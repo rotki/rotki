@@ -1,6 +1,6 @@
 import { Guid } from '../../common/guid';
-import { RotkiApp } from '../pages/rotki-app';
 import { OtcPage } from '../pages/otc-page';
+import { RotkiApp } from '../pages/rotki-app';
 import { OTCTrade } from '../support/types';
 
 describe('otc trades', () => {

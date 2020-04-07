@@ -1,6 +1,6 @@
+import { default as BigNumber } from 'bignumber.js';
 import { ApiAssetBalance, AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
-import BigNumber from 'bignumber.js';
 import { DSRMovementType } from '@/services/types-common';
 
 export interface GeneralSettings {

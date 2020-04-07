@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
 const { spawn } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 const tmpDir = os.tmpdir();
 let tempPath = path.join(tmpDir, 'rotki');

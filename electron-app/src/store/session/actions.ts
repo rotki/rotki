@@ -1,14 +1,14 @@
 import { ActionTree } from 'vuex';
-import { Message, RotkehlchenState } from '@/store/store';
-import { SessionState } from '@/store/session/state';
 import {
   convertToAccountingSettings,
   convertToGeneralSettings
 } from '@/data/converters';
 import { DBSettings } from '@/model/action-result';
-import { api } from '@/services/rotkehlchen-api';
 import { monitor } from '@/services/monitoring';
+import { api } from '@/services/rotkehlchen-api';
 import { notify } from '@/store/notifications/utils';
+import { SessionState } from '@/store/session/state';
+import { Message, RotkehlchenState } from '@/store/store';
 import { SyncConflictError, Tag, UnlockPayload } from '@/typing/types';
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {

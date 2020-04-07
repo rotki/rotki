@@ -1,9 +1,9 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import store from '@/store/store';
-import Vuetify from 'vuetify';
 import Vue from 'vue';
-import { Task, TaskMeta, TaskType } from '@/model/task';
+import Vuetify from 'vuetify';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
+import { Task, TaskMeta, TaskType } from '@/model/task';
+import store from '@/store/store';
 
 Vue.use(Vuetify);
 

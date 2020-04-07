@@ -102,10 +102,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { TradePayload } from '@/model/stored-trade';
-import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import moment from 'moment';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
+import { TradePayload } from '@/model/stored-trade';
 
 @Component({
   components: { DateTimePicker }

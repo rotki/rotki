@@ -1,4 +1,5 @@
 import { Application, SpectronClient } from 'spectron';
+import { Guid } from '../../common/guid';
 import {
   captureOnFailure,
   clearValue,
@@ -9,7 +10,6 @@ import {
   selectFromUserMenu,
   setupTest
 } from './utils/common';
-import { Guid } from '../../common/guid';
 
 const retry = require('promise-retry');
 

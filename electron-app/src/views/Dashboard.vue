@@ -82,16 +82,16 @@
 </template>
 
 <script lang="ts">
+import { default as BigNumber } from 'bignumber.js';
 import { Component, Vue } from 'vue-property-decorator';
-import InformationBox from '@/components/dashboard/InformationBox.vue';
 import { createNamespacedHelpers } from 'vuex';
-import { ExchangeInfo } from '@/typing/types';
-import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
-import { Currency } from '@/model/currency';
 import CryptoIcon from '@/components/CryptoIcon.vue';
-import BigNumber from 'bignumber.js';
-import { Zero } from '@/utils/bignumbers';
+import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
+import InformationBox from '@/components/dashboard/InformationBox.vue';
 import { AssetBalance } from '@/model/blockchain-balances';
+import { Currency } from '@/model/currency';
+import { ExchangeInfo } from '@/typing/types';
+import { Zero } from '@/utils/bignumbers';
 
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 const { mapGetters } = createNamespacedHelpers('session');

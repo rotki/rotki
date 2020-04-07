@@ -55,18 +55,18 @@
 </template>
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { createNamespacedHelpers } from 'vuex';
+import TagInput from '@/components/inputs/TagInput.vue';
+import TagManager from '@/components/tags/TagManager.vue';
+import { TaskType } from '@/model/task';
+import { BlockchainAccountPayload } from '@/store/balances/actions';
+import { notify } from '@/store/notifications/utils';
 import {
   Account,
   Blockchain,
   Severity,
   SupportedBlockchains
 } from '@/typing/types';
-import { TaskType } from '@/model/task';
-import { notify } from '@/store/notifications/utils';
-import { createNamespacedHelpers } from 'vuex';
-import TagInput from '@/components/inputs/TagInput.vue';
-import TagManager from '@/components/tags/TagManager.vue';
-import { BlockchainAccountPayload } from '@/store/balances/actions';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters } = createNamespacedHelpers('balances');

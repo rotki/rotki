@@ -63,12 +63,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
-import { Message } from '@/store/store';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { ExternalServiceKeys } from '@/model/action-result';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import { ExternalServiceKeys } from '@/model/action-result';
+import { Message } from '@/store/store';
+import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 
 @Component({
   components: { ServiceKey, ConfirmDialog, RevealableInput }

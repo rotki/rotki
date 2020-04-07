@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex';
-import { defaultState, TaxReportState } from '@/store/reports/state';
 import { EventEntry, TradeHistoryOverview } from '@/model/trade-history-types';
+import { defaultState, TaxReportState } from '@/store/reports/state';
 
 export const mutations: MutationTree<TaxReportState> = {
   set(

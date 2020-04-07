@@ -1,3 +1,5 @@
+import transform from 'lodash/transform';
+import { ApiAccountData } from '@/model/action-result';
 import {
   ApiBalance,
   ApiBalances,
@@ -7,11 +9,9 @@ import {
   EthBalances
 } from '@/model/blockchain-balances';
 
-import { bigNumberify } from '@/utils/bignumbers';
-import transform from 'lodash/transform';
 import { AccountData, ApiAssetBalances } from '@/typing/types';
-import { ApiAccountData } from '@/model/action-result';
 import { assert } from '@/utils/assertions';
+import { bigNumberify } from '@/utils/bignumbers';
 
 export function convertEthBalances(apiBalances: ApiEthBalances): EthBalances {
   const balances: EthBalances = {};

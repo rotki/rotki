@@ -1,9 +1,9 @@
+import { currencies } from '@/data/currencies';
 import {
   EventEntry,
   TradeHistoryOverview,
   tradeHistoryPlaceholder
 } from '@/model/trade-history-types';
-import { currencies } from '@/data/currencies';
 
 export interface TaxReportState {
   overview: TradeHistoryOverview;

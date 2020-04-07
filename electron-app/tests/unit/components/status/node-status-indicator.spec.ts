@@ -1,8 +1,8 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import store from '@/store/store';
-import Vuetify from 'vuetify';
 import Vue from 'vue';
+import Vuetify from 'vuetify';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
+import store from '@/store/store';
 
 Vue.use(Vuetify);
 

@@ -1,9 +1,9 @@
-import { actions } from './actions';
-import { mutations } from './mutations';
-import { getters } from './getters';
-import { SessionState, state } from './state';
 import { Module } from 'vuex';
 import { RotkehlchenState } from '@/store/store';
+import { actions } from './actions';
+import { getters } from './getters';
+import { mutations } from './mutations';
+import { SessionState, state } from './state';
 
 const namespaced: boolean = true;
 

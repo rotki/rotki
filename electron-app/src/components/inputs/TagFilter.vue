@@ -47,9 +47,9 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { createNamespacedHelpers } from 'vuex';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { Tag } from '@/typing/types';
-import { createNamespacedHelpers } from 'vuex';
 
 const { mapGetters } = createNamespacedHelpers('session');
 

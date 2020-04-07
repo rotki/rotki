@@ -1,6 +1,6 @@
+import { default as BigNumber } from 'bignumber.js';
 import Vue from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
-import BigNumber from 'bignumber.js';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 function percentage(value: string, total: string, precision: number): string {

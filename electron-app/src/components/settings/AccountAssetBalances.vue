@@ -38,9 +38,9 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import { AssetBalances } from '@/model/blockchain-balances';
-import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 
 const { mapGetters } = createNamespacedHelpers('balances');

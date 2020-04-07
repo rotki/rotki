@@ -1,4 +1,5 @@
 'use strict';
+import path from 'path';
 import {
   app,
   protocol,
@@ -8,14 +9,13 @@ import {
   shell,
   dialog
 } from 'electron';
+import windowStateKeeper from 'electron-window-state';
 import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib';
 import PyHandler from './py-handler';
 import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
-import windowStateKeeper from 'electron-window-state';
-import path from 'path';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 

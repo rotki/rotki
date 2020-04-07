@@ -32,12 +32,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import TokenTrack from '@/components/settings/TokenTrack.vue';
-import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import AssetBalances from '@/components/settings/AssetBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
+import AssetBalances from '@/components/settings/AssetBalances.vue';
+import TokenTrack from '@/components/settings/TokenTrack.vue';
+import { AccountBalance } from '@/model/blockchain-balances';
 
 const { mapGetters } = createNamespacedHelpers('balances');
 

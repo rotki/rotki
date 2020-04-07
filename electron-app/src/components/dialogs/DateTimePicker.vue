@@ -32,8 +32,8 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import moment from 'moment';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 
 @Component({})
 export default class DateTimePicker extends Vue {

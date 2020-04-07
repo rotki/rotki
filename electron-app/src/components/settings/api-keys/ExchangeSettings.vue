@@ -84,11 +84,11 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { exchanges } from '@/data/defaults';
 import { createNamespacedHelpers } from 'vuex';
-import ExchangeBadge from '@/components/ExchangeBadge.vue';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import ExchangeBadge from '@/components/ExchangeBadge.vue';
+import { exchanges } from '@/data/defaults';
 import { Message } from '@/store/store';
 
 const { mapState } = createNamespacedHelpers('balances');

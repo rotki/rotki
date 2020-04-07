@@ -54,9 +54,9 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { AssetBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
+import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task';
 

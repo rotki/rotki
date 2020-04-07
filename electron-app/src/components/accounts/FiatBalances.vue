@@ -62,12 +62,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { Currency } from '@/model/currency';
-import { currencies } from '@/data/currencies';
 import { createNamespacedHelpers } from 'vuex';
-import { Zero } from '@/utils/bignumbers';
+import { currencies } from '@/data/currencies';
 import { FiatBalance } from '@/model/blockchain-balances';
+import { Currency } from '@/model/currency';
 import { Message } from '@/store/store';
+import { Zero } from '@/utils/bignumbers';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const {

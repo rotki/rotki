@@ -1,18 +1,18 @@
+import { default as BigNumber } from 'bignumber.js';
+import isEmpty from 'lodash/isEmpty';
+import map from 'lodash/map';
 import { GetterTree } from 'vuex';
-import { RotkehlchenState } from '@/store/store';
-import { BalanceState } from '@/store/balances/state';
 import {
   AccountBalance,
   AssetBalance,
   Balance,
   EthBalance
 } from '@/model/blockchain-balances';
-import map from 'lodash/map';
-import BigNumber from 'bignumber.js';
+import { BalanceState } from '@/store/balances/state';
+import { RotkehlchenState } from '@/store/store';
+import { AccountDSRMovement, Blockchain, DSRBalance } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
-import isEmpty from 'lodash/isEmpty';
-import { AccountDSRMovement, Blockchain, DSRBalance } from '@/typing/types';
 
 export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   ethAccounts(state: BalanceState): AccountBalance[] {

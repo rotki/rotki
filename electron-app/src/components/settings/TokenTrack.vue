@@ -55,14 +55,14 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { EthToken } from '@/model/eth_token';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { BlockchainAccount } from '@/model/blockchain_account_result';
-import { convertBalances, convertEthBalances } from '@/utils/conversion';
-import { Message } from '@/store/store';
+import { EthToken } from '@/model/eth_token';
 import { notify } from '@/store/notifications/utils';
+import { Message } from '@/store/store';
 import { Severity } from '@/typing/types';
+import { convertBalances, convertEthBalances } from '@/utils/conversion';
 
 @Component({
   components: {

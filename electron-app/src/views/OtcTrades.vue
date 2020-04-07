@@ -96,12 +96,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { StoredTrade, TradePayload } from '@/model/stored-trade';
-import OtcForm from '@/components/OtcForm.vue';
 import { createNamespacedHelpers } from 'vuex';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import { Message } from '@/store/store';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import OtcForm from '@/components/OtcForm.vue';
+import { StoredTrade, TradePayload } from '@/model/stored-trade';
+import { Message } from '@/store/store';
 import { assert } from '@/utils/assertions';
 
 const { mapGetters } = createNamespacedHelpers('session');

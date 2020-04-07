@@ -4,12 +4,12 @@ import {
   EthBalances,
   FiatBalance
 } from '@/model/blockchain-balances';
+import { DSRBalances, DSRHistory } from '@/services/types-model';
 import {
   AccountDataMap,
   ExchangeData,
   UsdToFiatExchangeRates
 } from '@/typing/types';
-import { DSRBalances, DSRHistory } from '@/services/types-model';
 import { Zero } from '@/utils/bignumbers';
 
 export interface BalanceState {

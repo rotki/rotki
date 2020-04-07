@@ -1,10 +1,10 @@
+import { mount, Wrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { mount, Wrapper } from '@vue/test-utils';
-import store from '@/store/store';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import { ExternalServiceKeys } from '@/model/action-result';
-import flushPromises from 'flush-promises';
+import store from '@/store/store';
 
 Vue.use(Vuetify);
 

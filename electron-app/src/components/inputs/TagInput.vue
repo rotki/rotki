@@ -64,10 +64,10 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { Tag } from '@/typing/types';
-import TagManager from '@/components/tags/TagManager.vue';
 import { createNamespacedHelpers } from 'vuex';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import TagManager from '@/components/tags/TagManager.vue';
+import { Tag } from '@/typing/types';
 
 const { mapGetters } = createNamespacedHelpers('session');
 

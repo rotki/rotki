@@ -1,4 +1,4 @@
-import BigNumber from 'bignumber.js';
+import { default as BigNumber } from 'bignumber.js';
 import { DSRMovementType } from '@/services/types-common';
 
 export interface DSRBalances {

@@ -31,16 +31,16 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import Generate from '@/components/taxreport/Generate.vue';
-import { TaxReportEvent } from '@/typing/types';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import { TaskType } from '@/model/task';
 import { createNamespacedHelpers } from 'vuex';
-import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
-import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
-import { Currency } from '@/model/currency';
+import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import Generate from '@/components/taxreport/Generate.vue';
+import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
+import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
+import { Currency } from '@/model/currency';
+import { TaskType } from '@/model/task';
 import { Message } from '@/store/store';
+import { TaxReportEvent } from '@/typing/types';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapState, mapGetters } = createNamespacedHelpers('reports');

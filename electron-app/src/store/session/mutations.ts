@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex';
-import { defaultState, SessionState } from '@/store/session/state';
 import { Currency } from '@/model/currency';
+import { defaultState, SessionState } from '@/store/session/state';
 import {
   AccountingSettings,
   AccountingSettingsUpdate,

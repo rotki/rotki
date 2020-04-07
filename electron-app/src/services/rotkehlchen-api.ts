@@ -1,4 +1,4 @@
-import { VersionCheck } from '@/model/version-check';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import {
   AccountState,
   ActionResult,
@@ -7,15 +7,18 @@ import {
   DBSettings,
   ExternalServiceKeys
 } from '@/model/action-result';
-import { DBAssetBalance } from '@/model/db-asset-balance';
-import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { BlockchainAccount } from '@/model/blockchain_account_result';
-import { StoredTrade, Trade } from '@/model/stored-trade';
 import { Currency } from '@/model/currency';
+import { DBAssetBalance } from '@/model/db-asset-balance';
+import { EthTokens } from '@/model/eth_token';
 import { LocationData } from '@/model/location-data';
+import { Messages } from '@/model/messages';
 import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result';
 import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
-import { Messages } from '@/model/messages';
+import { SingleAssetBalance } from '@/model/single-asset-balance';
+import { StoredTrade, Trade } from '@/model/stored-trade';
+import { VersionCheck } from '@/model/version-check';
+import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
   AccountSession,
   ApiAssetBalances,
@@ -32,9 +35,6 @@ import {
   Tag,
   AccountData
 } from '@/typing/types';
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { EthTokens } from '@/model/eth_token';
-import { BlockchainAccountPayload } from '@/store/balances/actions';
 import { convertAccountData } from '@/utils/conversion';
 
 export class RotkehlchenApi {

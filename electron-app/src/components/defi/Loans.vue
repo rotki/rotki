@@ -98,16 +98,16 @@
 </template>
 
 <script lang="ts">
-import { Vue } from 'vue-property-decorator';
+import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
+import { Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import BigNumber from 'bignumber.js';
+import PremiumLock from '@/components/helper/PremiumLock.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import { TaskType } from '@/model/task';
 import { AccountDSRMovement, DSRBalance } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';
-import PremiumLock from '@/components/helper/PremiumLock.vue';
-import { TaskType } from '@/model/task';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 
 const { mapState, mapGetters: mapSessionGetters } = createNamespacedHelpers(
   'session'
