@@ -1,11 +1,15 @@
+from copy import deepcopy
+from http import HTTPStatus
 from typing import Any, Dict, List
 
+import pytest
 import requests
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_proper_response,
     assert_proper_response_with_result,
 )
@@ -115,7 +119,7 @@ def test_add_and_query_manually_tracked_balances(
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        )
+        ),
     )
     assert_proper_response(response)
     data = response.json()
@@ -129,7 +133,7 @@ def test_add_and_query_manually_tracked_balances(
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        )
+        ),
     )
     result = assert_proper_response_with_result(response)
     assert_balances_match(expected_balances=balances, returned_balances=result['balances'])
@@ -172,6 +176,300 @@ def test_edit_manually_tracked_balances(
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
+    )
+
+
+@pytest.mark.parametrize('verb', ('PUT', 'PATCH'))
+def test_add_edit_manually_tracked_balances_errors(
+        rotkehlchen_api_server,
+        verb,
+):
+    """Test that errors in input data while adding/editing manually tracked balances
+    are handled properly"""
+    _populate_tags(rotkehlchen_api_server)
+    balances = {'balances': [{
+        "asset": "XMR",
+        "label": "My monero wallet",
+        "amount": "50.315",
+        "tags": ["public", "mInEr"],
+        "location": "blockchain",
+    }, {
+        "asset": "BTC",
+        "label": "My XPUB BTC wallet",
+        "amount": "1.425",
+        "location": "blockchain",
+    }]}
+
+    # invalid initial input type
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=[1, 2, 3],
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Invalid input type",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # missing balances
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'foo': 1},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="balances': ['Missing data for required field",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # wrong type for balances
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'balances': 'foo'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="balances': ['Not a valid list",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # missing asset entry
+    data = deepcopy(balances)
+    del data['balances'][0]['asset']
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Missing data for required field',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # invalid type for asset
+    data = deepcopy(balances)
+    data['balances'][0]['asset'] = 123
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to initialize an asset out of a non-string identifier',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # unknown asset
+    data = deepcopy(balances)
+    data['balances'][0]['asset'] = 'SDSFFGFA'
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Unknown asset SDSFFGFA provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # missing label entry
+    data = deepcopy(balances)
+    del data['balances'][0]['label']
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Missing data for required field',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # wrong type for label
+    data = deepcopy(balances)
+    data['balances'][0]['label'] = 55
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="label': ['Not a valid string",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # missing amount entry
+    data = deepcopy(balances)
+    del data['balances'][0]['amount']
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Missing data for required field',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # wrong type for amount
+    data = deepcopy(balances)
+    data['balances'][0]['amount'] = 'gra'
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to deserialize an amount entry',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # missing location entry
+    data = deepcopy(balances)
+    del data['balances'][0]['location']
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Missing data for required field',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # wrong type for location
+    data = deepcopy(balances)
+    data['balances'][0]['location'] = 55
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to deserialize location symbol from',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # invalid location
+    data = deepcopy(balances)
+    data['balances'][0]['location'] = 'foo'
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to deserialize location symbol. Unknown symbol foo for location',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # wrong type for tags
+    data = deepcopy(balances)
+    data['balances'][0]['tags'] = 55
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="tags': ['Not a valid list",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # wrong type in list of tags
+    data = deepcopy(balances)
+    data['balances'][0]['tags'] = ['foo', 55]
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="'tags': {1: ['Not a valid string.'",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def test_add_edit_unknown_tags(rotkehlchen_api_server):
+    """Test that using unknown tags in manually tracked balances is handled properly"""
+    _populate_tags(rotkehlchen_api_server)
+    initial_balances = _populate_initial_balances(rotkehlchen_api_server)
+
+    # Try adding a new balance but with an unknown tag
+    balances = [{
+        "asset": "ETC",
+        "label": "My ETC wallet",
+        "amount": "500.115",
+        "tags": ["notexisting", "mInEr"],
+        "location": "blockchain",
+    }]
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'balances': balances},
+    )
+    msg = 'When adding manually tracked balances, unknown tags notexisting were found'
+    assert_error_response(
+        response=response,
+        contained_in_msg=msg,
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    balances = initial_balances[:1]
+    balances[0]['tags'] = ["notexisting", "mInEr"]
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'balances': balances},
+    )
+    msg = 'When editing manually tracked balances, unknown tags notexisting were found'
+    assert_error_response(
+        response=response,
+        contained_in_msg=msg,
+        status_code=HTTPStatus.CONFLICT,
     )
 
 
