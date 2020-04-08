@@ -968,12 +968,13 @@ class DBHandler:
         to delete did not exist
         """
         cursor = self.conn.cursor()
+        tuples = [(x,) for x in labels]
         cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', labels,
+            'object_reference = ?;', tuples,
         )
         cursor.executemany(
-            'DELETE FROM manually_tracked_balances WHERE label = ?;', labels,
+            'DELETE FROM manually_tracked_balances WHERE label = ?;', tuples,
         )
         affected_rows = cursor.rowcount
         if affected_rows != len(labels):
