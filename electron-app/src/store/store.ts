@@ -52,13 +52,14 @@ const store: StoreOptions<RotkehlchenState> = {
   },
   actions: {
     async version({ commit }): Promise<void> {
-      const timerId = setInterval(async function() {
+      const timerId = setInterval(async function () {
         try {
           const version = await api.checkVersion();
           if (version) {
             commit('versions', version);
             clearInterval(timerId);
           }
+          // eslint-disable-next-line no-empty
         } catch (e) {}
       }, 1000);
     }

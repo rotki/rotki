@@ -147,7 +147,7 @@ export default class PyHandler {
   }
 
   private setFailureNotification(window: Electron.BrowserWindow | null) {
-    this.rpcFailureNotifier = setInterval(function() {
+    this.rpcFailureNotifier = setInterval(function () {
       window?.webContents.send('failed', 'failed');
     }, 2000);
   }

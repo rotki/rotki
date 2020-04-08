@@ -16,6 +16,7 @@ function findComponents(): string[] {
 }
 
 async function loadComponents(): Promise<string[]> {
+  // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     let components = findComponents();
     if (components.length > 0) {
@@ -52,12 +53,14 @@ async function loadLibrary() {
 }
 
 export const PremiumStatistics = (): Promise<VueConstructor> => {
+  // eslint-disable-next-line no-async-promise-executor
   return new Promise(async resolve =>
     resolve((await loadLibrary()).PremiumStatistics)
   );
 };
 
 export const DsrMovementHistory = (): Promise<VueConstructor> => {
+  // eslint-disable-next-line no-async-promise-executor
   return new Promise(async resolve =>
     resolve((await loadLibrary()).DsrMovementHistory)
   );
