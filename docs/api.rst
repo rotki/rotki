@@ -2690,7 +2690,7 @@ Editing blockchain account data
               "tags": ["public", metamask"]
               }, {
               "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b,
-	      "label": "my hardware wallet"
+              "label": "my hardware wallet"
               }]
       }
 
@@ -2806,24 +2806,24 @@ Getting manually tracked balances
           "balances": [{
                   "asset": "XMR",
                   "label": "My monero wallet",
-		  "amount": "50.315",
-		  "usd_value": "2370.13839",
+                  "amount": "50.315",
+                  "usd_value": "2370.13839",
                   "tags": ["public"],
-		  "location": "blockchain"
+                  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
-		  "amount": "1.425",
-		  "usd_value": "9087.22",
-		  "location": "blockchain"
+                  "amount": "1.425",
+                  "usd_value": "9087.22",
+                  "location": "blockchain"
               }, {
-	          "asset": "ZEC",
-		  "label" "My favorite wallet",
-		  "amount": "76.2"
-		  "usd_value": "6067.77",
-		  "tags": ["private", "inheritance"],
-		  "location": "blockchain"
-	      }]
+                  "asset": "ZEC",
+                  "label" "My favorite wallet",
+                  "amount": "76.2"
+                  "usd_value": "6067.77",
+                  "tags": ["private", "inheritance"],
+                  "location": "blockchain"
+              }]
           "message": ""
       }
 
@@ -2855,14 +2855,14 @@ Adding manually tracked balances
           "balances": [{
                   "asset": "XMR",
                   "label": "My monero wallet",
-		  "amount": "50.315",
-                  "tags": ["public"]
-		  "location": "blockchain"
+                  "amount": "50.315",
+                  "tags": ["public"],
+                  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
-		  "amount": "1.425"
-		  "location": "blockchain"
+                  "amount": "1.425",
+                  "location": "blockchain"
               }]
       }
 
@@ -2885,24 +2885,24 @@ Adding manually tracked balances
           "balances": [{
                   "asset": "XMR",
                   "label": "My monero wallet",
-		  "amount": "50.315",
-		  "usd_value": "2370.13839",
+                  "amount": "50.315",
+                  "usd_value": "2370.13839",
                   "tags": ["public"],
-		  "location": "blockchain"
+                  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
-		  "amount": "1.425",
-		  "usd_value": "9087.22",
-		  "location": "blockchain"
+                  "amount": "1.425",
+                  "usd_value": "9087.22",
+                  "location": "blockchain"
               }, {
-	          "asset": "ZEC",
-		  "label" "My favorite wallet",
-		  "amount": "76.2"
-		  "usd_value": "6067.77",
-		  "tags": ["private", "inheritance"]
-		  "location": "blockchain"
-	      }]
+                  "asset": "ZEC",
+                  "label" "My favorite wallet",
+                  "amount": "76.2"
+                  "usd_value": "6067.77",
+                  "tags": ["private", "inheritance"]
+                  "location": "blockchain"
+              }]
           "message": ""
       }
 
@@ -2931,15 +2931,15 @@ Editing manually tracked balances
           "balances": [{
                   "asset": "XMR",
                   "label": "My monero wallet",
-		  "amount": "4.5",
-		  "location": "blockchain"
-		  },{
-	          "asset": "ETH",
-		  "label" "My favorite wallet",
-		  "amount": "10",
-		  "tags": [],
-		  "location": "kraken"
-	      }]
+                  "amount": "4.5",
+                  "location": "blockchain"
+                  },{
+                  "asset": "ETH",
+                  "label" "My favorite wallet",
+                  "amount": "10",
+                  "tags": [],
+                  "location": "kraken"
+              }]
       }
 
    :reqjson list[object] accounts: A list of manual balances to edit. As defined `here <manually_tracked_balances_section_>`__.
@@ -2956,23 +2956,23 @@ Editing manually tracked balances
           "balances": [{
                   "asset": "XMR",
                   "label": "My monero wallet",
-		  "amount": "4.5",
-		  "usd_value": "210.548",
+                  "amount": "4.5",
+                  "usd_value": "210.548",
                   "tags": ["public"],
-		  "location": "blockchain"
+                  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
-		  "amount": "1.425",
-		  "usd_value": "9087.22",
-		  "location": "blockchain"
+                  "amount": "1.425",
+                  "usd_value": "9087.22",
+                  "location": "blockchain"
               }, {
-	          "asset": "ZEC",
-		  "label" "My favorite wallet",
-		  "amount": "10"
-		  "usd_value": "1330.85"
-		  "location": "kraken"
-	      }]
+                  "asset": "ZEC",
+                  "label" "My favorite wallet",
+                  "amount": "10"
+                  "usd_value": "1330.85"
+                  "location": "kraken"
+              }]
           "message": ""
       }
 
