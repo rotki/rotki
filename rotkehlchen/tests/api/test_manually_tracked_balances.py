@@ -166,7 +166,43 @@ def test_edit_manually_tracked_balances(
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        )
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert_balances_match(
+        expected_balances=expected_balances,
+        returned_balances=result['balances'],
+    )
+
+
+def test_delete_manually_tracked_balances(
+        rotkehlchen_api_server,
+):
+    """Test that deleting manually tracked balances via the API works fine"""
+    _populate_tags(rotkehlchen_api_server)
+    balances = _populate_initial_balances(rotkehlchen_api_server)
+
+    labels_to_delete = ['My monero wallet', 'My BNB in binance']
+    expected_balances = balances[1:2]
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'labels': labels_to_delete},
+    )
+    result = assert_proper_response_with_result(response)
+    expected_balances = balances[1:2]
+    assert_balances_match(
+        expected_balances=expected_balances,
+        returned_balances=result['balances'],
+    )
+
+    # now query and make sure the remaining balances are returned
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ),
     )
     result = assert_proper_response_with_result(response)
     assert_balances_match(

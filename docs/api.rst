@@ -2999,7 +2999,7 @@ Deleting manually tracked balances
       DELETE /api/1/balances/manual HTTP/1.1
       Host: localhost:5042
 
-      {"balances": ["My monero wallet", "My favorite wallet"]}
+      {"labels": ["My monero wallet", "My favorite wallet"]}
 
    :reqjson list[string] balances: A list of labels of manually tracked balances to delete
 

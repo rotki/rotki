@@ -581,7 +581,7 @@ class ManuallyTrackedBalancesSchema(Schema):
 
 
 class ManuallyTrackedBalancesDeleteSchema(Schema):
-    balances = fields.List(fields.String(required=True))
+    labels = fields.List(fields.String(required=True))
 
 
 class TradePatchSchema(TradeSchema):
