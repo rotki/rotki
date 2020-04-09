@@ -69,8 +69,8 @@ def assert_proper_response_with_result(
         response: Optional[requests.Response],
         status_code=HTTPStatus.OK,
 ) -> Any:
-    assert_proper_response(response)
-    data = response.json()
+    assert_proper_response(response, status_code)
+    data = response.json()  # type: ignore
     assert data['result'] is not None
     assert data['message'] == ''
     return data['result']

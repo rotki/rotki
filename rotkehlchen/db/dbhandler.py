@@ -1893,7 +1893,7 @@ class DBHandler:
             if entry.tags is not None:
                 unknown_tags.update(
                     # tag comparison is case-insensitive
-                    set(t.lower() for t in entry.tags).difference(existing_tag_keys)
+                    {t.lower() for t in entry.tags}.difference(existing_tag_keys),
                 )
 
         if len(unknown_tags) != 0:

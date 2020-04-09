@@ -80,7 +80,7 @@ def assert_balances_match(
 
 def _populate_initial_balances(api_server) -> List[Dict[str, Any]]:
     # Now add some balances
-    balances = [{
+    balances: List[Dict[str, Any]] = [{
         "asset": "XMR",
         "label": "My monero wallet",
         "amount": "50.315",
@@ -473,9 +473,7 @@ def test_add_edit_unknown_tags(rotkehlchen_api_server):
     )
 
 
-def test_delete_manually_tracked_balances(
-        rotkehlchen_api_server,
-):
+def test_delete_manually_tracked_balances(rotkehlchen_api_server):
     """Test that deleting manually tracked balances via the API works fine"""
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
@@ -506,4 +504,75 @@ def test_delete_manually_tracked_balances(
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
+    )
+
+
+def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
+    """Test that errors at deleting manually tracked balances in the API are handled"""
+    _populate_tags(rotkehlchen_api_server)
+    _populate_initial_balances(rotkehlchen_api_server)
+
+    # invalid initial input type
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json=[],
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Invalid input type",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # missing labels
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="labels': ['Missing data for required field",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # wrong type for labels
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'labels': 1},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="labels': ['Not a valid list",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # wrong type for label entries
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'labels': ['My monero wallet', 55]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="'labels': {1: ['Not a valid string.'",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # delete non-existing label
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'labels': ['My monero wallet', 'nonexisting']},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to remove 1 manually tracked balance labels that do not exist',
+        status_code=HTTPStatus.BAD_REQUEST,
     )
