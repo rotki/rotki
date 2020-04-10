@@ -6,7 +6,7 @@ import requests
 
 # from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.db.utils import AssetBalance, LocationData
+from rotkehlchen.db.utils import AssetBalance, LocationData, ManuallyTrackedBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import (
     mock_alethio_balances_query,
@@ -28,6 +28,7 @@ class BalancesTestSetup(NamedTuple):
     token_balances: Dict[str, List[str]]
     binance_balances: Dict[str, FVal]
     poloniex_balances: Dict[str, FVal]
+    manually_tracked_balances: Optional[List[ManuallyTrackedBalance]]
     poloniex_patch: _patch
     binance_patch: _patch
     etherscan_patch: _patch
@@ -57,6 +58,7 @@ def setup_balances(
         token_balances: Optional[Dict[str, List[str]]] = None,
         btc_balances: Optional[List[str]] = None,
         use_alethio: bool = False,
+        manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
 ) -> BalancesTestSetup:
     """Setup the blockchain, exchange and fiat balances for some tests
 
@@ -158,6 +160,7 @@ def setup_balances(
         fiat_balances={'EUR': eur_balance},
         binance_balances=binance_balances,
         poloniex_balances=poloniex_balances,
+        manually_tracked_balances=manually_tracked_balances,
         poloniex_patch=poloniex_patch,
         binance_patch=binance_patch,
         etherscan_patch=etherscan_patch,

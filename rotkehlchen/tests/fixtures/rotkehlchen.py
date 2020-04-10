@@ -10,7 +10,9 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.database import (
     add_blockchain_accounts_to_db,
+    add_manually_tracked_balances_to_test_db,
     add_settings_to_test_db,
+    add_tags_to_test_db,
     maybe_include_etherscan_key,
 )
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
@@ -74,6 +76,8 @@ def initialize_mock_rotkehlchen_instance(
         ethereum_modules,
         db_settings,
         ignored_assets,
+        tags,
+        manually_tracked_balances,
 ):
     if start_with_logged_in_user:
         rotki.unlock_user(
@@ -95,6 +99,8 @@ def initialize_mock_rotkehlchen_instance(
         add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets)
         maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
         add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
+        add_tags_to_test_db(rotki.data.db, tags)
+        add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
         maybe_mock_price_queries(
             historian=PriceHistorian(),
             should_mock_price_queries=should_mock_price_queries,
@@ -125,6 +131,8 @@ def rotkehlchen_api_server(
         ethereum_modules,
         db_settings,
         ignored_assets,
+        tags,
+        manually_tracked_balances,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -145,6 +153,8 @@ def rotkehlchen_api_server(
         ethereum_modules=ethereum_modules,
         db_settings=db_settings,
         ignored_assets=ignored_assets,
+        tags=tags,
+        manually_tracked_balances=manually_tracked_balances,
     )
     return api_server
 
@@ -165,6 +175,8 @@ def rotkehlchen_instance(
         ethereum_modules,
         db_settings,
         ignored_assets,
+        tags,
+        manually_tracked_balances,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -183,6 +195,8 @@ def rotkehlchen_instance(
         ethereum_modules=ethereum_modules,
         db_settings=db_settings,
         ignored_assets=ignored_assets,
+        tags=tags,
+        manually_tracked_balances=manually_tracked_balances,
     )
     return uninitialized_rotkehlchen
 

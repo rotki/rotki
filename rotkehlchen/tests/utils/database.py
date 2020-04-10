@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import BlockchainAccounts
+from rotkehlchen.db.utils import BlockchainAccounts, ManuallyTrackedBalance
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.typing import (
     ApiKey,
@@ -54,3 +54,20 @@ def add_settings_to_test_db(
     if ignored_assets:
         for asset in ignored_assets:
             db.add_to_ignored_assets(asset)
+
+
+def add_tags_to_test_db(db: DBHandler, tags: List[Dict[str, Any]]) -> None:
+    for tag in tags:
+        db.add_tag(
+            name=tag['name'],
+            description=tag.get('description', None),
+            background_color=tag['background_color'],
+            foreground_color=tag['foreground_color'],
+        )
+
+
+def add_manually_tracked_balances_to_test_db(
+        db: DBHandler,
+        balances: List[ManuallyTrackedBalance],
+) -> None:
+    db.add_manually_tracked_balances(balances)

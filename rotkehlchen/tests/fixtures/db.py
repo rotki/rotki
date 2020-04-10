@@ -5,10 +5,12 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.utils import BlockchainAccounts
+from rotkehlchen.db.utils import BlockchainAccounts, ManuallyTrackedBalance
 from rotkehlchen.tests.utils.database import (
     add_blockchain_accounts_to_db,
+    add_manually_tracked_balances_to_test_db,
     add_settings_to_test_db,
+    add_tags_to_test_db,
     maybe_include_etherscan_key,
 )
 from rotkehlchen.typing import FilePath
@@ -68,6 +70,26 @@ def session_include_etherscan_key() -> bool:
     return True
 
 
+@pytest.fixture
+def tags() -> List[Dict[str, Any]]:
+    return []
+
+
+@pytest.fixture
+def session_tags() -> List[Dict[str, Any]]:
+    return []
+
+
+@pytest.fixture
+def manually_tracked_balances() -> List[ManuallyTrackedBalance]:
+    return []
+
+
+@pytest.fixture
+def session_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
+    return []
+
+
 def _init_database(
         data_dir: FilePath,
         password: str,
@@ -76,12 +98,16 @@ def _init_database(
         ignored_assets: Optional[List[Asset]],
         blockchain_accounts: BlockchainAccounts,
         include_etherscan_key: bool,
+        tags: List[Dict[str, Any]],
+        manually_tracked_balances: List[ManuallyTrackedBalance],
 ) -> DBHandler:
     db = DBHandler(data_dir, password, msg_aggregator)
     # Make sure that the fixture provided data are included in the DB
     add_settings_to_test_db(db, db_settings, ignored_assets)
     add_blockchain_accounts_to_db(db, blockchain_accounts)
     maybe_include_etherscan_key(db, include_etherscan_key)
+    add_tags_to_test_db(db, tags)
+    add_manually_tracked_balances_to_test_db(db, manually_tracked_balances)
 
     return db
 
@@ -96,6 +122,8 @@ def database(
         ignored_assets,
         blockchain_accounts,
         include_etherscan_key,
+        tags,
+        manually_tracked_balances,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
@@ -108,6 +136,8 @@ def database(
         ignored_assets=ignored_assets,
         blockchain_accounts=blockchain_accounts,
         include_etherscan_key=include_etherscan_key,
+        tags=tags,
+        manually_tracked_balances=manually_tracked_balances,
     )
 
 
@@ -120,6 +150,8 @@ def session_database(
         session_start_with_logged_in_user,
         session_ignored_assets,
         session_include_etherscan_key,
+        session_tags,
+        session_manually_tracked_balances,
 ) -> Optional[DBHandler]:
     if not session_start_with_logged_in_user:
         return None
@@ -134,6 +166,8 @@ def session_database(
         ignored_assets=session_ignored_assets,
         blockchain_accounts=blockchain_accounts,
         include_etherscan_key=session_include_etherscan_key,
+        tags=session_tags,
+        manually_tracked_balances=session_manually_tracked_balances,
     )
 
 

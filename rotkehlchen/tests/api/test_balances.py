@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
+from rotkehlchen.db.utils import ManuallyTrackedBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -33,6 +34,19 @@ def assert_all_balances(
     total_eth = get_asset_balance_total('ETH', setup)
     total_rdn = get_asset_balance_total('RDN', setup)
     total_btc = get_asset_balance_total('BTC', setup)
+
+    if setup.manually_tracked_balances:
+        for entry in setup.manually_tracked_balances:
+            if entry.asset == A_ETH:
+                total_eth += entry.amount
+            elif entry.asset == A_BTC:
+                total_btc += entry.amount
+            elif entry.asset == A_RDN:
+                total_rdn += entry.amount
+            else:
+                raise AssertionError(
+                    f'Unexpected manually tracked balance asset {entry.asset} in tests',
+                )
 
     assert FVal(result['ETH']['amount']) == total_eth
     assert result['ETH']['usd_value'] is not None
@@ -289,6 +303,65 @@ def test_query_all_balances_ignore_cache(
         )
         msg = 'call count should increase since cache should have been ignored'
         assert all(fn.call_count == 2 for fn in function_call_counters), msg
+
+
+@pytest.mark.parametrize('tags', [[{
+    'name': 'private',
+    'description': 'My private accounts',
+    'background_color': 'ffffff',
+    'foreground_color': '000000',
+}]])
+@pytest.mark.parametrize('manually_tracked_balances', [[ManuallyTrackedBalance(
+    asset=A_BTC,
+    label='XPUB BTC wallet',
+    amount=FVal('10'),
+    location=Location.BLOCKCHAIN,
+    tags=None,
+), ManuallyTrackedBalance(
+    asset=A_BTC,
+    label='BTC in hardware wallet',
+    amount=FVal('20'),
+    location=Location.BLOCKCHAIN,
+    tags=['private'],
+)]])
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_query_all_balances_with_manually_tracked_balances(
+        rotkehlchen_api_server_with_exchanges,
+        ethereum_accounts,
+        btc_accounts,
+        manually_tracked_balances,
+):
+    """Test that using the query all balances endpoint also includes manually tracked balances"""
+    # Disable caching of query results
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki.chain_manager.cache_ttl_secs = 0
+    setup = setup_balances(
+        rotki=rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=btc_accounts,
+        manually_tracked_balances=manually_tracked_balances,
+    )
+    # now do the same but save the data in the DB and test it works
+    # Omit the argument to test that default value of save_data is True
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "allbalancesresource",
+            ),
+        )
+    assert_proper_response(response)
+    json_data = response.json()
+    assert_all_balances(
+        data=json_data,
+        db=rotki.data.db,
+        expected_data_in_db=True,
+        setup=setup,
+    )
 
 
 def test_query_all_balances_errors(rotkehlchen_api_server):
