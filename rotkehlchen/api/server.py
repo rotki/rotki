@@ -14,6 +14,7 @@ from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.resources import (
+    AllAssetsResource,
     AllBalancesResource,
     AsyncTasksResource,
     BlockchainBalancesResource,
@@ -98,6 +99,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/makerdao/dsrhistory', MakerDAODSRHistoryResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/assets', OwnedAssetsResource),
+    ('/assets/all', AllAssetsResource),
     ('/assets/ignored', IgnoredAssetsResource),
     ('/version', VersionResource),
     ('/import', DataImportResource),
