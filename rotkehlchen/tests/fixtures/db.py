@@ -76,7 +76,7 @@ def tags() -> List[Dict[str, Any]]:
     return []
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def session_tags() -> List[Dict[str, Any]]:
     return []
 
@@ -86,7 +86,7 @@ def manually_tracked_balances() -> List[ManuallyTrackedBalance]:
     return []
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def session_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
     return []
 
