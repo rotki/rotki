@@ -22,4 +22,9 @@ def get_asset_balance_total(asset_symbol: str, setup: BalancesTestSetup) -> FVal
     total += setup.binance_balances.get(asset_symbol, ZERO)
     total += setup.poloniex_balances.get(asset_symbol, ZERO)
 
+    if setup.manually_tracked_balances:
+        for entry in setup.manually_tracked_balances:
+            if entry.asset.identifier == asset_symbol:
+                total += entry.amount
+
     return total

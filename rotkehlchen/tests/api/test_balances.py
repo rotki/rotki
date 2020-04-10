@@ -34,19 +34,9 @@ def assert_all_balances(
     total_eth = get_asset_balance_total('ETH', setup)
     total_rdn = get_asset_balance_total('RDN', setup)
     total_btc = get_asset_balance_total('BTC', setup)
+    total_eur = get_asset_balance_total('EUR', setup)
 
-    if setup.manually_tracked_balances:
-        for entry in setup.manually_tracked_balances:
-            if entry.asset == A_ETH:
-                total_eth += entry.amount
-            elif entry.asset == A_BTC:
-                total_btc += entry.amount
-            elif entry.asset == A_RDN:
-                total_rdn += entry.amount
-            else:
-                raise AssertionError(
-                    f'Unexpected manually tracked balance asset {entry.asset} in tests',
-                )
+    got_external = any(x.location == Location.EXTERNAL for x in setup.manually_tracked_balances)
 
     assert FVal(result['ETH']['amount']) == total_eth
     assert result['ETH']['usd_value'] is not None
@@ -57,13 +47,13 @@ def assert_all_balances(
     assert FVal(result['BTC']['amount']) == total_btc
     assert result['BTC']['usd_value'] is not None
     assert result['BTC']['percentage_of_net_value'] is not None
-    assert FVal(result['EUR']['amount']) == setup.fiat_balances['EUR']
+    assert FVal(result['EUR']['amount']) == total_eur
     assert result['BTC']['usd_value'] is not None
     assert result['EUR']['percentage_of_net_value'] is not None
 
     assert result['net_usd'] is not None
     # Check that the 4 locations are there
-    assert len(result['location']) == 4
+    assert len(result['location']) == 5 if got_external else 4
     assert result['location']['binance']['usd_value'] is not None
     assert result['location']['binance']['percentage_of_net_value'] is not None
     assert result['location']['poloniex']['usd_value'] is not None
@@ -72,6 +62,10 @@ def assert_all_balances(
     assert result['location']['blockchain']['percentage_of_net_value'] is not None
     assert result['location']['banks']['usd_value'] is not None
     assert result['location']['banks']['percentage_of_net_value'] is not None
+    if got_external:
+        assert result['location']['external']['usd_value'] is not None
+        assert result['location']['external']['percentage_of_net_value'] is not None
+
     assert len(result) == 6  # 4 assets + location + net_usd
 
     eth_tbalances = db.query_timed_balances(from_ts=None, to_ts=None, asset=A_ETH)
@@ -107,12 +101,21 @@ def assert_all_balances(
     if not expected_data_in_db:
         assert len(location_data) == 0
     else:
-        assert len(location_data) == 5
-        assert location_data[0].location == Location.POLONIEX.serialize_for_db()
-        assert location_data[1].location == Location.BINANCE.serialize_for_db()
-        assert location_data[2].location == Location.TOTAL.serialize_for_db()
-        assert location_data[3].location == Location.BANKS.serialize_for_db()
-        assert location_data[4].location == Location.BLOCKCHAIN.serialize_for_db()
+        expected_locations = {
+            Location.POLONIEX.serialize_for_db(),
+            Location.BINANCE.serialize_for_db(),
+            Location.TOTAL.serialize_for_db(),
+            Location.BANKS.serialize_for_db(),
+            Location.BLOCKCHAIN.serialize_for_db(),
+        }
+        if got_external:
+            expected_locations.add(Location.EXTERNAL.serialize_for_db())
+            assert len(location_data) == 6
+        else:
+            assert len(location_data) == 5
+        assert len(location_data) == 6 if got_external else 5
+        locations = {x.location for x in location_data}
+        assert locations == expected_locations
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -323,6 +326,24 @@ def test_query_all_balances_ignore_cache(
     amount=FVal('20'),
     location=Location.BLOCKCHAIN,
     tags=['private'],
+), ManuallyTrackedBalance(
+    asset=A_ETH,
+    label='ETH in a not supported exchange wallet',
+    amount=FVal('10'),
+    location=Location.EXTERNAL,
+    tags=['private'],
+), ManuallyTrackedBalance(
+    asset=A_EUR,
+    label='N26 account',
+    amount=FVal('12500.15'),
+    location=Location.BANKS,
+    tags=None,
+), ManuallyTrackedBalance(
+    asset=A_EUR,
+    label='Deutsche Bank account',
+    amount=FVal('1337.1337'),
+    location=Location.BANKS,
+    tags=None,
 )]])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])

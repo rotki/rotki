@@ -557,26 +557,26 @@ class Rotkehlchen():
             balances['banks'] = result
 
         manually_tracked_balances = self.get_manually_tracked_balances()
-        for entry in manually_tracked_balances:
-            location_str = str(entry.location)
+        for m_entry in manually_tracked_balances:
+            location_str = str(m_entry.location)
             if location_str not in balances:
                 balances[location_str] = {}
-                balances[location_str][entry.asset.identifier] = {
-                    'amount': entry.amount,
-                    'usd_value': entry.usd_value,
+                balances[location_str][m_entry.asset.identifier] = {
+                    'amount': m_entry.amount,
+                    'usd_value': m_entry.usd_value,
                 }
             else:
-                if entry.asset.identifier not in balances[location_str]:
-                    balances[location_str][entry.asset.identifier] = {
-                        'amount': entry.amount,
-                        'usd_value': entry.usd_value,
+                if m_entry.asset.identifier not in balances[location_str]:
+                    balances[location_str][m_entry.asset.identifier] = {
+                        'amount': m_entry.amount,
+                        'usd_value': m_entry.usd_value,
                     }
                 else:
-                    old_amount = balances[location_str][entry.asset.identifier]['amount']
-                    old_usd_value = balances[location_str][entry.asset.identifier]['usd_value']
-                    balances[location_str][entry.asset.identifier] = {
-                        'amount': old_amount + entry.amount,
-                        'usd_value': old_usd_value + entry.usd_value,
+                    old_amount = balances[location_str][m_entry.asset.identifier]['amount']
+                    old_usd_value = balances[location_str][m_entry.asset.identifier]['usd_value']
+                    balances[location_str][m_entry.asset.identifier] = {
+                        'amount': old_amount + m_entry.amount,
+                        'usd_value': old_usd_value + m_entry.usd_value,
                     }
 
         combined = combine_stat_dicts([v for k, v in balances.items()])

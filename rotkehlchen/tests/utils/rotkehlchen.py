@@ -28,7 +28,7 @@ class BalancesTestSetup(NamedTuple):
     token_balances: Dict[str, List[str]]
     binance_balances: Dict[str, FVal]
     poloniex_balances: Dict[str, FVal]
-    manually_tracked_balances: Optional[List[ManuallyTrackedBalance]]
+    manually_tracked_balances: List[ManuallyTrackedBalance]
     poloniex_patch: _patch
     binance_patch: _patch
     etherscan_patch: _patch
@@ -153,6 +153,8 @@ def setup_balances(
     # Taken from POLONIEX_BALANCES_RESPONSE from tests.utils.exchanges
     poloniex_balances = {'ETH': FVal('11.0'), 'BTC': FVal('5.5')}
 
+    if manually_tracked_balances is None:
+        manually_tracked_balances = []
     return BalancesTestSetup(
         eth_balances=eth_balances,
         btc_balances=btc_balances,
