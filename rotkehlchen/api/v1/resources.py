@@ -268,6 +268,12 @@ class OwnedAssetsResource(BaseResource):
         return self.rest_api.query_owned_assets()
 
 
+class AllAssetsResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.query_all_assets()
+
+
 class ExchangeTradesResource(BaseResource):
 
     get_schema = ExchangeTradesQuerySchema()

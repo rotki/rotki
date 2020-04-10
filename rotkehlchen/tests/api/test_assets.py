@@ -1,3 +1,5 @@
+import json
+import os
 from contextlib import ExitStack
 from http import HTTPStatus
 
@@ -204,3 +206,25 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     )
     # Check that assets did not get modified
     assert rotki.data.db.get_ignored_assets() == ignored_assets
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_query_all_assets(rotkehlchen_api_server):
+    """Test that using the query all owned assets endpoint works"""
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "allassetsresource",
+        ),
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+
+    dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    with open(os.path.join(dir_path, 'data', 'all_assets.json'), 'r') as f:
+        expected_assets = json.loads(f.read())
+
+    assert len(data['result']) == len(expected_assets)
+    for key, entry in data['result'].items():
+        assert expected_assets[key] == entry

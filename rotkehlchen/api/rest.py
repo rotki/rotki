@@ -14,6 +14,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -913,6 +914,15 @@ class RestAPI():
 
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @staticmethod
+    def query_all_assets() -> Response:
+        """Returns all supported assets. Essentially the contents of all_assets.json"""
+        assets = AssetResolver().assets
+        return api_response(
+            _wrap_in_ok_result(assets),
+            status_code=HTTPStatus.OK,
+        )
 
     @require_loggedin_user()
     def query_owned_assets(self) -> Response:
