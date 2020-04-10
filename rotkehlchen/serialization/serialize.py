@@ -1,14 +1,10 @@
 from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.ethereum.makerdao import DSRCurrentBalances
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.db.utils import (
-    AssetBalance,
-    LocationData,
-    ManuallyTrackedBalanceWithValue,
-    SingleAssetBalance,
-)
+from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db

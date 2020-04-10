@@ -4,8 +4,9 @@ from typing import Any, Dict, List, Optional
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.utils import BlockchainAccounts, ManuallyTrackedBalance
+from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.database import (
     add_blockchain_accounts_to_db,
     add_manually_tracked_balances_to_test_db,

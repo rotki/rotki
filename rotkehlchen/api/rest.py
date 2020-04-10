@@ -14,9 +14,15 @@ from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.balances.manual import (
+    ManuallyTrackedBalance,
+    add_manually_tracked_balances,
+    edit_manually_tracked_balances,
+    get_manually_tracked_balances,
+)
 from rotkehlchen.chain.ethereum.makerdao import serialize_dsr_reports
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import AssetBalance, LocationData, ManuallyTrackedBalance
+from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
     DBUpgradeError,
@@ -1226,7 +1232,7 @@ class RestAPI():
     @require_loggedin_user()
     def get_manually_tracked_balances(self) -> Response:
         try:
-            balances = {'balances': self.rotkehlchen.get_manually_tracked_balances()}
+            balances = {'balances': get_manually_tracked_balances(db=self.rotkehlchen.data.db)}
         except RemoteError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
 
@@ -1239,7 +1245,7 @@ class RestAPI():
             data: List[ManuallyTrackedBalance],
     ) -> Response:
         try:
-            self.rotkehlchen.add_manually_tracked_balances(data)
+            add_manually_tracked_balances(self.rotkehlchen.data.db, data)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
         except TagConstraintError as e:
@@ -1254,7 +1260,7 @@ class RestAPI():
     ) -> Response:
 
         try:
-            self.rotkehlchen.edit_manually_tracked_balances(data)
+            edit_manually_tracked_balances(self.rotkehlchen.data.db, data)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
         except TagConstraintError as e:

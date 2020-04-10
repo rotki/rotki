@@ -5,14 +5,13 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.fval import FVal
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.typing import (
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
     HexColorCode,
     ListOfBlockchainAddresses,
-    Location,
     SupportedBlockchain,
     Timestamp,
 )
@@ -56,25 +55,6 @@ class Tag(NamedTuple):
 
     def serialize(self) -> Dict[str, str]:
         return self._asdict()  # pylint: disable=no-member
-
-
-class ManuallyTrackedBalance(NamedTuple):
-    asset: Asset
-    label: str
-    amount: FVal
-    location: Location
-    tags: Optional[List[str]]
-
-
-class ManuallyTrackedBalanceWithValue(NamedTuple):
-    # NamedTuples can't use inheritance. Make sure this has same fields as
-    # ManuallyTrackedBalance until usd_value
-    asset: Asset
-    label: str
-    amount: FVal
-    location: Location
-    tags: Optional[List[str]]
-    usd_value: FVal
 
 
 class DBStartupAction(Enum):

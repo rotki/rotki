@@ -48,8 +48,8 @@ from rotkehlchen.api.v1.encoding import (
     UserActionSchema,
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import ManuallyTrackedBalance
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
