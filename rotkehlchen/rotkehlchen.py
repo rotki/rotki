@@ -12,13 +12,13 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.balances.manual import account_for_manually_tracked_balances
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
-from rotkehlchen.db.utils import ManuallyTrackedBalance, ManuallyTrackedBalanceWithValue
 from rotkehlchen.errors import EthSyncError, InputError, PremiumAuthenticationError, RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.alethio import Alethio
@@ -386,58 +386,6 @@ class Rotkehlchen():
         self.data.db.remove_blockchain_accounts(blockchain, accounts)
         return balances_update
 
-    def get_manually_tracked_balances(self) -> List[ManuallyTrackedBalanceWithValue]:
-        """Gets the manually tracked balances
-
-        May raise:
-        - RemoteError if there is a problem querying for the current price of an asset
-        """
-        balances = self.data.db.get_manually_tracked_balances()
-        balances_with_value = []
-        for entry in balances:
-            price = Inquirer().find_usd_price(entry.asset)
-            # https://github.com/python/mypy/issues/2582 --> for the type ignore below
-            balances_with_value.append(ManuallyTrackedBalanceWithValue(  # type: ignore
-                **entry._asdict(),
-                usd_value=price * entry.amount,
-            ))
-
-        return balances_with_value
-
-    def add_manually_tracked_balances(self, data: List[ManuallyTrackedBalance]) -> None:
-        """Adds manually tracked balances
-
-        May raise:
-        - InputError if any of the given balance entry labels already exist in the DB
-        - TagConstraintError if any of the given manually tracked balances contain unknown tags.
-        """
-        if len(data) == 0:
-            raise InputError('Empty list of manually tracked balances to add was given')
-        self.data.db.ensure_tags_exist(
-            given_data=data,
-            action='adding',
-            data_type='manually tracked balances',
-        )
-        self.data.db.add_manually_tracked_balances(data=data)
-
-    def edit_manually_tracked_balances(self, data: List[ManuallyTrackedBalance]) -> None:
-        """Edits manually tracked balances
-
-        May raise:
-        - InputError if the given balances list is empty or if
-        any of the balance entry labels to edit do not exist in the DB.
-        - TagConstraintError if any of the given balance data contain unknown tags.
-        """
-        if len(data) == 0:
-            raise InputError('Empty list of manually tracked balances to edit was given')
-        self.data.db.ensure_tags_exist(
-            given_data=data,
-            action='editing',
-            data_type='manually tracked balances',
-        )
-        self.data.db.edit_manually_tracked_balances(data)
-        return None
-
     def add_owned_eth_tokens(
             self,
             tokens: List[EthereumToken],
@@ -555,29 +503,7 @@ class Rotkehlchen():
         result = self.query_fiat_balances()
         if result != {}:
             balances['banks'] = result
-
-        manually_tracked_balances = self.get_manually_tracked_balances()
-        for m_entry in manually_tracked_balances:
-            location_str = str(m_entry.location)
-            if location_str not in balances:
-                balances[location_str] = {}
-                balances[location_str][m_entry.asset.identifier] = {
-                    'amount': m_entry.amount,
-                    'usd_value': m_entry.usd_value,
-                }
-            else:
-                if m_entry.asset.identifier not in balances[location_str]:
-                    balances[location_str][m_entry.asset.identifier] = {
-                        'amount': m_entry.amount,
-                        'usd_value': m_entry.usd_value,
-                    }
-                else:
-                    old_amount = balances[location_str][m_entry.asset.identifier]['amount']
-                    old_usd_value = balances[location_str][m_entry.asset.identifier]['usd_value']
-                    balances[location_str][m_entry.asset.identifier] = {
-                        'amount': old_amount + m_entry.amount,
-                        'usd_value': old_usd_value + m_entry.usd_value,
-                    }
+        balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 
         combined = combine_stat_dicts([v for k, v in balances.items()])
         total_usd_per_location = [(k, dict_get_sumof(v, 'usd_value')) for k, v in balances.items()]

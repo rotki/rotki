@@ -4,9 +4,10 @@ from unittest.mock import _patch
 
 import requests
 
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 # from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.db.utils import AssetBalance, LocationData, ManuallyTrackedBalance
+from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import (
     mock_alethio_balances_query,

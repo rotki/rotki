@@ -5,8 +5,8 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
-from rotkehlchen.db.utils import ManuallyTrackedBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,

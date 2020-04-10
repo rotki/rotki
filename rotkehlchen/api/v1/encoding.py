@@ -9,9 +9,9 @@ from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import is_valid_btc_address
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.utils import ManuallyTrackedBalance
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal

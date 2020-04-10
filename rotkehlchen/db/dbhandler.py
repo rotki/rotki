@@ -12,6 +12,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.settings import (
@@ -28,7 +29,6 @@ from rotkehlchen.db.utils import (
     BlockchainAccounts,
     DBStartupAction,
     LocationData,
-    ManuallyTrackedBalance,
     SingleAssetBalance,
     Tag,
     deserialize_tags_from_db,
