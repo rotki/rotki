@@ -4,7 +4,8 @@ import {
   EthBalances,
   FiatBalance
 } from '@/model/blockchain-balances';
-import { DSRBalances, DSRHistory } from '@/services/types-model';
+import { SupportedAsset } from '@/services/types-common';
+import { DSRBalances, DSRHistory, ManualBalance } from '@/services/types-model';
 import { BalanceState, defaultState } from '@/store/balances/state';
 import {
   AccountDataMap,
@@ -64,6 +65,12 @@ export const mutations: MutationTree<BalanceState> = {
   },
   dsrBalances(state: BalanceState, balances: DSRBalances) {
     state.dsrBalances = balances;
+  },
+  supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {
+    state.supportedAssets = supportedAssets;
+  },
+  manualBalances(state: BalanceState, manualBalances: ManualBalance[]) {
+    state.manualBalances = manualBalances;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset(state: BalanceState) {

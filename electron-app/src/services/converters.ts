@@ -1,6 +1,15 @@
 import { default as BigNumber } from 'bignumber.js';
-import { ApiDSRBalances, ApiDSRHistory } from '@/services/types-api';
-import { DSRBalances, DSRHistory, DSRMovement } from '@/services/types-model';
+import {
+  ApiDSRBalances,
+  ApiDSRHistory,
+  ApiManualBalances
+} from '@/services/types-api';
+import {
+  DSRBalances,
+  DSRHistory,
+  DSRMovement,
+  ManualBalance
+} from '@/services/types-model';
 import { bigNumberify } from '@/utils/bignumbers';
 
 export function convertDSRBalances({
@@ -46,4 +55,17 @@ export function convertDSRHistory(history: ApiDSRHistory): DSRHistory {
     };
   }
   return data;
+}
+
+export function convertManualBalances(
+  manualBalances: ApiManualBalances
+): ManualBalance[] {
+  return manualBalances.balances.map(value => ({
+    amount: bigNumberify(value.amount),
+    asset: value.asset,
+    label: value.label,
+    location: value.location,
+    tags: value.tags,
+    usdValue: bigNumberify(value.usd_value)
+  }));
 }

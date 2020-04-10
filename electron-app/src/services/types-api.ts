@@ -1,4 +1,8 @@
-import { DSRMovementType } from '@/services/types-common';
+import {
+  DSRMovementType,
+  SupportedAsset,
+  Location
+} from '@/services/types-common';
 
 export interface ApiDSRBalances {
   readonly current_dsr: string;
@@ -18,4 +22,24 @@ export interface ApiDSRHistory {
     gain_so_far: string;
     movements: ApiDSRMovement[];
   };
+}
+
+export interface SupportedAssets {
+  readonly [asset: string]: SupportedAsset;
+}
+
+export interface ApiManualBalance {
+  readonly asset: string;
+  readonly label: string;
+  readonly amount: string;
+  readonly location: Location;
+  readonly tags: string[];
+}
+
+export interface ApiManualBalanceWithValue extends ApiManualBalance {
+  readonly usd_value: string;
+}
+
+export interface ApiManualBalances {
+  readonly balances: ApiManualBalanceWithValue[];
 }

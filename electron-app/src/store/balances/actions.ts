@@ -7,10 +7,12 @@ import {
   ExchangeMeta,
   TaskType
 } from '@/model/task';
+import { convertManualBalances } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
+import { ApiManualBalance } from '@/services/types-api';
 import { BalanceState } from '@/store/balances/state';
 import { notify } from '@/store/notifications/utils';
-import { RotkehlchenState } from '@/store/store';
+import { Message, RotkehlchenState } from '@/store/store';
 import { Blockchain, Severity, UsdToFiatExchangeRates } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 import { toMap } from '@/utils/conversion';
@@ -257,6 +259,63 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       ignoreResult: false
     });
     commit('tasks/add', task, { root: true });
+  },
+  async fetchSupportedAssets({ commit, state }) {
+    if (state.supportedAssets.length > 0) {
+      return;
+    }
+    try {
+      const supportedAssets = await api.supportedAssets();
+      commit('supportedAssets', Object.values(supportedAssets));
+    } catch (e) {
+      notify(`Error: ${e}`, 'Fetching supported assets', Severity.ERROR);
+      commit('supportedAssets', [
+        {
+          active: false,
+          ended: 1506988800,
+          name: '1 credit',
+          started: 1398556800,
+          symbol: '1CR',
+          type: 'own chain'
+        },
+        {
+          ethereum_address: '0x0F72714B35a366285Df85886A2eE174601292A17',
+          ethereum_token_decimals: 18,
+          name: '1SG',
+          started: 1545696000,
+          symbol: '1SG',
+          type: 'ethereum token'
+        }
+      ]);
+    }
+  },
+
+  async fetchManualBalances({ commit }) {
+    try {
+      const manualBalances = await api.manualBalances();
+      commit('manualBalances', convertManualBalances(manualBalances));
+    } catch (e) {
+      notify(`Failed: ${e}`, 'Retrieving manual balances', Severity.ERROR);
+    }
+  },
+
+  async addManualBalance({ commit }, balance: ApiManualBalance) {
+    let result = false;
+    try {
+      const manualBalances = await api.addManualBalances([balance]);
+      commit('manualBalances', manualBalances);
+      result = true;
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Adding Manual Balance',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
+    return result;
   }
 };
 
