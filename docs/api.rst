@@ -1497,6 +1497,97 @@ Setting FIAT balances
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
 
+Querying all supported assets
+================================
+
+.. http:get:: /api/(version)/assets/all
+
+   Doing a GET on the all assets endpoint will return a mapping of all supported assets and their details. The keys are the unique symbol identifier and the values are the details for each asset.
+
+The details of each asset can contain the following keys:
+
+- **type**: The type of asset. Valid values are ethereum token, own chain, omni token and more. For all valid values check here: https://github.com/rotki/rotki/blob/develop/rotkehlchen/assets/resolver.py#L7
+- **started**: An optional unix timestamp denoting where we know price data for the asset started
+- **ended**: If an asset is no longer in circulation this value should denote the unix timestamp after which price data is no longer available
+- **name**: The long name of the asset. Does not need to be the same as the unique symbol identifier
+- **forked**: An optional attribute representing another asset out of which this asset forked from. For example ``ETC`` would have ``ETH`` here.
+- **swapped_for**: An optional attribute representing another asset for which this asset was swapped for. For example ``VEN`` tokens were at some point swapped for ``VET`` tokens.
+- **symbol**: The symbol used for this asset. This is not guaranteed to be unique. Unfortunately some assets use the same symbol as others.
+- **ethereum_address**: If the type is ``ethereum_token`` then this will be the hexadecimal address of the token's contract.
+- **ethereum_token_decimals**: If the type is ``ethereum_token`` then this will be the number of decimals the token has
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/all HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xBTC": {
+                  "ethereum_address": "0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
+                  "ethereum_token_decimals": 8,
+                  "name": "0xBitcoin",
+                  "started": 1517875200,
+                  "symbol": "0xBTC",
+                  "type": "ethereum token"
+              },
+              "DCR": {
+                  "name": "Decred",
+                  "started": 1450137600,
+                  "symbol": "DCR",
+                  "type": "own chain"
+              },
+              "DDF": {
+                  "active": false,
+                  "ended": 1542153600,
+                  "ethereum_address": "0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
+                  "ethereum_token_decimals": 18,
+                  "name": "DigitalDevelopersFund",
+                  "started": 1498504259,
+                  "symbol": "DDF",
+                  "type": "ethereum token"
+              },
+              "ETC": {
+                  "forked": "ETH",
+                  "name": "Ethereum classic",
+                  "started": 1469020840,
+                  "symbol": "ETC",
+                  "type": "own chain"
+              },
+              "KRW": {
+                  "name": "Korean won",
+                  "symbol": "KRW",
+                  "type": "fiat"
+              },
+              "VEN": {
+                  "active": false,
+                  "ended": 1533254400,
+                  "ethereum_address": "0xD850942eF8811f2A866692A623011bDE52a462C1",
+                  "ethereum_token_decimals": 18,
+                  "name": "Vechain Token",
+                  "started": 1503360000,
+                  "swapped_for": "VET",
+                  "symbol": "VEN",
+                  "type": "ethereum token"
+              },
+          },
+          "message": ""
+      }
+
+
+   :resjson object result: A mapping of asset symbol identifiers to asset details
+   :statuscode 200: Assets succesfully queried.
+   :statuscode 500: Internal Rotki error
+
 Querying owned assets
 ======================
 
