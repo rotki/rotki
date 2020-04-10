@@ -193,5 +193,9 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       );
       return acc;
     }, new Array<AccountDSRMovement>());
+  },
+
+  manualLabels: ({ manualBalances }: BalanceState) => {
+    return manualBalances.map(value => value.label);
   }
 };

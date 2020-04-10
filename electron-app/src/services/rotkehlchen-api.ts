@@ -18,6 +18,11 @@ import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { StoredTrade, Trade } from '@/model/stored-trade';
 import { VersionCheck } from '@/model/version-check';
+import {
+  ApiManualBalance,
+  ApiManualBalances,
+  SupportedAssets
+} from '@/services/types-api';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
   AccountSession,
@@ -88,6 +93,20 @@ export class RotkehlchenApi {
       status == 401 ||
       status == 409
     );
+  }
+
+  /**
+   * This is a status validation function for a PUT/PATCH/POST action that
+   * also involves calling an external service.
+   * @param status The status code of the request 2xx-5xx
+   * @return The validity of the status code
+   */
+  private static modifyWithExternalService(status: number): boolean {
+    return status === 200 || status === 400 || status === 409 || status == 502;
+  }
+
+  private static fetchWithExternalService(status: number): boolean {
+    return status === 200 || status === 409 || status == 502;
   }
 
   logout(username: string): Promise<boolean> {
@@ -1302,6 +1321,65 @@ export class RotkehlchenApi {
           }
         }
       )
+      .then(this.handleResponse);
+  }
+
+  async supportedAssets(): Promise<SupportedAssets> {
+    return this.axios
+      .get<ActionResult<SupportedAssets>>('assets/all', {
+        validateStatus: RotkehlchenApi.fetchWithExternalService
+      })
+      .then(this.handleResponse);
+  }
+
+  async manualBalances(): Promise<ApiManualBalances> {
+    return this.axios
+      .get<ActionResult<ApiManualBalances>>('manual_balances', {
+        validateStatus: RotkehlchenApi.fetchWithExternalService
+      })
+      .then(this.handleResponse);
+  }
+
+  async addManualBalances(
+    balances: ApiManualBalance[]
+  ): Promise<ApiManualBalances> {
+    return this.axios
+      .put<ActionResult<ApiManualBalances>>(
+        'manual_balances',
+        {
+          balances
+        },
+        {
+          validateStatus: RotkehlchenApi.modifyWithExternalService
+        }
+      )
+      .then(this.handleResponse);
+  }
+
+  async editManualBalances(
+    balances: ApiManualBalance[]
+  ): Promise<ApiManualBalances> {
+    return this.axios
+      .patch<ActionResult<ApiManualBalances>>(
+        'manual_balances',
+        {
+          balances
+        },
+        {
+          validateStatus: RotkehlchenApi.modifyWithExternalService
+        }
+      )
+      .then(this.handleResponse);
+  }
+
+  async deleteManualBalances(
+    balances: ApiManualBalance[]
+  ): Promise<ApiManualBalances> {
+    return this.axios
+      .delete<ActionResult<ApiManualBalances>>('manual_balances', {
+        data: { balances },
+        validateStatus: RotkehlchenApi.modifyWithExternalService
+      })
       .then(this.handleResponse);
   }
 }

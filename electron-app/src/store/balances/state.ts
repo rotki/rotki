@@ -4,7 +4,8 @@ import {
   EthBalances,
   FiatBalance
 } from '@/model/blockchain-balances';
-import { DSRBalances, DSRHistory } from '@/services/types-model';
+import { SupportedAsset } from '@/services/types-common';
+import { DSRBalances, DSRHistory, ManualBalance } from '@/services/types-model';
 import {
   AccountDataMap,
   ExchangeData,
@@ -24,6 +25,8 @@ export interface BalanceState {
   btcAccounts: AccountDataMap;
   dsrHistory: DSRHistory;
   dsrBalances: DSRBalances;
+  supportedAssets: SupportedAsset[];
+  manualBalances: ManualBalance[];
 }
 
 export const defaultState = (): BalanceState => ({
@@ -40,7 +43,9 @@ export const defaultState = (): BalanceState => ({
   dsrBalances: {
     currentDSR: Zero,
     balances: {}
-  }
+  },
+  supportedAssets: [],
+  manualBalances: []
 });
 
 export const state: BalanceState = defaultState();
