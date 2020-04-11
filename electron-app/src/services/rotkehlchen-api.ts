@@ -298,7 +298,6 @@ export class RotkehlchenApi {
     });
   }
 
-
   checkVersion(): Promise<VersionCheck> {
     return new Promise<VersionCheck>((resolve, reject) => {
       this.axios
