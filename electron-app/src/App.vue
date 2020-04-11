@@ -130,6 +130,7 @@ export default class App extends Vue {
 
   async created(): Promise<void> {
     this.$api.connect(4242);
+    await this.$store.dispatch('connect');
     await this.$store.dispatch('version');
     this.$interop.onError(() => {
       this.startupError =
