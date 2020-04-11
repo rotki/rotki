@@ -10,6 +10,7 @@ Changelog
 * :feature:`764` Gemini exchange is now supported. Trades, deposits, withdrawals and balances from that exchange can now be queried.
 * :feature:`-` Add support for the South African Rand  (ZAR - R) as a fiat currency
 * :feature:`-` Added support for the following tokens
+
   - `Standard Tokenization Protocol (STPT) <https://coinmarketcap.com/currencies/standard-tokenization-protocol/>`__
   - `IRISnet (IRIS) <https://coinmarketcap.com/currencies/irisnet/>`__
   - `Hive (HIVE) <https://coinmarketcap.com/currencies/hive-blockchain/>`__
@@ -40,6 +41,7 @@ Changelog
 * :feature:`-` Rotki should now remember your window size, position, and maximized state after closing the app.
 * :bug:`783` Fixes the update indicator to indicate to users if their client is out of date.
 * :feature:`-` Added support for the following tokens
+
   - `Bosagora (BOA) <https://coinmarketcap.com/currencies/bosagora/>`__
   - `Nervos Network (CKB) <https://coinmarketcap.com/currencies/nervos-network/>`__
   - `Molecular Future Token (MOF) <https://coinmarketcap.com/currencies/molecular-future/>`__
