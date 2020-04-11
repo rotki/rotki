@@ -269,24 +269,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('supportedAssets', Object.values(supportedAssets));
     } catch (e) {
       notify(`Error: ${e}`, 'Fetching supported assets', Severity.ERROR);
-      commit('supportedAssets', [
-        {
-          active: false,
-          ended: 1506988800,
-          name: '1 credit',
-          started: 1398556800,
-          symbol: '1CR',
-          type: 'own chain'
-        },
-        {
-          ethereum_address: '0x0F72714B35a366285Df85886A2eE174601292A17',
-          ethereum_token_decimals: 18,
-          name: '1SG',
-          started: 1545696000,
-          symbol: '1SG',
-          type: 'ethereum token'
-        }
-      ]);
     }
   },
 
@@ -303,7 +285,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     let result = false;
     try {
       const manualBalances = await api.addManualBalances([balance]);
-      commit('manualBalances', manualBalances);
+      commit('manualBalances', convertManualBalances(manualBalances));
       result = true;
     } catch (e) {
       commit(
@@ -316,6 +298,41 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
     }
     return result;
+  },
+
+  async editManualBalance({ commit }, balance: ApiManualBalance) {
+    let result = false;
+    try {
+      const manualBalances = await api.editManualBalances([balance]);
+      commit('manualBalances', convertManualBalances(manualBalances));
+      result = true;
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Adding Manual Balance',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
+    return result;
+  },
+
+  async deleteManualBalance({ commit }, label: string) {
+    try {
+      const manualBalances = await api.deleteManualBalances([label]);
+      commit('manualBalances', convertManualBalances(manualBalances));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Deleting Manual Balance',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
   }
 };
 

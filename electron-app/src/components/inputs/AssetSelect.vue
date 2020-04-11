@@ -44,6 +44,9 @@ const { mapState } = createNamespacedHelpers('balances');
 export default class AssetSelect extends Vue {
   supportedAssets!: SupportedAsset[];
 
+  @Prop({ required: true, default: '' })
+  value!: string;
+
   @Prop({ default: () => [], required: false })
   rules!: ((v: string) => boolean | string)[];
 
