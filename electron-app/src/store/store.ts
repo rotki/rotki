@@ -47,7 +47,9 @@ const store: StoreOptions<RotkehlchenState> = {
         latestVersion: version.latest_version || '',
         downloadUrl: version.download_url || ''
       };
-      state.connected = true;
+    },
+    setConnected: (state: RotkehlchenState, connected: boolean) => {
+      state.connected = connected;
     }
   },
   actions: {
@@ -62,7 +64,19 @@ const store: StoreOptions<RotkehlchenState> = {
           // eslint-disable-next-line no-empty
         } catch (e) {}
       }, 1000);
-    }
+    },
+    async connect({ commit }): Promise<void> {
+      const timerId = setInterval(async function () {
+        try {
+          const connected = await api.ping();
+          if (connected) {
+            commit('setConnected', connected);
+            clearInterval(timerId);
+          }
+          // eslint-disable-next-line no-empty
+        } catch (e) {}
+      }, 1000);
+    }, 
   },
   getters: {
     updateNeeded: (state: RotkehlchenState) => {
