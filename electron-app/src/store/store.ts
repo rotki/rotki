@@ -76,7 +76,7 @@ const store: StoreOptions<RotkehlchenState> = {
           // eslint-disable-next-line no-empty
         } catch (e) {}
       }, 1000);
-    }, 
+    }
   },
   getters: {
     updateNeeded: (state: RotkehlchenState) => {

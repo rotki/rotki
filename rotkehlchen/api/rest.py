@@ -240,7 +240,7 @@ class RestAPI():
         self.stop_event.set()
 
     # - Public functions exposed via the rest api
-    
+
     @require_loggedin_user()
     def set_settings(self, settings: ModifiableDBSettings) -> Response:
         success, message = self.rotkehlchen.set_settings(settings)
