@@ -1334,7 +1334,7 @@ export class RotkehlchenApi {
 
   async manualBalances(): Promise<ApiManualBalances> {
     return this.axios
-      .get<ActionResult<ApiManualBalances>>('manual_balances', {
+      .get<ActionResult<ApiManualBalances>>('balances/manual', {
         validateStatus: RotkehlchenApi.fetchWithExternalService
       })
       .then(this.handleResponse);
@@ -1345,7 +1345,7 @@ export class RotkehlchenApi {
   ): Promise<ApiManualBalances> {
     return this.axios
       .put<ActionResult<ApiManualBalances>>(
-        'manual_balances',
+        'balances/manual',
         {
           balances
         },
@@ -1361,7 +1361,7 @@ export class RotkehlchenApi {
   ): Promise<ApiManualBalances> {
     return this.axios
       .patch<ActionResult<ApiManualBalances>>(
-        'manual_balances',
+        'balances/manual',
         {
           balances
         },
@@ -1372,12 +1372,10 @@ export class RotkehlchenApi {
       .then(this.handleResponse);
   }
 
-  async deleteManualBalances(
-    balances: ApiManualBalance[]
-  ): Promise<ApiManualBalances> {
+  async deleteManualBalances(labels: string[]): Promise<ApiManualBalances> {
     return this.axios
-      .delete<ActionResult<ApiManualBalances>>('manual_balances', {
-        data: { balances },
+      .delete<ActionResult<ApiManualBalances>>('balances/manual', {
+        data: { labels },
         validateStatus: RotkehlchenApi.modifyWithExternalService
       })
       .then(this.handleResponse);

@@ -7,7 +7,7 @@
     </v-row>
     <blockchain-balances></blockchain-balances>
     <fiat-balances></fiat-balances>
-    <manually-tracked-balances></manually-tracked-balances>
+    <manual-balances></manual-balances>
   </v-container>
 </template>
 
@@ -15,11 +15,11 @@
 import { Component, Vue } from 'vue-property-decorator';
 import BlockchainBalances from '@/components/accounts/BlockchainBalances.vue';
 import FiatBalances from '@/components/accounts/FiatBalances.vue';
-import ManuallyTrackedBalances from '@/components/accounts/ManuallyTrackedBalances.vue';
+import ManualBalances from '@/components/accounts/ManualBalances.vue';
 
 @Component({
   components: {
-    ManuallyTrackedBalances,
+    ManualBalances,
     FiatBalances,
     BlockchainBalances
   }

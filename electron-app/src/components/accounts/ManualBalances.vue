@@ -2,22 +2,28 @@
   <v-card>
     <v-card-title>Manually Tracked Balances</v-card-title>
     <v-card-text>
-      <manually-tracked-form></manually-tracked-form>
+      <manual-balances-form
+        :edit="edit"
+        @clear="edit = null"
+      ></manual-balances-form>
       <h3 class="text-center">Balances</h3>
-      <manually-tracked-balance-list></manually-tracked-balance-list>
+      <manual-balances-list @edit="edit = $event"></manual-balances-list>
     </v-card-text>
   </v-card>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import ManuallyTrackedBalanceList from '@/components/accounts/ManuallyTrackedBalanceList.vue';
-import ManuallyTrackedForm from '@/components/accounts/ManuallyTrackedForm.vue';
+import ManualBalancesForm from '@/components/accounts/ManualBalancesForm.vue';
+import ManualBalancesList from '@/components/accounts/ManualBalancesList.vue';
+import { ManualBalance } from '@/services/types-model';
 
 @Component({
-  components: { ManuallyTrackedBalanceList, ManuallyTrackedForm }
+  components: { ManualBalancesList, ManualBalancesForm }
 })
 export default class ManuallyTrackedBalances extends Vue {
+  edit: ManualBalance | null = null;
+
   async mounted() {
     await this.$store.dispatch('balances/fetchSupportedAssets');
     await this.$store.dispatch('balances/fetchManualBalances');
