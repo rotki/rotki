@@ -282,20 +282,10 @@ export class RotkehlchenApi {
     });
   }
 
-  ping(): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<boolean>>('/ping') // no validate status here since defaults work
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+  async ping(): Promise<AsyncQuery> {
+    return this.axios
+      .get<ActionResult<AsyncQuery>>('/ping') // no validate status here since defaults work
+      .then(this.handleResponse);
   }
 
   checkVersion(): Promise<VersionCheck> {
