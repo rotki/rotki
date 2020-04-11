@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`862` Added a new API endpoint ``/api/1/ping`` as quick way to query API status for client/frontend initialization.
 * :feature:`860` Added a new API endpoint ``/api/1/assets/all`` to query information about all supported assets.
 * :bug:`848` Querying ``/api/1/balances/blockchains/btc`` with no BTC accounts tracked no longer results in a 500 Internal server error.
 * :bug:`837` If connected to an ethereum node, the connection status indicator should now properly show that to the user.
