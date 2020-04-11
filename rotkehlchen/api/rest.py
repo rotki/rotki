@@ -240,6 +240,7 @@ class RestAPI():
         self.stop_event.set()
 
     # - Public functions exposed via the rest api
+    
     @require_loggedin_user()
     def set_settings(self, settings: ModifiableDBSettings) -> Response:
         success, message = self.rotkehlchen.set_settings(settings)
@@ -1316,6 +1317,10 @@ class RestAPI():
     def version_check() -> Response:
         result = _wrap_in_ok_result(check_if_version_up_to_date())
         return api_response(process_result(result), status_code=HTTPStatus.OK)
+
+    @staticmethod
+    def ping() -> Response:
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def import_data(
