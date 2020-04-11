@@ -42,6 +42,19 @@ def test_query_version_when_up_to_date(rotkehlchen_api_server):
     assert data['result']['download_url'] is None
 
 
+def test_query_ping(rotkehlchen_api_server):
+    """Test that the ping endpoint works"""
+    expected_result = True
+    expected_message = ''
+
+    response = requests.get(api_url_for(rotkehlchen_api_server, "pingresource"))
+    assert_proper_response(response)
+    response_json = response.json()
+    assert len(response_json) == 2
+    assert response_json['result'] == expected_result
+    assert response_json['message'] == expected_message
+
+
 def test_query_version_when_update_required(rotkehlchen_api_server):
     """Test that endpoint to query version works when a new version is available"""
     def patched_get_latest_release(_klass):
