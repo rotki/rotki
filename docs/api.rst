@@ -1273,9 +1273,9 @@ Deleting a tag
 Querying onchain balances
 ==========================
 
-.. http:get:: /api/(version)/balances/blockchains/(blockchain_name)/
+.. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain name will query balances only for that chain. Available blockchain names are: ``btc`` and ``eth``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC`` and ``ETH``.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -2002,7 +2002,7 @@ Dealing with trades
 
 .. http:patch:: /api/(version)/trades
 
-   Doing a PATCH on this endpoint edits an existing trade in Rotki's currently logged in user using the ``trade_identifier``.
+   Doing a PATCH on this endpoint edits an existing trade in Rotki's currently logged in user using the ``trade_id``.
 
    **Example Request**:
 
@@ -2068,7 +2068,7 @@ Dealing with trades
 
 .. http:delete:: /api/(version)/trades
 
-   Doing a DELETE on this endpoint deletes an existing trade in Rotki's currently logged in user using the ``trade_identifier``.
+   Doing a DELETE on this endpoint deletes an existing trade in Rotki's currently logged in user using the ``trade_id``.
 
    **Example Request**:
 
@@ -3270,6 +3270,38 @@ Querying the version
    :resjson str url: URL link to download the latest version
 
    :statuscode 200: Version information queried
+   :statuscode 500: Internal Rotki error
+
+Sending a Ping
+====================
+
+.. http:get:: /api/(version)/ping
+
+   Doing a GET on the ping endpoint will return true. It serves as a very fast way to check the connection to the API and that everything necessary for other calls has initialized.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/ping HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
+
+   :statuscode 200: Ping successful
    :statuscode 500: Internal Rotki error
 
 Data imports

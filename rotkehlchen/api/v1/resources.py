@@ -713,6 +713,10 @@ class VersionResource(BaseResource):
     def get(self) -> Response:
         return self.rest_api.version_check()
 
+class PingResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.ping()
 
 class DataImportResource(BaseResource):
 

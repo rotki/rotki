@@ -46,6 +46,7 @@ from rotkehlchen.api.v1.resources import (
     UsersByNameResource,
     UsersResource,
     VersionResource,
+    PingResource,
     create_blueprint,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -102,6 +103,7 @@ URLS_V1: URLS = [
     ('/assets/all', AllAssetsResource),
     ('/assets/ignored', IgnoredAssetsResource),
     ('/version', VersionResource),
+    ('/ping', PingResource),
     ('/import', DataImportResource),
 ]
 
