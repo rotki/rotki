@@ -3,6 +3,11 @@ Changelog
 =========
 
 * :bug:`852` PUT or DELETE on ``/api/1/blockchains/eth`` without etherscan keys configured no longer results in 500 internal server error.
+* :feature:`869` Added some customized menu items to the applciation menu. Users can now access the `Usage Guide`, `FAQ`, `Issues & Feature Requests`, and `Logs Directory` from within the Help menu. Additionally, there is a `Get Premium` menu item for quick access to the rotki.com premium site. Finally, both backend and frontend logs (``rotkehlchen.log`` and ``rotki-electron.log`` respectively) are now found in these standard locations per OS:
+
+  * Linux: ``~/config/rotki/logs``
+  * OSX: ``~/Library/Application Support/rotki/logs``
+  * Windows: ``<WindowsDrive>:\Users\<User>\Roaming\rotki\logs\``
 * :feature:`862` Added a new API endpoint ``/api/1/ping`` as quick way to query API status for client/frontend initialization.
 * :feature:`860` Added a new API endpoint ``/api/1/assets/all`` to query information about all supported assets.
 * :bug:`848` Querying ``/api/1/balances/blockchains/btc`` with no BTC accounts tracked no longer results in a 500 Internal server error.

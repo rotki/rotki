@@ -113,6 +113,7 @@ export default class AccountManagement extends Vue {
     this.loading = false;
     if (this.logged) {
       this.showPremiumDialog();
+      this.showGetPremiumButton();
     }
   }
 
@@ -148,6 +149,10 @@ export default class AccountManagement extends Vue {
       return;
     }
     this.premiumVisible = true;
+  }
+
+  private showGetPremiumButton() {
+    this.$interop.premiumUserLoggedIn(this.premium);
   }
 
   closeUpdateDialog() {

@@ -21,13 +21,8 @@ export default class PyHandler {
   }
 
   constructor(private app: App) {
-    if (process.platform === 'linux') {
-      app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
-      this.logsPath = app.getPath('logs');
-    } else {
-      app.setAppLogsPath();
-      this.logsPath = app.getPath('logs');
-    }
+    app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
+    this.logsPath = app.getPath('logs');
     this.ELECTRON_LOG_PATH = path.join(this.logsPath, 'rotki_electron.log');
     fs.writeFileSync(
       this.ELECTRON_LOG_PATH,
@@ -163,6 +158,8 @@ export default class PyHandler {
     if (this._corsURL) {
       defaultArgs.push('--api-cors', this._corsURL);
     }
+
+    defaultArgs.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
 
     if (process.env.ROTKEHLCHEN_ENVIRONMENT === 'test') {
       let tempPath = path.join(this.app.getPath('temp'), 'rotkehlchen');
