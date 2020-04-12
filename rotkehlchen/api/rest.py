@@ -1141,7 +1141,7 @@ class RestAPI():
         except TagConstraintError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code:': HTTPStatus.BAD_GATEWAY}
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         # success
         return {'result': result.serialize(), 'message': ''}
@@ -1211,7 +1211,7 @@ class RestAPI():
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code:': HTTPStatus.BAD_GATEWAY}
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         return {'result': result.serialize(), 'message': ''}
 
