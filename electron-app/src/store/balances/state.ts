@@ -4,8 +4,12 @@ import {
   EthBalances,
   FiatBalance
 } from '@/model/blockchain-balances';
-import { SupportedAsset } from '@/services/types-common';
-import { DSRBalances, DSRHistory, ManualBalance } from '@/services/types-model';
+import {
+  DSRBalances,
+  DSRHistory,
+  ManualBalance,
+  SupportedAsset
+} from '@/services/types-model';
 import {
   AccountDataMap,
   ExchangeData,

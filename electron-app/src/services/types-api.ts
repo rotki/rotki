@@ -1,8 +1,4 @@
-import {
-  DSRMovementType,
-  SupportedAsset,
-  Location
-} from '@/services/types-common';
+import { DSRMovementType, Location } from '@/services/types-common';
 
 export interface ApiDSRBalances {
   readonly current_dsr: string;
@@ -24,8 +20,17 @@ export interface ApiDSRHistory {
   };
 }
 
+export interface ApiSupportedAsset {
+  readonly active?: boolean;
+  readonly ended?: number;
+  readonly name: string;
+  readonly started?: number;
+  readonly symbol: string;
+  readonly type: string;
+}
+
 export interface SupportedAssets {
-  readonly [asset: string]: SupportedAsset;
+  readonly [key: string]: ApiSupportedAsset;
 }
 
 export interface ApiManualBalance {

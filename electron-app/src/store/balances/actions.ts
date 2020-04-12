@@ -7,7 +7,10 @@ import {
   ExchangeMeta,
   TaskType
 } from '@/model/task';
-import { convertManualBalances } from '@/services/converters';
+import {
+  convertManualBalances,
+  convertSupportedAssets
+} from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { ApiManualBalance } from '@/services/types-api';
 import { BalanceState } from '@/store/balances/state';
@@ -266,7 +269,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
     try {
       const supportedAssets = await api.supportedAssets();
-      commit('supportedAssets', Object.values(supportedAssets));
+      commit('supportedAssets', convertSupportedAssets(supportedAssets));
     } catch (e) {
       notify(`Error: ${e}`, 'Fetching supported assets', Severity.ERROR);
     }

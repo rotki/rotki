@@ -2,13 +2,15 @@ import { default as BigNumber } from 'bignumber.js';
 import {
   ApiDSRBalances,
   ApiDSRHistory,
-  ApiManualBalances
+  ApiManualBalances,
+  SupportedAssets
 } from '@/services/types-api';
 import {
   DSRBalances,
   DSRHistory,
   DSRMovement,
-  ManualBalance
+  ManualBalance,
+  SupportedAsset
 } from '@/services/types-model';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -67,5 +69,14 @@ export function convertManualBalances(
     location: value.location,
     tags: value.tags,
     usdValue: bigNumberify(value.usd_value)
+  }));
+}
+
+export function convertSupportedAssets(
+  supportedAssets: SupportedAssets
+): SupportedAsset[] {
+  return Object.keys(supportedAssets).map(key => ({
+    key,
+    ...supportedAssets[key]
   }));
 }

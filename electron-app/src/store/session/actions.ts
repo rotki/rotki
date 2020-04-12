@@ -37,6 +37,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         ({ settings, exchanges } = await api.unlockUser(payload));
       }
 
+      await dispatch('balances/fetchSupportedAssets', null, {
+        root: true
+      });
+      await dispatch('balances/fetchManualBalances', null, {
+        root: true
+      });
+
       await dispatch('start', {
         settings
       });

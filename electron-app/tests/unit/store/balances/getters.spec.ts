@@ -60,6 +60,13 @@ describe('balances:getters', () => {
           currency: 'EUR'
         }
       ],
+      manualBalances: [
+        {
+          usdValue: bigNumberify(50),
+          amount: bigNumberify(50),
+          asset: 'DAI'
+        }
+      ],
       connectedExchanges: ['bittrex']
     };
 
@@ -72,8 +79,8 @@ describe('balances:getters', () => {
       },
       {
         asset: 'DAI',
-        amount: bigNumberify(150),
-        usdValue: bigNumberify(150)
+        amount: bigNumberify(200),
+        usdValue: bigNumberify(200)
       },
       {
         asset: 'BTC',
