@@ -18,6 +18,7 @@ import PyHandler from './py-handler';
 import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
+const isMac = process.platform === 'darwin';
 
 async function select(
   title: string,
@@ -46,6 +47,113 @@ protocol.registerSchemesAsPrivileged([
     privileges: { standard: true, secure: true, supportFetchAPI: true }
   }
 ]);
+
+const defaultMenuTemplate: any[] = [
+  // On a mac we want to show a "Rotki" menu item in the app bar
+  ...(isMac
+    ? [
+        {
+          label: app.name,
+          submenu: [
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            { type: 'separator' },
+            { role: 'quit' }
+          ]
+        }
+      ]
+    : []),
+  {
+    label: 'File',
+    submenu: [isMac ? { role: 'close' } : { role: 'quit' }]
+  },
+
+  {
+    label: '&Edit',
+    submenu: [
+      { role: 'undo' },
+      { role: 'redo' },
+      { type: 'separator' },
+      { role: 'cut' },
+      { role: 'copy' },
+      { role: 'paste' },
+      // Macs have special copy/paste and speech functionality
+      ...(isMac
+        ? [
+            { role: 'pasteAndMatchStyle' },
+            { role: 'delete' },
+            { role: 'selectAll' },
+            { type: 'separator' },
+            {
+              label: 'Speech',
+              submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }]
+            }
+          ]
+        : [{ role: 'delete' }, { type: 'separator' }, { role: 'selectAll' }])
+    ]
+  },
+  {
+    label: '&View',
+    submenu: [
+      { role: 'reload' },
+      { role: 'forceReload' },
+      { role: 'toggleDevTools' },
+      { type: 'separator' },
+      { role: 'resetZoom' },
+      { role: 'zoomIn' },
+      { role: 'zoomOut' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' }
+    ]
+  },
+  {
+    label: '&Help',
+    submenu: [
+      {
+        label: 'Usage Guide',
+        click: async () => {
+          await shell.openExternal(
+            'https://rotki.readthedocs.io/en/latest/usage_guide.html'
+          );
+        }
+      },
+      {
+        label: 'Frequenty Asked Questions',
+        click: async () => {
+          await shell.openExternal(
+            'https://rotki.readthedocs.io/en/latest/faq.html'
+          );
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Release Notes',
+        click: async () => {
+          await shell.openExternal(
+            'https://rotki.readthedocs.io/en/latest/changelog.html'
+          );
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Issue / Feature Requests',
+        click: async () => {
+          await shell.openExternal('https://github.com/rotki/rotki/issues');
+        }
+      },
+      {
+        label: 'Logs Directory',
+        click: () => {
+          shell.openItem(app.getPath('logs'));
+        }
+      }
+    ]
+  },
+  {
+    type: 'separator'
+  }
+];
 
 function createWindow() {
   // set default window Width and Height in case not specific
@@ -81,27 +189,8 @@ function createWindow() {
     win.loadURL('app://./index.html');
   }
 
-  // Check if we are on a MAC
-  if (process.platform === 'darwin') {
-    // Create our menu entries so that we can use MAC shortcuts
-    const template: MenuItemConstructorOptions[] = [
-      {
-        label: 'Edit',
-        submenu: [
-          { role: 'undo' },
-          { role: 'redo' },
-          { type: 'separator' },
-          { role: 'cut' },
-          { role: 'copy' },
-          { role: 'paste' },
-          { role: 'pasteAndMatchStyle' },
-          { role: 'delete' },
-          { role: 'selectAll' }
-        ]
-      }
-    ];
-    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-  }
+  const menuTemplate: MenuItemConstructorOptions[] = defaultMenuTemplate as MenuItemConstructorOptions[];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
 
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
@@ -136,6 +225,27 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString());
     }
   }
+  ipcMain.on('PREMIUM_USER_LOGGED_IN', (event, args) => {
+    const getRotkiPremiumButton = {
+      label: '&Get Rotki Premium',
+      id: 'premium-button',
+      click: () => {
+        shell.openExternal('https://rotki.com/products/');
+      }
+    };
+
+    // Re-render the menu with the 'Get Rotki Premium' button if the user who just logged in
+    // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
+    // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
+    // (see https://github.com/electron/electron/issues/8703). TODO: if we move the menu to the render
+    // process we can make this a lot cleaner.
+    if (args === false) {
+      const newMenuTemplate = defaultMenuTemplate.concat(getRotkiPremiumButton);
+      Menu.setApplicationMenu(Menu.buildFromTemplate(newMenuTemplate));
+    } else {
+      Menu.setApplicationMenu(Menu.buildFromTemplate(defaultMenuTemplate));
+    }
+  });
   ipcMain.on('CLOSE_APP', async () => await closeApp());
   ipcMain.on('OPEN_URL', (event, args) => {
     if (

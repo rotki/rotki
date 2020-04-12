@@ -31,6 +31,10 @@ export class ElectronInterop {
     window.interop?.openUrl(url);
   }
 
+  premiumUserLoggedIn(premiumUser: boolean) {
+    window.interop?.premiumUserLoggedIn(premiumUser);
+  }
+
   closeApp() {
     window.interop?.closeApp();
   }
