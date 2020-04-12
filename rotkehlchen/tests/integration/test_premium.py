@@ -65,10 +65,10 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
         saved_data='foo',
     )
 
+    now = ts_now()
     with patched_get, patched_put:
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
 
-    now = ts_now()
     last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
     msg = 'The last data upload timestamp should have been saved in the db as now'
     assert last_ts >= now and last_ts - now < 50, msg
