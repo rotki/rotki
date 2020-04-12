@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`852` PUT or DELETE on ``/api/1/blockchains/eth`` without etherscan keys configured no longer results in 500 internal server error.
 * :feature:`862` Added a new API endpoint ``/api/1/ping`` as quick way to query API status for client/frontend initialization.
 * :feature:`860` Added a new API endpoint ``/api/1/assets/all`` to query information about all supported assets.
 * :bug:`848` Querying ``/api/1/balances/blockchains/btc`` with no BTC accounts tracked no longer results in a 500 Internal server error.
