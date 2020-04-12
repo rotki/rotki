@@ -102,6 +102,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }
 
     getters.totals.forEach((value: AssetBalance) => addToOwned(value));
+    state.manualBalances.forEach(value => addToOwned(value));
     return Object.values(ownedAssets);
   },
 
@@ -197,5 +198,9 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
   manualLabels: ({ manualBalances }: BalanceState) => {
     return manualBalances.map(value => value.label);
+  },
+
+  assetInfo: ({ supportedAssets }: BalanceState) => (key: string) => {
+    return supportedAssets.find(asset => asset.key === key);
   }
 };

@@ -47,14 +47,7 @@
               {{ currency.ticker_symbol }} value
             </template>
             <template #item.asset="{ item }">
-              <span class="dashboard__aggregate__asset">
-                <crypto-icon
-                  width="26px"
-                  class="dashboard__aggregate__asset__icon"
-                  :symbol="item.asset"
-                ></crypto-icon>
-                {{ item.asset }}
-              </span>
+              <asset-details :asset="item.asset"></asset-details>
             </template>
             <template #item.amount="{ item }">
               {{ item.amount | precision(floatingPrecision) }}
@@ -88,6 +81,7 @@ import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 import InformationBox from '@/components/dashboard/InformationBox.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { ExchangeInfo } from '@/typing/types';
@@ -97,7 +91,7 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { ExchangeBox, InformationBox, CryptoIcon },
+  components: { AssetDetails, ExchangeBox, InformationBox, CryptoIcon },
   computed: {
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters([
@@ -137,17 +131,7 @@ export default class Dashboard extends Vue {
 </script>
 
 <style scoped lang="scss">
-.dashboard__aggregate__asset {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
 .dashboard__information-boxes > * {
   margin-top: 16px;
-}
-
-.dashboard__aggregate__asset__icon {
-  margin-right: 8px;
 }
 </style>

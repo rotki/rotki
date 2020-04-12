@@ -69,8 +69,8 @@ const { mapGetters } = createNamespacedHelpers('balances');
     ...mapGetters(['manualLabels'])
   }
 })
-export default class ManuallyTrackedForm extends Vue {
-  @Prop({ required: true })
+export default class ManualBalancesForm extends Vue {
+  @Prop({ required: false })
   edit!: ManualBalance | null;
 
   @Watch('edit')

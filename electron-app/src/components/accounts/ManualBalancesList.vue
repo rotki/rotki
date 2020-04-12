@@ -1,11 +1,18 @@
 <template>
   <v-container>
     <v-row>
+      <v-col cols="6" offset="6">
+        <tag-filter v-model="onlyTags"></tag-filter>
+      </v-col>
+    </v-row>
+    <v-row>
       <v-col cols="12">
         <v-data-table
           :headers="headers"
-          :items="manualBalances"
+          :items="visibleBalances"
           class="manual-balances-list"
+          sort-by="usdValue"
+          sort-desc
         >
           <template #item.label="{ item }">
             <v-row>
@@ -28,14 +35,7 @@
             </v-row>
           </template>
           <template #item.asset="{ item }">
-            <span class="manual-balances-list__asset">
-              <crypto-icon
-                width="26px"
-                class="manual-balances-list__asset__icon"
-                :symbol="item.asset"
-              ></crypto-icon>
-              {{ item.asset }}
-            </span>
+            <asset-details :asset="item.asset"></asset-details>
           </template>
           <template #item.amount="{ item }">
             {{ item.amount | formatPrice(floatingPrecision) }}
@@ -49,7 +49,7 @@
           </template>
           <template #item.actions="{ item }">
             <span>
-              <v-icon small class="mr-2" @click="edit(item)">
+              <v-icon small class="mr-2" @click="edited = item">
                 fa-edit
               </v-icon>
               <v-icon small @click="labelToDelete = item.label">
@@ -67,14 +67,38 @@
       @cancel="labelToDelete = ''"
       @confirm="deleteLabel()"
     ></confirm-dialog>
+    <v-dialog
+      max-width="600"
+      persistent
+      :value="!!edited"
+      @input="edited = null"
+    >
+      <v-card>
+        <v-card-title>
+          Edit Manual Balance
+        </v-card-title>
+        <v-card-subtitle>
+          Modify tags and amount of the balance
+        </v-card-subtitle>
+        <v-card-text>
+          <manual-balances-form
+            :edit="edited"
+            @clear="edited = null"
+          ></manual-balances-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script lang="ts">
-import { Component, Emit, Vue } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import ManualBalancesForm from '@/components/accounts/ManualBalancesForm.vue';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { Currency } from '@/model/currency';
 import { ManualBalance } from '@/services/types-model';
@@ -90,7 +114,14 @@ const {
 } = createNamespacedHelpers('balances');
 
 @Component({
-  components: { ConfirmDialog, TagIcon, CryptoIcon },
+  components: {
+    ManualBalancesForm,
+    AssetDetails,
+    ConfirmDialog,
+    TagIcon,
+    CryptoIcon,
+    TagFilter
+  },
   computed: {
     ...mapBalanceState(['manualBalances']),
     ...mapSessionState(['tags']),
@@ -98,8 +129,10 @@ const {
     ...mapBalanceGetters(['exchangeRate'])
   }
 })
-export default class ManuallyTrackedBalanceList extends Vue {
+export default class ManualBalancesList extends Vue {
   labelToDelete = '';
+  onlyTags: string[] = [];
+  edited: ManualBalance | null = null;
 
   headers = [
     { text: 'Label', value: 'label' },
@@ -116,11 +149,14 @@ export default class ManuallyTrackedBalanceList extends Vue {
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
 
-  @Emit()
-  edit(_item: ManualBalance | null) {}
+  get visibleBalances(): ManualBalance[] {
+    return this.manualBalances.filter(balances => {
+      return this.onlyTags.every(tag => balances.tags.includes(tag));
+    });
+  }
 
   async deleteLabel() {
-    this.edit(null);
+    this.edited = null;
     await this.$store.dispatch(
       'balances/deleteManualBalance',
       this.labelToDelete
@@ -138,15 +174,6 @@ export default class ManuallyTrackedBalanceList extends Vue {
 
   &__label {
     padding-bottom: 0 !important;
-  }
-
-  &__asset {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    &__icon {
-      margin-right: 8px;
-    }
   }
 }
 </style>
