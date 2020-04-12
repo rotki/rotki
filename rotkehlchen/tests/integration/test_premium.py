@@ -21,6 +21,15 @@ from rotkehlchen.tests.utils.premium import (
 from rotkehlchen.utils.misc import ts_now
 
 
+def get_different_hash(given_hash: str) -> str:
+    """Given the string hash get one that's different but has same length"""
+    new_hash = ''
+    for x in given_hash:
+        new_hash = new_hash + chr(ord(x) + 1)
+
+    return new_hash
+
+
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     """Test our side of uploading data to the server"""
@@ -31,7 +40,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_GBP))
     last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
-    remote_hash = 'a' + our_hash[1:]
+    remote_hash = get_different_hash(our_hash)
 
     def mock_succesfull_upload_data_to_server(
             url,  # pylint: disable=unused-argument
@@ -123,7 +132,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
     # Write anything in the DB to set a non-zero last_write_ts
     rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
-    remote_hash = 'a' + our_hash[1:]
+    remote_hash = get_different_hash(our_hash)
 
     patched_put = patch.object(
         rotkehlchen_instance.premium.session,
