@@ -41,7 +41,7 @@ If your OSX version does not allow you to open the application you will have to 
 Troubleshooting
 ----------------
 
-If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in ``~/Library/Logs/rotki``.
+If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in ``~/Library/Application Support/rotki/logs``.
 
 
 Windows
@@ -56,7 +56,7 @@ Troubleshooting
 
 If you get "The python backend crashed" or any other error please run the executable via the Command Prompt. Then provide us with the output that is visible in the prompt and this will help us debug your issue.
 
-You should also include all logs that can be found in ``%APPDATA%/rotki/``.
+You should also include all logs that can be found in ``<WindowsDrive>:\Users\<User>\Roaming\rotki\logs\`` (``%APPDATA%\rotki\logs``).
 
 
 Build from Source
