@@ -33,7 +33,13 @@
       :disabled="pending"
       label="Location"
       :items="locations"
-    ></v-select>
+    >
+      <template #item="{ item, attrs, on }">
+        <v-list-item :id="`balance-location__${item}`" v-bind="attrs" v-on="on">
+          {{ item }}
+        </v-list-item>
+      </template>
+    </v-select>
     <v-btn
       class="manual-balances-form__save"
       depressed
@@ -70,10 +76,10 @@ const { mapGetters } = createNamespacedHelpers('balances');
   }
 })
 export default class ManualBalancesForm extends Vue {
-  @Prop({ required: false })
+  @Prop({ required: false, default: null })
   edit!: ManualBalance | null;
 
-  @Watch('edit')
+  @Watch('edit', { immediate: true })
   onEdit(balance: ManualBalance | null) {
     if (!balance) {
       return;

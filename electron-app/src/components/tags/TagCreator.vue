@@ -22,6 +22,7 @@
         <v-row no-gutters>
           <v-col cols="12">
             <v-text-field
+              class="tag_creator__name"
               label="Name"
               :rules="rules"
               :value="tag.name"
@@ -33,6 +34,7 @@
         <v-row no-gutters>
           <v-col cols="12">
             <v-text-field
+              class="tag_creator__description"
               :value="tag.description"
               label="Description"
               @input="changed({ description: $event })"
@@ -52,6 +54,7 @@
           <v-col cols="12" class="tag-creator__color-picker">
             <v-color-picker
               flat
+              class="tag-creator__color-picker__foreground"
               mode="hexa"
               hide-mode-switch
               :value="`#${tag.foreground_color}`"
@@ -71,6 +74,7 @@
         <v-row no-gutters>
           <v-col cols="12" class="tag-creator__color-picker">
             <v-color-picker
+              class="tag-creator__color-picker__background"
               flat
               hide-mode-switch
               mode="hexa"

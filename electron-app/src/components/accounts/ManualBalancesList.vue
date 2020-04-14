@@ -38,7 +38,9 @@
             <asset-details :asset="item.asset"></asset-details>
           </template>
           <template #item.amount="{ item }">
-            {{ item.amount | formatPrice(floatingPrecision) }}
+            <span class="manual-balances-list__amount">
+              {{ item.amount | formatPrice(floatingPrecision) }}
+            </span>
           </template>
           <template #item.usdValue="{ item }">
             {{
@@ -47,12 +49,25 @@
                 | formatPrice(floatingPrecision)
             }}
           </template>
+          <template #item.location="{ item }">
+            <span class="manual-balances-list__location">
+              {{ item.location }}
+            </span>
+          </template>
           <template #item.actions="{ item }">
             <span>
-              <v-icon small class="mr-2" @click="edited = item">
+              <v-icon
+                small
+                class="mr-2 manual-balances-list__actions__edit"
+                @click="edited = item"
+              >
                 fa-edit
               </v-icon>
-              <v-icon small @click="labelToDelete = item.label">
+              <v-icon
+                small
+                class="manual-balances-list__actions__delete"
+                @click="labelToDelete = item.label"
+              >
                 fa-trash
               </v-icon>
             </span>
@@ -61,6 +76,7 @@
       </v-col>
     </v-row>
     <confirm-dialog
+      v-if="labelToDelete"
       :display="!!labelToDelete"
       title="Delete manually tracked balance"
       message="Are you sure you want to delete this entry?"
@@ -73,7 +89,7 @@
       :value="!!edited"
       @input="edited = null"
     >
-      <v-card>
+      <v-card class="manual-balances-list__edit-form">
         <v-card-title>
           Edit Manual Balance
         </v-card-title>
