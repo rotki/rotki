@@ -3,7 +3,7 @@
     <v-card-title>
       Tag Manager
       <v-spacer v-if="dialog"></v-spacer>
-      <v-btn v-if="dialog" icon text @click="close">
+      <v-btn v-if="dialog" class="tag-manager__close" icon text @click="close">
         <v-icon>fa-close</v-icon>
       </v-btn>
     </v-card-title>

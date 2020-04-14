@@ -22,7 +22,7 @@
       <v-list-item-avatar>
         <crypto-icon :symbol="item.symbol"></crypto-icon>
       </v-list-item-avatar>
-      <v-list-item-content>
+      <v-list-item-content :id="`asset-${item.key.toLocaleLowerCase()}`">
         <v-list-item-title>{{ item.symbol }}</v-list-item-title>
         <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
       </v-list-item-content>

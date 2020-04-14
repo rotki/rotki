@@ -42,6 +42,7 @@
       </template>
       <template #append-outer>
         <v-btn
+          class="tag-input__manage-tags"
           icon
           text
           color="primary"
