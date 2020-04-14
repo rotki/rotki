@@ -1,4 +1,5 @@
 import { AssetBalance } from '@/model/blockchain-balances';
+import { SupportedAsset } from '@/services/types-model';
 import { getters } from '@/store/balances/getters';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -98,5 +99,46 @@ describe('balances:getters', () => {
         usdValue: bigNumberify(100)
       }
     ] as AssetBalance[]);
+  });
+
+  test('manualLabels', () => {
+    expect(
+      // @ts-ignore
+      getters.manualLabels({
+        manualBalances: [
+          {
+            asset: 'XMR',
+            label: 'My monero wallet',
+            amount: '50.315',
+            tags: ['public'],
+            location: 'blockchain'
+          },
+          {
+            asset: 'EUR',
+            label: 'My Bank Account',
+            amount: '150',
+            tags: [],
+            location: 'banks'
+          }
+        ]
+      })
+    ).toMatchObject(['My monero wallet', 'My Bank Account']);
+  });
+
+  test('assetInfo', () => {
+    const eth: SupportedAsset = {
+      key: 'ETH',
+      name: 'Ethereum',
+      started: 1438214400,
+      symbol: 'ETH',
+      type: 'own chain'
+    };
+
+    // @ts-ignore
+    const actual = getters.assetInfo({
+      supportedAssets: [eth]
+    });
+    expect(actual('ETH')).toMatchObject(eth);
+    expect(actual('BTC')).toBeUndefined();
   });
 });
