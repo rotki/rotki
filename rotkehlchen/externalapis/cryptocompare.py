@@ -12,7 +12,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -36,6 +35,7 @@ T_PairCacheKey = str
 PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
+CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
 
 
 class PriceHistoryEntry(NamedTuple):
@@ -147,7 +147,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         if api_key:
             querystr += f'&api_key={api_key}'
 
-        tries = QUERY_RETRY_TIMES
+        tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
         while tries >= 0:
             try:
                 response = self.session.get(querystr)
@@ -173,7 +173,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     else:
                         log.debug(
                             f'Got rate limited by cryptocompare and did not manage to get a '
-                            f'request through even after {QUERY_RETRY_TIMES} '
+                            f'request through even after {CRYPTOCOMPARE_QUERY_RETRY_TIMES} '
                             f'incremental backoff retries',
                         )
 
