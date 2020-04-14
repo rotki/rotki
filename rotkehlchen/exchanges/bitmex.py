@@ -103,9 +103,9 @@ class Bitmex(ExchangeInterface):
         except RemoteError as e:
             error = str(e)
             if 'Invalid API Key' in error:
-                return False, 'Provided API key is invalid'
+                return False, 'Provided API Key is invalid'
             elif 'Signature not valid' in error:
-                return False, 'Provided API secret is invalid'
+                return False, 'Provided API Secret is invalid'
             else:
                 raise
         return True, ''

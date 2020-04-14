@@ -1,3 +1,4 @@
+import binascii
 import csv
 import hashlib
 import hmac
@@ -179,11 +180,14 @@ class Coinbasepro(ExchangeInterface):
             options=options,
         )
         if 'products' not in endpoint:
-            signature = hmac.new(
-                b64decode(self.secret),
-                message.encode(),
-                hashlib.sha256,
-            ).digest()
+            try:
+                signature = hmac.new(
+                    b64decode(self.secret),
+                    message.encode(),
+                    hashlib.sha256,
+                ).digest()
+            except binascii.Error:
+                raise RemoteError('Provided API Secret is invalid')
 
             self.session.headers.update({
                 'CB-ACCESS-SIGN': b64encode(signature).decode('utf-8'),

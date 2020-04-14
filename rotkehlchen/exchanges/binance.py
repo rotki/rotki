@@ -199,7 +199,7 @@ class Binance(ExchangeInterface):
         try:
             # We know account endpoint returns a dict
             self.api_query_dict('account')
-        except ValueError as e:
+        except RemoteError as e:
             error = str(e)
             if 'API-key format invalid' in error:
                 return False, 'Provided API Key is in invalid Format'

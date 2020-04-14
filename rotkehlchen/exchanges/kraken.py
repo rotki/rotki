@@ -286,7 +286,7 @@ class Kraken(ExchangeInterface):
         except (RemoteError, ValueError) as e:
             error = str(e)
             if 'Incorrect padding' in error:
-                return False, 'Provided API Key or secret is in invalid Format'
+                return False, 'Provided API Key or secret is invalid'
             elif 'EAPI:Invalid key' in error:
                 return False, 'Provided API Key is invalid'
             elif 'EGeneral:Permission denied' in error:

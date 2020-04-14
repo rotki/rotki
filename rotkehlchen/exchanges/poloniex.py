@@ -243,9 +243,9 @@ class Poloniex(ExchangeInterface):
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
             self.return_fee_info()
-        except ValueError as e:
+        except RemoteError as e:
             error = str(e)
-            if 'Invalid API key/secret pair' in error:
+            if 'Invalid API key' in error:
                 return False, 'Provided API Key or secret is invalid'
             else:
                 raise
