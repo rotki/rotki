@@ -186,7 +186,7 @@ class Bittrex(ExchangeInterface):
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
             self.api_query('getbalance', {'currency': 'BTC'})
-        except ValueError as e:
+        except RemoteError as e:
             error = str(e)
             if error == 'APIKEY_INVALID':
                 return False, 'Provided API Key is invalid'
