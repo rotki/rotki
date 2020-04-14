@@ -176,6 +176,12 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/.rotkehlchen-test-dir
+          key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-testdir-
       - name: Setup SQLCipher
         run: |
           if [ ${{ matrix.os }} == 'ubuntu-latest' ];
