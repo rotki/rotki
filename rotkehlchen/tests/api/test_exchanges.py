@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 import pytest
 import requests
 
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -49,14 +50,28 @@ def test_setup_exchange(rotkehlchen_api_server):
     assert json_data['message'] == ''
     assert json_data['result'] == []
 
-    # First test that if api key validation fails we get an error
-    data = {'name': 'kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
-    response = requests.put(api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Provided API Key or secret is in invalid Format',
-        status_code=HTTPStatus.CONFLICT,
-    )
+    # First test that if api key validation fails we get an error, for every exchange
+    for name in SUPPORTED_EXCHANGES:
+        data = {'name': name, 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+        if name == 'coinbasepro':
+            data['passphrase'] = '123'
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg=[
+                'Provided API Key or secret is invalid',
+                'Provided API Key is invalid',
+                'Provided API Key is in invalid Format',
+                'Provided API Secret is invalid',
+                'Provided Gemini API key needs to have "Auditor" permission activated',
+            ],
+            status_code=HTTPStatus.CONFLICT,
+        )
+    # Make sure that no exchange is registered after that
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert len(rotki.exchange_manager.connected_exchanges) == 0
 
     # Mock the api pair validation and make sure that the exchange is setup
     data = {'name': 'kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
