@@ -1,6 +1,6 @@
 import os
 from http import HTTPStatus
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import gevent
 import psutil
@@ -78,7 +78,7 @@ def assert_proper_response_with_result(
 
 def assert_error_response(
         response: Optional[requests.Response],
-        contained_in_msg: Optional[str] = None,
+        contained_in_msg: Optional[Union[str, List[str]]] = None,
         status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,
 ):
@@ -93,7 +93,10 @@ def assert_error_response(
     else:
         assert response_data['result'] is None
     if contained_in_msg:
-        assert contained_in_msg in response_data['message']
+        if isinstance(contained_in_msg, str):
+            assert contained_in_msg in response_data['message']
+        elif isinstance(contained_in_msg, list):
+            assert any(x in response_data['message'] for x in contained_in_msg)
 
 
 def assert_ok_async_response(response: requests.Response) -> int:
