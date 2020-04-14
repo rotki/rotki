@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`807` Enables the addition and querying of manually tracked balances
 * :bug:`852` PUT or DELETE on ``/api/1/blockchains/eth`` without etherscan keys configured no longer results in 500 internal server error.
 * :feature:`869` The application menu now has some customized menu items. Users can now access the `Usage Guide`, `FAQ`, `Issues & Feature Requests`, and `Logs Directory` from within the Help menu. Additionally, there is a `Get Rotki Premium` menu item for easy access to the premium subscription purchase page. Finally, both backend and frontend logs (``rotkehlchen.log`` and ``rotki-electron.log`` respectively) are now found in these standard locations per OS:
 
