@@ -10,7 +10,9 @@
         No premium subscription detected. Statistics are only available to
         premium users. <br />
         To get a premium subscription please visit our
-        <a :href="$interop.premiumURL" target="_blank">website</a>.
+        <base-external-link href="https://rotki.com/products/">
+          website.
+        </base-external-link>
       </div>
       <div v-else>
         <premium-statistics
@@ -25,13 +27,14 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { PremiumStatistics } from '@/utils/premium';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { MessageDialog, PremiumStatistics },
+  components: { MessageDialog, PremiumStatistics, BaseExternalLink },
   computed: {
     ...mapState(['premium']),
     ...mapGetters(['floatingPrecision'])

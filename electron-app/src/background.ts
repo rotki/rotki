@@ -251,6 +251,7 @@ app.on('ready', async () => {
     if (
       !(
         args.indexOf('https://rotki.com') > -1 ||
+        args.indexOf('https://rotki.readthedocs.io/') > -1 ||
         args.indexOf('https://github.com/rotki/rotki/') > -1
       )
     ) {

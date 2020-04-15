@@ -2,8 +2,20 @@
   <v-row class="exchange-settings">
     <v-col>
       <v-card>
-        <v-card-title>Exchange Settings</v-card-title>
+        <v-card-title>Exchanges</v-card-title>
         <v-card-text>
+          <p>
+            Rotki can connect to supported exchanges and automatically obtain
+            your trades and balances in that exchange. Each exchange may require
+            a different set of credentials for the connection, so make sure that
+            everything is provided. See the
+            <base-external-link
+              href="https://rotki.readthedocs.io/en/latest/usage_guide.html#adding-an-exchange"
+            >
+              Usage Guide
+            </base-external-link>
+            for more information.
+          </p>
           <v-row class="exchange-settings__connected-exchanges">
             <exchange-badge
               v-for="exchange in connectedExchanges"
@@ -85,6 +97,7 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
@@ -94,7 +107,7 @@ import { Message } from '@/store/store';
 const { mapState } = createNamespacedHelpers('balances');
 
 @Component({
-  components: { ConfirmDialog, MessageDialog, ExchangeBadge },
+  components: { ConfirmDialog, MessageDialog, ExchangeBadge, BaseExternalLink },
   computed: mapState(['connectedExchanges'])
 })
 export default class ExchangeSettings extends Vue {

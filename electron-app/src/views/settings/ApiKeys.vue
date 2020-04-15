@@ -5,9 +5,20 @@
         <h1>API Keys</h1>
       </v-col>
     </v-row>
-    <premium-settings></premium-settings>
-    <exchange-settings></exchange-settings>
-    <external-services></external-services>
+    <v-row>
+      <v-col>
+        Rotki can communciate with various APIs to provide additional
+        functionality. Click each tab below to explore what is offered.
+      </v-col>
+    </v-row>
+    <v-tabs grow>
+      <v-tab>Rotki Premium</v-tab>
+      <v-tab>Exchanges</v-tab>
+      <v-tab>External Services</v-tab>
+      <v-tab-item><premium-settings></premium-settings></v-tab-item>
+      <v-tab-item><exchange-settings></exchange-settings></v-tab-item>
+      <v-tab-item><external-services></external-services></v-tab-item>
+    </v-tabs>
   </v-container>
 </template>
 

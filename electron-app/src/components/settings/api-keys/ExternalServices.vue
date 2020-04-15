@@ -1,8 +1,18 @@
 <template>
-  <div>
+  <v-container>
     <v-row>
       <v-col cols="12">
-        <h2>External Services</h2>
+        <v-card>
+          <v-card-title>External Services</v-card-title>
+          <v-card-text>
+            <p>
+              Rotki can connect to service providers in order to obtain more
+              details about your transactions, usually of an optional nature. In
+              certain cases Rotki depends on these APIs for basic information,
+              in which case you will need to provide an API key.
+            </p>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
     <v-row>
@@ -11,6 +21,7 @@
           v-model="etherscanKey"
           class="external-services__etherscan-key"
           title="Etherscan"
+          description="Required for any Ethereum blockchain balances or transactions. Rotki uses etherscan to obtain basic information about ethereum blockchain addresses and transactions."
           label="API key"
           hint="Enter your Etherscan API key"
           :loading="loading"
@@ -26,6 +37,7 @@
           v-model="cryptocompareKey"
           class="external-services__cryptocompare-key"
           title="CryptoCompare"
+          description="Rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited."
           label="API key"
           hint="Enter your CryptoCompare API key"
           :loading="loading"
@@ -41,6 +53,7 @@
           v-model="alethioKey"
           class="external-services__alethio-key"
           title="Alethio"
+          description="Rotki uses Alethio for supplementary Ethereum blockchain information. An API key is only needed if you have a lot of assets and are being rate-limited."
           label="API key"
           hint="Enter your Alethio API key"
           :loading="loading"
@@ -58,7 +71,7 @@
       @cancel="serviceToDelete = ''"
     >
     </confirm-dialog>
-  </div>
+  </v-container>
 </template>
 
 <script lang="ts">
