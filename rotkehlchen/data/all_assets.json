@@ -1038,6 +1038,12 @@
         "symbol": "BKC",
         "type": "ethereum token"
     },
+    "BKRW": {
+        "name": "Binance KRW",
+        "started": 1580947200,
+        "symbol": "BKRW",
+        "type": "binance token"
+    },
     "BKX": {
         "ethereum_address": "0x45245bc59219eeaAF6cD3f382e078A461FF9De7B",
         "ethereum_token_decimals": 18,
