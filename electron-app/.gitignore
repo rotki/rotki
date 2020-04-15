@@ -27,3 +27,4 @@ yarn-error.log*
 /dist_electron
 coverage
 tests/e2e/videos
+.nyc_output

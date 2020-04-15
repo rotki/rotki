@@ -48,6 +48,9 @@ jobs:
       - name: Run unit tests
         working-directory: ./electron-app
         run: npm run test:unit
+      - name: Upload coverage
+        working-directory: ./electron-app
+        run: cd .. && bash <(curl -s https://codecov.io/bash) -c -F frontendunittests
   lint-backend:
     strategy:
       matrix:
@@ -138,6 +141,8 @@ jobs:
             COVERAGE_ARGS=''
           fi
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
+      - name: Upload coverage
+        run: bash <(curl -s https://codecov.io/bash) -c -F backend
   test-integration:
     if: "contains(github.event.head_commit.message, '[ui tests]')"
     needs: [lint-frontend, test-backend]
@@ -216,6 +221,9 @@ jobs:
         run: |
           npm ci
           npm run test:integration-ci
+      - name: Upload coverage
+        working-directory: ./electron-app
+        run: cd .. && bash <(curl -s https://codecov.io/bash) -c -F frontendintegration
       - uses: actions/upload-artifact@v1
         if: failure()
         with:
