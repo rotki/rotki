@@ -252,6 +252,9 @@ class Location(Enum):
     BLOCKCHAIN = 10
     COINBASEPRO = 11
     GEMINI = 12
+    EQUITIES = 13
+    REALESTATE = 14
+    COMMODITIES = 15
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -278,6 +281,12 @@ class Location(Enum):
             return 'coinbasepro'
         elif self == Location.GEMINI:
             return 'gemini'
+        elif self == Location.EQUITIES:
+            return 'equities'
+        elif self == Location.REALESTATE:
+            return 'real estate'
+        elif self == Location.COMMODITIES:
+            return 'commodities'
 
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -306,6 +315,12 @@ class Location(Enum):
             return 'K'
         elif self == Location.GEMINI:
             return 'L'
+        elif self == Location.EQUITIES:
+            return 'M'
+        elif self == Location.REALESTATE:
+            return 'N'
+        elif self == Location.COMMODITIES:
+            return 'O'
 
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

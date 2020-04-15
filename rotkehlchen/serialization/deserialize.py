@@ -293,6 +293,12 @@ def deserialize_location(symbol: str) -> Location:
         return Location.COINBASEPRO
     elif symbol == 'gemini':
         return Location.GEMINI
+    elif symbol == 'equities':
+        return Location.EQUITIES
+    elif symbol == 'real estate':
+        return Location.REALESTATE
+    elif symbol == 'commodities':
+        return Location.COMMODITIES
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -377,6 +383,12 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.COINBASEPRO
     elif symbol == 'L':
         return Location.GEMINI
+    elif symbol == 'M':
+        return Location.EQUITIES
+    elif symbol == 'N':
+        return Location.REALESTATE
+    elif symbol == 'O':
+        return Location.COMMODITIES
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',

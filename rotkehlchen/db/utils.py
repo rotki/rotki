@@ -171,6 +171,12 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('J', 10);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('K', 11);
 /* Gemini */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('L', 12);
+/* Equities */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('M', 13);
+/* Real estate */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('N', 14);
+/* Commodities */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('O', 15);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
