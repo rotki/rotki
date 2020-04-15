@@ -193,6 +193,22 @@ To add or modify the amount of an owned FIAT currency scroll down to the "Fiat B
    :alt: Manually adding fiat balances
    :align: center
 
+.. Warning::
+   This functionality is now deprecated in favour of the manually tracked balances (see below).
+
+
+Adding manually tracked balances
+==================================
+
+With Rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
+
+To add or modify a manually tracked balance scroll down to the "Manually Tracked Balances" section. There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
+
+.. image:: images/sc_manually_tracked_balances.png
+   :alt: The manually tracked balances
+   :align: center
+
+
 Adding and Removing Blockchain Accounts
 ============================================
 
