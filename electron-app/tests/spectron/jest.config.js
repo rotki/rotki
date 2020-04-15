@@ -25,7 +25,7 @@ module.exports = {
   // serializer for snapshots
   snapshotSerializers: ['jest-serializer-vue'],
   testMatch: [
-    '**/tests/e2e/**/*.spec.(js|jsx|ts|tsx)|**/__tests__/*.(js|jsx|ts|tsx)'
+    '**/tests/spectron/**/*.spec.(js|jsx|ts|tsx)|**/__tests__/*.(js|jsx|ts|tsx)'
   ],
   // https://github.com/facebook/jest/issues/6766
   testURL: 'http://localhost/',

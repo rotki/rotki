@@ -67,6 +67,15 @@
               return-object
               :items="currencies"
             >
+              <template #item="{ item, attrs, on }">
+                <v-list-item
+                  :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  {{ item.ticker_symbol }}
+                </v-list-item>
+              </template>
             </v-select>
 
             <v-text-field
