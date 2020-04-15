@@ -146,7 +146,7 @@ Handling user creation, sign-in, log-out and querying
    :resjson object result: For succesful requests, result contains the currently connected exchanges, and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
    :statuscode 200: Adding the new user was succesful
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User already exists. Another user is already logged in. Given Premium API credentials are invalid.
+   :statuscode 409: User already exists. Another user is already logged in. Given Premium API credentials are invalid. Permission error while trying to access the directory where Rotki saves data.
    :statuscode 500: Internal Rotki error
 
 .. http:patch:: /api/(version)/users/(username)
@@ -207,7 +207,7 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 300: Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: Provided password is wrong for the user or some other authentication error.
-   :statuscode 409: Another user is already logged in. User does not exist. There was a fatal error during the upgrade of the DB.
+   :statuscode 409: Another user is already logged in. User does not exist. There was a fatal error during the upgrade of the DB. Permission error while trying to access the directory where Rotki saves data.
    :statuscode 500: Internal Rotki error
 
 .. http:patch:: /api/(version)/users/(username)

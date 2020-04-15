@@ -33,6 +33,7 @@ from rotkehlchen.errors import (
     PremiumAuthenticationError,
     RemoteError,
     RotkehlchenPermissionError,
+    SystemPermissionError,
     TagConstraintError,
 )
 from rotkehlchen.exchanges.data_structures import Trade
@@ -807,7 +808,7 @@ class RestAPI():
             )
         # not catching RotkehlchenPermissionError here as for new account with premium
         # syncing there is no way that permission needs to be asked by the user
-        except (AuthenticationError, PremiumAuthenticationError) as e:
+        except (AuthenticationError, PremiumAuthenticationError, SystemPermissionError) as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
@@ -853,7 +854,7 @@ class RestAPI():
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
-        except DBUpgradeError as e:
+        except (DBUpgradeError, SystemPermissionError) as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
