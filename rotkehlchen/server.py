@@ -15,6 +15,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 class RotkehlchenServer():
     def __init__(self) -> None:
+        """Initializes the backend server
+        May raise:
+        - SystemPermissionError due to the given args containing a datadir
+        that does not have the correct permissions
+        """
         arg_parser = app_args(
             prog='rotki',
             description=(

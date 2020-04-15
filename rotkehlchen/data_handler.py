@@ -164,8 +164,6 @@ class DataHandler():
                 if x.is_dir() and (x / 'rotkehlchen.db').exists():
                     users[x.stem] = 'loggedin' if x.stem == self.username else 'loggedout'
             except PermissionError:
-                # __import__("pdb").set_trace()
-
                 # ignore directories that can't be accessed
                 continue
 
