@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -19,7 +20,13 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
-from rotkehlchen.errors import EthSyncError, InputError, PremiumAuthenticationError, RemoteError
+from rotkehlchen.errors import (
+    EthSyncError,
+    InputError,
+    PremiumAuthenticationError,
+    RemoteError,
+    SystemPermissionError,
+)
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -52,6 +59,12 @@ MAIN_LOOP_SECS_DELAY = 15
 
 class Rotkehlchen():
     def __init__(self, args: argparse.Namespace) -> None:
+        """Initialize the Rotkehlchen object
+
+        May Raise:
+        - SystemPermissionError if the given data directory's permissions
+        are not correct.
+        """
         self.lock = Semaphore()
         self.lock.acquire()
 
@@ -91,6 +104,10 @@ class Rotkehlchen():
 
         self.sleep_secs = args.sleep_secs
         self.data_dir = args.data_dir
+        if not os.access(self.data_dir, os.W_OK | os.R_OK):
+            raise SystemPermissionError(
+                f'The given data directory {self.data_dir} is not readable or writable',
+            )
         self.args = args
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
