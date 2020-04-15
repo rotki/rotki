@@ -2,8 +2,17 @@
   <v-row class="premium-settings">
     <v-col>
       <v-card>
-        <v-card-title>Premium Settings</v-card-title>
+        <v-card-title>Rotki Premium</v-card-title>
         <v-card-text>
+          <p>
+            Rotki Premium is an optional subscription service to gain access to
+            analytics and reporting features in Rotki. More information is
+            available on the
+            <base-external-link href="https://rotki.com/products/">
+              Rotki Premium
+            </base-external-link>
+            site.
+          </p>
           <v-text-field
             v-model="apiKey"
             class="premium-settings__fields__api-key"
@@ -11,7 +20,7 @@
             prepend-icon="fa-key"
             :disabled="premium && !edit"
             :type="showKey ? 'text' : 'password'"
-            label="Rotkehlchen API Key"
+            label="Rotki API Key"
             @click:append="showKey = !showKey"
           ></v-text-field>
           <v-text-field
@@ -21,7 +30,7 @@
             :disabled="premium && !edit"
             prepend-icon="fa-user-secret"
             :type="showSecret ? 'text' : 'password'"
-            label="Rotkehlchen API Secret"
+            label="Rotki API Secret"
             @click:append="showSecret = !showSecret"
           ></v-text-field>
           <div v-if="premium" class="premium-settings__premium-active">
@@ -64,6 +73,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Message } from '@/store/store';
 
@@ -71,7 +81,8 @@ const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
-    MessageDialog
+    MessageDialog,
+    BaseExternalLink
   },
   computed: mapState(['premium', 'premiumSync', 'username'])
 })

@@ -3,33 +3,38 @@
     <v-card-title>
       {{ title }}
     </v-card-title>
-    <v-card-text class="service-key__content">
-      <revealable-input
-        :value="editMode ? currentValue : ''"
-        class="service-key__api-key"
-        :hint="currentValue ? '' : hint"
-        :disabled="!editMode"
-        :label="label"
-        @input="currentValue = $event"
-      ></revealable-input>
-      <v-tooltip top>
-        <template #activator="{ on }">
-          <v-btn
-            icon
-            text
-            class="service-key__content__delete"
-            :disabled="loading || !currentValue"
-            color="primary"
-            v-on="on"
-            @click="deleteKey()"
-          >
-            <v-icon>fa-trash</v-icon>
-          </v-btn>
-        </template>
-        <span>
-          {{ tooltip }}
-        </span>
-      </v-tooltip>
+    <v-card-text class="service-key__content" style="display: block;">
+      <div>
+        {{ description }}
+      </div>
+      <div style="display: flex; align-items: center;">
+        <revealable-input
+          :value="editMode ? currentValue : ''"
+          class="service-key__api-key"
+          :hint="currentValue ? '' : hint"
+          :disabled="!editMode"
+          :label="label"
+          @input="currentValue = $event"
+        ></revealable-input>
+        <v-tooltip top>
+          <template #activator="{ on }">
+            <v-btn
+              icon
+              text
+              class="service-key__content__delete"
+              :disabled="loading || !currentValue"
+              color="primary"
+              v-on="on"
+              @click="deleteKey()"
+            >
+              <v-icon>fa-trash</v-icon>
+            </v-btn>
+          </template>
+          <span>
+            {{ tooltip }}
+          </span>
+        </v-tooltip>
+      </div>
     </v-card-text>
     <v-card-actions>
       <v-btn
@@ -68,6 +73,8 @@ export default class ServiceKey extends Vue {
   value!: string;
   @Prop({ required: true })
   title!: string;
+  @Prop({ required: false, default: '' })
+  description!: string;
   @Prop({ required: false, default: false })
   loading!: boolean;
   @Prop({ required: false, default: '' })
