@@ -68,7 +68,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: [3.7]
-        node-version: [12.x]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -111,6 +110,12 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/.rotkehlchen-test-dir
+          key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-testdir-
       - name: Install dependencies
         run: |
           pip install --upgrade "pip<19.0.0" wheel
