@@ -16,18 +16,10 @@ from rotkehlchen.tests.utils.premium import (
     VALID_PREMIUM_SECRET,
     assert_db_got_replaced,
     create_patched_requests_get_for_premium,
+    get_different_hash,
     setup_starting_environment,
 )
 from rotkehlchen.utils.misc import ts_now
-
-
-def get_different_hash(given_hash: str) -> str:
-    """Given the string hash get one that's different but has same length"""
-    new_hash = ''
-    for x in given_hash:
-        new_hash = new_hash + chr(ord(x) + 1)
-
-    return new_hash
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

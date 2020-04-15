@@ -122,6 +122,15 @@ def create_patched_premium(
     return patched_premium_at_start, patched_premium_at_set, patched_get
 
 
+def get_different_hash(given_hash: str) -> str:
+    """Given the string hash get one that's different but has same length"""
+    new_hash = ''
+    for x in given_hash:
+        new_hash = new_hash + chr(ord(x) + 1)
+
+    return new_hash
+
+
 def setup_starting_environment(
         rotkehlchen_instance: Rotkehlchen,
         username: str,
@@ -150,7 +159,7 @@ def setup_starting_environment(
     if same_hash_with_remote:
         remote_hash = our_hash
     else:
-        remote_hash = 'a' + our_hash[1:]
+        remote_hash = get_different_hash(our_hash)
 
     if newer_remote_db:
         metadata_last_modify_ts = our_last_write_ts + 10
