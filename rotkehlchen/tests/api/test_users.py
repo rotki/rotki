@@ -1,3 +1,4 @@
+import os
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Dict
@@ -92,6 +93,25 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
 
     # Check that the directory was created
     assert Path(data_dir / username / 'rotkehlchen.db').exists()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_user_creation_permission_error(rotkehlchen_api_server, data_dir):
+    """Test that creating a user when data directory permissions are wrong is handled"""
+    os.chmod(data_dir, 0o200)
+    username = 'hania'
+    data = {
+        'name': username,
+        'password': '1234',
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to create directory for user: [Errno 13] Permission denied',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    os.chmod(data_dir, 0o777)
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -503,6 +523,52 @@ def test_user_set_premium_credentials(rotkehlchen_api_server, username):
     assert rotki.premium.credentials.serialize_secret() == VALID_PREMIUM_SECRET
     with patched_get:
         assert rotki.premium.is_active()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_user_login_user_dir_permission_error(rotkehlchen_api_server, data_dir):
+    """Test that user login with userdir path permission errors is handled properly"""
+    username = 'a_user'
+    user_dir = Path(data_dir / username)
+    user_dir.mkdir()
+    db_path = Path(data_dir / username / 'rotkehlchen.db')
+    db_path.touch()
+    os.chmod(user_dir, 0o200)
+
+    data = {'action': 'login', "password": '123', 'sync_approval': 'unknown'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'User {username} exists but DB is missing',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_user_login_db_permission_error(rotkehlchen_api_server, data_dir):
+    """Test that user login with db path permission errors is handled properly"""
+    username = 'a_user'
+    user_dir = Path(data_dir / username)
+    user_dir.mkdir()
+    db_path = Path(data_dir / username / 'rotkehlchen.db')
+    db_path.touch()
+    os.chmod(db_path, 0o200)
+    data = {'action': 'login', "password": '123', 'sync_approval': 'unknown'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Could not open database file',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    os.chmod(db_path, 0o777)
 
 
 def test_user_set_premium_credentials_errors(rotkehlchen_api_server, username):
