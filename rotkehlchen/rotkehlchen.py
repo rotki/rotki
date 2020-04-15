@@ -129,6 +129,7 @@ class Rotkehlchen():
         or can't authenticate with the server
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error.
+        - SystemPermissionError if the directory or DB file can not be accessed
         """
         log.info(
             'Unlocking user',

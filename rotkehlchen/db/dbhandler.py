@@ -41,6 +41,7 @@ from rotkehlchen.errors import (
     DeserializationError,
     IncorrectApiKeyFormat,
     InputError,
+    SystemPermissionError,
     TagConstraintError,
     UnknownAsset,
     UnsupportedAsset,
@@ -157,6 +158,7 @@ class DBHandler:
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error.
         - AuthenticationError if SQLCipher version problems are detected
+        - SystemPermissionError if the DB file's permissions are not correct
         """
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
@@ -188,7 +190,13 @@ class DBHandler:
 
     def __del__(self) -> None:
         self.disconnect()
-        dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
+        try:
+            dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
+        except SystemPermissionError as e:
+            # If there is problems opening the DB at destruction just log and exit
+            log.error(f'At DB teardown could not open the DB: {str(e)}')
+            return
+
         with open(os.path.join(self.user_data_dir, DBINFO_FILENAME), 'w') as f:
             f.write(rlk_jsondumps(dbinfo))
 
@@ -224,18 +232,31 @@ class DBHandler:
         DBUpgradeManager(self).run_upgrades()
 
     def get_md5hash(self) -> str:
+        """Get the md5hash of the DB
+
+        May raise:
+        - SystemPermissionError if there are permission errors when accessing the DB
+        """
         no_active_connection = not hasattr(self, 'conn') or not self.conn
         assert no_active_connection, 'md5hash should be taken only with a closed DB'
         filename = os.path.join(self.user_data_dir, 'rotkehlchen.db')
         md5_hash = hashlib.md5()
-        with open(filename, 'rb') as f:
-            # Read and update hash in chunks of 4K
-            for byte_block in iter(lambda: f.read(4096), b''):
-                md5_hash.update(byte_block)
+        try:
+            with open(filename, 'rb') as f:
+                # Read and update hash in chunks of 4K
+                for byte_block in iter(lambda: f.read(4096), b''):
+                    md5_hash.update(byte_block)
+        except PermissionError as e:
+            raise SystemPermissionError(f'Failed to open DB: {filename}. {str(e)}')
 
         return md5_hash.hexdigest()
 
     def read_info_at_start(self) -> DBStartupAction:
+        """Read some metadata info at initialization
+
+        May raise:
+        - SystemPermissionError if there are permission errors when accessing the DB
+        """
         dbinfo = None
         action = DBStartupAction.NOTHING
         filepath = os.path.join(self.user_data_dir, DBINFO_FILENAME)
@@ -299,13 +320,22 @@ class DBHandler:
         self.conn.commit()
 
     def connect(self, password: str) -> None:
-        self.conn = sqlcipher.connect(  # pylint: disable=no-member
-            os.path.join(self.user_data_dir, 'rotkehlchen.db'),
-        )
+        """Connect to the DB using password
+
+        May raise:
+        - SystemPermissionError if we are unable to open the DB file,
+        probably due to permission errors
+        """
+        fullpath = os.path.join(self.user_data_dir, 'rotkehlchen.db')
+        try:
+            self.conn = sqlcipher.connect(fullpath)  # pylint: disable=no-member
+        except sqlcipher.OperationalError:  # pylint: disable=no-member
+            raise SystemPermissionError(
+                f'Could not open database file: {fullpath}. Permission errors?',
+            )
+
         self.conn.text_factory = str
         password_for_sqlcipher = _protect_password_sqlcipher(password)
-        # __import__("pdb").set_trace()
-
         self.conn.executescript(f'PRAGMA key="{password_for_sqlcipher}";')
         if self.sqlcipher_version == 3:
             script = f'PRAGMA key="{password_for_sqlcipher}"; PRAGMA kdf_iter={KDF_ITER};'
@@ -333,8 +363,9 @@ class DBHandler:
         return success, msg
 
     def disconnect(self) -> None:
-        self.conn.close()
-        self.conn = None
+        if hasattr(self, 'conn') and self.conn:
+            self.conn.close()
+            self.conn = None
 
     def export_unencrypted(self, temppath: FilePath) -> None:
         self.conn.executescript(
@@ -375,7 +406,12 @@ class DBHandler:
             self.conn.executescript(script)
             self.disconnect()
 
-        self.connect(password)
+        try:
+            self.connect(password)
+        except SystemPermissionError as e:
+            raise AssertionError(
+                f'Permission error when reopening the DB. {str(e)}. Should never happen here',
+            )
         self._run_actions_after_first_connection(password)
         # all went okay, remove the original temp backup
         os.remove(os.path.join(self.user_data_dir, 'rotkehlchen_temp_backup.db'))

@@ -41,6 +41,10 @@ class RotkehlchenPermissionError(Exception):
     pass
 
 
+class SystemPermissionError(Exception):
+    pass
+
+
 class RemoteError(Exception):
     """Thrown when a remote API can't be reached or throws unexpected error"""
     pass

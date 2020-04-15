@@ -14,7 +14,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import AuthenticationError
+from rotkehlchen.errors import AuthenticationError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import AssetAmount, B64EncodedBytes, B64EncodedString, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -48,12 +48,26 @@ class DataHandler():
             password: str,
             create_new: bool,
     ) -> FilePath:
+        """Unlocks a user, either logging them in or creating a new user
+
+        May raise:
+        - SystemPermissionError if there are permission errors when accessing the DB
+        or a directory in the user's filesystem
+        - AuthenticationError if the given user does not exist, or if
+        sqlcipher version problems are detected
+        - DBUpgradeError if the rotki DB version is newer than the software or
+        there is a DB upgrade and there is an error.
+        """
         user_data_dir = FilePath(os.path.join(self.data_directory, username))
         if create_new:
             if os.path.exists(user_data_dir):
                 raise AuthenticationError('User {} already exists'.format(username))
             else:
-                os.mkdir(user_data_dir)
+                try:
+                    os.mkdir(user_data_dir)
+                except PermissionError as e:
+                    raise SystemPermissionError(f'Failed to create directory for user: {str(e)}')
+
         else:
             if not os.path.exists(user_data_dir):
                 raise AuthenticationError('User {} does not exist'.format(username))
@@ -71,9 +85,10 @@ class DataHandler():
                     ),
                 )
 
-                raise AuthenticationError(
+                raise SystemPermissionError(
                     'User {} exists but DB is missing. Somehow must have been manually '
-                    'deleted or is corrupt. Please recreate the user account. '
+                    'deleted or is corrupt or access permissions do not allow reading. '
+                    'Please recreate the user account. '
                     'A backup of the user directory was created.'.format(username))
 
         self.db: DBHandler = DBHandler(user_data_dir, password, self.msg_aggregator)
@@ -145,8 +160,15 @@ class DataHandler():
         users = {}
         data_dir = Path(self.data_directory)
         for x in data_dir.iterdir():
-            if x.is_dir() and (x / 'rotkehlchen.db').exists():
-                users[x.stem] = 'loggedin' if x.stem == self.username else 'loggedout'
+            try:
+                if x.is_dir() and (x / 'rotkehlchen.db').exists():
+                    users[x.stem] = 'loggedin' if x.stem == self.username else 'loggedout'
+            except PermissionError:
+                # __import__("pdb").set_trace()
+
+                # ignore directories that can't be accessed
+                continue
+
         return users
 
     def set_fiat_balances(
@@ -198,6 +220,7 @@ class DataHandler():
         - UnableToDecryptRemoteData due to decrypt()
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error.
+        - SystemPermissionError if the DB file permissions are not correct
         """
         log.info('Decompress and decrypt DB')
 

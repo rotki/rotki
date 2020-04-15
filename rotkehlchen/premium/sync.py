@@ -113,7 +113,8 @@ class PremiumSyncManager():
 
         Returns true for success and False for error/failure
 
-        Can raise PremiumAuthenticationError due to an UnableToDecryptRemoteData
+        May raise:
+        - PremiumAuthenticationError due to an UnableToDecryptRemoteData
         coming from  decompress_and_decrypt_db. This happens when the given password
         does not match the one on the saved DB.
         """
