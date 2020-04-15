@@ -1,0 +1,20 @@
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+flags:
+  backend:
+    paths:
+      - /
+    ignore:
+      - "/electron-app"
+  frontendunittests:
+    joined: false
+    paths:
+      - "/electron-app"
+  frontendintegration:
+    joined: false
+    carryforward: true
+    paths:
+      - "/electron-app"

@@ -1,0 +1,14 @@
+{
+  "include": [
+    "src"
+  ],
+  "extension": [
+    ".ts",
+    ".vue"
+  ],
+  "reporter": [
+    "lcov",
+    "text",
+    "text-summary"
+  ]
+}

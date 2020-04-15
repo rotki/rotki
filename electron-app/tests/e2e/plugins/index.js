@@ -12,6 +12,7 @@ const wp = require('@cypress/webpack-preprocessor');
 // const webpack = require('@cypress/webpack-preprocessor')
 
 module.exports = (on, config) => {
+  require('@cypress/code-coverage/task')(on, config);
   const options = {
     webpackOptions: {
       resolve: {
