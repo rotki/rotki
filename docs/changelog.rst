@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.4.0 <2020-04-16>`
 * :feature:`807` Enables the addition and querying of manually tracked balances.
 * :bug:`874` Fixed a bug where if invalid credentials were given to setup an exchange a 500 error was returned. The error is now handled gracefully.
 * :bug:`852` PUT or DELETE on ``/api/1/blockchains/eth`` without etherscan keys configured no longer results in 500 internal server error.
