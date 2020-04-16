@@ -12,9 +12,9 @@
       </v-col>
     </v-row>
     <v-tabs grow>
-      <v-tab>Rotki Premium</v-tab>
-      <v-tab>Exchanges</v-tab>
-      <v-tab>External Services</v-tab>
+      <v-tab class="api-keys__tab__rotki-premium">Rotki Premium</v-tab>
+      <v-tab class="api-keys__tab__exchanges">Exchanges</v-tab>
+      <v-tab class="api-keys__tab__external-services">External Services</v-tab>
       <v-tab-item><premium-settings></premium-settings></v-tab-item>
       <v-tab-item><exchange-settings></exchange-settings></v-tab-item>
       <v-tab-item><external-services></external-services></v-tab-item>

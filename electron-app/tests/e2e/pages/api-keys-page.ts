@@ -5,6 +5,7 @@ export class ApiKeysPage {
   }
 
   addExchange(apiKey: string, apiSecret: string, exchange: string) {
+    cy.get('.api-keys__tab__exchanges').click();
     cy.get('.exchange-settings__fields__exchange').click();
     cy.get(`.exchange__${exchange}`).click();
     cy.get('.exchange-settings__fields__api-key').type(apiKey);

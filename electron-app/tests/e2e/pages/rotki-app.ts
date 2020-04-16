@@ -15,10 +15,9 @@ export class RotkiApp {
   }
 
   closePremiumOverlay() {
-    cy.contains(
-      '.account_management__premium .message-overlay__title',
-      'Upgrade to Premium'
-    );
+    cy.get('.account_management__premium .message-overlay__title', {
+      timeout: 10000
+    }).should('include.text', 'Upgrade to Premium');
     cy.get('.message-overlay__buttons__cancel').click();
   }
 
