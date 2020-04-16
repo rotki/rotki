@@ -22,9 +22,8 @@ def random_marker():
     value.
     """
     random_hex = hex(random.getrandbits(100))
-
-    # strip the leading 0x and trailing L
-    return random_hex[2:-1]
+    # strip the leading 0x
+    return random_hex[2:]
 
 
 @pytest.fixture(scope='session')
