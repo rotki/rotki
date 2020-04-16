@@ -5,6 +5,7 @@ Changelog
 * :bug:`895` Fixes manually tracked balances value column header not updating properly.
 * :bug:`899` If a user's ethereum account held both old and new REP the new REP's account balance should now be properly automatically detected.
 * :bug:`895` If the current price of an asset of a manually tracked balance can not be found, a value of zero is returned instead of breaking all manually tracked balances.
+* :feature:`838` Added additional information about API Keys that can be set up by the user and grouped the API connections page into 3 categories: Rotki Premium / Exchanges / External Services.
 * :feature:`-` Added support for the following tokens
 
   - `Rupiah token (IDRT) <https://coinmarketcap.com/currencies/rupiah-token/>`__
