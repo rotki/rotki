@@ -140,7 +140,7 @@ def geth_wait_and_check(ethereum_manager, rpc_endpoint, random_marker):
             ethereum_manager.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
             jsonrpc_running = True
             block = ethereum_manager.get_block_by_number(0)
-            running_marker = hexlify(block['proofOfAuthorityData'])[:24].decode()
+            running_marker = hexlify(block['proofOfAuthorityData'])[:len(random_marker)].decode()
             if running_marker != random_marker:
                 raise RuntimeError(
                     'the test marker does not match, maybe two tests are running in '
