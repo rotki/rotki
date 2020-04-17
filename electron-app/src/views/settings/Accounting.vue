@@ -66,7 +66,7 @@
                   v-model="assetToIgnore"
                   label="Select asset to ignore"
                   hint="Click to see all assets and select one to ignore"
-                  class="manual-balances-form__asset"
+                  class="settings-accounting__asset-to-ignore"
                 ></asset-select>
               </v-col>
               <v-col cols="2">
@@ -89,7 +89,7 @@
                   value="test"
                   :items="ignoredAssets"
                   hint="Click to see all ignored assets and select one for removal"
-                  class="manual-balances-form__asset"
+                  class="settings-accounting__ignored-assets"
                 ></asset-select>
                 <div slot="append-outer">
                   <v-badge>
@@ -100,25 +100,6 @@
                     </template>
                   </v-badge>
                 </div>
-                <!-- <v-select
-                  v-model="assetToRemove"
-                  class="settings-accounting__ignored-assets"
-                  :items="ignoredAssets"
-                  hint="Click to see all ignored assets and select one for removal"
-                  label="Ignored Assets"
-                >
-                  <div slot="append-outer">
-                    <v-badge>
-                      <template #badge>
-                        <span
-                          class="settings-accounting__ignored-assets__badge"
-                        >
-                          {{ ignoredAssets.length }}
-                        </span>
-                      </template>
-                    </v-badge>
-                  </div>
-                </v-select> -->
               </v-col>
               <v-col cols="2">
                 <v-btn
