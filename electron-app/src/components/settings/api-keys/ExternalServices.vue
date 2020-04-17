@@ -6,8 +6,8 @@
           <v-card-title>External Services</v-card-title>
           <v-card-text>
             <p>
-              Rotki can connect to service providers in order to obtain more
-              details about your transactions, usually of an optional nature. In
+              Rotki connects to various service providers in order to obtain
+              information such as historical prices or blockchain data. In
               certain cases Rotki depends on these APIs for basic information,
               in which case you will need to provide an API key.
             </p>
@@ -21,7 +21,7 @@
           v-model="etherscanKey"
           class="external-services__etherscan-key"
           title="Etherscan"
-          description="Required for any Ethereum blockchain balances or transactions. Rotki uses etherscan to obtain basic information about ethereum blockchain addresses and transactions."
+          description="Required for any Ethereum blockchain balances or transactions. Rotki uses Etherscan to query Ethereum blockchain data if you are not using your own Ethereum node. If you are, it's still needed but only for historical data."
           label="API key"
           hint="Enter your Etherscan API key"
           :loading="loading"
@@ -53,7 +53,7 @@
           v-model="alethioKey"
           class="external-services__alethio-key"
           title="Alethio"
-          description="Rotki uses Alethio for supplementary Ethereum blockchain information. An API key is only needed if you have a lot of assets and are being rate-limited."
+          description="Rotki uses Alethio to query Ethereum blockchain information. An API key is only needed if you have a lot of assets and are being rate-limited."
           label="API key"
           hint="Enter your Alethio API key"
           :loading="loading"

@@ -5,10 +5,8 @@
         <v-card-title>Exchanges</v-card-title>
         <v-card-text>
           <p>
-            Rotki can connect to supported exchanges and automatically obtain
-            your trades and balances in that exchange. Each exchange may require
-            a different set of credentials for the connection, so make sure that
-            everything is provided. See the
+            Rotki can connect to supported exchanges and automatically pull your
+            your trades and balances from that exchange. See the
             <base-external-link
               href="https://rotki.readthedocs.io/en/latest/usage_guide.html#adding-an-exchange"
             >

@@ -7,7 +7,7 @@
     </v-row>
     <v-row>
       <v-col>
-        Rotki can communciate with various APIs to provide additional
+        Rotki can communicate with various APIs to provide additional
         functionality. Click each tab below to explore what is offered.
       </v-col>
     </v-row>
