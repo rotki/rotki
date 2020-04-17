@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`895` If the current price of an asset of a manually tracked balance can not be found, a value of zero is returned instead of breaking all manually tracked balances.
+
 * :release:`1.4.0 <2020-04-16>`
 * :feature:`807` Enables the addition and querying of manually tracked balances.
 * :bug:`874` Fixed a bug where if invalid credentials were given to setup an exchange a 500 error was returned. The error is now handled gracefully.
