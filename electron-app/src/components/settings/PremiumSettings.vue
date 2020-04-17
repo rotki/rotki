@@ -6,12 +6,12 @@
         <v-card-text>
           <p>
             Rotki Premium is an optional subscription service to gain access to
-            analytics and reporting features in Rotki. More information is
-            available on the
+            analytics, graphs, and unlock many additional features. For more
+            information on what is available visit the
             <base-external-link href="https://rotki.com/products/">
               Rotki Premium
             </base-external-link>
-            site.
+            website.
           </p>
           <v-text-field
             v-model="apiKey"
