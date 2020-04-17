@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import InputError
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.typing import Location
+from rotkehlchen.typing import Location, Price
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -30,15 +31,18 @@ class ManuallyTrackedBalanceWithValue(NamedTuple):
 
 
 def get_manually_tracked_balances(db: 'DBHandler') -> List[ManuallyTrackedBalanceWithValue]:
-    """Gets the manually tracked balances
-
-    May raise:
-    - RemoteError if there is a problem querying for the current price of an asset
-    """
+    """Gets the manually tracked balances"""
     balances = db.get_manually_tracked_balances()
     balances_with_value = []
     for entry in balances:
-        price = Inquirer().find_usd_price(entry.asset)
+        try:
+            price = Inquirer().find_usd_price(entry.asset)
+        except RemoteError as e:
+            db.msg_aggregator.add_warning(
+                f'Could not find price for {entry.asset.identifier} during '
+                f'manually tracked balance querying due to {str(e)}',
+            )
+            price = Price(ZERO)
         # https://github.com/python/mypy/issues/2582 --> for the type ignore below
         balances_with_value.append(ManuallyTrackedBalanceWithValue(  # type: ignore
             **entry._asdict(),
