@@ -50,13 +50,13 @@ export default class AssetSelect extends Vue {
   supportedAssets!: SupportedAsset[];
 
   @Prop({ required: false, default: null })
-  items?: string[];
+  items!: string[] | null;
 
   @Prop({ required: false, default: '' })
-  hint?: string;
+  hint!: string;
 
   @Prop({ required: false, default: 'Asset' })
-  label?: string;
+  label!: string;
 
   @Prop({ required: true, default: '' })
   value!: string;
@@ -72,12 +72,9 @@ export default class AssetSelect extends Vue {
 
   get assets(): SupportedAsset[] {
     if (this.items) {
-      const filteredAssets = this.supportedAssets.filter(asset => {
-        if (this.items!.find(item => item === asset.key)) {
-          return asset;
-        }
-      });
-      return filteredAssets;
+      return this.supportedAssets.filter(asset =>
+        this.items!.includes(asset.key)
+      );
     }
 
     return this.supportedAssets;
