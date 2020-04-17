@@ -62,12 +62,12 @@
           <v-card-text>
             <v-row>
               <v-col cols="10">
-                <v-text-field
+                <asset-select
                   v-model="assetToIgnore"
-                  class="settings-accounting__asset"
-                  label="Asset To Ignore"
-                  @keyup.enter="addAsset()"
-                ></v-text-field>
+                  label="Select asset to ignore"
+                  hint="Click to see all assets and select one to ignore"
+                  class="manual-balances-form__asset"
+                ></asset-select>
               </v-col>
               <v-col cols="2">
                 <v-btn
@@ -82,8 +82,25 @@
               </v-col>
             </v-row>
             <v-row>
-              <v-col cols="10">
-                <v-select
+              <v-col cols="10" style="display: flex;">
+                <asset-select
+                  v-model="assetToRemove"
+                  label="Select asset to remove from ignored assets"
+                  value="test"
+                  :items="ignoredAssets"
+                  hint="Click to see all ignored assets and select one for removal"
+                  class="manual-balances-form__asset"
+                ></asset-select>
+                <div slot="append-outer">
+                  <v-badge>
+                    <template #badge>
+                      <span class="settings-accounting__ignored-assets__badge">
+                        {{ ignoredAssets.length }}
+                      </span>
+                    </template>
+                  </v-badge>
+                </div>
+                <!-- <v-select
                   v-model="assetToRemove"
                   class="settings-accounting__ignored-assets"
                   :items="ignoredAssets"
@@ -101,7 +118,7 @@
                       </template>
                     </v-badge>
                   </div>
-                </v-select>
+                </v-select> -->
               </v-col>
               <v-col cols="2">
                 <v-btn
@@ -126,14 +143,17 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { Message } from '@/store/store';
+
 import { AccountingSettings } from '@/typing/types';
 
 const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
-    MessageDialog
+    MessageDialog,
+    AssetSelect
   },
   computed: mapState(['accountingSettings'])
 })
@@ -148,6 +168,8 @@ export default class Accounting extends Vue {
   ignoredAssets: string[] = [];
   assetToIgnore: string = '';
   assetToRemove: string = '';
+
+  asset: string = '';
 
   taxFreeRules = [
     (v: string) => !!v || 'Please enter the number of days',

@@ -2,10 +2,11 @@
   <v-autocomplete
     :value="value"
     :disabled="disabled"
-    :items="supportedAssets"
+    :items="assets"
     class="asset-select"
+    :hint="hint"
     single-line
-    label="Asset"
+    :label="label"
     :rules="rules"
     item-value="key"
     :item-text="assetText"
@@ -48,6 +49,15 @@ const { mapState } = createNamespacedHelpers('balances');
 export default class AssetSelect extends Vue {
   supportedAssets!: SupportedAsset[];
 
+  @Prop({ required: false, default: null })
+  items?: string[];
+
+  @Prop({ required: false, default: '' })
+  hint?: string;
+
+  @Prop({ required: false, default: 'Asset' })
+  label?: string;
+
   @Prop({ required: true, default: '' })
   value!: string;
 
@@ -59,6 +69,19 @@ export default class AssetSelect extends Vue {
 
   @Emit()
   input(_value: string) {}
+
+  get assets(): SupportedAsset[] {
+    if (this.items) {
+      const filteredAssets = this.supportedAssets.filter(asset => {
+        if (this.items!.find(item => item === asset.key)) {
+          return asset;
+        }
+      });
+      return filteredAssets;
+    }
+
+    return this.supportedAssets;
+  }
 
   assetText(asset: SupportedAsset): string {
     return `${asset.symbol} ${asset.name}`;
