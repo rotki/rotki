@@ -13,6 +13,7 @@ from rotkehlchen.tests.utils.database import (
     add_manually_tracked_balances_to_test_db,
     add_settings_to_test_db,
     add_tags_to_test_db,
+    maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
 )
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
@@ -71,6 +72,7 @@ def initialize_mock_rotkehlchen_instance(
         blockchain_accounts,
         owned_eth_tokens,
         include_etherscan_key,
+        include_cryptocompare_key,
         should_mock_price_queries,
         mocked_price_queries,
         ethereum_modules,
@@ -98,6 +100,7 @@ def initialize_mock_rotkehlchen_instance(
         rotki.chain_manager.accounts = blockchain_accounts
         add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets)
         maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
+        maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
         add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
         add_tags_to_test_db(rotki.data.db, tags)
         add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
@@ -126,6 +129,7 @@ def rotkehlchen_api_server(
         blockchain_accounts,
         owned_eth_tokens,
         include_etherscan_key,
+        include_cryptocompare_key,
         should_mock_price_queries,
         mocked_price_queries,
         ethereum_modules,
@@ -148,6 +152,7 @@ def rotkehlchen_api_server(
         blockchain_accounts=blockchain_accounts,
         owned_eth_tokens=owned_eth_tokens,
         include_etherscan_key=include_etherscan_key,
+        include_cryptocompare_key=include_cryptocompare_key,
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,
         ethereum_modules=ethereum_modules,
@@ -170,6 +175,7 @@ def rotkehlchen_instance(
         blockchain_accounts,
         owned_eth_tokens,
         include_etherscan_key,
+        include_cryptocompare_key,
         should_mock_price_queries,
         mocked_price_queries,
         ethereum_modules,
@@ -190,6 +196,7 @@ def rotkehlchen_instance(
         blockchain_accounts=blockchain_accounts,
         owned_eth_tokens=owned_eth_tokens,
         include_etherscan_key=include_etherscan_key,
+        include_cryptocompare_key=include_cryptocompare_key,
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,
         ethereum_modules=ethereum_modules,

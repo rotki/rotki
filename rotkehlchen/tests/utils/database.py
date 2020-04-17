@@ -24,6 +24,16 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
     )])
 
 
+def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bool) -> None:
+    if not include_cryptocompare_key:
+        return
+    # Add the tests only etherscan API key
+    db.add_external_service_credentials([ExternalServiceApiCredentials(
+        service=ExternalService.CRYPTOCOMPARE,
+        api_key=ApiKey('e929bcf68fa28715fa95f3bfa3baa3b9a6bc8f12112835586c705ab038ee06aa'),
+    )])
+
+
 def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: BlockchainAccounts) -> None:
     db.add_blockchain_accounts(
         SupportedBlockchain.ETHEREUM,
