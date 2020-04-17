@@ -60,12 +60,16 @@ def _populate_tags(api_server):
 def assert_balances_match(
         expected_balances: List[Dict[str, Any]],
         returned_balances: List[Dict[str, Any]],
+        expect_found_price: bool = True,
 ) -> None:
     assert len(returned_balances) == len(expected_balances)
     for idx, entry in enumerate(reversed(returned_balances)):
         for key, val in entry.items():
             if key == 'usd_value':
-                assert FVal(val) > ZERO
+                if expect_found_price:
+                    assert FVal(val) > ZERO
+                else:
+                    assert FVal(val) == ZERO
                 continue
             if key == 'tags':
                 if val is None:
@@ -137,6 +141,45 @@ def test_add_and_query_manually_tracked_balances(
     )
     result = assert_proper_response_with_result(response)
     assert_balances_match(expected_balances=balances, returned_balances=result['balances'])
+
+
+def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
+    """Test that adding a manually tracked balance of an asset for which we cant
+    query a price is handled properly both in the adding and querying part
+
+    Regression test for https://github.com/rotki/rotki/issues/896"""
+    _populate_tags(rotkehlchen_api_server)
+    balances: List[Dict[str, Any]] = [{
+        "asset": "CYFM",
+        "label": "CUFM account",
+        "amount": "50.315",
+        "tags": ["public"],
+        "location": "blockchain",
+    }]
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ), json={'balances': balances},
+    )
+    result = assert_proper_response_with_result(response)
+    assert_balances_match(
+        expected_balances=balances,
+        returned_balances=result['balances'],
+        expect_found_price=False,
+    )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "manuallytrackedbalancesresource",
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert_balances_match(
+        expected_balances=balances,
+        returned_balances=result['balances'],
+        expect_found_price=False,
+    )
 
 
 def test_edit_manually_tracked_balances(
