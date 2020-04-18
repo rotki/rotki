@@ -1,3 +1,4 @@
+import random
 from typing import Any, Dict, List, Optional
 
 from rotkehlchen.assets.asset import Asset
@@ -27,10 +28,16 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
 def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bool) -> None:
     if not include_cryptocompare_key:
         return
+    keys = [
+        'a4a36d7fd1835cc1d757186de8e7357b4478b73923933d09d3689140ecc23c03',
+        'e929bcf68fa28715fa95f3bfa3baa3b9a6bc8f12112835586c705ab038ee06aa',
+        '5159ca00f2579ef634b7f210ad725550572afbfb44e409460dd8a908d1c6416a',
+        '6781b638eca6c3ca51a87efcdf0b9032397379a0810c5f8198a25493161c318d',
+    ]
     # Add the tests only etherscan API key
     db.add_external_service_credentials([ExternalServiceApiCredentials(
         service=ExternalService.CRYPTOCOMPARE,
-        api_key=ApiKey('e929bcf68fa28715fa95f3bfa3baa3b9a6bc8f12112835586c705ab038ee06aa'),
+        api_key=ApiKey(random.choice(keys)),
     )])
 
 
