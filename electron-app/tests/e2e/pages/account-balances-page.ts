@@ -75,4 +75,10 @@ export class AccountBalancesPage {
     cy.contains('.confirm-dialog__title', 'Delete manually tracked balance');
     cy.get('.confirm-dialog__buttons__confirm').click();
   }
+
+  showsCurrency(currency: string) {
+    cy.get('.manual-balances-list')
+      .contains(`${currency} Value`)
+      .should('be.visible');
+  }
 }
