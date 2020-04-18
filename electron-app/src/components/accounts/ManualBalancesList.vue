@@ -34,6 +34,9 @@
               </v-col>
             </v-row>
           </template>
+          <template #header.usdValue>
+            {{ currency.ticker_symbol }} Value
+          </template>
           <template #item.asset="{ item }">
             <asset-details :asset="item.asset"></asset-details>
           </template>

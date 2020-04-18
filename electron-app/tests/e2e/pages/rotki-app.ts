@@ -34,6 +34,11 @@ export class RotkiApp {
     cy.get('.confirm-dialog__buttons__confirm').click();
   }
 
+  changeCurrency(currency: string) {
+    cy.get('.currency-dropdown').click();
+    cy.get(`#change-to-${currency.toLocaleLowerCase()}`).click();
+  }
+
   logoutApi(username: string, cb: () => void) {
     axios
       .create({

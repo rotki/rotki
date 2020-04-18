@@ -46,6 +46,11 @@ describe('Accounts', () => {
       page.isVisible(0, manualBalances[0]);
     });
 
+    it('change currency', () => {
+      app.changeCurrency('EUR');
+      page.showsCurrency('EUR');
+    });
+
     it('add second entry', () => {
       page.addBalance(manualBalances[1]);
       page.visibleEntries(2);
