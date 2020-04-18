@@ -10,7 +10,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.makerdao import MakerDAO
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_REP
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnableToDecryptRemoteData
@@ -647,6 +647,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
         for account in accounts:
             balances = self.alethio.get_token_balances(account)
             for token, balance in balances.items():
+                if token.identifier == 'REP-old':
+                    # Handle the special case for the Alethio old REP bug
+                    # https://github.com/rotki/rotki/issues/899
+                    balance = ChainManager._query_token_balances(
+                        token_asset=A_REP,
+                        query_callback=self.ethereum.get_token_balance,
+                        argument=account,
+                    )
+                    token = A_REP
+
                 if balance != ZERO:
                     try:
                         usd_price = token_usd_price.get(
