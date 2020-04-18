@@ -8,7 +8,7 @@
             Rotki Premium is an optional subscription service to gain access to
             analytics, graphs, and unlock many additional features. For more
             information on what is available visit the
-            <base-external-link href="https://rotki.com/products/">
+            <base-external-link :href="$interop.premiumURL">
               Rotki Premium
             </base-external-link>
             website.

@@ -10,7 +10,7 @@
         No premium subscription detected. Statistics are only available to
         premium users. <br />
         To get a premium subscription please visit our
-        <base-external-link href="https://rotki.com/products/">
+        <base-external-link :href="$interop.premiumURL">
           website.
         </base-external-link>
       </div>

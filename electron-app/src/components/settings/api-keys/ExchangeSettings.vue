@@ -8,7 +8,7 @@
             Rotki can connect to supported exchanges and automatically pull your
             your trades and balances from that exchange. See the
             <base-external-link
-              href="https://rotki.readthedocs.io/en/latest/usage_guide.html#adding-an-exchange"
+              :href="$interop.usageGuideURL + '#adding-an-exchange'"
             >
               Usage Guide
             </base-external-link>

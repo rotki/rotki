@@ -1,8 +1,8 @@
 <template>
   <a
-    :href="$interop ? undefined : href"
+    :href="$interop.isPackaged ? undefined : href"
     target="_blank"
-    @click="$interop ? openLink() : undefined"
+    @click="$interop.isPackaged ? openLink() : undefined"
   >
     <slot></slot>
   </a>
