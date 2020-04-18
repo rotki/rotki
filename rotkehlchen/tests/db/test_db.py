@@ -1028,6 +1028,7 @@ def test_unlock_with_invalid_premium_data(data_dir, username):
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
+@pytest.mark.parametrize('include_cryptocompare_key', [False])
 def test_get_external_service_credentials(database):
     # Test that if the service is not in DB 'None' is returned
     for service in ExternalService:

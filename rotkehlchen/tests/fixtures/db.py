@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Any, Dict, List, Optional
 
 import pytest
@@ -64,14 +65,14 @@ def session_user_data_dir(session_data_dir, session_username):
 
 @pytest.fixture
 def include_cryptocompare_key() -> bool:
-    """By default use a cryptocompare API key only in the CI"""
-    return 'CI' in os.environ
+    """By default use a cryptocompare API key only in the OSX CI"""
+    return 'CI' in os.environ and sys.platform == 'darwin'
 
 
 @pytest.fixture(scope='session')
 def session_include_cryptocompare_key() -> bool:
-    """By default use a cryptocompare API key only in the CI"""
-    return 'CI' in os.environ
+    """By default use a cryptocompare API key only in the OSX CI"""
+    return 'CI' in os.environ and sys.platform == 'darwin'
 
 
 @pytest.fixture
