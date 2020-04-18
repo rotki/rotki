@@ -42,7 +42,7 @@ templates:
     script:
       - .travis/run_tests.sh
     after_success:
-      - codecov -F backend
+      - bash <(curl -s https://codecov.io/bash) -F backend
 
   job-template-osx: &job-template-osx
     os: osx
@@ -113,7 +113,7 @@ jobs:
       <<: *job-template-frontend
       script:
         - npm run test:unit
-        - cd .. && bash <(curl -s https://codecov.io/bash) -c -F frontendunittests
+        - cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_unit
 
     - stage: ui-test
       <<: *job-template-linux
@@ -121,7 +121,7 @@ jobs:
       after_failure:
         - ./tools/scripts/screenshot_upload.py ./failure-screenshots
       after_success:
-        - cd .. && bash <(curl -s https://codecov.io/bash) -c -F frontendintegration
+        - bash <(curl -s https://codecov.io/bash) -F frontend_integration
 
 #    - stage: ui-test
 #      <<: *job-template-osx
