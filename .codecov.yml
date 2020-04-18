@@ -6,15 +6,11 @@ codecov:
 flags:
   backend:
     paths:
-      - /
-    ignore:
-      - "/electron-app"
-  frontendunittests:
-    joined: false
+      - rotkehlchen
+  frontend_unit:
     paths:
-      - "/electron-app"
-  frontendintegration:
-    joined: false
+      - electron-app
+  frontend_integration:
     carryforward: true
     paths:
-      - "/electron-app"
+      - electron-app

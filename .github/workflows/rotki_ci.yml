@@ -50,7 +50,7 @@ jobs:
         run: npm run test:unit
       - name: Upload coverage
         working-directory: ./electron-app
-        run: cd .. && bash <(curl -s https://codecov.io/bash) -c -F frontendunittests
+        run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_unit
   lint-backend:
     strategy:
       matrix:
@@ -142,12 +142,12 @@ jobs:
           fi
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
       - name: Upload coverage
-        run: bash <(curl -s https://codecov.io/bash) -c -F backend
+        run: bash <(curl -s https://codecov.io/bash) -F backend
   test-integration:
-    if: "contains(github.event.head_commit.message, '[ui tests]')"
     needs: [lint-frontend, test-backend]
     env:
       CI: true
+      FILTER: '[ui tests]'
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -156,51 +156,64 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+      - name: check if ui tests should run
+        run: |
+          readonly local last_log=$(git log -1 --pretty=format:"%s")
+          readonly local count=$(echo "${last_log}" | grep -c "${FILTER}" )
+          if [[ "${count}" -eq 0 ]]; then
+              echo "skipping job, ${FILTER} not found"
+          else
+              echo "::set-output name=ui-tests::true"
+          fi
       - name: Set up python
+        if: contains(steps.output.ui-tests, true)
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
       - uses: actions/cache@v1
-        if: startsWith(runner.os, 'Linux')
+        if: startsWith(runner.os, 'Linux') && contains(steps.output.ui-tests, true)
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - uses: actions/cache@v1
-        if: startsWith(runner.os, 'macOS')
+        if: startsWith(runner.os, 'macOS') && contains(steps.output.ui-tests, true)
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - uses: actions/cache@v1
-        if: startsWith(runner.os, 'Linux')
+        if: startsWith(runner.os, 'Linux') && contains(steps.output.ui-tests, true)
         with:
           path: ~/.cache/Cypress
           key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-cypress-
       - uses: actions/cache@v1
-        if: startsWith(runner.os, 'macOS')
+        if: startsWith(runner.os, 'macOS') && contains(steps.output.ui-tests, true)
         with:
           path: ~/Library/Caches/Cypress
           key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-cypress-
       - uses: actions/cache@v1
+        if: contains(steps.output.ui-tests, true)
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
       - uses: actions/cache@v1
+        if: contains(steps.output.ui-tests, true)
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-testdir-
       - name: Setup SQLCipher
+        if: contains(steps.output.ui-tests, true)
         run: |
           if [ ${{ matrix.os }} == 'ubuntu-latest' ];
           then
@@ -213,24 +226,27 @@ jobs:
             brew install sqlcipher
           fi
       - name: Setup backend
+        if: contains(steps.output.ui-tests, true)
         run: |
           pip install -r requirements.txt
           pip install -e .
       - name: Run integration tests
+        if: contains(steps.output.ui-tests, true)
         working-directory: ./electron-app
         run: |
           npm ci
           npm run test:integration-ci
       - name: Upload coverage
+        if: contains(steps.output.ui-tests, true)
         working-directory: ./electron-app
-        run: cd .. && bash <(curl -s https://codecov.io/bash) -c -F frontendintegration
+        run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_integration
       - uses: actions/upload-artifact@v1
-        if: failure()
+        if: failure() && contains(steps.output.ui-tests, true)
         with:
           name: screenshots-${{ runner.os }}
           path: ./electron-app/tests/e2e/screenshots
       - uses: actions/upload-artifact@v1
-        if: always()
+        if: always() && contains(steps.output.ui-tests, true)
         with:
           name: videos-${{ runner.os }}
           path: ./electron-app/tests/e2e/videos

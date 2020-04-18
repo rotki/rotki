@@ -6,12 +6,7 @@ const plugins = [
 ];
 
 if (CODE_COVERAGE === 'true') {
-  plugins.push([
-    'istanbul',
-    {
-      useInlineSourceMaps: false
-    }
-  ]);
+  plugins.push('istanbul');
 }
 
 module.exports = {
