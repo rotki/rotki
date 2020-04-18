@@ -7427,6 +7427,14 @@
         "symbol": "REP",
         "type": "ethereum token"
     },
+    "REP-old": {
+        "ethereum_address": "0x48c80F1f4D53D5951e5D5438B54Cba84f29F32a5",
+        "ethereum_token_decimals": 18,
+        "name": "Augur old",
+        "started": 1416182400,
+        "symbol": "REP",
+        "type": "ethereum token"
+    },
     "REQ": {
         "ethereum_address": "0x8f8221aFbB33998d8584A2B05749bA73c37a938a",
         "ethereum_token_decimals": 18,
