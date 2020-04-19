@@ -330,7 +330,7 @@ class MockKraken(Kraken):
 
         self.balance_data_return = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
         # Not required in the real Kraken instance but we use it in the tests
-        self.tradeable_pairs = self.query_public('AssetPairs')
+        self.tradeable_pairs = self.api_query('AssetPairs')
 
     def query_private(self, method: str, req: Optional[dict] = None) -> dict:
         # Pretty ugly ... mock a kraken remote eror
@@ -372,4 +372,4 @@ class MockKraken(Kraken):
 
             return rlk_jsonloads_dict(response)
 
-        return super().query_private(method, req)
+        return super().api_query(method, req)

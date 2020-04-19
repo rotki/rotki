@@ -5,9 +5,11 @@ import hashlib
 import hmac
 import logging
 import time
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
+import gevent
 from gevent.lock import Semaphore
 from requests import Response
 
@@ -17,7 +19,6 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
-    RecoverableRequestError,
     RemoteError,
     UnknownAsset,
     UnprocessableTradePair,
@@ -44,7 +45,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import retry_calls
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
@@ -56,6 +57,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
+KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
+KRAKEN_QUERY_TRIES = 8
 
 
 def kraken_to_world_pair(pair: str) -> TradePair:
@@ -207,11 +210,16 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     )
 
 
-def _check_and_get_response(response: Response, method: str) -> dict:
-    """Checks the kraken response and if it's succesfull returns the result. If there
-    is an error an exception is raised"""
+def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]:
+    """Checks the kraken response and if it's succesfull returns the result.
+
+    If there is recoverable error a string is returned explaining the error
+    May raise:
+    - RemoteError if there is an unrecoverable/unexpected remote error
+    """
     if response.status_code in (520, 525, 504):
-        raise RecoverableRequestError('kraken', 'Usual kraken 5xx shenanigans')
+        log.debug(f'Kraken returned status code {response.status_code}')
+        return 'Usual kraken 5xx shenanigans'
     elif response.status_code != 200:
         raise RemoteError(
             'Kraken API request {} for {} failed with HTTP status '
@@ -229,11 +237,18 @@ def _check_and_get_response(response: Response, method: str) -> dict:
             error = result['error']
 
         if 'Rate limit exceeded' in error:
-            raise RecoverableRequestError('kraken', 'Rate limited exceeded')
+            log.debug(f'Kraken: Got rate limit exceeded error: {error}')
+            return 'Rate limited exceeded'
         else:
             raise RemoteError(error)
 
     return result['result']
+
+
+class KrakenAccountType(Enum):
+    STARTER = 0
+    INTERMEDIATE = 1
+    PRO = 2
 
 
 class Kraken(ExchangeInterface):
@@ -250,6 +265,18 @@ class Kraken(ExchangeInterface):
             'API-Key': self.api_key,
         })
         self.nonce_lock = Semaphore()
+        self.account_type = KrakenAccountType.STARTER
+        self.call_counter = 0
+        if self.account_type == KrakenAccountType.STARTER:
+            self.call_limit = 15
+            self.reduction_every_secs = 3
+        elif self.account_type == KrakenAccountType.INTERMEDIATE:
+            self.call_limit = 20
+            self.reduction_every_secs = 2
+        else:
+            self.call_limit = 20
+            self.reduction_every_secs = 1
+        self.last_query_ts = 0
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen
@@ -282,7 +309,7 @@ class Kraken(ExchangeInterface):
             req: Optional[Dict[str, Any]] = None,
     ) -> Tuple[bool, str]:
         try:
-            self.query_private(method_str, req)
+            self.api_query(method_str, req)
         except (RemoteError, ValueError) as e:
             error = str(e)
             if 'Incorrect padding' in error:
@@ -308,7 +335,14 @@ class Kraken(ExchangeInterface):
     def first_connection(self) -> None:
         self.first_connection_made = True
 
-    def _query_public(self, method: str, req: Optional[dict] = None) -> dict:
+    def _manage_call_counter(self, method: str) -> None:
+        self.last_query_ts = ts_now()
+        if method in ('Ledgers', 'TradesHistory'):
+            self.call_counter += 2
+        else:
+            self.call_counter += 1
+
+    def _query_public(self, method: str, req: Optional[dict] = None) -> Union[Dict, str]:
         """API queries that do not require a valid key/secret pair.
 
         Arguments:
@@ -318,35 +352,62 @@ class Kraken(ExchangeInterface):
         if req is None:
             req = {}
         urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
-        log.debug('Kraken Public API query', request_url=urlpath, data=req)
         response = self.session.post(urlpath, data=req)
+        self._manage_call_counter(method)
         return _check_and_get_response(response, method)
 
-    def query_public(self, method: str, req: Optional[dict] = None) -> dict:
-        return retry_calls(
-            times=5, location='kraken',
-            handle_429=False,
-            backoff_in_seconds=0,
-            method_name=method,
-            function=self._query_public,
-            # function's arguments
-            method=method,
-            req=req,
+    def api_query(self, method: str, req: Optional[dict] = None) -> dict:
+        tries = KRAKEN_QUERY_TRIES
+        query_method = (
+            self._query_public if method in KRAKEN_PUBLIC_METHODS else self._query_private
+        )
+        while tries > 0:
+            if self.call_counter + 2 > self.call_limit:
+                # If we are close to the limit, check how much our call counter reduced
+                # https://www.kraken.com/features/api#api-call-rate-limit
+                # +2 is for the maximum call counter increase amount possible
+                secs_since_last_call = ts_now() - self.last_query_ts
+                self.call_counter = max(
+                    0,
+                    self.call_counter - int(secs_since_last_call / self.reduction_every_secs),
+                )
+                # If still at limit, sleep for an amount big enough for smallest tier reduction
+                # +2 is for the maximum call counter increase amount possible
+                if self.call_counter + 2 > self.call_limit:
+                    backoff_in_seconds = 4
+                    log.debug(
+                        f'Doing a Kraken API call would now exceed our call counter limit. '
+                        f'Backing off for {backoff_in_seconds} seconds',
+                        call_counter=self.call_counter,
+                    )
+                    gevent.sleep(backoff_in_seconds)
+                    continue
+
+            log.debug(
+                'Kraken API query',
+                method=method,
+                data=req,
+                call_counter=self.call_counter,
+            )
+            result = query_method(method, req)
+            if isinstance(result, str):
+                # Got a recoverable error
+                backoff_in_seconds = int(15 / tries)
+                log.debug(
+                    f'Got recoverable error {result} in a Kraken query of {method}. Will backoff '
+                    f'for {backoff_in_seconds} seconds',
+                )
+                gevent.sleep(backoff_in_seconds)
+                continue
+
+            # else success
+            return result
+
+        raise RemoteError(
+            f'After {KRAKEN_QUERY_TRIES} kraken query for {method} could still not be completed',
         )
 
-    def query_private(self, method: str, req: Optional[dict] = None) -> dict:
-        return retry_calls(
-            times=5, location='kraken',
-            handle_429=False,
-            backoff_in_seconds=0,
-            method_name=method,
-            function=self._query_private,
-            # function's arguments
-            method=method,
-            req=req,
-        )
-
-    def _query_private(self, method: str, req: Optional[dict] = None) -> dict:
+    def _query_private(self, method: str, req: Optional[dict] = None) -> Union[Dict, str]:
         """API queries that require a valid key/secret pair.
 
         Arguments:
@@ -374,11 +435,11 @@ class Kraken(ExchangeInterface):
             self.session.headers.update({
                 'API-Sign': base64.b64encode(signature.digest()),  # type: ignore
             })
-            log.debug('Kraken Private API query', request_url=urlpath, data=post_data)
             response = self.session.post(
                 KRAKEN_BASE_URL + urlpath,
                 data=post_data.encode(),
             )
+            self._manage_call_counter(method)
 
         return _check_and_get_response(response, method)
 
@@ -387,7 +448,7 @@ class Kraken(ExchangeInterface):
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
-            old_balances = self.query_private('Balance', req={})
+            old_balances = self.api_query('Balance', req={})
 
         except RemoteError as e:
             msg = (
@@ -564,7 +625,7 @@ class Kraken(ExchangeInterface):
             request['ofs'] = offset
         if extra_dict is not None:
             request.update(extra_dict)
-        result = self.query_private(endpoint, request)
+        result = self.api_query(endpoint, request)
         return result
 
     def query_online_deposits_withdrawals(
