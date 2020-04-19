@@ -8,6 +8,7 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `Rupiah token (IDRT) <https://coinmarketcap.com/currencies/rupiah-token/>`__
+  - `Exchange Union (XUC) <https://coinmarketcap.com/currencies/exchange-union/>`__
 
 * :release:`1.4.0 <2020-04-16>`
 * :feature:`807` Enables the addition and querying of manually tracked balances.
