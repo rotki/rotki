@@ -4615,6 +4615,14 @@
         "symbol": "IDH",
         "type": "ethereum token"
     },
+    "IDRT": {
+        "ethereum_address": "0x998FFE1E43fAcffb941dc337dD0468d52bA5b48A",
+        "ethereum_token_decimals": 18,
+        "name": "Rupiah Token",
+        "started": 1554879530,
+        "symbol": "IDRT",
+        "type": "ethereum token"
+    },
     "IDXM": {
         "ethereum_address": "0xCc13Fc627EFfd6E35D2D2706Ea3C4D7396c610ea",
         "ethereum_token_decimals": 8,
