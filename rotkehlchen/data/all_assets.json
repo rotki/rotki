@@ -9989,6 +9989,14 @@
         "symbol": "XTZ",
         "type": "own chain"
     },
+    "XUC": {
+        "ethereum_address": "0xc324a2f6b05880503444451B8b27e6f9e63287Cb",
+        "ethereum_token_decimals": 18,
+        "name": "Exchange Union",
+        "started": 1502428013,
+        "symbol": "XUC",
+        "type": "ethereum token"
+    },
     "XVC": {
         "active": false,
         "ended": 1533340800,
