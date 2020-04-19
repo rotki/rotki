@@ -18,7 +18,6 @@ from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     ConversionError,
     DeserializationError,
-    RecoverableRequestError,
     RemoteError,
     UnableToDecryptRemoteData,
 )
@@ -164,15 +163,20 @@ def retry_calls(
 
             if handle_429:
                 if result.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries != 0:
+                    log.debug(
+                        f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
+                        f'{backoff_in_seconds} seconds',
+                    )
                     gevent.sleep(backoff_in_seconds)
                     continue
             return result
 
-        except (requests.exceptions.ConnectionError, RecoverableRequestError) as e:
-            if isinstance(e, RecoverableRequestError):
-                time.sleep(5)
-
+        except (requests.exceptions.ConnectionError) as e:
             tries -= 1
+            log.debug(
+                f'In retry_call for {location}-{method_name}. Got error {str(e)} '
+                f'Trying again ... with {tries} tries left',
+            )
             if tries == 0:
                 raise RemoteError(
                     "{} query for {} failed after {} tries. Reason: {}".format(
