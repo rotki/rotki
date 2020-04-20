@@ -19,6 +19,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_DATE_DISPLAY_FORMAT,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
+    DEFAULT_KRAKEN_ACCOUNT_TYPE,
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_START_DATE,
     DEFAULT_UI_FLOATING_PRECISION,
@@ -265,6 +266,7 @@ def test_writting_fetching_data(data_dir, username):
         'premium_should_sync': False,
         'submit_usage_analytics': True,
         'last_write_ts': 0,
+        'kraken_account_type': DEFAULT_KRAKEN_ACCOUNT_TYPE,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

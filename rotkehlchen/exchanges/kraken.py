@@ -59,6 +59,7 @@ log = RotkehlchenLogsAdapter(logger)
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
 KRAKEN_QUERY_TRIES = 8
+MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
 
 
 def kraken_to_world_pair(pair: str) -> TradePair:
@@ -250,6 +251,30 @@ class KrakenAccountType(Enum):
     INTERMEDIATE = 1
     PRO = 2
 
+    def __str__(self) -> str:
+        if self == KrakenAccountType.STARTER:
+            return 'starter'
+        elif self == KrakenAccountType.INTERMEDIATE:
+            return 'intermediate'
+        elif self == KrakenAccountType.PRO:
+            return 'pro'
+
+        raise RuntimeError(f'Corrupt value {self} for KrakenAcountType -- Should never happen')
+
+    def serialize(self) -> str:
+        return str(self)
+
+    @staticmethod
+    def deserialize(symbol: str) -> 'KrakenAccountType':
+        if symbol == 'starter':
+            return KrakenAccountType.STARTER
+        elif symbol == 'intermediate':
+            return KrakenAccountType.INTERMEDIATE
+        elif symbol == 'pro':
+            return KrakenAccountType.PRO
+
+        raise DeserializationError(f'Tried to deserialized invalid kraken account type: {symbol}')
+
 
 class Kraken(ExchangeInterface):
     def __init__(
@@ -258,6 +283,7 @@ class Kraken(ExchangeInterface):
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
+            account_type: KrakenAccountType = KrakenAccountType.STARTER,
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, database)
         self.msg_aggregator = msg_aggregator
@@ -265,18 +291,21 @@ class Kraken(ExchangeInterface):
             'API-Key': self.api_key,
         })
         self.nonce_lock = Semaphore()
-        self.account_type = KrakenAccountType.STARTER
+        self.set_account_type(account_type)
         self.call_counter = 0
+        self.last_query_ts = 0
+
+    def set_account_type(self, account_type: KrakenAccountType) -> None:
+        self.account_type = account_type
         if self.account_type == KrakenAccountType.STARTER:
             self.call_limit = 15
             self.reduction_every_secs = 3
         elif self.account_type == KrakenAccountType.INTERMEDIATE:
             self.call_limit = 20
             self.reduction_every_secs = 2
-        else:
+        else:  # Pro
             self.call_limit = 20
             self.reduction_every_secs = 1
-        self.last_query_ts = 0
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen
@@ -362,19 +391,17 @@ class Kraken(ExchangeInterface):
             self._query_public if method in KRAKEN_PUBLIC_METHODS else self._query_private
         )
         while tries > 0:
-            if self.call_counter + 2 > self.call_limit:
+            if self.call_counter + MAX_CALL_COUNTER_INCREASE > self.call_limit:
                 # If we are close to the limit, check how much our call counter reduced
                 # https://www.kraken.com/features/api#api-call-rate-limit
-                # +2 is for the maximum call counter increase amount possible
                 secs_since_last_call = ts_now() - self.last_query_ts
                 self.call_counter = max(
                     0,
                     self.call_counter - int(secs_since_last_call / self.reduction_every_secs),
                 )
                 # If still at limit, sleep for an amount big enough for smallest tier reduction
-                # +2 is for the maximum call counter increase amount possible
-                if self.call_counter + 2 > self.call_limit:
-                    backoff_in_seconds = 4
+                if self.call_counter + MAX_CALL_COUNTER_INCREASE > self.call_limit:
+                    backoff_in_seconds = self.reduction_every_secs * 2
                     log.debug(
                         f'Doing a Kraken API call would now exceed our call counter limit. '
                         f'Backing off for {backoff_in_seconds} seconds',
