@@ -69,10 +69,12 @@
             @click:append="showKey = !showKey"
           ></v-text-field>
           <v-select
+            v-if="selectedExchange === 'kraken'"
             v-model="selectedKrakenAccountType"
             class=""
             :items="krakenAccountTypes"
             label="Select the type of your Kraken account"
+            @change="onChangeKrakenAccountType"
           ></v-select>
         </v-card-text>
         <v-card-actions>
@@ -108,19 +110,19 @@ import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import { convertToGeneralSettings } from '@/data/converters';
 import { exchanges } from '@/data/defaults';
 import { Message } from '@/store/store';
-import { GeneralSettings } from '@/typing/types';
 
-const { mapState } = createNamespacedHelpers('session');
+const { mapState } = createNamespacedHelpers('balances');
+const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
   components: { ConfirmDialog, MessageDialog, ExchangeBadge, BaseExternalLink },
   computed: {
     ...mapState(['connectedExchanges']),
-    ...mapState(['settings'])
+    ...mapGetters(['krakenAccountType'])
   }
 })
 export default class ExchangeSettings extends Vue {
-  settings!: GeneralSettings;
+  krakenAccountType!: string;
   apiKey: string = '';
   apiSecret: string = '';
   passphrase: string | null = null;
@@ -136,7 +138,7 @@ export default class ExchangeSettings extends Vue {
   selectedKrakenAccountType = '';
 
   mounted() {
-    this.selectedKrakenAccountType = this.settings.krakenAccountType;
+    this.selectedKrakenAccountType = this.krakenAccountType;
   }
 
   @Watch('selectedExchange')
@@ -144,7 +146,6 @@ export default class ExchangeSettings extends Vue {
     this.resetFields();
   }
 
-  @Watch('selectedKrakenAccountType')
   onChangeKrakenAccountType() {
     const { commit } = this.$store;
     this.$api

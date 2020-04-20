@@ -10,8 +10,8 @@ export class Defaults {
 }
 
 export const exchanges = [
-  'kraken',
   'poloniex',
+  'kraken',
   'bittrex',
   'bitmex',
   'binance',
