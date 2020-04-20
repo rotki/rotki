@@ -50,6 +50,7 @@ from rotkehlchen.api.v1.encoding import (
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -154,6 +155,7 @@ class SettingsResource(BaseResource):
             eth_rpc_endpoint: Optional[str],
             main_currency: Optional[Asset],
             date_display_format: Optional[str],
+            kraken_account_type: Optional[KrakenAccountType],
     ) -> Response:
         settings = ModifiableDBSettings(
             premium_should_sync=premium_should_sync,
@@ -168,6 +170,7 @@ class SettingsResource(BaseResource):
             main_currency=main_currency,
             date_display_format=date_display_format,
             submit_usage_analytics=submit_usage_analytics,
+            kraken_account_type=kraken_account_type,
         )
         return self.rest_api.set_settings(settings)
 

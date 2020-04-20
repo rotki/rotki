@@ -6,6 +6,7 @@ from rotkehlchen.chain.ethereum.makerdao import DSRCurrentBalances
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db
 from rotkehlchen.typing import EthTokenInfo, Location, TradeType
@@ -62,7 +63,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         raise ValueError('Query results should not contain plain tuples')
     elif isinstance(entry, Asset):
         return entry.identifier
-    elif isinstance(entry, (TradeType, Location)):
+    elif isinstance(entry, (TradeType, Location, KrakenAccountType)):
         return str(entry)
     else:
         return entry

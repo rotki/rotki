@@ -5,6 +5,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -20,6 +21,7 @@ DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
+DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 
 
 class DBSettings(NamedTuple):
@@ -40,6 +42,7 @@ class DBSettings(NamedTuple):
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
+    kraken_account_type: KrakenAccountType = DEFAULT_KRAKEN_ACCOUNT_TYPE
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -55,6 +58,7 @@ class ModifiableDBSettings(NamedTuple):
     main_currency: Optional[Asset] = None
     date_display_format: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
+    kraken_account_type: Optional[KrakenAccountType] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -65,11 +69,13 @@ class ModifiableDBSettings(NamedTuple):
                 if isinstance(value, bool):
                     value = str(value)
                 # main currency needs to have only its identifier
-                if setting == 'main_currency':
+                elif setting == 'main_currency':
                     value = value.identifier  # pylint: disable=no-member
                 # taxfree_after_period of -1 by the user means disable the setting
-                if setting == 'taxfree_after_period' and value == -1:
+                elif setting == 'taxfree_after_period' and value == -1:
                     value = None
+                elif setting == 'kraken_account_type':
+                    value = value.serialize()
 
                 settings_dict[setting] = value
 
@@ -143,6 +149,8 @@ def db_settings_from_dict(
             specified_args[key] = Timestamp(int(value))
         elif key == 'submit_usage_analytics':
             specified_args[key] = read_boolean(value)
+        elif key == 'kraken_account_type':
+            specified_args[key] = KrakenAccountType.deserialize(value)
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

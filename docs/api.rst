@@ -137,7 +137,9 @@ Handling user creation, sign-in, log-out and querying
                   "eth_rpc_endpoint": "http://localhost:8545",
                   "main_currency": "USD",
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
-                  "last_balance_save": 1571552172
+                  "last_balance_save": 1571552172,
+                  "submit_usage_analytics": true,
+                  "kraken_account_type": "intermediate"
               }
           },
           "message": ""
@@ -196,7 +198,9 @@ Handling user creation, sign-in, log-out and querying
                   "eth_rpc_endpoint": "http://localhost:8545",
                   "main_currency": "USD",
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
-                  "last_balance_save": 1571552172
+                  "last_balance_save": 1571552172,
+                  "submit_usage_analytics": true,
+                  "kraken_account_type": "intermediate"
               }
           },
           "message": ""
@@ -453,7 +457,8 @@ Getting or modifying settings
               "main_currency": "USD",
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
               "last_balance_save": 1571552172,
-              "submit_usage_analytics": true
+              "submit_usage_analytics": true,
+              "kraken_account_type": "intermediate"
           },
           "message": ""
       }
@@ -474,6 +479,7 @@ Getting or modifying settings
    :resjson string date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :resjson int last_balance_save: The timestamp at which the balances were last saved in the database.
    :resjson bool submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the Rotki server.
+   :resjson string kraken_account_type: The type of the user's kraken account if he has one. Valid values are "starter", "intermediate" and "pro".
 
    :statuscode 200: Querying of settings was succesful
    :statuscode 409: There is no logged in user
@@ -534,7 +540,8 @@ Getting or modifying settings
               "main_currency": "USD",
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
               "last_balance_save": 1571552172,
-              "submit_usage_analytics": true
+              "submit_usage_analytics": true,
+              "kraken_account_type": "intermediate"
           },
           "message": ""
       }

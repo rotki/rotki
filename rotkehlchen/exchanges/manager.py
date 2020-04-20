@@ -1,6 +1,6 @@
 import logging
 from importlib import import_module
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -42,6 +42,9 @@ class ExchangeManager():
 
     def get_connected_exchange_names(self) -> List[str]:
         return [e.name for _, e in self.connected_exchanges.items()]
+
+    def get(self, name: str) -> Optional[ExchangeInterface]:
+        return self.connected_exchanges.get(name, None)
 
     def setup_exchange(
             self,
@@ -101,9 +104,12 @@ class ExchangeManager():
                     )
 
                 exchange_ctor = getattr(module, name.capitalize())
-                extra_args = {}
+                extra_args: Dict[str, Any] = {}
                 if credentials.passphrase is not None:
                     extra_args['passphrase'] = credentials.passphrase
+                if name == 'kraken':
+                    settings = database.get_settings()
+                    extra_args['account_type'] = settings.kraken_account_type
                 exchange_obj = exchange_ctor(
                     api_key=credentials.api_key,
                     secret=credentials.api_secret,

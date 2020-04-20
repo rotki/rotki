@@ -13,6 +13,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import is_valid_btc_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
@@ -146,6 +147,23 @@ class TaxFreeAfterPeriodField(fields.Field):
             raise ValidationError('The taxfree_after_period value can not be set to zero')
 
         return value
+
+
+class KrakenAccountTypeField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> KrakenAccountType:
+        try:
+            acc_type = KrakenAccountType.deserialize(value)
+        except DeserializationError:
+            raise ValidationError(f'{value} is not a valid kraken account type')
+
+        return acc_type
 
 
 class AmountField(fields.Field):
@@ -643,6 +661,7 @@ class ModifiableSettingsSchema(Schema):
     main_currency = FiatAssetField(missing=None)
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
+    kraken_account_type = KrakenAccountTypeField(missing=None)
 
 
 class BaseUserSchema(Schema):

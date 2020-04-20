@@ -602,6 +602,11 @@ class Rotkehlchen():
                 if not result:
                     return False, msg
 
+            if settings.kraken_account_type is not None:
+                kraken = self.exchange_manager.get('kraken')
+                if kraken:
+                    kraken.set_account_type(settings.kraken_account_type)  # type: ignore
+
             self.data.db.set_settings(settings)
             return True, ''
 
@@ -618,7 +623,7 @@ class Rotkehlchen():
             passphrase: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """
-        Setup a new exchange with an api key and an api secret
+        Setup a new exchange with an api key and an api secret and optionally a passphrase
 
         By default the api keys are always validated unless validate is False.
         """
