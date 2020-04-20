@@ -3,6 +3,11 @@ codecov:
   notify:
     wait_for_ci: true
 
+coverage:
+  status:
+    project: off
+    patch: off
+
 flags:
   backend:
     paths:
