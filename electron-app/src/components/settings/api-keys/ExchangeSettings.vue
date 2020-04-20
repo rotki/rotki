@@ -68,6 +68,12 @@
             :type="showKey ? 'text' : 'password'"
             @click:append="showKey = !showKey"
           ></v-text-field>
+          <v-select
+            v-model="selectedKrakenAccountType"
+            class=""
+            :items="krakenAccountTypes"
+            label="Select the type of your Kraken account"
+          ></v-select>
         </v-card-text>
         <v-card-actions>
           <v-btn
@@ -99,16 +105,22 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
+import { convertToGeneralSettings } from '@/data/converters';
 import { exchanges } from '@/data/defaults';
 import { Message } from '@/store/store';
+import { GeneralSettings } from '@/typing/types';
 
-const { mapState } = createNamespacedHelpers('balances');
+const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: { ConfirmDialog, MessageDialog, ExchangeBadge, BaseExternalLink },
-  computed: mapState(['connectedExchanges'])
+  computed: {
+    ...mapState(['connectedExchanges']),
+    ...mapState(['settings'])
+  }
 })
 export default class ExchangeSettings extends Vue {
+  settings!: GeneralSettings;
   apiKey: string = '';
   apiSecret: string = '';
   passphrase: string | null = null;
@@ -120,10 +132,37 @@ export default class ExchangeSettings extends Vue {
   showPassphrase: boolean = false;
 
   connectedExchanges!: string[];
+  krakenAccountTypes = ['starter', 'intermediate', 'pro'];
+  selectedKrakenAccountType = '';
+
+  mounted() {
+    this.selectedKrakenAccountType = this.settings.krakenAccountType;
+  }
 
   @Watch('selectedExchange')
-  onChange() {
+  onChangeExchange() {
     this.resetFields();
+  }
+
+  @Watch('selectedKrakenAccountType')
+  onChangeKrakenAccountType() {
+    const { commit } = this.$store;
+    this.$api
+      .setSettings({ kraken_account_type: this.selectedKrakenAccountType })
+      .then(settings => {
+        commit('setMessage', {
+          title: 'Success',
+          description: 'Successfully set kraken account type',
+          success: true
+        } as Message);
+        commit('session/settings', convertToGeneralSettings(settings));
+      })
+      .catch(reason => {
+        commit('setMessage', {
+          title: 'Error',
+          description: `Error setting kraken account type ${reason.message}`
+        } as Message);
+      });
   }
 
   private resetFields(includeExchange: boolean = false) {
