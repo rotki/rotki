@@ -6,6 +6,7 @@ export class Defaults {
   static ANONYMIZED_LOGS = false;
   static HISTORICAL_DATA_START = '01/08/2015';
   static ANONYMOUS_USAGE_ANALYTICS = true;
+  static KRAKEN_DEFAULT_ACCOUNT_TYPE = 'starter';
 }
 
 export const exchanges = [

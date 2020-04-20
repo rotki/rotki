@@ -10,7 +10,8 @@ export const defaultSettings = (): GeneralSettings => ({
   dateDisplayFormat: Defaults.DEFAULT_DISPLAY_FORMAT,
   historicDataStart: Defaults.HISTORICAL_DATA_START,
   anonymousUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
-  selectedCurrency: currencies[0]
+  selectedCurrency: currencies[0],
+  krakenAccountType: Defaults.KRAKEN_DEFAULT_ACCOUNT_TYPE
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({

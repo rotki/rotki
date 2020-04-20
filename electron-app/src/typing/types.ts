@@ -12,6 +12,7 @@ export interface GeneralSettings {
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
   readonly selectedCurrency: Currency;
+  readonly krakenAccountType: string;
 }
 
 export interface AccountingSettings {
@@ -113,6 +114,7 @@ export interface SettingsPayload {
   include_gas_costs: boolean;
   include_crypto2crypto: boolean;
   taxfree_after_period: number;
+  kraken_account_type: string;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';

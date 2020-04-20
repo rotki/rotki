@@ -23,7 +23,8 @@ export const convertToGeneralSettings = (
   balanceSaveFrequency: settings.balance_save_frequency,
   ethRpcEndpoint: settings.eth_rpc_endpoint,
   anonymizedLogs: settings.anonymized_logs,
-  anonymousUsageAnalytics: settings.submit_usage_analytics
+  anonymousUsageAnalytics: settings.submit_usage_analytics,
+  krakenAccountType: settings.kraken_account_type
 });
 
 export const convertToAccountingSettings = (
