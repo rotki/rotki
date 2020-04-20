@@ -21,5 +21,9 @@ export const getters: GetterTree<SessionState, RotkehlchenState> = {
 
   tags: (state: SessionState) => {
     return Object.values(state.tags);
+  },
+
+  krakenAccountType: (state: SessionState) => {
+    return state.settings.krakenAccountType;
   }
 };
