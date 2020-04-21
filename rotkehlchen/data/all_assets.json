@@ -1637,6 +1637,14 @@
         "symbol": "cUSDC",
         "type": "ethereum token"
     },
+    "cWBTC": {
+        "ethereum_address": "0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
+        "ethereum_token_decimals": 8,
+        "name": "Compound Wrapped BTC",
+        "started": 1563263257,
+        "symbol": "cWBTC",
+        "type": "ethereum token"
+    },
     "CACH": {
         "active": false,
         "ended": 1541548800,
