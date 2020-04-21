@@ -87,7 +87,7 @@
       v-if="displayConfirmation"
       message="Are you sure you want to delete the trade"
       title="Delete OTC Trade"
-      display
+      :display="displayConfirmation"
       @cancel="cancelConfirmation()"
       @confirm="deleteItem()"
     ></confirm-dialog>
@@ -182,11 +182,6 @@ export default class OtcTrades extends Vue {
     this.$api
       .deleteExternalTrade(this.deleteId)
       .then(() => {
-        this.$store.commit('setMessage', {
-          title: 'Success',
-          description: 'Trade was deleted successfully',
-          success: true
-        } as Message);
         const index = this.otcTrades.findIndex(
           value => value.trade_id === this.deleteId
         );

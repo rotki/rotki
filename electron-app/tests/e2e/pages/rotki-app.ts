@@ -19,6 +19,7 @@ export class RotkiApp {
       timeout: 10000
     }).should('include.text', 'Upgrade to Premium');
     cy.get('.message-overlay__buttons__cancel').click();
+    cy.get('.account_management__premium').should('not.be.visible');
   }
 
   login(username: string) {
@@ -31,6 +32,7 @@ export class RotkiApp {
     cy.get('.user-dropdown').click();
     cy.get('.user-dropdown__logout').click();
     cy.get('.confirm-dialog__buttons__confirm').click();
+    cy.get('.login__fields__username').should('be.visible');
   }
 
   changeCurrency(currency: string) {

@@ -72,7 +72,10 @@ export class AccountBalancesPage {
   }
 
   confirmDelete() {
-    cy.contains('.confirm-dialog__title', 'Delete manually tracked balance');
+    cy.get('.confirm-dialog__title').should(
+      'contain',
+      'Delete manually tracked balance'
+    );
     cy.get('.confirm-dialog__buttons__confirm').click();
   }
 
