@@ -7,10 +7,11 @@ from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType, Opt
 
 import gevent
 import requests
+from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_USD
 from rotkehlchen.constants.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset, RemoteError
@@ -36,6 +37,16 @@ PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
+# No special case needed for cETH. Cryptocompare maps it correctly
+CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
+    Asset('cDAI'): A_DAI,
+    Asset('cBAT'): Asset('BAT'),
+    Asset('cREP'): Asset('REP'),
+    Asset('cUSDC'): Asset('USDC'),
+    Asset('cWBTC'): Asset('WBTC'),
+    Asset('cZRX'): Asset('ZRX'),
+}
+CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 
 
 class PriceHistoryEntry(NamedTuple):
@@ -68,6 +79,11 @@ def _dict_history_to_data(data: Dict[str, Any]) -> PriceHistoryData:
         start_time=Timestamp(data['start_time']),
         end_time=Timestamp(data['end_time']),
     )
+
+
+def _multiply_str_nums(a: str, b: str) -> str:
+    """Multiples two string numbers and returns the result as a string"""
+    return str(FVal(a) * FVal(b))
 
 
 def pairwise(iterable: Iterable[Any]) -> Iterator:
@@ -198,18 +214,99 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         raise AssertionError('We should never get here')
 
+    def _special_case_handling(
+            self,
+            method_name: Literal[
+                'query_endpoint_histohour',
+                'query_endpoint_price',
+                'query_endpoint_pricehistorical',
+            ],
+            from_asset: Asset,
+            to_asset: Asset,
+            **kwargs: Any,
+    ) -> Any:
+        """Special case handling for queries that need combination of multiple asset queries
+
+        This is hopefully temporary and can be taken care of by cryptocompare itself in the future.
+
+        For some assets cryptocompare can only figure out the price via intermediaries.
+        This function takes care of these special cases."""
+        method = getattr(self, method_name)
+        intermediate_asset = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING[from_asset]
+        result1 = method(
+            from_asset=from_asset,
+            to_asset=intermediate_asset,
+            handling_special_case=True,
+            **kwargs,
+        )
+        result2 = method(
+            from_asset=intermediate_asset,
+            to_asset=to_asset,
+            handling_special_case=True,
+            **kwargs,
+        )
+        result: Any
+        if method_name == 'query_endpoint_histohour':
+            result = {
+                'Aggregated': result1['Aggregated'],
+                'TimeFrom': result1['TimeFrom'],
+                'TimeTo': result1['TimeTo'],
+            }
+            result1 = result1['Data']
+            result2 = result2['Data']
+            data = []
+            for idx, entry in enumerate(result1):
+                entry2 = result2[idx]
+                data.append({
+                    'time': entry['time'],
+                    'high': _multiply_str_nums(entry['high'], entry2['high']),
+                    'low': _multiply_str_nums(entry['low'], entry2['low']),
+                    'open': _multiply_str_nums(entry['open'], entry2['open']),
+                    'volumefrom': entry['volumefrom'],
+                    'volumeto': entry['volumeto'],
+                    'close': _multiply_str_nums(entry['close'], entry2['close']),
+                    'conversionType': entry['conversionType'],
+                    'conversionSymbol': entry['conversionSymbol'],
+                })
+            result['Data'] = data
+        elif method_name == 'query_endpoint_price':
+            result = {
+                to_asset.identifier: _multiply_str_nums(
+                    result1[intermediate_asset.identifier],
+                    result2[to_asset.identifier]),
+            }
+        elif method_name == 'query_endpoint_pricehistorical':
+            result = result1 * result2
+        else:
+            raise RuntimeError(f'Illegal method_name: {method_name}. Should never happen')
+
+        return result
+
     def query_endpoint_histohour(
             self,
             from_asset: Asset,
             to_asset: Asset,
             limit: int,
             to_timestamp: Timestamp,
+            handling_special_case: bool = False,
     ) -> Dict[str, Any]:
         """Returns the full histohour response including TimeFrom and TimeTo
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
+        special_asset = (
+            from_asset in CRYPTOCOMPARE_SPECIAL_CASES or to_asset in CRYPTOCOMPARE_SPECIAL_CASES
+        )
+        if special_asset and not handling_special_case:
+            return self._special_case_handling(
+                method_name='query_endpoint_histohour',
+                from_asset=from_asset,
+                to_asset=to_asset,
+                limit=limit,
+                to_timestamp=to_timestamp,
+            )
+
         # These two can raise but them raising here is a bug
         cc_from_asset_symbol = from_asset.to_cryptocompare()
         cc_to_asset_symbol = to_asset.to_cryptocompare()
@@ -224,12 +321,22 @@ class Cryptocompare(ExternalServiceWithApiKey):
             self,
             from_asset: Asset,
             to_asset: Asset,
+            handling_special_case: bool = False,
     ) -> Dict[str, Any]:
         """Returns the current price of an asset compared to another asset
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
+        special_asset = (
+            from_asset in CRYPTOCOMPARE_SPECIAL_CASES or to_asset in CRYPTOCOMPARE_SPECIAL_CASES
+        )
+        if special_asset and not handling_special_case:
+            return self._special_case_handling(
+                method_name='query_endpoint_price',
+                from_asset=from_asset,
+                to_asset=to_asset,
+            )
         # These two can raise but them raising here is a bug
         cc_from_asset_symbol = from_asset.to_cryptocompare()
         cc_to_asset_symbol = to_asset.to_cryptocompare()
@@ -242,6 +349,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
+            handling_special_case: bool = False,
     ) -> Price:
         """Queries the historical daily price of from_asset to to_asset for timestamp
 
@@ -254,6 +362,17 @@ class Cryptocompare(ExternalServiceWithApiKey):
             to_asset=to_asset,
             timestamp=timestamp,
         )
+        special_asset = (
+            from_asset in CRYPTOCOMPARE_SPECIAL_CASES or to_asset in CRYPTOCOMPARE_SPECIAL_CASES
+        )
+        if special_asset and not handling_special_case:
+            return self._special_case_handling(
+                method_name='query_endpoint_pricehistorical',
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+
         # These two can raise but them raising here is a bug
         cc_from_asset_symbol = from_asset.to_cryptocompare()
         cc_to_asset_symbol = to_asset.to_cryptocompare()
