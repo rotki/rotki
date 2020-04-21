@@ -172,5 +172,32 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       );
     }
     dispatch('balances/removeTag', tagName, { root: true });
+  },
+
+  async setKrakenAccountType({ commit }, account_type: string) {
+    try {
+      const settings = await api.setSettings({
+        kraken_account_type: account_type
+      });
+      commit('settings', convertToGeneralSettings(settings));
+      commit(
+        'setMessage',
+        {
+          title: 'Success',
+          description: 'Succesfully set kraken account type',
+          success: true
+        } as Message,
+        { root: true }
+      );
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Error setting kraken account type',
+          description: e.message || ''
+        } as Message,
+        { root: true }
+      );
+    }
   }
 };
