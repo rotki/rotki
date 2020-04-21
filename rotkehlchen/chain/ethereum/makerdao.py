@@ -29,7 +29,8 @@ log = logging.getLogger(__name__)
 
 POT_CREATION_BLOCK = 8928160
 POT_CREATION_TIMESTAMP = 1573672721
-CHI_BLOCKS_SEARCH_DISTANCE = 50
+CHI_BLOCKS_SEARCH_DISTANCE = 250  # BlocksPer call query in each side
+MAX_BLOCKS_TO_QUERY = 173000  # query about a month's worth of blocks before giving up
 
 
 class ChiRetrievalError(Exception):
@@ -403,51 +404,63 @@ class MakerDAO(EthereumModule):
         - ChiRetrievalError if we are unable to query chi at the given timestamp
         """
         block_number = self.ethereum.etherscan.get_blocknumber_by_time(time)
-        from_block = max(POT_CREATION_BLOCK, block_number - CHI_BLOCKS_SEARCH_DISTANCE)
         if self.ethereum.connected:
             latest_block = self.ethereum.web3.eth.blockNumber
         else:
             latest_block = self.ethereum.query_eth_highest_block()
+        from_block = max(POT_CREATION_BLOCK, block_number - CHI_BLOCKS_SEARCH_DISTANCE)
         to_block = min(latest_block, block_number + CHI_BLOCKS_SEARCH_DISTANCE)
-        join_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_POT_ADDRESS,
-            abi=MAKERDAO_POT_ABI,
-            event_name='LogNote',
-            argument_filters={'sig': '0x049878f3'},  # join
-            from_block=from_block,
-            to_block=to_block,
-        )
-        exit_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_POT_ADDRESS,
-            abi=MAKERDAO_POT_ABI,
-            event_name='LogNote',
-            argument_filters={'sig': '0x7f8661a1'},  # exit
-            from_block=from_block,
-            to_block=to_block,
-        )
-        events = join_events + exit_events
+        blocks_queried = 0
+        # Keep trying to find events that could reveal the chi to us. Go back
+        # as far as MAX_BLOCKS_TO_QUERY and only then give up
+        while blocks_queried < MAX_BLOCKS_TO_QUERY:
+            join_events = self.ethereum.get_logs(
+                contract_address=MAKERDAO_POT_ADDRESS,
+                abi=MAKERDAO_POT_ABI,
+                event_name='LogNote',
+                argument_filters={'sig': '0x049878f3'},  # join
+                from_block=from_block,
+                to_block=to_block,
+            )
+            exit_events = self.ethereum.get_logs(
+                contract_address=MAKERDAO_POT_ADDRESS,
+                abi=MAKERDAO_POT_ABI,
+                event_name='LogNote',
+                argument_filters={'sig': '0x7f8661a1'},  # exit
+                from_block=from_block,
+                to_block=to_block,
+            )
 
-        # Find the closest event to the block number
-        found_idx = -1
-        min_distance = 99999999
-        for idx, event in enumerate(events):
-            try:
-                event_block_number = deserialize_blocknumber(event['blockNumber'])
-            except DeserializationError as e:
-                msg = f'Error at reading DSR drip event block number. {str(e)}'
-                raise ChiRetrievalError(msg)
+            if len(join_events) != 0 or len(exit_events) != 0:
+                break
 
-            this_distance = abs(event_block_number - block_number)
-            if this_distance < min_distance:
-                min_distance = this_distance
-                found_idx = idx
+            blocks_queried += 2 * CHI_BLOCKS_SEARCH_DISTANCE
+            to_block = from_block - 1
+            from_block = to_block - 2 * CHI_BLOCKS_SEARCH_DISTANCE
 
-        if found_idx == -1:
+        # Find the closest event to the to_block number. Events are returned
+        # in a list with ascending block number, so last event is closest
+        found_event = None
+        if len(join_events) != 0:
+            found_event = join_events[-1]
+        if len(exit_events) != 0:
+            if found_event:
+                try:
+                    join_number = deserialize_blocknumber(found_event['blockNumber'])
+                    exit_number = deserialize_blocknumber(exit_events[-1]['blockNumber'])
+                except DeserializationError as e:
+                    msg = f'Error at reading DSR drip event block number. {str(e)}'
+                    raise ChiRetrievalError(msg)
+
+                if exit_number > join_number:
+                    found_event = exit_events[-1]
+            else:
+                found_event = exit_events[-1]
+        if not found_event:
             raise ChiRetrievalError(
                 f'Found no DSR events around timestamp {time}. Cant query chi.',
             )
 
-        found_event = events[found_idx]
         event_block_number = deserialize_blocknumber(found_event['blockNumber'])
         first_topic = found_event['topics'][0]
         if isinstance(first_topic, bytes):
