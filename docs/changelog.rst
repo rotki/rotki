@@ -13,6 +13,7 @@ Changelog
   - `Exchange Union (XUC) <https://coinmarketcap.com/currencies/exchange-union/>`__
   - `Compound DAI (cDAI) <https://coinmarketcap.com/currencies/compound-dai/>`__
   - `Compound BAT (cBAT) <https://etherscan.io/address/0x6c8c6b02e7b2be14d4fa6022dfd6d75921d90e4e>`__
+  - `Compound ETH (cETH) <https://etherscan.io/address/0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5>`__
 
 * :release:`1.4.0 <2020-04-16>`
 * :feature:`807` Enables the addition and querying of manually tracked balances.
