@@ -20,17 +20,18 @@ export class OtcPage {
   }
 
   confirmSuccess() {
-    cy.contains('.message-dialog__title', 'Success');
+    cy.get('.message-dialog__title').should('contain', 'Success');
     cy.get('.message-dialog__buttons__confirm').click();
   }
 
   confirmDelete() {
-    cy.contains('.confirm-dialog__title', 'Delete OTC Trade');
+    cy.get('.confirm-dialog__title').should('contain', 'Delete OTC Trade');
     cy.get('.confirm-dialog__buttons__confirm').click();
+    cy.get('.confirm-dialog__title').should('not.be.visible');
   }
 
   visibleEntries(visible: number) {
-    cy.get('.otc-trades tbody').find('tr').its('length').should('eq', visible);
+    cy.get('.otc-trades tbody').find('tr').should('have.length', visible);
   }
 
   tradeIsVisible(position: number, otcTrade: OTCTrade) {

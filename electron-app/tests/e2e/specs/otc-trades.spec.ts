@@ -51,7 +51,6 @@ describe('otc trades', () => {
   it('delete trade', () => {
     page.deleteTrade(0);
     page.confirmDelete();
-    page.confirmSuccess();
     page.visibleEntries(1);
     page.tradeIsVisible(0, otcData[1]);
   });
