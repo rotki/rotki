@@ -202,7 +202,8 @@ class Asset():
                     f'documented as returning None and is not handled',
                 )
 
-        return cryptocompare_str
+        # Seems cryptocompare capitalizes everything. So cDAI -> CDAI
+        return cryptocompare_str.upper()
 
     def __hash__(self) -> int:
         return hash(self.identifier)
