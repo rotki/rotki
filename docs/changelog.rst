@@ -15,6 +15,7 @@ Changelog
   - `Compound BAT (cBAT) <https://etherscan.io/address/0x6c8c6b02e7b2be14d4fa6022dfd6d75921d90e4e>`__
   - `Compound ETH (cETH) <https://etherscan.io/address/0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5>`__
   - `Compound Augur (cREP) <https://www.coingecko.com/en/coins/compound-augur>`__
+  - `Compound USD coin (cUSDC) <https://www.coingecko.com/en/coins/compound-usd-coin>`__
 
 * :release:`1.4.0 <2020-04-16>`
 * :feature:`807` Enables the addition and querying of manually tracked balances.

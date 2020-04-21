@@ -1629,6 +1629,14 @@
         "symbol": "cREP",
         "type": "ethereum token"
     },
+    "cUSDC": {
+        "ethereum_address": "0x39AA39c021dfbaE8faC545936693aC917d5E7563",
+        "ethereum_token_decimals": 8,
+        "name": "Compound USD Coin",
+        "started": 1557192331,
+        "symbol": "cUSDC",
+        "type": "ethereum token"
+    },
     "CACH": {
         "active": false,
         "ended": 1541548800,
