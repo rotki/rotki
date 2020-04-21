@@ -101,3 +101,79 @@ def test_cryptocompare_dao_query(cryptocompare):
         historical_data_start=1438387200,
     )
     assert price is not None
+
+
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='This test would heavily contribute in cryptocompare rate limiting',
+)
+@pytest.mark.parametrize('run', (
+    [{
+        'asset': Asset('cDAI'),
+        'expected_price1': FVal('0.02012010'),
+        'expected_price2': FVal('0'),  # Needs to be fixed -- mistake in cryptocompare data
+    }, {
+        'asset': Asset('cBAT'),
+        'expected_price1': FVal('0.003522603'),
+        'expected_price2': FVal('0.002713524'),
+    }, {
+        'asset': Asset('cETH'),
+        'expected_price1': FVal('2.903'),
+        'expected_price2': FVal('2.669'),
+    }, {
+        'asset': Asset('cREP'),
+        'expected_price1': FVal('0.20105130'),
+        'expected_price2': FVal('0.16356648'),
+    }, {
+        'asset': Asset('cUSDC'),
+        'expected_price1': FVal('0.02085273'),
+        'expected_price2': FVal('0.02103101'),
+    }, {
+        'asset': Asset('cWBTC'),
+        'expected_price1': FVal('136.971575'),
+        'expected_price2': FVal('138.8820732'),
+    }, {
+        'asset': Asset('cZRX'),
+        'expected_price1': FVal('0.004324785'),
+        'expected_price2': FVal('0.003037084'),
+    }]),
+)
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_cryptocompare_query_compound_tokens(
+        cryptocompare,
+        price_historian,  # pylint: disable=unused-argument
+        run,
+):
+    """
+    Test that querying cryptocompare for compound tokens works for any target asset.
+
+    This is due to a flaw in cryptocompare that compound tokens can only be queried
+    against their non-compound counterpart.
+
+    The test always uses a clean caching directory so requests are ALWAYS made to cryptocompare
+    to test that everything works.
+    """
+    asset = run['asset']
+    expected_price1 = run['expected_price1']
+    expected_price2 = run['expected_price2']
+    price = cryptocompare.query_historical_price(
+        from_asset=asset,
+        to_asset=A_USD,
+        timestamp=1576195200,
+        # Use historical data start that requires 2 (but not more) histohour queries
+        # 1576195200 - 2002*3600
+        historical_data_start=1568988000,
+    )
+    assert price == expected_price1
+    price = cryptocompare.query_endpoint_pricehistorical(
+        from_asset=asset,
+        to_asset=A_USD,
+        timestamp=1584662400,
+    )
+    assert price == expected_price2
+    price = cryptocompare.query_endpoint_price(
+        from_asset=asset,
+        to_asset=A_USD,
+    )
+    assert price is not None
