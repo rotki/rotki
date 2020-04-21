@@ -71,7 +71,7 @@
           <v-select
             v-if="selectedExchange === 'kraken'"
             v-model="selectedKrakenAccountType"
-            class=""
+            class="exchange-settings__fields__kraken-account-type"
             :items="krakenAccountTypes"
             label="Select the type of your Kraken account"
             @change="onChangeKrakenAccountType"
@@ -107,7 +107,6 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
-import { convertToGeneralSettings } from '@/data/converters';
 import { exchanges } from '@/data/defaults';
 import { Message } from '@/store/store';
 
@@ -146,24 +145,11 @@ export default class ExchangeSettings extends Vue {
     this.resetFields();
   }
 
-  onChangeKrakenAccountType() {
-    const { commit } = this.$store;
-    this.$api
-      .setSettings({ kraken_account_type: this.selectedKrakenAccountType })
-      .then(settings => {
-        commit('setMessage', {
-          title: 'Success',
-          description: 'Successfully set kraken account type',
-          success: true
-        } as Message);
-        commit('session/settings', convertToGeneralSettings(settings));
-      })
-      .catch(reason => {
-        commit('setMessage', {
-          title: 'Error',
-          description: `Error setting kraken account type ${reason.message}`
-        } as Message);
-      });
+  async onChangeKrakenAccountType() {
+    await this.$store.dispatch(
+      'session/setKrakenAccountType',
+      this.selectedKrakenAccountType
+    );
   }
 
   private resetFields(includeExchange: boolean = false) {
