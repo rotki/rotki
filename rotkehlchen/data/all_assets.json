@@ -1645,6 +1645,14 @@
         "symbol": "cWBTC",
         "type": "ethereum token"
     },
+    "cZRX": {
+        "ethereum_address": "0xB3319f5D18Bc0D84dD1b4825Dcde5d5f7266d407",
+        "ethereum_token_decimals": 8,
+        "name": "Compound 0x",
+        "started": 1557192054,
+        "symbol": "cZRX",
+        "type": "ethereum token"
+    },
     "CACH": {
         "active": false,
         "ended": 1541548800,
