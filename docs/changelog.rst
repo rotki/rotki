@@ -16,6 +16,7 @@ Changelog
   - `Compound ETH (cETH) <https://etherscan.io/address/0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5>`__
   - `Compound Augur (cREP) <https://www.coingecko.com/en/coins/compound-augur>`__
   - `Compound USD coin (cUSDC) <https://www.coingecko.com/en/coins/compound-usd-coin>`__
+  - `Compound Wrapped BTC (cWBTC) <https://www.coingecko.com/en/coins/compound-wrapped-btc>`__
 
 * :release:`1.4.0 <2020-04-16>`
 * :feature:`807` Enables the addition and querying of manually tracked balances.
