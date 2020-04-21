@@ -12,6 +12,7 @@ Changelog
   - `Rupiah token (IDRT) <https://coinmarketcap.com/currencies/rupiah-token/>`__
   - `Exchange Union (XUC) <https://coinmarketcap.com/currencies/exchange-union/>`__
   - `Compound DAI (cDAI) <https://coinmarketcap.com/currencies/compound-dai/>`__
+  - `Compound BAT (cBAT) <https://etherscan.io/address/0x6c8c6b02e7b2be14d4fa6022dfd6d75921d90e4e>`__
 
 * :release:`1.4.0 <2020-04-16>`
 * :feature:`807` Enables the addition and querying of manually tracked balances.

@@ -1597,6 +1597,14 @@
         "symbol": "C8",
         "type": "ethereum token"
     },
+    "cBAT": {
+        "ethereum_address": "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
+        "ethereum_token_decimals": 8,
+        "name": "Compound BAT",
+        "started": 1557192085,
+        "symbol": "cBAT",
+        "type": "ethereum token"
+    },
     "cDAI": {
         "ethereum_address": "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
         "ethereum_token_decimals": 8,
