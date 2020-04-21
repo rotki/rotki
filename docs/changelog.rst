@@ -17,6 +17,7 @@ Changelog
   - `Compound Augur (cREP) <https://www.coingecko.com/en/coins/compound-augur>`__
   - `Compound USD coin (cUSDC) <https://www.coingecko.com/en/coins/compound-usd-coin>`__
   - `Compound Wrapped BTC (cWBTC) <https://www.coingecko.com/en/coins/compound-wrapped-btc>`__
+  - `Compound 0x (cZRX) <https://www.coingecko.com/en/coins/compound-0x>`__
 
 * :release:`1.4.0 <2020-04-16>`
 * :feature:`807` Enables the addition and querying of manually tracked balances.
