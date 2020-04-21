@@ -149,14 +149,16 @@ You can integrate many different exchanges with Rotki. Currently supported excha
 
 To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else since that is all the permissions needed by Rotki.
 
-Click on the "API keys" on the left sidebar. This will take you to the place where you can add new exchange API keys. Select your exchange from the dropdown menu. Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press submit.
+Click on the "API keys" on the left sidebar. This will take you to the place where you can add new exchange API keys. Select the exchanges panel and select your exchange from the dropdown menu. Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press submit.
 
 If all went well, then you will get a confirmation that the connection was successful. If not please doublecheck that the key and secret are correct.
+
+Note that some exchanges have additional options. For example kraken needs you to specify the type of account you have with them to determine the api query limits and coinbasepro needs an additional passphrase.
 
 Adding an external service API Key
 =====================================
 
-Rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the respective UI element.
+Rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
 
 .. image:: images/add_external_service.gif
    :alt: Add API keys for an external service
