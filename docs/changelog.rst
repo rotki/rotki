@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Improve internal DSR mechanics so that even with hardly anyone using the DSR as of this release, Rotki can still find DSR chi values to provide historical reports of DSR profit.
 * :bug:`904` For Kraken users take into account the worst-case API call counter and make sure the maximum calls are not reached to avoid prolonged API bans.
 * :bug:`895` Fixes manually tracked balances value column header not updating properly.
 * :bug:`899` If a user's ethereum account held both old and new REP the new REP's account balance should now be properly automatically detected.
