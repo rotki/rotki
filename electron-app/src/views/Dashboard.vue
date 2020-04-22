@@ -2,10 +2,15 @@
   <v-container>
     <v-row>
       <v-col>
-        <h1 class="page-header">Dashboard</h1>
+        <h1 class="page-header">Portfolio</h1>
       </v-col>
     </v-row>
-
+    <overall-balances></overall-balances>
+    <v-row>
+      <v-col cols="12">
+        <h1 class="page-header">Balance per source</h1>
+      </v-col>
+    </v-row>
     <div class="dashboard__information-boxes">
       <exchange-box
         v-for="exchange in exchanges"
@@ -30,7 +35,7 @@
 
     <v-row>
       <v-col cols="12">
-        <h1 class="page-header">All Balances</h1>
+        <h1 class="page-header">Balance per asset</h1>
       </v-col>
     </v-row>
     <v-row>
@@ -81,7 +86,9 @@ import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 import InformationBox from '@/components/dashboard/InformationBox.vue';
+import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+
 import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { ExchangeInfo } from '@/typing/types';
@@ -91,7 +98,13 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { AssetDetails, ExchangeBox, InformationBox, CryptoIcon },
+  components: {
+    OverallBalances,
+    AssetDetails,
+    ExchangeBox,
+    InformationBox,
+    CryptoIcon
+  },
   computed: {
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters([
