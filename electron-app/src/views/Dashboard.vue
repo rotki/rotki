@@ -37,6 +37,7 @@
       <v-col cols="12">
         <v-card>
           <v-data-table
+            class="dashboard__balances"
             :headers="headers"
             :items="aggregatedBalances"
             :search="search"
@@ -66,6 +67,20 @@
               <v-alert :value="true" color="error" icon="warning">
                 Your search for "{{ search }}" found no results.
               </v-alert>
+            </template>
+            <template v-if="aggregatedBalances.length > 0" #body.append>
+              <tr class="dashboard__balances__totals">
+                <td>Totals</td>
+                <td></td>
+                <td>
+                  {{
+                    aggregatedBalances.map(val => val.usdValue)
+                      | balanceSum
+                      | calculatePrice(exchangeRate(currency.ticker_symbol))
+                      | formatPrice(floatingPrecision)
+                  }}
+                </td>
+              </tr>
             </template>
           </v-data-table>
         </v-card>
@@ -131,7 +146,14 @@ export default class Dashboard extends Vue {
 </script>
 
 <style scoped lang="scss">
-.dashboard__information-boxes > * {
-  margin-top: 16px;
+.dashboard {
+  &__balances {
+    &__totals {
+      font-weight: 500;
+    }
+  }
+  &__information-boxes > * {
+    margin-top: 16px;
+  }
 }
 </style>
