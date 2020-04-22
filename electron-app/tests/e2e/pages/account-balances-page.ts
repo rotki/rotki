@@ -21,9 +21,10 @@ export class AccountBalancesPage {
   }
 
   visibleEntries(visible: number) {
+    // the total row is added to the visible entries
     cy.get('.manual-balances-list tbody')
       .find('tr')
-      .should('have.length', visible);
+      .should('have.length', visible + 1);
   }
 
   isVisible(position: number, balance: ApiManualBalance) {

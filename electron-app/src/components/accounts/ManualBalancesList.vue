@@ -75,6 +75,21 @@
               </v-icon>
             </span>
           </template>
+          <template v-if="visibleBalances.length > 0" #body.append>
+            <tr class="manual-balances-list__totals">
+              <td>Totals</td>
+              <td></td>
+              <td></td>
+              <td>
+                {{
+                  visibleBalances.map(val => val.usdValue)
+                    | balanceSum
+                    | calculatePrice(exchangeRate(currency.ticker_symbol))
+                    | formatPrice(floatingPrecision)
+                }}
+              </td>
+            </tr>
+          </template>
         </v-data-table>
       </v-col>
     </v-row>
@@ -189,6 +204,10 @@ export default class ManualBalancesList extends Vue {
 .manual-balances-list {
   &__tag {
     margin-right: 8px;
+  }
+
+  &__totals {
+    font-weight: 500;
   }
 
   &__label {

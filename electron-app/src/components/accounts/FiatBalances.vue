@@ -52,6 +52,20 @@
                     | formatPrice(floatingPrecision)
                 }}
               </template>
+              <template v-if="fiatBalances.length > 0" #body.append>
+                <tr class="fiat-balances__totals">
+                  <td>Totals</td>
+                  <td></td>
+                  <td>
+                    {{
+                      fiatBalances.map(val => val.usdValue)
+                        | balanceSum
+                        | calculatePrice(exchangeRate(currency.ticker_symbol))
+                        | formatPrice(floatingPrecision)
+                    }}
+                  </td>
+                </tr>
+              </template>
             </v-data-table>
           </v-col>
         </v-card-text>
@@ -146,4 +160,10 @@ export default class FiatBalances extends Vue {
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.fiat-balances {
+  &__totals {
+    font-weight: 500;
+  }
+}
+</style>
