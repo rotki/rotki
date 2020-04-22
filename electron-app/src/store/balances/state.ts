@@ -2,6 +2,7 @@ import {
   AssetBalances,
   Balances,
   EthBalances,
+  ManualBalanceByLocation,
   FiatBalance
 } from '@/model/blockchain-balances';
 import {
@@ -31,6 +32,7 @@ export interface BalanceState {
   dsrBalances: DSRBalances;
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalance[];
+  manualBalanceByLocation: ManualBalanceByLocation;
 }
 
 export const defaultState = (): BalanceState => ({
@@ -49,7 +51,8 @@ export const defaultState = (): BalanceState => ({
     balances: {}
   },
   supportedAssets: [],
-  manualBalances: []
+  manualBalances: [],
+  manualBalanceByLocation: {}
 });
 
 export const state: BalanceState = defaultState();

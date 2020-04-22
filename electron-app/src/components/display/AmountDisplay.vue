@@ -118,17 +118,29 @@ td.text-end .amount-display {
   &__asterisk {
     float: right;
     margin-right: -0.6em;
-    top: -0.1em;
+    top: -0.2em;
   }
 }
 
 .amount-display {
+  display: inline-block;
+
+  span {
+    display: inline-block;
+  }
+
   &__asterisk {
+    position: relative;
+    top: -0.2em;
     font-weight: 500;
     font-size: 0.8em;
     &:hover {
       cursor: pointer;
     }
+  }
+
+  &__currency {
+    display: contents !important;
   }
 }
 

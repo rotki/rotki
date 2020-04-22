@@ -6,10 +6,10 @@
       :symbol="details.symbol"
     ></crypto-icon>
     <span class="asset-details__details">
-      <span class="text--primary asset-details__details__symbol">
+      <span class="asset-details__details__symbol">
         {{ details.symbol }}
       </span>
-      <span class="text--secondary asset-details__details__subtitle">
+      <span class="grey--text asset-details__details__subtitle">
         {{ details.name }}
       </span>
     </span>

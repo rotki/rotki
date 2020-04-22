@@ -6,7 +6,9 @@ import {
   AccountBalance,
   AssetBalance,
   Balance,
-  EthBalance
+  EthBalance,
+  ManualBalancesByLocation,
+  ManualBalanceByLocation
 } from '@/model/blockchain-balances';
 import { BalanceState } from '@/store/balances/state';
 import { RotkehlchenState } from '@/store/store';
@@ -110,6 +112,33 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return state.fiatBalances.reduce((sum, balance) => {
       return sum.plus(balance.usdValue);
     }, Zero);
+  },
+
+  manualBalances: (state: BalanceState) => {
+    return state.manualBalances;
+  },
+
+  manualBalanceByLocation: (state: BalanceState) => {
+    const simplifyManualBalances = state.manualBalances.map(obj => {
+      const newObj: ManualBalancesByLocation = { location: '', usdValue: Zero };
+      newObj.location = obj.location;
+      newObj.usdValue = obj.usdValue;
+      return newObj;
+    });
+    const aggregateManualBalancesByLocation: ManualBalanceByLocation = simplifyManualBalances.reduce(
+      function (
+        result: ManualBalanceByLocation,
+        manualBalance: ManualBalancesByLocation
+      ) {
+        result[manualBalance.location]
+          ? result[manualBalance.location].plus(manualBalance.usdValue)
+          : (result[manualBalance.location] = manualBalance.usdValue);
+        return result;
+      },
+      {}
+    );
+
+    return aggregateManualBalancesByLocation;
   },
 
   blockchainTotal: (_, getters) => {

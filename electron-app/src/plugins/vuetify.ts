@@ -17,7 +17,17 @@ export default new Vuetify({
         error: '#FF5252',
         info: '#2196F3',
         success: '#4CAF50',
-        warning: '#FFC107'
+        warning: '#FFC107',
+        rotkigreen: '#06D6A0',
+        rotkired: '#F03A47',
+        rotkiorange: '#E96930',
+        rotkiblack: '#0A0908',
+        rotkibeige: '#F2EFEA',
+        rotkilightblue: '#96DFD2',
+        rotkiblue: '#00CCCC',
+        rotkilightbrown: '#664D3E',
+        rotkibrown: '#422919',
+        rotkiyellow: '#F5CB5C'
       }
     }
   }
