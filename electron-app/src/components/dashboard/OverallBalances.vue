@@ -23,7 +23,7 @@
               border-radius: 0.5em;
             "
           >
-            ▼ XXX.XX {{ currency.unicode_symbol }}
+            ▲ XXX.XX {{ currency.unicode_symbol }}
           </span>
           <br />
           <span
@@ -34,7 +34,7 @@
               border-radius: 0.5em;
             "
           >
-            ▲ XXX.XX {{ currency.unicode_symbol }}
+            ▼ XXX.XX {{ currency.unicode_symbol }}
           </span>
         </div>
         <div class="overall-balances-box__timeframe">
