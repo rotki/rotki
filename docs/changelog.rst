@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`912` Adds total net value to the dashboard balance table.
+
 * :release:`1.4.1 <2020-04-22>`
 * :bug:`-` Improve internal DSR mechanics so that even with hardly anyone using the DSR as of this release, Rotki can still find DSR chi values to provide historical reports of DSR profit.
 * :bug:`904` For Kraken users take into account the worst-case API call counter and make sure the maximum calls are not reached to avoid prolonged API bans.
