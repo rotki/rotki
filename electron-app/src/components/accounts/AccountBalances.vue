@@ -113,14 +113,14 @@
           <td>Totals</td>
           <td>
             {{
-              balances.map(val => val.amount)
+              visibleBalances.map(val => val.amount)
                 | balanceSum
                 | formatPrice(floatingPrecision)
             }}
           </td>
           <td>
             {{
-              balances.map(val => val.usdValue)
+              visibleBalances.map(val => val.usdValue)
                 | balanceSum
                 | calculatePrice(exchangeRate(currency.ticker_symbol))
                 | formatPrice(floatingPrecision)
