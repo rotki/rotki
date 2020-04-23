@@ -43,14 +43,13 @@
                 {{ item.currency }}
               </template>
               <template #item.amount="{ item }">
-                {{ item.amount | formatPrice(floatingPrecision) }}
+                <amount-display :value="item.amount"></amount-display>
               </template>
               <template #item.usdValue="{ item }">
-                {{
-                  item.usdValue
-                    | calculatePrice(exchangeRate(currency.ticker_symbol))
-                    | formatPrice(floatingPrecision)
-                }}
+                <amount-display
+                  usd-value
+                  :value="item.usdValue"
+                ></amount-display>
               </template>
               <template v-if="fiatBalances.length > 0" #body.append>
                 <tr class="fiat-balances__total">
@@ -77,6 +76,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { currencies } from '@/data/currencies';
 import { FiatBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
@@ -90,6 +90,7 @@ const {
 } = createNamespacedHelpers('balances');
 
 @Component({
+  components: { AmountDisplay },
   computed: {
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters(['exchangeRate']),

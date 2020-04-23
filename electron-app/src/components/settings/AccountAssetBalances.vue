@@ -22,14 +22,10 @@
           </span>
         </template>
         <template #item.amount="{ item }">
-          {{ item.amount | formatPrice(floatingPrecision) }}
+          <amount-display :value="item.amount"></amount-display>
         </template>
         <template #item.usdValue="{ item }">
-          {{
-            item.usdValue
-              | calculatePrice(exchangeRate(currency.ticker_symbol))
-              | formatPrice(floatingPrecision)
-          }}
+          <amount-display usd-value :value="item.usdValue"></amount-display>
         </template>
       </v-data-table>
     </v-col>
@@ -40,6 +36,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 
@@ -48,7 +45,7 @@ const { mapGetters: mapSessionGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
-  components: { CryptoIcon },
+  components: { AmountDisplay, CryptoIcon },
   computed: {
     ...mapGetters(['accountAssets']),
     ...mapSessionGetters(['floatingPrecision', 'currency']),

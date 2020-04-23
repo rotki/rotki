@@ -41,16 +41,13 @@
             <asset-details :asset="item.asset"></asset-details>
           </template>
           <template #item.amount="{ item }">
-            <span class="manual-balances-list__amount">
-              {{ item.amount | formatPrice(floatingPrecision) }}
-            </span>
+            <amount-display
+              class="manual-balances-list__amount"
+              :value="item.amount"
+            ></amount-display>
           </template>
           <template #item.usdValue="{ item }">
-            {{
-              item.usdValue
-                | calculatePrice(exchangeRate(currency.ticker_symbol))
-                | formatPrice(floatingPrecision)
-            }}
+            <amount-display usd-value :value="item.usdValue"></amount-display>
           </template>
           <template #item.location="{ item }">
             <span class="manual-balances-list__location">
@@ -131,6 +128,7 @@ import { createNamespacedHelpers } from 'vuex';
 import ManualBalancesForm from '@/components/accounts/ManualBalancesForm.vue';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
@@ -149,6 +147,7 @@ const {
 
 @Component({
   components: {
+    AmountDisplay,
     ManualBalancesForm,
     AssetDetails,
     ConfirmDialog,

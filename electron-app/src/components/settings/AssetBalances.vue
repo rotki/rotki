@@ -25,14 +25,10 @@
         </span>
       </template>
       <template #item.amount="{ item }">
-        {{ item.amount | formatPrice(floatingPrecision) }}
+        <amount-display :value="item.amount"></amount-display>
       </template>
       <template #item.usdValue="{ item }">
-        {{
-          item.usdValue
-            | calculatePrice(exchangeRate(currency.ticker_symbol))
-            | formatPrice(floatingPrecision)
-        }}
+        <amount-display usd-value :value="item.usdValue"></amount-display>
       </template>
       <template v-if="balances.length > 0" #body.append>
         <tr class="asset-balances__total">
@@ -56,6 +52,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task';
@@ -65,7 +62,7 @@ const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
-  components: { CryptoIcon },
+  components: { AmountDisplay, CryptoIcon },
   computed: {
     ...mapTaskGetters(['isTaskRunning']),
     ...mapGetters(['floatingPrecision', 'currency']),

@@ -51,14 +51,10 @@
               <asset-details :asset="item.asset"></asset-details>
             </template>
             <template #item.amount="{ item }">
-              {{ item.amount | precision(floatingPrecision) }}
+              <amount-display :value="item.amount"></amount-display>
             </template>
             <template #item.usdValue="{ item }">
-              {{
-                item.usdValue
-                  | calculatePrice(exchangeRate(currency.ticker_symbol))
-                  | formatPrice(floatingPrecision)
-              }}
+              <amount-display usd-value :value="item.usdValue"></amount-display>
             </template>
             <template #item.percentage="{ item }">
               {{ item.usdValue | percentage(total, floatingPrecision) }}
@@ -96,6 +92,7 @@ import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 import InformationBox from '@/components/dashboard/InformationBox.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
@@ -106,7 +103,13 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { AssetDetails, ExchangeBox, InformationBox, CryptoIcon },
+  components: {
+    AmountDisplay,
+    AssetDetails,
+    ExchangeBox,
+    InformationBox,
+    CryptoIcon
+  },
   computed: {
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters([
