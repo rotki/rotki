@@ -79,14 +79,10 @@
         </v-row>
       </template>
       <template #item.amount="{ item }">
-        {{ item.amount | formatPrice(floatingPrecision) }}
+        <amount-display :value="item.amount"></amount-display>
       </template>
       <template #item.usdValue="{ item }">
-        {{
-          item.usdValue
-            | calculatePrice(exchangeRate(currency.ticker_symbol))
-            | formatPrice(floatingPrecision)
-        }}
+        <amount-display usd-value :value="item.usdValue"></amount-display>
       </template>
       <template #item.actions="{ item }">
         <span class="account-balances__actions">
@@ -180,6 +176,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
@@ -196,6 +193,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
+    AmountDisplay,
     AccountForm,
     TagFilter,
     TagIcon,
