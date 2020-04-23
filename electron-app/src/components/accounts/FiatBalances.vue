@@ -53,8 +53,8 @@
                 }}
               </template>
               <template v-if="fiatBalances.length > 0" #body.append>
-                <tr class="fiat-balances__totals">
-                  <td>Totals</td>
+                <tr class="fiat-balances__total">
+                  <td>Total</td>
                   <td></td>
                   <td>
                     {{
@@ -162,7 +162,7 @@ export default class FiatBalances extends Vue {
 
 <style scoped lang="scss">
 .fiat-balances {
-  &__totals {
+  &__total {
     font-weight: 500;
   }
 }

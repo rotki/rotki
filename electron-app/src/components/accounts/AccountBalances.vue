@@ -109,8 +109,8 @@
         </span>
       </template>
       <template v-if="balances.length > 0" #body.append>
-        <tr class="account-balances__totals">
-          <td>Totals</td>
+        <tr class="account-balances__total">
+          <td>Total</td>
           <td>
             {{
               visibleBalances.map(val => val.amount)
@@ -326,7 +326,7 @@ export default class AccountBalances extends Vue {
     flex-direction: row;
   }
 
-  &__totals {
+  &__total {
     font-weight: 500;
   }
 

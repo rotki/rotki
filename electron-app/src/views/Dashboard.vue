@@ -69,8 +69,8 @@
               </v-alert>
             </template>
             <template v-if="aggregatedBalances.length > 0" #body.append>
-              <tr class="dashboard__balances__totals">
-                <td>Totals</td>
+              <tr class="dashboard__balances__total">
+                <td>Total</td>
                 <td></td>
                 <td>
                   {{
@@ -148,7 +148,7 @@ export default class Dashboard extends Vue {
 <style scoped lang="scss">
 .dashboard {
   &__balances {
-    &__totals {
+    &__total {
       font-weight: 500;
     }
   }
