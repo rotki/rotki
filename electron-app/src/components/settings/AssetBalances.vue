@@ -35,8 +35,8 @@
         }}
       </template>
       <template v-if="balances.length > 0" #body.append>
-        <tr class="asset-balances__totals">
-          <td>Totals</td>
+        <tr class="asset-balances__total">
+          <td>Total</td>
           <td></td>
           <td>
             {{
@@ -111,7 +111,7 @@ export default class AssetBalances extends Vue {
   margin-right: 8px;
 }
 
-.asset-balances__totals {
+.asset-balances__total {
   font-weight: 500;
 }
 </style>

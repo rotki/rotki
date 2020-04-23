@@ -76,8 +76,8 @@
             </span>
           </template>
           <template v-if="visibleBalances.length > 0" #body.append>
-            <tr class="manual-balances-list__totals">
-              <td>Totals</td>
+            <tr class="manual-balances-list__total">
+              <td>Total</td>
               <td></td>
               <td></td>
               <td>
@@ -206,7 +206,7 @@ export default class ManualBalancesList extends Vue {
     margin-right: 8px;
   }
 
-  &__totals {
+  &__total {
     font-weight: 500;
   }
 
