@@ -10,7 +10,7 @@ import '@/filters';
 
 Vue.use(Vuetify);
 
-function createWrapper(value: BigNumber, usdValue: boolean = false) {
+function createWrapper(value: BigNumber, fiat: boolean = false) {
   let vuetify: typeof Vuetify = new Vuetify();
   return mount(AmountDisplay, {
     store,
@@ -18,7 +18,7 @@ function createWrapper(value: BigNumber, usdValue: boolean = false) {
     stubs: ['v-tooltip'],
     propsData: {
       value,
-      usdValue
+      fiat
     }
   });
 }
@@ -36,19 +36,17 @@ describe('AmountDisplay.vue', () => {
     store.commit('session/reset');
   });
 
-  test('displays amount converted to selected currency on usd-value flag', async () => {
-    wrapper = createWrapper(bigNumberify(1.20000001), true);
-    expect(wrapper.find('.amount-display__value').text()).toMatch('1.44');
-    expect(wrapper.find('.amount-display__full-value').text()).toMatch(
-      '1.440000012'
-    );
+  test('displays amount converted to selected currency on fiat flag', async () => {
+    wrapper = createWrapper(bigNumberify(1.20440001), true);
+    expect(wrapper.find('.amount-display__value').text()).toMatch('1.45');
+    expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
   });
 
-  test('displays amount as it is without the usd-value flag', async () => {
-    wrapper = createWrapper(bigNumberify(1.20000001));
-    expect(wrapper.find('.amount-display__value').text()).toMatch('1.20');
+  test('displays amount as it is without the fiat flag', async () => {
+    wrapper = createWrapper(bigNumberify(1.20540001));
+    expect(wrapper.find('.amount-display__value').text()).toMatch('1.21');
     expect(wrapper.find('.amount-display__full-value').text()).toMatch(
-      '1.20000001'
+      '1.20540001'
     );
   });
 });
