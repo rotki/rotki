@@ -54,11 +54,21 @@ def gemini_symbol_to_pair(symbol: str) -> TradePair:
     - Can raise UnprocessableTradePair if symbol is in unexpected format
     - Case raise UnknownAsset if any of the pair assets are not known to Rotki
     """
-    if len(symbol) != 6:
+    if len(symbol) == 6:
+        base_asset = Asset(symbol[:3].upper())
+        quote_asset = Asset(symbol[3:6].upper())
+    elif len(symbol) == 7:
+        try:
+            base_asset = Asset(symbol[:4].upper())
+            quote_asset = Asset(symbol[4:7].upper())
+        except UnknownAsset:
+            base_asset = Asset(symbol[:3].upper())
+            quote_asset = Asset(symbol[3:7].upper())
+    elif len(symbol) == 8:
+        base_asset = Asset(symbol[:4].upper())
+        quote_asset = Asset(symbol[4:8].upper())
+    else:
         raise UnprocessableTradePair(symbol)
-
-    base_asset = Asset(symbol[:3].upper())
-    quote_asset = Asset(symbol[3:6].upper())
 
     return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
 
