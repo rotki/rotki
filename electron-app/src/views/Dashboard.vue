@@ -54,7 +54,7 @@
               <amount-display :value="item.amount"></amount-display>
             </template>
             <template #item.usdValue="{ item }">
-              <amount-display usd-value :value="item.usdValue"></amount-display>
+              <amount-display fiat :value="item.usdValue"></amount-display>
             </template>
             <template #item.percentage="{ item }">
               {{ item.usdValue | percentage(total, floatingPrecision) }}

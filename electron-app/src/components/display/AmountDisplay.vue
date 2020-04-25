@@ -1,17 +1,17 @@
 <template>
   <span>
-    <span v-if="usdValue" class="amount-display__value">
+    <span v-if="fiat" class="amount-display__value">
       {{
         value
           | calculatePrice(exchangeRate(currency.ticker_symbol))
-          | formatPrice(floatingPrecision)
+          | formatPrice(2)
       }}
     </span>
     <span v-else class="amount-display__value">
       {{ value | formatPrice(floatingPrecision) }}
     </span>
 
-    <v-tooltip top>
+    <v-tooltip v-if="!fiat" top>
       <template #activator="{ on }">
         <span
           v-if="value.decimalPlaces() > floatingPrecision"
@@ -21,7 +21,7 @@
           *
         </span>
       </template>
-      <span v-if="usdValue" class="amount-display__full-value">
+      <span v-if="fiat" class="amount-display__full-value">
         {{ value | calculatePrice(exchangeRate(currency.ticker_symbol)) }}
       </span>
       <span v-else class="amount-display__full-value">
@@ -50,7 +50,7 @@ export default class AmountDisplay extends Vue {
   @Prop({ required: true })
   value!: BigNumber;
   @Prop({ required: false, default: false, type: Boolean })
-  usdValue!: boolean;
+  fiat!: boolean;
 
   currency!: Currency;
   floatingPrecision!: number;
