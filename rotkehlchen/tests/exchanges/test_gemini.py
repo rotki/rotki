@@ -1,3 +1,4 @@
+import warnings as test_warnings
 from unittest.mock import patch
 
 import pytest
@@ -5,6 +6,7 @@ import requests
 
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.exchanges.gemini import gemini_symbol_to_pair
 from rotkehlchen.fval import FVal
@@ -62,7 +64,17 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
     """
     symbols = sandbox_gemini._public_api_query('symbols')
     for symbol in symbols:
-        pair = gemini_symbol_to_pair(symbol)
+        try:
+            pair = gemini_symbol_to_pair(symbol)
+        except UnprocessableTradePair as e:
+            test_warnings.warn(UserWarning(
+                f'UnprocessableTradePair in Gemini. {e}',
+            ))
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Unknown Gemini asset detected. {e}',
+            ))
+
         assert pair is not None
 
 
@@ -288,3 +300,26 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     )]
     # The deposits should be returned with the oldest first (so given list is reversed)
     assert movements == expected_movements[::-1]
+
+
+def test_gemini_symbol_to_pair():
+    """Test edge cases and not yet existing cases of gemini symbol to pair"""
+    assert gemini_symbol_to_pair('btclink') == 'BTC_LINK'
+    assert gemini_symbol_to_pair('linkbtc') == 'LINK_BTC'
+    assert gemini_symbol_to_pair('linkpaxg') == 'LINK_PAXG'
+    assert gemini_symbol_to_pair('paxglink') == 'PAXG_LINK'
+
+    with pytest.raises(UnprocessableTradePair):
+        gemini_symbol_to_pair('btclinkxyz')
+    with pytest.raises(UnprocessableTradePair):
+        gemini_symbol_to_pair('xyzbtclink')
+    with pytest.raises(UnknownAsset):
+        gemini_symbol_to_pair('zzzbtc')
+    with pytest.raises(UnknownAsset):
+        gemini_symbol_to_pair('linkzzz')
+    with pytest.raises(UnknownAsset):
+        gemini_symbol_to_pair('zzzlink')
+    with pytest.raises(UnknownAsset):
+        gemini_symbol_to_pair('zzzzlink')
+    with pytest.raises(UnknownAsset):
+        gemini_symbol_to_pair('linkzzzz')
