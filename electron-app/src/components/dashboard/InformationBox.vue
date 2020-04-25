@@ -12,14 +12,11 @@
       </v-col>
       <v-col cols="10" class="information-box__amount text-right">
         <span class="information-box__amount__number">
-          {{
-            amount
-              | calculatePrice(exchangeRate(currency.ticker_symbol))
-              | formatPrice(floatingPrecision)
-          }}
-        </span>
-        <span class="information-box__currency__symbol">
-          {{ currency.unicode_symbol }}
+          <amount-display
+            show-currency="symbol"
+            usd-value
+            :value="amount"
+          ></amount-display>
         </span>
       </v-col>
     </v-row>
@@ -53,6 +50,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
 import { BlockchainBalancePayload } from '@/store/balances/actions';
 
@@ -60,6 +58,9 @@ const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
+  components: {
+    AmountDisplay
+  },
   computed: {
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters(['exchangeRate'])

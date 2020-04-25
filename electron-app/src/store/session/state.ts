@@ -9,6 +9,8 @@ export interface SessionState {
   accountingSettings: AccountingSettings;
   premium: boolean;
   premiumSync: boolean;
+  privacyMode: boolean;
+  scrambleData: boolean;
   nodeConnection: boolean;
   syncConflict: string;
   tags: Tags;
@@ -20,6 +22,8 @@ export const defaultState: () => SessionState = () => ({
   username: '',
   settings: defaultSettings(),
   accountingSettings: defaultAccountingSettings(),
+  privacyMode: false,
+  scrambleData: false,
   premium: false,
   premiumSync: false,
   nodeConnection: false,
