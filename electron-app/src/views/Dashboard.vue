@@ -141,9 +141,14 @@ export default class Dashboard extends Vue {
 
   headers = [
     { text: 'Asset', value: 'asset' },
-    { text: 'Amount', value: 'amount' },
-    { text: 'Value', value: 'usdValue' },
-    { text: '% of net Value', value: 'percentage', sortable: false }
+    { text: 'Amount', value: 'amount', align: 'end' },
+    { text: 'Value', value: 'usdValue', align: 'end' },
+    {
+      text: '% of net Value',
+      value: 'percentage',
+      align: 'end',
+      sortable: false
+    }
   ];
 }
 </script>
