@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`924` LINK is now properly supported for Gemini balance and trade queries.
 * :feature:`912` Adds total net value to the dashboard, fiat, and manual balances table. Makes account balance totals to reflect the filtered results.
 
 * :release:`1.4.1 <2020-04-22>`
@@ -9,7 +10,7 @@ Changelog
 * :bug:`904` For Kraken users take into account the worst-case API call counter and make sure the maximum calls are not reached to avoid prolonged API bans.
 * :bug:`895` Fixes manually tracked balances value column header not updating properly.
 * :bug:`899` If a user's ethereum account held both old and new REP the new REP's account balance should now be properly automatically detected.
-* :bug:`895` If the current price of an asset of a manually tracked balance can not be found, a value of zero is returned instead of breaking all manually tracked balances.
+* :bug:`896` If the current price of an asset of a manually tracked balance can not be found, a value of zero is returned instead of breaking all manually tracked balances.
 * :feature:`838` Added additional information about API Keys that can be set up by the user and grouped the API connections page into 3 categories: Rotki Premium / Exchanges / External Services.
 * :feature:`-` Added support for the following tokens
 
