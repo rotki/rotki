@@ -78,12 +78,11 @@
               <td></td>
               <td></td>
               <td>
-                {{
-                  visibleBalances.map(val => val.usdValue)
-                    | balanceSum
-                    | calculatePrice(exchangeRate(currency.ticker_symbol))
-                    | formatPrice(floatingPrecision)
-                }}
+                <amount-display
+                  usd-value
+                  class="manual-balances-list__amount"
+                  :value="visibleBalances.map(val => val.usdValue) | balanceSum"
+                ></amount-display>
               </td>
             </tr>
           </template>
