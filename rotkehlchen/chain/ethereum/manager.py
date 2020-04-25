@@ -10,6 +10,7 @@ from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.constants.ethereum import ETH_SCAN_ABI, ETH_SCAN_ADDRESS
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -221,20 +222,19 @@ class EthereumManager():
           there is a problem with its query.
         """
         balances: Dict[ChecksumEthAddress, FVal] = {}
-
-        if not self.connected:
-            balances = self.etherscan.get_accounts_balance(accounts)
-        else:
-            for account in accounts:
-                amount = FVal(self.web3.eth.getBalance(account))  # pylint: disable=no-member
-                log.debug(
-                    'Ethereum node balance result',
-                    sensitive_log=True,
-                    eth_address=account,
-                    wei_amount=amount,
-                )
-                balances[account] = from_wei(amount)
-
+        log.debug(
+            'Querying ethereum chain for ETH balance',
+            eth_addresses=accounts,
+        )
+        result = self.call_contract(
+            contract_address=ETH_SCAN_ADDRESS,
+            abi=ETH_SCAN_ABI,
+            method_name='etherBalances',
+            arguments=[accounts],
+        )
+        balances = {}
+        for idx, account in enumerate(accounts):
+            balances[account] = from_wei(result[idx])
         return balances
 
     def get_multitoken_balance(
@@ -251,44 +251,24 @@ class EthereumManager():
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
+        log.debug(
+            'Querying ethereum chain for token balances',
+            eth_addresses=accounts,
+            token_address=token.ethereum_address,
+            token_symbol=token.decimals,
+        )
         balances = {}
-        if self.connected:
-            token_contract = self.web3.eth.contract(  # pylint: disable=no-member
-                address=token.ethereum_address,
-                abi=self.token_abi,
-            )
-
-            for account in accounts:
-                log.debug(
-                    'Ethereum node query for token balance',
-                    sensitive_log=True,
-                    eth_address=account,
-                    token_address=token.ethereum_address,
-                    token_symbol=token.decimals,
-                )
-                token_amount = FVal(token_contract.functions.balanceOf(account).call())
-                if token_amount != 0:
-                    balances[account] = token_amount / (FVal(10) ** FVal(token.decimals))
-                log.debug(
-                    'Ethereum node result for token balance',
-                    sensitive_log=True,
-                    eth_address=account,
-                    token_address=token.ethereum_address,
-                    token_symbol=token.symbol,
-                    amount=token_amount,
-                )
-        else:
-            for account in accounts:
-                balances[account] = self.etherscan.get_token_balance(token, account)
-                log.debug(
-                    'Etherscan result for token balance',
-                    sensitive_log=True,
-                    eth_address=account,
-                    token_address=token.ethereum_address,
-                    token_symbol=token.symbol,
-                    amount=balances[account],
-                )
-
+        result = self.call_contract(
+            contract_address=ETH_SCAN_ADDRESS,
+            abi=ETH_SCAN_ABI,
+            method_name='tokensBalances',
+            arguments=[accounts, [token.ethereum_address]],
+        )
+        for idx, account in enumerate(accounts):
+            # 0 is since we only provide 1 token here
+            token_amount = result[idx][0]
+            if token_amount != 0:
+                balances[account] = FVal(result[idx][0]) / (FVal(10) ** FVal(token.decimals))
         return balances
 
     def get_token_balance(
