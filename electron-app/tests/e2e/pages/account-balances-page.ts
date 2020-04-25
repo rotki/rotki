@@ -38,6 +38,20 @@ export class AccountBalancesPage {
       .find('.manual-balances-list__amount')
       .should('contain', bigNumberify(balance.amount).toFormat(2));
 
+    if (bigNumberify(balance.amount).decimalPlaces() > 2) {
+      cy.get('@row')
+        .find('.manual-balances-list__amount')
+        .find('.amount-display__asterisk')
+        .should('be.visible');
+
+      cy.get('@row')
+        .find('.manual-balances-list__amount')
+        .find('.amount-display__asterisk')
+        .trigger('mouseenter');
+
+      cy.get('.amount-display__full-value').should('be.visible');
+    }
+
     cy.get('@row')
       .find('.manual-balances-list__location')
       .should('contain', balance.location);

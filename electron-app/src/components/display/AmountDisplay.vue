@@ -1,13 +1,13 @@
 <template>
   <span>
-    <span v-if="usdValue">
+    <span v-if="usdValue" class="amount-display__value">
       {{
         value
           | calculatePrice(exchangeRate(currency.ticker_symbol))
           | formatPrice(floatingPrecision)
       }}
     </span>
-    <span v-else>
+    <span v-else class="amount-display__value">
       {{ value | formatPrice(floatingPrecision) }}
     </span>
 
@@ -21,10 +21,10 @@
           *
         </span>
       </template>
-      <span v-if="usdValue">
+      <span v-if="usdValue" class="amount-display__full-value">
         {{ value | calculatePrice(exchangeRate(currency.ticker_symbol)) }}
       </span>
-      <span v-else>
+      <span v-else class="amount-display__full-value">
         {{ value }}
       </span>
     </v-tooltip>
