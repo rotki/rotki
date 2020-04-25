@@ -35,12 +35,11 @@
           <td>Total</td>
           <td></td>
           <td>
-            {{
-              balances.map(val => val.usdValue)
-                | balanceSum
-                | calculatePrice(exchangeRate(currency.ticker_symbol))
-                | formatPrice(floatingPrecision)
-            }}
+            <amount-display
+              usd-value
+              :value="balances.map(val => val.usdValue) | balanceSum"
+            >
+            </amount-display>
           </td>
         </tr>
       </template>

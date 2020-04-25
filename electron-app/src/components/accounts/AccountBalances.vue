@@ -108,19 +108,17 @@
         <tr class="account-balances__total">
           <td>Total</td>
           <td>
-            {{
-              visibleBalances.map(val => val.amount)
-                | balanceSum
-                | formatPrice(floatingPrecision)
-            }}
+            <amount-display
+              :value="visibleBalances.map(val => val.amount) | balanceSum"
+            >
+            </amount-display>
           </td>
           <td>
-            {{
-              visibleBalances.map(val => val.usdValue)
-                | balanceSum
-                | calculatePrice(exchangeRate(currency.ticker_symbol))
-                | formatPrice(floatingPrecision)
-            }}
+            <amount-display
+              usd-value
+              :value="visibleBalances.map(val => val.usdValue) | balanceSum"
+            >
+            </amount-display>
           </td>
         </tr>
       </template>
