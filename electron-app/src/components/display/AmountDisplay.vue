@@ -1,14 +1,16 @@
 <template>
   <span>
-    <span v-if="fiat" class="amount-display__value">
+    <span v-if="fiat" class="amount-display__value"
+      :class="privacyMode ? 'blur-content' : ''"
+    >
       {{
-        value
+        renderValue
           | calculatePrice(exchangeRate(currency.ticker_symbol))
           | formatPrice(2)
       }}
     </span>
     <span v-else class="amount-display__value">
-      {{ value | formatPrice(floatingPrecision) }}
+      {{ renderValue | formatPrice(floatingPrecision) }}
     </span>
 
     <v-tooltip v-if="!fiat" top>
@@ -22,12 +24,23 @@
         </span>
       </template>
       <span v-if="fiat" class="amount-display__full-value">
-        {{ value | calculatePrice(exchangeRate(currency.ticker_symbol)) }}
+        {{ renderValue | calculatePrice(exchangeRate(currency.ticker_symbol)) }}
       </span>
       <span v-else class="amount-display__full-value">
-        {{ value }}
-      </span>
+        {{ renderValue }}
     </v-tooltip>
+    <span v-if="showCurrency === 'ticker'" class="amount-display__currency">
+      {{ currency.ticker_symbol }}
+    </span>
+    <span
+      v-else-if="showCurrency === 'symbol'"
+      class="amount-display__currency"
+    >
+      {{ currency.unicode_symbol }}
+    </span>
+    <span v-else-if="showCurrency === 'name'" class="amount-display__currency">
+      {{ currency.name }}
+    </span>
   </span>
 </template>
 
@@ -42,8 +55,25 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   computed: {
-    ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapBalancesGetters(['exchangeRate'])
+    ...mapGetters([
+      'floatingPrecision',
+      'currency',
+      'privacyMode',
+      'scrambleData'
+    ]),
+    ...mapBalancesGetters(['exchangeRate']),
+    renderValue: function () {
+      const multiplier = [10, 100, 1000];
+
+      if (this.$store.state.session.scrambleData) {
+        return BigNumber.random()
+          .multipliedBy(
+            multiplier[Math.floor(Math.random() * multiplier.length)]
+          )
+          .plus(BigNumber.random(2));
+      }
+      return this.$props.value;
+    }
   }
 })
 export default class AmountDisplay extends Vue {
@@ -51,8 +81,18 @@ export default class AmountDisplay extends Vue {
   value!: BigNumber;
   @Prop({ required: false, default: false, type: Boolean })
   fiat!: boolean;
+  @Prop({
+    required: false,
+    default: 'none',
+    validator: showCurrency => {
+      return ['none', 'ticker', 'symbol', 'name'].indexOf(showCurrency) > -1;
+    }
+  })
+  showCurrency!: string;
 
   currency!: Currency;
+  privacyMode!: boolean;
+  scrambleData!: boolean;
   floatingPrecision!: number;
 }
 </script>
@@ -66,5 +106,9 @@ export default class AmountDisplay extends Vue {
       cursor: pointer;
     }
   }
+}
+.blur-content {
+  color: transparent;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 </style>

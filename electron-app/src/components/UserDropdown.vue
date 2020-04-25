@@ -30,6 +30,18 @@
           <v-list-item-title>Settings</v-list-item-title>
         </v-list-item>
 
+        <v-list-item
+          key="privacy-mode"
+          class="user-dropdown__privacy-mode"
+          @click="togglePrivacyMode()"
+        >
+          <v-list-item-avatar>
+            <v-icon v-if="privacyMode" color="primary">fa-eye-slash</v-icon>
+            <v-icon v-else color="primary">fa-eye</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-title>Toggle Privacy Mode</v-list-item-title>
+        </v-list-item>
+
         <v-divider></v-divider>
 
         <v-list-item
@@ -56,15 +68,24 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { createNamespacedHelpers } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
+const { mapGetters } = createNamespacedHelpers('session');
+
 @Component({
+  computed: mapGetters(['privacyMode']),
   components: {
     ConfirmDialog
   }
 })
 export default class UserDropdown extends Vue {
+  privacyMode!: boolean;
   confirmLogout: boolean = false;
+
+  togglePrivacyMode() {
+    this.$store.commit('session/privacyMode', !this.privacyMode);
+  }
 
   async logout() {
     this.confirmLogout = false;

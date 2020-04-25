@@ -21,7 +21,7 @@
               v-model="anonymizedLogs"
               class="settings-general__fields__anonymized-logs"
               off-icon="fa fa-square-o"
-              label="Should logs by anonymized?"
+              label="Should logs be anonymized?"
             ></v-checkbox>
 
             <v-checkbox
@@ -113,6 +113,17 @@
             </v-btn>
           </v-card-actions>
         </v-card>
+        <br />
+        <v-card>
+          <v-card-title>Frontend-only Settings</v-card-title>
+          <v-card-text>
+            <v-switch
+              v-model="scrambleData"
+              :label="`Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.`"
+            >
+            </v-switch>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
   </v-container>
@@ -134,12 +145,21 @@ const { mapState, mapGetters } = createNamespacedHelpers('session');
   components: { MessageDialog },
   computed: {
     ...mapState(['settings']),
-    ...mapGetters(['currency'])
+    ...mapGetters(['currency']),
+    scrambleData: {
+      get: function () {
+        return this.$store.getters['session/scrambleData'];
+      },
+      set: function (value) {
+        this.$store.commit('session/scrambleData', value);
+      }
+    }
   }
 })
 export default class General extends Vue {
   settings!: GeneralSettings;
   currency!: Currency;
+  scrambleData!: boolean;
 
   floatingPrecision: string = '0';
   anonymizedLogs: boolean = false;
