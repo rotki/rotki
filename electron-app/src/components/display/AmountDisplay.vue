@@ -98,10 +98,18 @@ export default class AmountDisplay extends Vue {
 </script>
 
 <style scoped lang="scss">
+td.text-end .amount-display {
+  &__asterisk {
+    float: right;
+    margin-right: -0.6em;
+    top: -0.1em;
+  }
+}
+
 .amount-display {
   &__asterisk {
     font-weight: 500;
-    padding: 2px;
+    font-size: 0.8em;
     &:hover {
       cursor: pointer;
     }
