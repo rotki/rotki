@@ -7,6 +7,7 @@ export class RotkiApp {
   }
 
   createAccount(username: string) {
+    // simulate high scaling / low res by making a very small viewpoirt
     cy.get('.login__button__new-account').click();
     cy.get('.create-account__fields__username').type(username);
     cy.get('.create-account__fields__password').type('1234');
