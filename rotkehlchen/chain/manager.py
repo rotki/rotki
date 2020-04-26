@@ -696,7 +696,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     )
                 else:
                     new_amount = add_or_sub(self.totals[token].amount, balance)  # type: ignore
-                    if new_amount == ZERO:
+                    if new_amount <= ZERO:
+                        new_amount = ZERO
                         new_usd_value = ZERO
                     else:
                         new_usd_value = add_or_sub(  # type: ignore
@@ -789,7 +790,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     self.totals[token] = Balance(amount=ZERO, usd_value=ZERO)
                 else:
                     new_amount = add_or_sub(self.totals[token].amount, token_total)  # type: ignore
-                    if new_amount == ZERO:
+                    if new_amount <= ZERO:
+                        new_amount = ZERO
                         new_usd_value = ZERO
                     else:
                         new_usd_value = add_or_sub(  # type: ignore
