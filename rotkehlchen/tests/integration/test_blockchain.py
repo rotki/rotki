@@ -5,11 +5,8 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
 from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.typing import SupportedBlockchain
-from rotkehlchen.utils.misc import from_wei
 
 
 @pytest.mark.skipif(
@@ -19,26 +16,15 @@ from rotkehlchen.utils.misc import from_wei
 @pytest.mark.parametrize('have_blockchain_backend', [True])
 def test_eth_connection_initial_balances(
         blockchain,
-        number_of_eth_accounts,
-        ethereum_accounts,
         inquirer,  # pylint: disable=unused-argument
 ):
+    """TODO for this test. Either:
+    1. Not use own chain but use a normal open node for this test.
+    2. If we use own chain, deploy the eth-scan contract there.
+
+    But probably (1) makes more sense
+    """
     assert blockchain.ethereum.connected is True, 'Should be connected to ethereum node'
-    result = blockchain.query_balances()
-
-    per_eth_account = result.per_account.eth
-    assert len(ethereum_accounts) == len(per_eth_account) == number_of_eth_accounts
-
-    eth_default_balance = from_wei(DEFAULT_BALANCE)
-    for acc, values in per_eth_account.items():
-        assert acc in ethereum_accounts
-        assert values.asset_balances['ETH'].amount == eth_default_balance
-        assert values.asset_balances['ETH'].usd_value > ZERO
-        assert values.total_usd_value > ZERO
-
-    totals_eth = result.totals['ETH']
-    assert totals_eth.amount == number_of_eth_accounts * eth_default_balance
-    assert totals_eth.usd_value > ZERO
 
 
 def test_query_btc_balances(blockchain):
