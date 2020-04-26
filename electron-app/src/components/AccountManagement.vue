@@ -1,6 +1,10 @@
 <template>
   <div>
-    <v-overlay v-if="!connected" class="account_management__loading">
+    <v-overlay
+      v-if="!connected"
+      class="account_management__loading"
+      z-index="8000"
+    >
       <v-row align="center" justify="center">
         <v-col cols="12" class="account_management__loading__content">
           <v-progress-circular indeterminate size="72"></v-progress-circular>
@@ -25,6 +29,7 @@
         </div>
       </v-alert>
     </div>
+
     <login
       v-if="connected"
       :displayed="!message && !logged && !accountCreation"
@@ -163,6 +168,14 @@ export default class AccountManagement extends Vue {
 </script>
 
 <style lang="scss">
+.v-overlay {
+  z-index: 8000 !important;
+}
+
+.v-dialog__content {
+  z-index: 9999 !important;
+}
+
 .account_management {
   &__loading {
     &__content {
@@ -181,7 +194,7 @@ export default class AccountManagement extends Vue {
     width: 100%;
     position: absolute;
     bottom: 20px;
-    z-index: 9999;
+    z-index: 8100;
     align-items: center;
     display: flex;
     flex-direction: column;
