@@ -14,7 +14,7 @@
         <span class="information-box__amount__number">
           <amount-display
             show-currency="symbol"
-            usd-value
+            fiat
             :value="amount"
           ></amount-display>
         </span>

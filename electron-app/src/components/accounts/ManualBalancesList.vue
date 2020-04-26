@@ -77,9 +77,9 @@
               <td>Total</td>
               <td></td>
               <td></td>
-              <td>
+              <td class="text-end">
                 <amount-display
-                  usd-value
+                  fiat
                   class="manual-balances-list__amount"
                   :value="visibleBalances.map(val => val.usdValue) | balanceSum"
                 ></amount-display>
@@ -169,8 +169,8 @@ export default class ManualBalancesList extends Vue {
   headers = [
     { text: 'Label', value: 'label' },
     { text: 'Asset', value: 'asset', width: '200' },
-    { text: 'Amount', value: 'amount' },
-    { text: 'USD Value', value: 'usdValue' },
+    { text: 'Amount', value: 'amount', align: 'end' },
+    { text: 'USD Value', value: 'usdValue', align: 'end' },
     { text: 'Location', value: 'location' },
     { text: 'Actions', value: 'actions', sortable: false, width: '50' }
   ];

@@ -107,13 +107,13 @@
       <template v-if="balances.length > 0" #body.append>
         <tr class="account-balances__total">
           <td>Total</td>
-          <td>
+          <td class="text-end">
             <amount-display
               :value="visibleBalances.map(val => val.amount) | balanceSum"
             >
             </amount-display>
           </td>
-          <td>
+          <td class="text-end">
             <amount-display
               usd-value
               :value="visibleBalances.map(val => val.usdValue) | balanceSum"
@@ -252,8 +252,8 @@ export default class AccountBalances extends Vue {
 
   headers = [
     { text: 'Account', value: 'account' },
-    { text: this.blockchain, value: 'amount' },
-    { text: 'USD Value', value: 'usdValue' },
+    { text: this.blockchain, value: 'amount', align: 'end' },
+    { text: 'USD Value', value: 'usdValue', align: 'end' },
     { text: 'Actions', value: 'actions', sortable: false, width: '50' },
     { text: '', value: 'expand', align: 'end' }
   ];
