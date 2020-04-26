@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`928` Action buttons in overlays ('Sign In', 'Create', etc.) are now never hidden by the privacy dialog regardless of resolution, app scaling, or zoom.
 * :feature:`908` Adds the ability to view the full amount on tables when hovering over a hint (asterisk) indicating that the display number has been rounded.
 * :bug:`924` LINK is now properly supported for Gemini balance and trade queries.
 * :feature:`912` Adds total net value to the dashboard, fiat, and manual balances table. Makes account balance totals to reflect the filtered results.
