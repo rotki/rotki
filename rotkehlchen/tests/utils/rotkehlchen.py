@@ -4,8 +4,8 @@ from unittest.mock import _patch
 
 import requests
 
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-# from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.fval import FVal
@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.blockchain import (
     mock_bitcoin_balances_query,
     mock_etherscan_balances_query,
 )
-from rotkehlchen.tests.utils.constants import A_XMR
+from rotkehlchen.tests.utils.constants import A_RDN, A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     patch_binance_balances_query,
     patch_poloniex_balances_query,
@@ -26,7 +26,7 @@ class BalancesTestSetup(NamedTuple):
     eth_balances: List[str]
     btc_balances: List[str]
     fiat_balances: Dict[str, FVal]
-    token_balances: Dict[str, List[str]]
+    token_balances: Dict[EthereumToken, List[str]]
     binance_balances: Dict[str, FVal]
     poloniex_balances: Dict[str, FVal]
     manually_tracked_balances: List[ManuallyTrackedBalance]
@@ -56,7 +56,7 @@ def setup_balances(
         ethereum_accounts: Optional[List[ChecksumEthAddress]],
         btc_accounts: Optional[List[BTCAddress]],
         eth_balances: Optional[List[str]] = None,
-        token_balances: Optional[Dict[str, List[str]]] = None,
+        token_balances: Optional[Dict[EthereumToken, List[str]]] = None,
         btc_balances: Optional[List[str]] = None,
         use_alethio: bool = False,
         manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
@@ -101,7 +101,7 @@ def setup_balances(
     else:
         # Default test values
         if len(ethereum_accounts) != 0:
-            token_balances = {'RDN': ['0', '4000000']}
+            token_balances = {A_RDN: ['0', '4000000']}
         else:
             token_balances = {}
     if btc_balances is not None:
@@ -121,8 +121,9 @@ def setup_balances(
     for idx, acc in enumerate(ethereum_accounts):
         eth_map[acc] = {}
         eth_map[acc]['ETH'] = eth_balances[idx]
-        for symbol in token_balances:
-            eth_map[acc][symbol] = token_balances[symbol][idx]
+        for token in token_balances:
+            symbol = token.identifier
+            eth_map[acc][symbol] = token_balances[token][idx]
 
     btc_map: Dict[BTCAddress, str] = {}
     for idx, btc_acc in enumerate(btc_accounts):

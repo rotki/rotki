@@ -15,7 +15,7 @@ def get_asset_balance_total(asset_symbol: str, setup: BalancesTestSetup) -> FVal
         asset_balances = getattr(setup, f'{asset_symbol.lower()}_balances')
         total += sum(conversion_function(FVal(b)) for b in asset_balances)
     elif EthereumToken(asset_symbol):
-        asset_balances = setup.token_balances[asset_symbol]
+        asset_balances = setup.token_balances[EthereumToken(asset_symbol)]
         total += sum(conversion_function(FVal(b)) for b in asset_balances)
     else:
         raise AssertionError(f'not implemented for asset {asset_symbol}')

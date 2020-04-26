@@ -13,7 +13,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.blockchain import assert_eth_balances_result
-from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
+from rotkehlchen.tests.utils.constants import A_GNO, A_MKR, A_RDN
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
@@ -75,10 +75,10 @@ def test_adding_ethereum_tokens(
         rotki,
         ethereum_accounts=ethereum_accounts,
         token_balances={
-            'RDN': ['0', '4000000'],
-            'DAI': ['50000000', '0'],
-            'MKR': ['0', '0'],
-            'GNO': ['0', '0'],
+            A_RDN: ['0', '4000000'],
+            A_DAI: ['50000000', '0'],
+            A_MKR: ['1115000', '0'],
+            A_GNO: ['0', '455552222'],
         },
         btc_accounts=[],
     )
@@ -114,10 +114,10 @@ def test_adding_ethereum_tokens_async(
         rotki,
         ethereum_accounts=ethereum_accounts,
         token_balances={
-            'RDN': ['0', '4000000'],
-            'DAI': ['50000000', '0'],
-            'MKR': ['0', '0'],
-            'GNO': ['0', '0'],
+            A_RDN: ['0', '4000000'],
+            A_DAI: ['50000000', '0'],
+            A_MKR: ['1115000', '0'],
+            A_GNO: ['0', '455552222'],
         },
         btc_accounts=[],
     )
@@ -223,9 +223,9 @@ def test_removing_ethereum_tokens(
         rotki,
         ethereum_accounts=ethereum_accounts,
         token_balances={
-            'RDN': ['0', '0'],
-            'DAI': ['50000000', '0'],
-            'GNO': ['0', '0'],
+            A_RDN: ['0', '0'],
+            A_DAI: ['50000000', '0'],
+            A_GNO: ['0', '0'],
         },
         btc_accounts=[],
     )
@@ -261,9 +261,9 @@ def test_removing_ethereum_tokens_async(
         rotki,
         ethereum_accounts=ethereum_accounts,
         token_balances={
-            'RDN': ['0', '0'],
-            'DAI': ['50000000', '0'],
-            'GNO': ['0', '0'],
+            A_RDN: ['0', '0'],
+            A_DAI: ['50000000', '0'],
+            A_GNO: ['0', '0'],
         },
         btc_accounts=[],
     )
