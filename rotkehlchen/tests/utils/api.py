@@ -96,7 +96,8 @@ def assert_error_response(
         if isinstance(contained_in_msg, str):
             assert contained_in_msg in response_data['message']
         elif isinstance(contained_in_msg, list):
-            assert any(x in response_data['message'] for x in contained_in_msg)
+            msg = f'Response: {response_data["message"]} does not match what we expected'
+            assert any(x in response_data['message'] for x in contained_in_msg), msg
 
 
 def assert_ok_async_response(response: requests.Response) -> int:
