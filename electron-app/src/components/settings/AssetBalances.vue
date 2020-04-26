@@ -34,7 +34,7 @@
         <tr class="asset-balances__total">
           <td>Total</td>
           <td></td>
-          <td>
+          <td class="text-end">
             <amount-display
               usd-value
               :value="balances.map(val => val.usdValue) | balanceSum"
@@ -85,8 +85,8 @@ export default class AssetBalances extends Vue {
 
   headers = [
     { text: 'Asset', value: 'asset' },
-    { text: 'Amount', value: 'amount' },
-    { text: 'USD Value', value: 'usdValue' }
+    { text: 'Amount', value: 'amount', align: 'end' },
+    { text: 'USD Value', value: 'usdValue', align: 'end' }
   ];
 }
 </script>

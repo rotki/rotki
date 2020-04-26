@@ -24,16 +24,24 @@
             item-key="trade_id"
           >
             <template #item.pair="{ item }" class="trade">
-              <span class="otc-trades__trade__pair">{{ item.pair }}</span>
+              <span class="otc-trades__trade__pair">
+                {{ item.pair }}
+              </span>
             </template>
             <template #item.trade_type="{ item }">
               <span class="otc-trades__trade__type">{{ item.trade_type }}</span>
             </template>
             <template #item.amount="{ item }">
-              <span class="otc-trades__trade__amount">{{ item.amount }}</span>
+              <amount-display
+                class="otc-trades__trade__amount"
+                :value="item.amount"
+              ></amount-display>
             </template>
             <template #item.rate="{ item }">
-              <span class="otc-trades__trade__rate">{{ item.rate }}</span>
+              <amount-display
+                class="otc-trades__trade__rate"
+                :value="item.rate"
+              ></amount-display>
             </template>
             <template #item.timestamp="{ item }">
               <span class="otc-trades__trade__time">
@@ -99,6 +107,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import OtcForm from '@/components/OtcForm.vue';
 import { StoredTrade, TradePayload } from '@/model/stored-trade';
 import { Message } from '@/store/store';
@@ -106,7 +115,7 @@ import { assert } from '@/utils/assertions';
 
 const { mapGetters } = createNamespacedHelpers('session');
 @Component({
-  components: { ConfirmDialog, MessageDialog, OtcForm },
+  components: { ConfirmDialog, MessageDialog, OtcForm, AmountDisplay },
   computed: mapGetters(['dateDisplayFormat'])
 })
 export default class OtcTrades extends Vue {
@@ -123,8 +132,8 @@ export default class OtcTrades extends Vue {
   readonly headers = [
     { text: 'Pair', value: 'pair' },
     { text: 'Type', value: 'trade_type' },
-    { text: 'Amount', value: 'amount' },
-    { text: 'Rate', value: 'rate' },
+    { text: 'Amount', value: 'amount', align: 'end' },
+    { text: 'Rate', value: 'rate', align: 'end' },
     { text: 'Time', value: 'timestamp' },
     { text: 'Actions', value: 'actions', width: '50' },
     { text: '', value: 'data-table-expand' }

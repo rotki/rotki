@@ -1,8 +1,6 @@
 <template>
-  <span>
-    <span v-if="fiat" class="amount-display__value"
-      :class="privacyMode ? 'blur-content' : ''"
-    >
+  <span :class="privacyMode ? 'blur-content' : ''">
+    <span v-if="fiat" class="amount-display__value">
       {{
         renderValue
           | calculatePrice(exchangeRate(currency.ticker_symbol))
@@ -16,7 +14,7 @@
     <v-tooltip v-if="!fiat" top>
       <template #activator="{ on }">
         <span
-          v-if="value.decimalPlaces() > floatingPrecision"
+          v-if="renderValue.decimalPlaces() > floatingPrecision"
           class="amount-display__asterisk"
           v-on="on"
         >
@@ -28,6 +26,7 @@
       </span>
       <span v-else class="amount-display__full-value">
         {{ renderValue }}
+      </span>
     </v-tooltip>
     <span v-if="showCurrency === 'ticker'" class="amount-display__currency">
       {{ currency.ticker_symbol }}
@@ -49,6 +48,7 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
+import { bigNumberify } from '@/utils/bignumbers';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
@@ -71,6 +71,9 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
             multiplier[Math.floor(Math.random() * multiplier.length)]
           )
           .plus(BigNumber.random(2));
+      }
+      if (typeof this.$props.value === 'string') {
+        return bigNumberify(this.$props.value);
       }
       return this.$props.value;
     }

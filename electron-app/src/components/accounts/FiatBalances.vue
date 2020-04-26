@@ -52,13 +52,13 @@
                 <tr class="fiat-balances__total">
                   <td>Total</td>
                   <td></td>
-                  <td>
-                    {{
-                      fiatBalances.map(val => val.usdValue)
-                        | balanceSum
-                        | calculatePrice(exchangeRate(currency.ticker_symbol))
-                        | formatPrice(floatingPrecision)
-                    }}
+                  <td class="text-end">
+                    <amount-display
+                      fiat
+                      :value="
+                        fiatBalances.map(val => val.usdValue) | balanceSum
+                      "
+                    ></amount-display>
                   </td>
                 </tr>
               </template>
@@ -128,8 +128,8 @@ export default class FiatBalances extends Vue {
 
   headers = [
     { text: 'Currency', value: 'currency' },
-    { text: 'Amount', value: 'amount' },
-    { text: 'value', value: 'usdValue' }
+    { text: 'Amount', value: 'amount', align: 'end' },
+    { text: 'value', value: 'usdValue', align: 'end' }
   ];
 
   get availableCurrencies(): Currency[] {

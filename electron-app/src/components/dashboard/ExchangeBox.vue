@@ -19,14 +19,11 @@
       </v-col>
       <v-col cols="10" class="exchange-box__amount text-right">
         <span class="exchange-box__amount__number">
-          {{
-            amount
-              | calculatePrice(exchangeRate(currency.ticker_symbol))
-              | formatPrice(floatingPrecision)
-          }}
-        </span>
-        <span class="exchange-box__currency__symbol">
-          {{ currency.unicode_symbol }}
+          <amount-display
+            show-currency="symbol"
+            fiat
+            :value="amount"
+          ></amount-display>
         </span>
       </v-col>
     </v-row>
@@ -66,6 +63,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
 import { ExchangeBalancePayload } from '@/store/balances/actions';
 
@@ -73,6 +71,7 @@ const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
+  components: { AmountDisplay },
   computed: {
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters(['exchangeRate'])

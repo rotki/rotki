@@ -68,13 +68,13 @@
               <tr class="dashboard__balances__total">
                 <td>Total</td>
                 <td></td>
-                <td>
-                  {{
-                    aggregatedBalances.map(val => val.usdValue)
-                      | balanceSum
-                      | calculatePrice(exchangeRate(currency.ticker_symbol))
-                      | formatPrice(floatingPrecision)
-                  }}
+                <td class="text-end">
+                  <amount-display
+                    fiat
+                    :value="
+                      aggregatedBalances.map(val => val.usdValue) | balanceSum
+                    "
+                  ></amount-display>
                 </td>
               </tr>
             </template>
