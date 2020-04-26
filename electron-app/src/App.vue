@@ -141,6 +141,10 @@ export default class App extends Vue {
 </script>
 
 <style scoped lang="scss">
+.v-navigation-drawer--fixed {
+  z-index: 8000 !important;
+}
+
 .rotki__logo {
   max-height: 150px;
 }

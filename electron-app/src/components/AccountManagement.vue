@@ -1,10 +1,6 @@
 <template>
   <div>
-    <v-overlay
-      v-if="!connected"
-      class="account_management__loading"
-      z-index="8000"
-    >
+    <v-overlay v-if="!connected" class="account_management__loading">
       <v-row align="center" justify="center">
         <v-col cols="12" class="account_management__loading__content">
           <v-progress-circular indeterminate size="72"></v-progress-circular>
@@ -169,7 +165,7 @@ export default class AccountManagement extends Vue {
 
 <style lang="scss">
 .v-overlay {
-  z-index: 8000 !important;
+  z-index: 200 !important;
 }
 
 .v-dialog__content {
