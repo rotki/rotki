@@ -301,7 +301,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
     ) -> Union[FVal, Dict[ChecksumEthAddress, FVal]]:
         """Query tokens by checking the eth_tokens mapping and using the respective query callback.
 
-        The callback is either self.ethereum.get_multitoken_balance or
+        The callback is either self.ethereum.get_multiaccount_token_balance or
         self.ethereum.get_token_balance"""
         result = query_callback(
             token_asset,
@@ -738,31 +738,19 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 usd_price = Inquirer().find_usd_price(token)
             except RemoteError:
                 usd_price = Price(ZERO)
-            if usd_price == ZERO:
-                # skip tokens that have no price
-                continue
             token_usd_price[token] = usd_price
 
-            if action == AccountAction.REMOVE and token not in self.totals:
-                # If we remove an account, and the token has no totals entry skip
-                token_balances[token] = {}
-                continue
-
-            try:
-                token_balances[token] = ChainManager._query_token_balances(
-                    token_asset=token,
-                    query_callback=self.ethereum.get_multitoken_balance,
-                    argument=accounts,
-                )
-            except BadFunctionCallOutput as e:
-                log.error(
-                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                    'exception: {}'.format(str(e)),
-                )
-                raise EthSyncError(
-                    'Tried to use the ethereum chain of the provided client to query '
-                    'token balances but the chain is not synced.',
-                )
+        try:
+            token_balances = self.ethereum.get_multitoken_multiaccount_balance(tokens, accounts)
+        except BadFunctionCallOutput as e:
+            log.error(
+                'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                'exception: {}'.format(str(e)),
+            )
+            raise EthSyncError(
+                'Tried to use the ethereum chain of the provided client to query '
+                'token balances but the chain is not synced.',
+            )
 
         add_or_sub: Optional[Callable[[Any, Any], Any]]
         if action == AccountAction.APPEND:
@@ -774,6 +762,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         eth_balances = self.balances.eth
         for token, token_accounts in token_balances.items():
+            if token_usd_price[token] == ZERO:
+                # skip tokens that have no price
+                continue
+
             token_total = ZERO
             for account, balance in token_accounts.items():
                 token_total += balance

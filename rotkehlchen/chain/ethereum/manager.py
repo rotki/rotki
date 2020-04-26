@@ -1,5 +1,6 @@
 import logging
 import os
+from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
@@ -237,12 +238,49 @@ class EthereumManager():
             balances[account] = from_wei(result[idx])
         return balances
 
-    def get_multitoken_balance(
+    def get_multitoken_multiaccount_balance(
+            self,
+            tokens: List[EthereumToken],
+            accounts: List[ChecksumEthAddress],
+    ) -> Dict[EthereumToken, Dict[ChecksumEthAddress, FVal]]:
+        """Queries a list of accounts for balances of multiple tokens
+
+        Return a dictionary with keys being tokens and value a dictionary of
+        account to balances
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - BadFunctionCallOutput if a local node is used and the contract for the
+          token has no code. That means the chain is not synced
+        """
+        log.debug(
+            'Querying ethereum chain for multi token multi account balances',
+            eth_addresses=accounts,
+            tokens=tokens,
+        )
+        balances: Dict[EthereumToken, Dict[ChecksumEthAddress, FVal]] = defaultdict(dict)
+        result = self.call_contract(
+            contract_address=ETH_SCAN_ADDRESS,
+            abi=ETH_SCAN_ABI,
+            method_name='tokensBalances',
+            arguments=[accounts, [x.ethereum_address for x in tokens]],
+        )
+        for acc_idx, account in enumerate(accounts):
+            for tk_idx, token in enumerate(tokens):
+                token_amount = FVal(result[acc_idx][tk_idx])
+                if token_amount != 0:
+                    balances[token][account] = token_amount / (FVal(10) ** FVal(token.decimals))
+        return balances
+
+    def get_multiaccount_token_balance(
             self,
             token: EthereumToken,
             accounts: List[ChecksumEthAddress],
     ) -> Dict[ChecksumEthAddress, FVal]:
-        """Return a dictionary with keys being accounts and value balances of token
+        """Queries a list of accounts for balances of a single token
+
+        Return a dictionary with keys being accounts and value balances of token
         Balance value is normalized through the token decimals.
 
         May raise:
@@ -252,7 +290,7 @@ class EthereumManager():
           token has no code. That means the chain is not synced
         """
         log.debug(
-            'Querying ethereum chain for token balances',
+            'Querying ethereum chain for single token multi account balances',
             eth_addresses=accounts,
             token_address=token.ethereum_address,
             token_symbol=token.decimals,
@@ -266,9 +304,9 @@ class EthereumManager():
         )
         for idx, account in enumerate(accounts):
             # 0 is since we only provide 1 token here
-            token_amount = result[idx][0]
+            token_amount = FVal(result[idx][0])
             if token_amount != 0:
-                balances[account] = FVal(result[idx][0]) / (FVal(10) ** FVal(token.decimals))
+                balances[account] = token_amount / (FVal(10) ** FVal(token.decimals))
         return balances
 
     def get_token_balance(
@@ -285,7 +323,7 @@ class EthereumManager():
         - BadFunctionCallOutput if a local node is used and the contract for the
         token has no code. That means the chain is not synced
         """
-        res = self.get_multitoken_balance(token=token, accounts=[account])
+        res = self.get_multiaccount_token_balance(token=token, accounts=[account])
         return res.get(account, FVal(0))
 
     def get_block_by_number(self, num: int) -> Dict[str, Any]:
