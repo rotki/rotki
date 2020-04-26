@@ -1,3 +1,4 @@
+import logging
 from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
@@ -5,6 +6,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -25,6 +27,9 @@ from rotkehlchen.tests.utils.factories import (
     make_ethereum_address,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -70,6 +75,7 @@ def test_query_blockchain_balances(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
+        caplog,
 ):
     """Test that the query blockchain balances endpoint works correctly. That is:
 
@@ -77,6 +83,7 @@ def test_query_blockchain_balances(
        - Querying only BTC chain returns only BTC account balances
        - Querying with no chain returns all balances (ETH, tokens and BTC)
     """
+    caplog.set_level(logging.DEBUG)
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
@@ -90,6 +97,9 @@ def test_query_blockchain_balances(
             "named_blockchain_balances_resource",
             blockchain='ETH',
         ))
+
+    msg = 'Alethio query should have failed'
+    assert 'Alethio accounts token balances query failed' in caplog.text, msg
 
     assert_proper_response(response)
     json_data = response.json()
@@ -326,14 +336,16 @@ def test_query_blockchain_balances_alethio(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
+        caplog,
 ):
     """Test that the query blockchain balances endpoint works correctly when used with alethio
     """
+    caplog.set_level(logging.DEBUG)
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
 
-    token_balances = {'RDN': ['0', '4000000'], 'GNO': ['323211111', '343442434']}
+    token_balances = {A_RDN: ['0', '4000000'], A_GNO: ['323211111', '343442434']}
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=ethereum_accounts,
@@ -348,6 +360,9 @@ def test_query_blockchain_balances_alethio(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
         ))
+
+    msg = 'Alethio query should not have failed'
+    assert 'Alethio accounts token balances query failed' not in caplog.text, msg
 
     assert_proper_response(response)
     json_data = response.json()
@@ -383,7 +398,7 @@ def _add_blockchain_accounts_test_start(
     if query_balances_before_first_modification:
         # Also test by having balances queried before adding an account
         eth_balances = ['1000000', '2000000']
-        token_balances = {'RDN': ['0', '4000000']}
+        token_balances = {A_RDN: ['0', '4000000']}
         setup = setup_balances(
             rotki,
             ethereum_accounts=ethereum_accounts,
@@ -402,7 +417,7 @@ def _add_blockchain_accounts_test_start(
     new_eth_accounts = [make_ethereum_address(), make_ethereum_address()]
     all_eth_accounts = ethereum_accounts + new_eth_accounts
     eth_balances = ['1000000', '2000000', '3000000', '4000000']
-    token_balances = {'RDN': ['0', '4000000', '0', '250000000']}
+    token_balances = {A_RDN: ['0', '4000000', '0', '250000000']}
     setup = setup_balances(
         rotki,
         ethereum_accounts=all_eth_accounts,
@@ -946,7 +961,7 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
     # Now add 3 accounts. Some of them  use these tags, some dont
     new_eth_accounts = [make_ethereum_address(), make_ethereum_address(), make_ethereum_address()]
     eth_balances = ['1000000', '4000000', '2000000']
-    token_balances = {'RDN': ['100000', '350000', '2223']}
+    token_balances = {A_RDN: ['100000', '350000', '2223']}
     setup = setup_balances(
         rotki,
         ethereum_accounts=new_eth_accounts,
@@ -1321,9 +1336,9 @@ def _remove_blockchain_accounts_test_start(
     removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
     eth_accounts_after_removal = [ethereum_accounts[1], ethereum_accounts[3]]
     all_eth_balances = ['1000000', '2000000', '3000000', '4000000']
-    token_balances = {'RDN': ['0', '0', '450000000', '0']}
+    token_balances = {A_RDN: ['0', '0', '450000000', '0']}
     eth_balances_after_removal = ['2000000', '4000000']
-    token_balances_after_removal = {'RDN': ['0', '0']}
+    token_balances_after_removal = {A_RDN: ['0', '0']}
     if query_balances_before_first_modification:
         # Also test by having balances queried before removing an account
         setup = setup_balances(

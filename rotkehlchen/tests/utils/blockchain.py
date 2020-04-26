@@ -8,9 +8,13 @@ from typing import Any, Dict, List
 from unittest.mock import patch
 
 import gevent
+from eth_utils.address import to_checksum_address
+from web3 import Web3
+from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.constants.ethereum import ETH_SCAN_ABI, ETH_SCAN_ADDRESS
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
 from rotkehlchen.externalapis.alethio import Alethio
@@ -259,7 +263,7 @@ def assert_eth_balances_result(
         json_data: Dict[str, Any],
         eth_accounts: List[str],
         eth_balances: List[str],
-        token_balances: Dict[str, List[str]],
+        token_balances: Dict[EthereumToken, List[str]],
         also_btc: bool,
         totals_only: bool = False,
 ) -> None:
@@ -286,15 +290,17 @@ def assert_eth_balances_result(
             else:
                 assert usd_value > ZERO
             have_tokens = False
-            for symbol, balances in token_balances.items():
+            for token, balances in token_balances.items():
                 expected_token_amount = FVal(balances[idx])
                 if expected_token_amount == ZERO:
-                    msg = f'{account} should have no entry for {symbol}'
-                    assert symbol not in per_account[account], msg
+                    msg = f'{account} should have no entry for {token}'
+                    assert token.identifier not in per_account[account], msg
                 else:
                     have_tokens = True
-                    token_amount = FVal(per_account[account]['assets'][symbol]['amount'])
-                    usd_value = FVal(per_account[account]['assets'][symbol]['usd_value'])
+                    token_amount = FVal(per_account[account]['assets'][token.identifier]['amount'])
+                    usd_value = FVal(
+                        per_account[account]['assets'][token.identifier]['usd_value'],
+                    )
                     assert token_amount == from_wei(expected_token_amount)
                     assert usd_value > ZERO
 
@@ -323,8 +329,9 @@ def assert_eth_balances_result(
     else:
         assert FVal(totals['ETH']['usd_value']) > ZERO
 
-    for symbol, balances in token_balances.items():
-        if symbol not in rotki.chain_manager.owned_eth_tokens:
+    for token, balances in token_balances.items():
+        symbol = token.identifier
+        if token not in rotki.chain_manager.owned_eth_tokens:
             # If the token got removed from the owned tokens in the test make sure
             # it's not in the totals anymore
             assert symbol not in totals
@@ -379,6 +386,55 @@ def mock_etherscan_balances_query(
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
 
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN_ADDRESS}' in url:
+            web3 = Web3()
+            contract = web3.eth.contract(address=ETH_SCAN_ADDRESS, abi=ETH_SCAN_ABI)
+            if 'data=0xdbdbb51b' in url:  # Eth balance query
+                data = url.split('data=')[1]
+                fn_abi = contract._find_matching_fn_abi(
+                    fn_identifier='etherBalances',
+                    args=[list(eth_map.keys())],
+                )
+                input_types = get_abi_input_types(fn_abi)
+                output_types = get_abi_output_types(fn_abi)
+                decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
+                args = []
+                for account_address in decoded_input[0]:
+                    account_address = to_checksum_address(account_address)
+                    args.append(int(eth_map[account_address]['ETH']))
+                result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
+                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+            elif 'data=0x06187b4f' in url:  # Multi token balance query
+                data = url.split('data=')[1]
+                # not really the given args, but we just want the fn abi
+                args = [list(eth_map.keys()), list(eth_map.keys())]
+                fn_abi = contract._find_matching_fn_abi(
+                    fn_identifier='tokensBalances',
+                    args=args,
+                )
+                input_types = get_abi_input_types(fn_abi)
+                output_types = get_abi_output_types(fn_abi)
+                decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
+                args = []
+                for account_address in decoded_input[0]:
+                    account_address = to_checksum_address(account_address)
+                    x = []
+                    for token_address in decoded_input[1]:
+                        token_address = to_checksum_address(token_address)
+                        for given_asset, value in eth_map[account_address].items():
+                            if not isinstance(given_asset, EthereumToken):
+                                continue
+                            if token_address != given_asset.ethereum_address:
+                                continue
+                            x.append(int(value))
+                            break
+                    args.append(x)
+                result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
+                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+
+            else:
+                raise AssertionError(f'Unexpected etherscan call during tests: {url}')
+
         else:
             return original_requests_get(url, *args, **kwargs)
 
@@ -400,15 +456,29 @@ def mock_alethio_balances_query(
         if 'tokenBalances' in url:
             addr = url[33:75]
             assert addr in eth_map, f'Queried alethio for {addr} which is not in the eth_map'
-            response = '{"data":['
+            response = '{"meta":{"page":{"hasNext": false}},"data":['
             for symbol, balance in eth_map[addr].items():
                 if symbol == 'ETH':
                     continue
 
-                token = EthereumToken(symbol)
+                token = symbol
                 if FVal(balance) == ZERO:
                     continue
-                response += f"""{{"type":"TokenBalance","id":"foo","attributes":{{"balance":"{balance}"}},"relationships":{{"account":{{"data":{{"type":"Account","id":"foo"}},"links":{{"related":"https://api.aleth.io/v1/token-balances/0x9531c059098e3d194ff87febb587ab07b30b13066b175474e89094c44da98b954eedeac495271d0f/account"}},"token":{{"data":{{"type":"Token","id":"{token.ethereum_address}" }}}}}}"""  # noqa: E501
+
+                if 'TokenBalance' in response:
+                    # if it's not the first response
+                    response += ','
+                response += f"""{{
+                    "type":"TokenBalance","id":"foo",
+                        "attributes":{{"balance":"{balance}"}},
+                        "relationships":{{
+                            "account":{{
+                                "data":{{"type":"Account","id":"foo"}},
+                                "links":{{"related":"https://api.aleth.io/v1/token-balances/0x9531c059098e3d194ff87febb587ab07b30b13066b175474e89094c44da98b954eedeac495271d0f/account"}}
+                            }},
+                            "token":{{"data":{{"type":"Token","id":"{token.ethereum_address}"}}}}
+                        }}
+                    }}"""
 
             response += ']}'
 
