@@ -142,7 +142,11 @@ export default class App extends Vue {
 
 <style scoped lang="scss">
 .v-navigation-drawer--fixed {
-  z-index: 8000 !important;
+  z-index: 100 !important;
+}
+
+.v-navigation-drawer--is-mobile {
+  z-index: 205 !important;
 }
 
 .rotki__logo {

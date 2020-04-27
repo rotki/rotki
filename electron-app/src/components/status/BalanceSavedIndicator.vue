@@ -1,5 +1,10 @@
 <template>
-  <v-menu id="balances-saved-dropdown" transition="slide-y-transition" bottom>
+  <v-menu
+    id="balances-saved-dropdown"
+    transition="slide-y-transition"
+    bottom
+    z-index="105"
+  >
     <template #activator="{ on }">
       <v-btn color="primary" dark icon text v-on="on">
         <v-icon>
