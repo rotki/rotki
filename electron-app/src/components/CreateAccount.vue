@@ -11,6 +11,7 @@
         <v-form ref="form" v-model="valid">
           <v-text-field
             v-model="username"
+            autofocus
             class="create-account__fields__username"
             label="Username"
             prepend-icon="fa-user"

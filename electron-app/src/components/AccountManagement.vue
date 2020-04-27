@@ -165,7 +165,7 @@ export default class AccountManagement extends Vue {
 
 <style lang="scss">
 .v-overlay {
-  z-index: 200 !important;
+  z-index: 8050 !important;
 }
 
 .v-dialog__content {
