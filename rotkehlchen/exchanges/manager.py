@@ -31,7 +31,23 @@ class ExchangeManager():
         self.connected_exchanges: Dict[str, ExchangeInterface] = {}
         self.msg_aggregator = msg_aggregator
 
-    def has_exchange(self, name: str) -> bool:
+    def has_exchange(self, name: str, database: Optional['DBHandler'] = None) -> bool:
+        """Check if an exchange is registered.
+
+        If the exchange manager can access the database (given as argument)
+        then it checks for credentials there. If not just relies on the mapping
+        """
+        credentials = database.get_exchange_credentials() if database else None
+        if credentials is not None and name not in credentials:
+            if name in self.connected_exchanges:
+                log.warning(
+                    f'{name} exchange had no credentials in the DB but was in the '
+                    f'connected exchanges mapping. Removing stale exchange from '
+                    f'mapping. This should not happen.'
+                )
+                self.connected_exchanges.pop(name)
+            return False
+
         return name in self.connected_exchanges
 
     def delete_exchange(self, name: str) -> None:
@@ -62,7 +78,7 @@ class ExchangeManager():
         if name not in SUPPORTED_EXCHANGES:
             return False, 'Attempted to register unsupported exchange {}'.format(name)
 
-        if name in self.connected_exchanges:
+        if self.has_exchange(name, database=database):
             return False, 'Exchange {} is already registered'.format(name)
 
         credentials_dict = {}
