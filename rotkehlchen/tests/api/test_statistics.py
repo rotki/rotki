@@ -237,7 +237,8 @@ def test_query_statistics_value_distribution(
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
-    setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
+    token_balances = {A_RDN: ['111000', '4000000']}
+    setup = setup_balances(rotki, ethereum_accounts, btc_accounts, token_balances=token_balances)
 
     # query balances and save data in DB to have data to test the statistics endpoint
     with ExitStack() as stack:

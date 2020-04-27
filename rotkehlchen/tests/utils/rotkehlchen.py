@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 from unittest.mock import _patch
 
 import requests
@@ -117,13 +117,12 @@ def setup_balances(
         else:
             btc_balances = []
 
-    eth_map: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
+    eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]] = {}
     for idx, acc in enumerate(ethereum_accounts):
         eth_map[acc] = {}
         eth_map[acc]['ETH'] = eth_balances[idx]
         for token in token_balances:
-            symbol = token.identifier
-            eth_map[acc][symbol] = token_balances[token][idx]
+            eth_map[acc][token] = token_balances[token][idx]
 
     btc_map: Dict[BTCAddress, str] = {}
     for idx, btc_acc in enumerate(btc_accounts):
