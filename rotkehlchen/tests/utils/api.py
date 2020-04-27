@@ -88,10 +88,11 @@ def assert_error_response(
         response.headers["Content-Type"] == "application/json"
     )
     response_data = response.json()
-    if result_exists:
-        assert response_data['result'] is not None
-    else:
-        assert response_data['result'] is None
+    if status_code != HTTPStatus.INTERNAL_SERVER_ERROR:
+        if result_exists:
+            assert response_data['result'] is not None
+        else:
+            assert response_data['result'] is None
     if contained_in_msg:
         if isinstance(contained_in_msg, str):
             assert contained_in_msg in response_data['message']

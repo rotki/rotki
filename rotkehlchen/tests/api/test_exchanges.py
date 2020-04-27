@@ -26,9 +26,18 @@ from rotkehlchen.tests.utils.history import (
     mock_history_processing_and_exchanges,
 )
 
+
+def mock_validate_api_key():
+    raise ValueError('BOOM 500 ERROR!')
+
+
 API_KEYPAIR_VALIDATION_PATCH = patch(
     'rotkehlchen.exchanges.kraken.Kraken.validate_api_key',
     return_value=(True, ''),
+)
+API_KEYPAIR_KRAKEN_VALIDATION_FAIL_PATCH = patch(
+    'rotkehlchen.exchanges.kraken.Kraken.validate_api_key',
+    side_effect=mock_validate_api_key,
 )
 API_KEYPAIR_COINBASEPRO_VALIDATION_PATCH = patch(
     'rotkehlchen.exchanges.coinbasepro.Coinbasepro.validate_api_key',
@@ -113,6 +122,38 @@ def test_setup_exchange(rotkehlchen_api_server):
     json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result'] == ['kraken', 'coinbasepro']
+
+
+def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api_server):
+    """Test that if 500 error is returned during setup of an exchange and it's stuck
+    in the exchange mapping Rotki doesn't still think the exchange is registered.
+
+    Regression test for the second part of https://github.com/rotki/rotki/issues/943
+    """
+    data = {'name': 'kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+    with API_KEYPAIR_KRAKEN_VALIDATION_FAIL_PATCH:
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+        )
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+    )
+
+    # Now try to register the exchange again
+    data = {'name': 'kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+    with API_KEYPAIR_VALIDATION_PATCH:
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+        )
+    assert_simple_ok_response(response)
+
+    # and check that kraken is now registered
+    response = requests.get(api_url_for(rotkehlchen_api_server, "exchangesresource"))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert json_data['result'] == ['kraken']
 
 
 def test_setup_exchange_errors(rotkehlchen_api_server):

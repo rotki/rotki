@@ -43,7 +43,7 @@ class ExchangeManager():
                 log.warning(
                     f'{name} exchange had no credentials in the DB but was in the '
                     f'connected exchanges mapping. Removing stale exchange from '
-                    f'mapping. This should not happen.'
+                    f'mapping. This should not happen.',
                 )
                 self.connected_exchanges.pop(name)
             return False
