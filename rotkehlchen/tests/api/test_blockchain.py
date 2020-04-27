@@ -556,43 +556,18 @@ def test_add_blockchain_accounts(
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
-def test_add_blockchain_accounts_synchronously_no_etherscan(rotkehlchen_api_server):
-    """Make sure that adding an ethereum blockchain account without etherscan key returns error
-
-    Regression test for https://github.com/rotki/rotki/issues/852
-    """
+def test_no_etherscan_is_detected(rotkehlchen_api_server):
+    """Make sure that interacting with ethereum without an etherscan key is given a warning"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
         "blockchainsaccountsresource",
         blockchain='ETH',
     ), json={'accounts': [{'address': make_ethereum_address()}]})
-    assert_error_response(
-        response=response,
-        contained_in_msg='Etherscan has introduced compulsory API keys.',
-        status_code=HTTPStatus.BAD_GATEWAY,
-    )
-
-
-@pytest.mark.parametrize('include_etherscan_key', [False])
-@pytest.mark.parametrize('number_of_eth_accounts', [2])
-def test_remove_blockchain_accounts_synchronously_no_etherscan(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
-    """Make sure that removing an ethereum blockchain account without etherscan key returns error
-
-    Regression test for https://github.com/rotki/rotki/issues/852
-    """
-    response = requests.delete(api_url_for(
-        rotkehlchen_api_server,
-        "blockchainsaccountsresource",
-        blockchain='ETH',
-    ), json={'accounts': [ethereum_accounts[0]]})
-    assert_error_response(
-        response=response,
-        contained_in_msg='Etherscan has introduced compulsory API keys.',
-        status_code=HTTPStatus.BAD_GATEWAY,
-    )
+    assert_proper_response(response)
+    warnings = rotki.msg_aggregator.consume_warnings()
+    assert len(warnings) == 1
+    assert 'You do not have an Etherscan API key configured' in warnings[0]
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])

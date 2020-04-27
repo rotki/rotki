@@ -83,6 +83,7 @@ class Etherscan(ExternalServiceWithApiKey):
         super().__init__(database=database, service_name=ExternalService.ETHERSCAN)
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
+        self.warning_given = False
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
     @overload  # noqa: F811
@@ -152,11 +153,17 @@ class Etherscan(ExternalServiceWithApiKey):
 
         api_key = self._get_api_key()
         if api_key is None:
-            raise RemoteError(
-                'Etherscan has introduced compulsory API keys.'
-                'Please go to to https://etherscan.io/register, create an API '
-                'key and then input it in the external service credentials setting of Rotki',
-            )
+            if not self.warning_given:
+                self.msg_aggregator.add_warning(
+                    'You do not have an Etherscan API key configured. Rotki '
+                    'etherscan queries will still work but will be very slow. '
+                    'If you are not using your own ethereum node, it iss recommended '
+                    'to go to https://etherscan.io/register, create an API '
+                    'key and then input it in the external service credentials setting of Rotki',
+                )
+                self.warning_given = True
+        else:
+            query_str += f'&apikey={api_key}'
 
         logger.debug(f'Querying etherscan: {query_str}')
         backoff = 1
