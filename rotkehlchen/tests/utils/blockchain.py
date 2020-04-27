@@ -391,6 +391,9 @@ def mock_etherscan_balances_query(
             contract = web3.eth.contract(address=ETH_SCAN_ADDRESS, abi=ETH_SCAN_ABI)
             if 'data=0xdbdbb51b' in url:  # Eth balance query
                 data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
+
                 fn_abi = contract._find_matching_fn_abi(
                     fn_identifier='etherBalances',
                     args=[list(eth_map.keys())],
@@ -406,6 +409,8 @@ def mock_etherscan_balances_query(
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             elif 'data=0x06187b4f' in url:  # Multi token balance query
                 data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
                 # not really the given args, but we just want the fn abi
                 args = [list(eth_map.keys()), list(eth_map.keys())]
                 fn_abi = contract._find_matching_fn_abi(

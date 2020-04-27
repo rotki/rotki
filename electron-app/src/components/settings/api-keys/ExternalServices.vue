@@ -21,7 +21,7 @@
           v-model="etherscanKey"
           class="external-services__etherscan-key"
           title="Etherscan"
-          description="Required for any Ethereum blockchain balances or transactions. Rotki uses Etherscan to query Ethereum blockchain data if you are not using your own Ethereum node. If you are, it's still needed but only for historical data."
+          description="Recommended for any Ethereum blockchain balances or transactions if you are not using your own node."
           label="API key"
           hint="Enter your Etherscan API key"
           :loading="loading"

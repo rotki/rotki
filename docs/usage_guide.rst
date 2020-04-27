@@ -164,7 +164,7 @@ Rotki relies on various external services for data such as historical crypto pri
    :alt: Add API keys for an external service
    :align: center
 
-At the moment the only compulsory API key is etherscan. If you don't already have an account with them please create one `here <https://etherscan.io/register>`_ and then generate a free API key and set it in the app as explained above.
+At the moment there is no compulsory API key. But if you don't use your own node etherscan queries without an API key are really slow. So if you don't already have an account with them please create one `here <https://etherscan.io/register>`_ and then generate a free API key and set it in the app as explained above. It's free of charge.
 
 Cointracking.info
 ====================
