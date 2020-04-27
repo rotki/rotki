@@ -4,7 +4,7 @@ import os
 import shutil
 import subprocess
 from binascii import hexlify
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from unittest.mock import patch
 
 import gevent
@@ -347,7 +347,7 @@ def assert_eth_balances_result(
 
 
 def mock_etherscan_balances_query(
-        eth_map: Dict[ChecksumEthAddress, Dict[str, Any]],
+        eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
         etherscan: Etherscan,
         original_requests_get,
 ):
@@ -421,14 +421,17 @@ def mock_etherscan_balances_query(
                     x = []
                     for token_address in decoded_input[1]:
                         token_address = to_checksum_address(token_address)
+                        value_to_add = 0
                         for given_asset, value in eth_map[account_address].items():
                             if not isinstance(given_asset, EthereumToken):
                                 continue
                             if token_address != given_asset.ethereum_address:
                                 continue
-                            x.append(int(value))
+                            value_to_add = int(value)
                             break
+                        x.append(value_to_add)
                     args.append(x)
+
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
 
@@ -444,7 +447,7 @@ def mock_etherscan_balances_query(
 
 
 def mock_alethio_balances_query(
-        eth_map: Dict[ChecksumEthAddress, Dict[str, Any]],
+        eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
         alethio: Alethio,
         use_alethio: bool,
 ):
