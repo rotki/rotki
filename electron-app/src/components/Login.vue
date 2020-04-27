@@ -6,6 +6,7 @@
         <v-form ref="form" v-model="valid">
           <v-text-field
             v-model="username"
+            autofocus
             class="login__fields__username"
             label="Username"
             prepend-icon="fa-user"
