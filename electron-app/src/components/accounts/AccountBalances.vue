@@ -115,7 +115,7 @@
           </td>
           <td class="text-end">
             <amount-display
-              usd-value
+              fiat
               :value="visibleBalances.map(val => val.usdValue) | balanceSum"
             >
             </amount-display>

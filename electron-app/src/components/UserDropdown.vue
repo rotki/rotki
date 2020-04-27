@@ -71,10 +71,10 @@ import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
-const { mapGetters } = createNamespacedHelpers('session');
+const { mapState } = createNamespacedHelpers('session');
 
 @Component({
-  computed: mapGetters(['privacyMode']),
+  computed: mapState(['privacyMode']),
   components: {
     ConfirmDialog
   }

@@ -145,21 +145,12 @@ const { mapState, mapGetters } = createNamespacedHelpers('session');
   components: { MessageDialog },
   computed: {
     ...mapState(['settings']),
-    ...mapGetters(['currency']),
-    scrambleData: {
-      get: function () {
-        return this.$store.getters['session/scrambleData'];
-      },
-      set: function (value) {
-        this.$store.commit('session/scrambleData', value);
-      }
-    }
+    ...mapGetters(['currency'])
   }
 })
 export default class General extends Vue {
   settings!: GeneralSettings;
   currency!: Currency;
-  scrambleData!: boolean;
 
   floatingPrecision: string = '0';
   anonymizedLogs: boolean = false;
@@ -176,6 +167,14 @@ export default class General extends Vue {
   @Watch('date')
   dateWatch() {
     this.historicDataStart = this.formatDate(this.date);
+  }
+
+  get scrambleData() {
+    return this.$store.state.session.scrambleData;
+  }
+
+  set scrambleData(value: boolean) {
+    this.$store.commit('session/scrambleData', value);
   }
 
   formatDate(date: string) {

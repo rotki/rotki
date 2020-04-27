@@ -15,14 +15,6 @@ export const getters: GetterTree<SessionState, RotkehlchenState> = {
     return state.accountingSettings.lastBalanceSave;
   },
 
-  privacyMode: (state: SessionState) => {
-    return state.privacyMode;
-  },
-
-  scrambleData: (state: SessionState) => {
-    return state.scrambleData;
-  },
-
   currency: (state: SessionState) => {
     return state.settings.selectedCurrency;
   },
