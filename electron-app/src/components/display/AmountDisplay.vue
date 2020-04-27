@@ -51,16 +51,14 @@ import { Currency } from '@/model/currency';
 import { bigNumberify } from '@/utils/bignumbers';
 
 const { mapGetters } = createNamespacedHelpers('session');
+const { mapState } = createNamespacedHelpers('session');
+
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   computed: {
-    ...mapGetters([
-      'floatingPrecision',
-      'currency',
-      'privacyMode',
-      'scrambleData'
-    ]),
+    ...mapGetters(['floatingPrecision', 'currency']),
+    ...mapState(['privacyMode', 'scrambleData']),
     ...mapBalancesGetters(['exchangeRate']),
     renderValue: function () {
       const multiplier = [10, 100, 1000];
