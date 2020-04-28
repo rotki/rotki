@@ -100,20 +100,20 @@ def account_for_manually_tracked_balances(
         location_str = str(m_entry.location)
         if location_str not in balances:
             balances[location_str] = {}
-            balances[location_str][m_entry.asset.identifier] = {
+            balances[location_str][m_entry.asset] = {
                 'amount': m_entry.amount,
                 'usd_value': m_entry.usd_value,
             }
         else:
-            if m_entry.asset.identifier not in balances[location_str]:
-                balances[location_str][m_entry.asset.identifier] = {
+            if m_entry.asset not in balances[location_str]:
+                balances[location_str][m_entry.asset] = {
                     'amount': m_entry.amount,
                     'usd_value': m_entry.usd_value,
                 }
             else:
-                old_amount = balances[location_str][m_entry.asset.identifier]['amount']
-                old_usd_value = balances[location_str][m_entry.asset.identifier]['usd_value']
-                balances[location_str][m_entry.asset.identifier] = {
+                old_amount = balances[location_str][m_entry.asset]['amount']
+                old_usd_value = balances[location_str][m_entry.asset]['usd_value']
+                balances[location_str][m_entry.asset] = {
                     'amount': old_amount + m_entry.amount,
                     'usd_value': old_usd_value + m_entry.usd_value,
                 }

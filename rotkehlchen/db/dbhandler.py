@@ -1043,7 +1043,8 @@ class DBHandler:
             if key in ('location', 'net_usd'):
                 continue
 
-            assert isinstance(key, Asset), 'at this point the key should only be Asset type'
+            msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
+            assert isinstance(key, Asset), msg
             balances.append(AssetBalance(
                 time=timestamp,
                 asset=key,
