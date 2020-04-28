@@ -486,14 +486,17 @@ class Kraken(ExchangeInterface):
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             old_balances = self.api_query('Balance', req={})
-
         except RemoteError as e:
-            msg = (
-                'Kraken API request failed. Could not reach kraken due '
-                'to {}'.format(e)
-            )
-            log.error(msg)
-            return None, msg
+            if "Missing key: 'result'" in str(e):
+                # handle https://github.com/rotki/rotki/issues/946
+                old_balances = {}
+            else:
+                msg = (
+                    'Kraken API request failed. Could not reach kraken due '
+                    'to {}'.format(e)
+                )
+                log.error(msg)
+                return None, msg
 
         balances = {}
         for k, v in old_balances.items():
