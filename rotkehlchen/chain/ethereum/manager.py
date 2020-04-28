@@ -9,6 +9,7 @@ from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
+from web3.middleware.exception_retry_request import http_retry_request_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.ethereum import ETH_SCAN_ABI, ETH_SCAN_ADDRESS
@@ -75,6 +76,7 @@ class EthereumManager():
                 request_kwargs={'timeout': self.eth_rpc_timeout},
             )
             self.web3 = Web3(provider)
+            self.web3.middleware_onion.inject(http_retry_request_middleware, layer=0)
         except requests.exceptions.ConnectionError:
             log.warning('Could not connect to an ethereum node. Will use etherscan only')
             self.connected = False
