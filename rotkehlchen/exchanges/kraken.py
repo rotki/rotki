@@ -3,6 +3,7 @@
 import base64
 import hashlib
 import hmac
+import json
 import logging
 import time
 from enum import Enum
@@ -230,20 +231,29 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
                 response.status_code,
             ))
 
-    result = rlk_jsonloads_dict(response.text)
-    if result['error']:
-        if isinstance(result['error'], list):
-            error = result['error'][0]
-        else:
-            error = result['error']
+    try:
+        decoded_json = rlk_jsonloads_dict(response.text)
+    except json.decoder.JSONDecodeError as e:
+        raise RemoteError(f'Invalid JSON in Kraken response. {e}')
 
-        if 'Rate limit exceeded' in error:
-            log.debug(f'Kraken: Got rate limit exceeded error: {error}')
-            return 'Rate limited exceeded'
-        else:
-            raise RemoteError(error)
+    try:
+        if decoded_json['error']:
+            if isinstance(decoded_json['error'], list):
+                error = decoded_json['error'][0]
+            else:
+                error = decoded_json['error']
 
-    return result['result']
+            if 'Rate limit exceeded' in error:
+                log.debug(f'Kraken: Got rate limit exceeded error: {error}')
+                return 'Rate limited exceeded'
+            else:
+                raise RemoteError(error)
+
+        result = decoded_json['result']
+    except KeyError as e:
+        raise RemoteError(f'Unexpected format of Kraken response. Missing key: {e}')
+
+    return result
 
 
 class KrakenAccountType(Enum):
