@@ -319,6 +319,11 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BCHBULL',
     'BSVBEAR',
     'BSVBULL',
+    # Bitcoin and Volatility and Inverse volatility token.
+    # No data found yet but should probably revisit. They are
+    # in cryptocompare but they have no price
+    'BVOL',
+    'IBVOL',
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
