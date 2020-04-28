@@ -513,8 +513,22 @@ def mock_bitcoin_balances_query(
                 if idx < len(addresses) - 1:
                     response += ','
             response += ']}'
+        elif 'blockcypher.com' in url:
+            addresses = url.split('addrs/')[1].split('/balance')[0].split(';')
+            response = '['
+            for idx, address in enumerate(addresses):
+                balance = btc_map.get(address, '0')
+                entry = f'{{"address": "{address}", "final_balance": {balance}}}'
+                if len(addresses) == 1:
+                    response = entry
+                else:
+                    response += entry
+                if idx < len(addresses) - 1:
+                    response += ','
+
+            if len(addresses) > 1:
+                response += ']'
         else:
-            # TODO: Handle blockcypher and make at least 1 integration api test with it
             return original_requests_get(url, *args, **kwargs)
 
         return MockResponse(200, response)

@@ -167,6 +167,51 @@ def test_query_blockchain_balances(
     )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('btc_accounts', [[
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+    'bc1qhkje0xfvhmgk6mvanxwy09n45df03tj3h3jtnf',
+]])
+@pytest.mark.parametrize('owned_eth_tokens', [[]])
+def test_query_bitcoin_blockchain_bech32_balances(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        btc_accounts,
+        caplog,
+):
+    """Test that querying Bech32 bitcoin addresses works fine"""
+    caplog.set_level(logging.DEBUG)
+    # Disable caching of query results
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.chain_manager.cache_ttl_secs = 0
+
+    btc_balances = ['111110', '3232223', '555555333']
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=btc_accounts,
+        btc_balances=btc_balances,
+    )
+
+    # query all balances
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainbalancesresource",
+        ))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert_btc_balances_result(
+        json_data=json_data,
+        btc_accounts=btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=False,
+    )
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
