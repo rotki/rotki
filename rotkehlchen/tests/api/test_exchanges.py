@@ -25,6 +25,7 @@ from rotkehlchen.tests.utils.history import (
     assert_poloniex_trades_result,
     mock_history_processing_and_exchanges,
 )
+from rotkehlchen.tests.utils.mock import MockResponse
 
 
 def mock_validate_api_key():
@@ -122,6 +123,54 @@ def test_setup_exchange(rotkehlchen_api_server):
     json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result'] == ['kraken', 'coinbasepro']
+
+
+@pytest.mark.parametrize('added_exchanges', [('kraken',)])
+def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
+    """Test that if Rotki gets a malformed response from Kraken it's handled properly
+
+    Regression test for the first part of https://github.com/rotki/rotki/issues/943
+    """
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    kraken = rotki.exchange_manager.get('kraken')
+    kraken.cache_ttl_secs = 0
+    kraken.use_original_kraken = True
+    response_data = '{"'
+
+    def mock_kraken_return(url, *args, **kwargs):  # pylint: disable=unused-argument
+        return MockResponse(200, response_data)
+    kraken_patch = patch.object(kraken.session, 'post', side_effect=mock_kraken_return)
+
+    # Test that invalid json is handled
+    with kraken_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "exchangebalancesresource",
+                name='kraken',
+            ),
+        )
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.CONFLICT,
+        contained_in_msg='Could not reach kraken due to Invalid JSON in Kraken response',
+    )
+
+    # Test that the response missing result key seen in #943 is handled properly
+    response_data = '{"error": []}'
+    with kraken_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "exchangebalancesresource",
+                name='kraken',
+            ),
+        )
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.CONFLICT,
+        contained_in_msg="Missing key: 'result'",
+    )
 
 
 def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api_server):

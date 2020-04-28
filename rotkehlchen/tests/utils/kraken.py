@@ -327,6 +327,7 @@ class MockKraken(Kraken):
         self.random_balance_data = True
         self.random_ledgers_data = True
         self.remote_errors = False
+        self.use_original_kraken = False
 
         self.balance_data_return = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
         # Not required in the real Kraken instance but we use it in the tests
@@ -336,6 +337,9 @@ class MockKraken(Kraken):
         # Pretty ugly ... mock a kraken remote eror
         if self.remote_errors:
             raise RemoteError('Kraken remote error')
+
+        if self.use_original_kraken:
+            return super().api_query(method, req)
 
         if method == 'Balance':
             if self.random_balance_data:
