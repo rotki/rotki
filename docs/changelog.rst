@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`946` Handle the malformed response by kraken that is sent if a Kraken user has no balances.
 * :bug:`943` If Kraken sends a malformed response Rotki no longer raises a 500 Internal server error. Also if such an error is thrown during setup of any exchange and a stale object is left in the Rotki state, trying to setup the exchange again should now work and no longer give an error that the exchange is already registered.
 * :bug:`930` Etherscan API keys are now properly included in all etherscan api queries. Also etherscan API key is no longer compulsory.
 * :feature:`922` Speed up ethereum chain balance queries by utilizing the eth-scan contract to batch multiple ether and token balance queries into a single call.
