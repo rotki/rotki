@@ -31,10 +31,17 @@ class MockEth():
         return {'hash': HexBytes(genesis)}
 
 
+class MockMiddlewareOnion():
+
+    def inject(self, middleware, layer) -> None:
+        pass
+
+
 class MockWeb3():
 
     def __init__(self, _providers=None, _middlewares=None):
         self.eth = MockEth(0)
+        self.middleware_onion = MockMiddlewareOnion()
 
     def isConnected(self) -> bool:  # noqa: N802 pylint: disable=no-self-use
         return True
