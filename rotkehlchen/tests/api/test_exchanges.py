@@ -130,6 +130,7 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
     """Test that if Rotki gets a malformed response from Kraken it's handled properly
 
     Regression test for the first part of https://github.com/rotki/rotki/issues/943
+    and for https://github.com/rotki/rotki/issues/946
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     kraken = rotki.exchange_manager.get('kraken')
@@ -156,7 +157,7 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
         contained_in_msg='Could not reach kraken due to Invalid JSON in Kraken response',
     )
 
-    # Test that the response missing result key seen in #943 is handled properly
+    # Test that the response missing result key seen in #946 is handled properly
     response_data = '{"error": []}'
     with kraken_patch:
         response = requests.get(
@@ -166,11 +167,10 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
                 name='kraken',
             ),
         )
-    assert_error_response(
-        response=response,
-        status_code=HTTPStatus.CONFLICT,
-        contained_in_msg="Missing key: 'result'",
-    )
+    assert_proper_response(response=response)
+    data = response.json()
+    assert data['result'] == {}
+    assert data['message'] == ""
 
 
 def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api_server):
