@@ -34,7 +34,7 @@ from rotkehlchen.utils.interfaces import (
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import request_get_dict, request_get_direct, satoshis_to_btc
+from rotkehlchen.utils.misc import request_get, request_get_dict, satoshis_to_btc
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -223,31 +223,69 @@ class ChainManager(CacheableObject, LockableQueryObject):
         return self.get_balances_update()
 
     @staticmethod
-    def query_btc_account_balance(account: BTCAddress) -> FVal:
+    def query_btc_accounts_balances(accounts: List[BTCAddress]) -> Dict[BTCAddress, FVal]:
         """Queries blockchain.info for the balance of account
 
         May raise:
         - RemotError if there is a problem querying blockchain.info or blockcypher
         """
+        source = 'blockchain.info'
+        balances = {}
         try:
-            if account.lower()[0:3] == 'bc1':
-                url = f'https://api.blockcypher.com/v1/btc/main/addrs/{account.lower()}/balance'
-                response_data = request_get_dict(url=url)
-                if 'balance' not in response_data:
-                    raise RemoteError(f'Unexpected blockcypher balance response: {response_data}')
-                btc_resp = response_data['balance']
+            if any(account.lower()[0:3] == 'bc1' for account in accounts):
+                # if 1 account is bech32 we have to query blockcypher. blockchaininfo won't work
+                source = 'blockcypher.com'
+                # the bech32 accounts have to be given lowercase to the
+                # blockcypher query. No idea why.
+                new_accounts = []
+                for x in accounts:
+                    lowered = x.lower()
+                    if lowered[0:3] == 'bc1':
+                        new_accounts.append(lowered)
+                    else:
+                        new_accounts.append(x)
+
+                # blockcypher's batching takes up as many api queries as the batch,
+                # and the api rate limit is 3 requests per second. So we should make
+                # sure each batch is of max size 3
+                batches = [new_accounts[x: x + 3] for x in range(0, len(new_accounts), 3)]
+                total_idx = 0
+                for batch in batches:
+                    params = ';'.join(batch)
+                    url = f'https://api.blockcypher.com/v1/btc/main/addrs/{params}/balance'
+                    response_data = request_get(url=url, handle_429=True, backoff_in_seconds=4)
+
+                    if isinstance(response_data, dict):
+                        # If only one account was requested put it in a list so the
+                        # rest of the code works
+                        response_data = [response_data]
+
+                    for idx, entry in enumerate(response_data):
+                        # we don't use the returned address as it may be lowercased
+                        balances[accounts[total_idx + idx]] = satoshis_to_btc(
+                            FVal(entry['final_balance']),
+                        )
+                    total_idx += len(batch)
             else:
-                btc_resp = request_get_direct(
-                    url='https://blockchain.info/q/addressbalance/%s' % account,
+                params = '|'.join(accounts)
+                btc_resp = request_get_dict(
+                    url=f'https://blockchain.info/multiaddr?active={params}',
                     handle_429=True,
                     # If we get a 429 then their docs suggest 10 seconds
                     # https://blockchain.info/q
                     backoff_in_seconds=10,
                 )
+                for idx, entry in enumerate(btc_resp['addresses']):
+                    balances[accounts[idx]] = satoshis_to_btc(FVal(entry['final_balance']))
         except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
             raise RemoteError(f'bitcoin external API request failed due to {str(e)}')
+        except KeyError as e:
+            raise RemoteError(
+                f'Malformed response when querying bitcoin blockchain via {source}.'
+                f'Did not find key {e}',
+            )
 
-        return satoshis_to_btc(FVal(btc_resp))  # result is in satoshis
+        return balances
 
     def query_btc_balances(self) -> None:
         """Queries blockchain.info for the balance of all BTC accounts
@@ -261,15 +299,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.balances.btc = {}
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         total = FVal(0)
-        for account in self.accounts.btc:
-            balance = self.query_btc_account_balance(account)
-
+        balances = self.query_btc_accounts_balances(self.accounts.btc)
+        for account, balance in balances.items():
             total += balance
             self.balances.btc[account] = Balance(
                 amount=balance,
                 usd_value=balance * btc_usd_price,
             )
-
         self.totals[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
 
     @overload
@@ -395,7 +431,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Query the balance of the account except for the case when it's removed
         # and there is no other account in the balances
         if append_or_remove == 'append' or remove_with_populated_balance:
-            balance = self.query_btc_account_balance(account)
+            balances = self.query_btc_accounts_balances([account])
+            balance = balances[account]
             usd_balance = balance * btc_usd_price
 
         if append_or_remove == 'append':

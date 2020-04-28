@@ -163,11 +163,17 @@ def retry_calls(
 
             if handle_429:
                 if result.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries != 0:
+                    if tries == 0:
+                        raise RemoteError(
+                            f"{location} query for {method_name} failed after {times} tries",
+                        )
+
                     log.debug(
                         f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
                         f'{backoff_in_seconds} seconds',
                     )
                     gevent.sleep(backoff_in_seconds)
+                    tries -= 1
                     continue
             return result
 
