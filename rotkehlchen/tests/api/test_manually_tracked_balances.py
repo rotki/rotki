@@ -13,6 +13,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.utils.misc import ts_now
 
 
 def _populate_tags(api_server):
@@ -118,6 +119,7 @@ def test_add_and_query_manually_tracked_balances(
         rotkehlchen_api_server,
 ):
     """Test that adding and querying manually tracked balances via the API works fine"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     _populate_tags(rotkehlchen_api_server)
     response = requests.get(
         api_url_for(
@@ -141,6 +143,23 @@ def test_add_and_query_manually_tracked_balances(
     )
     result = assert_proper_response_with_result(response)
     assert_balances_match(expected_balances=balances, returned_balances=result['balances'])
+
+    now = ts_now()
+    # Also now test for https://github.com/rotki/rotki/issues/942 by querying for all balances
+    # causing all balances to be saved and making sure the manual balances also got saved
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "allbalancesresource",
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['BTC']['amount'] == '1.425'
+    assert result['XMR']['amount'] == '50.315'
+    assert result['BNB']['amount'] == '155'
+    # Check DB to make sure a save happened
+    assert rotki.data.db.get_last_balance_save_time() >= now
+    assert set(rotki.data.db.query_owned_assets()) == {'BTC', 'XMR', 'BNB', 'ETH'}
 
 
 def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
