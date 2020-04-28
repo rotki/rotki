@@ -248,6 +248,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 # blockcypher's batching takes up as many api queries as the batch,
                 # and the api rate limit is 3 requests per second. So we should make
                 # sure each batch is of max size 3
+                # https://www.blockcypher.com/dev/bitcoin/#batching
                 batches = [new_accounts[x: x + 3] for x in range(0, len(new_accounts), 3)]
                 total_idx = 0
                 for batch in batches:
