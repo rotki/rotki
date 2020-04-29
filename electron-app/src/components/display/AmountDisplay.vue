@@ -50,8 +50,7 @@ import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 import { bigNumberify } from '@/utils/bignumbers';
 
-const { mapGetters } = createNamespacedHelpers('session');
-const { mapState } = createNamespacedHelpers('session');
+const { mapGetters, mapState } = createNamespacedHelpers('session');
 
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
@@ -117,7 +116,6 @@ td.text-end .amount-display {
   }
 }
 .blur-content {
-  color: transparent;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  filter: blur(0.3em);
 }
 </style>
