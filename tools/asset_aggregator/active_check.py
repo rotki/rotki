@@ -313,6 +313,11 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'XSR': True,
+    # On 29/04/2020 YOU is still active and trading in 3 exchange
+    # https://coinmarketcap.com/currencies/you-coin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'YOU': True,
     # On 12/04/2019 Crowdholding is still active and trading in 1 exchange
     # https://coinmarketcap.com/currencies/crowdholding/
     # For some reason coin paprika thinks it's not so specify here we
