@@ -393,6 +393,7 @@ WORLD_TO_PAPRIKA_ID = {
     'POP-2': 'pop-pop-chest-token',
     # For Rotkehlchen RED is Red token
     'RED': 'red-red',
+    'REV': 'r-revain',
     # For Rotkehlchen RMC is RemiCoin
     'RMC': 'rmc-remicoin',
     # For Rotkehlchen SAC is SmartApplicationChain

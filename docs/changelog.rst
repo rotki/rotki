@@ -17,6 +17,7 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `Cartesi token (CTSI) <https://coinmarketcap.com/currencies/cartesi/>`__
+  - `Revain (REV) <https://coinmarketcap.com/currencies/revain/>`__
 
 * :release:`1.4.1 <2020-04-22>`
 * :bug:`-` Improve internal DSR mechanics so that even with hardly anyone using the DSR as of this release, Rotki can still find DSR chi values to provide historical reports of DSR profit.
