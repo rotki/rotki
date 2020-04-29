@@ -10079,6 +10079,15 @@
         "symbol": "YEED",
         "type": "ethereum token"
     },
+    "YOU": {
+        "active": true,
+        "ethereum_address": "0x34364BEe11607b1963d66BCA665FDE93fCA666a8",
+        "ethereum_token_decimals": 18,
+        "name": "YOU COIN",
+        "started": 1520696174,
+        "symbol": "YOU",
+        "type": "ethereum token"
+    },
     "YOYOW": {
         "ethereum_address": "0xcbeAEc699431857FDB4d37aDDBBdc20E132D4903",
         "ethereum_token_decimals": 18,
