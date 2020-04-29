@@ -14,6 +14,10 @@ Changelog
 * :bug:`924` LINK is now properly supported for Gemini balance and trade queries.
 * :feature:`912` Adds total net value to the dashboard, fiat, and manual balances table. Makes account balance totals to reflect the filtered results.
 
+* :feature:`-` Added support for the following tokens
+
+  - `Cartesi token (CTSI) <https://coinmarketcap.com/currencies/cartesi/>`__
+
 * :release:`1.4.1 <2020-04-22>`
 * :bug:`-` Improve internal DSR mechanics so that even with hardly anyone using the DSR as of this release, Rotki can still find DSR chi values to provide historical reports of DSR profit.
 * :bug:`904` For Kraken users take into account the worst-case API call counter and make sure the maximum calls are not reached to avoid prolonged API bans.

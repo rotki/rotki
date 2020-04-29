@@ -15,6 +15,7 @@ MANUALLY_CHECKED_NAMES = {
     'BTR-2': 'Bither',
     'CET-2': 'DICE Money',
     'CFTY': 'Crafty',
+    'CTSI': 'Cartesi',
     'CO2': 'Climatecoin',
     'CRGO': 'CargoCoin',
     'DEPO': 'Depository Network',
