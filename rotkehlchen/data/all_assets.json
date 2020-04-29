@@ -7459,6 +7459,14 @@
         "symbol": "REQ",
         "type": "ethereum token"
     },
+    "REV": {
+        "ethereum_address": "0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9",
+        "ethereum_token_decimals": 6,
+        "name": "Revain",
+        "started": 1585227180,
+        "symbol": "REV",
+        "type": "ethereum token"
+    },
     "REX": {
         "ethereum_address": "0xf05a9382A4C3F29E2784502754293D88b835109C",
         "ethereum_token_decimals": 18,
