@@ -5335,6 +5335,12 @@
         "symbol": "LOCUS",
         "type": "ethereum token"
     },
+    "LOKI": {
+        "name": "Loki",
+        "started": 1519516800,
+        "symbol": "LOKI",
+        "type": "own chain"
+    },
     "LOOM": {
         "ethereum_address": "0xA4e8C3Ec456107eA67d3075bF9e3DF3A75823DB0",
         "ethereum_token_decimals": 18,
