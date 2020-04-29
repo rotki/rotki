@@ -1,6 +1,9 @@
 <template>
   <span :class="privacyMode ? 'blur-content' : ''">
-    <span v-if="fiat" class="amount-display__value">
+    <span
+      v-if="fiat && fiatCurrency != currency.ticker_symbol"
+      class="amount-display__value"
+    >
       {{
         renderValue
           | calculatePrice(exchangeRate(currency.ticker_symbol))
@@ -58,29 +61,18 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
   computed: {
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapState(['privacyMode', 'scrambleData']),
-    ...mapBalancesGetters(['exchangeRate']),
-    renderValue: function () {
-      const multiplier = [10, 100, 1000];
-
-      if (this.$store.state.session.scrambleData) {
-        return BigNumber.random()
-          .multipliedBy(
-            multiplier[Math.floor(Math.random() * multiplier.length)]
-          )
-          .plus(BigNumber.random(2));
-      }
-      if (typeof this.$props.value === 'string') {
-        return bigNumberify(this.$props.value);
-      }
-      return this.$props.value;
-    }
+    ...mapBalancesGetters(['exchangeRate'])
   }
 })
 export default class AmountDisplay extends Vue {
   @Prop({ required: true })
   value!: BigNumber;
+  @Prop({ required: false })
+  amount!: BigNumber;
   @Prop({ required: false, default: false, type: Boolean })
   fiat!: boolean;
+  @Prop({ required: false, default: '', type: String })
+  fiatCurrency!: string;
   @Prop({
     required: false,
     default: 'none',
@@ -89,11 +81,37 @@ export default class AmountDisplay extends Vue {
     }
   })
   showCurrency!: string;
-
   currency!: Currency;
   privacyMode!: boolean;
   scrambleData!: boolean;
   floatingPrecision!: number;
+
+  get renderValue() {
+    const multiplier = [10, 100, 1000];
+    let valueToRender;
+
+    // return a random number if scrambeData is on
+    if (this.$store.state.session.scrambleData) {
+      return BigNumber.random()
+        .multipliedBy(multiplier[Math.floor(Math.random() * multiplier.length)])
+        .plus(BigNumber.random(2));
+    }
+
+    if (
+      this.$props.amount &&
+      this.$props.fiatCurrency === this.currency.ticker_symbol
+    ) {
+      valueToRender = this.$props.amount;
+    } else {
+      valueToRender = this.$props.value;
+    }
+
+    // in certain cases where what is passed as a value is a string and not BigNumber, convert it
+    if (typeof valueToRender === 'string') {
+      return bigNumberify(valueToRender);
+    }
+    return valueToRender;
+  }
 }
 </script>
 
