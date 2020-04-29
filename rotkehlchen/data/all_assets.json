@@ -10250,6 +10250,14 @@
         "symbol": "ZXC",
         "type": "ethereum token"
     },
+    "aDAI": {
+        "ethereum_address": "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing DAI",
+        "started": 1578501167,
+        "symbol": "aDAI",
+        "type": "ethereum token"
+    },
     "cBAT": {
         "ethereum_address": "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
         "ethereum_token_decimals": 8,
