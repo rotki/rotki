@@ -9056,6 +9056,14 @@
         "symbol": "UCN",
         "type": "ethereum token"
     },
+    "UCT": {
+        "ethereum_address": "0x3c4bEa627039F0B7e7d21E34bB9C9FE962977518",
+        "ethereum_token_decimals": 18,
+        "name": "Ubique Chain Of Things",
+        "started": 1517276066,
+        "symbol": "UCT",
+        "type": "ethereum token"
+    },
     "UFR": {
         "ethereum_address": "0xEA097A2b1dB00627B2Fa17460Ad260c016016977",
         "ethereum_token_decimals": 18,
