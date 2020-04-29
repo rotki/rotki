@@ -47,7 +47,13 @@
             ></amount-display>
           </template>
           <template #item.usdValue="{ item }">
-            <amount-display fiat :value="item.usdValue"></amount-display>
+            <amount-display
+              fiat
+              :amount="item.amount"
+              :fiat-currency="item.asset"
+              :value="item.usdValue"
+            >
+            </amount-display>
           </template>
           <template #item.location="{ item }">
             <span class="manual-balances-list__location">
