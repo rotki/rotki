@@ -54,6 +54,8 @@ KNOWN_TO_MISS_FROM_CMC = (
     'COMM',
     # Missing from API, is in website https://coinmarketcap.com/currencies/cryptcoin/
     'CRYPT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/cartesi/
+    'CTSI',
     # Missing from API, is in https://coinmarketcap.com/currencies/conspiracycoin/
     'CYC',
     # Missing from API, is in https://coinmarketcap.com/currencies/diem/

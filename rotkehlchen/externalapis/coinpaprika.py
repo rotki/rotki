@@ -32,6 +32,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'CNL',
     'CNMT',
     'COMM',
+    'CTSI',
     'DIEM',
     'DRKC',
     'DUSK',
