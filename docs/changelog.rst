@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :feature:`-` Added support for the following tokens
+
+  - `Aave Interest bearing DAI (aDAI) <https://www.coingecko.com/en/coins/aave-dai>`__
+
 * :release:`1.4.2 <2020-04-29>`
 * :bug:`927` Rotki should no longer fail to handle HTTP Rate limiting if your web3 providing node rate limits you.
 * :bug:`950` If too many BTC accounts are used Rotki will no longer delay for a long time due to balance query rate limiting. Proper batching of queries to both bitcoin.info and blockcypher is now happening.

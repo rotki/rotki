@@ -1,5 +1,7 @@
 WORLD_TO_CRYPTOCOMPARE = {
+    # Botch CHAI and aDAI should be switched to proper queries with coingecko support
     'CHAI': 'DAI',
+    'aDAI': 'DAI',
     'LBRY': 'LBC',
     'DATAcoin': 'DATA',
     'IOTA': 'MIOTA',
