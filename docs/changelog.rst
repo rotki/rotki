@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.4.2 <2020-04-29>`
 * :bug:`927` Rotki should no longer fail to handle HTTP Rate limiting if your web3 providing node rate limits you.
 * :bug:`950` If too many BTC accounts are used Rotki will no longer delay for a long time due to balance query rate limiting. Proper batching of queries to both bitcoin.info and blockcypher is now happening.
 * :bug:`942` Properly save all historical balances to the DB when a user has input manually tracked balances.
