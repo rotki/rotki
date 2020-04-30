@@ -21,7 +21,7 @@
         <span class="exchange-box__amount__number">
           <amount-display
             show-currency="symbol"
-            fiat
+            fiat-currency="USD"
             :value="amount"
           ></amount-display>
         </span>

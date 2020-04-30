@@ -82,7 +82,10 @@
         <amount-display :value="item.amount"></amount-display>
       </template>
       <template #item.usdValue="{ item }">
-        <amount-display fiat :value="item.usdValue"></amount-display>
+        <amount-display
+          fiat-currency="USD"
+          :value="item.usdValue"
+        ></amount-display>
       </template>
       <template #item.actions="{ item }">
         <span class="account-balances__actions">
@@ -115,7 +118,7 @@
           </td>
           <td class="text-end">
             <amount-display
-              fiat
+              fiat-currency="USD"
               :value="visibleBalances.map(val => val.usdValue) | balanceSum"
             >
             </amount-display>

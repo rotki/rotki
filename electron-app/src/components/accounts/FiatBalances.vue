@@ -54,7 +54,7 @@
                   <td></td>
                   <td class="text-end">
                     <amount-display
-                      fiat
+                      fiat-currency="USD"
                       :value="
                         fiatBalances.map(val => val.usdValue) | balanceSum
                       "
