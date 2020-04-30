@@ -10,7 +10,11 @@ import '@/filters';
 
 Vue.use(Vuetify);
 
-function createWrapper(value: BigNumber, amount: BigNumber, fiatCurrency: string | null) {
+function createWrapper(
+  value: BigNumber,
+  amount: BigNumber,
+  fiatCurrency: string | null
+) {
   let vuetify: typeof Vuetify = new Vuetify();
   return mount(AmountDisplay, {
     store,
@@ -45,7 +49,11 @@ describe('AmountDisplay.vue', () => {
     });
 
     test('displays amount converted to selected fiat currency (does not double-convert)', async () => {
-      wrapper = createWrapper(bigNumberify(1.20440001), bigNumberify(1.20440001), 'EUR');
+      wrapper = createWrapper(
+        bigNumberify(1.20440001),
+        bigNumberify(1.20440001),
+        'EUR'
+      );
       expect(wrapper.find('.amount-display__value').text()).toMatch('1.20');
       expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
     });
@@ -78,7 +86,11 @@ describe('AmountDisplay.vue', () => {
     });
 
     test('displays amount converted to selected fiat currency (does not double-convert) as scrambled', async () => {
-      wrapper = createWrapper(bigNumberify(1.20440001), bigNumberify(1.20440001), 'EUR');
+      wrapper = createWrapper(
+        bigNumberify(1.20440001),
+        bigNumberify(1.20440001),
+        'EUR'
+      );
       expect(wrapper.find('.amount-display__value').text()).not.toMatch('1.20');
       expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
     });
