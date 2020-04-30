@@ -54,7 +54,11 @@
               <amount-display :value="item.amount"></amount-display>
             </template>
             <template #item.usdValue="{ item }">
-              <amount-display fiat :value="item.usdValue"></amount-display>
+              <amount-display
+                :fiat-currency="item.asset"
+                :amount="item.amount"
+                :value="item.usdValue"
+              ></amount-display>
             </template>
             <template #item.percentage="{ item }">
               <amount-display
@@ -72,7 +76,7 @@
                 <td></td>
                 <td class="text-end">
                   <amount-display
-                    fiat
+                    fiat-currency="USD"
                     :value="
                       aggregatedBalances.map(val => val.usdValue) | balanceSum
                     "
