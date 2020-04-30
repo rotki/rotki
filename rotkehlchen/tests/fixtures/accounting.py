@@ -8,6 +8,7 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 
 
@@ -103,13 +104,49 @@ def accountant(
 
 
 @pytest.fixture
-def inquirer(data_dir, cryptocompare):
-    # Since this is a singleton and we want it initialized everytime the fixture
-    # is called make sure its instance is always starting from scratch
-    Inquirer._Inquirer__instance = None
-    return Inquirer(data_dir=data_dir, cryptocompare=cryptocompare)
+def should_mock_current_price_queries():
+    return True
 
 
 @pytest.fixture(scope='session')
-def session_inquirer(session_data_dir, session_cryptocompare):
-    return Inquirer(data_dir=session_data_dir, cryptocompare=session_cryptocompare)
+def session_should_mock_current_price_queries():
+    return True
+
+
+def create_inquirer(data_dir, cryptocompare, should_mock_current_price_queries) -> Inquirer:
+    # Since this is a singleton and we want it initialized everytime the fixture
+    # is called make sure its instance is always starting from scratch
+    Inquirer._Inquirer__instance = None  # type: ignore
+    inquirer = Inquirer(data_dir=data_dir, cryptocompare=cryptocompare)
+    if not should_mock_current_price_queries:
+        return inquirer
+
+    def mock_find_usd_price(asset):  # pylint: disable=unused-argument
+        return FVal(1)
+
+    inquirer.find_usd_price = mock_find_usd_price  # type: ignore
+
+    def mock_query_fiat_pair(base, quote):  # pylint: disable=unused-argument
+        return FVal(1)
+
+    inquirer.query_fiat_pair = mock_query_fiat_pair  # type: ignore
+
+    return inquirer
+
+
+@pytest.fixture
+def inquirer(data_dir, cryptocompare, should_mock_current_price_queries):
+    return create_inquirer(data_dir, cryptocompare, should_mock_current_price_queries)
+
+
+@pytest.fixture(scope='session')
+def session_inquirer(
+        session_data_dir,
+        session_cryptocompare,
+        session_should_mock_current_price_queries,
+):
+    return create_inquirer(
+        session_data_dir,
+        session_cryptocompare,
+        session_should_mock_current_price_queries,
+    )

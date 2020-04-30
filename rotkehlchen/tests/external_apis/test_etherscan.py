@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import warnings as test_warnings
 
 import gevent
 import pytest
@@ -14,7 +15,10 @@ from rotkehlchen.typing import ExternalService, ExternalServiceApiCredentials
 def temp_etherscan(function_scope_messages_aggregator, tmpdir_factory):
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
     if not api_key:
-        pytest.fail('No ETHERSCAN_API_KEY environment variable found.')
+        msg = 'No ETHERSCAN_API_KEY environment variable found. Skipping test'
+        test_warnings.warn(UserWarning(msg))
+        pytest.skip(msg)
+
     directory = tmpdir_factory.mktemp('data')
     db = DBHandler(
         user_data_dir=directory,

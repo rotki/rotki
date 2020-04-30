@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_etherscan_key,
 )
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
-from rotkehlchen.tests.utils.history import maybe_mock_price_queries
+from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ def initialize_mock_rotkehlchen_instance(
         add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
         add_tags_to_test_db(rotki.data.db, tags)
         add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
-        maybe_mock_price_queries(
+        maybe_mock_historical_price_queries(
             historian=PriceHistorian(),
             should_mock_price_queries=should_mock_price_queries,
             mocked_price_queries=mocked_price_queries,

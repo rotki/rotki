@@ -908,7 +908,11 @@ def assert_poloniex_trades_result(
             raise AssertionError('index out of range')
 
 
-def maybe_mock_price_queries(historian, should_mock_price_queries: bool, mocked_price_queries):
+def maybe_mock_historical_price_queries(
+        historian,
+        should_mock_price_queries: bool,
+        mocked_price_queries,
+) -> None:
     """If needed will make sure the historian's price queries are mocked"""
     if not should_mock_price_queries:
         return

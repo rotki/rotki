@@ -4,7 +4,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.history import PriceHistorian, TradesHistorian
-from rotkehlchen.tests.utils.history import maybe_mock_price_queries
+from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 
 TEST_HISTORY_DATA_START = "01/01/2015"
 
@@ -35,7 +35,7 @@ def price_historian(
         history_date_start=TEST_HISTORY_DATA_START,
         cryptocompare=cryptocompare,
     )
-    maybe_mock_price_queries(
+    maybe_mock_historical_price_queries(
         historian=historian,
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,
