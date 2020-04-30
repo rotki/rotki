@@ -89,7 +89,7 @@ export default class AmountDisplay extends Vue {
     let valueToRender;
 
     // return a random number if scrambeData is on
-    if (this.$store.state.session.scrambleData) {
+    if (this.scrambleData) {
       return BigNumber.random()
         .multipliedBy(multiplier[Math.floor(Math.random() * multiplier.length)])
         .plus(BigNumber.random(2));
