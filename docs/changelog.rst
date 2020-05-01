@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`966` Rotki now supports the new Kraken LTC and XRP trade pairs
 * :feature:`-` Added support for the following tokens
 
   - `Aave Interest bearing DAI (aDAI) <https://www.coingecko.com/en/coins/aave-dai>`__
