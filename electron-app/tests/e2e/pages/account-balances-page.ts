@@ -27,6 +27,43 @@ export class AccountBalancesPage {
       .should('have.length', visible + 1);
   }
 
+  balanceShouldMatch(balances: ApiManualBalance[]) {
+    let i = 0;
+    for (const balance of balances) {
+      cy.get('.manual-balances-list tbody').find('tr').eq(i).as('row');
+
+      cy.get('@row')
+        .find('.manual-balances-list__amount')
+        .should('contain', bigNumberify(balance.amount).toFormat(2));
+
+      i += 1;
+    }
+
+    // cy.get('.manual-balances-list tbody').find('tr').eq(position).as('row');
+
+    // cy.get('@row')
+    //   .find('.manual-balances-list__amount')
+    //   .should('contain', bigNumberify(balance.amount).toFormat(2));
+  }
+
+  balanceShouldNotMatch(balances: ApiManualBalance[]) {
+    let i = 0;
+    for (const balance of balances) {
+      cy.get('.manual-balances-list tbody').find('tr').eq(i).as('row');
+
+      cy.get('@row')
+        .find('.manual-balances-list__amount')
+        .should('not.contain', bigNumberify(balance.amount).toFormat(2));
+
+      i += 1;
+    }
+    // cy.get('.manual-balances-list tbody').find('tr').eq(position).as('row');
+
+    // cy.get('@row')
+    //   .find('.manual-balances-list__amount')
+    //   .should('not.contain', bigNumberify(balance.amount).toFormat(2));
+  }
+
   isVisible(position: number, balance: ApiManualBalance) {
     cy.get('.manual-balances-list tbody').find('tr').eq(position).as('row');
 
@@ -63,6 +100,14 @@ export class AccountBalancesPage {
     for (const tag of balance.tags) {
       cy.get('@row').find('.tag').contains(tag).should('be.visible');
     }
+  }
+
+  amountDisplayIsBlurred() {
+    cy.get('.amount-display').should('have.class', 'blur-content');
+  }
+
+  amountDisplayIsNotBlurred() {
+    cy.get('.amount-display').should('not.have.class', 'blur-content');
   }
 
   editBalance(position: number, amount: string) {

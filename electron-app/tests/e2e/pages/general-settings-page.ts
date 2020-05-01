@@ -39,6 +39,10 @@ export class GeneralSettingsPage {
     cy.get('.settings-general__fields__date-display-format').type(value);
   }
 
+  toggleScrambleData() {
+    cy.get('.settings-general__fields__scramble-data').click();
+  }
+
   saveSettings() {
     cy.get('.settings-general__buttons__save').click();
   }
