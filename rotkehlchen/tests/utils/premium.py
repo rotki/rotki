@@ -203,7 +203,8 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
     # Also check a copy of our old DB is kept around.
     directory = os.path.join(rotkehlchen_instance.data.data_directory, username)
     files = [os.path.join(directory, f) for f in os.listdir(directory)]
-    assert len(files) == 2
+    msg = f'Expected 2 files in the directory but got {files}'
+    assert len(files) == 2, msg
     # The order of the files is not guaranteed
     assert 'rotkehlchen.db' in files[0] or 'rotkehlchen.db' in files[1]
     assert 'backup' in files[0] or 'backup' in files[1]

@@ -30,6 +30,7 @@ def test_query_realtime_price_apis(inquirer):
     reason='some of these APIs frequently become unavailable',
 )
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_switching_to_backup_api(inquirer):
     count = 0
     original_get = requests.get
@@ -47,6 +48,7 @@ def test_switching_to_backup_api(inquirer):
         assert count > 1, 'requests.get should have been called more than once'
 
 
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_caching(inquirer):
     def mock_currency_converter_api(url, timeout):  # pylint: disable=unused-argument
@@ -61,6 +63,7 @@ def test_caching(inquirer):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=unused-argument
     def mock_api_remote_fail(url, timeout):  # pylint: disable=unused-argument
         return MockResponse(500, '{"msg": "shit hit the fan"')

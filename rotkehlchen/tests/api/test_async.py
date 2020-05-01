@@ -16,8 +16,15 @@ from rotkehlchen.tests.utils.mock import MockResponse
 
 
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
-    """Test that querying the outcomes of async tasks works as expected"""
+    """Test that querying the outcomes of async tasks works as expected
+
+    We don't mock price queries in this test only because that cause the tasks
+    list test below to fail since due to the mocking the tasks returns immediately and
+    does not wait on a gevent context switching. So if we mock we don't get to
+    test the task is still pending functionality.
+    """
 
     # async query balances of one specific exchange
     server = rotkehlchen_api_server_with_exchanges

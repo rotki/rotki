@@ -114,7 +114,17 @@ def session_should_mock_current_price_queries():
     return True
 
 
-def create_inquirer(data_dir, should_mock_current_price_queries) -> Inquirer:
+@pytest.fixture
+def mocked_current_prices():
+    return {}
+
+
+@pytest.fixture(scope='session')
+def session_mocked_current_prices():
+    return {}
+
+
+def create_inquirer(data_dir, should_mock_current_price_queries, mocked_prices) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     Inquirer._Inquirer__instance = None  # type: ignore
@@ -126,7 +136,7 @@ def create_inquirer(data_dir, should_mock_current_price_queries) -> Inquirer:
         return inquirer
 
     def mock_find_usd_price(asset):  # pylint: disable=unused-argument
-        return FVal(1)
+        return mocked_prices.get(asset, FVal('1.5'))
 
     inquirer.find_usd_price = mock_find_usd_price  # type: ignore
 
@@ -139,16 +149,18 @@ def create_inquirer(data_dir, should_mock_current_price_queries) -> Inquirer:
 
 
 @pytest.fixture
-def inquirer(data_dir, should_mock_current_price_queries):
-    return create_inquirer(data_dir, should_mock_current_price_queries)
+def inquirer(data_dir, should_mock_current_price_queries, mocked_current_prices):
+    return create_inquirer(data_dir, should_mock_current_price_queries, mocked_current_prices)
 
 
 @pytest.fixture(scope='session')
 def session_inquirer(
         session_data_dir,
         session_should_mock_current_price_queries,
+        session_mocked_current_prices,
 ):
     return create_inquirer(
         session_data_dir,
         session_should_mock_current_price_queries,
+        session_mocked_current_prices,
     )
