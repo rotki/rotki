@@ -49,6 +49,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'GPUC',
     'GUE',
     'HBD',
+    'HDAO',
     'HIVE',
     'HUGE',
     'HVC',

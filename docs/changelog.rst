@@ -7,6 +7,7 @@ Changelog
 
   - `Aave Interest bearing DAI (aDAI) <https://www.coingecko.com/en/coins/aave-dai>`__
   - `Loki (LOKI) <https://coinmarketcap.com/currencies/loki/>`__
+  - `HyperDAO (HDAO) <https://coinmarketcap.com/currencies/hyperdao/>`__
 
 * :release:`1.4.2 <2020-04-29>`
 * :bug:`927` Rotki should no longer fail to handle HTTP Rate limiting if your web3 providing node rate limits you.
