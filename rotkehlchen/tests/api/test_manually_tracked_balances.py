@@ -162,6 +162,7 @@ def test_add_and_query_manually_tracked_balances(
     assert set(rotki.data.db.query_owned_assets()) == {'BTC', 'XMR', 'BNB', 'ETH'}
 
 
+@pytest.mark.parametrize('mocked_current_prices', [{'CYFM': FVal(0)}])
 def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     """Test that adding a manually tracked balance of an asset for which we cant
     query a price is handled properly both in the adding and querying part
@@ -170,7 +171,7 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     _populate_tags(rotkehlchen_api_server)
     balances: List[Dict[str, Any]] = [{
         "asset": "CYFM",
-        "label": "CUFM account",
+        "label": "CYFM account",
         "amount": "50.315",
         "tags": ["public"],
         "location": "blockchain",

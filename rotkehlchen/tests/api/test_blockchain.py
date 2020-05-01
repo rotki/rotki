@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -215,6 +216,11 @@ def test_query_bitcoin_blockchain_bech32_balances(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+@pytest.mark.parametrize('mocked_current_prices', [{
+    'RDN': FVal('0.1135'),
+    'ETH': FVal('212.92'),
+    'BTC': FVal('8849.04'),
+}])
 def test_query_blockchain_balances_async(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -229,14 +235,14 @@ def test_query_blockchain_balances_async(
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
     # First query only ETH and token balances
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        "named_blockchain_balances_resource",
-        blockchain='ETH',
-    ), json={'async_query': True})
-    task_id = assert_ok_async_response(response)
-
     with setup.etherscan_patch, setup.alethio_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "named_blockchain_balances_resource",
+            blockchain='ETH',
+        ), json={'async_query': True})
+        task_id = assert_ok_async_response(response)
+
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_eth_balances_result(
         rotki=rotki,
@@ -248,14 +254,13 @@ def test_query_blockchain_balances_async(
     )
 
     # Then query only BTC balances
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        "named_blockchain_balances_resource",
-        blockchain='BTC',
-    ), json={'async_query': True})
-    task_id = assert_ok_async_response(response)
-
     with setup.bitcoin_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "named_blockchain_balances_resource",
+            blockchain='BTC',
+        ), json={'async_query': True})
+        task_id = assert_ok_async_response(response)
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_btc_balances_result(
         json_data=outcome,
@@ -265,15 +270,15 @@ def test_query_blockchain_balances_async(
     )
 
     # Finally query all balances
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        "blockchainbalancesresource",
-    ), json={'async_query': True})
-    task_id = assert_ok_async_response(response)
-
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainbalancesresource",
+        ), json={'async_query': True})
+        task_id = assert_ok_async_response(response)
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+
     assert_eth_balances_result(
         rotki=rotki,
         json_data=outcome,
