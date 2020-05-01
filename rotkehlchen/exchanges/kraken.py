@@ -618,6 +618,7 @@ class Kraken(ExchangeInterface):
 
         # And now turn it from kraken trade to our own trade format
         trades = []
+        log.error(f'Kraken trade history result is {result}')
         for raw_data in result:
             try:
                 trades.append(trade_from_kraken(raw_data))
