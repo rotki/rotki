@@ -290,22 +290,21 @@ class Coinbase(ExchangeInterface):
 
         # If we got pagination and this is the first query, gather all the subsequent queries
         if 'pagination' in json_ret and not pagination_next_uri and not ignore_pagination:
-            while True:
-                if 'next_uri' not in json_ret['pagination']:
-                    raise RemoteError(f'Coinbase json response contained no "next_uri" key')
+            if 'next_uri' not in json_ret['pagination']:
+                raise RemoteError(f'Coinbase json response contained no "next_uri" key')
 
-                next_uri = json_ret['pagination']['next_uri']
-                if not next_uri:
-                    # As per the docs: https://developers.coinbase.com/api/v2?python#pagination
-                    # once we get an empty next_uri we are done
-                    break
+            next_uri = json_ret['pagination']['next_uri']
+            if not next_uri:
+                # As per the docs: https://developers.coinbase.com/api/v2?python#pagination
+                # once we get an empty next_uri we are done
+                return final_data
 
-                additional_data = self._api_query(
-                    endpoint=endpoint,
-                    options=options,
-                    pagination_next_uri=next_uri,
-                )
-                final_data.extend(additional_data)
+            additional_data = self._api_query(
+                endpoint=endpoint,
+                options=options,
+                pagination_next_uri=next_uri,
+            )
+            final_data.extend(additional_data)
 
         return final_data
 
