@@ -8,6 +8,7 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 
@@ -113,10 +114,13 @@ def session_should_mock_current_price_queries():
     return True
 
 
-def create_inquirer(data_dir, cryptocompare, should_mock_current_price_queries) -> Inquirer:
+def create_inquirer(data_dir, should_mock_current_price_queries) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     Inquirer._Inquirer__instance = None  # type: ignore
+    # Get a cryptocompare without a DB since invoking DB fixture here causes problems
+    # of existing user for some tests
+    cryptocompare = Cryptocompare(data_directory=data_dir, database=None)
     inquirer = Inquirer(data_dir=data_dir, cryptocompare=cryptocompare)
     if not should_mock_current_price_queries:
         return inquirer
@@ -135,18 +139,16 @@ def create_inquirer(data_dir, cryptocompare, should_mock_current_price_queries) 
 
 
 @pytest.fixture
-def inquirer(data_dir, cryptocompare, should_mock_current_price_queries):
-    return create_inquirer(data_dir, cryptocompare, should_mock_current_price_queries)
+def inquirer(data_dir, should_mock_current_price_queries):
+    return create_inquirer(data_dir, should_mock_current_price_queries)
 
 
 @pytest.fixture(scope='session')
 def session_inquirer(
         session_data_dir,
-        session_cryptocompare,
         session_should_mock_current_price_queries,
 ):
     return create_inquirer(
         session_data_dir,
-        session_cryptocompare,
         session_should_mock_current_price_queries,
     )

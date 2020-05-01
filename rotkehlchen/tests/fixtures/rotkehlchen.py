@@ -112,8 +112,15 @@ def initialize_mock_rotkehlchen_instance(
 
 
 @pytest.fixture()
-def uninitialized_rotkehlchen(cli_args):
-    """A rotkehlchen instance that has only had __init__ run but is not unlocked"""
+def uninitialized_rotkehlchen(cli_args, inquirer):  # pylint: disable=unused-argument
+    """A rotkehlchen instance that has only had __init__ run but is not unlocked
+
+    Adding the inquirer fixture as a requirement to make sure that any mocking that
+    happens at the inquirer level is reflected in the tests.
+
+    For this to happen inquirer fixture must be initialized before Rotkehlchen so
+    that the inquirer initialization in Rotkehlchen's __init__ uses the fixture's instance
+    """
     return Rotkehlchen(cli_args)
 
 
