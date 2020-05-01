@@ -4387,6 +4387,14 @@
         "symbol": "HDAC",
         "type": "own chain"
     },
+    "HDAO": {
+        "ethereum_address": "0x74faaB6986560fD1140508e4266D8a7b87274Ffd",
+        "ethereum_token_decimals": 18,
+        "name": "HyperDAO",
+        "started": 1573198254,
+        "symbol": "HDAO",
+        "type": "ethereum token"
+    },
     "HDG": {
         "ethereum_address": "0xfFe8196bc259E8dEDc544d935786Aa4709eC3E64",
         "ethereum_token_decimals": 18,

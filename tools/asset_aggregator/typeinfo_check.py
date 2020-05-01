@@ -41,6 +41,7 @@ MANUALLY_CHECKED_TYPES = {
     'FLX': 'ethereum token',
     'FORK-2': 'ethereum token',
     'HBD': 'own chain',
+    'HDAO': 'ethereum token',
     'HIVE': 'own chain',
     'HKG': 'ethereum token',
     'ITM': 'ethereum token',
