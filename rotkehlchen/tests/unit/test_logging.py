@@ -39,6 +39,8 @@ def test_log_anonymization(anonymized_logs, caplog):
         entry = f'{key}={str(value)}'
         if anonymized_logs:
             assert key + '=' in caplog.text
-            assert entry not in caplog.text, f'{key} entry should have been modified'
+            msg = f'{key} entry should have been modified'
+            assert entry not in caplog.text or entry + ',' not in caplog.text, msg
         else:
-            assert entry in caplog.text, f'{key} entry should not have been modified'
+            msg = f'{key} entry should not have been modified'
+            assert entry in caplog.text or entry + ',' in caplog.text
