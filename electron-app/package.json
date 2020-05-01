@@ -7,7 +7,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
-    "test:e2e": "CODE_COVERAGE=true vue-cli-service test:e2e",
+    "test:e2e": "vue-cli-service test:e2e --mode e2e",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve",
@@ -15,7 +15,7 @@
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
     "serve:backend": "node start-backend.js",
-    "test:e2e-ci": "CODE_COVERAGE=true nyc vue-cli-service test:e2e --headless",
+    "test:e2e-ci": "nyc vue-cli-service test:e2e --mode e2e --headless",
     "test:integration": "start-server-and-test serve:backend http://localhost:4242/api/1/version test:e2e",
     "test:integration-ci": "start-server-and-test serve:backend http://localhost:4242/api/1/version test:e2e-ci",
     "test:spectron": "jest --config tests/spectron/jest.config.js --runInBand"
