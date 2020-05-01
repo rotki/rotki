@@ -86,6 +86,7 @@ def test_gemini_wrong_key_permissions(sandbox_gemini):
     assert not result
 
 
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_gemini_query_balances(sandbox_gemini):
     """Test that querying the balances endpoint works correctly
 

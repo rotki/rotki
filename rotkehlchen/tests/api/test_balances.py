@@ -118,6 +118,9 @@ def assert_all_balances(
         assert locations == expected_locations
 
 
+# Use real current price querying in this test since it's very extensive
+# and we can make sure that we can query current prices properly in the real app
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
