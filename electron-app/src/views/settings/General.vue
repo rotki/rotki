@@ -119,6 +119,7 @@
           <v-card-text>
             <v-switch
               v-model="scrambleData"
+              class="settings-general__fields__scramble-data"
               :label="`Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.`"
             >
             </v-switch>

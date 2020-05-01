@@ -1,5 +1,5 @@
 <template>
-  <span :class="privacyMode ? 'blur-content' : ''">
+  <span class="amount-display" :class="privacyMode ? 'blur-content' : ''">
     <span
       v-if="fiatCurrency && fiatCurrency != currency.ticker_symbol"
       class="amount-display__value"
@@ -131,6 +131,7 @@ td.text-end .amount-display {
     }
   }
 }
+
 .blur-content {
   filter: blur(0.3em);
 }

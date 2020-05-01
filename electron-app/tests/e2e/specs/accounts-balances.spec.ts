@@ -1,6 +1,7 @@
 import { ApiManualBalance } from '../../../src/services/types-api';
 import { Guid } from '../../common/guid';
 import { AccountBalancesPage } from '../pages/account-balances-page';
+import { GeneralSettingsPage } from '../pages/general-settings-page';
 import { RotkiApp } from '../pages/rotki-app';
 import { TagManager } from '../pages/tag-manager';
 
@@ -9,12 +10,14 @@ describe('Accounts', () => {
   let app: RotkiApp;
   let page: AccountBalancesPage;
   let tagManager: TagManager;
+  let settings: GeneralSettingsPage;
 
   before(() => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
     page = new AccountBalancesPage();
     tagManager = new TagManager();
+    settings = new GeneralSettingsPage();
     app.visit();
     app.createAccount(username);
     app.closePremiumOverlay();
@@ -55,6 +58,29 @@ describe('Accounts', () => {
       page.addBalance(manualBalances[1]);
       page.visibleEntries(2);
       page.isVisible(1, manualBalances[1]);
+    });
+
+    it('test privacy mode is off', () => {
+      page.amountDisplayIsNotBlurred();
+    });
+
+    it('test privacy mode is on', () => {
+      app.togglePrivacyMode();
+      page.amountDisplayIsBlurred();
+      app.togglePrivacyMode();
+    });
+
+    it('test scramble mode', () => {
+      page.balanceShouldMatch(manualBalances);
+
+      settings.visit();
+      settings.toggleScrambleData();
+      page.visit();
+      page.balanceShouldNotMatch(manualBalances);
+
+      settings.visit();
+      settings.toggleScrambleData();
+      page.visit();
     });
 
     it('edit', () => {

@@ -41,6 +41,11 @@ export class RotkiApp {
     cy.get(`#change-to-${currency.toLocaleLowerCase()}`).click();
   }
 
+  togglePrivacyMode() {
+    cy.get('.user-dropdown').click();
+    cy.get('.user-dropdown__privacy-mode').click();
+  }
+
   logoutApi(username: string, cb: () => void) {
     axios
       .create({
