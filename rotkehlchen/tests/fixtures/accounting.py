@@ -83,7 +83,7 @@ def accountant(
         database,
         data_dir,
         accounting_create_csv,
-        messages_aggregator,
+        function_scope_messages_aggregator,
         start_with_logged_in_user,
         accounting_initialize_parameters,
 ) -> Optional[Accountant]:
@@ -93,7 +93,7 @@ def accountant(
     accountant = Accountant(
         db=database,
         user_directory=data_dir,
-        msg_aggregator=messages_aggregator,
+        msg_aggregator=function_scope_messages_aggregator,
         create_csv=accounting_create_csv,
     )
 
