@@ -661,11 +661,10 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
 
 
 def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
-    """Test that coinbase trade history query handles unexpected data properly"""
+    """Test that coinbase trade history query can deal with paginated response"""
     coinbase = function_scope_coinbase
     coinbase.cache_ttl_secs = 0
 
-    # first query with proper data and expect no errors
     paginated_buys_response = BUYS_RESPONSE.replace(
         '"next_uri": null',
         '"next_uri": "/v2/buys/?next-page"',
