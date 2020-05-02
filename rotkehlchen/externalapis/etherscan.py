@@ -248,69 +248,6 @@ class Etherscan(ExternalServiceWithApiKey):
 
         return result
 
-    def get_account_balance(self, account: ChecksumEthAddress) -> FVal:
-        """Gets the balance of the given account in WEI
-
-        May raise:
-        - RemoteError due to self._query(). Also if the returned result can't be parsed as a number
-        """
-        result = self._query(module='account', action='balance', options={'address': account})
-        try:
-            amount = FVal(result)
-        except ValueError:
-            raise RemoteError(
-                f'Etherscan returned non-numeric result for account balance {result}',
-            )
-        return amount
-
-    def get_accounts_balance(
-            self,
-            accounts: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, FVal]:
-        """Gets the balance of the given accounts in ETH
-
-        May raise:
-        - RemoteError due to self._query(). Also if the returned result
-        is not in the expected format
-        """
-        # Etherscan can only accept up to 20 accounts in the multi account balance endpoint
-        if len(accounts) > 20:
-            new_accounts = [accounts[x:x + 2] for x in range(0, len(accounts), 2)]
-        else:
-            new_accounts = [accounts]
-
-        balances = {}
-        for account_slice in new_accounts:
-            result = self._query(
-                module='account',
-                action='balancemulti',
-                options={'address': ','.join(account_slice)},
-            )
-            if not isinstance(result, list):
-                raise RemoteError(
-                    f'Etherscan multibalance result {result} is in unexpected format',
-                )
-
-            try:
-                for account_entry in result:
-                    amount = FVal(account_entry['balance'])
-                    # Etherscan does not return accounts checksummed so make sure they
-                    # are converted properly here
-                    checksum_account = to_checksum_address(account_entry['account'])
-                    balances[checksum_account] = from_wei(amount)
-                    log.debug(
-                        'Etherscan account balance result',
-                        sensitive_log=True,
-                        eth_address=account_entry['account'],
-                        wei_amount=amount,
-                    )
-            except (KeyError, ValueError):
-                raise RemoteError(
-                    'Unexpected data format in etherscan multibalance response: {result}',
-                )
-
-        return balances
-
     def get_token_balance(
             self,
             token: EthereumToken,
