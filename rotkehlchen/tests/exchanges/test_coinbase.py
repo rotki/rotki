@@ -486,7 +486,9 @@ def query_coinbase_and_test(
         coinbase,
         query_fn_name,
         buys_response=BUYS_RESPONSE,
+        buys_paginated_end=BUYS_RESPONSE,
         sells_response=SELLS_RESPONSE,
+        sells_paginated_end=SELLS_RESPONSE,
         deposits_response=DEPOSITS_RESPONSE,
         withdrawals_response=WITHDRAWALS_RESPONSE,
         expected_warnings_num=0,
@@ -496,9 +498,15 @@ def query_coinbase_and_test(
 ):
     def mock_coinbase_query(url):  # pylint: disable=unused-argument
         if 'buys' in url:
-            return MockResponse(200, buys_response)
+            if 'next-page' in url:
+                return MockResponse(200, buys_paginated_end)
+            else:
+                return MockResponse(200, buys_response)
         elif 'sells' in url:
-            return MockResponse(200, sells_response)
+            if 'next-page' in url:
+                return MockResponse(200, sells_paginated_end)
+            else:
+                return MockResponse(200, sells_response)
         elif 'deposits' in url:
             return MockResponse(200, deposits_response)
         elif 'withdrawals' in url:
@@ -518,7 +526,7 @@ def query_coinbase_and_test(
 
     errors = coinbase.msg_aggregator.consume_errors()
     warnings = coinbase.msg_aggregator.consume_warnings()
-    if expected_errors_num == 0 and expected_warnings_num == 0:
+    if expected_errors_num == 0 and expected_warnings_num == 0 and expected_actions_num == 1:
         assert len(actions) == 2
         assert len(errors) == 0
         assert len(warnings) == 0
@@ -538,7 +546,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         coinbase=coinbase,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=0,
-        expected_errors_num=0,
+        expected_errors_num=0
     )
 
     # invalid payout_at timestamp
@@ -649,6 +657,25 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
+    )
+
+
+def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
+    """Test that coinbase trade history query handles unexpected data properly"""
+    coinbase = function_scope_coinbase
+    coinbase.cache_ttl_secs = 0
+
+    # first query with proper data and expect no errors
+    paginated_buys_response = BUYS_RESPONSE.replace('"next_uri": null', '"next_uri": "/v2/buys/?next-page"')
+    paginated_sells_response = SELLS_RESPONSE.replace('"next_uri": null', '"next_uri": "/v2/sells/?next-page"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_online_trade_history',
+        expected_warnings_num=0,
+        expected_errors_num=0,
+        expected_actions_num=4,
+        buys_response=paginated_buys_response,
+        sells_response=paginated_sells_response
     )
 
 
