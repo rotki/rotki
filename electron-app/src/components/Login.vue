@@ -1,62 +1,62 @@
 <template>
-  <v-dialog v-model="displayed" persistent max-width="450" class="login">
-    <v-card>
-      <v-card-title>Sign In</v-card-title>
-      <v-card-text>
-        <v-form ref="form" v-model="valid">
-          <v-text-field
-            v-model="username"
-            autofocus
-            class="login__fields__username"
-            label="Username"
-            prepend-icon="fa-user"
-            :rules="usernameRules"
-            :disabled="loading || !!syncConflict"
-            required
-          ></v-text-field>
-          <v-text-field
-            v-model="password"
-            class="login__fields__password"
-            label="Password"
-            prepend-icon="fa-lock"
-            :rules="passwordRules"
-            :disabled="loading || !!syncConflict"
-            type="password"
-            required
-            @keypress.enter="login()"
-          ></v-text-field>
-          <transition name="bounce">
-            <v-alert
-              v-if="!!syncConflict"
-              class="login__sync-error"
-              text
-              prominent
-              outlined
-              type="error"
-              icon="fa-cloud-download"
-            >
-              <h3 class="login__sync-error__header">Sync Error</h3>
-              <div class="login__sync-error__body">
-                {{ syncConflict }}
-              </div>
+  <div v-if="displayed" class="rotki-welcome">
+    <v-card-title>Sign In</v-card-title>
+    <v-card-text>
+      <v-form ref="form" v-model="valid">
+        <v-text-field
+          v-model="username"
+          autofocus
+          class="login__fields__username"
+          label="Username"
+          prepend-icon="fa-user"
+          :rules="usernameRules"
+          :disabled="loading || !!syncConflict"
+          required
+        ></v-text-field>
+        <v-text-field
+          v-model="password"
+          class="login__fields__password"
+          label="Password"
+          prepend-icon="fa-lock"
+          :rules="passwordRules"
+          :disabled="loading || !!syncConflict"
+          type="password"
+          required
+          @keypress.enter="login()"
+        ></v-text-field>
+        <transition name="bounce">
+          <v-alert
+            v-if="!!syncConflict"
+            class="login__sync-error"
+            text
+            prominent
+            outlined
+            type="error"
+            icon="fa-cloud-download"
+          >
+            <h3 class="login__sync-error__header">Sync Error</h3>
+            <div class="login__sync-error__body">
+              {{ syncConflict }}
+            </div>
 
-              <v-row no-gutters justify="end">
-                <v-col cols="3" class="shrink">
-                  <v-btn color="error" depressed @click="login('no')">
-                    No
-                  </v-btn>
-                </v-col>
-                <v-col cols="3" class="shrink">
-                  <v-btn color="success" depressed @click="login('yes')">
-                    Yes
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-alert>
-          </transition>
-        </v-form>
-      </v-card-text>
-      <v-card-actions>
+            <v-row no-gutters justify="end">
+              <v-col cols="3" class="shrink">
+                <v-btn color="error" depressed @click="login('no')">
+                  No
+                </v-btn>
+              </v-col>
+              <v-col cols="3" class="shrink">
+                <v-btn color="success" depressed @click="login('yes')">
+                  Yes
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-alert>
+        </transition>
+      </v-form>
+    </v-card-text>
+    <v-card-actions class="login__actions d-block">
+      <span>
         <v-btn
           class="login__button__sign-in"
           depressed
@@ -67,18 +67,15 @@
         >
           Sign In
         </v-btn>
-        <v-btn
-          class="login__button__new-account"
-          depressed
-          color="primary"
-          :disabled="loading || !!syncConflict"
-          @click="newAccount()"
-        >
+      </span>
+      <v-divider class="my-3"></v-divider>
+      <span style="font-size: 0.9em;">
+        <a class="login__button__new-account" @click="newAccount()">
           Create New Account
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </a>
+      </span>
+    </v-card-actions>
+  </div>
 </template>
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
@@ -138,6 +135,13 @@ export default class Login extends Vue {
 .login__sync-error__body {
   margin-top: 5px;
   margin-bottom: 8px;
+}
+
+.login__actions span,
+.login__actions button {
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 .bounce-enter-active {

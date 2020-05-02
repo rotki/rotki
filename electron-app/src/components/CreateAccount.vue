@@ -1,80 +1,74 @@
 <template>
-  <v-dialog
-    v-model="displayed"
-    persistent
-    max-width="450"
-    class="create-account"
-  >
-    <v-card>
-      <v-card-title>Create New Account</v-card-title>
-      <v-card-text>
-        <v-form ref="form" v-model="valid">
-          <v-text-field
-            v-model="username"
-            autofocus
-            class="create-account__fields__username"
-            label="Username"
-            prepend-icon="fa-user"
-            :rules="usernameRules"
-            :disabled="loading"
-            required
-          ></v-text-field>
-          <v-text-field
-            v-model="password"
-            class="create-account__fields__password"
-            label="Password"
-            prepend-icon="fa-lock"
-            :rules="passwordRules"
-            :disabled="loading"
-            type="password"
-            required
-          ></v-text-field>
-          <v-text-field
-            v-model="passwordConfirm"
-            class="create-account__fields__password-repeat"
-            prepend-icon="fa-repeat"
-            :error-messages="errorMessages"
-            :rules="passwordConfirmRules"
-            :disabled="loading"
-            label="Repeat Password"
-            type="password"
-            required
-          >
-          </v-text-field>
-          <premium-credentials
-            :enabled="premiumEnabled"
-            :api-secret="apiSecret"
-            :api-key="apiKey"
-            :loading="loading"
-            @api-key-changed="apiKey = $event"
-            @api-secret-changed="apiSecret = $event"
-            @enabled-changed="premiumEnabled = $event"
-          ></premium-credentials>
-        </v-form>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn
-          class="create-account__buttons__confirm"
-          depressed
-          color="primary"
-          :disabled="!valid || loading"
-          :loading="loading"
-          @click="confirm()"
-        >
-          Create
-        </v-btn>
-        <v-btn
-          class="create-account__buttons__cancel"
-          depressed
-          color="primary"
+  <div v-if="displayed">
+    <v-card-title>Create New Account</v-card-title>
+    <v-card-text>
+      <v-form ref="form" v-model="valid">
+        <v-text-field
+          v-model="username"
+          autofocus
+          class="create-account__fields__username"
+          label="Username"
+          prepend-icon="fa-user"
+          :rules="usernameRules"
           :disabled="loading"
-          @click="cancel()"
+          required
+        ></v-text-field>
+        <v-text-field
+          v-model="password"
+          class="create-account__fields__password"
+          label="Password"
+          prepend-icon="fa-lock"
+          :rules="passwordRules"
+          :disabled="loading"
+          type="password"
+          required
+        ></v-text-field>
+        <v-text-field
+          v-model="passwordConfirm"
+          class="create-account__fields__password-repeat"
+          prepend-icon="fa-repeat"
+          :error-messages="errorMessages"
+          :rules="passwordConfirmRules"
+          :disabled="loading"
+          label="Repeat Password"
+          type="password"
+          required
         >
-          Cancel
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </v-text-field>
+        <premium-credentials
+          :enabled="premiumEnabled"
+          :api-secret="apiSecret"
+          :api-key="apiKey"
+          :loading="loading"
+          @api-key-changed="apiKey = $event"
+          @api-secret-changed="apiSecret = $event"
+          @enabled-changed="premiumEnabled = $event"
+        ></premium-credentials>
+      </v-form>
+    </v-card-text>
+    <v-card-actions>
+      <v-btn
+        class="create-account__buttons__confirm"
+        depressed
+        color="primary"
+        :disabled="!valid || loading"
+        :loading="loading"
+        @click="confirm()"
+      >
+        Create
+      </v-btn>
+      <v-btn
+        class="create-account__buttons__cancel"
+        depressed
+        outlined
+        color="primary"
+        :disabled="loading"
+        @click="cancel()"
+      >
+        Cancel
+      </v-btn>
+    </v-card-actions>
+  </div>
 </template>
 
 <script lang="ts">
