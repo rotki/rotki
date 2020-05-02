@@ -546,7 +546,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         coinbase=coinbase,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=0,
-        expected_errors_num=0
+        expected_errors_num=0,
     )
 
     # invalid payout_at timestamp
@@ -666,8 +666,16 @@ def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
     coinbase.cache_ttl_secs = 0
 
     # first query with proper data and expect no errors
-    paginated_buys_response = BUYS_RESPONSE.replace('"next_uri": null', '"next_uri": "/v2/buys/?next-page"')
-    paginated_sells_response = SELLS_RESPONSE.replace('"next_uri": null', '"next_uri": "/v2/sells/?next-page"')
+    paginated_buys_response = BUYS_RESPONSE.replace(
+        '"next_uri": null',
+        '"next_uri": "/v2/buys/?next-page"',
+    )
+
+    paginated_sells_response = SELLS_RESPONSE.replace(
+        '"next_uri": null',
+        '"next_uri": "/v2/sells/?next-page"',
+    )
+
     query_coinbase_and_test(
         coinbase=coinbase,
         query_fn_name='query_online_trade_history',
@@ -675,7 +683,7 @@ def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
         expected_errors_num=0,
         expected_actions_num=4,
         buys_response=paginated_buys_response,
-        sells_response=paginated_sells_response
+        sells_response=paginated_sells_response,
     )
 
 
