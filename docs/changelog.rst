@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Rotki users now have two options to further enhance their privacy. If a user wants to temporarily obscure values in the application, they can do so by turning `Privacy Mode` on and off in the User Menu. Additionally, if a user wants to scramble their data (e.g. before sharing screenshots or videos), they can do so via the `Scramble Data` setting in the application's General Settings.
 * :bug:`966` Rotki now supports the new Kraken LTC and XRP trade pairs
 * :feature:`-` Added support for the following tokens
 

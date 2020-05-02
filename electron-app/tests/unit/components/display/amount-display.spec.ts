@@ -31,17 +31,17 @@ function createWrapper(
 describe('AmountDisplay.vue', () => {
   let wrapper: Wrapper<AmountDisplay>;
 
+  beforeEach(() => {
+    store.commit('session/defaultCurrency', currencies[1]);
+    store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
+    store.commit('session/settings', { floatingPrecision: 2 });
+  });
+
+  afterEach(() => {
+    store.commit('session/reset');
+  });
+
   describe('Common case', () => {
-    beforeEach(() => {
-      store.commit('session/defaultCurrency', currencies[1]);
-      store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
-      store.commit('session/settings', { floatingPrecision: 2 });
-    });
-
-    afterEach(() => {
-      store.commit('session/reset');
-    });
-
     test('displays amount converted to selected fiat currency', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), Zero, 'USD');
       expect(wrapper.find('.amount-display__value').text()).toMatch('1.45');
@@ -69,14 +69,7 @@ describe('AmountDisplay.vue', () => {
 
   describe('Scramble data', () => {
     beforeEach(() => {
-      store.commit('session/defaultCurrency', currencies[1]);
-      store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
-      store.commit('session/settings', { floatingPrecision: 2 });
       store.commit('session/scrambleData', true);
-    });
-
-    afterEach(() => {
-      store.commit('session/reset');
     });
 
     test('displays amount converted to selected fiat currency as scrambled', async () => {
