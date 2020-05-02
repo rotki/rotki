@@ -38,12 +38,6 @@ export class AccountBalancesPage {
 
       i += 1;
     }
-
-    // cy.get('.manual-balances-list tbody').find('tr').eq(position).as('row');
-
-    // cy.get('@row')
-    //   .find('.manual-balances-list__amount')
-    //   .should('contain', bigNumberify(balance.amount).toFormat(2));
   }
 
   balanceShouldNotMatch(balances: ApiManualBalance[]) {
@@ -57,11 +51,6 @@ export class AccountBalancesPage {
 
       i += 1;
     }
-    // cy.get('.manual-balances-list tbody').find('tr').eq(position).as('row');
-
-    // cy.get('@row')
-    //   .find('.manual-balances-list__amount')
-    //   .should('not.contain', bigNumberify(balance.amount).toFormat(2));
   }
 
   isVisible(position: number, balance: ApiManualBalance) {
