@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Union, overload
 
 import gevent
 import requests
-from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import EthereumToken
@@ -16,7 +15,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import convert_to_int, from_wei, hexstring_to_bytes
+from rotkehlchen.utils.misc import convert_to_int, hexstring_to_bytes
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
