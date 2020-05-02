@@ -226,21 +226,6 @@ def request_get(
     return result
 
 
-def request_get_direct(
-        url: str,
-        timeout: int = ALL_REMOTES_TIMEOUT,
-        handle_429: bool = False,
-        backoff_in_seconds: Union[int, float] = 0,
-) -> str:
-    """Like request_get, but the endpoint only returns a direct value
-
-    May raise:
-    - UnableToDecryptRemoteData from request_get
-    - Remote error if the get request fails
-    """
-    return str(request_get(url, timeout, handle_429, backoff_in_seconds))
-
-
 def request_get_dict(
         url: str,
         timeout: int = ALL_REMOTES_TIMEOUT,
