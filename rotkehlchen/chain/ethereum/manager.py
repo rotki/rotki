@@ -201,18 +201,8 @@ class EthereumManager():
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        if not self.connected:
-            wei_amount = self.etherscan.get_account_balance(account)
-        else:
-            wei_amount = self.web3.eth.getBalance(account)  # pylint: disable=no-member
-
-        log.debug(
-            'Ethereum account balance result',
-            sensitive_log=True,
-            eth_address=account,
-            wei_amount=wei_amount,
-        )
-        return from_wei(wei_amount)
+        result = self.get_multieth_balance([account])
+        return result[account]
 
     def get_multieth_balance(
             self,
