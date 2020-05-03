@@ -18,7 +18,12 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_VAT_ADDRESS,
 )
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
+from rotkehlchen.errors import (
+    BlockchainQueryError,
+    ConversionError,
+    DeserializationError,
+    RemoteError,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
@@ -159,6 +164,8 @@ class MakerDAO(EthereumModule):
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
         """
         result = self.ethereum.call_contract(
             contract_address=MAKERDAO_PROXY_REGISTRY_ADDRESS,
@@ -193,6 +200,8 @@ class MakerDAO(EthereumModule):
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
         """
         with self.lock:
             proxy_mappings = self.get_accounts_having_maker_proxy()
@@ -240,6 +249,8 @@ class MakerDAO(EthereumModule):
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
         """
         arg1 = address_to_bytes32(from_address)
         arg2 = address_to_bytes32(to_address)
@@ -281,6 +292,8 @@ class MakerDAO(EthereumModule):
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
         """
         movements = []
         join_normalized_balances = []
@@ -457,6 +470,8 @@ class MakerDAO(EthereumModule):
         May raise:
         - RemoteError if there are problems with querying etherscan
         - ChiRetrievalError if we are unable to query chi at the given timestamp
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
         """
         block_number = self.ethereum.etherscan.get_blocknumber_by_time(time)
         if self.ethereum.connected:
@@ -575,6 +590,8 @@ class MakerDAO(EthereumModule):
         May raise:
         - ChiRetrievalError if we are unable to query chi at the given timestamp
         - RemoteError if etherscan is queried and there is a problem with the query
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
         """
         # First events show up ~432000 seconds after deployment
         if from_ts < POT_CREATION_TIMESTAMP:
@@ -631,7 +648,7 @@ class MakerDAO(EthereumModule):
                     from_ts=from_ts,
                     to_ts=to_ts,
                 )
-            except (ChiRetrievalError, RemoteError) as e:
+            except (ChiRetrievalError, RemoteError, BlockchainQueryError) as e:
                 self.msg_aggregator.add_warning(
                     f'Failed to get DSR gains for {account} between '
                     f'{from_ts} and {to_ts}: {str(e)}',
