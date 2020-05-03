@@ -13,7 +13,7 @@ from web3.middleware.exception_retry_request import http_retry_request_middlewar
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.ethereum import ETH_SCAN_ABI, ETH_SCAN_ADDRESS
-from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -387,11 +387,18 @@ class EthereumManager():
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
+        - ValueError if web3 is used and there is a VM execution error
         """
         if self.connected:
             contract = self.web3.eth.contract(address=contract_address, abi=abi)
-            method = getattr(contract.caller, method_name)
-            return method(*arguments if arguments else [])
+            try:
+                method = getattr(contract.caller, method_name)
+                result = method(*arguments if arguments else [])
+            except ValueError as e:
+                raise BlockchainQueryError(
+                    f'Error doing call on contract {contract_address}: {str(e)}',
+                )
+            return result
         else:
             return self._call_contract_etherscan(
                 contract_address=contract_address,

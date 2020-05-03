@@ -10,6 +10,9 @@ from typing_extensions import Literal
 from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import (
+    MAKERDAO_CDP_MANAGER_ADDRESS,
+    MAKERDAO_GET_CDPS_ABI,
+    MAKERDAO_GET_CDPS_ADDRESS,
     MAKERDAO_POT_ABI,
     MAKERDAO_POT_ADDRESS,
     MAKERDAO_PROXY_REGISTRY_ABI,
@@ -29,7 +32,7 @@ from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import hex_or_bytes_to_int
+from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_now
 
 log = logging.getLogger(__name__)
 
@@ -37,10 +40,19 @@ POT_CREATION_BLOCK = 8928160
 POT_CREATION_TIMESTAMP = 1573672721
 CHI_BLOCKS_SEARCH_DISTANCE = 250  # Blocks per call query per side (before/after)
 MAX_BLOCKS_TO_QUERY = 346000  # query about a month's worth of blocks in each side before giving up
+PROXY_MAPPING_QUERY_PERIOD = 7200  # Refresh proxy query mappings every 2 hours
 
 
 class ChiRetrievalError(Exception):
     pass
+
+
+class MakerDAOVault(NamedTuple):
+    identifier: int
+    # No idea what this is
+    urn: ChecksumEthAddress
+    # The name of the vault
+    ilk: str
 
 
 def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
@@ -157,6 +169,8 @@ class MakerDAO(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.lock = Semaphore()
         self.historical_dsr_reports: Dict[ChecksumEthAddress, DSRAccountReport] = {}
+        self.last_proxy_mapping_query_ts = 0
+        self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
 
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
         """Checks if a DSR proxy exists for the given address and returns it if it does
@@ -177,13 +191,22 @@ class MakerDAO(EthereumModule):
             return to_checksum_address(result)
         return None
 
-    def get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
+    def _get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
         """Returns a mapping of accounts that have DSR proxies to their proxies
+
+        If the proxy mappings have been queried in the past PROXY_MAPPING_QUERY_PERIOD
+        seconds then the old result is used.
 
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
         """
+        now = ts_now()
+        if now - self.last_proxy_mapping_query_ts < PROXY_MAPPING_QUERY_PERIOD:
+            return self.proxy_mappings
+
         mapping = {}
         accounts = self.database.get_blockchain_accounts()
         for account in accounts.eth:
@@ -191,7 +214,36 @@ class MakerDAO(EthereumModule):
             if proxy_result:
                 mapping[account] = proxy_result
 
+        self.last_proxy_mapping_query_ts = ts_now()
+        self.proxy_mappings = mapping
         return mapping
+
+    def get_vaults(self) -> List[MakerDAOVault]:
+        """Detects vaults the user has and returns basic info about each one
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
+        """
+        proxy_mappings = self._get_accounts_having_maker_proxy()
+        vaults = []
+        for _, proxy in proxy_mappings.items():
+            result = self.ethereum.call_contract(
+                contract_address=MAKERDAO_GET_CDPS_ADDRESS,
+                abi=MAKERDAO_GET_CDPS_ABI,
+                method_name='getCdpsAsc',
+                arguments=[MAKERDAO_CDP_MANAGER_ADDRESS, proxy],
+            )
+            for idx, identifier in enumerate(result[0]):
+                vaults.append(MakerDAOVault(
+                    identifier=identifier,
+                    urn=result[1][idx],
+                    ilk=result[2][idx].split(b'\0', 1)[0].decode(),
+                ))
+
+        return vaults
 
     def get_current_dsr(self) -> DSRCurrentBalances:
         """Gets the current DSR balance for all accounts that have DAI in DSR
@@ -204,7 +256,7 @@ class MakerDAO(EthereumModule):
         queries fail for some reason
         """
         with self.lock:
-            proxy_mappings = self.get_accounts_having_maker_proxy()
+            proxy_mappings = self._get_accounts_having_maker_proxy()
             balances = {}
             for account, proxy in proxy_mappings.items():
                 guy_slice = self.ethereum.call_contract(
@@ -427,7 +479,7 @@ class MakerDAO(EthereumModule):
 
     def get_historical_dsr(self) -> Dict[ChecksumEthAddress, DSRAccountReport]:
         with self.lock:
-            proxy_mappings = self.get_accounts_having_maker_proxy()
+            proxy_mappings = self._get_accounts_having_maker_proxy()
             reports = {}
             for account, proxy in proxy_mappings.items():
                 report = self._historical_dsr_for_account(account, proxy)
