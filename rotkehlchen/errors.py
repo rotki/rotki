@@ -89,3 +89,11 @@ class ConversionError(Exception):
 
 class TagConstraintError(Exception):
     pass
+
+
+class BlockchainQueryError(Exception):
+    """Raises when there are problems querying a blockchain node.
+
+    For example a VM Execution error in ethereum contract calls
+    """
+    pass
