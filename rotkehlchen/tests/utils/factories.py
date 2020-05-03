@@ -6,6 +6,7 @@ from typing import Optional
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ApiKey, ApiSecret, ChecksumEthAddress, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -54,3 +55,5 @@ def make_ethereum_address() -> ChecksumEthAddress:
 UNIT_BTC_ADDRESS1 = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'
 UNIT_BTC_ADDRESS2 = '1CounterpartyXXXXXXXXXXXXXXXUWLpVr'
 UNIT_BTC_ADDRESS3 = '18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2'
+
+ZERO_ETH_ADDRESS = deserialize_ethereum_address('0x' + '0' * 40)
