@@ -192,7 +192,7 @@ class DBHandler:
         self.disconnect()
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
-        except SystemPermissionError as e:
+        except (SystemPermissionError, FileNotFoundError) as e:
             # If there is problems opening the DB at destruction just log and exit
             log.error(f'At DB teardown could not open the DB: {str(e)}')
             return
