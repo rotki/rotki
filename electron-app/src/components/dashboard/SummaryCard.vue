@@ -1,7 +1,9 @@
 <template>
   <v-card :loading="isLoading" class="pb-3">
     <v-row no-gutters class="pa-3 rotkibeige primary--text">
-      <v-toolbar-title> {{ name }} balances </v-toolbar-title>
+      <v-toolbar-title class="font-weight-medium">
+        {{ name }} balances
+      </v-toolbar-title>
       <v-spacer></v-spacer>
       <span>
         <v-tooltip v-if="canRefresh" bottom>
