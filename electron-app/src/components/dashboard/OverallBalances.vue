@@ -12,7 +12,7 @@
         </div>
       </v-col>
       <v-col cols="12" md="8" lg="8">
-        <div class="display-3 pa-5 text-center" style="height: 100%; width; 100%;">
+        <div class="display-3 pa-5" style="display: flex; justify-content: center; align-items: center; height: 100%; width; 100%;">
           <amount-display
             show-currency="symbol"
             fiat
