@@ -7,6 +7,7 @@ from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import (
@@ -17,6 +18,8 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_POT_ADDRESS,
     MAKERDAO_PROXY_REGISTRY_ABI,
     MAKERDAO_PROXY_REGISTRY_ADDRESS,
+    MAKERDAO_SPOT_ABI,
+    MAKERDAO_SPOT_ADDRESS,
     MAKERDAO_VAT_ABI,
     MAKERDAO_VAT_ADDRESS,
 )
@@ -42,6 +45,10 @@ CHI_BLOCKS_SEARCH_DISTANCE = 250  # Blocks per call query per side (before/after
 MAX_BLOCKS_TO_QUERY = 346000  # query about a month's worth of blocks in each side before giving up
 PROXY_MAPPING_QUERY_PERIOD = 7200  # Refresh proxy query mappings every 2 hours
 
+WAD = int(1e18)
+RAY = int(1e27)
+RAD = int(1e45)
+
 
 class ChiRetrievalError(Exception):
     pass
@@ -49,10 +56,18 @@ class ChiRetrievalError(Exception):
 
 class MakerDAOVault(NamedTuple):
     identifier: int
-    # No idea what this is
-    urn: ChecksumEthAddress
-    # The name of the vault
-    ilk: str
+    name: str
+    collateral_asset: Asset
+    # The amount of collateral tokens locked
+    collateral_amount: FVal
+    # The USD value of collateral locked, given the current price according to the price feed
+    collateral_usd_value: FVal
+    # amount of DAI drawn
+    debt_value: FVal
+    # The USD price of collateral at which the Vault becomes unsafe. None if nothing is locked in.
+    liquidation_price: Optional[FVal]
+    # The current collateralization_ratio of the Vault. None if nothing is locked in.
+    collateralization_ratio: Optional[str]
 
 
 def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
@@ -172,6 +187,14 @@ class MakerDAO(EthereumModule):
         self.last_proxy_mapping_query_ts = 0
         self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
 
+        result = self.ethereum.call_contract(
+            contract_address=MAKERDAO_SPOT_ADDRESS,
+            abi=MAKERDAO_SPOT_ABI,
+            method_name='par',
+            arguments=[],
+        )
+        self.par = result
+
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
         """Checks if a DSR proxy exists for the given address and returns it if it does
 
@@ -218,6 +241,67 @@ class MakerDAO(EthereumModule):
         self.proxy_mappings = mapping
         return mapping
 
+    def _query_vault_data(self, identifier: int, urn: str, ilk: bytes):
+        result = self.ethereum.call_contract(
+            contract_address=MAKERDAO_VAT_ADDRESS,
+            abi=MAKERDAO_VAT_ABI,
+            method_name='urns',
+            arguments=[ilk, urn],
+        )
+        # also known as ink in their contract
+        collateral_amount = FVal(result[0] / WAD)
+        normalized_debt = result[1]  # known as art in their contract
+        result = self.ethereum.call_contract(
+            contract_address=MAKERDAO_VAT_ADDRESS,
+            abi=MAKERDAO_VAT_ABI,
+            method_name='ilks',
+            arguments=[ilk],
+        )
+        rate = result[1]  # Accumulated Rates
+        spot = FVal(result[2])  # Price with Safety Margin
+        # How many DAI owner needs to pay back to the vault
+        debt_value = FVal(((normalized_debt / WAD) * rate) / RAY)
+        name = ilk.split(b'\0', 1)[0].decode()
+        asset_symbol = name.split('-')[0]
+        result = self.ethereum.call_contract(
+            contract_address=MAKERDAO_SPOT_ADDRESS,
+            abi=MAKERDAO_SPOT_ABI,
+            method_name='ilks',
+            arguments=[ilk],
+        )
+
+        mat = result[1]
+        # This should also be wrapped with USD/MDAI ratio
+        # https://github.com/makerdao/dai.js/blob/672475576b94b19d35b1e014807ea809ebf700af/packages/dai-plugin-mcd/src/math.js#L26
+        # Which I am not sure how to calculate
+        liquidation_ratio = FVal(mat / RAY)
+        # This should also be wrapped with USD/currency ratio
+        # https://github.com/makerdao/dai.js/blob/672475576b94b19d35b1e014807ea809ebf700af/packages/dai-plugin-mcd/src/math.js#L33
+        # Which I am not sure how to calculate
+        price = FVal((spot / RAY) * liquidation_ratio)
+        collateral_value = FVal(price * collateral_amount)
+
+        if debt_value == 0:
+            collateralization_ratio = None
+        else:
+            collateralization_ratio = FVal(collateral_value / debt_value).to_percentage(2)
+
+        if collateral_amount == 0:
+            liquidation_price = None
+        else:
+            liquidation_price = FVal((debt_value * liquidation_ratio) / collateral_amount)
+
+        return MakerDAOVault(
+            identifier=identifier,
+            name=name,
+            collateral_asset=Asset(asset_symbol),
+            collateral_amount=collateral_amount,
+            collateral_usd_value=collateral_value,
+            debt_value=debt_value,
+            liquidation_price=liquidation_price,
+            collateralization_ratio=collateralization_ratio,
+        )
+
     def get_vaults(self) -> List[MakerDAOVault]:
         """Detects vaults the user has and returns basic info about each one
 
@@ -237,10 +321,10 @@ class MakerDAO(EthereumModule):
                 arguments=[MAKERDAO_CDP_MANAGER_ADDRESS, proxy],
             )
             for idx, identifier in enumerate(result[0]):
-                vaults.append(MakerDAOVault(
+                vaults.append(self._query_vault_data(
                     identifier=identifier,
                     urn=result[1][idx],
-                    ilk=result[2][idx].split(b'\0', 1)[0].decode(),
+                    ilk=result[2][idx],
                 ))
 
         return vaults
