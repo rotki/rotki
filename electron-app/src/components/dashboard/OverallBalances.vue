@@ -7,19 +7,23 @@
         lg="4"
         style="display: flex; flex-direction: column; justify-content: center;"
       >
-        <div class="rotkibeige display-3 pa-5 primary--text font-weight-bold" style="height: 100%; width; 100%;">
+        <div
+          class="rotkibeige display-3 pa-5 primary--text font-weight-bold"
+          style="height: 100%; width; 100%;"
+        >
           net worth
         </div>
       </v-col>
       <v-col cols="12" md="8" lg="8">
-        <div class="display-3 pa-5" style="display: flex; justify-content: center; align-items: center; height: 100%; width; 100%;">
+        <div
+          class="display-3 pa-5"
+          style="display: flex; justify-content: center; align-items: center; height: 100%; width; 100%;"
+        >
           <amount-display
             show-currency="symbol"
             fiat
             :value="total"
           ></amount-display>
-          <!-- <span class="overall-balances-box__amount__number font-weight-light"> -->
-          <!-- </span> -->
         </div>
       </v-col>
     </v-row>
