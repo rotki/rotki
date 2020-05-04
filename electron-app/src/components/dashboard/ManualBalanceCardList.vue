@@ -11,10 +11,7 @@
       </v-icon>
     </v-list-item-avatar>
     <v-list-item-content>
-      <v-list-item-title
-        style="display: flex; justify-content: space-between;"
-        class="font-weight-light"
-      >
+      <v-list-item-title style="display: flex; justify-content: space-between;">
         <span>
           {{ name[0].toUpperCase() + name.slice(1) }}
         </span>
