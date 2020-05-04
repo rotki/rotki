@@ -51,7 +51,9 @@
       <v-col cols="12">
         <v-card>
           <v-row no-gutters class="pa-3 rotkibeige primary--text">
-            <v-toolbar-title class="font-weight-medium"> balance per asset </v-toolbar-title>
+            <v-toolbar-title class="font-weight-medium">
+              balance per asset
+            </v-toolbar-title>
             <v-spacer></v-spacer>
             <v-text-field
               v-model="search"
