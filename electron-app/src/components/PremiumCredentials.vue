@@ -12,9 +12,10 @@
           <v-icon small class="mb-3 ml-1" v-on="on">fa fa-info-circle</v-icon>
         </template>
         <div>
-          Enabling premium for a new account will restore the database associated
-          with these credentials from the server. <br />Ensure that the account uses the
-          same password as the database originally backed up.
+          Enabling premium for a new account will restore the database
+          associated with these credentials from the server. <br />
+          Ensure that the account uses the same password as the database
+          originally backed up.
         </div>
       </v-tooltip>
     </v-row>
