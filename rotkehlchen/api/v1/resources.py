@@ -46,6 +46,7 @@ from rotkehlchen.api.v1.encoding import (
     TradeSchema,
     TradesQuerySchema,
     UserActionSchema,
+    UserPasswordChangeSchema,
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -526,6 +527,23 @@ class UsersByNameResource(BaseResource):
             )
         else:  # Can only be logout -- checked by marshmallow
             return self.rest_api.user_logout(name=name)
+
+
+class UserPasswordChangeResource(BaseResource):
+    patch_schema = UserPasswordChangeSchema
+
+    @use_kwargs(patch_schema, location='json')  # type: ignore
+    def patch(
+            self,
+            name: str,
+            password: str,
+            new_password: str,
+    ) -> Response:
+        return self.rest_api.user_change_password(
+            name=name,
+            password=password,
+            new_password=new_password,
+        )
 
 
 class StatisticsNetvalueResource(BaseResource):
