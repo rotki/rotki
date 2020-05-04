@@ -50,20 +50,6 @@
     <v-row>
       <v-col cols="12">
         <v-card>
-          <!-- <v-toolbar class="grey lighten-2 primary--text">
-            <v-list-item-avatar size="28" tile>
-              <v-icon size="28"> fa fa-table </v-icon>
-            </v-list-item-avatar>
-            <v-toolbar-title> Balance per Asset </v-toolbar-title>
-            <v-spacer></v-spacer>
-            <v-text-field
-              v-model="search"
-              append-icon="fa-search"
-              label="Search"
-              single-line
-              hide-details
-            ></v-text-field>
-          </v-toolbar> -->
           <v-row no-gutters class="pa-3 rotkibeige primary--text">
             <v-toolbar-title> balance per asset </v-toolbar-title>
             <v-spacer></v-spacer>

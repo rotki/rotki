@@ -1,5 +1,6 @@
 <template>
   <v-list-item
+    v-if="amount !== zero"
     :id="`${name}_box`"
     :ripple="false"
     class="blockchain-balance-box__item"
@@ -39,6 +40,7 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { Zero } from '@/utils/bignumbers';
 
 @Component({
   components: { AmountDisplay, CryptoIcon }
@@ -48,6 +50,8 @@ export default class BlockchainBalanceCardList extends Vue {
   name!: string;
   @Prop({ required: true })
   amount!: BigNumber;
+
+  zero = Zero;
 
   blockchainBalanceIcons = {
     bitcoin: 'BTC',
