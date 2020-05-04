@@ -33,14 +33,21 @@ class DataHandler():
         self.logged_in = False
         self.data_directory = data_directory
         self.username = 'no_user'
+        self.password = ''
         self.msg_aggregator = msg_aggregator
 
     def logout(self) -> None:
         if self.logged_in:
             self.username = 'no_user'
+            self.password = ''
             self.user_data_dir: Optional[FilePath] = None
             del self.db
             self.logged_in = False
+
+    def change_password(self, new_password: str) -> None:
+        if self.logged_in:
+            self.db.change_password(new_password)
+            self.password = new_password
 
     def unlock(
             self,
@@ -95,6 +102,7 @@ class DataHandler():
         self.user_data_dir = user_data_dir
         self.logged_in = True
         self.username = username
+        self.password = password
         return user_data_dir
 
     def main_currency(self) -> Asset:

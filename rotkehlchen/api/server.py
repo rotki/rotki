@@ -45,6 +45,7 @@ from rotkehlchen.api.v1.resources import (
     TradesResource,
     UsersByNameResource,
     UsersResource,
+    UserPasswordChangeResource,
     VersionResource,
     PingResource,
     create_blueprint,
@@ -62,6 +63,7 @@ URLS = List[
 URLS_V1: URLS = [
     ('/users', UsersResource),
     ('/users/<string:name>', UsersByNameResource),
+    ('/users/<string:name>/password', UserPasswordChangeResource),
     ('/settings', SettingsResource),
     ('/tasks/', AsyncTasksResource),
     ('/tasks/<int:task_id>', AsyncTasksResource, 'specific_async_tasks_resource'),

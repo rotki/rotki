@@ -917,6 +917,31 @@ class RestAPI():
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
+    def user_change_password(
+        self,
+        name: str,
+        password: str,
+        new_password: str,
+    ) -> Response:
+        result_dict: Dict[str, Any] = {'result': None, 'message': ''}
+
+        if name != self.rotkehlchen.data.username:
+            result_dict['message'] = f'Provided user {name} is not the logged in user'
+            return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+
+        if password != self.rotkehlchen.data.password:
+            result_dict['message'] = f'Provided current password is not correct'
+            return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+
+        try:
+            self.rotkehlchen.data.change_password(new_password=new_password)
+            # self.rotkehlchen.data.db.change_password(new_password=new_password)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
     @staticmethod
     def query_all_assets() -> Response:
         """Returns all supported assets. Essentially the contents of all_assets.json"""
