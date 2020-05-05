@@ -113,8 +113,7 @@
             </v-btn>
           </v-card-actions>
         </v-card>
-        <br />
-        <v-card>
+        <v-card class="mt-5">
           <v-card-title>Frontend-only Settings</v-card-title>
           <v-card-text>
             <v-switch
@@ -125,6 +124,51 @@
             </v-switch>
           </v-card-text>
         </v-card>
+        <v-card class="mt-5">
+          <v-card-title>User Account & Security</v-card-title>
+          <v-form ref="form">
+            <v-card-text>
+              <revealable-input
+                v-model="currentPassword"
+                class="settings-general__account-and-security__fields__current-password"
+                label="Current Password"
+                :rules="passwordRules"
+              ></revealable-input>
+              <revealable-input
+                v-model="newPassword"
+                class="settings-general__account-and-security__fields__new-password"
+                label="New Password"
+                :rules="passwordRules"
+              ></revealable-input>
+              <revealable-input
+                v-model="newPasswordConfirm"
+                class="settings-general__account-and-security__fields__new-password-confirm"
+                label="Confirm New Password"
+                icon="fa-repeat"
+                :rules="passwordConfirmRules"
+                :error-messages="errorMessages"
+              ></revealable-input>
+            </v-card-text>
+            <v-card-actions>
+              <v-btn
+                depressed
+                class="settings-general__account-and-security__buttons__change-password"
+                color="primary"
+                type="submit"
+                :disabled="
+                  !(
+                    currentPassword &&
+                    newPassword &&
+                    newPassword === newPasswordConfirm
+                  )
+                "
+                @click="changePassword()"
+              >
+                Change Password
+              </v-btn>
+            </v-card-actions>
+          </v-form>
+        </v-card>
       </v-col>
     </v-row>
   </v-container>
@@ -134,6 +178,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { convertToGeneralSettings } from '@/data/converters';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
@@ -143,9 +188,9 @@ import { GeneralSettings, SettingsUpdate } from '@/typing/types';
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { MessageDialog },
+  components: { MessageDialog, RevealableInput },
   computed: {
-    ...mapState(['settings']),
+    ...mapState(['settings', 'username']),
     ...mapGetters(['currency'])
   }
 })
@@ -161,6 +206,47 @@ export default class General extends Vue {
   balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
   selectedCurrency: Currency = currencies[0];
+
+  currentPassword: string = '';
+  newPassword: string = '';
+  newPasswordConfirm: string = '';
+  errorMessages: string[] = [];
+  username!: string;
+
+  readonly passwordRules = [(v: string) => !!v || 'Please provide a password'];
+  readonly passwordConfirmRules = [
+    (v: string) => !!v || 'Please provide a password confirmation'
+  ];
+
+  private updateConfirmationError() {
+    if (this.errorMessages.length > 0) {
+      return;
+    }
+    this.errorMessages.push(
+      'The password confirmation does not match the provided password'
+    );
+  }
+
+  @Watch('newPassword')
+  onNewPasswordChange() {
+    if (this.newPassword && this.newPassword !== this.newPasswordConfirm) {
+      this.updateConfirmationError();
+    } else {
+      this.errorMessages.pop();
+    }
+  }
+
+  @Watch('newPasswordConfirm')
+  onNewPasswordConfirmationChange() {
+    if (
+      this.newPasswordConfirm &&
+      this.newPasswordConfirm !== this.newPassword
+    ) {
+      this.updateConfirmationError();
+    } else {
+      this.errorMessages.pop();
+    }
+  }
 
   historicDateMenu: boolean = false;
   date: string = '';
@@ -215,6 +301,37 @@ export default class General extends Vue {
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
     this.date = this.parseDate(settings.historicDataStart) || '';
+  }
+
+  changePassword() {
+    const currentPassword = this.currentPassword;
+    const newPassword = this.newPassword;
+    const newPasswordConfirm = this.newPasswordConfirm;
+
+    if (currentPassword && newPassword === newPasswordConfirm) {
+      const { commit } = this.$store;
+
+      this.$api
+        .changeUserPassword(this.username, currentPassword, newPassword)
+        .then(() => {
+          commit('setMessage', {
+            title: 'Change User Password',
+            description: 'Successfully changed user password',
+            success: true
+          } as Message);
+          (this.$refs.form as Vue & { reset: () => boolean }).reset();
+          (this.$refs.form as Vue & {
+            resetValidation: () => boolean;
+          }).resetValidation();
+        })
+        .catch((reason: Error) => {
+          commit('setMessage', {
+            title: 'Change User Password',
+            description: reason.message || 'Error while changing user password',
+            success: false
+          } as Message);
+        });
+    }
   }
 
   save() {

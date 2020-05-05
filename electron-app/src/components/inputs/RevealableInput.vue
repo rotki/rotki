@@ -10,6 +10,7 @@
     :hint="hint"
     :disabled="disabled"
     :persistent-hint="!!hint"
+    :error-messages="errorMessages"
     @input="input"
     @click:append="revealed = !revealed"
   ></v-text-field>
@@ -36,6 +37,9 @@ export default class RevealableInput extends Vue {
 
   @Prop({ required: false, default: '' })
   hint!: string;
+
+  @Prop({ required: false, default: '' })
+  errorMessages!: string | any[];
 
   @Prop({ required: false, default: false })
   disabled!: boolean;
