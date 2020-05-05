@@ -927,8 +927,8 @@ class RestAPI():
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
 
         if name != self.rotkehlchen.data.username:
-            result_dict['message'] = f'Provided user {name} is not the logged in user'
-            return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+            result_dict['message'] = f'Provided user "{name}" is not the logged in user'
+            return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
 
         if password != self.rotkehlchen.data.password:
             result_dict['message'] = f'Provided current password is not correct'
@@ -940,7 +940,7 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
     def query_all_assets() -> Response:
