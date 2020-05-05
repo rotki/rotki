@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
-from rotkehlchen.chain.ethereum.makerdao import DSRCurrentBalances
+from rotkehlchen.chain.ethereum.makerdao import DSRCurrentBalances, MakerDAOVault
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -47,17 +47,15 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         }
     elif isinstance(entry, Trade):
         return entry.serialize()
-    elif isinstance(entry, DBSettings):
-        return process_result(entry._asdict())
-    elif isinstance(entry, EthTokenInfo):
-        return process_result(entry._asdict())
-    elif isinstance(entry, VersionCheckResult):
-        return process_result(entry._asdict())
-    elif isinstance(entry, DSRCurrentBalances):
-        return process_result(entry._asdict())
-    elif isinstance(entry, DBSettings):
-        return process_result(entry._asdict())
-    elif isinstance(entry, ManuallyTrackedBalanceWithValue):
+    elif isinstance(entry, (
+            DBSettings,
+            EthTokenInfo,
+            VersionCheckResult,
+            DBSettings,
+            DSRCurrentBalances,
+            ManuallyTrackedBalanceWithValue,
+            MakerDAOVault,
+    )):
         return process_result(entry._asdict())
     elif isinstance(entry, tuple):
         raise ValueError('Query results should not contain plain tuples')
