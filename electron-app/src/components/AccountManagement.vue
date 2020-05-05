@@ -200,23 +200,6 @@ export default class AccountManagement extends Vue {
   }
 }
 
-.account_management__loading {
-  height: 400%;
-  width: 400%;
-  top: -40%;
-  left: -100%;
-  background-color: #42210b;
-  background: url(~@/assets/images/rotkipattern2.png);
-  -webkit-animation-name: scrollLarge;
-  animation-name: scrollLarge;
-  -webkit-animation-duration: 35s;
-  animation-duration: 35s;
-  -webkit-animation-timing-function: linear;
-  animation-timing-function: linear;
-  -webkit-animation-iteration-count: infinite;
-  animation-iteration-count: infinite;
-}
-
 .v-overlay {
   z-index: 200 !important;
 }
@@ -227,6 +210,21 @@ export default class AccountManagement extends Vue {
 
 .account_management {
   &__loading {
+    height: 400%;
+    width: 400%;
+    top: -40%;
+    left: -100%;
+    background-color: #42210b;
+    background: url(~@/assets/images/rotkipattern2.png);
+    -webkit-animation-name: scrollLarge;
+    animation-name: scrollLarge;
+    -webkit-animation-duration: 35s;
+    animation-duration: 35s;
+    -webkit-animation-timing-function: linear;
+    animation-timing-function: linear;
+    -webkit-animation-iteration-count: infinite;
+    animation-iteration-count: infinite;
+
     &__content {
       align-items: center;
       justify-content: center;
