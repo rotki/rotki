@@ -1,11 +1,11 @@
 <template>
   <v-container>
-    <v-row style="margin: 0;">
+    <v-row class="ma-0">
       <v-col cols="12">
         <overall-balances></overall-balances>
       </v-col>
     </v-row>
-    <v-row class="flex" style="margin: 0; justify-content: space-evenly;">
+    <v-row class="ma-0 flex" justify="center">
       <v-col cols="12" md="4" lg="4">
         <summary-card
           name="exchange"
@@ -13,12 +13,12 @@
           :is-loading="exchangeIsLoading"
           @refresh="refreshBalance($event)"
         >
-          <exchange-box-new
+          <exchange-box
             v-for="exchange in exchanges"
             :key="exchange.name + '_new'"
             :name="exchange.name"
             :amount="exchange.total"
-          ></exchange-box-new>
+          ></exchange-box>
         </summary-card>
       </v-col>
       <v-col cols="12" md="4" lg="4">
@@ -130,7 +130,6 @@ import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceCardList.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
-import ExchangeBoxNew from '@/components/dashboard/ExchangeBoxNew.vue';
 import InformationBox from '@/components/dashboard/InformationBox.vue';
 import ManualBalanceCardList from '@/components/dashboard/ManualBalanceCardList.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
@@ -167,7 +166,6 @@ interface BlockchainBalances {
     AssetDetails,
     SummaryCard,
     ExchangeBox,
-    ExchangeBoxNew,
     InformationBox,
     ManualBalanceCardList,
     BlockchainBalanceCardList,

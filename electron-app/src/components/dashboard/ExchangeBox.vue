@@ -1,102 +1,58 @@
 <template>
-  <v-card :id="`${name}_box`" class="exchange-box" color="primary">
-    <v-row
-      align="center"
-      justify="space-between"
-      class="exchange-box__information mx-auto"
+  <v-list-item
+    :id="`${name}_box`"
+    :to="`/exchange-balances/${name}`"
+    :ripple="false"
+    class="exchange-box__item"
+    @click="doNothing"
+  >
+    <v-list-item-avatar
+      tile
+      class="exchange-box__icon__exchange exchange-box__icon"
     >
-      <v-col cols="2">
-        <v-img
-          contain
-          size="45"
-          class="exchange-box__icon"
-          :title="name"
-          :class="
-            inverted ? 'exchange-box__icon--inverted' : 'exchange-box__icon'
-          "
-          :src="require(`../../assets/images/${name}.png`)"
-        />
-      </v-col>
-      <v-col cols="10" class="exchange-box__amount text-right">
-        <span class="exchange-box__amount__number">
+      <v-img
+        contain
+        height="24"
+        :title="name"
+        :src="require(`../../assets/images/${name}.png`)"
+      />
+    </v-list-item-avatar>
+    <v-list-item-content>
+      <v-list-item-title class="d-flex justify-space-between">
+        <span>
+          {{ name[0].toUpperCase() + name.slice(1) }}
+        </span>
+        <span class="text-end">
           <amount-display
             show-currency="symbol"
-            fiat-currency="USD"
+            fiat
             :value="amount"
           ></amount-display>
         </span>
-      </v-col>
-    </v-row>
-    <v-row align="center" class="exchange-box__footer">
-      <v-col cols="12">
-        <v-btn
-          :id="`exchange-box_details__${name}`"
-          :to="`/exchange-balances/${name}`"
-          class="exchange-box__footer__view-details mx-auto text-capitalize"
-          tile
-          outlined
-          color="primary"
-        >
-          View Details
-          <v-spacer></v-spacer>
-          <v-icon right>
-            fa fa-arrow-circle-right
-          </v-icon>
-        </v-btn>
-        <v-tooltip bottom>
-          <template #activator="{ on }">
-            <v-btn text icon color="primary" @click="refresh()" v-on="on">
-              <v-icon>
-                fa-refresh
-              </v-icon>
-            </v-btn>
-          </template>
-          <span>
-            Refreshes the exchange balances ignoring any cached entries
-          </span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
-  </v-card>
+      </v-list-item-title>
+    </v-list-item-content>
+  </v-list-item>
 </template>
 
 <script lang="ts">
+import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { Currency } from '@/model/currency';
-import { ExchangeBalancePayload } from '@/store/balances/actions';
-
-const { mapGetters } = createNamespacedHelpers('session');
-const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
-  components: { AmountDisplay },
-  computed: {
-    ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapBalanceGetters(['exchangeRate'])
-  }
+  components: { AmountDisplay }
 })
 export default class ExchangeBox extends Vue {
-  currency!: Currency;
-  floatingPrecision!: number;
-  exchangeRate!: (currency: string) => number;
-
   @Prop({ required: true })
   name!: string;
   @Prop({ required: true })
-  amount!: number;
+  amount!: BigNumber;
 
   get inverted(): boolean {
     return ['bitmex', 'coinbasepro'].indexOf(this.name) > -1;
   }
 
-  refresh() {
-    this.$store.dispatch('balances/fetchExchangeBalances', {
-      name: this.name,
-      ignoreCache: true
-    } as ExchangeBalancePayload);
-  }
+  doNothing() {}
 }
 </script>
 <style scoped lang="scss">
@@ -105,46 +61,21 @@ export default class ExchangeBox extends Vue {
 }
 
 .exchange-box__icon {
-  margin-left: 8px;
-  width: 45px;
   filter: grayscale(100%);
+
+  &__exchange {
+    margin: 0;
+    margin-right: 5px !important;
+  }
+}
+
+.exchange-box__item:hover .exchange-box__icon {
+  filter: grayscale(0);
 }
 
 .exchange-box__icon--inverted {
   margin-left: 8px;
   width: 45px;
   filter: grayscale(100%) invert(100%);
-}
-
-.exchange-box__information {
-  width: 100%;
-}
-
-.exchange-box__footer {
-  background-color: white;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-}
-
-.exchange-box__footer__view-details {
-  border: none !important;
-  height: 24px !important;
-  width: calc(100% - 40px);
-}
-
-.exchange-box__footer .col-12 {
-  padding: 4px !important;
-}
-
-.exchange-box__amount {
-  color: white;
-}
-
-.exchange-box__amount__number {
-  font-size: 34px;
-}
-
-.exchange-box__amount__currency {
-  margin-top: -15px;
 }
 </style>

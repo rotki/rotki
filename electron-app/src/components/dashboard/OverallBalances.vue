@@ -21,7 +21,7 @@
         >
           <amount-display
             show-currency="symbol"
-            fiat
+            fiat-currency="USD"
             :value="total"
           ></amount-display>
         </div>

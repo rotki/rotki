@@ -119,17 +119,20 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   },
 
   manualBalanceByLocation: (state: BalanceState) => {
-    const simplifyManualBalances = state.manualBalances.map(obj => {
-      const newObj: ManualBalancesByLocation = { location: '', usdValue: Zero };
-      newObj.location = obj.location;
-      newObj.usdValue = obj.usdValue;
-      return newObj;
-    });
+    const simplifyManualBalances = state.manualBalances.map(
+      perLocationBalance => {
+        const { location, usdValue }: ManualBalancesByLocation = {
+          location: perLocationBalance.location,
+          usdValue: perLocationBalance.usdValue
+        };
+        return { location, usdValue };
+      }
+    );
     const aggregateManualBalancesByLocation: ManualBalanceByLocation = simplifyManualBalances.reduce(
-      function (
+      (
         result: ManualBalanceByLocation,
         manualBalance: ManualBalancesByLocation
-      ) {
+      ) => {
         result[manualBalance.location]
           ? result[manualBalance.location].plus(manualBalance.usdValue)
           : (result[manualBalance.location] = manualBalance.usdValue);
