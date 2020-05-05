@@ -6,10 +6,7 @@
     class="blockchain-balance-box__item"
     @click="doNothing"
   >
-    <v-list-item-avatar
-      tile
-      class="blockchain-balance-box__icon blockchain-box__icon"
-    >
+    <v-list-item-avatar tile class="blockchain-balance-box__icon">
       <crypto-icon
         width="24px"
         :symbol="blockchainBalanceIcons[name]"
@@ -52,17 +49,13 @@ export default class BlockchainBalanceCardList extends Vue {
 
   blockchainBalanceIcons = {
     bitcoin: 'BTC',
-    ethereum: 'ETC'
+    ethereum: 'ETH'
   };
 
   doNothing() {}
 }
 </script>
 <style scoped lang="scss">
-.blockchain-balance-box__currency__symbol {
-  font-size: 2em;
-}
-
 .blockchain-balance-box__icon {
   filter: grayscale(100%);
 }
