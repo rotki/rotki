@@ -536,12 +536,12 @@ class UserPasswordChangeResource(BaseResource):
     def patch(
             self,
             name: str,
-            password: str,
+            current_password: str,
             new_password: str,
     ) -> Response:
         return self.rest_api.user_change_password(
             name=name,
-            password=password,
+            current_password=current_password,
             new_password=new_password,
         )
 

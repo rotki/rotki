@@ -921,7 +921,7 @@ class RestAPI():
     def user_change_password(
         self,
         name: str,
-        password: str,
+        current_password: str,
         new_password: str,
     ) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
@@ -930,17 +930,22 @@ class RestAPI():
             result_dict['message'] = f'Provided user "{name}" is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
 
-        if password != self.rotkehlchen.data.password:
+        if current_password != self.rotkehlchen.data.password:
             result_dict['message'] = f'Provided current password is not correct'
             return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 
+        success: bool
         try:
-            self.rotkehlchen.data.change_password(new_password=new_password)
-            # self.rotkehlchen.data.db.change_password(new_password=new_password)
+            success = self.rotkehlchen.data.change_password(new_password=new_password)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        if success is False:
+            msg = 'The database rejected the password change for unknown reasons'
+            result_dict['message'] = msg
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+        else:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
     def query_all_assets() -> Response:

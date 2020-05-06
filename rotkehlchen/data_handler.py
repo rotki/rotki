@@ -44,10 +44,14 @@ class DataHandler():
             del self.db
             self.logged_in = False
 
-    def change_password(self, new_password: str) -> None:
+    def change_password(self, new_password: str) -> bool:
+        success: bool = False
+
         if self.logged_in:
-            self.db.change_password(new_password)
+            success = self.db.change_password(new_password)
             self.password = new_password
+
+        return success
 
     def unlock(
             self,
