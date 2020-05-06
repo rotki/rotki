@@ -68,7 +68,7 @@ describe('General Settings', () => {
 
   it('verify settings persist re-login', () => {
     app.logout();
-    app.login(username, password);
+    app.login(username, newPassword);
     app.closePremiumOverlay();
     page.visit();
     page.verify(settings);
