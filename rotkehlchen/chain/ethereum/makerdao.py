@@ -241,7 +241,12 @@ class MakerDAO(EthereumModule):
         self.proxy_mappings = mapping
         return mapping
 
-    def _query_vault_data(self, identifier: int, urn: str, ilk: bytes):
+    def _query_vault_data(
+            self,
+            identifier: int,
+            urn: ChecksumEthAddress,
+            ilk: bytes,
+    ) -> MakerDAOVault:
         result = self.ethereum.call_contract(
             contract_address=MAKERDAO_VAT_ADDRESS,
             abi=MAKERDAO_VAT_ABI,
@@ -320,10 +325,11 @@ class MakerDAO(EthereumModule):
                 method_name='getCdpsAsc',
                 arguments=[MAKERDAO_CDP_MANAGER_ADDRESS, proxy],
             )
+
             for idx, identifier in enumerate(result[0]):
                 vaults.append(self._query_vault_data(
                     identifier=identifier,
-                    urn=result[1][idx],
+                    urn=to_checksum_address(result[1][idx]),
                     ilk=result[2][idx],
                 ))
 
