@@ -371,9 +371,9 @@ class EthereumManager():
         output_types = get_abi_output_types(fn_abi)
         output_data = web3.codec.decode_abi(output_types, bytes.fromhex(result[2:]))
 
-        if len(output_data) != 1:
-            log.error('Unexpected call with multiple output data. Can not handle properly')
-        return output_data[0]
+        if len(output_data) == 1:
+            return output_data[0]
+        return output_data
 
     def call_contract(
             self,
