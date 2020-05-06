@@ -189,39 +189,27 @@ export class RotkehlchenApi {
     currentPassword: string,
     newPassword: string
   ): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .patch<ActionResult<boolean>>(
-          `/users/${username}/password`,
-          {
-            name: username,
-            password: currentPassword,
-            new_password: newPassword
-          },
-          {
-            validateStatus: function (status) {
-              return (
-                status == 200 ||
-                status == 400 ||
-                status == 401 ||
-                status == 409 ||
-                status == 502
-              );
-            }
+    return this.axios
+      .patch<ActionResult<boolean>>(
+        `/users/${username}/password`,
+        {
+          name: username,
+          current_password: currentPassword,
+          new_password: newPassword
+        },
+        {
+          validateStatus: function (status) {
+            return (
+              status == 200 ||
+              status == 400 ||
+              status == 401 ||
+              status == 409 ||
+              status == 502
+            );
           }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => {
-          reject(error);
-        });
-    });
+        }
+      )
+      .then(this.handleResponse);
   }
 
   removeOwnedEthTokens(tokens: string[]): Promise<BlockchainAccount> {

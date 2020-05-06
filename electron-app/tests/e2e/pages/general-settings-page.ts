@@ -43,6 +43,33 @@ export class GeneralSettingsPage {
     cy.get('.settings-general__fields__scramble-data').click();
   }
 
+  changePassword(currentPassword: string, newPassword: string) {
+    cy.get(
+      '.settings-general__account-and-security__fields__current-password input'
+    ).clear();
+    cy.get(
+      '.settings-general__account-and-security__fields__current-password input'
+    ).type(currentPassword);
+
+    cy.get(
+      '.settings-general__account-and-security__fields__new-password input'
+    ).clear();
+    cy.get(
+      '.settings-general__account-and-security__fields__new-password input'
+    ).type(newPassword);
+
+    cy.get(
+      '.settings-general__account-and-security__fields__new-password-confirm input'
+    ).clear();
+    cy.get(
+      '.settings-general__account-and-security__fields__new-password-confirm input'
+    ).type(newPassword);
+
+    cy.get(
+      '.settings-general__account-and-security__buttons__change-password'
+    ).click();
+  }
+
   saveSettings() {
     cy.get('.settings-general__buttons__save').click();
   }

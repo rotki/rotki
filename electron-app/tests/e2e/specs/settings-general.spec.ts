@@ -4,6 +4,8 @@ import { RotkiApp } from '../pages/rotki-app';
 
 describe('General Settings', () => {
   let username: string;
+  let password: string;
+  let newPassword: string;
   let app: RotkiApp;
   let page: GeneralSettingsPage;
 
@@ -20,10 +22,12 @@ describe('General Settings', () => {
 
   before(() => {
     username = Guid.newGuid().toString();
+    password = '1234';
+    newPassword = '5678';
     app = new RotkiApp();
     page = new GeneralSettingsPage();
     app.visit();
-    app.createAccount(username);
+    app.createAccount(username, password);
     app.closePremiumOverlay();
   });
 
@@ -50,6 +54,12 @@ describe('General Settings', () => {
     page.verify(settings);
   });
 
+  it('change user password and revert', () => {
+    page.visit();
+    page.changePassword(password, newPassword);
+    page.confirmSuccess();
+  });
+
   it('change rpc without success', () => {
     page.setRpcEndpoint('http://localhost:9001');
     page.saveSettings();
@@ -58,7 +68,7 @@ describe('General Settings', () => {
 
   it('verify settings persist re-login', () => {
     app.logout();
-    app.login(username);
+    app.login(username, password);
     app.closePremiumOverlay();
     page.visit();
     page.verify(settings);

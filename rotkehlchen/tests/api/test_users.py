@@ -354,7 +354,6 @@ def test_user_creation_with_already_loggedin_user(rotkehlchen_api_server, userna
     )
 
 
-# @pytest.mark.parametrize('start_with_logged_in_user', [True]) (NEEDED?)
 def test_user_password_change(rotkehlchen_api_server, username, db_password):
     """
     Test that changing a logged-in user's users password works successfully and that
@@ -364,7 +363,7 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     # wrong username
     data_wrong_user = {
         'name': 'billybob',
-        'password': 'asdf',
+        'current_password': 'asdf',
         'new_password': 'asdf',
     }
     response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",
@@ -381,7 +380,7 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     # wrong password
     data_wrong_pass = {
         'name': username,
-        'password': 'asdf',  # should be ??? '123' (?)
+        'current_password': 'asdf',
         'new_password': 'asdf',
     }
     response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",
@@ -398,7 +397,7 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     # success
     data_success = {
         'name': username,
-        'password': db_password,
+        'current_password': db_password,
         'new_password': 'asdf',
     }
     response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",
@@ -408,7 +407,7 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     # revert password
     data_revert = {
         'name': username,
-        'password': data_success['new_password'],
+        'current_password': data_success['new_password'],
         'new_password': db_password,
     }
     response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",

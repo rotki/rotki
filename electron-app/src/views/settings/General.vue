@@ -154,7 +154,6 @@
                 depressed
                 class="settings-general__account-and-security__buttons__change-password"
                 color="primary"
-                type="submit"
                 :disabled="
                   !(
                     currentPassword &&
@@ -315,7 +314,7 @@ export default class General extends Vue {
         .changeUserPassword(this.username, currentPassword, newPassword)
         .then(() => {
           commit('setMessage', {
-            title: 'Change User Password',
+            title: 'Success',
             description: 'Successfully changed user password',
             success: true
           } as Message);
@@ -326,7 +325,7 @@ export default class General extends Vue {
         })
         .catch((reason: Error) => {
           commit('setMessage', {
-            title: 'Change User Password',
+            title: 'Error',
             description: reason.message || 'Error while changing user password',
             success: false
           } as Message);

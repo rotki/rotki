@@ -6,12 +6,12 @@ export class RotkiApp {
     cy.visit('/');
   }
 
-  createAccount(username: string) {
+  createAccount(username: string, password: string = '1234') {
     // simulate high scaling / low res by making a very small viewpoirt
     cy.get('.login__button__new-account').click();
     cy.get('.create-account__fields__username').type(username);
-    cy.get('.create-account__fields__password').type('1234');
-    cy.get('.create-account__fields__password-repeat').type('1234');
+    cy.get('.create-account__fields__password').type(password);
+    cy.get('.create-account__fields__password-repeat').type(password);
     cy.get('.create-account__buttons__confirm').click();
   }
 
@@ -23,9 +23,9 @@ export class RotkiApp {
     cy.get('.account_management__premium').should('not.be.visible');
   }
 
-  login(username: string) {
+  login(username: string, password: string = '1234') {
     cy.get('.login__fields__username').type(username);
-    cy.get('.login__fields__password').type('1234');
+    cy.get('.login__fields__password').type(password);
     cy.get('.login__button__sign-in').click();
   }
 
