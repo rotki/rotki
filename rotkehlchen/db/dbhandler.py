@@ -336,7 +336,7 @@ class DBHandler:
 
         self.conn.text_factory = str
         password_for_sqlcipher = _protect_password_sqlcipher(password)
-        script = f'PRAGMA rekey="{password_for_sqlcipher}";'
+        script = f'PRAGMA key="{password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += 'PRAGMA kdf_iter={KDF_ITER};'
         self.conn.executescript(script)
