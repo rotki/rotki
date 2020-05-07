@@ -31,15 +31,30 @@ export default new Router({
       name: 'otc-trades',
       component: () => import('../views/OtcTrades.vue')
     },
+    // {
+    //   path: '/settings/accounting',
+    //   name: 'accounting-settings',
+    //   component: () => import('../views/settings/Settings.vue')
+    // },
     {
-      path: '/settings/accounting',
-      name: 'accounting-settings',
-      component: () => import('../views/settings/Accounting.vue')
+      path: '/settings',
+      name: 'settings',
+      component: () => import('../views/settings/Settings.vue'),
+      children: [
+        {
+          path: 'general',
+          component: () => import('../views/settings/GeneralSettings.vue')
+        },
+        {
+          path: 'accounting',
+          component: () => import('../views/settings/AccountingSettings.vue')
+        }
+      ]
     },
     {
       path: '/settings/general',
       name: 'general-settings',
-      component: () => import('../views/settings/General.vue')
+      component: () => import('../views/settings/Settings.vue')
     },
     {
       path: '/settings/api-keys',

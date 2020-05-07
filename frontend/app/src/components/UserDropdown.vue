@@ -9,17 +9,6 @@
 
       <v-list>
         <v-list-item
-          key="accounting-settings"
-          class="user-dropdown__accounting-settings"
-          to="/settings/accounting"
-        >
-          <v-list-item-avatar>
-            <v-icon color="primary">fa fa-book</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-title>Accounting Settings</v-list-item-title>
-        </v-list-item>
-
-        <v-list-item
           key="settings"
           class="user-dropdown__settings"
           to="/settings/general"
@@ -29,7 +18,6 @@
           </v-list-item-avatar>
           <v-list-item-title>Settings</v-list-item-title>
         </v-list-item>
-
         <v-list-item
           key="privacy-mode"
           class="user-dropdown__privacy-mode"
