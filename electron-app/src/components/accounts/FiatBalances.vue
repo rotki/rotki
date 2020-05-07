@@ -46,7 +46,11 @@
                 <amount-display :value="item.amount"></amount-display>
               </template>
               <template #item.usdValue="{ item }">
-                <amount-display fiat :value="item.usdValue"></amount-display>
+                <amount-display
+                  :fiat-currency="item.currency"
+                  :amount="item.amount"
+                  :value="item.usdValue"
+                ></amount-display>
               </template>
               <template v-if="fiatBalances.length > 0" #body.append>
                 <tr class="fiat-balances__total">
