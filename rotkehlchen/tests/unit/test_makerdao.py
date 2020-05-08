@@ -9,6 +9,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_GET_CDPS_ADDRESS,
     MAKERDAO_PROXY_REGISTRY_ADDRESS,
 )
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS, make_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress
 
@@ -83,14 +84,26 @@ def use_etherscan() -> bool:
 
 
 @pytest.fixture
-def makerdao(ethereum_manager, database, function_scope_messages_aggregator, use_etherscan):
+def makerdao(
+        ethereum_manager,
+        database,
+        function_scope_messages_aggregator,
+        use_etherscan,
+        start_with_valid_premium,
+        rotki_premium_credentials,
+):
     if not use_etherscan:
         ethereum_manager.connected = True
         ethereum_manager.web3 = Web3()
 
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
+
     return MakerDAO(
         ethereum_manager=ethereum_manager,
         database=database,
+        premium=premium,
         msg_aggregator=function_scope_messages_aggregator,
     )
 

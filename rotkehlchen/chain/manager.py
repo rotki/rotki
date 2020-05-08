@@ -19,6 +19,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
     BTCAddress,
@@ -144,6 +145,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             msg_aggregator: MessagesAggregator,
             alethio: Alethio,
             greenlet_manager: GreenletManager,
+            premium: Optional[Premium],
             eth_modules: Optional[List[str]] = None,
     ):
         super().__init__()
@@ -165,6 +167,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     self.eth_modules['makerdao'] = MakerDAO(
                         ethereum_manager=ethereum_manager,
                         database=self.alethio.db,
+                        premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
         self.greenlet_manager = greenlet_manager

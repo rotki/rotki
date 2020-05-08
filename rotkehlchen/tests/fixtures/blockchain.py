@@ -13,6 +13,7 @@ from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
@@ -211,7 +212,12 @@ def blockchain(
         owned_eth_tokens,
         ethereum_modules,
         alethio,
+        start_with_valid_premium,
+        rotki_premium_credentials,
 ):
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
     return ChainManager(
         blockchain_accounts=blockchain_accounts,
         owned_eth_tokens=owned_eth_tokens,
@@ -219,5 +225,6 @@ def blockchain(
         msg_aggregator=messages_aggregator,
         alethio=alethio,
         greenlet_manager=greenlet_manager,
+        premium=premium,
         eth_modules=ethereum_modules,
     )
