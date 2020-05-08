@@ -229,6 +229,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             alethio=alethio,
             greenlet_manager=self.greenlet_manager,
+            premium=self.premium,
             eth_modules=ethereum_modules,
         )
         self.ethereum_analyzer = EthereumAnalyzer(

@@ -18,6 +18,9 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_CDP_MANAGER_ABI,
     MAKERDAO_CDP_MANAGER_ADDRESS,
     MAKERDAO_CPD_MANAGER_DEPLOYED_BLOCK,
+    MAKERDAO_DAI_JOIN_ABI,
+    MAKERDAO_DAI_JOIN_ADDRESS,
+    MAKERDAO_DAI_JOIN_DEPLOYED_BLOCK,
     MAKERDAO_ETH_JOIN_ABI,
     MAKERDAO_ETH_JOIN_ADDRESS,
     MAKERDAO_ETH_JOIN_DEPLOYED_BLOCK,
@@ -34,6 +37,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_USDC_JOIN_DEPLOYED_BLOCK,
     MAKERDAO_VAT_ABI,
     MAKERDAO_VAT_ADDRESS,
+    MAKERDAO_VAT_DEPLOYED_BLOCK,
     MAKERDAO_WBTC_JOIN_ABI,
     MAKERDAO_WBTC_JOIN_ADDRESS,
     MAKERDAO_WBTC_JOIN_DEPLOYED_BLOCK,
@@ -46,6 +50,7 @@ from rotkehlchen.errors import (
     RemoteError,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -93,7 +98,7 @@ class VaultEventType(Enum):
 
 class VaultEvent(NamedTuple):
     event_type: VaultEventType
-    amount: FVal()
+    amount: FVal
     timestamp: Timestamp
 
 
@@ -111,6 +116,11 @@ class MakerDAOVault(NamedTuple):
     liquidation_price: Optional[FVal]
     # The current collateralization_ratio of the Vault. None if nothing is locked in.
     collateralization_ratio: Optional[str]
+
+
+class MakerDAOVaultExtra(NamedTuple):
+    creation_ts: Timestamp
+    vault_events: List[VaultEvent]
 
 
 def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
@@ -161,7 +171,7 @@ def _find_closest_event(
 
 def _normalize_amount(asset_symbol: str, amount: int) -> FVal:
     """Take in the big integer amount of the asset and normalizes it by decimals"""
-    if asset_symbol in ('ETH', 'BAT'):
+    if asset_symbol in ('ETH', 'BAT', 'DAI'):
         return FVal(amount / WAD)
     elif asset_symbol == 'USDC':
         return FVal(amount / int(1e6))
@@ -232,8 +242,10 @@ class MakerDAO(EthereumModule):
             self,
             ethereum_manager: EthereumManager,
             database: DBHandler,
+            premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
+        self.premium = premium
         self.ethereum = ethereum_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
@@ -249,6 +261,9 @@ class MakerDAO(EthereumModule):
             arguments=[],
         )
         self.par = result
+
+    def premium_active():
+        return self.premium and self.premium.is_active()
 
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
         """Checks if a DSR proxy exists for the given address and returns it if it does
@@ -359,15 +374,41 @@ class MakerDAO(EthereumModule):
         else:
             liquidation_price = FVal((debt_value * liquidation_ratio) / collateral_amount)
 
-        # TODO: Those from here and down should be queried only for premium users
+        return MakerDAOVault(
+            identifier=identifier,
+            name=name,
+            collateral_asset=Asset(asset_symbol),
+            collateral_amount=collateral_amount,
+            collateral_usd_value=collateral_value,
+            debt_value=debt_value,
+            liquidation_price=liquidation_price,
+            collateralization_ratio=collateralization_ratio,
+        )
+
+    def _query_vault_history(
+            self,
+            vault: MakerDAOVault,
+            proxy: ChecksumEthAddress,
+            urn: ChecksumEthAddress,
+    ) -> MakerDAOVaultExtra:
+        asset_symbol = vault.collateral_asset.identifier
+        # They can raise:
+        # ConversionError due to hex_or_bytes_to_address, hex_or_bytes_to_int
+        # RemoteError due to external query errors
         events = self.ethereum.get_logs(
             contract_address=MAKERDAO_CDP_MANAGER_ADDRESS,
             abi=MAKERDAO_CDP_MANAGER_ABI,
             event_name='NewCdp',
-            argument_filters={'cdp': identifier},
+            argument_filters={'cdp': vault.identifier},
             from_block=MAKERDAO_CPD_MANAGER_DEPLOYED_BLOCK,
         )
-        if len(events) != 1:
+        if len(events) == 0:
+            self.msg_aggregator.add_error(
+                'No events found for a Vault creation. This should never '
+                'happen. Please open a bug report: https://github.com/rotki/rotki/issues',
+            )
+            return None
+        elif len(events) != 1:
             log.error(
                 f'Multiple events found for a Vault creation: {events}. Taking '
                 f'only the first. This should not happen. Something is wrong',
@@ -378,8 +419,11 @@ class MakerDAO(EthereumModule):
             )
         creation_ts = self.ethereum.get_event_timestamp(events[0])
 
-        gemjoin_address, gemjoin_abi, gemjoin_block = GEMJOIN_ADDRESS_ABI_BLOCK[asset_symbol]
+        gemjoin_address, gemjoin_abi, gemjoin_block = GEMJOIN_ADDRESS_ABI_BLOCK[
+            vault.collateral_asset.identifier,
+        ]
 
+        vault_events = []
         # Get the deposit events
         argument_filters = {
             'sig': '0x3b4da69f',  # join
@@ -392,11 +436,10 @@ class MakerDAO(EthereumModule):
             argument_filters=argument_filters,
             from_block=gemjoin_block,
         )
-        vault_events = []
         for event in events:
             amount = _normalize_amount(
                 asset_symbol=asset_symbol,
-                amount=int(event['topics'][3].hex(), 16),
+                amount=hex_or_bytes_to_int(event['topics'][3])
             )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.DEPOSIT_COLLATERAL,
@@ -404,16 +447,31 @@ class MakerDAO(EthereumModule):
                 timestamp=self.ethereum.get_event_timestamp(event),
             ))
 
-        return MakerDAOVault(
-            identifier=identifier,
-            name=name,
-            collateral_asset=Asset(asset_symbol),
-            collateral_amount=collateral_amount,
-            collateral_usd_value=collateral_value,
-            debt_value=debt_value,
-            liquidation_price=liquidation_price,
-            collateralization_ratio=collateralization_ratio,
+        # Get the dai generation events
+        argument_filters = {
+            'sig': '0xbb35783b',  # move
+            'arg1': address_to_bytes32(urn),
+            'arg2': address_to_bytes32(proxy),
+        }
+        events = self.ethereum.get_logs(
+            contract_address=MAKERDAO_VAT_ADDRESS,
+            abi=MAKERDAO_VAT_ABI,
+            event_name='LogNote',
+            argument_filters=argument_filters,
+            from_block=MAKERDAO_VAT_DEPLOYED_BLOCK,
         )
+        for event in events:
+            amount = _normalize_amount(
+                asset_symbol='DAI',
+                amount=hex_or_bytes_to_int(event['topics'][3]) / RAY
+            )
+            vault_events.append(VaultEvent(
+                event_type=VaultEventType.GENERATE_DEBT,
+                amount=amount,
+                timestamp=self.ethereum.get_event_timestamp(event),
+            ))
+
+        return MakerDAOVaultExtra(creation_ts=creation_ts, vault_events=vault_events)
 
     def get_vaults(self) -> List[MakerDAOVault]:
         """Detects vaults the user has and returns basic info about each one
@@ -426,6 +484,7 @@ class MakerDAO(EthereumModule):
         """
         proxy_mappings = self._get_accounts_having_maker_proxy()
         vaults = []
+        vault_extras = []
         for _, proxy in proxy_mappings.items():
             result = self.ethereum.call_contract(
                 contract_address=MAKERDAO_GET_CDPS_ADDRESS,
@@ -435,13 +494,17 @@ class MakerDAO(EthereumModule):
             )
 
             for idx, identifier in enumerate(result[0]):
+                urn = to_checksum_address(result[1][idx])
                 vault = self._query_vault_data(
                     identifier=identifier,
-                    urn=to_checksum_address(result[1][idx]),
+                    urn=urn,
                     ilk=result[2][idx],
                     proxy=proxy,
                 )
                 vaults.append(vault)
+                if self.premium_active():
+                    vault_extra = self._query_vault_history(vault, proxy, urn)
+                    vault_extras.append(vault_extra)
 
         return vaults
 
