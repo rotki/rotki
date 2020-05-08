@@ -1,5 +1,6 @@
 import logging
 import platform
+import sys
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, NamedTuple, Optional
@@ -139,6 +140,10 @@ def create_usage_analytics() -> Dict[str, Any]:
 
 
 def maybe_submit_usage_analytics(should_submit: bool) -> None:
+    if not getattr(sys, 'frozen', False):
+        # not packaged -- must be in develop mode. Don't submit analytics
+        return None
+
     if should_submit is False:
         return None
 
