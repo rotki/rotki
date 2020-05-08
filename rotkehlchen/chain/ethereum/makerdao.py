@@ -100,6 +100,7 @@ class VaultEvent(NamedTuple):
     event_type: VaultEventType
     amount: FVal
     timestamp: Timestamp
+    tx_hash: str
 
 
 class MakerDAOVault(NamedTuple):
@@ -262,7 +263,7 @@ class MakerDAO(EthereumModule):
         )
         self.par = result
 
-    def premium_active():
+    def premium_active(self):
         return self.premium and self.premium.is_active()
 
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
@@ -420,7 +421,7 @@ class MakerDAO(EthereumModule):
         creation_ts = self.ethereum.get_event_timestamp(events[0])
 
         gemjoin_address, gemjoin_abi, gemjoin_block = GEMJOIN_ADDRESS_ABI_BLOCK[
-            vault.collateral_asset.identifier,
+            vault.collateral_asset.identifier
         ]
 
         vault_events = []
@@ -445,6 +446,7 @@ class MakerDAO(EthereumModule):
                 event_type=VaultEventType.DEPOSIT_COLLATERAL,
                 amount=amount,
                 timestamp=self.ethereum.get_event_timestamp(event),
+                tx_hash=event['transactionHash'],
             ))
 
         # Get the dai generation events
@@ -469,8 +471,37 @@ class MakerDAO(EthereumModule):
                 event_type=VaultEventType.GENERATE_DEBT,
                 amount=amount,
                 timestamp=self.ethereum.get_event_timestamp(event),
+                tx_hash=event['transactionHash'],
             ))
 
+        # Get the dai payback events
+        argument_filters = {
+            'sig': '0x3b4da69f',  # join
+            'usr': proxy,
+            'arg1': address_to_bytes32(urn),
+        }
+        events = self.ethereum.get_logs(
+            contract_address=MAKERDAO_DAI_JOIN_ADDRESS,
+            abi=MAKERDAO_DAI_JOIN_ABI,
+            event_name='LogNote',
+            argument_filters=argument_filters,
+            from_block=MAKERDAO_DAI_JOIN_DEPLOYED_BLOCK,
+        )
+        for event in events:
+            amount = _normalize_amount(
+                asset_symbol='DAI',
+                amount=hex_or_bytes_to_int(event['topics'][3])
+            )
+            if amount == ZERO:
+                # it seems there is a zero DAI value transfer from the urn when
+                # withdrawing ETH. So we should ignore these as events
+                continue
+            vault_events.append(VaultEvent(
+                event_type=VaultEventType.PAYBACK_DEBT,
+                amount=amount,
+                timestamp=self.ethereum.get_event_timestamp(event),
+                tx_hash=event['transactionHash'],
+            ))
         return MakerDAOVaultExtra(creation_ts=creation_ts, vault_events=vault_events)
 
     def get_vaults(self) -> List[MakerDAOVault]:
