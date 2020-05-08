@@ -94,6 +94,7 @@ jobs:
         run: |
           if [ ${{ matrix.os }} == 'ubuntu-latest' ];
           then
+            sudo apt-get update
             sudo apt-get install libxml2-utils
             ./install_deps.sh
             sudo ldconfig
@@ -218,6 +219,7 @@ jobs:
         run: |
           if [ ${{ matrix.os }} == 'ubuntu-latest' ];
           then
+            sudo apt-get update
             sudo apt-get install libxml2-utils
             ./install_deps.sh
             sudo ldconfig
@@ -297,6 +299,7 @@ jobs:
         run: |
           if [ ${{ matrix.os }} == 'ubuntu-latest' ];
           then
+            sudo apt-get update
             sudo apt-get install libxml2-utils
             ./install_deps.sh
             sudo ldconfig
