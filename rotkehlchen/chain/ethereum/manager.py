@@ -29,7 +29,7 @@ DEFAULT_ETH_RPC_TIMEOUT = 10
 
 
 def address_to_bytes32(address: ChecksumEthAddress) -> str:
-    return '0x' + 24 * '0' + address[2:]
+    return '0x' + 24 * '0' + address.lower()[2:]
 
 
 class EthereumManager():

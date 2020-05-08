@@ -1,6 +1,7 @@
 import logging
 import operator
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from eth_utils.address import to_checksum_address
@@ -11,7 +12,15 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import (
+    MAKERDAO_BAT_JOIN_ABI,
+    MAKERDAO_BAT_JOIN_ADDRESS,
+    MAKERDAO_BAT_JOIN_DEPLOYED_BLOCK,
+    MAKERDAO_CDP_MANAGER_ABI,
     MAKERDAO_CDP_MANAGER_ADDRESS,
+    MAKERDAO_CPD_MANAGER_DEPLOYED_BLOCK,
+    MAKERDAO_ETH_JOIN_ABI,
+    MAKERDAO_ETH_JOIN_ADDRESS,
+    MAKERDAO_ETH_JOIN_DEPLOYED_BLOCK,
     MAKERDAO_GET_CDPS_ABI,
     MAKERDAO_GET_CDPS_ADDRESS,
     MAKERDAO_POT_ABI,
@@ -20,8 +29,14 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_PROXY_REGISTRY_ADDRESS,
     MAKERDAO_SPOT_ABI,
     MAKERDAO_SPOT_ADDRESS,
+    MAKERDAO_USDC_JOIN_ABI,
+    MAKERDAO_USDC_JOIN_ADDRESS,
+    MAKERDAO_USDC_JOIN_DEPLOYED_BLOCK,
     MAKERDAO_VAT_ABI,
     MAKERDAO_VAT_ADDRESS,
+    MAKERDAO_WBTC_JOIN_ABI,
+    MAKERDAO_WBTC_JOIN_ADDRESS,
+    MAKERDAO_WBTC_JOIN_DEPLOYED_BLOCK,
 )
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
@@ -45,6 +60,21 @@ CHI_BLOCKS_SEARCH_DISTANCE = 250  # Blocks per call query per side (before/after
 MAX_BLOCKS_TO_QUERY = 346000  # query about a month's worth of blocks in each side before giving up
 PROXY_MAPPING_QUERY_PERIOD = 7200  # Refresh proxy query mappings every 2 hours
 
+GEMJOIN_ADDRESS_ABI_BLOCK = {
+    'ETH': (MAKERDAO_ETH_JOIN_ADDRESS, MAKERDAO_ETH_JOIN_ABI, MAKERDAO_ETH_JOIN_DEPLOYED_BLOCK),
+    'BAT': (MAKERDAO_BAT_JOIN_ADDRESS, MAKERDAO_BAT_JOIN_ABI, MAKERDAO_BAT_JOIN_DEPLOYED_BLOCK),
+    'USDC': (
+        MAKERDAO_USDC_JOIN_ADDRESS,
+        MAKERDAO_USDC_JOIN_ABI,
+        MAKERDAO_USDC_JOIN_DEPLOYED_BLOCK,
+    ),
+    'WBTC': (
+        MAKERDAO_WBTC_JOIN_ADDRESS,
+        MAKERDAO_WBTC_JOIN_ABI,
+        MAKERDAO_WBTC_JOIN_DEPLOYED_BLOCK,
+    ),
+}
+
 WAD = int(1e18)
 RAY = int(1e27)
 RAD = int(1e45)
@@ -52,6 +82,19 @@ RAD = int(1e45)
 
 class ChiRetrievalError(Exception):
     pass
+
+
+class VaultEventType(Enum):
+    DEPOSIT_COLLATERAL = 1
+    WITHDRAW_COLLATERAL = 2
+    GENERATE_DEBT = 3
+    PAYBACK_DEBT = 4
+
+
+class VaultEvent(NamedTuple):
+    event_type: VaultEventType
+    amount: FVal()
+    timestamp: Timestamp
 
 
 class MakerDAOVault(NamedTuple):
@@ -114,6 +157,18 @@ def _find_closest_event(
             found_event = exit_events[index]
 
     return found_event
+
+
+def _normalize_amount(asset_symbol: str, amount: int) -> FVal:
+    """Take in the big integer amount of the asset and normalizes it by decimals"""
+    if asset_symbol in ('ETH', 'BAT'):
+        return FVal(amount / WAD)
+    elif asset_symbol == 'USDC':
+        return FVal(amount / int(1e6))
+    elif asset_symbol == 'WBTC':
+        return FVal(amount / int(1e8))
+
+    raise AssertionError('should never reach here')
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -246,7 +301,17 @@ class MakerDAO(EthereumModule):
             identifier: int,
             urn: ChecksumEthAddress,
             ilk: bytes,
-    ) -> MakerDAOVault:
+            proxy: ChecksumEthAddress,
+    ) -> Optional[MakerDAOVault]:
+        name = ilk.split(b'\0', 1)[0].decode()
+        asset_symbol = name.split('-')[0]
+        if asset_symbol not in ('ETH', 'BAT', 'USDC', 'WBTC'):
+            self.msg_aggregator.add_warning(
+                f'Detected vault with {asset_symbol} as collateral. That is not yet '
+                f'supported by rotki',
+            )
+            return None
+
         result = self.ethereum.call_contract(
             contract_address=MAKERDAO_VAT_ADDRESS,
             abi=MAKERDAO_VAT_ABI,
@@ -266,8 +331,6 @@ class MakerDAO(EthereumModule):
         spot = FVal(result[2])  # Price with Safety Margin
         # How many DAI owner needs to pay back to the vault
         debt_value = FVal(((normalized_debt / WAD) * rate) / RAY)
-        name = ilk.split(b'\0', 1)[0].decode()
-        asset_symbol = name.split('-')[0]
         result = self.ethereum.call_contract(
             contract_address=MAKERDAO_SPOT_ADDRESS,
             abi=MAKERDAO_SPOT_ABI,
@@ -295,6 +358,51 @@ class MakerDAO(EthereumModule):
             liquidation_price = None
         else:
             liquidation_price = FVal((debt_value * liquidation_ratio) / collateral_amount)
+
+        # TODO: Those from here and down should be queried only for premium users
+        events = self.ethereum.get_logs(
+            contract_address=MAKERDAO_CDP_MANAGER_ADDRESS,
+            abi=MAKERDAO_CDP_MANAGER_ABI,
+            event_name='NewCdp',
+            argument_filters={'cdp': identifier},
+            from_block=MAKERDAO_CPD_MANAGER_DEPLOYED_BLOCK,
+        )
+        if len(events) != 1:
+            log.error(
+                f'Multiple events found for a Vault creation: {events}. Taking '
+                f'only the first. This should not happen. Something is wrong',
+            )
+            self.msg_aggregator.add_error(
+                'Multiple events found for a Vault creation. This should never '
+                'happen. Please open a bug report: https://github.com/rotki/rotki/issues',
+            )
+        creation_ts = self.ethereum.get_event_timestamp(events[0])
+
+        gemjoin_address, gemjoin_abi, gemjoin_block = GEMJOIN_ADDRESS_ABI_BLOCK[asset_symbol]
+
+        # Get the deposit events
+        argument_filters = {
+            'sig': '0x3b4da69f',  # join
+            'usr': proxy,
+        }
+        events = self.ethereum.get_logs(
+            contract_address=gemjoin_address,
+            abi=gemjoin_abi,
+            event_name='LogNote',
+            argument_filters=argument_filters,
+            from_block=gemjoin_block,
+        )
+        vault_events = []
+        for event in events:
+            amount = _normalize_amount(
+                asset_symbol=asset_symbol,
+                amount=int(event['topics'][3].hex(), 16),
+            )
+            vault_events.append(VaultEvent(
+                event_type=VaultEventType.DEPOSIT_COLLATERAL,
+                amount=amount,
+                timestamp=self.ethereum.get_event_timestamp(event),
+            ))
 
         return MakerDAOVault(
             identifier=identifier,
@@ -327,11 +435,13 @@ class MakerDAO(EthereumModule):
             )
 
             for idx, identifier in enumerate(result[0]):
-                vaults.append(self._query_vault_data(
+                vault = self._query_vault_data(
                     identifier=identifier,
                     urn=to_checksum_address(result[1][idx]),
                     ilk=result[2][idx],
-                ))
+                    proxy=proxy,
+                )
+                vaults.append(vault)
 
         return vaults
 
