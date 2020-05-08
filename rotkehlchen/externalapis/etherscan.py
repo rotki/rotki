@@ -394,8 +394,9 @@ class Etherscan(ExternalServiceWithApiKey):
         """
         options = {'fromBlock': from_block, 'toBlock': to_block, 'address': contract_address}
         for idx, topic in enumerate(topics):
-            options[f'topic{idx}'] = topic
-            options[f'topic{idx}_{idx + 1}opr'] = 'and'
+            if topic is not None:
+                options[f'topic{idx}'] = topic
+                options[f'topic{idx}_{idx + 1}opr'] = 'and'
 
         result = self._query(
             module='logs',
