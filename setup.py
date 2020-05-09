@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 # Utility function to read the README file.
@@ -31,7 +31,10 @@ setup(
     license='BSD-3',
     keywords='accounting tax-report portfolio asset-management cryptocurrencies',
     url='https://github.com/rotki/rotki',
-    packages=['rotkehlchen'],
+    packages=find_packages('.'),
+    package_data={
+        "rotkehlchen": ["data/*.json"],
+    },
     install_requires=install_requirements,
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
