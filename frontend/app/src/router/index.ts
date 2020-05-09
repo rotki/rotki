@@ -31,11 +31,6 @@ export default new Router({
       name: 'otc-trades',
       component: () => import('../views/OtcTrades.vue')
     },
-    // {
-    //   path: '/settings/accounting',
-    //   name: 'accounting-settings',
-    //   component: () => import('../views/settings/Settings.vue')
-    // },
     {
       path: '/settings',
       name: 'settings',
