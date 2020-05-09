@@ -14,7 +14,7 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.constants.ethereum import ETH_SCAN_ABI, ETH_SCAN_ADDRESS
+from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
 from rotkehlchen.externalapis.alethio import Alethio
@@ -386,9 +386,9 @@ def mock_etherscan_balances_query(
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
 
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN_ADDRESS}' in url:
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN.address}' in url:
             web3 = Web3()
-            contract = web3.eth.contract(address=ETH_SCAN_ADDRESS, abi=ETH_SCAN_ABI)
+            contract = web3.eth.contract(address=ETH_SCAN.address, abi=ETH_SCAN.abi)
             if 'data=0xdbdbb51b' in url:  # Eth balance query
                 data = url.split('data=')[1]
                 if '&apikey' in data:
