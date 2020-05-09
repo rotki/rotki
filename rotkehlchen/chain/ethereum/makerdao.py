@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_BAT_JOIN,
+    MAKERDAO_CAT,
     MAKERDAO_CDP_MANAGER,
     MAKERDAO_DAI_JOIN,
     MAKERDAO_ETH_JOIN,
@@ -81,6 +82,7 @@ class VaultEventType(Enum):
     WITHDRAW_COLLATERAL = 2
     GENERATE_DEBT = 3
     PAYBACK_DEBT = 4
+    LIQUIDATION = 5
 
 
 class VaultEvent(NamedTuple):
@@ -473,7 +475,7 @@ class MakerDAO(EthereumModule):
         for event in events:
             amount = _normalize_amount(
                 asset_symbol=asset_symbol,
-                amount=hex_or_bytes_to_int(event['topics'][3])
+                amount=hex_or_bytes_to_int(event['topics'][3]),
             )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.WITHDRAW_COLLATERAL,
@@ -527,7 +529,7 @@ class MakerDAO(EthereumModule):
         for event in events:
             amount = _normalize_amount(
                 asset_symbol='DAI',
-                amount=hex_or_bytes_to_int(event['topics'][3])
+                amount=hex_or_bytes_to_int(event['topics'][3]),
             )
             if amount == ZERO:
                 # it seems there is a zero DAI value transfer from the urn when
@@ -539,6 +541,32 @@ class MakerDAO(EthereumModule):
                 timestamp=self.ethereum.get_event_timestamp(event),
                 tx_hash=event['transactionHash'],
             ))
+
+        # Get the liquidation events
+        argument_filters = {'urn': urn}
+        events = self.ethereum.get_logs(
+            contract_address=MAKERDAO_CAT.address,
+            abi=MAKERDAO_CAT.abi,
+            event_name='Bite',
+            argument_filters=argument_filters,
+            from_block=MAKERDAO_CAT.deployed_block,
+        )
+        for event in events:
+            if isinstance(event['data'], str):
+                lot = event['data'][:66]
+            else:  # bytes
+                lot = event['data'][:32]
+            amount = _normalize_amount(
+                asset_symbol=asset_symbol,
+                amount=hex_or_bytes_to_int(lot),
+            )
+            vault_events.append(VaultEvent(
+                event_type=VaultEventType.LIQUIDATION,
+                amount=amount,
+                timestamp=self.ethereum.get_event_timestamp(event),
+                tx_hash=event['transactionHash'],
+            ))
+
         return MakerDAOVaultExtra(creation_ts=creation_ts, vault_events=vault_events)
 
     def get_vaults(self) -> List[MakerDAOVault]:
