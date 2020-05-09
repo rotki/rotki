@@ -12,7 +12,7 @@ from web3._utils.filters import construct_event_filter_params
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.constants.ethereum import ETH_SCAN_ABI, ETH_SCAN_ADDRESS
+from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -220,8 +220,8 @@ class EthereumManager():
             eth_addresses=accounts,
         )
         result = self.call_contract(
-            contract_address=ETH_SCAN_ADDRESS,
-            abi=ETH_SCAN_ABI,
+            contract_address=ETH_SCAN.address,
+            abi=ETH_SCAN.abi,
             method_name='etherBalances',
             arguments=[accounts],
         )
@@ -253,8 +253,8 @@ class EthereumManager():
         )
         balances: Dict[EthereumToken, Dict[ChecksumEthAddress, FVal]] = defaultdict(dict)
         result = self.call_contract(
-            contract_address=ETH_SCAN_ADDRESS,
-            abi=ETH_SCAN_ABI,
+            contract_address=ETH_SCAN.address,
+            abi=ETH_SCAN.abi,
             method_name='tokensBalances',
             arguments=[accounts, [x.ethereum_address for x in tokens]],
         )
@@ -289,8 +289,8 @@ class EthereumManager():
         )
         balances = {}
         result = self.call_contract(
-            contract_address=ETH_SCAN_ADDRESS,
-            abi=ETH_SCAN_ABI,
+            contract_address=ETH_SCAN.address,
+            abi=ETH_SCAN.abi,
             method_name='tokensBalances',
             arguments=[accounts, [token.ethereum_address]],
         )

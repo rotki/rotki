@@ -12,35 +12,17 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import (
-    MAKERDAO_BAT_JOIN_ABI,
-    MAKERDAO_BAT_JOIN_ADDRESS,
-    MAKERDAO_BAT_JOIN_DEPLOYED_BLOCK,
-    MAKERDAO_CDP_MANAGER_ABI,
-    MAKERDAO_CDP_MANAGER_ADDRESS,
-    MAKERDAO_CPD_MANAGER_DEPLOYED_BLOCK,
-    MAKERDAO_DAI_JOIN_ABI,
-    MAKERDAO_DAI_JOIN_ADDRESS,
-    MAKERDAO_DAI_JOIN_DEPLOYED_BLOCK,
-    MAKERDAO_ETH_JOIN_ABI,
-    MAKERDAO_ETH_JOIN_ADDRESS,
-    MAKERDAO_ETH_JOIN_DEPLOYED_BLOCK,
-    MAKERDAO_GET_CDPS_ABI,
-    MAKERDAO_GET_CDPS_ADDRESS,
-    MAKERDAO_POT_ABI,
-    MAKERDAO_POT_ADDRESS,
-    MAKERDAO_PROXY_REGISTRY_ABI,
-    MAKERDAO_PROXY_REGISTRY_ADDRESS,
-    MAKERDAO_SPOT_ABI,
-    MAKERDAO_SPOT_ADDRESS,
-    MAKERDAO_USDC_JOIN_ABI,
-    MAKERDAO_USDC_JOIN_ADDRESS,
-    MAKERDAO_USDC_JOIN_DEPLOYED_BLOCK,
-    MAKERDAO_VAT_ABI,
-    MAKERDAO_VAT_ADDRESS,
-    MAKERDAO_VAT_DEPLOYED_BLOCK,
-    MAKERDAO_WBTC_JOIN_ABI,
-    MAKERDAO_WBTC_JOIN_ADDRESS,
-    MAKERDAO_WBTC_JOIN_DEPLOYED_BLOCK,
+    MAKERDAO_BAT_JOIN,
+    MAKERDAO_CDP_MANAGER,
+    MAKERDAO_DAI_JOIN,
+    MAKERDAO_ETH_JOIN,
+    MAKERDAO_GET_CDPS,
+    MAKERDAO_POT,
+    MAKERDAO_PROXY_REGISTRY,
+    MAKERDAO_SPOT,
+    MAKERDAO_USDC_JOIN,
+    MAKERDAO_VAT,
+    MAKERDAO_WBTC_JOIN,
 )
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
@@ -59,25 +41,16 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_now
 
 log = logging.getLogger(__name__)
 
-POT_CREATION_BLOCK = 8928160
 POT_CREATION_TIMESTAMP = 1573672721
 CHI_BLOCKS_SEARCH_DISTANCE = 250  # Blocks per call query per side (before/after)
 MAX_BLOCKS_TO_QUERY = 346000  # query about a month's worth of blocks in each side before giving up
 PROXY_MAPPING_QUERY_PERIOD = 7200  # Refresh proxy query mappings every 2 hours
 
-GEMJOIN_ADDRESS_ABI_BLOCK = {
-    'ETH': (MAKERDAO_ETH_JOIN_ADDRESS, MAKERDAO_ETH_JOIN_ABI, MAKERDAO_ETH_JOIN_DEPLOYED_BLOCK),
-    'BAT': (MAKERDAO_BAT_JOIN_ADDRESS, MAKERDAO_BAT_JOIN_ABI, MAKERDAO_BAT_JOIN_DEPLOYED_BLOCK),
-    'USDC': (
-        MAKERDAO_USDC_JOIN_ADDRESS,
-        MAKERDAO_USDC_JOIN_ABI,
-        MAKERDAO_USDC_JOIN_DEPLOYED_BLOCK,
-    ),
-    'WBTC': (
-        MAKERDAO_WBTC_JOIN_ADDRESS,
-        MAKERDAO_WBTC_JOIN_ABI,
-        MAKERDAO_WBTC_JOIN_DEPLOYED_BLOCK,
-    ),
+GEMJOIN_MAPPING = {
+    'ETH': MAKERDAO_ETH_JOIN,
+    'BAT': MAKERDAO_BAT_JOIN,
+    'USDC': MAKERDAO_USDC_JOIN,
+    'WBTC': MAKERDAO_WBTC_JOIN,
 }
 
 WAD = int(1e18)
@@ -270,8 +243,8 @@ class MakerDAO(EthereumModule):
         self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
 
         result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_SPOT_ADDRESS,
-            abi=MAKERDAO_SPOT_ABI,
+            contract_address=MAKERDAO_SPOT.address,
+            abi=MAKERDAO_SPOT.abi,
             method_name='par',
             arguments=[],
         )
@@ -290,8 +263,8 @@ class MakerDAO(EthereumModule):
         queries fail for some reason
         """
         result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_PROXY_REGISTRY_ADDRESS,
-            abi=MAKERDAO_PROXY_REGISTRY_ABI,
+            contract_address=MAKERDAO_PROXY_REGISTRY.address,
+            abi=MAKERDAO_PROXY_REGISTRY.abi,
             method_name='proxies',
             arguments=[address],
         )
@@ -343,8 +316,8 @@ class MakerDAO(EthereumModule):
             return None
 
         result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_VAT_ADDRESS,
-            abi=MAKERDAO_VAT_ABI,
+            contract_address=MAKERDAO_VAT.address,
+            abi=MAKERDAO_VAT.abi,
             method_name='urns',
             arguments=[ilk, urn],
         )
@@ -352,8 +325,8 @@ class MakerDAO(EthereumModule):
         collateral_amount = FVal(result[0] / WAD)
         normalized_debt = result[1]  # known as art in their contract
         result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_VAT_ADDRESS,
-            abi=MAKERDAO_VAT_ABI,
+            contract_address=MAKERDAO_VAT.address,
+            abi=MAKERDAO_VAT.abi,
             method_name='ilks',
             arguments=[ilk],
         )
@@ -362,8 +335,8 @@ class MakerDAO(EthereumModule):
         # How many DAI owner needs to pay back to the vault
         debt_value = FVal(((normalized_debt / WAD) * rate) / RAY)
         result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_SPOT_ADDRESS,
-            abi=MAKERDAO_SPOT_ABI,
+            contract_address=MAKERDAO_SPOT.address,
+            abi=MAKERDAO_SPOT.abi,
             method_name='ilks',
             arguments=[ilk],
         )
@@ -411,11 +384,11 @@ class MakerDAO(EthereumModule):
         # ConversionError due to hex_or_bytes_to_address, hex_or_bytes_to_int
         # RemoteError due to external query errors
         events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_CDP_MANAGER_ADDRESS,
-            abi=MAKERDAO_CDP_MANAGER_ABI,
+            contract_address=MAKERDAO_CDP_MANAGER.address,
+            abi=MAKERDAO_CDP_MANAGER.abi,
             event_name='NewCdp',
             argument_filters={'cdp': vault.identifier},
-            from_block=MAKERDAO_CPD_MANAGER_DEPLOYED_BLOCK,
+            from_block=MAKERDAO_CDP_MANAGER.deployed_block,
         )
         if len(events) == 0:
             self.msg_aggregator.add_error(
@@ -434,10 +407,7 @@ class MakerDAO(EthereumModule):
             )
         creation_ts = self.ethereum.get_event_timestamp(events[0])
 
-        gemjoin_address, gemjoin_abi, gemjoin_block = GEMJOIN_ADDRESS_ABI_BLOCK[
-            vault.collateral_asset.identifier
-        ]
-
+        gemjoin = GEMJOIN_MAPPING[vault.collateral_asset.identifier]
         vault_events = []
         # Get the collateral deposit events
         argument_filters = {
@@ -450,11 +420,11 @@ class MakerDAO(EthereumModule):
             'arg1': address_to_bytes32(urn),
         }
         events = self.ethereum.get_logs(
-            contract_address=gemjoin_address,
-            abi=gemjoin_abi,
+            contract_address=gemjoin.address,
+            abi=gemjoin.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=gemjoin_block,
+            from_block=gemjoin.deployed_block,
         )
         # all subsequent deposits should have the proxy as a usr
         # but for non-migrated CDPS the previous query would also work
@@ -464,11 +434,11 @@ class MakerDAO(EthereumModule):
             'usr': proxy,
         }
         events.extend(self.ethereum.get_logs(
-            contract_address=gemjoin_address,
-            abi=gemjoin_abi,
+            contract_address=gemjoin.address,
+            abi=gemjoin.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=gemjoin_block,
+            from_block=gemjoin.deployed_block,
         ))
         deposit_tx_hashes = set()
         for event in events:
@@ -494,11 +464,11 @@ class MakerDAO(EthereumModule):
             'usr': proxy,
         }
         events = self.ethereum.get_logs(
-            contract_address=gemjoin_address,
-            abi=gemjoin_abi,
+            contract_address=gemjoin.address,
+            abi=gemjoin.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=gemjoin_block,
+            from_block=gemjoin.deployed_block,
         )
         for event in events:
             amount = _normalize_amount(
@@ -522,11 +492,11 @@ class MakerDAO(EthereumModule):
             # 'arg2': address_to_bytes32(proxy),
         }
         events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_VAT_ADDRESS,
-            abi=MAKERDAO_VAT_ABI,
+            contract_address=MAKERDAO_VAT.address,
+            abi=MAKERDAO_VAT.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=MAKERDAO_VAT_DEPLOYED_BLOCK,
+            from_block=MAKERDAO_VAT.deployed_block,
         )
         for event in events:
             given_amount = _shift_num_right_by(hex_or_bytes_to_int(event['topics'][3]), RAY_DIGITS)
@@ -548,11 +518,11 @@ class MakerDAO(EthereumModule):
             'arg1': address_to_bytes32(urn),
         }
         events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_DAI_JOIN_ADDRESS,
-            abi=MAKERDAO_DAI_JOIN_ABI,
+            contract_address=MAKERDAO_DAI_JOIN.address,
+            abi=MAKERDAO_DAI_JOIN.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=MAKERDAO_DAI_JOIN_DEPLOYED_BLOCK,
+            from_block=MAKERDAO_DAI_JOIN.deployed_block,
         )
         for event in events:
             amount = _normalize_amount(
@@ -585,10 +555,10 @@ class MakerDAO(EthereumModule):
         vault_extras = []
         for _, proxy in proxy_mappings.items():
             result = self.ethereum.call_contract(
-                contract_address=MAKERDAO_GET_CDPS_ADDRESS,
-                abi=MAKERDAO_GET_CDPS_ABI,
+                contract_address=MAKERDAO_GET_CDPS.address,
+                abi=MAKERDAO_GET_CDPS.abi,
                 method_name='getCdpsAsc',
-                arguments=[MAKERDAO_CDP_MANAGER_ADDRESS, proxy],
+                arguments=[MAKERDAO_CDP_MANAGER.address, proxy],
             )
 
             for idx, identifier in enumerate(result[0]):
@@ -621,14 +591,14 @@ class MakerDAO(EthereumModule):
             balances = {}
             for account, proxy in proxy_mappings.items():
                 guy_slice = self.ethereum.call_contract(
-                    contract_address=MAKERDAO_POT_ADDRESS,
-                    abi=MAKERDAO_POT_ABI,
+                    contract_address=MAKERDAO_POT.address,
+                    abi=MAKERDAO_POT.abi,
                     method_name='pie',
                     arguments=[proxy],
                 )
                 chi = self.ethereum.call_contract(
-                    contract_address=MAKERDAO_POT_ADDRESS,
-                    abi=MAKERDAO_POT_ABI,
+                    contract_address=MAKERDAO_POT.address,
+                    abi=MAKERDAO_POT.abi,
                     method_name='chi',
                 )
                 balance = _dsrdai_to_dai(guy_slice * chi)
@@ -636,8 +606,8 @@ class MakerDAO(EthereumModule):
                 balances[account] = balance
 
             current_dsr = self.ethereum.call_contract(
-                contract_address=MAKERDAO_POT_ADDRESS,
-                abi=MAKERDAO_POT_ABI,
+                contract_address=MAKERDAO_POT.address,
+                abi=MAKERDAO_POT.abi,
                 method_name='dsr',
             )
 
@@ -673,8 +643,8 @@ class MakerDAO(EthereumModule):
             'arg2': arg2,  # dst
         }
         events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_VAT_ADDRESS,
-            abi=MAKERDAO_VAT_ABI,
+            contract_address=MAKERDAO_VAT.address,
+            abi=MAKERDAO_VAT.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
             from_block=block_number,
@@ -716,11 +686,11 @@ class MakerDAO(EthereumModule):
             'usr': proxy,
         }
         join_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_POT_ADDRESS,
-            abi=MAKERDAO_POT_ABI,
+            contract_address=MAKERDAO_POT.address,
+            abi=MAKERDAO_POT.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=POT_CREATION_BLOCK,
+            from_block=MAKERDAO_POT.deployed_block,
         )
         for join_event in join_events:
             try:
@@ -740,7 +710,7 @@ class MakerDAO(EthereumModule):
                 continue
             dai_value = self._get_vat_move_event_value(
                 from_address=proxy,
-                to_address=MAKERDAO_POT_ADDRESS,
+                to_address=MAKERDAO_POT.address,
                 block_number=block_number,
                 transaction_index=join_event['transactionIndex'],
             )
@@ -766,11 +736,11 @@ class MakerDAO(EthereumModule):
             'usr': proxy,
         }
         exit_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_POT_ADDRESS,
-            abi=MAKERDAO_POT_ABI,
+            contract_address=MAKERDAO_POT.address,
+            abi=MAKERDAO_POT.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=POT_CREATION_BLOCK,
+            from_block=MAKERDAO_POT.deployed_block,
         )
         for exit_event in exit_events:
             try:
@@ -790,7 +760,7 @@ class MakerDAO(EthereumModule):
 
             # and now get the withdrawal amount
             dai_value = self._get_vat_move_event_value(
-                from_address=MAKERDAO_POT_ADDRESS,
+                from_address=MAKERDAO_POT.address,
                 to_address=proxy,
                 block_number=block_number,
                 transaction_index=exit_event['transactionIndex'],
@@ -828,8 +798,8 @@ class MakerDAO(EthereumModule):
                 normalized_balance -= m.normalized_balance
 
         chi = self.ethereum.call_contract(
-            contract_address=MAKERDAO_POT_ADDRESS,
-            abi=MAKERDAO_POT_ABI,
+            contract_address=MAKERDAO_POT.address,
+            abi=MAKERDAO_POT.abi,
             method_name='chi',
         )
         normalized_balance = normalized_balance * chi
@@ -854,16 +824,16 @@ class MakerDAO(EthereumModule):
             to_block: int,
     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         join_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_POT_ADDRESS,
-            abi=MAKERDAO_POT_ABI,
+            contract_address=MAKERDAO_POT.address,
+            abi=MAKERDAO_POT.abi,
             event_name='LogNote',
             argument_filters={'sig': '0x049878f3'},  # join
             from_block=from_block,
             to_block=to_block,
         )
         exit_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_POT_ADDRESS,
-            abi=MAKERDAO_POT_ABI,
+            contract_address=MAKERDAO_POT.address,
+            abi=MAKERDAO_POT.abi,
             event_name='LogNote',
             argument_filters={'sig': '0x7f8661a1'},  # exit
             from_block=from_block,
@@ -898,7 +868,7 @@ class MakerDAO(EthereumModule):
         # as far as MAX_BLOCKS_TO_QUERY and only then give up
         while blocks_queried < MAX_BLOCKS_TO_QUERY:
             back_from_block = max(
-                POT_CREATION_BLOCK,
+                MAKERDAO_POT.deployed_block,
                 block_number - counter * CHI_BLOCKS_SEARCH_DISTANCE,
             )
             back_to_block = block_number - (counter - 1) * CHI_BLOCKS_SEARCH_DISTANCE
@@ -923,8 +893,8 @@ class MakerDAO(EthereumModule):
                 # if our forward querying got us to the latest block and there is
                 # still no other results, then take current chi
                 return self.ethereum.call_contract(
-                    contract_address=MAKERDAO_POT_ADDRESS,
-                    abi=MAKERDAO_POT_ABI,
+                    contract_address=MAKERDAO_POT.address,
+                    abi=MAKERDAO_POT.abi,
                     method_name='chi',
                 )
 
@@ -972,9 +942,9 @@ class MakerDAO(EthereumModule):
 
         if first_topic.startswith('0x049878f3'):  # join
             from_address = hex_or_bytes_to_address(found_event['topics'][1])
-            to_address = MAKERDAO_POT_ADDRESS
+            to_address = MAKERDAO_POT.address
         else:
-            from_address = MAKERDAO_POT_ADDRESS
+            from_address = MAKERDAO_POT.address
             to_address = hex_or_bytes_to_address(found_event['topics'][1])
 
         amount = self._get_vat_move_event_value(
