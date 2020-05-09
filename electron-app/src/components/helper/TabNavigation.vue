@@ -6,7 +6,12 @@
     active-class="rounded-tabs__active"
     class="rounded-tabs py-6"
   >
-    <v-tab v-for="tab in tabContents" :key="tab.name" :to="tab.routerTo">
+    <v-tab
+      v-for="tab in tabContents"
+      :key="tab.name"
+      :to="tab.routerTo"
+      :class="tab.routerTo.toLowerCase().replace('/', '').replace(/\//g, '-')"
+    >
       {{ tab.name }}
     </v-tab>
   </v-tabs>

@@ -8,6 +8,8 @@
     single-line
     :label="label"
     :rules="rules"
+    :success-messages="successMessages"
+    :error-messages="errorMessages"
     item-value="key"
     :item-text="assetText"
     :menu-props="{ closeOnClick: true, closeOnContentClick: true }"
@@ -54,6 +56,12 @@ export default class AssetSelect extends Vue {
 
   @Prop({ required: false, default: '' })
   hint!: string;
+
+  @Prop({ required: false, default: '' })
+  successMessages!: string;
+
+  @Prop({ required: false, default: '' })
+  errorMessages!: string;
 
   @Prop({ required: false, default: 'Asset' })
   label!: string;

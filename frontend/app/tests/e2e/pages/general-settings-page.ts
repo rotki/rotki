@@ -2,6 +2,7 @@ export class GeneralSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
     cy.get('.user-dropdown__settings').click();
+    cy.get('a.settings-general').click();
   }
 
   setFloatingPrecision(value: string) {

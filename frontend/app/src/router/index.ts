@@ -48,6 +48,10 @@ export default new Router({
         {
           path: 'accounting',
           component: () => import('../views/settings/AccountingSettings.vue')
+        },
+        {
+          path: 'usersecurity',
+          component: () => import('../views/settings/UserSecuritySettings.vue')
         }
       ]
     },

@@ -10,18 +10,24 @@
               class="settings-accounting__crypto2crypto"
               label="Take into account crypto to crypto trades"
               color="primary"
+              :success-messages="settingsMessages['crypto2crypto'].success"
+              :error-messages="settingsMessages['crypto2crypto'].error"
               @change="onCrypto2CryptoChange($event)"
             ></v-switch>
             <v-switch
               v-model="gasCosts"
               class="settings-accounting__include-gas-costs"
               label="Take into account Ethereum gas costs"
+              :success-messages="settingsMessages['gasCostChange'].success"
+              :error-messages="settingsMessages['gasCostChange'].error"
               color="primary"
               @change="onGasCostChange($event)"
             ></v-switch>
             <v-switch
               v-model="taxFreePeriod"
               class="settings-accounting__taxfree-period"
+              :success-messages="settingsMessages['taxFreePeriod'].success"
+              :error-messages="settingsMessages['taxFreePeriod'].error"
               label="Is there a tax free period?"
               color="primary"
               @change="onTaxFreeChange($event)"
@@ -29,24 +35,16 @@
             <v-text-field
               v-model="taxFreeAfterPeriod"
               class="settings-accounting__taxfree-period-days"
+              :success-messages="settingsMessages['taxFreePeriodAfter'].success"
+              :error-messages="settingsMessages['taxFreePeriodAfter'].error"
               :disabled="!taxFreePeriod"
               :rules="taxFreeRules"
               label="Tax free after how many days"
               type="number"
+              @change="onTaxFreePeriodChange($event)"
             >
             </v-text-field>
           </v-card-text>
-          <v-card-actions>
-            <v-btn
-              class="settings-accounting__modify-trade-settings"
-              depressed
-              color="primary"
-              type="submit"
-              @click="modifyTradeSettings()"
-            >
-              Set
-            </v-btn>
-          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -60,6 +58,8 @@
                 <asset-select
                   v-model="assetToIgnore"
                   label="Select asset to ignore"
+                  :success-messages="settingsMessages['addIgnoreAsset'].success"
+                  :error-messages="settingsMessages['addIgnoreAsset'].error"
                   hint="Click to see all assets and select one to ignore"
                   class="settings-accounting__asset-to-ignore"
                 ></asset-select>
@@ -83,6 +83,8 @@
                   label="Select asset to remove from ignored assets"
                   value="test"
                   :items="ignoredAssets"
+                  :success-messages="settingsMessages['remIgnoreAsset'].success"
+                  :error-messages="settingsMessages['remIgnoreAsset'].error"
                   hint="Click to see all ignored assets and select one for removal"
                   class="settings-accounting__ignored-assets"
                 ></asset-select>
@@ -116,13 +118,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { Message } from '@/store/store';
 
 import { AccountingSettings } from '@/typing/types';
+import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 
 const { mapState } = createNamespacedHelpers('session');
 
@@ -133,7 +136,7 @@ const { mapState } = createNamespacedHelpers('session');
   },
   computed: mapState(['accountingSettings'])
 })
-export default class Accounting extends Vue {
+export default class Accounting extends Settings {
   accountingSettings!: AccountingSettings;
 
   crypto2CryptoTrades: boolean = false;
@@ -146,6 +149,15 @@ export default class Accounting extends Vue {
   assetToRemove: string = '';
 
   asset: string = '';
+
+  settingsMessages: SettingsMessages = {
+    crypto2crypto: { success: '', error: '' },
+    gasCostChange: { success: '', error: '' },
+    taxFreePeriod: { success: '', error: '' },
+    taxFreePeriodAfter: { success: '', error: '' },
+    addIgnoreAsset: { success: '', error: '' },
+    remIgnoreAsset: { success: '', error: '' }
+  };
 
   taxFreeRules = [
     (v: string) => !!v || 'Please enter the number of days',
@@ -180,8 +192,52 @@ export default class Accounting extends Vue {
     }
   }
 
-  modifyTradeSettings() {
-    let period = this.taxFreeAfterPeriod;
+  onTaxFreeChange(enabled: boolean) {
+    let taxFreeAfterPeriod = this.taxFreeAfterPeriod;
+
+    if (!enabled) {
+      taxFreeAfterPeriod = null;
+    } else {
+      const period = this.accountingSettings.taxFreeAfterPeriod;
+      if (period) {
+        taxFreeAfterPeriod = period / 86400;
+      } else {
+        taxFreeAfterPeriod = 0;
+      }
+    }
+
+    const { commit } = this.$store;
+    if (taxFreeAfterPeriod !== null) {
+      taxFreeAfterPeriod *= 86400;
+    } else {
+      taxFreeAfterPeriod = -1;
+      this.taxFreeAfterPeriod = null;
+    }
+    this.$api
+      .setSettings({ taxfree_after_period: taxFreeAfterPeriod! })
+      .then(settings => {
+        this.validateSettingChange(
+          'taxFreePeriod',
+          'success',
+          `Tax free period ${enabled ? 'enabled' : 'disabled'}`
+        );
+
+        commit('session/accountingSettings', {
+          ...this.accountingSettings,
+          taxFreeAfterPeriod: settings.taxfree_after_period
+        });
+      })
+      .catch((reason: Error) => {
+        this.validateSettingChange(
+          'taxFreePeriod',
+          'error',
+          `${reason.message}`
+        );
+        this.taxFreeAfterPeriod = null;
+      });
+  }
+
+  onTaxFreePeriodChange(period: number) {
     if (period !== null) {
       period *= 86400;
     } else {
@@ -193,11 +249,11 @@ export default class Accounting extends Vue {
     this.$api
       .setSettings({ taxfree_after_period: period })
       .then(settings => {
-        commit('setMessage', {
-          title: 'Success',
-          description: 'Successfully set trade settings',
-          success: true
-        } as Message);
+        this.validateSettingChange(
+          'taxFreePeriodAfter',
+          'success',
+          `Tax free period set to ${this.taxFreeAfterPeriod} days`
+        );
 
         commit('session/accountingSettings', {
           ...this.accountingSettings,
@@ -205,46 +261,33 @@ export default class Accounting extends Vue {
         });
       })
       .catch((reason: Error) => {
-        commit('setMessage', {
-          title: 'Error setting trade settings',
-          description: reason.message
-        } as Message);
+        this.validateSettingChange(
+          'taxFreePeriodAfter',
+          'error',
+          `${reason.message}`
+        );
+        this.taxFreeAfterPeriod = null;
       });
-  }
-
-  onTaxFreeChange(enabled: boolean) {
-    if (!enabled) {
-      this.taxFreeAfterPeriod = null;
-    } else {
-      const period = this.accountingSettings.taxFreeAfterPeriod;
-      if (period) {
-        this.taxFreeAfterPeriod = period / 86400;
-      } else {
-        this.taxFreeAfterPeriod = 0;
-      }
-    }
   }
 
   onCrypto2CryptoChange(enabled: boolean) {
     const { commit } = this.$store;
+
     this.$api
       .setSettings({ include_crypto2crypto: enabled })
       .then(settings => {
-        commit('setMessage', {
-          title: 'Success',
-          description: 'Successfully set crypto to crypto consideration value',
-          success: true
-        } as Message);
         commit('session/accountingSettings', {
           ...this.accountingSettings,
           includeCrypto2Crypto: settings.include_crypto2crypto
         });
+        this.validateSettingChange('crypto2crypto', 'success');
       })
       .catch(reason => {
-        commit('setMessage', {
-          title: 'Error',
-          description: `Error setting crypto to crypto ${reason.message}`
-        } as Message);
+        this.validateSettingChange(
+          'crypto2crypto',
+          'error',
+          `Error setting crypto to crypto ${reason.message}`
+        );
       });
   }
 
@@ -254,38 +297,39 @@ export default class Accounting extends Vue {
     this.$api
       .setSettings({ include_gas_costs: enabled })
       .then(settings => {
-        commit('setMessage', {
-          title: 'Success',
-          description: 'Successfully set Ethereum gas costs value',
-          success: true
-        } as Message);
         commit('session/accountingSettings', {
           ...this.accountingSettings,
           includeGasCosts: settings.include_gas_costs
         });
+        this.validateSettingChange('gasCostChange', 'success');
       })
       .catch(reason => {
-        commit('setMessage', {
-          title: 'Error',
-          description: `Error setting Ethereum gas costs: ${reason.message}`
-        } as Message);
+        this.validateSettingChange(
+          'gasCostChange',
+          'error',
+          `Error setting Ethereum gas costs: ${reason.message}`
+        );
       });
   }
 
   addAsset() {
-    const { commit } = this.$store;
-
     this.$api
       .modifyAsset(true, this.assetToIgnore)
       .then(ignoredAssets => {
         this.ignoredAssets = ignoredAssets;
+        this.validateSettingChange(
+          'addIgnoreAsset',
+          'success',
+          `${this.assetToIgnore} added to ignored assets`
+        );
         this.assetToIgnore = '';
       })
       .catch((reason: Error) => {
-        commit('setMessage', {
-          title: 'Ignored Asset Modification Error',
-          description: `Error at modifying ignored asset ${this.assetToIgnore} (${reason.message})`
-        } as Message);
+        this.validateSettingChange(
+          'addIgnoreAsset',
+          'error',
+          `error adding ignored asset ${this.assetToIgnore} (${reason.message})`
+        );
       });
   }
 
@@ -294,15 +338,19 @@ export default class Accounting extends Vue {
       .modifyAsset(false, this.assetToRemove)
       .then(ignoredAssets => {
         this.ignoredAssets = ignoredAssets;
+        this.validateSettingChange(
+          'remIgnoreAsset',
+          'success',
+          `${this.assetToRemove} removed from ignored assets`
+        );
         this.assetToRemove = '';
       })
       .catch((reason: Error) => {
-        const { commit } = this.$store;
-
-        commit('setMessage', {
-          title: 'Ignored Asset Modification Error',
-          description: `Error at modifying ignored asset ${this.assetToIgnore} (${reason.message})`
-        } as Message);
+        this.validateSettingChange(
+          'remIgnoreAsset',
+          'error',
+          `error removing ignored asset ${this.assetToRemove} (${reason.message})`
+        );
       });
   }
 }
