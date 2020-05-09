@@ -9,7 +9,8 @@ Changelog
 * :feature:`917` Rotki now has a new and improved Dashboard. Users can view their total net worth as well as totals per source of balances (exchanges, blockchains, and manual entries), as well as filter the full asset listing.
 * :bug:`995` Importing from cointracking.info should now work again. Adjust to the latest cointracking.info CSV export format.
 * :feature:`971` Rotki's initial loading and welcome screens are now integrated with an improved UI and a scrolling robin in the background to welcome the user.
-* :feature:`763` Rotki users can now change their password in the app's settings.
+* :feature:`988` General and Accounting settings have been consolidated into one Settings page, accessed via the User Menu, where users can access them as separate tabs.
+* :feature:`763` Rotki users can now change their password in the app's settings in the "User & Security" tab.
 * :bug:`962` Fix infinite loop in Coinbase trades query
 * :feature:`-` Rotki users now have two options to further enhance their privacy. If a user wants to temporarily obscure values in the application, they can do so by turning `Privacy Mode` on and off in the User Menu. Additionally, if a user wants to scramble their data (e.g. before sharing screenshots or videos), they can do so via the `Scramble Data` setting in the application's General Settings.
 * :bug:`966` Rotki now supports the new Kraken LTC and XRP trade pairs
