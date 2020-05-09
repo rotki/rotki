@@ -81,8 +81,22 @@ GEMJOIN_ADDRESS_ABI_BLOCK = {
 }
 
 WAD = int(1e18)
+WAD_DIGITS = 18
 RAY = int(1e27)
+RAY_DIGITS = 27
 RAD = int(1e45)
+RAD_DIGITS = 45
+
+
+def _shift_num_right_by(num: int, digits: int) -> int:
+    """Shift a number to the right by discarding some digits
+
+    We actually use string conversion here since division can provide
+    wrong results due to precision errors for very big numbers. e.g.:
+    6150000000000000000000000000000000000000000000000 // 1e27
+    6.149999999999999e+21   <--- wrong
+    """
+    return int(str(num)[:-digits])
 
 
 class ChiRetrievalError(Exception):
@@ -425,9 +439,58 @@ class MakerDAO(EthereumModule):
         ]
 
         vault_events = []
-        # Get the deposit events
+        # Get the collateral deposit events
         argument_filters = {
             'sig': '0x3b4da69f',  # join
+            # In cases where a CDP has been migrated from a SAI CDP to a DAI
+            # Vault the usr in the first deposit will be the old address. To
+            # detect the first deposit in these cases we need to check for
+            # arg1 being the urn
+            # 'usr': proxy,
+            'arg1': address_to_bytes32(urn),
+        }
+        events = self.ethereum.get_logs(
+            contract_address=gemjoin_address,
+            abi=gemjoin_abi,
+            event_name='LogNote',
+            argument_filters=argument_filters,
+            from_block=gemjoin_block,
+        )
+        # all subsequent deposits should have the proxy as a usr
+        # but for non-migrated CDPS the previous query would also work
+        # so in those cases we will have the first deposit 2 times
+        argument_filters = {
+            'sig': '0x3b4da69f',  # join
+            'usr': proxy,
+        }
+        events.extend(self.ethereum.get_logs(
+            contract_address=gemjoin_address,
+            abi=gemjoin_abi,
+            event_name='LogNote',
+            argument_filters=argument_filters,
+            from_block=gemjoin_block,
+        ))
+        deposit_tx_hashes = set()
+        for event in events:
+            tx_hash = event['transactionHash']
+            if tx_hash in deposit_tx_hashes:
+                # Skip duplicate deposit that would be detected in non migrated CDP case
+                continue
+            deposit_tx_hashes.add(tx_hash)
+            amount = _normalize_amount(
+                asset_symbol=asset_symbol,
+                amount=hex_or_bytes_to_int(event['topics'][3])
+            )
+            vault_events.append(VaultEvent(
+                event_type=VaultEventType.DEPOSIT_COLLATERAL,
+                amount=amount,
+                timestamp=self.ethereum.get_event_timestamp(event),
+                tx_hash=tx_hash,
+            ))
+
+        # Get the collateral withdrawal events
+        argument_filters = {
+            'sig': '0xef693bed',  # exit
             'usr': proxy,
         }
         events = self.ethereum.get_logs(
@@ -443,7 +506,7 @@ class MakerDAO(EthereumModule):
                 amount=hex_or_bytes_to_int(event['topics'][3])
             )
             vault_events.append(VaultEvent(
-                event_type=VaultEventType.DEPOSIT_COLLATERAL,
+                event_type=VaultEventType.WITHDRAW_COLLATERAL,
                 amount=amount,
                 timestamp=self.ethereum.get_event_timestamp(event),
                 tx_hash=event['transactionHash'],
@@ -453,7 +516,10 @@ class MakerDAO(EthereumModule):
         argument_filters = {
             'sig': '0xbb35783b',  # move
             'arg1': address_to_bytes32(urn),
-            'arg2': address_to_bytes32(proxy),
+            # For CDPs that were created by migrating from SAI the first DAI generation
+            # during vault creation will have the old owner as arg2. So we can't
+            # filter for it here. Still seems like the urn as arg1 is sufficient
+            # 'arg2': address_to_bytes32(proxy),
         }
         events = self.ethereum.get_logs(
             contract_address=MAKERDAO_VAT_ADDRESS,
@@ -463,9 +529,10 @@ class MakerDAO(EthereumModule):
             from_block=MAKERDAO_VAT_DEPLOYED_BLOCK,
         )
         for event in events:
+            given_amount = _shift_num_right_by(hex_or_bytes_to_int(event['topics'][3]), RAY_DIGITS)
             amount = _normalize_amount(
                 asset_symbol='DAI',
-                amount=hex_or_bytes_to_int(event['topics'][3]) / RAY
+                amount=given_amount,
             )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.GENERATE_DEBT,
