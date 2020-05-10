@@ -113,6 +113,8 @@ class MakerDAOVaultDetails(NamedTuple):
     # The USD value of collateral locked, given the current price according to the price feed
     collateral_usd_value: FVal
     creation_ts: Timestamp
+    # Total amount of DAI owed to the vault, past and future as interest rate
+    total_interest_owed: FVal
     events: List[VaultEvent]
 
 

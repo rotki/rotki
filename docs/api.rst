@@ -2726,7 +2726,7 @@ Getting MakerDAO vaults basic data
               "collateral_amount": "5.232",
               "debt_value": "650",
               "collateralization_ratio": "234.21%",
-              "liquidation_ratio": "150%",
+              "liquidation_ratio": "150%"
           }, {
               "identifier": 55,
               "name": "USDC-A",
@@ -2734,7 +2734,7 @@ Getting MakerDAO vaults basic data
               "collateral_amount": "150",
               "debt_value": "50",
               "collateralization_ratio": "250.551%",
-              "liquidation_ratio": "150%",
+              "liquidation_ratio": "150%"
           }]
           "message": ""
       }
@@ -2787,35 +2787,37 @@ Getting MakerDAO vault details
       {
           "result": [{
               "identifier": 1,
-              "liquidation_price": "105.01"
-              "collateral_usd_value": "2550.22"
+              "liquidation_price": "105.01",
+              "collateral_usd_value": "2550.22",
               "creation_ts": 1589067898,
+              "total_interest_owed": "0.02341",
               "events": [{
                   "event_type": "deposit",
                   "amount": "5.551",
-                  "timestamp": 1589067899
-                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd",
+                  "timestamp": 1589067899,
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "generate",
                   "amount": "325",
-                  "timestamp": 1589067900
-                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd",
+                  "timestamp": 1589067900,
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }]
           }, {
-              "identifier": 56
-              "liquidation_price": "0.82"
-              "collateral_usd_value": "1500.21"
+              "identifier": 56,
+              "liquidation_price": "0.82",
+              "collateral_usd_value": "1500.21",
               "creation_ts": 1589067897,
+              "total_interest_owed": "0.000141",
               "events": [{
                   "event_type": "deposit",
                   "amount": "1050.21",
                   "timestamp": 1589067899
-                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd",
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "generate",
                   "amount": "721.32",
                   "timestamp": 1589067900
-                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd",
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }]
           }]
           "message": ""
