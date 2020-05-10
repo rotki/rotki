@@ -1,5 +1,6 @@
 import logging
 import operator
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
@@ -98,19 +99,21 @@ class MakerDAOVault(NamedTuple):
     collateral_asset: Asset
     # The amount of collateral tokens locked
     collateral_amount: FVal
-    # The USD value of collateral locked, given the current price according to the price feed
-    collateral_usd_value: FVal
     # amount of DAI drawn
     debt_value: FVal
-    # The USD price of collateral at which the Vault becomes unsafe. None if nothing is locked in.
-    liquidation_price: Optional[FVal]
     # The current collateralization_ratio of the Vault. None if nothing is locked in.
     collateralization_ratio: Optional[str]
+    # The ratio at which the vault is open for liquidation. (e.g. 1.5 for 150%)
+    liquidation_ratio: FVal
 
 
-class MakerDAOVaultExtra(NamedTuple):
+class MakerDAOVaultDetails(NamedTuple):
+    # The USD price of collateral at which the Vault becomes unsafe. None if nothing is locked in.
+    liquidation_price: Optional[FVal]
+    # The USD value of collateral locked, given the current price according to the price feed
+    collateral_usd_value: FVal
     creation_ts: Timestamp
-    vault_events: List[VaultEvent]
+    events: List[VaultEvent]
 
 
 def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
@@ -251,6 +254,7 @@ class MakerDAO(EthereumModule):
             arguments=[],
         )
         self.par = result
+        self.usd_price: Dict[str, FVal] = defaultdict(ZERO)
 
     def premium_active(self):
         return self.premium and self.premium.is_active()
@@ -344,43 +348,46 @@ class MakerDAO(EthereumModule):
         )
 
         mat = result[1]
-        # This should also be wrapped with USD/MDAI ratio
-        # https://github.com/makerdao/dai.js/blob/672475576b94b19d35b1e014807ea809ebf700af/packages/dai-plugin-mcd/src/math.js#L26
-        # Which I am not sure how to calculate
         liquidation_ratio = FVal(mat / RAY)
-        # This should also be wrapped with USD/currency ratio
-        # https://github.com/makerdao/dai.js/blob/672475576b94b19d35b1e014807ea809ebf700af/packages/dai-plugin-mcd/src/math.js#L33
-        # Which I am not sure how to calculate
+        asset = Asset(asset_symbol)
         price = FVal((spot / RAY) * liquidation_ratio)
+        self.usd_price[asset] = price
         collateral_value = FVal(price * collateral_amount)
-
         if debt_value == 0:
             collateralization_ratio = None
         else:
             collateralization_ratio = FVal(collateral_value / debt_value).to_percentage(2)
 
-        if collateral_amount == 0:
-            liquidation_price = None
-        else:
-            liquidation_price = FVal((debt_value * liquidation_ratio) / collateral_amount)
-
         return MakerDAOVault(
             identifier=identifier,
             name=name,
-            collateral_asset=Asset(asset_symbol),
+            collateral_asset=asset,
             collateral_amount=collateral_amount,
-            collateral_usd_value=collateral_value,
             debt_value=debt_value,
-            liquidation_price=liquidation_price,
+            liquidation_ratio=liquidation_ratio,
             collateralization_ratio=collateralization_ratio,
         )
 
-    def _query_vault_history(
+    def _query_vault_details(
             self,
             vault: MakerDAOVault,
             proxy: ChecksumEthAddress,
             urn: ChecksumEthAddress,
-    ) -> MakerDAOVaultExtra:
+    ) -> MakerDAOVaultDetails:
+        """Querying vault details for a vault.
+
+        Premium only. Should always be called only after a vault's data have
+        been queried with _query_vault_data()
+        """
+
+        collateral_value = self.usd_price[vault.collateral_asset] * vault.collateral_amount
+
+        if vault.collateral_amount == 0:
+            liquidation_price = None
+        else:
+            liquidation_price = (
+                (vault.debt_value * vault.liquidation_ratio) / vault.collateral_amount
+            )
         asset_symbol = vault.collateral_asset.identifier
         # They can raise:
         # ConversionError due to hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -451,7 +458,7 @@ class MakerDAO(EthereumModule):
             deposit_tx_hashes.add(tx_hash)
             amount = _normalize_amount(
                 asset_symbol=asset_symbol,
-                amount=hex_or_bytes_to_int(event['topics'][3])
+                amount=hex_or_bytes_to_int(event['topics'][3]),
             )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.DEPOSIT_COLLATERAL,
@@ -567,7 +574,12 @@ class MakerDAO(EthereumModule):
                 tx_hash=event['transactionHash'],
             ))
 
-        return MakerDAOVaultExtra(creation_ts=creation_ts, vault_events=vault_events)
+        return MakerDAOVaultDetails(
+            liquidation_price=liquidation_price,
+            collateral_usd_value=collateral_value,
+            creation_ts=creation_ts,
+            events=vault_events,
+        )
 
     def get_vaults(self) -> List[MakerDAOVault]:
         """Detects vaults the user has and returns basic info about each one
@@ -599,8 +611,8 @@ class MakerDAO(EthereumModule):
                 )
                 vaults.append(vault)
                 if self.premium_active():
-                    vault_extra = self._query_vault_history(vault, proxy, urn)
-                    vault_extras.append(vault_extra)
+                    vault_detail = self._query_vault_details(vault, proxy, urn)
+                    vault_details.append(vault_detail)
 
         return vaults
 
