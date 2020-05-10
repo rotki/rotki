@@ -60,6 +60,10 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('R', 18);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('S', 19);
 /* Bitfinex */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('T', 20);
+/* Bitcoin.de */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('U', 21);
+/* ICONOMI */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('V', 22);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
