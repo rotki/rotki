@@ -2683,11 +2683,157 @@ Getting ethereum MakerDAO DSR historical report
    :resjsonarr string gain_so_far: The amount of DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal.
    :resjsonarr string amount: The amount of DAI deposited or withdrawn from the DSR.
    :resjsonarr int block_number: The block number at which the deposit or withdrawal occured.
-   :resjsonarr int block_number: The timestamp of the block number at which the deposit or withdrawal occured.
 
    :statuscode 200: DSR history succesfully queried.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or makerdao module is not activated.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+Getting MakerDAO vaults basic data
+===================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/vaults
+
+   Doing a GET on the makerdao vault resource will return the basic information for each vault the user has
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/makerdao/vaults HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "identifier": 1,
+              "name": "ETH-A",
+              "collateral_asset": "ETH",
+              "collateral_amount": "5.232",
+              "debt_value": "650",
+              "collateralization_ratio": "234.21%",
+              "liquidation_ratio": "150%",
+          }, {
+              "identifier": 55,
+              "name": "USDC-A",
+              "collateral_asset": "USDC",
+              "collateral_amount": "150",
+              "debt_value": "50",
+              "collateralization_ratio": "250.551%",
+              "liquidation_ratio": "150%",
+          }]
+          "message": ""
+      }
+
+   :resjson object result: A list of all vaults auto detected for the user's accounts
+   :resjsonarr string identifier: A unique integer identifier for the vault.
+   :resjsonarr string name: The name of the vault given by the system.
+   :resjsonarr string collateral_asset: The asset deposited in the vault as collateral. As of this writing supported assets are ``["ETH", "BAT", "USDC", "WBTC"]``
+   :resjsonarr string collateral_amount: The amount of collateral currently deposited in the vault
+   :resjsonarr string debt_value: The amount of DAI owed to the vault. So generated DAI plus the stability fee interest.
+   :resjsonarr string collateralization_ratio: A string denoting the percentage of collateralization of the vault.
+   :resjsonarr string liquidation_ratio: This is the current minimum collateralization ratio. Less than this and the vault is going to get liquidated.
+   :statuscode 200: Vaults succesfuly queried
+   :statuscode 409: User is not logged in. Or makerdao module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+Getting MakerDAO vault details
+===================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/vaultdetails
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a GET on the makerdao vault details resource will return additional details for each vault and also the list of vault events such as deposits, withdrawals, liquidations, debt generation and repayment.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/makerdao/vaultdetails HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "identifier": 1,
+              "liquidation_price": "105.01"
+              "collateral_usd_value": "2550.22"
+              "creation_ts": 1589067898,
+              "events": [{
+                  "event_type": "deposit",
+                  "amount": "5.551",
+                  "timestamp": 1589067899
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd",
+              }, {
+                  "event_type": "generate",
+                  "amount": "325",
+                  "timestamp": 1589067900
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd",
+              }]
+          }, {
+              "identifier": 56
+              "liquidation_price": "0.82"
+              "collateral_usd_value": "1500.21"
+              "creation_ts": 1589067897,
+              "events": [{
+                  "event_type": "deposit",
+                  "amount": "1050.21",
+                  "timestamp": 1589067899
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd",
+              }, {
+                  "event_type": "generate",
+                  "amount": "721.32",
+                  "timestamp": 1589067900
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd",
+              }]
+          }]
+          "message": ""
+      }
+
+   :resjson object result: A list of all vault details detected.
+   :resjsonarr string liquidation_price: The USD price that the asset deposited in the vault as collateral at which the vault is going to get liquidated.
+   :resjsonarr string collateral_usd_value: The current value in USD of all the collateral in the vault according to the MakerDAO price feed.
+   :resjsonarr int creation_ts: The timestamp of the vault's creation
+   :resjson object events: A list of all events that occured for this vault
+   :resjsonarr string event_type: The type of the event. Valid types are: ``["deposit", "withdraw", "generate", "payback", "liquidation"]``
+   :resjsonarr string amount: The amount associated with the event. So collateral deposited/withdrawn, debt generated/paid back, amount of collateral lost in liquidation.
+   :resjsonarr int timestamp: The unix timestamp of the event
+   :resjsonarr string tx_hash: The transaction hash associated with the event.
+
+   :statuscode 200: Vault details succesfuly queried
+   :statuscode 409: User is not logged in. Or makerdao module is not activated.
+   :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Adding blockchain accounts
