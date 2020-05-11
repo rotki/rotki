@@ -4,11 +4,11 @@ import { RotkehlchenState } from '@/store/store';
 
 export const getters: GetterTree<SessionState, RotkehlchenState> = {
   floatingPrecision: (state: SessionState) => {
-    return state.settings.floatingPrecision;
+    return state.generalSettings.floatingPrecision;
   },
 
   dateDisplayFormat: (state: SessionState) => {
-    return state.settings.dateDisplayFormat;
+    return state.generalSettings.dateDisplayFormat;
   },
 
   lastBalanceSave: (state: SessionState) => {
@@ -16,7 +16,7 @@ export const getters: GetterTree<SessionState, RotkehlchenState> = {
   },
 
   currency: (state: SessionState) => {
-    return state.settings.selectedCurrency;
+    return state.generalSettings.selectedCurrency;
   },
 
   tags: (state: SessionState) => {
@@ -24,6 +24,6 @@ export const getters: GetterTree<SessionState, RotkehlchenState> = {
   },
 
   krakenAccountType: (state: SessionState) => {
-    return state.settings.krakenAccountType;
+    return state.generalSettings.krakenAccountType;
   }
 };

@@ -34,7 +34,7 @@ describe('AmountDisplay.vue', () => {
   beforeEach(() => {
     store.commit('session/defaultCurrency', currencies[1]);
     store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
-    store.commit('session/settings', { floatingPrecision: 2 });
+    store.commit('session/generalSettings', { floatingPrecision: 2 });
   });
 
   afterEach(() => {

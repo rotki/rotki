@@ -10,7 +10,7 @@ import {
 
 export const mutations: MutationTree<SessionState> = {
   defaultCurrency(state: SessionState, currency: Currency) {
-    state.settings = Object.assign(state.settings, {
+    state.generalSettings = Object.assign(state.generalSettings, {
       selectedCurrency: currency
     });
   },
@@ -23,8 +23,8 @@ export const mutations: MutationTree<SessionState> = {
     state.newAccount = newAccount;
     state.username = username;
   },
-  settings(state: SessionState, settings: GeneralSettings) {
-    state.settings = Object.assign(state.settings, settings);
+  generalSettings(state: SessionState, settings: GeneralSettings) {
+    state.generalSettings = Object.assign(state.generalSettings, settings);
   },
   privacyMode(state: SessionState, privacyMode: boolean) {
     state.privacyMode = privacyMode;
