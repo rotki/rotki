@@ -33,8 +33,12 @@ describe('AccountManagement.vue', () => {
       wrapper.vm.showPremiumDialog();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.account_management__premium').exists()).toBe(true);
-      wrapper.find('.message-overlay__buttons__cancel').trigger('click');
+      expect(wrapper.find('.account_management__premium_dialog').exists()).toBe(
+        true
+      );
+      wrapper
+        .find('.account_management__premium_dialog__buttons__cancel')
+        .trigger('click');
       await wrapper.vm.$nextTick();
 
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
@@ -61,8 +65,12 @@ describe('AccountManagement.vue', () => {
       wrapper.vm.showPremiumDialog();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.account_management__premium').exists()).toBe(true);
-      wrapper.find('.message-overlay__buttons__cancel').trigger('click');
+      expect(wrapper.find('.account_management__premium_dialog').exists()).toBe(
+        true
+      );
+      wrapper
+        .find('.account_management__premium_dialog__buttons__cancel')
+        .trigger('click');
       await wrapper.vm.$nextTick();
 
       expect(wrapper.emitted()['login-complete']).toBeTruthy();

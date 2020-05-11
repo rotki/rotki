@@ -16,11 +16,11 @@ export class RotkiApp {
   }
 
   closePremiumOverlay() {
-    cy.get('.account_management__premium .message-overlay__title', {
+    cy.get('.account_management__premium_dialog__title', {
       timeout: 10000
     }).should('include.text', 'Upgrade to Premium');
-    cy.get('.message-overlay__buttons__cancel').click();
-    cy.get('.account_management__premium').should('not.be.visible');
+    cy.get('.account_management__premium_dialog__buttons__cancel').click();
+    cy.get('.account_management__premium_dialog').should('not.be.visible');
   }
 
   login(username: string, password: string = '1234') {
