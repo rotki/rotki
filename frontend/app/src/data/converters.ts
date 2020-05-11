@@ -3,7 +3,7 @@ import { DBSettings } from '@/model/action-result';
 import { Currency } from '@/model/currency';
 import { AccountingSettings, GeneralSettings } from '@/typing/types';
 
-const findCurrency = (currencySymbol: string) => {
+export const findCurrency = (currencySymbol: string) => {
   const currency: Currency | undefined = currencies.find(
     currency => currency.ticker_symbol === currencySymbol
   );

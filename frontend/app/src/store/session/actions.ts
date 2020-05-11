@@ -17,7 +17,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
     commit('premium', settings.have_premium);
     commit('premiumSync', settings.premium_should_sync);
-    commit('settings', convertToGeneralSettings(settings));
+    commit('generalSettings', convertToGeneralSettings(settings));
     commit('accountingSettings', convertToAccountingSettings(settings));
   },
   async unlock({ commit, dispatch, state }, payload: UnlockPayload) {
@@ -179,7 +179,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const settings = await api.setSettings({
         kraken_account_type: account_type
       });
-      commit('settings', convertToGeneralSettings(settings));
+      commit('generalSettings', convertToGeneralSettings(settings));
       commit(
         'setMessage',
         {

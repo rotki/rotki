@@ -1,11 +1,14 @@
-import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
+import {
+  defaultAccountingSettings,
+  defaultGeneralSettings
+} from '@/data/factories';
 import { AccountingSettings, GeneralSettings, Tags } from '@/typing/types';
 
 export interface SessionState {
   newAccount: boolean;
   logged: boolean;
   username: string;
-  settings: GeneralSettings;
+  generalSettings: GeneralSettings;
   accountingSettings: AccountingSettings;
   premium: boolean;
   premiumSync: boolean;
@@ -20,7 +23,7 @@ export const defaultState: () => SessionState = () => ({
   newAccount: false,
   logged: false,
   username: '',
-  settings: defaultSettings(),
+  generalSettings: defaultGeneralSettings(),
   accountingSettings: defaultAccountingSettings(),
   privacyMode: false,
   scrambleData: false,

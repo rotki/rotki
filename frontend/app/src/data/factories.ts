@@ -2,7 +2,7 @@ import { currencies } from '@/data/currencies';
 import { Defaults } from '@/data/defaults';
 import { AccountingSettings, GeneralSettings } from '@/typing/types';
 
-export const defaultSettings = (): GeneralSettings => ({
+export const defaultGeneralSettings = (): GeneralSettings => ({
   floatingPrecision: Defaults.FLOATING_PRECISION,
   anonymizedLogs: Defaults.ANONYMIZED_LOGS,
   ethRpcEndpoint: Defaults.RPC_ENDPOINT,

@@ -7,21 +7,34 @@ export class GeneralSettingsPage {
 
   setFloatingPrecision(value: string) {
     cy.get('.settings-general__fields__floating-precision input').clear();
-    cy.get('.settings-general__fields__floating-precision').type(value);
+    cy.get('.settings-general__fields__floating-precision input').type(value);
+    cy.get('.settings-general__fields__floating-precision input').blur();
   }
 
   changeAnonymizedLogs() {
     cy.get('.settings-general__fields__anonymized-logs').click();
+    this.confirmInlineSuccess('.settings-general__fields__anonymized-logs');
   }
 
   changeAnonymousUsageStatistics() {
     cy.get('.settings-general__fields__anonymous-usage-statistics').click();
+    this.confirmInlineSuccess(
+      '.settings-general__fields__anonymous-usage-statistics'
+    );
   }
 
-  setHistoryDataStart(value: string) {
-    cy.get('.settings-general__fields__historic-data-start input').clear();
-    cy.get('.settings-general__fields__historic-data-start')
-      .type(value)
+  setHistoryDataStart() {
+    cy.get('.settings-general__fields__historic-data-start input').click();
+    cy.get('.v-picker__body .v-date-picker-header__value button').click(); // click up to month selection
+    cy.get('.v-picker__body .v-date-picker-header__value button')
+      .contains(/^2015$/)
+      .click(); // clear up to year selection
+    cy.get('.v-picker__body .v-date-picker-years li').contains('2018').click();
+    cy.get('.v-picker__body .v-date-picker-table--month .v-btn__content')
+      .contains('Oct')
+      .click();
+    cy.get('.v-picker__body .v-date-picker-table--date .v-btn__content')
+      .contains('3')
       .click();
   }
 
@@ -33,11 +46,13 @@ export class GeneralSettingsPage {
   setBalanceSaveFrequency(value: string) {
     cy.get('.settings-general__fields__balance-save-frequency input').clear();
     cy.get('.settings-general__fields__balance-save-frequency').type(value);
+    cy.get('.settings-general__fields__balance-save-frequency input').blur();
   }
 
   setDateDisplayFormat(value: string) {
     cy.get('.settings-general__fields__date-display-format input').clear();
     cy.get('.settings-general__fields__date-display-format').type(value);
+    cy.get('.settings-general__fields__date-display-format input').blur();
   }
 
   toggleScrambleData() {
@@ -78,6 +93,32 @@ export class GeneralSettingsPage {
   confirmSuccess() {
     cy.get('.message-dialog__title').should('include.text', 'Success');
     cy.get('.message-dialog__buttons__confirm').click();
+  }
+
+  confirmInlineSuccess(target: string, messageContains?: string) {
+    cy.get(`${target} .v-messages__message`).should(
+      'include.text',
+      'Setting saved'
+    );
+    if (messageContains) {
+      cy.get(`${target} .v-messages__message`).should(
+        'include.text',
+        messageContains
+      );
+    }
+  }
+
+  confirmInlineFailure(target: string, messageContains?: string) {
+    cy.get(`${target} .v-messages__message`).should(
+      'include.text',
+      'Setting not saved'
+    );
+    if (messageContains) {
+      cy.get(`${target} .v-messages__message`).should(
+        'include.text',
+        messageContains
+      );
+    }
   }
 
   verify(settings: {
@@ -133,6 +174,7 @@ export class GeneralSettingsPage {
   setRpcEndpoint(value: string) {
     cy.get('.settings-general__fields__rpc-endpoint input').clear();
     cy.get('.settings-general__fields__rpc-endpoint').type(value);
+    cy.get('.settings-general__fields__rpc-endpoint input').blur();
   }
 
   confirmFailure() {

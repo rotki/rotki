@@ -48,14 +48,23 @@ export default class Settings extends Vue {
     targetSetting: string,
     targetState: string,
     message: string = '',
-    timeOut: number = 10000
+    timeOut: number = 5500
   ) {
     if (targetState === 'success' || targetState === 'error') {
       setTimeout(() => {
-        this.settingsMessages[targetSetting][targetState] = `Setting${
-          targetState === 'error' ? ' not ' : ' '
-        }saved${message !== '' ? ': ' + message : ''}`;
-      }, 500);
+        let validationMessage = '';
+        if (targetState === 'error') {
+          validationMessage = 'Setting not saved';
+        } else {
+          validationMessage = 'Setting saved';
+        }
+
+        if (message) {
+          validationMessage += `: ${message}`;
+        }
+
+        this.settingsMessages[targetSetting][targetState] = validationMessage;
+      }, 200);
       setTimeout(() => {
         this.settingsMessages[targetSetting][targetState] = '';
       }, timeOut);
