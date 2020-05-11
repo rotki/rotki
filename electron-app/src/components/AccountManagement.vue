@@ -67,24 +67,58 @@
           </v-alert>
         </div>
       </v-dialog>
+
+      <v-dialog
+        :value="!premium && !message && premiumVisible"
+        persistent
+        max-width="450"
+      >
+        <v-card
+          light
+          max-width="500"
+          class="mx-auto account_management__premium_dialog"
+        >
+          <v-card-title class="account_management__premium_dialog__title">
+            Upgrade to Premium
+          </v-card-title>
+          <v-card-text>
+            <v-row class="mx-auto text-justify">
+              <v-col cols="2" align-self="center">
+                <v-icon color="success" size="48">
+                  fa fa-info-circle
+                </v-icon>
+              </v-col>
+              <v-col cols="10">
+                rotki is open source software and needs your support! Please
+                consider upgrading to premium by purchasing a premium
+                subscription. This way you can help us further develop the
+                software and you can also enjoy additional premium-only
+                features.
+              </v-col>
+            </v-row>
+          </v-card-text>
+          <v-card-actions>
+            <div class="flex-grow-1"></div>
+            <v-btn
+              color="primary"
+              class="account_management__premium_dialog__buttons__confirm"
+              depressed
+              @click="upgrade()"
+            >
+              Upgrade
+            </v-btn>
+            <v-btn
+              class="account_management__premium_dialog__buttons__cancel"
+              text
+              outlined
+              @click="loginComplete()"
+            >
+              Close
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-overlay>
-
-    <message-overlay
-      class="account_management__premium"
-      action="Upgrade"
-      :visible="!premium && !message && premiumVisible"
-      @primary="upgrade()"
-      @close="loginComplete"
-    >
-      <template #title>
-        Upgrade to Premium
-      </template>
-
-      rotki is open source software and needs your support! Please consider
-      upgrading to premium by purchasing a premium subscription. This way you
-      can help us further develop the software and you can also enjoy additional
-      premium-only features.
-    </message-overlay>
   </div>
 </template>
 
