@@ -44,6 +44,11 @@
             :name="location"
             :amount="usdValue"
           ></manual-balance-card-list>
+          <manual-balance-card-list
+            key="fiat"
+            name="fiat"
+            :amount="fiatTotal"
+          ></manual-balance-card-list>
         </summary-card>
       </v-col>
     </v-row>
