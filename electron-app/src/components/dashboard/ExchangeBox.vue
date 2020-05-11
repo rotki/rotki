@@ -14,7 +14,7 @@
         contain
         height="24"
         :title="name"
-        :src="require(`../../assets/images/${name}.png`)"
+        :src="require(`@/assets/images/${name}.png`)"
       />
     </v-list-item-avatar>
     <v-list-item-content>
