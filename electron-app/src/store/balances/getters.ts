@@ -114,10 +114,6 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }, Zero);
   },
 
-  manualBalances: (state: BalanceState) => {
-    return state.manualBalances;
-  },
-
   manualBalanceByLocation: (state: BalanceState) => {
     const simplifyManualBalances = state.manualBalances.map(
       perLocationBalance => {
