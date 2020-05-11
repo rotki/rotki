@@ -52,11 +52,18 @@ export default class SummaryCard extends Vue {
 </script>
 
 <style scoped lang="scss">
-.summary-card__refresh-icon {
-  filter: grayscale(100%);
+.summary-card {
+  .v-list-item {
+    font-size: 0.8em;
+    max-height: 48px;
+  }
 
-  &:hover {
-    filter: grayscale(0);
+  &__refresh-icon {
+    filter: grayscale(100%);
+
+    &:hover {
+      filter: grayscale(0);
+    }
   }
 }
 </style>
