@@ -9,12 +9,18 @@ from urllib.parse import urlencode
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
+from rotkehlchen.exchanges.data_structures import AssetMovement, Location, Price, Trade, TradePair
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
+from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
+    deserialize_asset_movement_category,
+    deserialize_fee,
+    deserialize_timestamp_from_date,
+    deserialize_trade_type,
+)
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -24,8 +30,7 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
@@ -34,50 +39,45 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-BITMEX_PRIVATE_ENDPOINTS = (
-    'user',
-    'user/wallet',
-    'user/walletHistory',
-)
+
+def bitcoin_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
+    tx_asset = Asset(pair[:3].upper())
+    native_asset = Asset(pair[3:].upper())
+    return tx_asset, native_asset
 
 
-def bitmex_to_world(symbol: str) -> Asset:
-    if symbol == 'XBt':
-        return A_BTC
-    return Asset(symbol)
+def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
 
+    if raw_trade['state'] != 1:
+        # We only want to deal with completed trades
+        return None
 
-def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
-    """Turn a bitmex trade returned from bitmex trade history to our common trade
-    history format. This only returns margin positions as bitmex only deals in
-    margin trading"""
-    close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
-    profit_loss = AssetAmount(satoshis_to_btc(FVal(bitmex_trade['amount'])))
-    currency = bitmex_to_world(bitmex_trade['currency'])
-    fee = deserialize_fee(bitmex_trade['fee'])
-    notes = bitmex_trade['address']
-    assert currency == A_BTC, 'Bitmex trade should only deal in BTC'
+    try:
+        timestamp = deserialize_timestamp_from_date(raw_trade['successfully_finished_at'], 'iso8601', 'bitcoinde')
+    except KeyError:
+        # For very old trades (2013) bitcoin.de does not return 'successfully_finished_at'
+        timestamp = deserialize_timestamp_from_date(raw_trade['trade_marked_as_paid_at'], 'iso8601', 'bitcoinde')
+    trade_type = deserialize_trade_type(raw_trade['type'])
+    tx_amount = raw_trade['amount_currency_to_trade']
 
-    log.debug(
-        'Processing Bitmex Trade',
-        sensitive_log=True,
-        timestamp=close_time,
-        profit_loss=profit_loss,
-        currency=currency,
-        fee=fee,
-        notes=notes,
-    )
+    native_amount = raw_trade['volume_currency_to_pay']
+    tx_asset, native_asset = bitcoin_pair_to_world(raw_trade['trading_pair'])
+    pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
+    amount = tx_amount
+    rate = Price(native_amount / tx_amount)
+    fee_amount = deserialize_fee(raw_trade['fee_currency_to_pay'])
+    fee_asset = Asset('EUR')
 
     return Trade(
-        location=Location.BITMEX,
-        open_time=None,
-        close_time=close_time,
-        profit_loss=profit_loss,
-        pl_currency=currency,
-        fee=fee,
-        fee_currency=A_BTC,
-        notes=notes,
-        link=str(bitmex_trade['transactID']),
+        timestamp=timestamp,
+        location=Location.BITCOINDE,
+        pair=pair,
+        trade_type=trade_type,
+        amount=amount,
+        rate=rate,
+        fee=fee_amount,
+        fee_currency=fee_asset,
+        link=str(raw_trade['trade_id']),
     )
 
 
@@ -94,25 +94,9 @@ class Bitcoinde(ExchangeInterface):
         self.session.headers.update({'x-api-key': api_key})
         self.msg_aggregator = msg_aggregator
 
-    def first_connection(self) -> None:
-        self.first_connection_made = True
-
-    def validate_api_key(self) -> Tuple[bool, str]:
-        try:
-            self._api_query('get', 'user')
-        except RemoteError as e:
-            error = str(e)
-            if 'Invalid API Key' in error:
-                return False, 'Provided API Key is invalid'
-            elif 'Signature not valid' in error:
-                return False, 'Provided API Secret is invalid'
-            else:
-                raise
-        return True, ''
-
     def _generate_signature(self, request_type: str, url: str, nonce: str) -> str:
-        md5_empty_post = 'd41d8cd98f00b204e9800998ecf8427e'
-        signed_data = (request_type + '#' + url + '#' + self.api_key + '#' + str(nonce) + '#' + md5_empty_post).encode()
+        md5_empty = 'd41d8cd98f00b204e9800998ecf8427e'  # this is md5('')
+        signed_data = '#'.join(request_type, url, self.api_key, nonce, md5_empty).encode()
         signature = hmac.new(
             self.secret,
             signed_data,
@@ -147,7 +131,7 @@ class Bitcoinde(ExchangeInterface):
         else:
             request_path = request_path_no_args + '?' + urlencode(options)
 
-        nonce = int(time.time() * 1000)
+        nonce = str(int(time.time() * 1000))
         request_url = self.uri + request_path
 
         self._generate_signature(
@@ -157,7 +141,7 @@ class Bitcoinde(ExchangeInterface):
         )
 
         self.session.headers.update({
-            'x-api-nonce': str(nonce),
+            'x-api-nonce': nonce,
         })
         if data != '':
             self.session.headers.update({
@@ -165,7 +149,7 @@ class Bitcoinde(ExchangeInterface):
                 'Content-Length': str(len(data)),
             })
 
-        log.debug('Bitmex API Query', verb=verb, request_url=request_url)
+        log.debug('Bitcoin.de API Query', verb=verb, request_url=request_url)
 
         response = getattr(self.session, verb)(request_url, data=data)
 
@@ -187,61 +171,37 @@ class Bitcoinde(ExchangeInterface):
 
         return json_ret
 
-    def _api_query_dict(
-            self,
-            verb: str,
-            path: str,
-            options: Optional[Dict] = None,
-    ) -> Dict:
-        result = self._api_query(verb, path, options)
-        assert isinstance(result, Dict)
-        return result
-
-    @protect_with_lock()
-    @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[dict], str]:
-
-        try:
-            resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
-            # Bitmex shows only BTC balance
-            returned_balances = {}
-            usd_price = Inquirer().find_usd_price(A_BTC)
-        except RemoteError as e:
-            msg = f'Bitmex API request failed due to: {str(e)}'
-            log.error(msg)
-            return None, msg
-
-        # result is in satoshis
-        amount = satoshis_to_btc(FVal(resp['amount']))
-        usd_value = amount * usd_price
-
-        returned_balances[A_BTC] = {
-            'amount': amount,
-            'usd_value': usd_value,
-        }
-        log.debug(
-            'Bitmex balance query result',
-            sensitive_log=True,
-            currency='BTC',
-            amount=amount,
-            usd_value=usd_value,
-        )
-
-        return returned_balances, ''
-
     def query_online_trade_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List:
-        resp = self._api_query('get', 'trades', {'state': '1'})
-        resp_trades = resp['trades']
+
+        page = 1
+        resp_trades = []
+
+        while True:
+            resp = self._api_query('get', 'trades', {'state': 1, 'page': page})
+            resp_trades.extend(resp['trades'])
+
+            if not 'page' in resp:
+                break
+
+            if resp['page']['current'] >= resp['page']['last']:
+                break
+
+            page = resp['page']['current'] + 1
 
         log.debug('Bitcoin.de trade history query', results_num=len(resp_trades))
 
         trades = []
         for tx in resp_trades:
-            timestamp = iso8601ts_to_timestamp(tx['successfully_finished_at'])
+            try:
+                timestamp = iso8601ts_to_timestamp(tx['successfully_finished_at'])
+            except KeyError:
+                # For very old trades (2013) bitcoin.de does not return 'successfully_finished_at'
+                timestamp = iso8601ts_to_timestamp(tx['trade_marked_as_paid_at'])
+
             if tx['state'] != 1:
                 continue
             if timestamp and timestamp < start_ts:
