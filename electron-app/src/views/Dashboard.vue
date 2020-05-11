@@ -1,11 +1,11 @@
 <template>
   <v-container>
-    <v-row class="ma-0">
+    <v-row>
       <v-col cols="12">
         <overall-balances></overall-balances>
       </v-col>
     </v-row>
-    <v-row class="ma-0 flex" justify="center">
+    <v-row class="mx-0 flex" justify="center">
       <v-col cols="12" md="4" lg="4">
         <summary-card
           name="exchange"
