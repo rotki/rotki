@@ -2,6 +2,7 @@ import { default as BigNumber } from 'bignumber.js';
 import {
   ApiDSRBalances,
   ApiDSRHistory,
+  ApiMakerDAOVault,
   ApiManualBalances,
   SupportedAssets
 } from '@/services/types-api';
@@ -9,6 +10,7 @@ import {
   DSRBalances,
   DSRHistory,
   DSRMovement,
+  MakerDAOVault,
   ManualBalance,
   SupportedAsset
 } from '@/services/types-model';
@@ -78,5 +80,22 @@ export function convertSupportedAssets(
   return Object.keys(supportedAssets).map(key => ({
     key,
     ...supportedAssets[key]
+  }));
+}
+
+export function convertMakerDAOVaults(
+  vaults: ApiMakerDAOVault[]
+): MakerDAOVault[] {
+  return vaults.map(vault => ({
+    identifier: vault.identifier,
+    name: vault.name,
+    collateralAsset: vault.collateral_asset,
+    collateralAmount: bigNumberify(vault.collateral_amount),
+    debtValue: bigNumberify(vault.debt_value),
+    liquidationRatio: vault.liquidation_ratio,
+    collateralizationRatio:
+      vault.collateralization_ratio === null
+        ? undefined
+        : vault.collateralization_ratio
   }));
 }

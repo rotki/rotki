@@ -7,6 +7,7 @@ import {
 import {
   DSRBalances,
   DSRHistory,
+  MakerDAOVault,
   ManualBalance,
   SupportedAsset
 } from '@/services/types-model';
@@ -75,6 +76,9 @@ export const mutations: MutationTree<BalanceState> = {
   },
   manualBalances(state: BalanceState, manualBalances: ManualBalance[]) {
     state.manualBalances = manualBalances;
+  },
+  makerDAOVaults(state: BalanceState, makerDAOVaults: MakerDAOVault[]) {
+    state.makerDAOVaults = makerDAOVaults;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset(state: BalanceState) {

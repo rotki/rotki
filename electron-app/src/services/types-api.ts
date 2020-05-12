@@ -48,3 +48,13 @@ export interface ApiManualBalanceWithValue extends ApiManualBalance {
 export interface ApiManualBalances {
   readonly balances: ApiManualBalanceWithValue[];
 }
+
+export interface ApiMakerDAOVault {
+  readonly identifier: number;
+  readonly name: string;
+  readonly collateral_asset: string;
+  readonly collateral_amount: string;
+  readonly debt_value: string;
+  readonly collateralization_ratio: string | null;
+  readonly liquidation_ratio: string;
+}
