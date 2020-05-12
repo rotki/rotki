@@ -2,7 +2,25 @@
   <v-row class="fiat-balances">
     <v-col>
       <v-card>
-        <v-card-title>Fiat Balances</v-card-title>
+        <v-card-title>
+          Fiat Balances
+          <v-tooltip bottom style="z-index: 200;">
+            <template #activator="{ on }">
+              <v-icon
+                small
+                class="mb-3 ml-1 summary-card__header__tooltip"
+                v-on="on"
+              >
+                fa fa-info-circle
+              </v-icon>
+            </template>
+            <div>
+              When aggregating, fiat balances will be<br />
+              reported together with Manual Balances<br />
+              with a location of "banks".
+            </div>
+          </v-tooltip>
+        </v-card-title>
         <v-card-text>
           <v-select
             v-model="selectedCurrency"
