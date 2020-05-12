@@ -19,7 +19,7 @@
           <amount-display
             show-currency="symbol"
             fiat-currency="USD"
-            :value="amount"
+            :value="amountToRender"
           ></amount-display>
         </span>
       </v-list-item-title>
@@ -30,10 +30,16 @@
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 
+const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances'); // this is only until we deprecate fiat balances
+
 @Component({
-  components: { AmountDisplay }
+  components: { AmountDisplay },
+  computed: {
+    ...mapBalanceGetters(['fiatTotal']) // this is only until we deprecate fiat balances
+  }
 })
 export default class ManualBalanceCardList extends Vue {
   @Prop({ required: true })
@@ -41,6 +47,7 @@ export default class ManualBalanceCardList extends Vue {
   @Prop({ required: true })
   amount!: BigNumber;
 
+  fiatTotal!: BigNumber; // this is only until we deprecate fiat balances
   manualBalanceIcons = {
     external: 'book',
     banks: 'bank',
@@ -50,6 +57,13 @@ export default class ManualBalanceCardList extends Vue {
     fiat: 'money',
     blockchain: 'link'
   };
+
+  get amountToRender(): BigNumber {
+    if (this.name === 'banks') {
+      return this.amount.plus(this.fiatTotal);
+    }
+    return this.amount;
+  }
 
   doNothing() {}
 }

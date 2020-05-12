@@ -1,8 +1,25 @@
 <template>
   <v-card :loading="isLoading" class="pb-3">
-    <v-row no-gutters class="pa-3 rotkibeige primary--text">
+    <v-row
+      no-gutters
+      class="pa-3 rotkibeige primary--text summary-card__header"
+    >
       <v-toolbar-title class="font-weight-medium">
         {{ name }} balances
+        <v-tooltip v-if="this.$slots.tooltip" bottom>
+          <template #activator="{ on }">
+            <v-icon
+              small
+              class="mb-3 ml-1 summary-card__header__tooltip"
+              v-on="on"
+            >
+              fa fa-info-circle
+            </v-icon>
+          </template>
+          <div>
+            <slot name="tooltip"></slot>
+          </div>
+        </v-tooltip>
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <span>
@@ -64,6 +81,13 @@ export default class SummaryCard extends Vue {
     &:hover {
       filter: grayscale(0);
     }
+  }
+
+  &__header__tooltip {
+    visibility: hidden;
+  }
+  &__header:hover .summary-card__header__tooltip {
+    visibility: visible;
   }
 }
 </style>

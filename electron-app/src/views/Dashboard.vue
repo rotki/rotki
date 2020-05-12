@@ -13,6 +13,9 @@
           :is-loading="exchangeIsLoading"
           @refresh="refreshBalance($event)"
         >
+          <div slot="tooltip">
+            Aggregate value of all balances<br />in each configured exchange.
+          </div>
           <exchange-box
             v-for="exchange in exchanges"
             :key="exchange.name + '_new'"
@@ -28,6 +31,9 @@
           can-refresh
           @refresh="refreshBalance($event)"
         >
+          <div slot="tooltip">
+            Aggregate value of all configured<br />addresses in each blockchain.
+          </div>
           <blockchain-balance-card-list
             v-for="(usdValue, protocol) in blockchainTotals"
             :key="protocol"
@@ -37,17 +43,19 @@
         </summary-card>
       </v-col>
       <v-col cols="12" md="4" lg="4">
-        <summary-card name="manual">
+        <summary-card
+          name="manual"
+          tooltip="Aggregate value of manual balances entered. Fiat balances are aggregated in the banks entry."
+        >
+          <div slot="tooltip">
+            Aggregate value of manual balances entered.<br />Fiat balances are
+            aggregated in the banks entry.
+          </div>
           <manual-balance-card-list
             v-for="(usdValue, location) in manualBalanceByLocation"
             :key="location"
             :name="location"
             :amount="usdValue"
-          ></manual-balance-card-list>
-          <manual-balance-card-list
-            key="fiat"
-            name="fiat"
-            :amount="fiatTotal"
           ></manual-balance-card-list>
         </summary-card>
       </v-col>
@@ -183,7 +191,6 @@ interface BlockchainBalances {
       'exchanges',
       'manualBalanceByLocation',
       'aggregatedBalances',
-      'fiatTotal',
       'ethAccounts',
       'btcAccounts',
       'blockchainTotal'
@@ -194,7 +201,6 @@ export default class Dashboard extends Vue {
   currency!: Currency;
   floatingPrecision!: number;
   exchanges!: ExchangeInfo;
-  fiatTotal!: BigNumber;
   blockchainTotal!: BigNumber;
   ethAccounts!: AccountBalance[];
   btcAccounts!: AccountBalance[];
