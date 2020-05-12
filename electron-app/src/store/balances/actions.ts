@@ -336,6 +336,22 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         { root: true }
       );
     }
+  },
+
+  async fetchMakerDAOVaults({ commit }) {
+    try {
+      const makerDAOVaults = await api.makerDAOVaults();
+      commit('makerDAOVaults', makerDAOVaults);
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'MakerDAO Vaults',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
   }
 };
 

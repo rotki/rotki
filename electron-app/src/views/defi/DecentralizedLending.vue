@@ -2,12 +2,12 @@
   <v-container>
     <v-row>
       <v-col>
-        <h1>Decentralized Loans</h1>
+        <h1>Decentralized Lending</h1>
       </v-col>
     </v-row>
     <v-row>
       <v-col>
-        <loans></loans>
+        <lending></lending>
       </v-col>
     </v-row>
   </v-container>
@@ -15,10 +15,10 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import Loans from '@/components/defi/Loans.vue';
+import Lending from '@/components/defi/Lending.vue';
 
 @Component({
-  components: { Loans }
+  components: { Lending }
 })
 export default class DecentralizedLoans extends Vue {}
 </script>

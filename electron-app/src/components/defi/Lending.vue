@@ -11,34 +11,18 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="12" class="loans__cards">
-        <v-card>
-          <v-card-title>
-            Current DSR
-          </v-card-title>
-          <v-card-text> {{ currentDSR.dp(2) }}% </v-card-text>
-        </v-card>
-        <v-card>
-          <v-card-title>
-            Total DAI locked
-          </v-card-title>
-          <v-card-text>
-            {{ totalDai.dp(decimals) }}
-          </v-card-text>
-        </v-card>
-        <v-card>
-          <v-card-title>
-            Total DAI earned
-            <v-spacer v-if="!premium"></v-spacer>
-            <premium-lock v-if="!premium"></premium-lock>
-          </v-card-title>
-          <v-card-text>
-            <span v-if="premium">
-              {{ totalGain.dp(decimals) }}
-            </span>
-            <span v-else> </span>
-          </v-card-text>
-        </v-card>
+      <v-col>
+        <stat-card title="Current DSR"> {{ currentDSR.dp(2) }}% </stat-card>
+      </v-col>
+      <v-col>
+        <stat-card title="Total DAI locked">
+          {{ totalDai.dp(decimals) }}
+        </stat-card>
+      </v-col>
+      <v-col>
+        <stat-card title="Total DAI earned" :locked="!premium">
+          {{ totalGain.dp(decimals) }}
+        </stat-card>
       </v-col>
     </v-row>
     <v-row>
@@ -54,28 +38,15 @@
       </v-col>
     </v-row>
     <v-row v-if="!!selection">
-      <v-col cols="12" class="loans__cards">
-        <v-card>
-          <v-card-title>
-            DAI locked
-          </v-card-title>
-          <v-card-text>
-            {{ selection.balance.dp(decimals) }}
-          </v-card-text>
-        </v-card>
-        <v-card>
-          <v-card-title>
-            DAI earned
-            <v-spacer v-if="!premium"></v-spacer>
-            <premium-lock v-if="!premium"></premium-lock>
-          </v-card-title>
-          <v-card-text>
-            <span v-if="premium">
-              {{ accountGain(selection.address).dp(decimals) }}
-            </span>
-            <span v-else> </span>
-          </v-card-text>
-        </v-card>
+      <v-col>
+        <stat-card title="DAI locked">
+          {{ selection.balance.dp(decimals) }}
+        </stat-card>
+      </v-col>
+      <v-col>
+        <stat-card title="DAI earned" :locked="!premium">
+          {{ accountGain(selection.address).dp(decimals) }}
+        </stat-card>
       </v-col>
     </v-row>
     <v-row class="loans__history">
@@ -102,6 +73,7 @@ import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
 import { Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { TaskType } from '@/model/task';
@@ -117,6 +89,7 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 
 @Component({
   components: {
+    StatCard,
     ProgressScreen,
     PremiumLock,
     DsrMovementHistory
@@ -134,7 +107,7 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
     ])
   }
 })
-export default class Loans extends Vue {
+export default class Lending extends Vue {
   premium!: boolean;
   floatingPrecision!: number;
   currentDSR!: BigNumber;
@@ -169,42 +142,3 @@ export default class Loans extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss">
-.loans {
-  &__account-selector {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-
-  &__history {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-
-  &__cards {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    align-content: space-evenly;
-    ::v-deep {
-      .v-card {
-        margin: 12px;
-        width: 100%;
-        padding-bottom: 12px;
-        padding-left: 12px;
-        padding-right: 12px;
-        .v-card__title {
-          font-size: 16px;
-          color: #646464;
-        }
-        .v-card__text {
-          padding-top: 12px;
-          font-weight: 500;
-          font-size: 32px;
-        }
-      }
-    }
-  }
-}
-</style>

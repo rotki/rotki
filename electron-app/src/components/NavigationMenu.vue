@@ -59,9 +59,14 @@
         </v-list-item>
       </template>
 
-      <v-list-item to="/defi/loans" class="navigation__defi__loans">
+      <v-list-item to="/defi/lending" class="navigation__defi__lending">
         <v-list-item-content>
-          <v-list-item-title>Loans</v-list-item-title>
+          <v-list-item-title>Lending</v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+      <v-list-item to="/defi/borrowing" class="navigation__defi__borrowing">
+        <v-list-item-content>
+          <v-list-item-title>Borrowing</v-list-item-title>
         </v-list-item-content>
       </v-list-item>
     </v-list-group>

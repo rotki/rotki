@@ -8,6 +8,7 @@ import {
 import {
   DSRBalances,
   DSRHistory,
+  MakerDAOVault,
   ManualBalance,
   SupportedAsset
 } from '@/services/types-model';
@@ -33,6 +34,7 @@ export interface BalanceState {
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalance[];
   manualBalanceByLocation: ManualBalanceByLocation;
+  makerDAOVaults: MakerDAOVault[];
 }
 
 export const defaultState = (): BalanceState => ({
@@ -52,7 +54,8 @@ export const defaultState = (): BalanceState => ({
   },
   supportedAssets: [],
   manualBalances: [],
-  manualBalanceByLocation: {}
+  manualBalanceByLocation: {},
+  makerDAOVaults: []
 });
 
 export const state: BalanceState = defaultState();
