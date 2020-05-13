@@ -1,24 +1,13 @@
 <template>
   <v-card class="overall-balances-box mt-3 mb-6" :loading="isLoading">
     <v-row no-gutters>
-      <v-col
-        cols="12"
-        md="4"
-        lg="4"
-        style="display: flex; flex-direction: column; justify-content: center;"
-      >
-        <div
-          class="rotkibeige display-3 pa-5 primary--text font-weight-bold"
-          style="height: 100%; width; 100%;"
-        >
+      <v-col cols="12" md="4" lg="4" class="d-flex flex-column justify-center">
+        <div class="rotkibeige display-3 pa-5 primary--text font-weight-bold">
           net worth
         </div>
       </v-col>
       <v-col cols="12" md="8" lg="8">
-        <div
-          class="display-3 pa-5"
-          style="display: flex; justify-content: center; align-items: center; height: 100%; width; 100%;"
-        >
+        <div class="display-3 pa-5 d-flex justify-center align-center">
           <amount-display
             show-currency="symbol"
             :fiat-currency="currency.ticker_symbol"
