@@ -114,28 +114,51 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }, Zero);
   },
 
+  // simplify the manual balances object so that we can easily reduce it
   manualBalanceByLocation: (state: BalanceState) => {
-    const simplifyManualBalances = state.manualBalances.map(
-      perLocationBalance => {
-        const { location, usdValue }: ManualBalancesByLocation = {
-          location: perLocationBalance.location,
-          usdValue: perLocationBalance.usdValue
-        };
-        return { location, usdValue };
-      }
-    );
-    const aggregateManualBalancesByLocation: ManualBalanceByLocation = simplifyManualBalances.reduce(
+    const fiatTotal = state.fiatBalances.reduce((sum, balance) => {
+      return sum.plus(balance.usdValue);
+    }, Zero);
+
+    const manualBalances = state.manualBalances;
+
+    const simplifyManualBalances = manualBalances.map(perLocationBalance => {
+      let { location, usdValue }: ManualBalancesByLocation = {
+        location: perLocationBalance.location,
+        usdValue: perLocationBalance.usdValue
+      };
+      return { location, usdValue };
+    });
+
+    // Aggregate all balances per location
+    let aggregateManualBalancesByLocation: ManualBalanceByLocation = simplifyManualBalances.reduce(
       (
         result: ManualBalanceByLocation,
         manualBalance: ManualBalancesByLocation
       ) => {
-        result[manualBalance.location]
-          ? result[manualBalance.location].plus(manualBalance.usdValue)
-          : (result[manualBalance.location] = manualBalance.usdValue);
+        if (result[manualBalance.location]) {
+          // if the location exists on the reduced object, add the usdValue of the current item to the previous total
+          result[manualBalance.location] = result[manualBalance.location].plus(
+            manualBalance.usdValue
+          );
+        } else {
+          // otherwise create the location and initiate its value
+          result[manualBalance.location] = manualBalance.usdValue;
+        }
         return result;
       },
       {}
     );
+
+    // Add fiat total to the banks aggregate
+    if (aggregateManualBalancesByLocation.banks) {
+      aggregateManualBalancesByLocation.banks = aggregateManualBalancesByLocation.banks.plus(
+        fiatTotal
+      );
+    } else {
+      if (fiatTotal !== Zero)
+        aggregateManualBalancesByLocation.banks = fiatTotal;
+    }
 
     return aggregateManualBalancesByLocation;
   },

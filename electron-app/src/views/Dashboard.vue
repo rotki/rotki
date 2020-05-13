@@ -2,7 +2,9 @@
   <v-container>
     <v-row>
       <v-col cols="12">
-        <overall-balances></overall-balances>
+        <overall-balances
+          :is-loading="blockchainIsLoading || exchangeIsLoading"
+        ></overall-balances>
       </v-col>
     </v-row>
     <v-row class="mx-0 flex" justify="center">
@@ -16,12 +18,21 @@
           <div slot="tooltip">
             Aggregate value of all balances<br />in each configured exchange.
           </div>
-          <exchange-box
-            v-for="exchange in exchanges"
-            :key="exchange.name + '_new'"
-            :name="exchange.name"
-            :amount="exchange.total"
-          ></exchange-box>
+          <div v-if="exchanges.length < 1">
+            <v-card-actions>
+              <v-btn text color="primary" to="/settings/api-keys">
+                Add an exchange
+              </v-btn>
+            </v-card-actions>
+          </div>
+          <div v-else>
+            <exchange-box
+              v-for="exchange in exchanges"
+              :key="exchange.name + '_new'"
+              :name="exchange.name"
+              :amount="exchange.total"
+            ></exchange-box>
+          </div>
         </summary-card>
       </v-col>
       <v-col cols="12" md="4" lg="4">
@@ -34,12 +45,26 @@
           <div slot="tooltip">
             Aggregate value of all configured<br />addresses in each blockchain.
           </div>
-          <blockchain-balance-card-list
-            v-for="(usdValue, protocol) in blockchainTotals"
-            :key="protocol"
-            :name="protocol"
-            :amount="usdValue"
-          ></blockchain-balance-card-list>
+          <div
+            v-if="
+              blockchainTotals.ethereum === zero &&
+              blockchainTotals.bitcoin === zero
+            "
+          >
+            <v-card-actions>
+              <v-btn text color="primary" to="/blockchain-accounts">
+                Add blockchain address
+              </v-btn>
+            </v-card-actions>
+          </div>
+          <div v-else>
+            <blockchain-balance-card-list
+              v-for="(usdValue, protocol) in blockchainTotals"
+              :key="protocol"
+              :name="protocol"
+              :amount="usdValue"
+            ></blockchain-balance-card-list>
+          </div>
         </summary-card>
       </v-col>
       <v-col cols="12" md="4" lg="4">
@@ -51,12 +76,21 @@
             Aggregate value of manual balances entered.<br />Fiat balances are
             aggregated in the banks entry.
           </div>
-          <manual-balance-card-list
-            v-for="(usdValue, location) in manualBalanceByLocation"
-            :key="location"
-            :name="location"
-            :amount="usdValue"
-          ></manual-balance-card-list>
+          <div v-if="Object.keys(manualBalanceByLocation).length < 1">
+            <v-card-actions>
+              <v-btn text color="primary" to="/blockchain-accounts">
+                Add a manual balance
+              </v-btn>
+            </v-card-actions>
+          </div>
+          <div v-else>
+            <manual-balance-card-list
+              v-for="(usdValue, location) in manualBalanceByLocation"
+              :key="location"
+              :name="location"
+              :amount="usdValue"
+            ></manual-balance-card-list>
+          </div>
         </summary-card>
       </v-col>
     </v-row>
@@ -213,6 +247,8 @@ export default class Dashboard extends Vue {
 
   aggregatedBalances!: AssetBalance[];
   manualBalanceByLocation!: ManualBalanceByLocation;
+
+  zero: BigNumber = Zero;
 
   get blockchainTotals(): BlockchainBalances {
     const ethereumTotal = this.ethAccounts.reduce(

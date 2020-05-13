@@ -95,10 +95,7 @@ export default class AmountDisplay extends Vue {
         .plus(BigNumber.random(2));
     }
 
-    if (
-      this.$props.amount &&
-      this.$props.fiatCurrency === this.currency.ticker_symbol
-    ) {
+    if (this.amount && this.fiatCurrency === this.currency.ticker_symbol) {
       valueToRender = this.$props.amount;
     } else {
       valueToRender = this.$props.value;
