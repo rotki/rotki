@@ -31,6 +31,21 @@ function balanceSum(value: BigNumber[]): BigNumber {
   );
 }
 
+function aggregateTotal(
+  balances: any[],
+  mainCurrency: string,
+  exchangeRate: number
+): BigNumber {
+  return balances.reduce((previousValue, currentValue) => {
+    if (currentValue.asset === mainCurrency) {
+      return previousValue.plus(currentValue.amount);
+    }
+    return previousValue.plus(
+      currentValue.usdValue.multipliedBy(bigNumberify(exchangeRate))
+    );
+  }, Zero);
+}
+
 function splitOnCapital(value: string) {
   return (
     value.charAt(0).toLocaleUpperCase() +
@@ -47,4 +62,5 @@ Vue.filter('formatDate', formatDate);
 Vue.filter('formatPrice', formatPrice);
 Vue.filter('calculatePrice', calculatePrice);
 Vue.filter('balanceSum', balanceSum);
+Vue.filter('aggregateTotal', aggregateTotal);
 Vue.filter('splitOnCapital', splitOnCapital);

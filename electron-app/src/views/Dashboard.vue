@@ -121,9 +121,13 @@
                 <td></td>
                 <td class="text-end">
                   <amount-display
-                    fiat-currency="USD"
+                    :fiat-currency="currency.ticker_symbol"
                     :value="
-                      aggregatedBalances.map(val => val.usdValue) | balanceSum
+                      aggregatedBalances
+                        | aggregateTotal(
+                          currency.ticker_symbol,
+                          exchangeRate(currency.ticker_symbol)
+                        )
                     "
                   ></amount-display>
                 </td>
@@ -190,6 +194,7 @@ interface BlockchainBalances {
     ...mapBalanceGetters([
       'exchanges',
       'manualBalanceByLocation',
+      'exchangeRate',
       'aggregatedBalances',
       'ethAccounts',
       'btcAccounts',

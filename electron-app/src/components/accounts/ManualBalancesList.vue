@@ -84,9 +84,15 @@
               <td></td>
               <td class="text-end">
                 <amount-display
-                  fiat-currency="USD"
                   class="manual-balances-list__amount"
-                  :value="visibleBalances.map(val => val.usdValue) | balanceSum"
+                  :fiat-currency="currency.ticker_symbol"
+                  :value="
+                    visibleBalances
+                      | aggregateTotal(
+                        currency.ticker_symbol,
+                        exchangeRate(currency.ticker_symbol)
+                      )
+                  "
                 ></amount-display>
               </td>
             </tr>
