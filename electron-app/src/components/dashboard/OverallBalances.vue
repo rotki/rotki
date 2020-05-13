@@ -21,8 +21,14 @@
         >
           <amount-display
             show-currency="symbol"
-            fiat-currency="USD"
-            :value="total"
+            :fiat-currency="currency.ticker_symbol"
+            :value="
+              aggregatedBalances
+                | aggregateTotal(
+                  currency.ticker_symbol,
+                  exchangeRate(currency.ticker_symbol)
+                )
+            "
           ></amount-display>
         </div>
       </v-col>
@@ -31,14 +37,12 @@
 </template>
 
 <script lang="ts">
-import { default as BigNumber } from 'bignumber.js';
 import { Component, Vue, Prop } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
-import { Zero } from '@/utils/bignumbers';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
@@ -46,7 +50,7 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
   components: { AmountDisplay },
   computed: {
     ...mapGetters(['currency']),
-    ...mapBalanceGetters(['aggregatedBalances'])
+    ...mapBalanceGetters(['aggregatedBalances', 'exchangeRate'])
   }
 })
 export default class OverallBox extends Vue {
@@ -55,13 +59,6 @@ export default class OverallBox extends Vue {
 
   currency!: Currency;
   aggregatedBalances!: AssetBalance[];
-
-  get total(): BigNumber {
-    return this.aggregatedBalances.reduce(
-      (sum, asset) => sum.plus(asset.usdValue),
-      Zero
-    );
-  }
 }
 </script>
 <style scoped lang="scss">

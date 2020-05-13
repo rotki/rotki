@@ -3,6 +3,7 @@
     :id="`${name}_box`"
     :ripple="false"
     class="manual-balance-box__item"
+    to="/blockchain-accounts"
     @click="doNothing"
   >
     <v-list-item-avatar tile class="manual-balance-box__icon">
@@ -19,7 +20,7 @@
           <amount-display
             show-currency="symbol"
             fiat-currency="USD"
-            :value="amountToRender"
+            :value="amount"
           ></amount-display>
         </span>
       </v-list-item-title>
@@ -57,13 +58,6 @@ export default class ManualBalanceCardList extends Vue {
     fiat: 'money',
     blockchain: 'link'
   };
-
-  get amountToRender(): BigNumber {
-    if (this.name === 'banks') {
-      return this.amount.plus(this.fiatTotal);
-    }
-    return this.amount;
-  }
 
   doNothing() {}
 }

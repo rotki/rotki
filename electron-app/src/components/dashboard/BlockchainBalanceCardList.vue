@@ -3,6 +3,7 @@
     v-if="amount !== zero"
     :id="`${name}_box`"
     :ripple="false"
+    to="/blockchain-accounts"
     class="blockchain-balance-box__item"
     @click="doNothing"
   >
