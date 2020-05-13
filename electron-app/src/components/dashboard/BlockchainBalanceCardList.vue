@@ -14,7 +14,7 @@
       ></crypto-icon>
     </v-list-item-avatar>
     <v-list-item-content>
-      <v-list-item-title style="display: flex; justify-content: space-between;">
+      <v-list-item-title class="d-flex justify-space-between">
         <span>
           {{ name[0].toUpperCase() + name.slice(1) }}
         </span>

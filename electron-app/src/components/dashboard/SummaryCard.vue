@@ -1,5 +1,9 @@
 <template>
-  <v-card :loading="isLoading" class="pb-3">
+  <v-card
+    :loading="isLoading"
+    :class="`dashboard__summary-card__${name}`"
+    class="pb-3"
+  >
     <v-row
       no-gutters
       class="pa-3 rotkibeige primary--text summary-card__header"
