@@ -6,6 +6,8 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
+import requests
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
@@ -164,8 +166,10 @@ class Bitmex(ExchangeInterface):
 
         request_url = self.uri + request_path
         log.debug('Bitmex API Query', verb=verb, request_url=request_url)
-
-        response = getattr(self.session, verb)(request_url, data=data)
+        try:
+            response = getattr(self.session, verb)(request_url, data=data)
+        except requests.exceptions.ConnectionError as e:
+            raise RemoteError(f'Bitmex API request failed due to {str(e)}')
 
         if response.status_code not in (200, 401):
             raise RemoteError(
