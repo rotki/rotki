@@ -84,7 +84,7 @@ class DataImporter():
         row_type = csv_row['Type']
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['Date'],
-            formatstr='%d.%m.%Y %H:%M',
+            formatstr='%d.%m.%Y %H:%M:%S',
             location='cointracking.info',
         )
         notes = csv_row['Comment']
