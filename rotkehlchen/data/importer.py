@@ -1,7 +1,7 @@
 import csv
 from itertools import count
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
@@ -12,12 +12,13 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, AssetMovementCa
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_movement_category,
+    deserialize_fee,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.typing import AssetAmount, Fee, Location, Price, TradePair, TradeType
 
 
-def remap_header(fieldnames):
+def remap_header(fieldnames: List[str]) -> List[str]:
     cur_count = count(1)
     mapping = {1: 'Buy', 2: 'Sell', 3: 'Fee'}
     return [f'Cur.{mapping[next(cur_count)]}' if f.startswith('Cur.') else f for f in fieldnames]
@@ -89,7 +90,11 @@ class DataImporter():
         notes = csv_row["Comment"]
         location = exchange_row_to_location(csv_row["Exchange"])
 
-        # TODO: Fees
+        fee = Fee(ZERO)
+        fee_currency = A_USD  # whatever (used only if there is no fee)
+        if csv_row["Fee"] != '':
+            fee = deserialize_fee(csv_row["Fee"])
+            fee_currency = Asset(csv_row["Cur.Fee"])
 
         if row_type == 'Gift/Tip' or row_type == 'Trade':
             base_asset = Asset(csv_row['Cur.Buy'])
@@ -115,8 +120,8 @@ class DataImporter():
                 trade_type=TradeType.BUY,  # It's always a buy during cointracking import
                 amount=base_amount_bought,
                 rate=rate,
-                fee=Fee(ZERO),  # There are no fees when import from cointracking
-                fee_currency=base_asset,
+                fee=fee,
+                fee_currency=fee_currency,
                 link='',
                 notes=notes,
             )
@@ -136,8 +141,8 @@ class DataImporter():
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
-                fee_asset=asset,
-                fee=Fee(ZERO),
+                fee=fee,
+                fee_asset=fee_currency,
                 link='',
             )
             self.db.add_asset_movements([asset_movement])
