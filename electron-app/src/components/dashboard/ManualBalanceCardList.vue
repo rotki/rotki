@@ -12,14 +12,14 @@
       </v-icon>
     </v-list-item-avatar>
     <v-list-item-content>
-      <v-list-item-title style="display: flex; justify-content: space-between;">
+      <v-list-item-title class="d-flex justify-space-between">
         <span>
           {{ name[0].toUpperCase() + name.slice(1) }}
         </span>
         <span class="text-end">
           <amount-display
             show-currency="symbol"
-            fiat-currency="USD"
+            :fiat-currency="currency.ticker_symbol"
             :value="amount"
           ></amount-display>
         </span>
@@ -33,12 +33,15 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { Currency } from '@/model/currency';
 
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances'); // this is only until we deprecate fiat balances
+const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
   components: { AmountDisplay },
   computed: {
+    ...mapGetters(['currency']),
     ...mapBalanceGetters(['fiatTotal']) // this is only until we deprecate fiat balances
   }
 })
@@ -48,6 +51,7 @@ export default class ManualBalanceCardList extends Vue {
   @Prop({ required: true })
   amount!: BigNumber;
 
+  currency!: Currency;
   fiatTotal!: BigNumber; // this is only until we deprecate fiat balances
   manualBalanceIcons = {
     external: 'book',
