@@ -1,4 +1,4 @@
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
@@ -32,8 +32,8 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('0.05772716')),
         rate=Price(FVal('190.3783245183029963712055123')),
-        fee=Fee(ZERO),
-        fee_currency=A_ETH,
+        fee=Fee(FVal("0.02")),
+        fee_currency=A_EUR,
         link='',
         notes='',
     ), Trade(
@@ -44,9 +44,20 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         amount=AssetAmount(FVal('0.00100000')),
         rate=Price(ZERO),
         fee=Fee(ZERO),
-        fee_currency=A_BTC,
+        fee_currency=A_USD,
         link='',
         notes='Just a small gift from someone',
+    ), Trade(
+        timestamp=Timestamp(1567504800),
+        location=Location.EXTERNAL,
+        pair=TradePair('ETH_USD'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('2')),
+        rate=Price(ZERO),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes='Sign up bonus',
     )]
     assert expected_trades == trades
 
@@ -56,7 +67,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         timestamp=Timestamp(1565848620),
         asset=A_XMR,
         amount=AssetAmount(FVal('5')),
-        fee_asset=A_XMR,
+        fee_asset=A_USD,
         fee=Fee(ZERO),
         link='',
     ), AssetMovement(
@@ -66,7 +77,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         asset=A_ETH,
         amount=AssetAmount(FVal('0.05770427')),
         fee_asset=A_ETH,
-        fee=Fee(ZERO),
+        fee=Fee(FVal("0.0001")),
         link='',
     )]
     assert expected_movements == asset_movements
