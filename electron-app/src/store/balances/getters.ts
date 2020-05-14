@@ -13,7 +13,7 @@ import {
 import { BalanceState } from '@/store/balances/state';
 import { RotkehlchenState } from '@/store/store';
 import { AccountDSRMovement, Blockchain, DSRBalance } from '@/typing/types';
-import { Zero } from '@/utils/bignumbers';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 
 export const getters: GetterTree<BalanceState, RotkehlchenState> = {
@@ -115,17 +115,35 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   },
 
   // simplify the manual balances object so that we can easily reduce it
-  manualBalanceByLocation: (state: BalanceState) => {
-    const fiatTotal = state.fiatBalances.reduce((sum, balance) => {
-      return sum.plus(balance.usdValue);
-    }, Zero);
+  manualBalanceByLocation: (
+    state: BalanceState,
+    balanceGetters,
+    rootGetters
+  ) => {
+    const fiatTotal = balanceGetters.fiatTotal;
+    const mainCurrency =
+      rootGetters.session?.settings.selectedCurrency.ticker_symbol;
 
     const manualBalances = state.manualBalances;
+    const exchangeRate = balanceGetters.exchangeRate(mainCurrency);
 
     const simplifyManualBalances = manualBalances.map(perLocationBalance => {
+      // because we mix different assets we need to convert them before they are aggregated
+      // thus in amount display we always pass the manualBalanceByLocation in the user's main currency
+      let convertedValue: BigNumber;
+      if (mainCurrency === perLocationBalance.asset) {
+        convertedValue = perLocationBalance.amount;
+      } else {
+        convertedValue = perLocationBalance.usdValue.multipliedBy(
+          bigNumberify(exchangeRate)
+        );
+      }
+
+      // to avoid double-conversion, we take as usdValue the amount property when the original asset type and
+      // user's main currency coincide
       let { location, usdValue }: ManualBalancesByLocation = {
         location: perLocationBalance.location,
-        usdValue: perLocationBalance.usdValue
+        usdValue: convertedValue
       };
       return { location, usdValue };
     });
@@ -145,6 +163,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
           // otherwise create the location and initiate its value
           result[manualBalance.location] = manualBalance.usdValue;
         }
+
         return result;
       },
       {}
@@ -153,11 +172,13 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     // Add fiat total to the banks aggregate
     if (aggregateManualBalancesByLocation.banks) {
       aggregateManualBalancesByLocation.banks = aggregateManualBalancesByLocation.banks.plus(
-        fiatTotal
+        fiatTotal.multipliedBy(bigNumberify(exchangeRate))
       );
     } else {
       if (fiatTotal !== Zero)
-        aggregateManualBalancesByLocation.banks = fiatTotal;
+        aggregateManualBalancesByLocation.banks = fiatTotal.multipliedBy(
+          bigNumberify(exchangeRate)
+        );
     }
 
     return aggregateManualBalancesByLocation;
