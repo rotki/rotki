@@ -27,10 +27,6 @@
                 fees.
               </li>
               <li>
-                All timestamps are rounded up to the minute. That is extremely
-                innacurate for fast paced trading.
-              </li>
-              <li>
                 All trades imported from Cointracking will always be considered
                 as buys due to the way the data are represented.
               </li>

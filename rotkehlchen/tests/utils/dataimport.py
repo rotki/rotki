@@ -26,7 +26,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     assert len(warnings) == 3
 
     expected_trades = [Trade(
-        timestamp=Timestamp(1566687660),
+        timestamp=Timestamp(1566687719),
         location=Location.COINBASE,
         pair=TradePair('ETH_EUR'),
         trade_type=TradeType.BUY,
@@ -37,7 +37,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         link='',
         notes='',
     ), Trade(
-        timestamp=Timestamp(1567418400),
+        timestamp=Timestamp(1567418410),
         location=Location.EXTERNAL,
         pair=TradePair('BTC_USD'),
         trade_type=TradeType.BUY,
@@ -48,7 +48,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         link='',
         notes='Just a small gift from someone',
     ), Trade(
-        timestamp=Timestamp(1567504800),
+        timestamp=Timestamp(1567504805),
         location=Location.EXTERNAL,
         pair=TradePair('ETH_USD'),
         trade_type=TradeType.BUY,
@@ -64,7 +64,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     expected_movements = [AssetMovement(
         location=Location.POLONIEX,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1565848620),
+        timestamp=Timestamp(1565848624),
         asset=A_XMR,
         amount=AssetAmount(FVal('5')),
         fee_asset=A_USD,
@@ -73,7 +73,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=Timestamp(1566726120),
+        timestamp=Timestamp(1566726155),
         asset=A_ETH,
         amount=AssetAmount(FVal('0.05770427')),
         fee_asset=A_ETH,
