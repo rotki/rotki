@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from urllib.parse import urlencode
 
 import gevent
+import requests
 from gevent.lock import Semaphore
 
 from rotkehlchen.assets.converters import asset_from_binance
@@ -243,8 +244,10 @@ class Binance(ExchangeInterface):
                 request_url += urlencode(options)
 
                 log.debug('Binance API request', request_url=request_url)
-
-                response = self.session.get(request_url)
+                try:
+                    response = self.session.get(request_url)
+                except requests.exceptions.ConnectionError as e:
+                    raise RemoteError(f'Binance API request failed due to {str(e)}')
 
             limit_ban = response.status_code == 429 and backoff > self.backoff_limit
             if limit_ban or response.status_code not in (200, 429):

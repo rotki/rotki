@@ -6,6 +6,8 @@ from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
+import requests
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
@@ -267,7 +269,10 @@ class Coinbase(ExchangeInterface):
             'CB-VERSION': '2019-08-25',
         })
         full_url = self.base_uri + request_url
-        response = self.session.get(full_url)
+        try:
+            response = self.session.get(full_url)
+        except requests.exceptions.ConnectionError as e:
+            raise RemoteError(f'Coinbase API request failed due to {str(e)}')
 
         if response.status_code == 403:
             raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')

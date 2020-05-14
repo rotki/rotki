@@ -5,6 +5,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
 
+import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -251,7 +252,10 @@ class Bittrex(ExchangeInterface):
         ).hexdigest()
         self.session.headers.update({'apisign': signature})
         log.debug('Bittrex API query', request_url=request_url)
-        response = self.session.get(request_url)
+        try:
+            response = self.session.get(request_url)
+        except requests.exceptions.ConnectionError as e:
+            raise RemoteError(f'Bittrex API request failed due to {str(e)}')
 
         if response.status_code != 200:
             raise RemoteError(

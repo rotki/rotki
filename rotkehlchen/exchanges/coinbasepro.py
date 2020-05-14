@@ -105,9 +105,9 @@ class Coinbasepro(ExchangeInterface):
             self._api_query('accounts')
         except CoinbaseProPermissionError:
             msg = (
-                f'Provided Coinbase Pro API key needs to have "View" permission activated. '
-                f'Please log into your coinbase account and create a key with '
-                f'the required permissions.'
+                'Provided Coinbase Pro API key needs to have "View" permission activated. '
+                'Please log into your coinbase account and create a key with '
+                'the required permissions.'
             )
             return False, msg
         except RemoteError as e:

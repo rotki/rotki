@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 import gevent
+import requests
 from gevent.lock import Semaphore
 from requests import Response
 
@@ -391,7 +392,11 @@ class Kraken(ExchangeInterface):
         if req is None:
             req = {}
         urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
-        response = self.session.post(urlpath, data=req)
+        try:
+            response = self.session.post(urlpath, data=req)
+        except requests.exceptions.ConnectionError as e:
+            raise RemoteError(f'Kraken API request failed due to {str(e)}')
+
         self._manage_call_counter(method)
         return _check_and_get_response(response, method)
 
@@ -472,10 +477,13 @@ class Kraken(ExchangeInterface):
             self.session.headers.update({
                 'API-Sign': base64.b64encode(signature.digest()),  # type: ignore
             })
-            response = self.session.post(
-                KRAKEN_BASE_URL + urlpath,
-                data=post_data.encode(),
-            )
+            try:
+                response = self.session.post(
+                    KRAKEN_BASE_URL + urlpath,
+                    data=post_data.encode(),
+                )
+            except requests.exceptions.ConnectionError as e:
+                raise RemoteError(f'Kraken API request failed due to {str(e)}')
             self._manage_call_counter(method)
 
         return _check_and_get_response(response, method)
