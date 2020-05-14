@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`995` Importing from cointracking.info should now work again. Adjust to the latest cointracking.info CSV export format.
 * :feature:`971` Rotki's initial loading and welcome screens are now integrated with an improved UI and a scrolling robin in the background to welcome the user.
 * :feature:`763` Rotki users can now change their password in the app's settings.
 * :bug:`962` Fix infinite loop in Coinbase trades query

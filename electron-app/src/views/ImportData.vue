@@ -23,6 +23,11 @@
             Important notes for importing data from cointracking's CSV exports.
             <ul>
               <li>
+                They change their format in a backwards incompatible way quite
+                often. As such this import may stop working. If that happens
+                open an issue with rotki and we will see what we can do.
+              </li>
+              <li>
                 Trades/deposits/withdrawals from Cointracking do not include
                 fees.
               </li>
