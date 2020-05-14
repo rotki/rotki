@@ -81,34 +81,34 @@ class DataImporter():
             - IndexError if the CSV file is corrupt
             - UnknownAsset if one of the assets founds in the entry are not supported
         """
-        row_type = csv_row["Type"]
+        row_type = csv_row['Type']
         timestamp = deserialize_timestamp_from_date(
-            date=csv_row["Date"],
+            date=csv_row['Date'],
             formatstr='%d.%m.%Y %H:%M',
             location='cointracking.info',
         )
-        notes = csv_row["Comment"]
-        location = exchange_row_to_location(csv_row["Exchange"])
+        notes = csv_row['Comment']
+        location = exchange_row_to_location(csv_row['Exchange'])
 
         fee = Fee(ZERO)
         fee_currency = A_USD  # whatever (used only if there is no fee)
-        if csv_row["Fee"] != '':
-            fee = deserialize_fee(csv_row["Fee"])
-            fee_currency = Asset(csv_row["Cur.Fee"])
+        if csv_row['Fee'] != '':
+            fee = deserialize_fee(csv_row['Fee'])
+            fee_currency = Asset(csv_row['Cur.Fee'])
 
-        if row_type == 'Gift/Tip' or row_type == 'Trade':
+        if row_type in ('Gift/Tip', 'Trade', 'Income'):
             base_asset = Asset(csv_row['Cur.Buy'])
             quote_asset = None if csv_row['Cur.Sell'] == '' else Asset(csv_row['Cur.Sell'])
-            if not quote_asset and row_type != 'Gift/Tip':
+            if not quote_asset and row_type not in ('Gift/Tip', 'Income'):
                 raise DeserializationError('Got a trade entry with an empty quote asset')
 
             if quote_asset is None:
                 # Really makes no difference as this is just a gift and the amount is zero
                 quote_asset = A_USD
             pair = TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
-            base_amount_bought = deserialize_asset_amount(csv_row["Buy"])
-            if csv_row["Sell"] != '-':
-                quote_amount_sold = deserialize_asset_amount(csv_row["Sell"])
+            base_amount_bought = deserialize_asset_amount(csv_row['Buy'])
+            if csv_row['Sell'] != '-':
+                quote_amount_sold = deserialize_asset_amount(csv_row['Sell'])
             else:
                 quote_amount_sold = AssetAmount(ZERO)
             rate = Price(quote_amount_sold / base_amount_bought)
@@ -129,11 +129,11 @@ class DataImporter():
         elif row_type == 'Deposit' or row_type == 'Withdrawal':
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
-                amount = deserialize_asset_amount(csv_row["Buy"])
-                asset = Asset(csv_row["Cur.Buy"])
+                amount = deserialize_asset_amount(csv_row['Buy'])
+                asset = Asset(csv_row['Cur.Buy'])
             else:
-                amount = deserialize_asset_amount(csv_row["Sell"])
-                asset = Asset(csv_row["Cur.Sell"])
+                amount = deserialize_asset_amount(csv_row['Sell'])
+                asset = Asset(csv_row['Cur.Sell'])
 
             asset_movement = AssetMovement(
                 location=location,
