@@ -4,6 +4,8 @@ import {
   ApiDSRHistory,
   ApiMakerDAOVault,
   ApiManualBalances,
+  ApiVaultDetails,
+  ApiVaultEvent,
   SupportedAssets
 } from '@/services/types-api';
 import {
@@ -12,7 +14,9 @@ import {
   DSRMovement,
   MakerDAOVault,
   ManualBalance,
-  SupportedAsset
+  SupportedAsset,
+  VaultDetails,
+  VaultEvent
 } from '@/services/types-model';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -97,5 +101,27 @@ export function convertMakerDAOVaults(
       vault.collateralization_ratio === null
         ? undefined
         : vault.collateralization_ratio
+  }));
+}
+
+function convertVaultEvents(apiVaultEvents: ApiVaultEvent[]): VaultEvent[] {
+  return apiVaultEvents.map(event => ({
+    eventType: event.event_type,
+    amount: new BigNumber(event.amount),
+    timestamp: event.timestamp,
+    txHash: event.tx_hash
+  }));
+}
+
+export function convertVaultDetails(
+  apiVaultDetails: ApiVaultDetails[]
+): VaultDetails[] {
+  return apiVaultDetails.map(details => ({
+    identifier: details.identifier,
+    liquidationPrice: new BigNumber(details.liquidation_price),
+    collateralUsdValue: new BigNumber(details.collateral_usd_value),
+    creationTs: details.creation_ts,
+    totalInterestOwed: new BigNumber(details.total_interest_owed),
+    events: convertVaultEvents(details.events)
   }));
 }

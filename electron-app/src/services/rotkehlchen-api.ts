@@ -18,14 +18,18 @@ import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { StoredTrade, Trade } from '@/model/stored-trade';
 import { VersionCheck } from '@/model/version-check';
-import { convertMakerDAOVaults } from '@/services/converters';
+import {
+  convertMakerDAOVaults,
+  convertVaultDetails
+} from '@/services/converters';
 import {
   ApiMakerDAOVault,
   ApiManualBalance,
   ApiManualBalances,
+  ApiVaultDetails,
   SupportedAssets
 } from '@/services/types-api';
-import { MakerDAOVault } from '@/services/types-model';
+import { MakerDAOVault, VaultDetails } from '@/services/types-model';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
   AccountSession,
@@ -1422,6 +1426,18 @@ export class RotkehlchenApi {
       )
       .then(this.handleResponse)
       .then(convertMakerDAOVaults);
+  }
+
+  async makerDAOVaultDetails(): Promise<VaultDetails[]> {
+    return this.axios
+      .get<ActionResult<ApiVaultDetails[]>>(
+        '/blockchains/ETH/modules/makerdao/vaultdetails`',
+        {
+          validateStatus: RotkehlchenApi.fetchWithExternalService
+        }
+      )
+      .then(this.handleResponse)
+      .then(convertVaultDetails);
   }
 }
 

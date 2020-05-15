@@ -16,3 +16,10 @@ export enum Location {
   REALESTATE = 'real estate',
   COMMODITIES = 'commodities'
 }
+
+export type VaultEventType =
+  | 'deposit'
+  | 'withdraw'
+  | 'generate'
+  | 'payback'
+  | 'liquidation';
