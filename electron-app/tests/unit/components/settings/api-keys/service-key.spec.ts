@@ -15,7 +15,6 @@ describe('ServiceKey.vue', () => {
     return mount(ServiceKey, {
       store,
       vuetify,
-      attachToDocument: true,
       propsData: {
         value: '',
         title: 'test'

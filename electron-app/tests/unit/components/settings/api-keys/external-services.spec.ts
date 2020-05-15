@@ -29,7 +29,6 @@ describe('ExternalServices.vue', () => {
     return mount(ExternalServices, {
       store,
       vuetify,
-      attachToDocument: true,
       stubs: ['v-dialog'],
       propsData: {
         value: ''
