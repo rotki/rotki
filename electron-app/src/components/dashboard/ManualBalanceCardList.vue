@@ -20,7 +20,7 @@
           <amount-display
             show-currency="symbol"
             :fiat-currency="currency.ticker_symbol"
-            :value="amount"
+            :value="amount | roundDown(2)"
           ></amount-display>
         </span>
       </v-list-item-title>
@@ -35,14 +35,12 @@ import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
 
-const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances'); // this is only until we deprecate fiat balances
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
   components: { AmountDisplay },
   computed: {
-    ...mapGetters(['currency']),
-    ...mapBalanceGetters(['fiatTotal']) // this is only until we deprecate fiat balances
+    ...mapGetters(['currency'])
   }
 })
 export default class ManualBalanceCardList extends Vue {
@@ -52,14 +50,12 @@ export default class ManualBalanceCardList extends Vue {
   amount!: BigNumber;
 
   currency!: Currency;
-  fiatTotal!: BigNumber; // this is only until we deprecate fiat balances
   manualBalanceIcons = {
     external: 'book',
     banks: 'bank',
     equities: 'suitcase',
     realestate: 'home',
     commodities: 'shopping-basket',
-    fiat: 'money',
     blockchain: 'link'
   };
 

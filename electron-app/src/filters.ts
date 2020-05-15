@@ -20,6 +20,10 @@ function formatPrice(value: BigNumber, precision: number) {
   return value.toFormat(precision);
 }
 
+function roundDown(value: BigNumber, precision: number) {
+  return value.toFormat(precision, 1);
+}
+
 function calculatePrice(value: BigNumber, exchangeRate: number): BigNumber {
   return value.multipliedBy(bigNumberify(exchangeRate));
 }
@@ -60,6 +64,7 @@ Vue.filter('percentage', percentage);
 Vue.filter('precision', precision);
 Vue.filter('formatDate', formatDate);
 Vue.filter('formatPrice', formatPrice);
+Vue.filter('roundDown', roundDown);
 Vue.filter('calculatePrice', calculatePrice);
 Vue.filter('balanceSum', balanceSum);
 Vue.filter('aggregateTotal', aggregateTotal);
