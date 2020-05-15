@@ -15,7 +15,7 @@ describe('AccountManagement.vue', () => {
     wrapper = mount(AccountManagement, {
       store,
       vuetify,
-      attachToDocument: true,
+      stubs: ['v-dialog'],
       propsData: {
         logged: true
       }

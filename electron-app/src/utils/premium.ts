@@ -68,7 +68,7 @@ export const DsrMovementHistory = (): Promise<VueConstructor> => {
 
 declare global {
   interface Window {
-    Vue: typeof Vue;
+    Vue: any;
     Chart: typeof Chart;
     moment: typeof moment;
   }
