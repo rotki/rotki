@@ -47,7 +47,6 @@ function aggregateTotal(
 ): BigNumber {
   return balances.reduce((previousValue, currentValue) => {
     if (currentValue.asset === mainCurrency) {
-      console.log('we are here');
       return previousValue.plus(currentValue.amount).dp(precision, 1);
     }
     return previousValue
