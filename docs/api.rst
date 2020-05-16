@@ -2726,7 +2726,9 @@ Getting MakerDAO vaults basic data
               "collateral_amount": "5.232",
               "debt_value": "650",
               "collateralization_ratio": "234.21%",
-              "liquidation_ratio": "150%"
+              "liquidation_ratio": "150%",
+              "liquidation_price": "125.1",
+              "collateral_usd_value": "950.13"
           }, {
               "identifier": 55,
               "name": "USDC-A",
@@ -2734,7 +2736,9 @@ Getting MakerDAO vaults basic data
               "collateral_amount": "150",
               "debt_value": "50",
               "collateralization_ratio": "250.551%",
-              "liquidation_ratio": "150%"
+              "liquidation_ratio": "150%",
+              "liquidation_price": "0.45",
+              "collateral_usd_value": "150"
           }]
           "message": ""
       }
@@ -2747,6 +2751,8 @@ Getting MakerDAO vaults basic data
    :resjsonarr string debt_value: The amount of DAI owed to the vault. So generated DAI plus the stability fee interest.
    :resjsonarr string collateralization_ratio: A string denoting the percentage of collateralization of the vault.
    :resjsonarr string liquidation_ratio: This is the current minimum collateralization ratio. Less than this and the vault is going to get liquidated.
+   :resjsonarr string liquidation_price: The USD price that the asset deposited in the vault as collateral at which the vault is going to get liquidated.
+   :resjsonarr string collateral_usd_value: The current value in USD of all the collateral in the vault according to the MakerDAO price feed.
    :statuscode 200: Vaults succesfuly queried
    :statuscode 409: User is not logged in. Or makerdao module is not activated.
    :statuscode 500: Internal Rotki error.
@@ -2787,8 +2793,6 @@ Getting MakerDAO vault details
       {
           "result": [{
               "identifier": 1,
-              "liquidation_price": "105.01",
-              "collateral_usd_value": "2550.22",
               "creation_ts": 1589067898,
               "total_interest_owed": "0.02341",
               "events": [{
@@ -2804,8 +2808,6 @@ Getting MakerDAO vault details
               }]
           }, {
               "identifier": 56,
-              "liquidation_price": "0.82",
-              "collateral_usd_value": "1500.21",
               "creation_ts": 1589067897,
               "total_interest_owed": "0.000141",
               "events": [{
@@ -2824,8 +2826,6 @@ Getting MakerDAO vault details
       }
 
    :resjson object result: A list of all vault details detected.
-   :resjsonarr string liquidation_price: The USD price that the asset deposited in the vault as collateral at which the vault is going to get liquidated.
-   :resjsonarr string collateral_usd_value: The current value in USD of all the collateral in the vault according to the MakerDAO price feed.
    :resjsonarr int creation_ts: The timestamp of the vault's creation
    :resjson object events: A list of all events that occured for this vault
    :resjsonarr string event_type: The type of the event. Valid types are: ``["deposit", "withdraw", "generate", "payback", "liquidation"]``

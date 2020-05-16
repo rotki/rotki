@@ -105,13 +105,13 @@ class MakerDAOVault(NamedTuple):
     collateralization_ratio: Optional[str]
     # The ratio at which the vault is open for liquidation. (e.g. 1.5 for 150%)
     liquidation_ratio: FVal
-
-
-class MakerDAOVaultDetails(NamedTuple):
     # The USD price of collateral at which the Vault becomes unsafe. None if nothing is locked in.
     liquidation_price: Optional[FVal]
     # The USD value of collateral locked, given the current price according to the price feed
     collateral_usd_value: FVal
+
+
+class MakerDAOVaultDetails(NamedTuple):
     creation_ts: Timestamp
     # Total amount of DAI owed to the vault, past and future as interest rate
     total_interest_owed: FVal
@@ -360,6 +360,12 @@ class MakerDAO(EthereumModule):
         else:
             collateralization_ratio = FVal(collateral_value / debt_value).to_percentage(2)
 
+        collateral_usd_value = price * collateral_amount
+        if collateral_amount == 0:
+            liquidation_price = None
+        else:
+            liquidation_price = (debt_value * liquidation_ratio) / collateral_amount
+
         return MakerDAOVault(
             identifier=identifier,
             name=name,
@@ -368,6 +374,8 @@ class MakerDAO(EthereumModule):
             debt_value=debt_value,
             liquidation_ratio=liquidation_ratio,
             collateralization_ratio=collateralization_ratio,
+            collateral_usd_value=collateral_usd_value,
+            liquidation_price=liquidation_price,
         )
 
     def _query_vault_details(
@@ -381,15 +389,6 @@ class MakerDAO(EthereumModule):
         Premium only. Should always be called only after a vault's data have
         been queried with _query_vault_data()
         """
-
-        collateral_value = self.usd_price[vault.collateral_asset] * vault.collateral_amount
-
-        if vault.collateral_amount == 0:
-            liquidation_price = None
-        else:
-            liquidation_price = (
-                (vault.debt_value * vault.liquidation_ratio) / vault.collateral_amount
-            )
         asset_symbol = vault.collateral_asset.identifier
         # They can raise:
         # ConversionError due to hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -493,6 +492,7 @@ class MakerDAO(EthereumModule):
                 tx_hash=event['transactionHash'],
             ))
 
+        total_dai_wei = 0
         # Get the dai generation events
         argument_filters = {
             'sig': '0xbb35783b',  # move
@@ -511,6 +511,7 @@ class MakerDAO(EthereumModule):
         )
         for event in events:
             given_amount = _shift_num_right_by(hex_or_bytes_to_int(event['topics'][3]), RAY_DIGITS)
+            total_dai_wei += given_amount
             amount = _normalize_amount(
                 asset_symbol='DAI',
                 amount=given_amount,
@@ -536,9 +537,11 @@ class MakerDAO(EthereumModule):
             from_block=MAKERDAO_DAI_JOIN.deployed_block,
         )
         for event in events:
+            given_amount = hex_or_bytes_to_int(event['topics'][3])
+            total_dai_wei -= given_amount
             amount = _normalize_amount(
                 asset_symbol='DAI',
-                amount=hex_or_bytes_to_int(event['topics'][3]),
+                amount=given_amount,
             )
             if amount == ZERO:
                 # it seems there is a zero DAI value transfer from the urn when
@@ -576,9 +579,13 @@ class MakerDAO(EthereumModule):
                 tx_hash=event['transactionHash'],
             ))
 
+        total_interest_owed = _normalize_amount(
+            asset_symbol='DAI',
+            amount=total_dai_wei,
+        ) - vault.debt_value
+
         return MakerDAOVaultDetails(
-            liquidation_price=liquidation_price,
-            collateral_usd_value=collateral_value,
+            total_interest_owed=total_interest_owed,
             creation_ts=creation_ts,
             events=vault_events,
         )
@@ -594,7 +601,7 @@ class MakerDAO(EthereumModule):
         """
         proxy_mappings = self._get_accounts_having_maker_proxy()
         vaults = []
-        vault_extras = []
+        vault_details = []
         for _, proxy in proxy_mappings.items():
             result = self.ethereum.call_contract(
                 contract_address=MAKERDAO_GET_CDPS.address,
