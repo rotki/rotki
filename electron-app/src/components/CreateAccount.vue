@@ -47,16 +47,7 @@
       </v-form>
     </v-card-text>
     <v-card-actions>
-      <v-btn
-        class="create-account__buttons__confirm"
-        depressed
-        color="primary"
-        :disabled="!valid || loading"
-        :loading="loading"
-        @click="confirm()"
-      >
-        Create
-      </v-btn>
+      <v-spacer></v-spacer>
       <v-btn
         class="create-account__buttons__cancel"
         depressed
@@ -66,6 +57,16 @@
         @click="cancel()"
       >
         Cancel
+      </v-btn>
+      <v-btn
+        class="create-account__buttons__confirm"
+        depressed
+        color="primary"
+        :disabled="!valid || loading"
+        :loading="loading"
+        @click="confirm()"
+      >
+        Create
       </v-btn>
     </v-card-actions>
   </div>

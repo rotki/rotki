@@ -59,7 +59,7 @@
     <confirm-dialog
       :display="confirmLogout"
       title="Confirmation Required"
-      message="Are you sure you want to log out of your current rotkehlchen session?"
+      message="Are you sure you want to log out of your current rotki session?"
       @confirm="logout()"
       @cancel="confirmLogout = false"
     ></confirm-dialog>
