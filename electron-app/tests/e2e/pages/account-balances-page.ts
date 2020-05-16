@@ -1,5 +1,6 @@
 import { ApiManualBalance } from '../../../src/services/types-api';
-import { bigNumberify } from '../../../src/utils/bignumbers';
+import { bigNumberify, Zero } from '../../../src/utils/bignumbers';
+import { capitalize } from '../../common/helpers';
 
 export class AccountBalancesPage {
   visit() {
@@ -80,7 +81,7 @@ export class AccountBalancesPage {
 
     cy.get('@row')
       .find('.manual-balances-list__location')
-      .should('contain', balance.location);
+      .should('contain', capitalize(balance.location));
 
     cy.get('@row')
       .find('.asset-details__details__symbol')
@@ -89,6 +90,45 @@ export class AccountBalancesPage {
     for (const tag of balance.tags) {
       cy.get('@row').find('.tag').contains(tag).should('be.visible');
     }
+  }
+
+  getLocationBalances() {
+    const balanceLocations = [
+      { location: 'Blockchain', renderedValue: Zero },
+      { location: 'Banks', renderedValue: Zero },
+      { location: 'External', renderedValue: Zero },
+      { location: 'Commodities', renderedValue: Zero },
+      { location: 'Real estate', renderedValue: Zero },
+      { location: 'Equities', renderedValue: Zero }
+    ];
+
+    balanceLocations.forEach(balanceLocation => {
+      cy.get('.manual-balances-list tr').then($rows => {
+        if ($rows.text().includes(balanceLocation.location)) {
+          cy.get(
+            `.manual-balances-list tr:contains(${balanceLocation.location})`
+          ).each($row => {
+            // loops over all manual balances rows and adds up the total per location
+            // TODO: extract the replace(',', '') as to use user settings (when implemented)
+            cy.wrap($row)
+              .find(':nth-child(4) > .amount-display > .amount-display__value')
+              .then($amount => {
+                if (balanceLocation.renderedValue === Zero) {
+                  balanceLocation.renderedValue = bigNumberify(
+                    $amount.text().replace(',', '')
+                  );
+                } else {
+                  balanceLocation.renderedValue = balanceLocation.renderedValue.plus(
+                    bigNumberify($amount.text().replace(',', ''))
+                  );
+                }
+              });
+          });
+        }
+      });
+    });
+
+    return cy.wrap(balanceLocations);
   }
 
   amountDisplayIsBlurred() {

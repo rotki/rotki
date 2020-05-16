@@ -16,7 +16,7 @@
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
         <span>
-          {{ name[0].toUpperCase() + name.slice(1) }}
+          {{ name | capitalize }}
         </span>
         <span class="text-end">
           <amount-display

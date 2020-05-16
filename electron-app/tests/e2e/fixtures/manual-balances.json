@@ -14,5 +14,12 @@
     "amount": "150",
     "tags": [],
     "location": "banks"
-  }
+  },
+  {
+    "asset": "USD",
+    "label": "My USD Bank Account",
+    "amount": "100",
+    "tags": [],
+    "location": "banks"
+  }  
 ]
