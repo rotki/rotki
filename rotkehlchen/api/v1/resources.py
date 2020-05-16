@@ -766,3 +766,21 @@ class MakerDAODSRHistoryResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_makerdao_dsr_history(async_query)
+
+
+class MakerDAOVaultsResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_makerdao_vaults(async_query)
+
+
+class MakerDAOVaultDetailsResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_makerdao_vault_details(async_query)
