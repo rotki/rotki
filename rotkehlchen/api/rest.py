@@ -1423,3 +1423,64 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
 
         return api_response(process_result(result_dict), status_code=response['status_code'])
+
+    def _get_makerdao_vaults(self) -> Dict[str, Any]:
+        result = None
+        msg = ''
+        status_code = HTTPStatus.OK
+
+        makerdao = self.rotkehlchen.chain_manager.makerdao
+        if not makerdao:
+            return {
+                'result': None,
+                'status_code': HTTPStatus.CONFLICT,
+                'message': 'MakerDAO module is not activated',
+            }
+
+        try:
+            result = makerdao.get_vaults()
+        except RemoteError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
+
+    @require_loggedin_user()
+    def get_makerdao_vaults(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_makerdao_vaults')
+
+        response = self._get_makerdao_vaults()
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
+
+    def _get_makerdao_vault_details(self) -> Dict[str, Any]:
+        result = None
+        msg = ''
+        status_code = HTTPStatus.OK
+
+        makerdao = self.rotkehlchen.chain_manager.makerdao
+        if not makerdao:
+            return {
+                'result': None,
+                'status_code': HTTPStatus.CONFLICT,
+                'message': 'MakerDAO module is not activated',
+            }
+
+        try:
+            result = makerdao.get_vault_details()
+        except RemoteError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
+
+    @require_premium_user(active_check=False)
+    def get_makerdao_vault_details(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_makerdao_vault_details')
+
+        response = self._get_makerdao_vault_details()
+        result_dict = {'result': response['result'], 'message': response['message']}
+
+        return api_response(process_result(result_dict), status_code=response['status_code'])

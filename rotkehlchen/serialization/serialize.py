@@ -45,7 +45,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, Trade):
+    elif isinstance(entry, Trade, MakerDAOVault):
         return entry.serialize()
     elif isinstance(entry, (
             DBSettings,
@@ -56,11 +56,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             ManuallyTrackedBalanceWithValue,
     )):
         return process_result(entry._asdict())
-    elif isinstance(entry, MakerDAOVault):
-        result = process_result(entry._asdict())
-        # But make sure to turn liquidation ratio to a percentage
-        result['liquidation_ratio'] = entry.liquidation_ration.to_percentage(2)
-        return result
     elif isinstance(entry, tuple):
         raise ValueError('Query results should not contain plain tuples')
     elif isinstance(entry, Asset):

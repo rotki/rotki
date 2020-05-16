@@ -109,6 +109,15 @@ class MakerDAOVault(NamedTuple):
     liquidation_price: Optional[FVal]
     # The USD value of collateral locked, given the current price according to the price feed
     collateral_usd_value: FVal
+    urn: ChecksumEthAddress
+
+    def serialize(self) -> Dict[str, Any]:
+        result = self._asdict()
+        # But make sure to turn liquidation ratio to a percentage
+        result['liquidation_ratio'] = self.liquidation_ration.to_percentage(2)
+        # And don't send unneeded data
+        del result['urn']
+        return result
 
 
 class MakerDAOVaultDetails(NamedTuple):
@@ -257,6 +266,7 @@ class MakerDAO(EthereumModule):
         )
         self.par = result
         self.usd_price: Dict[str, FVal] = defaultdict(ZERO)
+        self.vault_mappings: Dict[ChecksumEthAddress, List[MakerDAOVault]] = defaultdict(list)
 
     def premium_active(self):
         return self.premium and self.premium.is_active()
@@ -376,6 +386,7 @@ class MakerDAO(EthereumModule):
             collateralization_ratio=collateralization_ratio,
             collateral_usd_value=collateral_usd_value,
             liquidation_price=liquidation_price,
+            urn=urn,
         )
 
     def _query_vault_details(
@@ -601,8 +612,7 @@ class MakerDAO(EthereumModule):
         """
         proxy_mappings = self._get_accounts_having_maker_proxy()
         vaults = []
-        vault_details = []
-        for _, proxy in proxy_mappings.items():
+        for user_address, proxy in proxy_mappings.items():
             result = self.ethereum.call_contract(
                 contract_address=MAKERDAO_GET_CDPS.address,
                 abi=MAKERDAO_GET_CDPS.abi,
@@ -619,11 +629,29 @@ class MakerDAO(EthereumModule):
                     proxy=proxy,
                 )
                 vaults.append(vault)
-                if self.premium_active():
-                    vault_detail = self._query_vault_details(vault, proxy, urn)
-                    vault_details.append(vault_detail)
+                self.vault_mappings[user_address].append(vault)
 
         return vaults
+
+    def get_vault_details(self) -> List[MakerDAOVaultDetails]:
+        """Queries vault details for the auto detected vaults of the user
+
+        This is a premium only call
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
+        """
+        vault_details = []
+        proxy_mappings = self._get_accounts_having_maker_proxy()
+        for address, vaults in self.vault_mappings.items():
+            proxy = proxy_mappings[address]
+            for vault in vaults:
+                vault_detail = self._query_vault_details(vault, proxy, vault.urn)
+                vault_details.append(vault_detail)
+        return vault_details
 
     def get_current_dsr(self) -> DSRCurrentBalances:
         """Gets the current DSR balance for all accounts that have DAI in DSR
