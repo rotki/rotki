@@ -7,7 +7,7 @@
             class="pt-6 pb-3 display-3 font-weight-black primary white--text"
           >
             <span class="px-6">rotki</span>
-            <span style="display: block;" class="pl-6 mb-3 caption">
+            <span class="d-block mb-3 pl-6 caption">
               the opensource portfolio manager that respects your privacy
             </span>
           </div>

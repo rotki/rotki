@@ -1,5 +1,5 @@
 <template>
-  <div v-if="displayed" class="rotki-welcome">
+  <div v-if="displayed" class="rotki-welcome__login">
     <v-card-title>Sign In</v-card-title>
     <v-card-text>
       <v-form ref="form" v-model="valid">

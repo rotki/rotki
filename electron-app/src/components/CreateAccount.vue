@@ -1,5 +1,5 @@
 <template>
-  <div v-if="displayed">
+  <div v-if="displayed" class="rotki-welcome__create-new-account">
     <v-card-title>Create New Account</v-card-title>
     <v-card-text>
       <v-form ref="form" v-model="valid">
