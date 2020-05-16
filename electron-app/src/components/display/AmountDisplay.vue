@@ -7,8 +7,14 @@
       {{
         renderValue
           | calculatePrice(exchangeRate(currency.ticker_symbol))
-          | formatPrice(2)
+          | roundDown(floatingPrecision)
       }}
+    </span>
+    <span
+      v-else-if="fiatCurrency === currency.ticker_symbol"
+      class="amount-display__value"
+    >
+      {{ renderValue | roundDown(floatingPrecision) }}
     </span>
     <span v-else class="amount-display__value">
       {{ renderValue | formatPrice(floatingPrecision) }}
@@ -96,9 +102,9 @@ export default class AmountDisplay extends Vue {
     }
 
     if (this.amount && this.fiatCurrency === this.currency.ticker_symbol) {
-      valueToRender = this.$props.amount;
+      valueToRender = this.amount;
     } else {
-      valueToRender = this.$props.value;
+      valueToRender = this.value;
     }
 
     // in certain cases where what is passed as a value is a string and not BigNumber, convert it

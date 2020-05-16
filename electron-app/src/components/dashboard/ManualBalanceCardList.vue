@@ -14,13 +14,13 @@
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
         <span>
-          {{ name[0].toUpperCase() + name.slice(1) }}
+          {{ name | capitalize }}
         </span>
         <span class="text-end">
           <amount-display
             show-currency="symbol"
             :fiat-currency="currency.ticker_symbol"
-            :value="amount | roundDown(2)"
+            :value="amount"
           ></amount-display>
         </span>
       </v-list-item-title>

@@ -56,7 +56,7 @@
           </template>
           <template #item.location="{ item }">
             <span class="manual-balances-list__location">
-              {{ item.location }}
+              {{ item.location | capitalize }}
             </span>
           </template>
           <template #item.actions="{ item }">
@@ -90,7 +90,8 @@
                     visibleBalances
                       | aggregateTotal(
                         currency.ticker_symbol,
-                        exchangeRate(currency.ticker_symbol)
+                        exchangeRate(currency.ticker_symbol),
+                        floatingPrecision
                       )
                   "
                 ></amount-display>

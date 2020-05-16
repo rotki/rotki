@@ -160,7 +160,8 @@
                       aggregatedBalances
                         | aggregateTotal(
                           currency.ticker_symbol,
-                          exchangeRate(currency.ticker_symbol)
+                          exchangeRate(currency.ticker_symbol),
+                          floatingPrecision
                         )
                     "
                   ></amount-display>

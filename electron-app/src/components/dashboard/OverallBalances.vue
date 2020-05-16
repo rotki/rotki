@@ -15,7 +15,8 @@
               aggregatedBalances
                 | aggregateTotal(
                   currency.ticker_symbol,
-                  exchangeRate(currency.ticker_symbol)
+                  exchangeRate(currency.ticker_symbol),
+                  floatingPrecision
                 )
             "
           ></amount-display>
@@ -38,7 +39,7 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 @Component({
   components: { AmountDisplay },
   computed: {
-    ...mapGetters(['currency']),
+    ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters(['aggregatedBalances', 'exchangeRate'])
   }
 })
