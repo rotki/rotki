@@ -19,7 +19,7 @@
             class="my-3"
           >
             <v-col
-              class="account_management__loading__content grey-darken-2--text"
+              class="account_management__loading__content grey-darken-1--text"
             >
               <span
                 class="account_management__loading__content__text my-3 pb-6"
@@ -72,6 +72,7 @@
         :value="!premium && !message && premiumVisible"
         persistent
         max-width="450"
+        @keydown.esc.stop="loginComplete()"
       >
         <v-card
           light
@@ -98,22 +99,23 @@
             </v-row>
           </v-card-text>
           <v-card-actions>
-            <div class="flex-grow-1"></div>
+            <v-spacer></v-spacer>
             <v-btn
               color="primary"
-              class="account_management__premium_dialog__buttons__confirm"
-              depressed
-              @click="upgrade()"
-            >
-              Upgrade
-            </v-btn>
-            <v-btn
               class="account_management__premium_dialog__buttons__cancel"
-              text
+              depressed
               outlined
               @click="loginComplete()"
             >
               Close
+            </v-btn>
+            <v-btn
+              color="primary"
+              depressed
+              class="account_management__premium_dialog__buttons__confirm"
+              @click="upgrade()"
+            >
+              Upgrade
             </v-btn>
           </v-card-actions>
         </v-card>

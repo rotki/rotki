@@ -1,5 +1,11 @@
 <template>
-  <v-dialog :value="display" persistent max-width="500" class="confirm-dialog">
+  <v-dialog
+    :value="display"
+    persistent
+    max-width="500"
+    class="confirm-dialog"
+    @keydown.esc.stop="cancel()"
+  >
     <v-card>
       <v-card-title class="headline confirm-dialog__title">
         {{ title }}
@@ -19,7 +25,8 @@
         <v-spacer></v-spacer>
         <v-btn
           color="primary"
-          text
+          depressed
+          outlined
           class="confirm-dialog__buttons__cancel"
           @click="cancel()"
         >
@@ -27,7 +34,7 @@
         </v-btn>
         <v-btn
           color="primary"
-          text
+          depressed
           class="confirm-dialog__buttons__confirm"
           @click="confirm()"
         >
