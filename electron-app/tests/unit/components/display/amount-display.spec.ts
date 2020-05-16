@@ -44,7 +44,7 @@ describe('AmountDisplay.vue', () => {
   describe('Common case', () => {
     test('displays amount converted to selected fiat currency', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), Zero, 'USD');
-      expect(wrapper.find('.amount-display__value').text()).toMatch('1.45');
+      expect(wrapper.find('.amount-display__value').text()).toMatch('1.44');
       expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
     });
 
@@ -74,7 +74,7 @@ describe('AmountDisplay.vue', () => {
 
     test('displays amount converted to selected fiat currency as scrambled', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), Zero, 'USD');
-      expect(wrapper.find('.amount-display__value').text()).not.toMatch('1.45');
+      expect(wrapper.find('.amount-display__value').text()).not.toMatch('1.44');
       expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
     });
 
