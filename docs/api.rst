@@ -2826,7 +2826,8 @@ Getting MakerDAO vault details
       }
 
    :resjson object result: A list of all vault details detected.
-   :resjsonarr int creation_ts: The timestamp of the vault's creation
+   :resjsonarr int creation_ts: The timestamp of the vault's creation.
+   :resjsonarr string total_interest_owed: Total amount of DAI lost to the vault as interest rate.
    :resjson object events: A list of all events that occured for this vault
    :resjsonarr string event_type: The type of the event. Valid types are: ``["deposit", "withdraw", "generate", "payback", "liquidation"]``
    :resjsonarr string amount: The amount associated with the event. So collateral deposited/withdrawn, debt generated/paid back, amount of collateral lost in liquidation.
