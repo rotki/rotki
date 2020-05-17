@@ -40,9 +40,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def bitcoin_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
-    tx_asset = Asset(pair[:3].upper())
-    native_asset = Asset(pair[3:].upper())
+def bitcoinde_asset(asset: str) -> Asset:
+    return Asset(asset.upper())
+
+
+def bitcoinde_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
+    tx_asset = bitcoinde_asset(pair[:3])
+    native_asset = bitcoinde_asset(pair[3:])
     return tx_asset, native_asset
 
 
@@ -61,7 +65,7 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
     tx_amount = raw_trade['amount_currency_to_trade']
 
     native_amount = raw_trade['volume_currency_to_pay']
-    tx_asset, native_asset = bitcoin_pair_to_world(raw_trade['trading_pair'])
+    tx_asset, native_asset = bitcoinde_pair_to_world(raw_trade['trading_pair'])
     pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     rate = Price(native_amount / tx_amount)
@@ -170,6 +174,18 @@ class Bitcoinde(ExchangeInterface):
                 )
 
         return json_ret
+
+    def query_balances(self) -> Tuple[Optional[dict], str]:
+        balances = {}
+        resp_info = self._api_query('get', 'account')
+
+        for currency, balance in resp_info['data']['balances'].items():
+            balances[bitcoinde_asset(currency)] = {
+                'amount': balance['total_amount'],
+                'usd_value': FVal(0)
+            }
+
+        return (balances, "")
 
     def query_online_trade_history(
             self,
