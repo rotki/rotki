@@ -20,17 +20,49 @@
             <span> DAI </span>
           </stat-card>
         </v-col>
-      </v-row>
-      <v-row>
         <v-col>
           <stat-card title="Collateralization Ratio">
             {{ vault.collateralizationRatio }}
           </stat-card>
         </v-col>
+      </v-row>
+      <v-row>
         <v-col>
           <stat-card title="Liquidation Rate">
             {{ vault.liquidationRatio }}
           </stat-card>
+        </v-col>
+        <v-col>
+          <stat-card title="Liquidation Price">
+            {{ vault.liquidationPrice }}
+          </stat-card>
+        </v-col>
+        <v-col>
+          <stat-card title="Collateral value">
+            <amount-display
+              :value="vault.collateralUsdValue"
+              fiat-currency="USD"
+              show-currency="symbol"
+            ></amount-display>
+          </stat-card>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <stat-card title="Total interest owned" :locked="!premium">
+            <span>{{ vault.totalInterestOwed }} </span>
+            <span>{{ vault.collateralAsset }}</span>
+          </stat-card>
+        </v-col>
+        <v-col>
+          <stat-card title="Created" :locked="!premium">
+            {{ vault.creationTs | formatDate(dateDisplayFormat) }}
+          </stat-card>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <premium-card title="Actions"></premium-card>
         </v-col>
       </v-row>
     </v-col>
@@ -39,15 +71,27 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { createNamespacedHelpers } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { MakerDAOVault } from '@/services/types-model';
+import { MakerDAOVaultModel } from '@/store/balances/types';
+
+const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { StatCard }
+  components: { PremiumCard, AmountDisplay, StatCard },
+  computed: {
+    ...mapState(['premium']),
+    ...mapGetters(['dateDisplayFormat'])
+  }
 })
 export default class Vault extends Vue {
   @Prop({ required: true })
-  vault!: MakerDAOVault | null;
+  vault!: MakerDAOVaultModel | null;
+
+  premium!: boolean;
+  dateDisplayFormat!: string;
 }
 </script>
 

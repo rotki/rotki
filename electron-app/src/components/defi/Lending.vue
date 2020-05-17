@@ -51,13 +51,7 @@
     </v-row>
     <v-row class="loans__history">
       <v-col cols="12">
-        <v-card v-if="!premium">
-          <v-card-title>
-            History
-            <v-spacer></v-spacer>
-            <premium-lock></premium-lock>
-          </v-card-title>
-        </v-card>
+        <premium-card v-if="!premium" title="History"></premium-card>
         <dsr-movement-history
           v-else
           :history="dsrHistory"
@@ -73,6 +67,7 @@ import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
 import { Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -89,6 +84,7 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 
 @Component({
   components: {
+    PremiumCard,
     StatCard,
     ProgressScreen,
     PremiumLock,

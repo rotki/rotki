@@ -11,6 +11,7 @@ import {
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
 import { BalanceState } from '@/store/balances/state';
+import { MakerDAOVaultModel } from '@/store/balances/types';
 import { RotkehlchenState } from '@/store/store';
 import { AccountDSRMovement, Blockchain, DSRBalance } from '@/typing/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
@@ -273,5 +274,20 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
   assetInfo: ({ supportedAssets }: BalanceState) => (key: string) => {
     return supportedAssets.find(asset => asset.key === key);
+  },
+
+  makerDAOVaults: ({
+    makerDAOVaults,
+    makerDAOVaultDetails
+  }: BalanceState): MakerDAOVaultModel[] => {
+    const vaults: MakerDAOVaultModel[] = [];
+    for (let i = 0; i < makerDAOVaults.length; i++) {
+      const vault = makerDAOVaults[i];
+      const details = makerDAOVaultDetails.find(
+        details => details.identifier === vault.identifier
+      );
+      vaults.push(details ? { ...vault, ...details } : vault);
+    }
+    return vaults;
   }
 };

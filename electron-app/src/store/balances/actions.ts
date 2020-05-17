@@ -338,10 +338,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetchMakerDAOVaults({ commit }) {
+  async fetchMakerDAOVaults({ commit, rootState: { session } }) {
     try {
       const makerDAOVaults = await api.makerDAOVaults();
       commit('makerDAOVaults', makerDAOVaults);
+      if (session?.premium) {
+        const makerDAOVaultDetails = await api.makerDAOVaultDetails();
+        commit('makerDAOVaultDetails', makerDAOVaultDetails);
+      }
     } catch (e) {
       commit(
         'setMessage',
