@@ -4,7 +4,6 @@
     :to="`/exchange-balances/${name}`"
     :ripple="false"
     class="exchange-box__item"
-    @click="doNothing"
   >
     <v-list-item-avatar
       tile
@@ -51,8 +50,6 @@ export default class ExchangeBox extends Vue {
   get inverted(): boolean {
     return ['bitmex', 'coinbasepro'].indexOf(this.name) > -1;
   }
-
-  doNothing() {}
 }
 </script>
 <style scoped lang="scss">

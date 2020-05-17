@@ -25,7 +25,7 @@ function capitalize(string: string): string {
 }
 
 function roundDown(value: BigNumber, precision: number) {
-  return value.toFormat(precision, 1);
+  return value.toFormat(precision, BigNumber.ROUND_DOWN);
 }
 
 function calculatePrice(value: BigNumber, exchangeRate: number): BigNumber {
@@ -47,11 +47,13 @@ function aggregateTotal(
 ): BigNumber {
   return balances.reduce((previousValue, currentValue) => {
     if (currentValue.asset === mainCurrency) {
-      return previousValue.plus(currentValue.amount).dp(precision, 1);
+      return previousValue
+        .plus(currentValue.amount)
+        .dp(precision, BigNumber.ROUND_DOWN);
     }
     return previousValue
       .plus(currentValue.usdValue.multipliedBy(bigNumberify(exchangeRate)))
-      .dp(precision, 1);
+      .dp(precision, BigNumber.ROUND_DOWN);
   }, Zero);
 }
 

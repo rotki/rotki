@@ -117,15 +117,14 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   // simplify the manual balances object so that we can easily reduce it
   manualBalanceByLocation: (
     state: BalanceState,
-    balanceGetters,
-    rootGetters
+    { fiatTotal, exchangeRate },
+    { session }
   ) => {
-    const fiatTotal = balanceGetters.fiatTotal;
-    const mainCurrency =
-      rootGetters.session?.settings.selectedCurrency.ticker_symbol;
+    const overallFiatTotal = fiatTotal;
+    const mainCurrency = session?.settings.selectedCurrency.ticker_symbol;
 
     const manualBalances = state.manualBalances;
-    const exchangeRate = balanceGetters.exchangeRate(mainCurrency);
+    const currentExchangeRate = exchangeRate(mainCurrency);
 
     const simplifyManualBalances = manualBalances.map(perLocationBalance => {
       // because we mix different assets we need to convert them before they are aggregated
@@ -135,7 +134,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
         convertedValue = perLocationBalance.amount;
       } else {
         convertedValue = perLocationBalance.usdValue.multipliedBy(
-          bigNumberify(exchangeRate)
+          bigNumberify(currentExchangeRate)
         );
       }
 
@@ -172,12 +171,12 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     // Add fiat total to the banks aggregate
     if (aggregateManualBalancesByLocation.banks) {
       aggregateManualBalancesByLocation.banks = aggregateManualBalancesByLocation.banks.plus(
-        fiatTotal.multipliedBy(bigNumberify(exchangeRate))
+        overallFiatTotal.multipliedBy(bigNumberify(currentExchangeRate))
       );
     } else {
-      if (fiatTotal !== Zero)
+      if (overallFiatTotal !== Zero)
         aggregateManualBalancesByLocation.banks = fiatTotal.multipliedBy(
-          bigNumberify(exchangeRate)
+          bigNumberify(currentExchangeRate)
         );
     }
 

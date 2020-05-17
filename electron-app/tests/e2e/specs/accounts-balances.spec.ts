@@ -71,7 +71,9 @@ describe('Accounts', () => {
     it('data is reflected in dashboard', () => {
       page.getLocationBalances().then($manualBalances => {
         const total = $manualBalances.reduce((sum: BigNumber, location) => {
-          return sum.plus(location.renderedValue.toFixed(2, 1));
+          return sum.plus(
+            location.renderedValue.toFixed(2, BigNumber.ROUND_DOWN)
+          );
         }, Zero);
 
         dashboardPage.visit();
