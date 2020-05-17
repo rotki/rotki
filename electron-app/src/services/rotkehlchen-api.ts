@@ -26,10 +26,10 @@ import {
   ApiMakerDAOVault,
   ApiManualBalance,
   ApiManualBalances,
-  ApiVaultDetails,
+  ApiMakerDAOVaultDetails,
   SupportedAssets
 } from '@/services/types-api';
-import { MakerDAOVault, VaultDetails } from '@/services/types-model';
+import { MakerDAOVault, MakerDAOVaultDetails } from '@/services/types-model';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
   AccountSession,
@@ -1428,9 +1428,9 @@ export class RotkehlchenApi {
       .then(convertMakerDAOVaults);
   }
 
-  async makerDAOVaultDetails(): Promise<VaultDetails[]> {
+  async makerDAOVaultDetails(): Promise<MakerDAOVaultDetails[]> {
     return this.axios
-      .get<ActionResult<ApiVaultDetails[]>>(
+      .get<ActionResult<ApiMakerDAOVaultDetails[]>>(
         '/blockchains/ETH/modules/makerdao/vaultdetails`',
         {
           validateStatus: RotkehlchenApi.fetchWithExternalService

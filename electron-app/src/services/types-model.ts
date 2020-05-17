@@ -2,7 +2,7 @@ import { default as BigNumber } from 'bignumber.js';
 import {
   DSRMovementType,
   Location,
-  VaultEventType
+  MakerDAOVaultEventType
 } from '@/services/types-common';
 
 export interface DSRBalances {
@@ -50,21 +50,21 @@ export interface MakerDAOVault {
   readonly collateralAsset: string;
   readonly collateralAmount: BigNumber;
   readonly debtValue: BigNumber;
-  readonly liquidationRatio: string;
   readonly collateralizationRatio?: string;
-}
-
-export interface VaultDetails {
-  readonly identifier: number;
+  readonly liquidationRatio: string;
   readonly liquidationPrice: BigNumber;
   readonly collateralUsdValue: BigNumber;
-  readonly creationTs: number;
-  readonly totalInterestOwed: BigNumber;
-  readonly events: VaultEvent[];
 }
 
-export interface VaultEvent {
-  readonly eventType: VaultEventType;
+export interface MakerDAOVaultDetails {
+  readonly identifier: number;
+  readonly creationTs: number;
+  readonly totalInterestOwed: BigNumber;
+  readonly events: MakerDAOVaultEvent[];
+}
+
+export interface MakerDAOVaultEvent {
+  readonly eventType: MakerDAOVaultEventType;
   readonly amount: BigNumber;
   readonly timestamp: number;
   readonly txHash: string;

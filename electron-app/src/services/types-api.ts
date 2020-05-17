@@ -1,7 +1,7 @@
 import {
   DSRMovementType,
   Location,
-  VaultEventType
+  MakerDAOVaultEventType
 } from '@/services/types-common';
 
 export interface ApiDSRBalances {
@@ -61,19 +61,19 @@ export interface ApiMakerDAOVault {
   readonly debt_value: string;
   readonly collateralization_ratio: string | null;
   readonly liquidation_ratio: string;
-}
-
-export interface ApiVaultDetails {
-  readonly identifier: number;
   readonly liquidation_price: string;
   readonly collateral_usd_value: string;
-  readonly creation_ts: number;
-  readonly total_interest_owed: string;
-  readonly events: ApiVaultEvent[];
 }
 
-export interface ApiVaultEvent {
-  readonly event_type: VaultEventType;
+export interface ApiMakerDAOVaultDetails {
+  readonly identifier: number;
+  readonly creation_ts: number;
+  readonly total_interest_owed: string;
+  readonly events: ApiMakerDAOVaultEvent[];
+}
+
+export interface ApiMakerDAOVaultEvent {
+  readonly event_type: MakerDAOVaultEventType;
   readonly amount: string;
   readonly timestamp: number;
   readonly tx_hash: string;

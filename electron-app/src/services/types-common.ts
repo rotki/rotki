@@ -17,7 +17,7 @@ export enum Location {
   COMMODITIES = 'commodities'
 }
 
-export type VaultEventType =
+export type MakerDAOVaultEventType =
   | 'deposit'
   | 'withdraw'
   | 'generate'
