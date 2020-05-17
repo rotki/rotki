@@ -112,9 +112,9 @@ class MakerDAOVault(NamedTuple):
     urn: ChecksumEthAddress
 
     def serialize(self) -> Dict[str, Any]:
-        result = self._asdict()
+        result = self._asdict()  # pylint: disable=no-member
         # But make sure to turn liquidation ratio to a percentage
-        result['liquidation_ratio'] = self.liquidation_ration.to_percentage(2)
+        result['liquidation_ratio'] = self.liquidation_ratio.to_percentage(2)
         # And don't send unneeded data
         del result['urn']
         return result
@@ -206,26 +206,12 @@ class DSRAccountReport(NamedTuple):
     movements: List[DSRMovement]
     gain_so_far: int
 
-
-def _dsrdai_to_dai(value: Union[int, FVal]) -> FVal:
-    """Turns a big integer that is the value of DAI in DSR into a proper DAI decimal FVal"""
-    return FVal(value / FVal(1e27) / FVal(1e18))
-
-
-def serialize_dsr_reports(
-        reports: Dict[ChecksumEthAddress, DSRAccountReport],
-) -> Dict[ChecksumEthAddress, Dict[str, Any]]:
-    """Serializes a DSR Report into a dict.
-
-    Turns DAI into proper decimals and omits fields we don't need to export
-    """
-    result = {}
-    for account, report in reports.items():
+    def serialize(self) -> Dict[str, Any]:
         serialized_report = {
-            'gain_so_far': str(_dsrdai_to_dai(report.gain_so_far)),
+            'gain_so_far': str(_dsrdai_to_dai(self.gain_so_far)),
             'movements': [],
         }
-        for movement in report.movements:
+        for movement in self.movements:
             serialized_movement = {
                 'movement_type': movement.movement_type,
                 'gain_so_far': str(_dsrdai_to_dai(movement.gain_so_far)),
@@ -234,9 +220,12 @@ def serialize_dsr_reports(
                 'timestamp': movement.timestamp,
             }
             serialized_report['movements'].append(serialized_movement)  # type: ignore
-        result[account] = serialized_report
+        return serialized_report
 
-    return result
+
+def _dsrdai_to_dai(value: Union[int, FVal]) -> FVal:
+    """Turns a big integer that is the value of DAI in DSR into a proper DAI decimal FVal"""
+    return FVal(value / FVal(1e27) / FVal(1e18))
 
 
 class MakerDAO(EthereumModule):
@@ -258,18 +247,18 @@ class MakerDAO(EthereumModule):
         self.last_proxy_mapping_query_ts = 0
         self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
 
-        result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_SPOT.address,
-            abi=MAKERDAO_SPOT.abi,
-            method_name='par',
-            arguments=[],
-        )
-        self.par = result
-        self.usd_price: Dict[str, FVal] = defaultdict(ZERO)
+        # result = self.ethereum.call_contract(
+        #     contract_address=MAKERDAO_SPOT.address,
+        #     abi=MAKERDAO_SPOT.abi,
+        #     method_name='par',
+        #     arguments=[],
+        # )
+        # self.par = result
+        self.usd_price: Dict[str, FVal] = defaultdict(FVal)
         self.vault_mappings: Dict[ChecksumEthAddress, List[MakerDAOVault]] = defaultdict(list)
 
-    def premium_active(self):
-        return self.premium and self.premium.is_active()
+    def premium_active(self) -> bool:
+        return bool(self.premium and self.premium.is_active())
 
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
         """Checks if a DSR proxy exists for the given address and returns it if it does
@@ -322,7 +311,6 @@ class MakerDAO(EthereumModule):
             identifier: int,
             urn: ChecksumEthAddress,
             ilk: bytes,
-            proxy: ChecksumEthAddress,
     ) -> Optional[MakerDAOVault]:
         name = ilk.split(b'\0', 1)[0].decode()
         asset_symbol = name.split('-')[0]
@@ -358,12 +346,11 @@ class MakerDAO(EthereumModule):
             method_name='ilks',
             arguments=[ilk],
         )
-
         mat = result[1]
         liquidation_ratio = FVal(mat / RAY)
         asset = Asset(asset_symbol)
         price = FVal((spot / RAY) * liquidation_ratio)
-        self.usd_price[asset] = price
+        self.usd_price[asset_symbol] = price
         collateral_value = FVal(price * collateral_amount)
         if debt_value == 0:
             collateralization_ratio = None
@@ -394,7 +381,7 @@ class MakerDAO(EthereumModule):
             vault: MakerDAOVault,
             proxy: ChecksumEthAddress,
             urn: ChecksumEthAddress,
-    ) -> MakerDAOVaultDetails:
+    ) -> Optional[MakerDAOVaultDetails]:
         """Querying vault details for a vault.
 
         Premium only. Should always be called only after a vault's data have
@@ -626,10 +613,10 @@ class MakerDAO(EthereumModule):
                     identifier=identifier,
                     urn=urn,
                     ilk=result[2][idx],
-                    proxy=proxy,
                 )
-                vaults.append(vault)
-                self.vault_mappings[user_address].append(vault)
+                if vault:
+                    vaults.append(vault)
+                    self.vault_mappings[user_address].append(vault)
 
         return vaults
 
@@ -650,7 +637,8 @@ class MakerDAO(EthereumModule):
             proxy = proxy_mappings[address]
             for vault in vaults:
                 vault_detail = self._query_vault_details(vault, proxy, vault.urn)
-                vault_details.append(vault_detail)
+                if vault_detail:
+                    vault_details.append(vault_detail)
         return vault_details
 
     def get_current_dsr(self) -> DSRCurrentBalances:
