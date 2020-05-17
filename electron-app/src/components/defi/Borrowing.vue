@@ -31,20 +31,20 @@ import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import Vault from '@/components/defi/Vault.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { MakerDAOVault } from '@/services/types-model';
+import { MakerDAOVaultModel } from '@/store/balances/types';
 
-const { mapState } = createNamespacedHelpers('balances');
+const { mapGetters } = createNamespacedHelpers('balances');
 
 @Component({
   computed: {
-    ...mapState(['makerDAOVaults'])
+    ...mapGetters(['makerDAOVaults'])
   },
   components: { Vault, ProgressScreen }
 })
 export default class Borrowing extends Vue {
   loading: boolean = false;
-  selection: MakerDAOVault | null = null;
-  makerDAOVaults!: MakerDAOVault[];
+  selection: MakerDAOVaultModel | null = null;
+  makerDAOVaults!: MakerDAOVaultModel[];
 
   async mounted() {
     await this.$store.dispatch('balances/fetchMakerDAOVaults');
