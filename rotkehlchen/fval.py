@@ -31,7 +31,7 @@ class FVal():
             elif isinstance(data, bool):  # type: ignore
                 # This elif has to come before the isinstance(int) check due to
                 # https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
-                raise ValueError(f'Invalid type bool for data given to FVal constructor')
+                raise ValueError('Invalid type bool for data given to FVal constructor')
             elif isinstance(data, (Decimal, int, str)):
                 self.num = Decimal(data)
             elif isinstance(data, FVal):

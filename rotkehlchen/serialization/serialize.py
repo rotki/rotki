@@ -46,7 +46,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'usd_value': entry.usd_value,
         }
     elif isinstance(entry, (Trade, MakerDAOVault, DSRAccountReport)):
-        return entry.serialize()
+        return process_result(entry.serialize())
     elif isinstance(entry, (
             DBSettings,
             EthTokenInfo,
