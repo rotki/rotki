@@ -59,8 +59,6 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 export default class SummaryCard extends Vue {
   @Prop({ required: true })
   name!: string;
-  @Prop({ required: false })
-  icon?: string;
   @Prop({ required: false, default: false })
   isLoading!: boolean;
   @Prop({ required: false, default: false, type: Boolean })

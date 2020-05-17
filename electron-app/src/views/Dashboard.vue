@@ -28,7 +28,7 @@
           <div v-else>
             <exchange-box
               v-for="exchange in exchanges"
-              :key="exchange.name + '_new'"
+              :key="exchange.name"
               :name="exchange.name"
               :amount="exchange.total"
             ></exchange-box>

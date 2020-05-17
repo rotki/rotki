@@ -5,7 +5,6 @@
     :ripple="false"
     to="/blockchain-accounts"
     class="blockchain-balance-box__item"
-    @click="doNothing"
   >
     <v-list-item-avatar tile class="blockchain-balance-box__icon">
       <crypto-icon
@@ -52,22 +51,21 @@ export default class BlockchainBalanceCardList extends Vue {
     bitcoin: 'BTC',
     ethereum: 'ETH'
   };
-
-  doNothing() {}
 }
 </script>
 <style scoped lang="scss">
-.blockchain-balance-box__icon {
-  filter: grayscale(100%);
-}
+.blockchain-balance-box {
+  &__icon {
+    filter: grayscale(100%);
+  }
+  &__item:hover &__icon {
+    filter: grayscale(0);
+  }
 
-.blockchain-balance-box__item:hover .blockchain-balance-box__icon {
-  filter: grayscale(0);
-}
-
-.blockchain-balance-box__icon--inverted {
-  margin-left: 8px;
-  width: 45px;
-  filter: grayscale(100%) invert(100%);
+  &__icon--inverted {
+    margin-left: 8px;
+    width: 45px;
+    filter: grayscale(100%) invert(100%);
+  }
 }
 </style>

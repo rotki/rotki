@@ -52,61 +52,39 @@ export default class OverallBox extends Vue {
 }
 </script>
 <style scoped lang="scss">
-.overall-balances-box__balance {
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-}
+.overall-balances-box {
+  &__balance {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+  }
+  .overall-balances-box__balance__change {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    margin-bottom: 1em;
+  }
 
-.overall-balances-box__balance__change {
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-  margin-bottom: 1em;
-}
-
-.overall-balances-box__timeframe ul {
-  display: flex;
-  justify-content: center;
-  padding: 0;
-  font-size: 0.9em;
-}
-
-.overall-balances-box__timeframe ul li {
-  display: inline;
-  margin-left: 0.2em;
-  margin-right: 0.2em;
-  padding-left: 0.5em;
-  padding-right: 0.5em;
-  border-radius: 0.8em;
-}
-
-.overall-balances-box__timeframe__selected {
-  background-color: #7e4a3b;
-  color: white;
-}
-
-.overall-balances-box__currency__symbol {
-  font-size: 2.2em;
-}
-
-.overall-balances-box__icon {
-  margin-left: 8px;
-  width: 45px;
-  filter: grayscale(100%);
-}
-
-.overall-balances-box__icon--inverted {
-  margin-left: 8px;
-  width: 45px;
-  filter: grayscale(100%) invert(100%);
-}
-
-.overall-balances-box__amount {
-  color: white;
-}
-
-.overall-balances-box__amount__number {
-  font-size: 2.8em;
+  &__timeframe ul {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    font-size: 0.9em;
+    & li {
+      display: inline;
+      margin-left: 0.2em;
+      margin-right: 0.2em;
+      padding-left: 0.5em;
+      padding-right: 0.5em;
+      border-radius: 0.8em;
+    }
+    &--selected {
+      background-color: #7e4a3b;
+      color: white;
+    }
+  }
+  &__currency__symbol {
+    font-size: 2.2em;
+  }
 }
 </style>

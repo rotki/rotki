@@ -4,7 +4,6 @@
     :ripple="false"
     class="manual-balance-box__item"
     to="/blockchain-accounts"
-    @click="doNothing"
   >
     <v-list-item-avatar tile class="manual-balance-box__icon">
       <v-icon>
@@ -58,26 +57,23 @@ export default class ManualBalanceCardList extends Vue {
     commodities: 'shopping-basket',
     blockchain: 'link'
   };
-
-  doNothing() {}
 }
 </script>
 <style scoped lang="scss">
-.manual-balance-box__currency__symbol {
-  font-size: 2em;
-}
-
-.manual-balance-box__icon {
-  filter: grayscale(100%);
-}
-
-.manual-balance-box__item:hover .manual-balance-box__icon {
-  filter: grayscale(0);
-}
-
-.manual-balance-box__icon--inverted {
-  margin-left: 8px;
-  width: 45px;
-  filter: grayscale(100%) invert(100%);
+.manual-balance-box {
+  &__currency__symbol {
+    font-size: 2em;
+  }
+  &__icon {
+    filter: grayscale(100%);
+  }
+  &__item:hover &__icon {
+    filter: grayscale(0);
+  }
+  &__icon--inverted {
+    margin-left: 8px;
+    width: 45px;
+    filter: grayscale(100%) invert(100%);
+  }
 }
 </style>
