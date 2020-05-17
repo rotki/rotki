@@ -3,7 +3,7 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Any
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
@@ -44,10 +44,6 @@ def bitcoinde_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
 
 
 def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
-
-    if raw_trade['state'] != 1:
-        # We only want to deal with completed trades
-        return None
 
     try:
         timestamp = deserialize_timestamp_from_date(
@@ -118,7 +114,7 @@ class Bitcoinde(ExchangeInterface):
             verb: str,
             path: str,
             options: Optional[Dict] = None,
-    ) -> Union[List, Dict]:
+    ) -> Dict:
         """
         Queries Bitcoin.de with the given verb for the given path and options
         """
@@ -159,22 +155,25 @@ class Bitcoinde(ExchangeInterface):
         try:
             json_ret = rlk_jsonloads(response.text)
         except JSONDecodeError:
-            raise RemoteError('Bitmex returned invalid JSON response')
+            raise RemoteError('Bitcoin.de returned invalid JSON response')
 
         if response.status_code not in (200, 401):
             if isinstance(json_ret, dict) and 'errors' in json_ret:
                 raise RemoteError(json_ret['errors'])
             else:
                 raise RemoteError(
-                    'Bitmex api request for {} failed with HTTP status code {}'.format(
+                    'Bitcoin.de api request for {} failed with HTTP status code {}'.format(
                         response.url,
                         response.status_code,
                     ),
                 )
 
+        if not isinstance(json_ret, dict):
+            raise RemoteError('Bitcoin.de returned invalid non-dict response')
+
         return json_ret
 
-    def query_balances(self) -> Tuple[Optional[dict], str]:
+    def query_balances(self, **kwargs: Any) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         balances = {}
         resp_info = self._api_query('get', 'account')
 
