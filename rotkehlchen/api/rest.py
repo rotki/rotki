@@ -21,7 +21,6 @@ from rotkehlchen.balances.manual import (
     edit_manually_tracked_balances,
     get_manually_tracked_balances,
 )
-from rotkehlchen.chain.ethereum.makerdao import serialize_dsr_reports
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
@@ -1362,7 +1361,7 @@ class RestAPI():
         self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _get_makerdao_dsr_balance(self) -> Dict[str, Any]:
+    def _makerdao_query(self, method: str) -> Dict[str, Any]:
         result = None
         msg = ''
         status_code = HTTPStatus.OK
@@ -1376,111 +1375,33 @@ class RestAPI():
             }
 
         try:
-            result = makerdao.get_current_dsr()
+            result = getattr(makerdao, method)()
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
 
         return {'result': result, 'message': msg, 'status_code': status_code}
+
+    def _api_query_for_makerdao(self, async_query: bool, method: str) -> Response:
+        if async_query:
+            return self._query_async(command='_makerdao_query', method=method)
+
+        response = self._makerdao_query(method=method)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
     def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_makerdao_dsr_balance')
-
-        response = self._get_makerdao_dsr_balance()
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
-
-    def _get_makerdao_dsr_history(self) -> Dict[str, Any]:
-        serialized_result = None
-        msg = ''
-        status_code = HTTPStatus.OK
-
-        makerdao = self.rotkehlchen.chain_manager.makerdao
-        if not makerdao:
-            return {
-                'result': None,
-                'status_code': HTTPStatus.CONFLICT,
-                'message': 'MakerDAO module is not activated',
-            }
-
-        try:
-            result = makerdao.get_historical_dsr()
-            serialized_result = serialize_dsr_reports(result)
-        except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
-
-        return {'result': serialized_result, 'message': msg, 'status_code': status_code}
+        return self._api_query_for_makerdao(async_query, method='get_current_dsr')
 
     @require_premium_user(active_check=False)
     def get_makerdao_dsr_history(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_makerdao_dsr_history')
-
-        response = self._get_makerdao_dsr_history()
-        result_dict = {'result': response['result'], 'message': response['message']}
-
-        return api_response(process_result(result_dict), status_code=response['status_code'])
-
-    def _get_makerdao_vaults(self) -> Dict[str, Any]:
-        result = None
-        msg = ''
-        status_code = HTTPStatus.OK
-
-        makerdao = self.rotkehlchen.chain_manager.makerdao
-        if not makerdao:
-            return {
-                'result': None,
-                'status_code': HTTPStatus.CONFLICT,
-                'message': 'MakerDAO module is not activated',
-            }
-
-        try:
-            result = makerdao.get_vaults()
-        except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
-
-        return {'result': result, 'message': msg, 'status_code': status_code}
+        return self._api_query_for_makerdao(async_query, method='get_historical_dsr')
 
     @require_loggedin_user()
     def get_makerdao_vaults(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_makerdao_vaults')
-
-        response = self._get_makerdao_vaults()
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
-
-    def _get_makerdao_vault_details(self) -> Dict[str, Any]:
-        result = None
-        msg = ''
-        status_code = HTTPStatus.OK
-
-        makerdao = self.rotkehlchen.chain_manager.makerdao
-        if not makerdao:
-            return {
-                'result': None,
-                'status_code': HTTPStatus.CONFLICT,
-                'message': 'MakerDAO module is not activated',
-            }
-
-        try:
-            result = makerdao.get_vault_details()
-        except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
-
-        return {'result': result, 'message': msg, 'status_code': status_code}
+        return self._api_query_for_makerdao(async_query, method='get_vaults')
 
     @require_premium_user(active_check=False)
     def get_makerdao_vault_details(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_makerdao_vault_details')
-
-        response = self._get_makerdao_vault_details()
-        result_dict = {'result': response['result'], 'message': response['message']}
-
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        return self._api_query_for_makerdao(async_query, method='get_vault_details')

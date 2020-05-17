@@ -412,7 +412,7 @@ class EthereumManager():
             contract_address: ChecksumEthAddress,
             abi: List,
             event_name: str,
-            argument_filters: Dict[str, str],
+            argument_filters: Dict[str, Any],
             from_block: int,
             to_block: Union[int, str] = 'latest',
     ) -> List[Dict[str, Any]]:
