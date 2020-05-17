@@ -96,7 +96,7 @@ class Bitcoinde(ExchangeInterface):
 
     def _generate_signature(self, request_type: str, url: str, nonce: str) -> str:
         md5_empty = 'd41d8cd98f00b204e9800998ecf8427e'  # this is md5('')
-        signed_data = '#'.join(request_type, url, self.api_key, nonce, md5_empty).encode()
+        signed_data = '#'.join([request_type, url, self.api_key, nonce, md5_empty]).encode()
         signature = hmac.new(
             self.secret,
             signed_data,
