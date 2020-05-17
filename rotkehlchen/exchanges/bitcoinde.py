@@ -7,16 +7,12 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, Location, Price, Trade, TradePair
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchanges.data_structures import Location, Price, Trade, TradePair
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp_from_date,
     deserialize_trade_type,
@@ -24,9 +20,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
-    AssetMovementCategory,
-    Fee,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -57,10 +50,19 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
         return None
 
     try:
-        timestamp = deserialize_timestamp_from_date(raw_trade['successfully_finished_at'], 'iso8601', 'bitcoinde')
+        timestamp = deserialize_timestamp_from_date(
+            raw_trade['successfully_finished_at'],
+            'iso8601',
+            'bitcoinde',
+        )
     except KeyError:
         # For very old trades (2013) bitcoin.de does not return 'successfully_finished_at'
-        timestamp = deserialize_timestamp_from_date(raw_trade['trade_marked_as_paid_at'], 'iso8601', 'bitcoinde')
+        timestamp = deserialize_timestamp_from_date(
+            raw_trade['trade_marked_as_paid_at'],
+            'iso8601',
+            'bitcoinde',
+        )
+
     trade_type = deserialize_trade_type(raw_trade['type'])
     tx_amount = raw_trade['amount_currency_to_trade']
 
@@ -124,9 +126,6 @@ class Bitcoinde(ExchangeInterface):
             'Given verb {} is not a valid HTTP verb'.format(verb)
         )
 
-        # 20 seconds expiration
-        expires = int(time.time()) + 20
-
         request_path_no_args = '/v4/' + path
 
         data = ''
@@ -141,7 +140,7 @@ class Bitcoinde(ExchangeInterface):
         self._generate_signature(
             request_type=verb.upper(),
             url=request_url,
-            nonce=nonce
+            nonce=nonce,
         )
 
         self.session.headers.update({
@@ -182,7 +181,7 @@ class Bitcoinde(ExchangeInterface):
         for currency, balance in resp_info['data']['balances'].items():
             balances[bitcoinde_asset(currency)] = {
                 'amount': balance['total_amount'],
-                'usd_value': FVal(0)
+                'usd_value': FVal(0),
             }
 
         return (balances, "")
@@ -200,7 +199,7 @@ class Bitcoinde(ExchangeInterface):
             resp = self._api_query('get', 'trades', {'state': 1, 'page': page})
             resp_trades.extend(resp['trades'])
 
-            if not 'page' in resp:
+            if 'page' not in resp:
                 break
 
             if resp['page']['current'] >= resp['page']['last']:
