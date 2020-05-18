@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from typing import Dict
 
 import pytest
@@ -7,6 +8,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
     wait_for_async_task,
@@ -38,6 +40,7 @@ def _check_vaults_values(vaults):
 
 def _check_vault_details_values(details):
     expected_details = [{
+        'identifier': 8015,
         'creation_ts': 1586785858,
         'total_interest_owed': FVal('0.2743084'),
         'events': [{
@@ -130,3 +133,18 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
     assert outcome['message'] == ''
     details = outcome['result']
     _check_vault_details_values(details)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+def test_query_vaults_details_non_premium(rotkehlchen_api_server):
+    """Check querying the vaults details endpoint without premium does not work"""
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultdetailsresource",
+    ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='Currently logged in user testuser does not have a premium subscription',
+        status_code=HTTPStatus.CONFLICT,
+    )
