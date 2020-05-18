@@ -85,6 +85,20 @@ class VaultEventType(Enum):
     PAYBACK_DEBT = 4
     LIQUIDATION = 5
 
+    def __str__(self) -> str:
+        if self == VaultEventType.DEPOSIT_COLLATERAL:
+            return 'deposit'
+        elif self == VaultEventType.WITHDRAW_COLLATERAL:
+            return 'withdraw'
+        elif self == VaultEventType.GENERATE_DEBT:
+            return 'generate'
+        elif self == VaultEventType.PAYBACK_DEBT:
+            return 'payback'
+        elif self == VaultEventType.LIQUIDATION:
+            return 'liquidation'
+
+        raise RuntimeError(f'Corrupt value {self} for VaultEventType -- Should never happen')
+
 
 class VaultEvent(NamedTuple):
     event_type: VaultEventType
@@ -246,14 +260,6 @@ class MakerDAO(EthereumModule):
         self.historical_dsr_reports: Dict[ChecksumEthAddress, DSRAccountReport] = {}
         self.last_proxy_mapping_query_ts = 0
         self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
-
-        # result = self.ethereum.call_contract(
-        #     contract_address=MAKERDAO_SPOT.address,
-        #     abi=MAKERDAO_SPOT.abi,
-        #     method_name='par',
-        #     arguments=[],
-        # )
-        # self.par = result
         self.usd_price: Dict[str, FVal] = defaultdict(FVal)
         self.vault_mappings: Dict[ChecksumEthAddress, List[MakerDAOVault]] = defaultdict(list)
 
@@ -577,10 +583,13 @@ class MakerDAO(EthereumModule):
                 tx_hash=event['transactionHash'],
             ))
 
-        total_interest_owed = _normalize_amount(
+        total_interest_owed = vault.debt_value - _normalize_amount(
             asset_symbol='DAI',
             amount=total_dai_wei,
-        ) - vault.debt_value
+        )
+
+        # sort vault events by timestamp
+        vault_events.sort(key=lambda event: event.timestamp)
 
         return MakerDAOVaultDetails(
             total_interest_owed=total_interest_owed,
