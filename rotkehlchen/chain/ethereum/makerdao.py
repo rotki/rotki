@@ -135,6 +135,7 @@ class MakerDAOVault(NamedTuple):
 
 
 class MakerDAOVaultDetails(NamedTuple):
+    identifier: int
     creation_ts: Timestamp
     # Total amount of DAI owed to the vault, past and future as interest rate
     total_interest_owed: FVal
@@ -592,6 +593,7 @@ class MakerDAO(EthereumModule):
         vault_events.sort(key=lambda event: event.timestamp)
 
         return MakerDAOVaultDetails(
+            identifier=vault.identifier,
             total_interest_owed=total_interest_owed,
             creation_ts=creation_ts,
             events=vault_events,
