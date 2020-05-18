@@ -1,3 +1,4 @@
+var path = require('path');
 const wp = require('@cypress/webpack-preprocessor');
 
 /* eslint-disable arrow-body-style */
@@ -16,7 +17,11 @@ module.exports = (on, config) => {
   const options = {
     webpackOptions: {
       resolve: {
-        extensions: ['.ts', '.tsx', '.js']
+        extensions: ['.ts', '.tsx', '.js'],
+        // add the alias object
+        alias: {
+          '@': path.resolve(__dirname, '../../../src')
+        }
       },
       module: {
         rules: [

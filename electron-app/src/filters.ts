@@ -3,43 +3,50 @@ import Vue from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
-function percentage(value: string, total: string, precision: number): string {
+export function percentage(
+  value: string,
+  total: string,
+  precision: number
+): string {
   const percentage = parseFloat(value) / parseFloat(total);
   return (percentage * 100).toFixed(precision);
 }
 
-function precision(value: number, precision: number): string {
+export function precision(value: number, precision: number): string {
   return value.toFixed(precision);
 }
 
-function formatDate(value: number, format: string): string {
+export function formatDate(value: number, format: string): string {
   return displayDateFormatter.format(new Date(value * 1000), format);
 }
 
-function formatPrice(value: BigNumber, precision: number) {
+export function formatPrice(value: BigNumber, precision: number) {
   return value.toFormat(precision);
 }
 
-function capitalize(string: string): string {
+export function capitalize(string: string): string {
   return string[0].toUpperCase() + string.slice(1);
 }
 
-function roundDown(value: BigNumber, precision: number) {
+export function roundDown(value: BigNumber, precision: number) {
   return value.toFormat(precision, BigNumber.ROUND_DOWN);
 }
 
-function calculatePrice(value: BigNumber, exchangeRate: number): BigNumber {
+export function calculatePrice(
+  value: BigNumber,
+  exchangeRate: number
+): BigNumber {
   return value.multipliedBy(bigNumberify(exchangeRate));
 }
 
-function balanceSum(value: BigNumber[]): BigNumber {
+export function balanceSum(value: BigNumber[]): BigNumber {
   return value.reduce(
     (previousValue, currentValue) => previousValue.plus(currentValue),
     Zero
   );
 }
 
-function aggregateTotal(
+export function aggregateTotal(
   balances: any[],
   mainCurrency: string,
   exchangeRate: number,
@@ -57,7 +64,7 @@ function aggregateTotal(
   }, Zero);
 }
 
-function splitOnCapital(value: string) {
+export function splitOnCapital(value: string) {
   return (
     value.charAt(0).toLocaleUpperCase() +
     value
