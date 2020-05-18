@@ -103,7 +103,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/makerdao/dsrbalance', MakerDAODSRBalanceResource),
     ('/blockchains/ETH/modules/makerdao/dsrhistory', MakerDAODSRHistoryResource),
     ('/blockchains/ETH/modules/makerdao/vaults', MakerDAOVaultsResource),
-    ('/blockchains/ETH/modules/makerdao/dsrhistory', MakerDAOVaultDetailsResource),
+    ('/blockchains/ETH/modules/makerdao/vaultdetails', MakerDAOVaultDetailsResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/assets', OwnedAssetsResource),
     ('/assets/all', AllAssetsResource),
