@@ -10,6 +10,11 @@
       "es6"
     ],
     "types": ["cypress"],
+    "paths": {
+      "@/*": [
+        "../src/*"
+      ]
+    },
     "experimentalDecorators": true
   },
   "include": [
