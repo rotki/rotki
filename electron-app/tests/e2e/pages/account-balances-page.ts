@@ -1,9 +1,6 @@
-// import { capitalize } from '../../../src/filters';
 import { capitalize } from '@/filters';
-
 import { ApiManualBalance } from '../../../src/services/types-api';
 import { bigNumberify, Zero } from '../../../src/utils/bignumbers';
-// import { capitalize } from '../../common/helpers';
 
 export class AccountBalancesPage {
   visit() {
