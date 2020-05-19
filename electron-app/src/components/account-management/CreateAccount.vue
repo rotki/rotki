@@ -1,5 +1,5 @@
 <template>
-  <div v-if="displayed" class="rotki-welcome__create-new-account">
+  <div v-if="displayed" class="create-account">
     <v-card-title>Create New Account</v-card-title>
     <v-card-text>
       <v-form ref="form" v-model="valid">
@@ -74,7 +74,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import PremiumCredentials from '@/components/PremiumCredentials.vue';
+import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import { Credentials } from '@/typing/types';
 
 @Component({

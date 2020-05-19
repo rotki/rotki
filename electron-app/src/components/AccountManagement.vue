@@ -2,7 +2,7 @@
   <div>
     <v-overlay class="account_management__loading">
       <v-dialog :value="true && !premiumVisible" persistent max-width="450">
-        <v-card class="rotki-welcome pb-6">
+        <v-card class="account_management__card pb-6">
           <div
             class="pt-6 pb-3 display-3 font-weight-black primary white--text"
           >
@@ -127,17 +127,15 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
-import MessageOverlay from '@/components/MessageOverlay.vue';
+import CreateAccount from '@/components/account-management/CreateAccount.vue';
+import Login from '@/components/account-management/Login.vue';
 import { Version } from '@/store/store';
 import { Credentials, UnlockPayload } from '@/typing/types';
-import CreateAccount from './CreateAccount.vue';
-import Login from './Login.vue';
 
 const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
-    MessageOverlay,
     Login,
     CreateAccount
   },
@@ -248,8 +246,8 @@ export default class AccountManagement extends Vue {
   &__loading {
     height: 400%;
     width: 400%;
-    top: -40%;
-    left: -100%;
+    top: -40% !important;
+    left: -100% !important;
     background-color: #42210b;
     background: url(~@/assets/images/rotkipattern2.png);
     -webkit-animation-name: scrollLarge;
