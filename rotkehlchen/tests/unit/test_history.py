@@ -1,7 +1,7 @@
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import limit_trade_list_to_period
+from rotkehlchen.history.trades import limit_trade_list_to_period
 from rotkehlchen.typing import Location, TradeType
 
 

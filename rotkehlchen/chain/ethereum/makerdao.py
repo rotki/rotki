@@ -12,6 +12,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_BAT_JOIN,
     MAKERDAO_CAT,
@@ -34,6 +35,7 @@ from rotkehlchen.errors import (
     RemoteError,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.history import PriceHistorian
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
@@ -138,7 +140,14 @@ class MakerDAOVaultDetails(NamedTuple):
     identifier: int
     creation_ts: Timestamp
     # Total amount of DAI owed to the vault, past and future as interest rate
+    # Will be negative if vault has been liquidated. If it's negative then this
+    # is the amount of DAI you managed to keep after liquidation.
     total_interest_owed: FVal
+    # The total amount of collateral that got liquidated
+    total_liquidated_amount: FVal
+    # The total usd value of collateral that got liquidated. This is essentially
+    # all liquidation events amounts multiplied by the USD price of collateral at the time.
+    total_liquidated_usd: FVal
     events: List[VaultEvent]
 
 
@@ -568,6 +577,8 @@ class MakerDAO(EthereumModule):
             argument_filters=argument_filters,
             from_block=MAKERDAO_CAT.deployed_block,
         )
+        sum_liquidation_amount = ZERO
+        sum_liquidation_usd = ZERO
         for event in events:
             if isinstance(event['data'], str):
                 lot = event['data'][:66]
@@ -577,10 +588,18 @@ class MakerDAO(EthereumModule):
                 asset_symbol=asset_symbol,
                 amount=hex_or_bytes_to_int(lot),
             )
+            timestamp = self.ethereum.get_event_timestamp(event)
+            sum_liquidation_amount += amount
+            usd_price = PriceHistorian().query_historical_price(
+                from_asset=vault.collateral_asset,
+                to_asset=A_USD,
+                timestamp=timestamp,
+            )
+            sum_liquidation_usd += amount * usd_price
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.LIQUIDATION,
                 amount=amount,
-                timestamp=self.ethereum.get_event_timestamp(event),
+                timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
 
@@ -588,7 +607,6 @@ class MakerDAO(EthereumModule):
             asset_symbol='DAI',
             amount=total_dai_wei,
         )
-
         # sort vault events by timestamp
         vault_events.sort(key=lambda event: event.timestamp)
 
@@ -596,6 +614,8 @@ class MakerDAO(EthereumModule):
             identifier=vault.identifier,
             total_interest_owed=total_interest_owed,
             creation_ts=creation_ts,
+            total_liquidated_amount=sum_liquidation_amount,
+            total_liquidated_usd=sum_liquidation_usd,
             events=vault_events,
         )
 
@@ -629,6 +649,8 @@ class MakerDAO(EthereumModule):
                     vaults.append(vault)
                     self.vault_mappings[user_address].append(vault)
 
+        # Returns vaults sorted. Oldest identifier first
+        vaults.sort(key=lambda vault: vault.identifier)
         return vaults
 
     def get_vault_details(self) -> List[MakerDAOVaultDetails]:
@@ -650,6 +672,9 @@ class MakerDAO(EthereumModule):
                 vault_detail = self._query_vault_details(vault, proxy, vault.urn)
                 if vault_detail:
                     vault_details.append(vault_detail)
+
+        # Returns vault details sorted. Oldest identifier first
+        vault_details.sort(key=lambda details: details.identifier)
         return vault_details
 
     def get_current_dsr(self) -> DSRCurrentBalances:

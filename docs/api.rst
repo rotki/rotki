@@ -2768,6 +2768,8 @@ Getting MakerDAO vault details
 
    Doing a GET on the makerdao vault details resource will return additional details for each vault and also the list of vault events such as deposits, withdrawals, liquidations, debt generation and repayment.
 
+   To get the total amount of USD lost from the vault (including liquidations) the user should simply add ``total_liquidated_usd`` and ``total_interest_owed``.
+
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
@@ -2795,6 +2797,8 @@ Getting MakerDAO vault details
               "identifier": 1,
               "creation_ts": 1589067898,
               "total_interest_owed": "0.02341",
+	      "total_liquidated_amount": "0",
+	      "total_liquidated_usd": "0",
               "events": [{
                   "event_type": "deposit",
                   "amount": "5.551",
@@ -2809,25 +2813,39 @@ Getting MakerDAO vault details
           }, {
               "identifier": 56,
               "creation_ts": 1589067897,
-              "total_interest_owed": "0.000141",
+              "total_interest_owed": "-751.32",
+	      "total_liquidated_amount": "1050.21",
+	      "total_liquidated_usd": "2501.234",
               "events": [{
                   "event_type": "deposit",
                   "amount": "1050.21",
-                  "timestamp": 1589067899
+                  "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "generate",
                   "amount": "721.32",
-                  "timestamp": 1589067900
+                  "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
-              }]
+              }, {
+                  "event_type": "liquidation",
+                  "amount": "500",
+                  "timestamp": 1589068000,
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
+	      }, {
+                  "event_type": "liquidation",
+                  "amount": "550.21",
+                  "timestamp": 1589068001,
+                  "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
+	      }]
           }]
           "message": ""
       }
 
    :resjson object result: A list of all vault details detected.
    :resjsonarr int creation_ts: The timestamp of the vault's creation.
-   :resjsonarr string total_interest_owed: Total amount of DAI lost to the vault as interest rate.
+   :resjsonarr string total_interest_owed: Total amount of DAI lost to the vault as interest rate. This can be negative, if the vault has been liquidated. In that case the negative number is the DAI that is out in the wild and does not need to be returned after liquidation.
+   :resjsonarr string total_liquidated_amount: The total amount of the collateral asset that has been lost to liquidation. Will be ``0`` if no liquidations happened.
+   :resjsonarr string total_liquidated_usd: The total usd value of collateral that got liquidated. This is essentially all liquidation events amounts multiplied by the USD price of collateral at the time.
    :resjson object events: A list of all events that occured for this vault
    :resjsonarr string event_type: The type of the event. Valid types are: ``["deposit", "withdraw", "generate", "payback", "liquidation"]``
    :resjsonarr string amount: The amount associated with the event. So collateral deposited/withdrawn, debt generated/paid back, amount of collateral lost in liquidation.
