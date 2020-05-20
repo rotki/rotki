@@ -4,6 +4,7 @@ from typing import Dict
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.makerdao import MakerDAOVault
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -13,7 +14,11 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
+from rotkehlchen.tests.utils.checks import (
+    assert_serialized_dicts_equal,
+    assert_serialized_lists_equal,
+)
+from rotkehlchen.tests.utils.constants import A_WBTC
 from rotkehlchen.typing import ChecksumEthAddress
 
 
@@ -250,3 +255,81 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     details = assert_proper_response_with_result(response)
     expected_details = [vault_6021_details, VAULT_8015_DETAILS]
     assert_serialized_lists_equal(expected_details, details)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
+    """Check vault info and details for a vault with WBTC as collateral"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    proxies_mapping = {
+        ethereum_accounts[0]: '0x9684e6C1c7B79868839b27F88bA6d5A176367075',  # 8913
+    }
+
+    mock_proxies(rotki, proxies_mapping)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultsresource",
+    ))
+    # That proxy has 3 vaults. We only want to test 8913, which is closed/repaid so just keep that
+    vaults = [x for x in assert_proper_response_with_result(response) if x['identifier'] == 8913]
+    vault_8913 = MakerDAOVault(
+        identifier=8913,
+        name='WBTC-A',
+        urn='0x37f7B3C82A9Edc13FdCcE66E7d500b3698A13294',
+        collateral_asset=A_WBTC,
+        collateral_amount=ZERO,
+        collateral_usd_value=ZERO,
+        debt_value=ZERO,
+        collateralization_ratio=None,
+        liquidation_ratio=FVal(1.5),
+        liquidation_price=None,
+    )
+    expected_vaults = [vault_8913.serialize()]
+    assert_serialized_lists_equal(expected_vaults, vaults)
+    # And also make sure that the internal mapping will only query details of 8913
+    rotki.chain_manager.makerdao.vault_mappings = {ethereum_accounts[0]: [vault_8913]}
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultdetailsresource",
+    ))
+    vault_8913_details = {
+        'identifier': 8913,
+        'creation_ts': 1588664698,
+        'total_interest_owed': FVal('0.1903819198'),
+        'total_liquidated_amount': FVal('141.7'),
+        'total_liquidated_usd': FVal('19191.848'),
+        'events': [{
+            'event_type': 'deposit',
+            'amount': FVal('0.011'),
+            'timestamp': 1588664698,
+            'tx_hash': '0x9ba4a6187fa2c49ba327e7c923846a08a1e972017ec41d3f9f66ef524f7dde59',
+        }, {
+            'event_type': 'generate',
+            'amount': FVal('25'),
+            'timestamp': 1588664698,
+            'tx_hash': '0x9ba4a6187fa2c49ba327e7c923846a08a1e972017ec41d3f9f66ef524f7dde59',
+        }, {
+            'event_type': 'payback',
+            'amount': FVal('25.000248996'),
+            'timestamp': 1588696496,
+            'tx_hash': '0x8bd960e7eb8b9e2b81d2446d1844dd63f94636c7800ea5e3b4d926ea0244c66c',
+        }, {
+            'event_type': 'deposit',
+            'amount': FVal('0.0113'),
+            'timestamp': 1588720248,
+            'tx_hash': '0x678c4da562173c102473f1904ff293a767ebac9ec6c7d728ef2fd41acf00a13a',
+        }],  # way too many events in the vault, so no need to check them all
+    }
+    details = assert_proper_response_with_result(response)
+    assert len(details) == 1
+    detail = details[0]
+    assert detail['identifier'] == vault_8913_details['identifier']
+    assert detail['creation_ts'] == vault_8913_details['creation_ts']
+    assert FVal(detail['total_interest_owed']).is_close(vault_8913_details['total_interest_owed'])
+    assert FVal(detail['total_liquidated_amount']) == ZERO
+    assert FVal(detail['total_liquidated_usd']) == ZERO
+    for idx, event in enumerate(vault_8913_details['events']):
+        assert_serialized_dicts_equal(event, detail['events'][idx])

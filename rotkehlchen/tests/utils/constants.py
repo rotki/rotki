@@ -10,6 +10,7 @@ A_SNGLS = EthereumToken('SNGLS')
 A_USDT = EthereumToken('USDT')
 A_MKR = EthereumToken('MKR')
 A_BAT = EthereumToken('BAT')
+A_WBTC = EthereumToken('WBTC')
 
 A_DOGE = Asset('DOGE')
 A_LTC = Asset('LTC')
