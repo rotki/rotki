@@ -1,5 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import {
+  CollateralAssetType,
   DSRMovementType,
   Location,
   MakerDAOVaultEventType
@@ -47,7 +48,7 @@ export interface SupportedAsset {
 export interface MakerDAOVault {
   readonly identifier: number;
   readonly name: string;
-  readonly collateralAsset: string;
+  readonly collateralAsset: CollateralAssetType;
   readonly collateralAmount: BigNumber;
   readonly debtValue: BigNumber;
   readonly collateralizationRatio?: string;
@@ -60,6 +61,8 @@ export interface MakerDAOVaultDetails {
   readonly identifier: number;
   readonly creationTs: number;
   readonly totalInterestOwed: BigNumber;
+  readonly totalLiquidatedAmount: BigNumber;
+  readonly totalLiquidatedUsd: BigNumber;
   readonly events: MakerDAOVaultEvent[];
 }
 

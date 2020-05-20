@@ -1,4 +1,5 @@
 import {
+  CollateralAssetType,
   DSRMovementType,
   Location,
   MakerDAOVaultEventType
@@ -56,7 +57,7 @@ export interface ApiManualBalances {
 export interface ApiMakerDAOVault {
   readonly identifier: number;
   readonly name: string;
-  readonly collateral_asset: string;
+  readonly collateral_asset: CollateralAssetType;
   readonly collateral_amount: string;
   readonly debt_value: string;
   readonly collateralization_ratio: string | null;
@@ -69,6 +70,8 @@ export interface ApiMakerDAOVaultDetails {
   readonly identifier: number;
   readonly creation_ts: number;
   readonly total_interest_owed: string;
+  readonly total_liquidated_amount: string;
+  readonly total_liquidated_usd: string;
   readonly events: ApiMakerDAOVaultEvent[];
 }
 

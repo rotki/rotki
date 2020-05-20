@@ -1431,7 +1431,7 @@ export class RotkehlchenApi {
   async makerDAOVaultDetails(): Promise<MakerDAOVaultDetails[]> {
     return this.axios
       .get<ActionResult<ApiMakerDAOVaultDetails[]>>(
-        '/blockchains/ETH/modules/makerdao/vaultdetails`',
+        '/blockchains/ETH/modules/makerdao/vaultdetails',
         {
           validateStatus: RotkehlchenApi.fetchWithExternalService
         }

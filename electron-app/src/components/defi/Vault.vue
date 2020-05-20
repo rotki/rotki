@@ -21,19 +21,19 @@
           </stat-card>
         </v-col>
         <v-col>
-          <stat-card title="Collateralization Ratio">
+          <stat-card title="Collateralization ratio">
             {{ vault.collateralizationRatio }}
           </stat-card>
         </v-col>
       </v-row>
       <v-row>
         <v-col>
-          <stat-card title="Liquidation Rate">
+          <stat-card title="Liquidation rate">
             {{ vault.liquidationRatio }}
           </stat-card>
         </v-col>
         <v-col>
-          <stat-card title="Liquidation Price">
+          <stat-card title="Liquidation price">
             {{ vault.liquidationPrice }}
           </stat-card>
         </v-col>
@@ -49,14 +49,31 @@
       </v-row>
       <v-row>
         <v-col>
+          <stat-card title="Created" :locked="!premium">
+            {{ vault.creationTs | formatDate(dateDisplayFormat) }}
+          </stat-card>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
           <stat-card title="Total interest owned" :locked="!premium">
             <span>{{ vault.totalInterestOwed }} </span>
             <span>{{ vault.collateralAsset }}</span>
           </stat-card>
         </v-col>
         <v-col>
-          <stat-card title="Created" :locked="!premium">
-            {{ vault.creationTs | formatDate(dateDisplayFormat) }}
+          <stat-card title="Total liquidated amount" :locked="!premium">
+            <span>{{ vault.totalLiquidatedAmount }} </span>
+            <span>{{ vault.collateralAsset }}</span>
+          </stat-card>
+        </v-col>
+        <v-col>
+          <stat-card title="Total liquidated value" :locked="!premium">
+            <amount-display
+              :value="vault.totalLiquidatedUsd"
+              show-currency="symbol"
+              fiat-currency="USD"
+            ></amount-display>
           </stat-card>
         </v-col>
       </v-row>
@@ -65,6 +82,13 @@
           <premium-card title="Actions"></premium-card>
         </v-col>
       </v-row>
+    </v-col>
+  </v-row>
+  <v-row v-else align="center" justify="center">
+    <v-col>
+      <span class="font-weight-light subtitle-2">
+        Please select a Vault to see information
+      </span>
     </v-col>
   </v-row>
 </template>

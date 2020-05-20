@@ -97,9 +97,9 @@ export function convertMakerDAOVaults(
     collateralAmount: bigNumberify(vault.collateral_amount),
     debtValue: bigNumberify(vault.debt_value),
     liquidationRatio: vault.liquidation_ratio,
-    liquidationPrice: new BigNumber(vault.liquidation_price),
+    liquidationPrice: bigNumberify(vault.liquidation_price),
     collateralizationRatio: vault.collateralization_ratio ?? undefined,
-    collateralUsdValue: new BigNumber(vault.collateral_usd_value)
+    collateralUsdValue: bigNumberify(vault.collateral_usd_value)
   }));
 }
 
@@ -108,7 +108,7 @@ function convertVaultEvents(
 ): MakerDAOVaultEvent[] {
   return apiVaultEvents.map(event => ({
     eventType: event.event_type,
-    amount: new BigNumber(event.amount),
+    amount: bigNumberify(event.amount),
     timestamp: event.timestamp,
     txHash: event.tx_hash
   }));
@@ -120,7 +120,9 @@ export function convertVaultDetails(
   return apiVaultDetails.map(details => ({
     identifier: details.identifier,
     creationTs: details.creation_ts,
-    totalInterestOwed: new BigNumber(details.total_interest_owed),
+    totalInterestOwed: bigNumberify(details.total_interest_owed),
+    totalLiquidatedAmount: bigNumberify(details.total_liquidated_amount),
+    totalLiquidatedUsd: bigNumberify(details.total_liquidated_usd),
     events: convertVaultEvents(details.events)
   }));
 }
