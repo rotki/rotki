@@ -79,7 +79,12 @@
       </v-row>
       <v-row>
         <v-col cols="12">
-          <premium-card title="Actions"></premium-card>
+          <premium-card v-if="!premium" title="Actions"></premium-card>
+          <vault-events-list
+            v-else
+            :asset="vault.collateralAsset"
+            :events="vault.events"
+          ></vault-events-list>
         </v-col>
       </v-row>
     </v-col>
@@ -100,11 +105,12 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import { MakerDAOVaultModel } from '@/store/balances/types';
+import { VaultEventsList } from '@/utils/premium';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { PremiumCard, AmountDisplay, StatCard },
+  components: { PremiumCard, AmountDisplay, StatCard, VaultEventsList },
   computed: {
     ...mapState(['premium']),
     ...mapGetters(['dateDisplayFormat'])

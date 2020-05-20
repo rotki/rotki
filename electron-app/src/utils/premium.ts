@@ -66,6 +66,13 @@ export const DsrMovementHistory = (): Promise<VueConstructor> => {
   );
 };
 
+export const VaultEventsList = (): Promise<VueConstructor> => {
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async resolve =>
+    resolve((await loadLibrary()).VaultEventsList)
+  );
+};
+
 declare global {
   interface Window {
     Vue: any;
