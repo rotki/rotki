@@ -405,3 +405,78 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     details = assert_proper_response_with_result(response)
     expected_details = [vault_7588_details]
     assert_serialized_lists_equal(expected_details, details)
+
+
+@pytest.mark.skip('This vault is special and does not work. needs investigation')
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
+    """Strange case of a USDC vault that is not queried correctly
+
+    https://oasis.app/borrow/7538?network=mainnet
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    proxies_mapping = {
+        ethereum_accounts[0]: '0x15fEaFd4358b8C03c889D6661b0CA1Be3389792F',  # 7538
+    }
+
+    mock_proxies(rotki, proxies_mapping)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultsresource",
+    ))
+    # That proxy has 3 vaults. We only want to test 7538, which is closed/repaid so just keep that
+    vaults = [x for x in assert_proper_response_with_result(response) if x['identifier'] == 7538]
+    vault_7538 = MakerDAOVault(
+        identifier=7538,
+        name='USDC-A',
+        urn='0x70E58566C7baB6faaFE03fbA69DF45Ef4f48223B',
+        collateral_asset=A_USDC,
+        collateral_amount=ZERO,
+        collateral_usd_value=ZERO,
+        debt_value=ZERO,
+        collateralization_ratio=None,
+        liquidation_ratio=FVal(1.2),
+        liquidation_price=None,
+    )
+    expected_vaults = [vault_7538.serialize()]
+    assert_serialized_lists_equal(expected_vaults, vaults)
+    # And also make sure that the internal mapping will only query details of 7538
+    rotki.chain_manager.makerdao.vault_mappings = {ethereum_accounts[0]: [vault_7538]}
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultdetailsresource",
+    ))
+    vault_7538_details = {
+        'identifier': 7538,
+        'creation_ts': 1585145754,
+        'total_interest_owed': FVal('0.0005943266'),
+        'total_liquidated_amount': ZERO,
+        'total_liquidated_usd': ZERO,
+        'events': [{
+            'event_type': 'deposit',
+            'amount': FVal('250.12'),
+            'timestamp': 1588664698,
+            'tx_hash': '0x9ba4a6187fa2c49ba327e7c923846a08a1e972017ec41d3f9f66ef524f7dde59',
+        }, {
+            'event_type': 'generate',
+            'amount': FVal('25'),
+            'timestamp': 1588664698,
+            'tx_hash': '0x9ba4a6187fa2c49ba327e7c923846a08a1e972017ec41d3f9f66ef524f7dde59',
+        }, {
+            'event_type': 'payback',
+            'amount': FVal('25.000248996'),
+            'timestamp': 1588696496,
+            'tx_hash': '0x8bd960e7eb8b9e2b81d2446d1844dd63f94636c7800ea5e3b4d926ea0244c66c',
+        }, {
+            'event_type': 'deposit',
+            'amount': FVal('0.0113'),
+            'timestamp': 1588720248,
+            'tx_hash': '0x678c4da562173c102473f1904ff293a767ebac9ec6c7d728ef2fd41acf00a13a',
+        }],
+    }
+    details = assert_proper_response_with_result(response)
+    expected_details = [vault_7538_details]
+    assert_serialized_lists_equal(expected_details, details)
