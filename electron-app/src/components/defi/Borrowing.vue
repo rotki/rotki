@@ -1,7 +1,7 @@
 <template>
   <progress-screen v-if="loading">
     <template #message>
-      Please wait while your balances are getting loaded...
+      Please wait while your vaults are getting loaded...
     </template>
   </progress-screen>
   <v-container v-else>

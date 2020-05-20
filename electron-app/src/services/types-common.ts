@@ -23,3 +23,5 @@ export type MakerDAOVaultEventType =
   | 'generate'
   | 'payback'
   | 'liquidation';
+
+export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
