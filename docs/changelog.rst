@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`707` Rotki now supports makerdao vaults. The vaults of the user are autodetected and they can see all details of each
+  vault in the DeFi borrowing section. Premium users can also see historical information and total interest owed or USD lost to liquidation.
 * :feature:`917` Rotki now has a new and improved Dashboard. Users can view their total net worth as well as totals per source of balances (exchanges, blockchains, and manual entries), as well as filter the full asset listing.
 * :bug:`995` Importing from cointracking.info should now work again. Adjust to the latest cointracking.info CSV export format.
 * :feature:`971` Rotki's initial loading and welcome screens are now integrated with an improved UI and a scrolling robin in the background to welcome the user.
