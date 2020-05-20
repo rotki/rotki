@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.checks import (
     assert_serialized_dicts_equal,
     assert_serialized_lists_equal,
 )
-from rotkehlchen.tests.utils.constants import A_WBTC
+from rotkehlchen.tests.utils.constants import A_USDC, A_WBTC
 from rotkehlchen.typing import ChecksumEthAddress
 
 
@@ -333,3 +333,75 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     assert FVal(detail['total_liquidated_usd']) == ZERO
     for idx, event in enumerate(vault_8913_details['events']):
         assert_serialized_dicts_equal(event, detail['events'][idx])
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
+    """Check vault info and details for a vault with USDC as collateral"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    proxies_mapping = {
+        ethereum_accounts[0]: '0xBE79958661741079679aFf75DbEd713cE71a979d',  # 7588
+    }
+
+    mock_proxies(rotki, proxies_mapping)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultsresource",
+    ))
+    vaults = assert_proper_response_with_result(response)
+    vault_7588 = MakerDAOVault(
+        identifier=7588,
+        name='USDC-A',
+        urn='0x56D88244073B2fC17af5B1E6088936D5bAaDc37B',
+        collateral_asset=A_USDC,
+        collateral_amount=ZERO,
+        collateral_usd_value=ZERO,
+        debt_value=ZERO,
+        collateralization_ratio=None,
+        liquidation_ratio=FVal(1.2),
+        liquidation_price=None,
+    )
+    expected_vaults = [vault_7588.serialize()]
+    assert_serialized_lists_equal(expected_vaults, vaults)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultdetailsresource",
+    ))
+    vault_7588_details = {
+        'identifier': 7588,
+        'creation_ts': 1585286480,
+        'total_interest_owed': FVal('0.00050636718'),
+        'total_liquidated_amount': ZERO,
+        'total_liquidated_usd': ZERO,
+        'events': [{
+            'event_type': 'deposit',
+            'amount': FVal('45'),
+            'timestamp': 1585286480,
+            'tx_hash': '0x8b553dd0e8ee5385ec91105bf911143666d9df0ecd84c04f288278f7658aa7d6',
+        }, {
+            'event_type': 'generate',
+            'amount': FVal('20'),
+            'timestamp': 1585286480,
+            'tx_hash': '0x8b553dd0e8ee5385ec91105bf911143666d9df0ecd84c04f288278f7658aa7d6',
+        }, {
+            'event_type': 'generate',
+            'amount': FVal('15.99'),
+            'timestamp': 1585286769,
+            'tx_hash': '0xdb861c893a51e4649ff3740cd3658cd4c9b1d048d3b8b4d117f4319bd60aee01',
+        }, {
+            'event_type': 'payback',
+            'amount': FVal('35.990506367'),
+            'timestamp': 1585290263,
+            'tx_hash': '0xdd7825fe4a93c6f1ffa25a91b6da2396c229fe16b17242ad5c0bf7962928b2ec',
+        }, {
+            'event_type': 'withdraw',
+            'amount': FVal('45'),
+            'timestamp': 1585290300,
+            'tx_hash': '0x97462ebba7ce2467787bf6de25a25c24e538cf8a647919112c5f048b6a293408',
+        }],
+    }
+    details = assert_proper_response_with_result(response)
+    expected_details = [vault_7588_details]
+    assert_serialized_lists_equal(expected_details, details)
