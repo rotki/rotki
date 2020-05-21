@@ -47,6 +47,7 @@ from rotkehlchen.api.v1.encoding import (
     TradesQuerySchema,
     UserActionSchema,
     UserPasswordChangeSchema,
+    UserPremiumKeyRemoveSchema,
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -544,6 +545,14 @@ class UserPasswordChangeResource(BaseResource):
             current_password=current_password,
             new_password=new_password,
         )
+
+
+class UserPremiumKeyResource(BaseResource):
+    delete_schema = UserPremiumKeyRemoveSchema
+
+    @use_kwargs(delete_schema, location='view_args')  # type: ignore
+    def delete(self, name: str) -> Response:
+        return self.rest_api.user_premium_key_remove(name=name)
 
 
 class StatisticsNetvalueResource(BaseResource):

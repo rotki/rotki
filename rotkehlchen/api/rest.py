@@ -946,6 +946,29 @@ class RestAPI():
         else:
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
+    @require_premium_user(active_check=False)
+    def user_premium_key_remove(self, name: str) -> Response:
+        """Returns successful result if API keys are successfully removed"""
+        result_dict: Dict[str, Any] = {'result': None, 'message': ''}
+        success: bool
+
+        if name != self.rotkehlchen.data.username:
+            result_dict['message'] = f'Provided user "{name}" is not the logged in user'
+            return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
+
+        try:
+            success = self.rotkehlchen.data.db.del_rotkehlchen_premium()
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        if success is False:
+            msg = 'The database was unable to delete the Premium keys for the logged-in user'
+            result_dict['message'] = msg
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+        else:
+            self.rotkehlchen.deactivate_premium_status()
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
     @staticmethod
     def query_all_assets() -> Response:
         """Returns all supported assets. Essentially the contents of all_assets.json"""

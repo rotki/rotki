@@ -11,12 +11,12 @@
         {{ title }}
       </v-card-title>
       <v-row align="center" class="mx-0 confirm-dialog__body">
-        <v-col cols="1">
-          <v-icon color="primary">
-            fa fa-question-circle fa-3x
+        <v-col cols="2" class="text-center">
+          <v-icon :color="confirmTypeProps[confirmType].color" x-large>
+            fa {{ confirmTypeProps[confirmType].icon }}
           </v-icon>
         </v-col>
-        <v-col cols="11">
+        <v-col cols="10">
           {{ message }}
         </v-col>
       </v-row>
@@ -33,7 +33,7 @@
           Cancel
         </v-btn>
         <v-btn
-          color="primary"
+          :color="confirmTypeProps[confirmType].color"
           depressed
           class="confirm-dialog__buttons__confirm"
           @click="confirm()"
@@ -56,6 +56,18 @@ export default class ConfirmDialog extends Vue {
   message!: string;
   @Prop({ type: Boolean, required: true })
   display!: boolean;
+  @Prop({ type: String, required: false, default: 'Confirm' })
+  primaryAction!: string;
+  @Prop({ type: String, required: false, default: 'Cancel' })
+  secondaryAction!: string;
+  @Prop({ type: String, required: false, default: 'info' }) // must be one of the types defined in confirmTypesProps below
+  confirmType!: string;
+
+  confirmTypeProps = {
+    info: { icon: 'fa-question-circle', color: 'primary' }, // TODO: change color: 'primary' -> 'info' when we start to use it as a variable in the new color scheme
+    warning: { icon: 'fa-warning', color: 'error' },
+    success: { icon: 'fa-check-circle', color: 'success' }
+  };
 
   @Emit()
   confirm() {}

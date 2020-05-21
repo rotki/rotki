@@ -184,6 +184,22 @@ export class RotkehlchenApi {
     });
   }
 
+  deletePremiumCredentials(username: string): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>(`/users/${username}/premium`, {
+        validateStatus: function (status) {
+          return (
+            status == 200 ||
+            status == 400 ||
+            status == 401 ||
+            status == 409 ||
+            status == 502
+          );
+        }
+      })
+      .then(this.handleResponse);
+  }
+
   changeUserPassword(
     username: string,
     currentPassword: string,

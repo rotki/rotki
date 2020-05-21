@@ -1650,6 +1650,19 @@ class DBHandler:
         # an empty last write ts in that case
         # self.update_last_write()
 
+    def del_rotkehlchen_premium(self) -> None:
+        """Delete the rotki premium credentials in the DB for the logged-in user"""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                'DELETE FROM user_credentials WHERE name =?', ('rotkehlchen',),
+            )
+            self.conn.commit()
+        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+            log.error(f'Could not delete rotki premium keys: {str(e)}')
+            return False
+        return True
+
     def get_rotkehlchen_premium(self) -> Optional[PremiumCredentials]:
         cursor = self.conn.cursor()
         result = cursor.execute(
