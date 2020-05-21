@@ -81,6 +81,7 @@
     <confirm-dialog
       :display="confirmDeletePremium"
       confirm-type="warning"
+      primary-action="Delete"
       title="Delete rotki premium keys?"
       message="Are you sure you want to delete your rotki premium keys? Premium will be disabled for this session and if you want to re-enable premium you will have to enter your keys again."
       @confirm="deletePremium()"

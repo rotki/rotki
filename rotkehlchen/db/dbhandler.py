@@ -1650,7 +1650,7 @@ class DBHandler:
         # an empty last write ts in that case
         # self.update_last_write()
 
-    def del_rotkehlchen_premium(self) -> None:
+    def del_rotkehlchen_premium(self) -> bool:
         """Delete the rotki premium credentials in the DB for the logged-in user"""
         try:
             cursor = self.conn.cursor()
