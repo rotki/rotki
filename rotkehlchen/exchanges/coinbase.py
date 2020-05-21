@@ -127,11 +127,13 @@ class Coinbase(ExchangeInterface):
             elif 'buys' in method_str:
                 permission = 'wallet:buys:read'
             elif 'sells' in method_str:
-                permission = 'wallet:buys:read'
+                permission = 'wallet:sells:read'
             elif 'deposits' in method_str:
                 permission = 'wallet:deposits:read'
             elif 'withdrawals' in method_str:
                 permission = 'wallet:withdrawals:read'
+            elif 'trades' in method_str:
+                permission = 'wallet:trades:read'
             # the accounts elif should be at the end since the word appears
             # in other endpoints
             elif 'accounts' in method_str:
@@ -145,7 +147,7 @@ class Coinbase(ExchangeInterface):
                 f'Please log into your coinbase account and set all required permissions: '
                 f'wallet:accounts:read, wallet:transactions:read, '
                 f'wallet:buys:read, wallet:sells:read, wallet:withdrawals:read, '
-                f'wallet:deposits:read'
+                f'wallet:deposits:read, wallet:trades:read'
             )
 
             return None, msg
