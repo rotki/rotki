@@ -48,7 +48,7 @@ log = logging.getLogger(__name__)
 POT_CREATION_TIMESTAMP = 1573672721
 CHI_BLOCKS_SEARCH_DISTANCE = 250  # Blocks per call query per side (before/after)
 MAX_BLOCKS_TO_QUERY = 346000  # query about a month's worth of blocks in each side before giving up
-PROXY_MAPPING_QUERY_PERIOD = 7200  # Refresh proxy query mappings every 2 hours
+REQUERY_PERIOD = 7200  # Refresh queries every 2 hours
 
 GEMJOIN_MAPPING = {
     'ETH': MAKERDAO_ETH_JOIN,
@@ -269,6 +269,7 @@ class MakerDAO(EthereumModule):
         self.lock = Semaphore()
         self.historical_dsr_reports: Dict[ChecksumEthAddress, DSRAccountReport] = {}
         self.last_proxy_mapping_query_ts = 0
+        self.last_vault_mapping_query_ts = 0
         self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
         self.usd_price: Dict[str, FVal] = defaultdict(FVal)
         self.vault_mappings: Dict[ChecksumEthAddress, List[MakerDAOVault]] = defaultdict(list)
@@ -298,7 +299,7 @@ class MakerDAO(EthereumModule):
     def _get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
         """Returns a mapping of accounts that have DSR proxies to their proxies
 
-        If the proxy mappings have been queried in the past PROXY_MAPPING_QUERY_PERIOD
+        If the proxy mappings have been queried in the past REQUERY_PERIOD
         seconds then the old result is used.
 
         May raise:
@@ -308,7 +309,7 @@ class MakerDAO(EthereumModule):
         queries fail for some reason
         """
         now = ts_now()
-        if now - self.last_proxy_mapping_query_ts < PROXY_MAPPING_QUERY_PERIOD:
+        if now - self.last_proxy_mapping_query_ts < REQUERY_PERIOD:
             return self.proxy_mappings
 
         mapping = {}
@@ -398,11 +399,6 @@ class MakerDAO(EthereumModule):
             proxy: ChecksumEthAddress,
             urn: ChecksumEthAddress,
     ) -> Optional[MakerDAOVaultDetails]:
-        """Querying vault details for a vault.
-
-        Premium only. Should always be called only after a vault's data have
-        been queried with _query_vault_data()
-        """
         asset_symbol = vault.collateral_asset.identifier
         # They can raise:
         # ConversionError due to hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -649,9 +645,31 @@ class MakerDAO(EthereumModule):
                     vaults.append(vault)
                     self.vault_mappings[user_address].append(vault)
 
+        self.last_vault_mapping_query_ts = ts_now()
         # Returns vaults sorted. Oldest identifier first
         vaults.sort(key=lambda vault: vault.identifier)
         return vaults
+
+    def _get_vault_mappings(self) -> Dict[ChecksumEthAddress, List[MakerDAOVault]]:
+        """Returns a mapping of accounts to vault lists
+
+        If the mappings have been queried in the past REQUERY_PERIOD
+        seconds then the old result is used.
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
+        """
+        now = ts_now()
+        if now - self.last_vault_mapping_query_ts < REQUERY_PERIOD:
+            return self.vault_mappings
+
+        # reset vault mappings, and set them with get_vaults
+        self.vault_mappings = defaultdict(list)
+        self.get_vaults()
+        return self.vault_mappings
 
     def get_vault_details(self) -> List[MakerDAOVaultDetails]:
         """Queries vault details for the auto detected vaults of the user
@@ -666,7 +684,9 @@ class MakerDAO(EthereumModule):
         """
         vault_details = []
         proxy_mappings = self._get_accounts_having_maker_proxy()
-        for address, vaults in self.vault_mappings.items():
+        # Make sure that before querying vault details there has been a recent vaults call
+        vault_mappings = self._get_vault_mappings()
+        for address, vaults in vault_mappings.items():
             proxy = proxy_mappings[address]
             for vault in vaults:
                 vault_detail = self._query_vault_details(vault, proxy, vault.urn)
