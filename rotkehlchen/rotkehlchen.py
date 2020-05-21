@@ -297,7 +297,7 @@ class Rotkehlchen():
     def deactivate_premium_status(self) -> None:
         """Deactivate premium in the current session"""
         self.premium = None
-        self.premium_sync_manager = None
+        self.premium_sync_manager.premium = None
         makerdao = self.chain_manager.makerdao
         if makerdao:
             makerdao.premium = None
