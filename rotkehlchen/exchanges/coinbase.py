@@ -296,7 +296,7 @@ class Coinbase(ExchangeInterface):
         # If we got pagination and this is the first query, gather all the subsequent queries
         if 'pagination' in json_ret and not pagination_next_uri and not ignore_pagination:
             if 'next_uri' not in json_ret['pagination']:
-                raise RemoteError(f'Coinbase json response contained no "next_uri" key')
+                raise RemoteError('Coinbase json response contained no "next_uri" key')
 
             next_uri = json_ret['pagination']['next_uri']
             if not next_uri:
@@ -526,8 +526,8 @@ class Coinbase(ExchangeInterface):
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
-                f'Unexpected data encountered during deserialization of a coinbase '
-                f'asset movement. Check logs for details and open a bug report.',
+                'Unexpected data encountered during deserialization of a coinbase '
+                'asset movement. Check logs for details and open a bug report.',
             )
             log.error(
                 f'Unexpected data encountered during deserialization of coinbase '

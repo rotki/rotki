@@ -326,8 +326,8 @@ class Bitmex(ExchangeInterface):
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 self.msg_aggregator.add_error(
-                    f'Unexpected data encountered during deserialization of a bitmex '
-                    f'asset movement. Check logs for details and open a bug report.',
+                    'Unexpected data encountered during deserialization of a bitmex '
+                    'asset movement. Check logs for details and open a bug report.',
                 )
                 log.error(
                     f'Unexpected data encountered during deserialization of bitmex '

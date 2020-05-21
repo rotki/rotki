@@ -169,9 +169,7 @@ def create_coinbasepro_query_mock(
                 else:
                     text = ETH_BAT_REPORT
             else:
-                raise AssertionError(
-                    f'Tried to download invalid coinbasepro report during tests',
-                )
+                raise AssertionError('Tried to download invalid coinbasepro report during tests')
 
             return MockResponse(200, text)
         else:

@@ -162,7 +162,7 @@ class DBUpgradeManager():
 
         # First make a backup of the DB
         with TemporaryDirectory() as tmpdirname:
-            tmp_db_filename = os.path.join(tmpdirname, f'rotkehlchen_db.backup')
+            tmp_db_filename = os.path.join(tmpdirname, 'rotkehlchen_db.backup')
             shutil.copyfile(
                 os.path.join(self.db.user_data_dir, 'rotkehlchen.db'),
                 tmp_db_filename,

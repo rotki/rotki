@@ -189,7 +189,7 @@ class RestAPI():
             task_str = f'Greenlet for task {task_id}'
         except AttributeError:
             task_id = None
-            task_str = f'Main greenlet'
+            task_str = 'Main greenlet'
 
         log.error(
             '{} dies with exception: {}.\n'
@@ -930,7 +930,7 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
 
         if current_password != self.rotkehlchen.data.password:
-            result_dict['message'] = f'Provided current password is not correct'
+            result_dict['message'] = 'Provided current password is not correct'
             return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 
         success: bool

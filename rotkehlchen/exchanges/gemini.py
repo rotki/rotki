@@ -109,9 +109,9 @@ class Gemini(ExchangeInterface):
         - Auditor
         """
         msg = (
-            f'Provided Gemini API key needs to have "Auditor" permission activated. '
-            f'Please log into your gemini account and create a key with '
-            f'the required permissions.'
+            'Provided Gemini API key needs to have "Auditor" permission activated. '
+            'Please log into your gemini account and create a key with '
+            'the required permissions.'
         )
         try:
             roles = self._private_api_query(endpoint='roles')
