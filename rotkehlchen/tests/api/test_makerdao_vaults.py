@@ -149,6 +149,30 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_accounts):
+    """Check querying the vaults details endpoint works before even querying vaults"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    proxies_mapping = {ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB'}
+    mock_proxies(rotki, proxies_mapping)
+    # Query the details first
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultdetailsresource",
+    ))
+    details = assert_proper_response_with_result(response)
+    _check_vault_details_values(details)
+    # And then query the vaults, which should just use the cached value
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultsresource",
+    ))
+    vaults = assert_proper_response_with_result(response)
+    _check_vaults_values(vaults)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 def test_query_vaults_details_non_premium(rotkehlchen_api_server):
     """Check querying the vaults details endpoint without premium does not work"""
     response = requests.get(api_url_for(
