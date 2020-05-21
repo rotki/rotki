@@ -16,7 +16,7 @@
           <v-text-field
             v-model="apiKey"
             class="premium-settings__fields__api-key"
-            :append-icon="showKey ? 'fa-eye' : 'fa-eye-slash'"
+            :append-icon="edit ? (showKey ? 'fa-eye' : 'fa-eye-slash') : ''"
             prepend-icon="fa-key"
             :disabled="premium && !edit"
             :type="showKey ? 'text' : 'password'"
@@ -26,7 +26,7 @@
           <v-text-field
             v-model="apiSecret"
             class="premium-settings__fields__api-secret"
-            :append-icon="showSecret ? 'fa-eye' : 'fa-eye-slash'"
+            :append-icon="edit ? (showSecret ? 'fa-eye' : 'fa-eye-slash') : ''"
             :disabled="premium && !edit"
             prepend-icon="fa-user-secret"
             :type="showSecret ? 'text' : 'password'"
@@ -49,7 +49,18 @@
             {{ premium && !edit ? 'Replace Key' : 'Setup' }}
           </v-btn>
           <v-btn
-            v-if="edit"
+            v-if="premium"
+            class="premium-settings__button__setup"
+            depressed
+            outlined
+            color="primary"
+            type="submit"
+            @click="confirmDeletePremium = true"
+          >
+            Delete Key
+          </v-btn>
+          <v-btn
+            v-if="edit && premium"
             id="premium-edit-cancel-button"
             depressed
             color="primary"
@@ -67,6 +78,14 @@
         </v-card-actions>
       </v-card>
     </v-col>
+    <confirm-dialog
+      :display="confirmDeletePremium"
+      confirm-type="warning"
+      title="Delete rotki premium keys?"
+      message="Are you sure you want to delete your rotki premium keys? Premium will be disabled for this session and if you want to re-enable premium you will have to enter your keys again."
+      @confirm="deletePremium()"
+      @cancel="confirmDeletePremium = false"
+    ></confirm-dialog>
   </v-row>
 </template>
 
@@ -74,6 +93,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Message } from '@/store/store';
 
@@ -81,6 +101,7 @@ const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
+    ConfirmDialog,
     MessageDialog,
     BaseExternalLink
   },
@@ -90,7 +111,8 @@ export default class PremiumSettings extends Vue {
   apiKey: string = '';
   apiSecret: string = '';
   sync: boolean = false;
-  edit: boolean = false;
+  edit: boolean = true;
+  confirmDeletePremium: boolean = false;
 
   showKey: boolean = false;
   showSecret: boolean = false;
@@ -101,6 +123,11 @@ export default class PremiumSettings extends Vue {
 
   mounted() {
     this.sync = this.premiumSync;
+    if (!this.premium && !this.edit) {
+      this.edit = true;
+    } else {
+      this.edit = false;
+    }
   }
 
   setupPremium() {
@@ -138,6 +165,35 @@ export default class PremiumSettings extends Vue {
           success: false
         } as Message);
       });
+  }
+
+  deletePremium() {
+    this.confirmDeletePremium = false;
+    if (this.premium) {
+      const { commit } = this.$store;
+
+      this.$api
+        .deletePremiumCredentials(this.username)
+        .then(() => {
+          commit('session/premium', false);
+          commit('setMessage', {
+            title: 'Premium Credentials',
+            description: 'Successfully deleted premium credentials',
+            success: true
+          } as Message);
+          this.apiSecret = '';
+          this.apiKey = '';
+          this.edit = false;
+        })
+        .catch((reason: Error) => {
+          commit('session/premium', false);
+          commit('setMessage', {
+            title: 'Premium Credentials Error',
+            description: reason.message || 'Error deleting premium credentials',
+            success: false
+          } as Message);
+        });
+    }
   }
 
   onSyncChange() {

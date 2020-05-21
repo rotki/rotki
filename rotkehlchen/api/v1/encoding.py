@@ -706,6 +706,10 @@ class UserPasswordChangeSchema(Schema):
     new_password = fields.String(required=True)
 
 
+class UserPremiumKeyRemoveSchema(Schema):
+    name = fields.String(required=True)
+
+
 class NewUserSchema(BaseUserSchema):
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')
