@@ -209,7 +209,7 @@ def _upgrade_trades_table(db: 'DBHandler') -> None:
             ))
 
     # and now delete all old trades
-    cursor.executemany(f'DELETE FROM trades WHERE id = ?', trades_to_delete)
+    cursor.executemany('DELETE FROM trades WHERE id = ?', trades_to_delete)
     # and add all newly edited trades back in the DB
     query = """
     INSERT INTO trades(

@@ -385,9 +385,7 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     }
     response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",
                               name=username), json=data_wrong_pass)
-    msg = (
-        f'Provided current password is not correct'
-    )
+    msg = ('Provided current password is not correct')
     assert_error_response(
         response=response,
         contained_in_msg=msg,

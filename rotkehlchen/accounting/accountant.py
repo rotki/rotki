@@ -430,8 +430,8 @@ class Accountant():
             return True, prev_time, count
         except DeserializationError:
             self.msg_aggregator.add_error(
-                f'At history processing found trade with non string asset type. '
-                f'Ignoring the trade.',
+                'At history processing found trade with non string asset type. '
+                'Ignoring the trade.',
             )
             return True, prev_time, count
 
