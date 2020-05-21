@@ -27,10 +27,11 @@
           color="primary"
           depressed
           outlined
+          text
           class="confirm-dialog__buttons__cancel"
           @click="cancel()"
         >
-          Cancel
+          {{ secondaryAction }}
         </v-btn>
         <v-btn
           :color="confirmTypeProps[confirmType].color"
@@ -38,7 +39,7 @@
           class="confirm-dialog__buttons__confirm"
           @click="confirm()"
         >
-          Confirm
+          {{ primaryAction }}
         </v-btn>
       </v-card-actions>
     </v-card>
