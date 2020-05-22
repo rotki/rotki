@@ -979,6 +979,13 @@ class MakerDAO(EthereumModule):
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
+
+        if time > 1584386100:
+            # If the time is after 16/03/2020 19:15 GMT we know that
+            # makerdao DSR was set to 0% we know chi has not changed
+            # https://twitter.com/MakerDAO/status/1239270910810411008
+            return FVal('1018008449363110619399951035')
+
         block_number = self.ethereum.etherscan.get_blocknumber_by_time(time)
         if self.ethereum.connected:
             latest_block = self.ethereum.web3.eth.blockNumber
@@ -1165,7 +1172,7 @@ class MakerDAO(EthereumModule):
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
-        self.historical_dsr_reports = self.get_historical_dsr()
+        pass
 
     def on_account_addition(self, address: ChecksumEthAddress) -> None:
         with self.lock:
