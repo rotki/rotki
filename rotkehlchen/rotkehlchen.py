@@ -294,6 +294,21 @@ class Rotkehlchen():
 
         self.data.db.set_rotkehlchen_premium(credentials)
 
+    def delete_premium_credentials(self, name: str) -> Tuple[bool, str]:
+        """Deletes the premium credentials for Rotki"""
+        success: bool
+        msg = ''
+
+        if name != self.data.username:
+            msg = f'Provided user "{name}" is not the logged in user'
+            success = False
+
+        success = self.data.db.del_rotkehlchen_premium()
+        if success is False:
+            msg = 'The database was unable to delete the Premium keys for the logged-in user'
+        self.deactivate_premium_status()
+        return success, msg
+
     def deactivate_premium_status(self) -> None:
         """Deactivate premium in the current session"""
         self.premium = None

@@ -288,6 +288,35 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 409: User is not logged in, or user does not exist
    :statuscode 500: Internal Rotki error
 
+.. http:delete:: /api/(version)/users/(username)/premium
+
+   By doing a ``DELETE`` at this endpoint you can delete the premium api key and secret pair for the logged-in user.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/users/john/premium HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
+   :statuscode 200: API key/secret deleted succesfully
+   :statuscode 400: Provided call is in some way malformed. For example a user who is not logged in has been specified.
+   :statuscode 409: User is not logged in, or user does not exist, or db operation error
+   :statuscode 500: Internal Rotki error
+
 Getting or modifying external services API credentials
 =======================================================
 

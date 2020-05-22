@@ -1655,7 +1655,7 @@ class DBHandler:
         try:
             cursor = self.conn.cursor()
             cursor.execute(
-                'DELETE FROM user_credentials WHERE name =?', ('rotkehlchen',),
+                'DELETE FROM user_credentials WHERE name=?', ('rotkehlchen',),
             )
             self.conn.commit()
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
