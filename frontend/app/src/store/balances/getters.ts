@@ -125,7 +125,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     { session }
   ) => {
     const overallFiatTotal = fiatTotal;
-    const mainCurrency = session?.settings.selectedCurrency.ticker_symbol;
+    const mainCurrency = session?.generalSettings.selectedCurrency.ticker_symbol;
 
     const manualBalances = state.manualBalances;
     const currentExchangeRate = exchangeRate(mainCurrency);
