@@ -2,15 +2,15 @@ export class AccountingSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
     cy.get('.user-dropdown__settings').click();
-    cy.get('a.settings-accounting').click();
+    cy.get('a.settings__accounting').click();
   }
 
   setTaxFreePeriodDays(value: string) {
-    cy.get('.settings-accounting__taxfree-period-days input').clear();
-    cy.get('.settings-accounting__taxfree-period-days input').type(value);
-    cy.get('.settings-accounting__taxfree-period-days input').blur();
+    cy.get('.accounting-settings__taxfree-period-days input').clear();
+    cy.get('.accounting-settings__taxfree-period-days input').type(value);
+    cy.get('.accounting-settings__taxfree-period-days input').blur();
     this.confirmInlineSuccess(
-      '.settings-accounting__taxfree-period-days',
+      '.accounting-settings__taxfree-period-days',
       value
     );
   }
@@ -35,26 +35,26 @@ export class AccountingSettingsPage {
 
   addIgnoredAsset(asset: string) {
     cy.get(
-      '.settings-accounting__asset-to-ignore div.v-select__selections input'
+      '.accounting-settings__asset-to-ignore div.v-select__selections input'
     ).click();
     cy.get(
-      '.settings-accounting__asset-to-ignore div.v-select__selections input'
+      '.accounting-settings__asset-to-ignore div.v-select__selections input'
     ).type(`${asset}{enter}`);
-    cy.get('.settings-accounting__buttons__add').click();
+    cy.get('.accounting-settings__buttons__add').click();
   }
 
   remIgnoredAsset(asset: string) {
     cy.get(
-      '.settings-accounting__ignored-assets div.v-select__selections input'
+      '.accounting-settings__ignored-assets div.v-select__selections input'
     ).click();
     cy.get(
-      '.settings-accounting__ignored-assets div.v-select__selections input'
+      '.accounting-settings__ignored-assets div.v-select__selections input'
     ).type(`${asset}{enter}`);
-    cy.get('.settings-accounting__buttons__remove').click();
+    cy.get('.accounting-settings__buttons__remove').click();
   }
 
   ignoredAssetCount(number: string) {
-    cy.get('.settings-accounting__ignored-assets__badge').should(
+    cy.get('.accounting-settings__ignored-assets__badge').should(
       'include.text',
       number
     );

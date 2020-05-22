@@ -2,34 +2,28 @@ export class UserSecuritySettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
     cy.get('.user-dropdown__settings').click();
-    cy.get('a.settings-usersecurity').click();
+    cy.get('a.settings__usersecurity').click();
   }
 
   changePassword(currentPassword: string, newPassword: string) {
-    cy.get(
-      '.settings-general__account-and-security__fields__current-password input'
-    ).clear();
-    cy.get(
-      '.settings-general__account-and-security__fields__current-password input'
-    ).type(currentPassword);
+    cy.get('.user-security-settings__fields__current-password input').clear();
+    cy.get('.user-security-settings__fields__current-password input').type(
+      currentPassword
+    );
+
+    cy.get('.user-security-settings__fields__new-password input').clear();
+    cy.get('.user-security-settings__fields__new-password input').type(
+      newPassword
+    );
 
     cy.get(
-      '.settings-general__account-and-security__fields__new-password input'
+      '.user-security-settings__fields__new-password-confirm input'
     ).clear();
-    cy.get(
-      '.settings-general__account-and-security__fields__new-password input'
-    ).type(newPassword);
+    cy.get('.user-security-settings__fields__new-password-confirm input').type(
+      newPassword
+    );
 
-    cy.get(
-      '.settings-general__account-and-security__fields__new-password-confirm input'
-    ).clear();
-    cy.get(
-      '.settings-general__account-and-security__fields__new-password-confirm input'
-    ).type(newPassword);
-
-    cy.get(
-      '.settings-general__account-and-security__buttons__change-password'
-    ).click();
+    cy.get('.user-security-settings__buttons__change-password').click();
   }
 
   confirmSuccess() {

@@ -1,5 +1,5 @@
 <template>
-  <v-container id="settings-user-security">
+  <v-container class="user-security-settings">
     <v-row no-gutters>
       <v-col>
         <v-card>
@@ -8,19 +8,19 @@
             <v-card-text>
               <revealable-input
                 v-model="currentPassword"
-                class="settings-general__account-and-security__fields__current-password"
+                class="user-security-settings__fields__current-password"
                 label="Current Password"
                 :rules="passwordRules"
               ></revealable-input>
               <revealable-input
                 v-model="newPassword"
-                class="settings-general__account-and-security__fields__new-password"
+                class="user-security-settings__fields__new-password"
                 label="New Password"
                 :rules="passwordRules"
               ></revealable-input>
               <revealable-input
                 v-model="newPasswordConfirm"
-                class="settings-general__account-and-security__fields__new-password-confirm"
+                class="user-security-settings__fields__new-password-confirm"
                 label="Confirm New Password"
                 icon="fa-repeat"
                 :rules="passwordConfirmRules"
@@ -30,7 +30,7 @@
             <v-card-actions>
               <v-btn
                 depressed
-                class="settings-general__account-and-security__buttons__change-password"
+                class="user-security-settings__buttons__change-password"
                 color="primary"
                 :disabled="
                   !(

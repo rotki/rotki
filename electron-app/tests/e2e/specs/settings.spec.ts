@@ -49,7 +49,7 @@ describe('Settings', () => {
     it('change precision & validate UI message', () => {
       pageGeneral.setFloatingPrecision(settings.floatingPrecision);
       pageGeneral.confirmInlineSuccess(
-        '.settings-general__fields__floating-precision',
+        '.general-settings__fields__floating-precision',
         settings.floatingPrecision
       );
     });
@@ -65,7 +65,7 @@ describe('Settings', () => {
     it('change historical data start & validate UI message', () => {
       pageGeneral.setHistoryDataStart();
       pageGeneral.confirmInlineSuccess(
-        '.settings-general__fields__historic-data-start',
+        '.general-settings__fields__historic-data-start',
         settings.historicDataStart
       );
     });
@@ -73,7 +73,7 @@ describe('Settings', () => {
     it('change main currency and validate UI message', () => {
       pageGeneral.selectCurrency(settings.currency);
       pageGeneral.confirmInlineSuccess(
-        '.settings-general__fields__currency-selector',
+        '.general-settings__fields__currency-selector',
         settings.currency
       );
     });
@@ -81,7 +81,7 @@ describe('Settings', () => {
     it('change balance save frequency and validate UI message', () => {
       pageGeneral.setBalanceSaveFrequency(settings.balanceSaveFrequency);
       pageGeneral.confirmInlineSuccess(
-        '.settings-general__fields__balance-save-frequency',
+        '.general-settings__fields__balance-save-frequency',
         settings.balanceSaveFrequency
       );
     });
@@ -89,7 +89,7 @@ describe('Settings', () => {
     it('change date display format and validate UI message', () => {
       pageGeneral.setDateDisplayFormat(settings.dateDisplayFormat);
       pageGeneral.confirmInlineSuccess(
-        '.settings-general__fields__date-display-format',
+        '.general-settings__fields__date-display-format',
         settings.dateDisplayFormat
       );
     });
@@ -107,7 +107,7 @@ describe('Settings', () => {
     it('change rpc without success', () => {
       pageGeneral.setRpcEndpoint('http://localhost:9001');
       pageGeneral.confirmInlineFailure(
-        '.settings-general__fields__rpc-endpoint',
+        '.general-settings__fields__rpc-endpoint',
         'http://localhost:9001'
       );
     });
@@ -126,14 +126,14 @@ describe('Settings', () => {
 
     describe('trade settings', () => {
       it('change crypto2crypto switch & validate UI message', () => {
-        pageAccounting.changeSwitch('.settings-accounting__crypto2crypto');
+        pageAccounting.changeSwitch('.accounting-settings__crypto2crypto');
       });
       it('change gas costs switch & validate UI message', () => {
-        pageAccounting.changeSwitch('.settings-accounting__include-gas-costs');
+        pageAccounting.changeSwitch('.accounting-settings__include-gas-costs');
       });
       it('change tax free period value and switch & validate UI message', () => {
         pageAccounting.setTaxFreePeriodDays('50');
-        pageAccounting.changeSwitch('.settings-accounting__taxfree-period');
+        pageAccounting.changeSwitch('.accounting-settings__taxfree-period');
       });
     });
 
@@ -141,7 +141,7 @@ describe('Settings', () => {
       it('add an ignored asset and validate UI message it has been added', () => {
         pageAccounting.addIgnoredAsset('1SG');
         pageAccounting.confirmInlineSuccess(
-          '.settings-accounting__asset-to-ignore',
+          '.accounting-settings__asset-to-ignore',
           '1SG'
         );
       });
@@ -153,14 +153,14 @@ describe('Settings', () => {
       it('cannot add already ignored asset & validate UI message', () => {
         pageAccounting.addIgnoredAsset('1SG');
         pageAccounting.confirmInlineFailure(
-          '.settings-accounting__asset-to-ignore',
+          '.accounting-settings__asset-to-ignore',
           '1SG'
         );
       });
       it('remove an ignored asset, validate UI message, and confirm count is 2', () => {
         pageAccounting.remIgnoredAsset('1SG');
         pageAccounting.confirmInlineSuccess(
-          '.settings-accounting__ignored-assets',
+          '.accounting-settings__ignored-assets',
           '1SG'
         );
         pageAccounting.ignoredAssetCount('2');
@@ -191,15 +191,15 @@ describe('Settings', () => {
     it('Accounting settings', () => {
       pageAccounting.visit();
       pageAccounting.verifySwitchState(
-        '.settings-accounting__crypto2crypto',
+        '.accounting-settings__crypto2crypto',
         'false'
       );
       pageAccounting.verifySwitchState(
-        '.settings-accounting__include-gas-costs',
+        '.accounting-settings__include-gas-costs',
         'false'
       );
       pageAccounting.verifySwitchState(
-        '.settings-accounting__taxfree-period',
+        '.accounting-settings__taxfree-period',
         'false'
       );
       pageAccounting.ignoredAssetCount('2');

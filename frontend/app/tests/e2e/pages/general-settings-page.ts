@@ -2,29 +2,29 @@ export class GeneralSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
     cy.get('.user-dropdown__settings').click();
-    cy.get('a.settings-general').click();
+    cy.get('a.settings__general').click();
   }
 
   setFloatingPrecision(value: string) {
-    cy.get('.settings-general__fields__floating-precision input').clear();
-    cy.get('.settings-general__fields__floating-precision input').type(value);
-    cy.get('.settings-general__fields__floating-precision input').blur();
+    cy.get('.general-settings__fields__floating-precision input').clear();
+    cy.get('.general-settings__fields__floating-precision input').type(value);
+    cy.get('.general-settings__fields__floating-precision input').blur();
   }
 
   changeAnonymizedLogs() {
-    cy.get('.settings-general__fields__anonymized-logs').click();
-    this.confirmInlineSuccess('.settings-general__fields__anonymized-logs');
+    cy.get('.general-settings__fields__anonymized-logs').click();
+    this.confirmInlineSuccess('.general-settings__fields__anonymized-logs');
   }
 
   changeAnonymousUsageStatistics() {
-    cy.get('.settings-general__fields__anonymous-usage-statistics').click();
+    cy.get('.general-settings__fields__anonymous-usage-statistics').click();
     this.confirmInlineSuccess(
-      '.settings-general__fields__anonymous-usage-statistics'
+      '.general-settings__fields__anonymous-usage-statistics'
     );
   }
 
   setHistoryDataStart() {
-    cy.get('.settings-general__fields__historic-data-start input').click();
+    cy.get('.general-settings__fields__historic-data-start input').click();
     cy.get('.v-picker__body .v-date-picker-header__value button').click(); // click up to month selection
     cy.get('.v-picker__body .v-date-picker-header__value button')
       .contains(/^2015$/)
@@ -39,55 +39,55 @@ export class GeneralSettingsPage {
   }
 
   selectCurrency(value: string) {
-    cy.get('.settings-general__fields__currency-selector').click();
+    cy.get('.general-settings__fields__currency-selector').click();
     cy.get(`#currency__${value.toLocaleLowerCase()}`).click();
   }
 
   setBalanceSaveFrequency(value: string) {
-    cy.get('.settings-general__fields__balance-save-frequency input').clear();
-    cy.get('.settings-general__fields__balance-save-frequency').type(value);
-    cy.get('.settings-general__fields__balance-save-frequency input').blur();
+    cy.get('.general-settings__fields__balance-save-frequency input').clear();
+    cy.get('.general-settings__fields__balance-save-frequency').type(value);
+    cy.get('.general-settings__fields__balance-save-frequency input').blur();
   }
 
   setDateDisplayFormat(value: string) {
-    cy.get('.settings-general__fields__date-display-format input').clear();
-    cy.get('.settings-general__fields__date-display-format').type(value);
-    cy.get('.settings-general__fields__date-display-format input').blur();
+    cy.get('.general-settings__fields__date-display-format input').clear();
+    cy.get('.general-settings__fields__date-display-format').type(value);
+    cy.get('.general-settings__fields__date-display-format input').blur();
   }
 
   toggleScrambleData() {
-    cy.get('.settings-general__fields__scramble-data').click();
+    cy.get('.general-settings__fields__scramble-data').click();
   }
 
   changePassword(currentPassword: string, newPassword: string) {
     cy.get(
-      '.settings-general__account-and-security__fields__current-password input'
+      '.general-settings__account-and-security__fields__current-password input'
     ).clear();
     cy.get(
-      '.settings-general__account-and-security__fields__current-password input'
+      '.general-settings__account-and-security__fields__current-password input'
     ).type(currentPassword);
 
     cy.get(
-      '.settings-general__account-and-security__fields__new-password input'
+      '.general-settings__account-and-security__fields__new-password input'
     ).clear();
     cy.get(
-      '.settings-general__account-and-security__fields__new-password input'
+      '.general-settings__account-and-security__fields__new-password input'
     ).type(newPassword);
 
     cy.get(
-      '.settings-general__account-and-security__fields__new-password-confirm input'
+      '.general-settings__account-and-security__fields__new-password-confirm input'
     ).clear();
     cy.get(
-      '.settings-general__account-and-security__fields__new-password-confirm input'
+      '.general-settings__account-and-security__fields__new-password-confirm input'
     ).type(newPassword);
 
     cy.get(
-      '.settings-general__account-and-security__buttons__change-password'
+      '.general-settings__account-and-security__buttons__change-password'
     ).click();
   }
 
   saveSettings() {
-    cy.get('.settings-general__buttons__save').click();
+    cy.get('.general-settings__buttons__save').click();
   }
 
   confirmSuccess() {
@@ -131,28 +131,28 @@ export class GeneralSettingsPage {
     historicDataStart: string;
     rpcEndpoint: string;
   }) {
-    cy.get('.settings-general__fields__floating-precision input').should(
+    cy.get('.general-settings__fields__floating-precision input').should(
       'have.value',
       settings.floatingPrecision
     );
-    cy.get('.settings-general__fields__anonymized-logs input')
+    cy.get('.general-settings__fields__anonymized-logs input')
       .should('have.attr', 'aria-checked')
       .and('include', `${settings.anonymizedLogs}`);
-    cy.get('.settings-general__fields__anonymous-usage-statistics input')
+    cy.get('.general-settings__fields__anonymous-usage-statistics input')
       .should('have.attr', 'aria-checked')
       .and('include', `${settings.anonymousUsageStatistics}`);
-    cy.get('.settings-general__fields__historic-data-start input').should(
+    cy.get('.general-settings__fields__historic-data-start input').should(
       'have.value',
       settings.historicDataStart
     );
     cy.get(
-      '.settings-general__fields__currency-selector .v-select__selection'
+      '.general-settings__fields__currency-selector .v-select__selection'
     ).should('have.text', settings.currency);
-    cy.get('.settings-general__fields__balance-save-frequency input').should(
+    cy.get('.general-settings__fields__balance-save-frequency input').should(
       'have.value',
       settings.balanceSaveFrequency
     );
-    cy.get('.settings-general__fields__date-display-format input').should(
+    cy.get('.general-settings__fields__date-display-format input').should(
       'have.value',
       settings.dateDisplayFormat
     );
@@ -160,7 +160,7 @@ export class GeneralSettingsPage {
   }
 
   verifyRPCEndpoint(rpcEndpoint: string) {
-    cy.get('.settings-general__fields__rpc-endpoint input').should(
+    cy.get('.general-settings__fields__rpc-endpoint input').should(
       'have.value',
       rpcEndpoint
     );
@@ -172,9 +172,9 @@ export class GeneralSettingsPage {
   }
 
   setRpcEndpoint(value: string) {
-    cy.get('.settings-general__fields__rpc-endpoint input').clear();
-    cy.get('.settings-general__fields__rpc-endpoint').type(value);
-    cy.get('.settings-general__fields__rpc-endpoint input').blur();
+    cy.get('.general-settings__fields__rpc-endpoint input').clear();
+    cy.get('.general-settings__fields__rpc-endpoint').type(value);
+    cy.get('.general-settings__fields__rpc-endpoint input').blur();
   }
 
   confirmFailure() {

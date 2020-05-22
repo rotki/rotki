@@ -1,13 +1,13 @@
 <template>
-  <v-container id="settings-account">
-    <v-row>
+  <v-container class="accounting-settings">
+    <v-row no-gutters>
       <v-col>
         <v-card>
           <v-card-title>Trade Settings</v-card-title>
           <v-card-text>
             <v-switch
               v-model="crypto2CryptoTrades"
-              class="settings-accounting__crypto2crypto"
+              class="accounting-settings__crypto2crypto"
               label="Take into account crypto to crypto trades"
               color="primary"
               :success-messages="settingsMessages['crypto2crypto'].success"
@@ -16,7 +16,7 @@
             ></v-switch>
             <v-switch
               v-model="gasCosts"
-              class="settings-accounting__include-gas-costs"
+              class="accounting-settings__include-gas-costs"
               label="Take into account Ethereum gas costs"
               :success-messages="settingsMessages['gasCostChange'].success"
               :error-messages="settingsMessages['gasCostChange'].error"
@@ -25,7 +25,7 @@
             ></v-switch>
             <v-switch
               v-model="taxFreePeriod"
-              class="settings-accounting__taxfree-period"
+              class="accounting-settings__taxfree-period"
               :success-messages="settingsMessages['taxFreePeriod'].success"
               :error-messages="settingsMessages['taxFreePeriod'].error"
               label="Is there a tax free period?"
@@ -34,7 +34,7 @@
             ></v-switch>
             <v-text-field
               v-model="taxFreeAfterPeriod"
-              class="settings-accounting__taxfree-period-days"
+              class="accounting-settings__taxfree-period-days"
               :success-messages="settingsMessages['taxFreePeriodAfter'].success"
               :error-messages="settingsMessages['taxFreePeriodAfter'].error"
               :disabled="!taxFreePeriod"
@@ -61,12 +61,12 @@
                   :success-messages="settingsMessages['addIgnoreAsset'].success"
                   :error-messages="settingsMessages['addIgnoreAsset'].error"
                   hint="Click to see all assets and select one to ignore"
-                  class="settings-accounting__asset-to-ignore"
+                  class="accounting-settings__asset-to-ignore"
                 ></asset-select>
               </v-col>
               <v-col cols="2">
                 <v-btn
-                  class="settings-accounting__buttons__add"
+                  class="accounting-settings__buttons__add"
                   text
                   color="primary"
                   :disabled="assetToIgnore === ''"
@@ -86,12 +86,12 @@
                   :success-messages="settingsMessages['remIgnoreAsset'].success"
                   :error-messages="settingsMessages['remIgnoreAsset'].error"
                   hint="Click to see all ignored assets and select one for removal"
-                  class="settings-accounting__ignored-assets"
+                  class="accounting-settings__ignored-assets"
                 ></asset-select>
                 <div slot="append-outer">
                   <v-badge>
                     <template #badge>
-                      <span class="settings-accounting__ignored-assets__badge">
+                      <span class="accounting-settings__ignored-assets__badge">
                         {{ ignoredAssets.length }}
                       </span>
                     </template>
@@ -100,7 +100,7 @@
               </v-col>
               <v-col cols="2">
                 <v-btn
-                  class="settings-accounting__buttons__remove"
+                  class="accounting-settings__buttons__remove"
                   text
                   color="primary"
                   :disabled="assetToRemove === ''"

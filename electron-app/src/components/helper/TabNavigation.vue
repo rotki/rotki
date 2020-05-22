@@ -10,7 +10,7 @@
       v-for="tab in tabContents"
       :key="tab.name"
       :to="tab.routerTo"
-      :class="tab.routerTo.toLowerCase().replace('/', '').replace(/\//g, '-')"
+      :class="tab.routerTo.toLowerCase().replace('/', '').replace(/\//g, '__')"
     >
       {{ tab.name }}
     </v-tab>
