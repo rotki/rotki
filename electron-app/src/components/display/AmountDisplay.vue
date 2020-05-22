@@ -1,7 +1,7 @@
 <template>
   <span class="amount-display" :class="privacyMode ? 'blur-content' : ''">
     <span
-      v-if="fiatCurrency && fiatCurrency != currency.ticker_symbol"
+      v-if="fiatCurrency && fiatCurrency !== currency.ticker_symbol"
       class="amount-display__value"
     >
       {{
@@ -49,6 +49,9 @@
     <span v-else-if="showCurrency === 'name'" class="amount-display__currency">
       {{ currency.name }}
     </span>
+    <span v-else-if="!!asset" class="amount-display__asset">
+      {{ asset }}
+    </span>
   </span>
 </template>
 
@@ -85,6 +88,8 @@ export default class AmountDisplay extends Vue {
     }
   })
   showCurrency!: string;
+  @Prop({ required: false, default: '' })
+  asset!: string;
   currency!: Currency;
   privacyMode!: boolean;
   scrambleData!: boolean;
@@ -144,6 +149,13 @@ td.text-end .amount-display {
 
   &__currency {
     display: contents !important;
+  }
+
+  &__asset,
+  &__currency {
+    font-size: 0.82em;
+    color: #616161;
+    margin-left: 5px;
   }
 }
 

@@ -10,14 +10,18 @@
       <v-row>
         <v-col>
           <stat-card title="Collateral">
-            <span>{{ vault.collateralAmount }} </span>
-            <span>{{ vault.collateralAsset }}</span>
+            <amount-display
+              :value="vault.collateralAmount"
+              :asset="vault.collateralAsset"
+            ></amount-display>
           </stat-card>
         </v-col>
         <v-col>
           <stat-card title="Debt">
-            <span>{{ vault.debtValue.toFormat(2) }}</span>
-            <span> DAI </span>
+            <amount-display
+              :value="vault.debtValue"
+              asset="DAI"
+            ></amount-display>
           </stat-card>
         </v-col>
         <v-col>
@@ -57,20 +61,43 @@
       <v-row>
         <v-col>
           <stat-card title="Total interest owned" :locked="!premium">
-            <span>{{ vault.totalInterestOwed }} </span>
-            <span>{{ vault.collateralAsset }}</span>
+            <amount-display
+              :value="vault.totalInterestOwed"
+              asset="DAI"
+            ></amount-display>
           </stat-card>
         </v-col>
-        <v-col>
+        <v-col
+          v-if="
+            vault.totalLiquidatedAmount && vault.totalLiquidatedAmount.gt(0)
+          "
+        >
           <stat-card title="Total liquidated amount" :locked="!premium">
-            <span>{{ vault.totalLiquidatedAmount }} </span>
-            <span>{{ vault.collateralAsset }}</span>
+            <amount-display
+              :value="vault.totalLiquidatedAmount"
+              :asset="vault.collateralAsset"
+            ></amount-display>
           </stat-card>
         </v-col>
-        <v-col>
+        <v-col
+          v-if="vault.totalLiquidatedUsd && vault.totalLiquidatedUsd.gt(0)"
+        >
           <stat-card title="Total liquidated value" :locked="!premium">
             <amount-display
               :value="vault.totalLiquidatedUsd"
+              show-currency="symbol"
+              fiat-currency="USD"
+            ></amount-display>
+          </stat-card>
+        </v-col>
+      </v-row>
+      <v-row
+        v-if="vault.totalLiquidatedAmount && vault.totalLiquidatedAmount.gt(0)"
+      >
+        <v-col>
+          <stat-card title="Total value lost" :locked="!premium">
+            <amount-display
+              :value="vault.totalLiquidatedUsd.plus(vault.totalInterestOwed)"
               show-currency="symbol"
               fiat-currency="USD"
             ></amount-display>
