@@ -38,7 +38,7 @@
         </v-col>
         <v-col>
           <stat-card title="Liquidation price">
-            {{ vault.liquidationPrice }}
+            <amount-display :value="vault.liquidationPrice"></amount-display>
           </stat-card>
         </v-col>
         <v-col>
@@ -91,9 +91,7 @@
           </stat-card>
         </v-col>
       </v-row>
-      <v-row
-        v-if="vault.totalLiquidatedAmount && vault.totalLiquidatedAmount.gt(0)"
-      >
+      <v-row v-if="vault.totalLiquidatedUsd && vault.totalLiquidatedUsd.gt(0)">
         <v-col>
           <stat-card title="Total value lost" :locked="!premium">
             <amount-display
