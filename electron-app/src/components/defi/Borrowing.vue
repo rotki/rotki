@@ -72,7 +72,9 @@ export default class Borrowing extends Vue {
   makerDAOVaultSummary!: MakerDAOVaultSummary;
 
   async mounted() {
+    this.loading = true;
     await this.$store.dispatch('balances/fetchMakerDAOVaults');
+    this.loading = false;
   }
 }
 </script>
