@@ -10,7 +10,7 @@ Introduction
 In this section we are going to see how to use various parts of the Rotki application.
 
 Sign-in/Signup
-===============
+==================
 
 When you start Rotki you are greeted with a sign-in/signup prompt.
 
@@ -29,6 +29,20 @@ If you have purchased a premium subscription you can also add the API Key and th
 If you already have an account just write the name and the password at the sign in prompt.
 
 All accounts are created in the rotki directory which is located in: ``$HOME/.rotkehlchen``. Each user has their own subdirectory.
+
+Rotki Premium
+==================
+If you decide to purchase `Rotki Premium <https://rotki.com/products/>`_ at a later time, you can set it up via API Keys -> Rotki Premium.
+
+.. image:: images/rotki_premium_set.png
+   :alt: Set up Rotki premium API key/secret pair in an existing account
+   :align: center
+
+If after you have set up premium you wish to replace or disassociate keys with the currently logged-in account, you can do so via the same page.
+
+.. image:: images/rotki_premium_del.png
+   :alt: Delete up Rotki premium API key/secret pair in a premium account
+   :align: center
 
 Customizing
 **************

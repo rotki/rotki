@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1016` Rotki users can now delete their rotki premium API keys via API Keys -> Rotki Premium.
 * :feature:`707` Rotki now supports makerdao vaults. The vaults of the user are autodetected and they can see all details of each
   vault in the DeFi borrowing section. Premium users can also see historical information and total interest owed or USD lost to liquidation.
 * :feature:`917` Rotki now has a new and improved Dashboard. Users can view their total net worth as well as totals per source of balances (exchanges, blockchains, and manual entries), as well as filter the full asset listing.

@@ -584,6 +584,38 @@ def test_user_set_premium_credentials(rotkehlchen_api_server, username):
         assert rotki.premium.is_active()
 
 
+def test_user_del_premium_credentials(rotkehlchen_api_server, username):
+    """Test that removing the premium credentials endpoint works.
+
+    We first set up mock the server accepting the premium credentials
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    _, patched_premium_at_set, patched_get = create_patched_premium(
+        PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
+        patch_get=True,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=b'',
+        metadata_data_size=0,
+    )
+
+    # Set premium credentials for current user
+    data = {'premium_api_key': VALID_PREMIUM_KEY, 'premium_api_secret': VALID_PREMIUM_SECRET}
+    with patched_premium_at_set:
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+            json=data,
+        )
+    with patched_get:
+        assert rotki.premium.is_active()
+
+    # Delete premium credentials for current user
+    response = requests.delete(api_url_for(rotkehlchen_api_server, "userpremiumkeyresource",
+                                           name=username))
+    assert_simple_ok_response(response)
+    assert rotki.premium is None
+    assert rotki.premium_sync_manager.premium is None
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_login_user_dir_permission_error(rotkehlchen_api_server, data_dir):
