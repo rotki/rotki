@@ -267,6 +267,7 @@ class MakerDAO(EthereumModule):
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.lock = Semaphore()
+        self.vaults_lock = Semaphore()
         self.historical_dsr_reports: Dict[ChecksumEthAddress, DSRAccountReport] = {}
         self.last_proxy_mapping_query_ts = 0
         self.last_vault_mapping_query_ts = 0
@@ -624,30 +625,31 @@ class MakerDAO(EthereumModule):
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
-        proxy_mappings = self._get_accounts_having_maker_proxy()
-        vaults = []
-        for user_address, proxy in proxy_mappings.items():
-            result = self.ethereum.call_contract(
-                contract_address=MAKERDAO_GET_CDPS.address,
-                abi=MAKERDAO_GET_CDPS.abi,
-                method_name='getCdpsAsc',
-                arguments=[MAKERDAO_CDP_MANAGER.address, proxy],
-            )
-
-            for idx, identifier in enumerate(result[0]):
-                urn = to_checksum_address(result[1][idx])
-                vault = self._query_vault_data(
-                    identifier=identifier,
-                    urn=urn,
-                    ilk=result[2][idx],
+        with self.vaults_lock:
+            proxy_mappings = self._get_accounts_having_maker_proxy()
+            vaults = []
+            for user_address, proxy in proxy_mappings.items():
+                result = self.ethereum.call_contract(
+                    contract_address=MAKERDAO_GET_CDPS.address,
+                    abi=MAKERDAO_GET_CDPS.abi,
+                    method_name='getCdpsAsc',
+                    arguments=[MAKERDAO_CDP_MANAGER.address, proxy],
                 )
-                if vault:
-                    vaults.append(vault)
-                    self.vault_mappings[user_address].append(vault)
 
-        self.last_vault_mapping_query_ts = ts_now()
-        # Returns vaults sorted. Oldest identifier first
-        vaults.sort(key=lambda vault: vault.identifier)
+                for idx, identifier in enumerate(result[0]):
+                    urn = to_checksum_address(result[1][idx])
+                    vault = self._query_vault_data(
+                        identifier=identifier,
+                        urn=urn,
+                        ilk=result[2][idx],
+                    )
+                    if vault:
+                        vaults.append(vault)
+                        self.vault_mappings[user_address].append(vault)
+
+            self.last_vault_mapping_query_ts = ts_now()
+            # Returns vaults sorted. Oldest identifier first
+            vaults.sort(key=lambda vault: vault.identifier)
         return vaults
 
     def _get_vault_mappings(self) -> Dict[ChecksumEthAddress, List[MakerDAOVault]]:
