@@ -1,5 +1,5 @@
 <template>
-  <v-container id="settings-general">
+  <v-container class="general-settings">
     <v-row no-gutters>
       <v-col>
         <v-card>
@@ -7,7 +7,7 @@
           <v-card-text>
             <v-text-field
               v-model="floatingPrecision"
-              class="settings-general__fields__floating-precision"
+              class="general-settings__fields__floating-precision"
               label="Floating Precision"
               type="number"
               :success-messages="settingsMessages['floatingPrecision'].success"
@@ -16,7 +16,7 @@
             ></v-text-field>
             <v-switch
               v-model="anonymizedLogs"
-              class="settings-general__fields__anonymized-logs"
+              class="general-settings__fields__anonymized-logs"
               label="Should logs be anonymized?"
               color="primary"
               :success-messages="settingsMessages['anonymizedLogs'].success"
@@ -25,7 +25,7 @@
             ></v-switch>
             <v-switch
               v-model="anonymousUsageAnalytics"
-              class="settings-general__fields__anonymous-usage-statistics"
+              class="general-settings__fields__anonymous-usage-statistics"
               color="primary"
               label="Should anonymous usage analytics be submitted?"
               :success-messages="
@@ -49,7 +49,7 @@
               <template #activator="{ on }">
                 <v-text-field
                   v-model="historicDataStart"
-                  class="settings-general__fields__historic-data-start"
+                  class="general-settings__fields__historic-data-start"
                   label="Date from when to count historical data"
                   hint="DD/MM/YYYY format"
                   prepend-icon="fa-calendar"
@@ -71,7 +71,7 @@
 
             <v-select
               v-model="selectedCurrency"
-              class="settings-general__fields__currency-selector"
+              class="general-settings__fields__currency-selector"
               label="Select Main Currency"
               item-text="ticker_symbol"
               return-object
@@ -86,14 +86,26 @@
                   v-bind="attrs"
                   v-on="on"
                 >
-                  {{ item.ticker_symbol }}
+                  <v-list-item-avatar
+                    class="general-settings__currency-list primary--text"
+                  >
+                    {{ item.unicode_symbol }}
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ item.name }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle>
+                      Select as the main currency
+                    </v-list-item-subtitle>
+                  </v-list-item-content>
                 </v-list-item>
               </template>
             </v-select>
 
             <v-text-field
               v-model="rpcEndpoint"
-              class="settings-general__fields__rpc-endpoint"
+              class="general-settings__fields__rpc-endpoint"
               label="Eth RPC Endpoint"
               type="text"
               data-vv-name="eth_rpc_endpoint"
@@ -104,7 +116,7 @@
 
             <v-text-field
               v-model="balanceSaveFrequency"
-              class="settings-general__fields__balance-save-frequency"
+              class="general-settings__fields__balance-save-frequency"
               label="Balance data saving frequency in hours"
               type="number"
               :success-messages="
@@ -116,7 +128,7 @@
 
             <v-text-field
               v-model="dateDisplayFormat"
-              class="settings-general__fields__date-display-format"
+              class="general-settings__fields__date-display-format"
               label="Date display format"
               type="text"
               :success-messages="settingsMessages['dateDisplayFormat'].success"
@@ -130,7 +142,7 @@
           <v-card-text>
             <v-switch
               v-model="scrambleData"
-              class="settings-general__fields__scramble-data"
+              class="general-settings__fields__scramble-data"
               :label="`Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.`"
               :success-messages="settingsMessages['scrambleData'].success"
               :error-messages="settingsMessages['scrambleData'].error"
@@ -539,5 +551,9 @@ export default class General extends Settings {
   }
 }
 </script>
-
-<style scoped></style>
+<style scoped>
+.general-settings__currency-list {
+  font-size: 2em;
+  font-weight: bold;
+}
+</style>
