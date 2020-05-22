@@ -11,7 +11,10 @@ import {
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
 import { BalanceState } from '@/store/balances/state';
-import { MakerDAOVaultModel } from '@/store/balances/types';
+import {
+  MakerDAOVaultModel,
+  MakerDAOVaultSummary
+} from '@/store/balances/types';
 import { RotkehlchenState } from '@/store/store';
 import { AccountDSRMovement, Blockchain, DSRBalance } from '@/typing/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
@@ -289,5 +292,17 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       vaults.push(details ? { ...vault, ...details } : vault);
     }
     return vaults;
+  },
+
+  makerDAOVaultSummary: ({
+    makerDAOVaults
+  }: BalanceState): MakerDAOVaultSummary => {
+    const totalCollateralUsd = makerDAOVaults
+      .map(vault => vault.collateralUsdValue)
+      .reduce((sum, collateralUsdValue) => sum.plus(collateralUsdValue), Zero);
+    const totalDebt = makerDAOVaults
+      .map(vault => vault.debtValue)
+      .reduce((sum, debt) => sum.plus(debt), Zero);
+    return { totalCollateralUsd, totalDebt };
   }
 };
