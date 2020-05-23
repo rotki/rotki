@@ -506,7 +506,7 @@ class Rotkehlchen():
 
     def query_balances(
             self,
-            requested_save_data: bool = True,
+            requested_save_data: bool = None,
             timestamp: Timestamp = None,
             ignore_cache: bool = False,
     ) -> Dict[str, Any]:
@@ -583,7 +583,16 @@ class Rotkehlchen():
 
         result_dict = merge_dicts(combined, stats)
 
-        allowed_to_save = requested_save_data and self.data.should_save_balances()
+        """
+        If requested_save_data is false, we never save.
+        We save user balances when should_save_balances() is true (i.e. if we haven't saved within
+        the last user-defined save period), or if save has been explicitly requested.
+        """
+        if requested_save_data is not False:
+            allowed_to_save = requested_save_data or self.data.should_save_balances()
+        else:
+            allowed_to_save = requested_save_data
+
         if problem_free and allowed_to_save:
             if not timestamp:
                 timestamp = Timestamp(int(time.time()))
