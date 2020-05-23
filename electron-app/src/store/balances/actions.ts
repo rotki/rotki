@@ -29,13 +29,20 @@ import { bigNumberify } from '@/utils/bignumbers';
 import { toMap } from '@/utils/conversion';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
-  async fetchBalances({ commit, rootGetters, dispatch }) {
+  async fetchBalances(
+    { commit, rootGetters, dispatch },
+    payload: AllBalancePayload = {
+      ignoreCache: false,
+      saveData: false
+    }
+  ) {
+    const { ignoreCache, saveData } = payload;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
     if (isTaskRunning(TaskType.QUERY_BALANCES)) {
       return;
     }
     try {
-      const result = await api.queryBalancesAsync();
+      const result = await api.queryBalancesAsync(ignoreCache, saveData);
       const task = createTask(result.task_id, TaskType.QUERY_BALANCES, {
         description: `Query All Balances`,
         ignoreResult: true
@@ -432,4 +439,9 @@ export interface ExchangeBalancePayload {
 export interface BlockchainBalancePayload {
   readonly blockchain?: Blockchain;
   readonly ignoreCache: boolean;
+}
+
+export interface AllBalancePayload {
+  readonly ignoreCache: boolean;
+  readonly saveData: boolean;
 }

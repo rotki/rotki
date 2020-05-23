@@ -433,12 +433,17 @@ export class RotkehlchenApi {
       .then(this.handleResponse);
   }
 
-  queryBalancesAsync(): Promise<AsyncQuery> {
+  queryBalancesAsync(
+    ignoreCache: boolean = false,
+    saveData: boolean = false
+  ): Promise<AsyncQuery> {
     return new Promise<AsyncQuery>((resolve, reject) => {
       this.axios
         .get<ActionResult<AsyncQuery>>('/balances/', {
           params: {
-            async_query: true
+            async_query: true,
+            ignore_cache: ignoreCache ? true : undefined,
+            save_data: saveData ? true : undefined
           },
           validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;

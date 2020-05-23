@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`1016` Rotki users can now delete their rotki premium API keys via API Keys -> Rotki Premium.
+* :feature:`1015` Rotki now lets the user manually refresh and save their balances, even if the balance save frequency has not lapsed. This functionality is accessible through the Save Indicator (floppy disk icon on the app bar).
 * :feature:`707` Rotki now supports makerdao vaults. The vaults of the user are autodetected and they can see all details of each
   vault in the DeFi borrowing section. Premium users can also see historical information and total interest owed or USD lost to liquidation.
 * :feature:`917` Rotki now has a new and improved Dashboard. Users can view their total net worth as well as totals per source of balances (exchanges, blockchains, and manual entries), as well as filter the full asset listing.

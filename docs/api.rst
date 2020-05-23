@@ -1402,8 +1402,11 @@ Querying all balances
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :reqjson bool save_data: Boolean denoting whether to force save data even if the balance save frequency has not lapsed (see `Getting or modifying settings`_ ).
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :param bool save_data: Boolean denoting whether to force save data even if the balance save frequency has not lapsed (see `Getting or modifying settings`_ ).
+
 
    **Example Response**:
 
