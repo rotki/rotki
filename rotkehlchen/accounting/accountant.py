@@ -272,8 +272,6 @@ class Accountant():
         self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)
         self.csvexporter.reset_csv_lists()
-        # Used only in the "avoid zerorpc remote lost after 10ms problem"
-        self.last_sleep_ts = 0
 
         # Ask the DB for the settings once at the start of processing so we got the
         # same settings through the entire task
