@@ -75,6 +75,7 @@ export default class Borrowing extends Vue {
     this.loading = true;
     await this.$store.dispatch('balances/fetchMakerDAOVaults');
     this.loading = false;
+    await this.$store.dispatch('balances/fetchMakerDAOVaultDetails');
   }
 }
 </script>

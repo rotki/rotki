@@ -16,7 +16,11 @@ import {
 } from '@/model/trade-history-types';
 import { convertDSRBalances, convertDSRHistory } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
-import { ApiDSRBalances, ApiDSRHistory } from '@/services/types-api';
+import {
+  ApiDSRBalances,
+  ApiDSRHistory,
+  TaskNotFoundError
+} from '@/services/types-api';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
 import { ApiAssetBalances, Severity } from '@/typing/types';
@@ -173,9 +177,17 @@ export class TaskManager {
       api
         .queryTaskResult(task.id)
         .then(result => this.handleResult(result, task))
-        .catch(() => {
+        .catch(e => {
           // When the request fails for any reason (pending or network error) then we unlock it
           store.commit('tasks/unlock', task.id);
+          if (e instanceof TaskNotFoundError) {
+            store.commit('tasks/remove', task.id);
+            notify(
+              `Task ${task.id}: ${task.meta.description} was not found`,
+              'Task not found',
+              Severity.ERROR
+            );
+          }
         });
     }
   }
@@ -213,7 +225,7 @@ export class TaskManager {
     store.commit('tasks/remove', task.id);
   }
 
-  readonly handler: {
+  private handler: {
     [type: string]: (result: any, meta: any) => void;
   } = {
     [TaskType.QUERY_EXCHANGE_BALANCES]: TaskManager.onQueryExchangeBalances,
@@ -224,6 +236,17 @@ export class TaskManager {
     [TaskType.DSR_BALANCE]: TaskManager.dsrBalance,
     [TaskType.DSR_HISTORY]: TaskManager.dsrHistory
   };
+
+  registerHandler<R, M extends TaskMeta>(
+    task: TaskType,
+    handlerImpl: (actionResult: ActionResult<R>, meta: M) => void
+  ) {
+    this.handler[task] = handlerImpl;
+  }
+
+  unregisterHandler(task: TaskType) {
+    delete this.handler[task];
+  }
 }
 
 export const taskManager = new TaskManager();

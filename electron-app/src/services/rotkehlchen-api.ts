@@ -19,17 +19,11 @@ import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { StoredTrade, Trade } from '@/model/stored-trade';
 import { VersionCheck } from '@/model/version-check';
 import {
-  convertMakerDAOVaults,
-  convertVaultDetails
-} from '@/services/converters';
-import {
-  ApiMakerDAOVault,
   ApiManualBalance,
   ApiManualBalances,
-  ApiMakerDAOVaultDetails,
-  SupportedAssets
+  SupportedAssets,
+  TaskNotFoundError
 } from '@/services/types-api';
-import { MakerDAOVault, MakerDAOVaultDetails } from '@/services/types-model';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
   AccountSession,
@@ -500,25 +494,23 @@ export class RotkehlchenApi {
   }
 
   queryTaskResult<T>(id: number): Promise<ActionResult<T>> {
-    return new Promise<any>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`, {
-          validateStatus: function (status) {
-            return (
-              status == 200 || status == 400 || status == 404 || status == 409
-            );
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result && result.outcome) {
-            resolve(result.outcome);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`, {
+        validateStatus: status => [200, 400, 404, 409].indexOf(status) >= 0
+      })
+      .then(response => {
+        if (response.status === 404) {
+          throw new TaskNotFoundError(`Task with id ${id} not found`);
+        }
+        return response;
+      })
+      .then(this.handleResponse)
+      .then(value => {
+        if (value.outcome) {
+          return value.outcome;
+        }
+        throw new Error('No result');
+      });
   }
 
   queryNetvalueData(): Promise<NetvalueDataResult> {
@@ -1416,28 +1408,32 @@ export class RotkehlchenApi {
       .then(this.handleResponse);
   }
 
-  async makerDAOVaults(): Promise<MakerDAOVault[]> {
+  async makerDAOVaults(): Promise<AsyncQuery> {
     return this.axios
-      .get<ActionResult<ApiMakerDAOVault[]>>(
+      .get<ActionResult<AsyncQuery>>(
         'blockchains/ETH/modules/makerdao/vaults',
         {
-          validateStatus: RotkehlchenApi.fetchWithExternalService
+          validateStatus: RotkehlchenApi.fetchWithExternalService,
+          params: {
+            async_query: true
+          }
         }
       )
-      .then(this.handleResponse)
-      .then(convertMakerDAOVaults);
+      .then(this.handleResponse);
   }
 
-  async makerDAOVaultDetails(): Promise<MakerDAOVaultDetails[]> {
+  async makerDAOVaultDetails(): Promise<AsyncQuery> {
     return this.axios
-      .get<ActionResult<ApiMakerDAOVaultDetails[]>>(
+      .get<ActionResult<AsyncQuery>>(
         '/blockchains/ETH/modules/makerdao/vaultdetails',
         {
-          validateStatus: RotkehlchenApi.fetchWithExternalService
+          validateStatus: RotkehlchenApi.fetchWithExternalService,
+          params: {
+            async_query: true
+          }
         }
       )
-      .then(this.handleResponse)
-      .then(convertVaultDetails);
+      .then(this.handleResponse);
   }
 }
 

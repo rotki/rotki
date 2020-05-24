@@ -53,14 +53,22 @@
       </v-row>
       <v-row>
         <v-col>
-          <stat-card title="Created" :locked="!premium">
+          <stat-card
+            title="Created"
+            :locked="!premium"
+            :loading="!vault.creationTs"
+          >
             {{ vault.creationTs | formatDate(dateDisplayFormat) }}
           </stat-card>
         </v-col>
       </v-row>
       <v-row>
         <v-col>
-          <stat-card title="Total interest owned" :locked="!premium">
+          <stat-card
+            title="Total interest owned"
+            :locked="!premium"
+            :loading="!vault.totalInterestOwed"
+          >
             <amount-display
               :value="vault.totalInterestOwed"
               asset="DAI"
@@ -72,7 +80,11 @@
             vault.totalLiquidatedAmount && vault.totalLiquidatedAmount.gt(0)
           "
         >
-          <stat-card title="Total liquidated amount" :locked="!premium">
+          <stat-card
+            title="Total liquidated amount"
+            :locked="!premium"
+            :loading="!vault.totalLiquidatedAmount"
+          >
             <amount-display
               :value="vault.totalLiquidatedAmount"
               :asset="vault.collateralAsset"
@@ -129,6 +141,7 @@ import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
+import { MakerDAOVault } from '@/services/types-model';
 import { MakerDAOVaultModel } from '@/store/balances/types';
 import { VaultEventsList } from '@/utils/premium';
 
@@ -143,7 +156,7 @@ const { mapState, mapGetters } = createNamespacedHelpers('session');
 })
 export default class Vault extends Vue {
   @Prop({ required: true })
-  vault!: MakerDAOVaultModel | null;
+  vault!: MakerDAOVault | MakerDAOVaultModel | null;
 
   premium!: boolean;
   dateDisplayFormat!: string;
