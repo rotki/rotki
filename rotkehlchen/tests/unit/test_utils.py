@@ -3,6 +3,7 @@ import time
 from unittest.mock import patch
 
 import pytest
+from hexbytes import HexBytes
 
 from rotkehlchen.errors import ConversionError, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import invert_pair
@@ -46,6 +47,12 @@ def test_tuple_in_process_result():
     # Process result should detect the tuple and throw
     with pytest.raises(ValueError):
         json.dumps(process_result(d))
+
+
+def test_hexbytes_in_process_result():
+    expected_str = '{"overview": "0xd4e56740f876aef8c010906a34"}'
+    d = {'overview': HexBytes(b'\xd4\xe5g@\xf8v\xae\xf8\xc0\x10\x90j4')}
+    assert json.dumps(process_result(d)) == expected_str
 
 
 def test_iso8601ts_to_timestamp():
