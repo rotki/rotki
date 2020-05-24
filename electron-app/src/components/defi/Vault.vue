@@ -121,6 +121,7 @@
             v-else
             :asset="vault.collateralAsset"
             :events="vault.events"
+            @open-transaction="openTransaction($event)"
           ></vault-events-list>
         </v-col>
       </v-row>
@@ -160,6 +161,10 @@ export default class Vault extends Vue {
 
   premium!: boolean;
   dateDisplayFormat!: string;
+
+  openTransaction(url: string) {
+    this.$interop.openUrl(url);
+  }
 }
 </script>
 

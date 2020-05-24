@@ -252,7 +252,8 @@ app.on('ready', async () => {
       !(
         args.indexOf('https://rotki.com') > -1 ||
         args.indexOf('https://rotki.readthedocs.io/') > -1 ||
-        args.indexOf('https://github.com/rotki/rotki/') > -1
+        args.indexOf('https://github.com/rotki/rotki/') > -1 ||
+        args.indexOf('https://etherscan.io/') > -1
       )
     ) {
       console.error(`Error: Requested to open untrusted URL: ${args} `);
