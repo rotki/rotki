@@ -616,6 +616,40 @@ class MakerDAO(EthereumModule):
             events=vault_events,
         )
 
+    def _get_vaults_of_address(
+            self,
+            user_address: ChecksumEthAddress,
+            proxy_address: ChecksumEthAddress,
+    ) -> List[MakerDAOVault]:
+        """Gets the vaults of a single address
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
+        - BlockchainQueryError if an ethereum node is used and the contract call
+        queries fail for some reason
+        """
+        result = self.ethereum.call_contract(
+            contract_address=MAKERDAO_GET_CDPS.address,
+            abi=MAKERDAO_GET_CDPS.abi,
+            method_name='getCdpsAsc',
+            arguments=[MAKERDAO_CDP_MANAGER.address, proxy_address],
+        )
+
+        vaults = []
+        for idx, identifier in enumerate(result[0]):
+            urn = to_checksum_address(result[1][idx])
+            vault = self._query_vault_data(
+                identifier=identifier,
+                urn=urn,
+                ilk=result[2][idx],
+            )
+            if vault:
+                vaults.append(vault)
+                self.vault_mappings[user_address].append(vault)
+
+        return vaults
+
     def get_vaults(self) -> List[MakerDAOVault]:
         """Detects vaults the user has and returns basic info about each one
 
@@ -629,23 +663,9 @@ class MakerDAO(EthereumModule):
             proxy_mappings = self._get_accounts_having_maker_proxy()
             vaults = []
             for user_address, proxy in proxy_mappings.items():
-                result = self.ethereum.call_contract(
-                    contract_address=MAKERDAO_GET_CDPS.address,
-                    abi=MAKERDAO_GET_CDPS.abi,
-                    method_name='getCdpsAsc',
-                    arguments=[MAKERDAO_CDP_MANAGER.address, proxy],
+                vaults.extend(
+                    self._get_vaults_of_address(user_address=user_address, proxy_address=proxy),
                 )
-
-                for idx, identifier in enumerate(result[0]):
-                    urn = to_checksum_address(result[1][idx])
-                    vault = self._query_vault_data(
-                        identifier=identifier,
-                        urn=urn,
-                        ilk=result[2][idx],
-                    )
-                    if vault:
-                        vaults.append(vault)
-                        self.vault_mappings[user_address].append(vault)
 
             self.last_vault_mapping_query_ts = ts_now()
             # Returns vaults sorted. Oldest identifier first
@@ -1175,12 +1195,15 @@ class MakerDAO(EthereumModule):
         pass
 
     def on_account_addition(self, address: ChecksumEthAddress) -> None:
-        with self.lock:
-            proxy = self._get_account_proxy(address)
-            if not proxy:
-                return
-            report = self._historical_dsr_for_account(address, proxy)
-            self.historical_dsr_reports[address] = report
+        # Get the proxy of the account
+        proxy_result = self._get_account_proxy(address)
+        if not proxy_result:
+            return
+
+        # add it to the mapping
+        self.proxy_mappings[address] = proxy_result
+        # get any vaults the proxy owns
+        self._get_vaults_of_address(user_address=address, proxy_address=proxy_result)
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         with self.lock:
