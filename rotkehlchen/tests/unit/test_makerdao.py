@@ -34,6 +34,7 @@ def use_etherscan() -> bool:
 def makerdao_test_data(ethereum_accounts) -> VaultTestData:
     vault0 = MakerDAOVault(
         identifier=1,
+        owner=make_ethereum_address(),
         urn=make_ethereum_address(),
         name='ETH-A',
         collateral_asset=A_ETH,
@@ -46,6 +47,7 @@ def makerdao_test_data(ethereum_accounts) -> VaultTestData:
     )
     vault1 = MakerDAOVault(
         identifier=2,
+        owner=make_ethereum_address(),
         urn=make_ethereum_address(),
         name='BAT-A',
         collateral_asset=A_BAT,

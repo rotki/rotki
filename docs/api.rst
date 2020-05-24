@@ -2753,6 +2753,7 @@ Getting MakerDAO vaults basic data
           "result": [{
               "identifier": 1,
               "name": "ETH-A",
+	      "owner": "0xA76a9560ffFD9fC603F7d6A30c37D79665207876",
               "collateral_asset": "ETH",
               "collateral_amount": "5.232",
               "debt_value": "650",
@@ -2763,6 +2764,7 @@ Getting MakerDAO vaults basic data
           }, {
               "identifier": 55,
               "name": "USDC-A",
+	      "owner": "0xB26a9561ffFD9fC603F7d6A30c37D79665207876",
               "collateral_asset": "USDC",
               "collateral_amount": "150",
               "debt_value": "50",
@@ -2777,6 +2779,7 @@ Getting MakerDAO vaults basic data
    :resjson object result: A list of all vaults auto detected for the user's accounts
    :resjsonarr string identifier: A unique integer identifier for the vault.
    :resjsonarr string name: The name of the vault given by the system.
+   :resjsonarr string owner: The address of the owner of the vault.
    :resjsonarr string collateral_asset: The asset deposited in the vault as collateral. As of this writing supported assets are ``["ETH", "BAT", "USDC", "WBTC"]``
    :resjsonarr string collateral_amount: The amount of collateral currently deposited in the vault
    :resjsonarr string debt_value: The amount of DAI owed to the vault. So generated DAI plus the stability fee interest.

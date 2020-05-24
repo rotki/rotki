@@ -112,6 +112,7 @@ class VaultEvent(NamedTuple):
 class MakerDAOVault(NamedTuple):
     identifier: int
     name: str
+    owner: ChecksumEthAddress
     collateral_asset: Asset
     # The amount of collateral tokens locked
     collateral_amount: FVal
@@ -327,6 +328,7 @@ class MakerDAO(EthereumModule):
     def _query_vault_data(
             self,
             identifier: int,
+            owner: ChecksumEthAddress,
             urn: ChecksumEthAddress,
             ilk: bytes,
     ) -> Optional[MakerDAOVault]:
@@ -383,6 +385,7 @@ class MakerDAO(EthereumModule):
 
         return MakerDAOVault(
             identifier=identifier,
+            owner=owner,
             name=name,
             collateral_asset=asset,
             collateral_amount=collateral_amount,
@@ -641,6 +644,7 @@ class MakerDAO(EthereumModule):
             urn = to_checksum_address(result[1][idx])
             vault = self._query_vault_data(
                 identifier=identifier,
+                owner=user_address,
                 urn=urn,
                 ilk=result[2][idx],
             )
