@@ -195,7 +195,7 @@ import {
   AccountBalance
 } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
-import { TaskType } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import {
   BlockchainBalancePayload,
   ExchangeBalancePayload

@@ -71,7 +71,7 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { TaskType } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import { AccountDSRMovement, DSRBalance } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';

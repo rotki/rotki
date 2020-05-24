@@ -1,5 +1,6 @@
 import { ActionTree } from 'vuex';
-import { createTask, TaskType } from '@/model/task';
+import { createTask } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
 import { notify } from '@/store/notifications/utils';
 import { TaxReportState } from '@/store/reports/state';

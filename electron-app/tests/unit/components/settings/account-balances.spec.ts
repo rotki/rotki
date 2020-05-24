@@ -2,7 +2,8 @@ import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import { Task, TaskMeta, TaskType } from '@/model/task';
+import { Task, TaskMeta } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import store from '@/store/store';
 
 Vue.use(Vuetify);
