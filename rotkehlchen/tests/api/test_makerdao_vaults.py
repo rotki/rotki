@@ -300,6 +300,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     vaults = [x for x in assert_proper_response_with_result(response) if x['identifier'] == 8913]
     vault_8913 = MakerDAOVault(
         identifier=8913,
+        owner=ethereum_accounts[0],
         name='WBTC-A',
         urn='0x37f7B3C82A9Edc13FdCcE66E7d500b3698A13294',
         collateral_asset=A_WBTC,
@@ -377,6 +378,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     vaults = assert_proper_response_with_result(response)
     vault_7588 = MakerDAOVault(
         identifier=7588,
+        owner=ethereum_accounts[0],
         name='USDC-A',
         urn='0x56D88244073B2fC17af5B1E6088936D5bAaDc37B',
         collateral_asset=A_USDC,
@@ -454,6 +456,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     vaults = [x for x in assert_proper_response_with_result(response) if x['identifier'] == 7538]
     vault_7538 = MakerDAOVault(
         identifier=7538,
+        owner=ethereum_accounts[0],
         name='USDC-A',
         urn='0x70E58566C7baB6faaFE03fbA69DF45Ef4f48223B',
         collateral_asset=A_USDC,

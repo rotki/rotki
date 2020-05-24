@@ -3,8 +3,8 @@
     <v-col cols="12">
       <v-row>
         <v-col>
-          <h1>{{ vault.name }}</h1>
-          <div class="vault__identifier">{{ vault.identifier }}</div>
+          <h1>{{ vault.identifier }} - {{ vault.name }}</h1>
+          <div class="vault__identifier">owned by {{ vault.owner }}</div>
         </v-col>
       </v-row>
       <v-row>

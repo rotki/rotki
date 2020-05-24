@@ -93,6 +93,7 @@ export function convertMakerDAOVaults(
   return vaults.map(vault => ({
     identifier: vault.identifier,
     name: vault.name,
+    owner: vault.owner,
     collateralAsset: vault.collateral_asset,
     collateralAmount: bigNumberify(vault.collateral_amount),
     debtValue: bigNumberify(vault.debt_value),
