@@ -200,7 +200,13 @@ class Etherscan(ExternalServiceWithApiKey):
                 raise RemoteError(f'Etherscan returned invalid JSON response: {response.text}')
 
             try:
-                result = json_ret['result']
+                result = json_ret.get('result', None)
+                if result is None:
+                    raise RemoteError(
+                        f'Unexpected format of Etherscan response for request {response.url}. '
+                        f'Missing a result in response. Response was: {response.text}',
+                    )
+
                 if 'status' not in json_ret:
                     # sucessful proxy calls do not include a status
                     status = 1
@@ -239,7 +245,8 @@ class Etherscan(ExternalServiceWithApiKey):
                     raise RemoteError(f'Etherscan returned error response: {json_ret}')
             except KeyError as e:
                 raise RemoteError(
-                    f'Unexpected format of Etherscan response. Missing key entry for {str(e)}',
+                    f'Unexpected format of Etherscan response for request {response.url}. '
+                    f'Missing key entry for {str(e)}. Response was: {response.text}',
                 )
 
             # success, break out of the loop and return result
