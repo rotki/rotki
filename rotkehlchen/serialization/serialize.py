@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Union
 
+from hexbytes import HexBytes
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.ethereum.makerdao import (
@@ -35,6 +37,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
                 k = k.identifier
             new_dict[k] = _process_entry(v)
         return new_dict
+    elif isinstance(entry, HexBytes):
+        return entry.hex()
     elif isinstance(entry, Location):
         return str(entry)
     elif isinstance(entry, LocationData):
