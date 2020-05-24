@@ -54,7 +54,7 @@ import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
-import { TaskType } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters } = createNamespacedHelpers('session');

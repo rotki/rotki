@@ -184,7 +184,7 @@ import AssetBalances from '@/components/settings/AssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
-import { TaskType } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import { BlockchainBalancePayload } from '@/store/balances/actions';
 import { Account, Blockchain, Tags } from '@/typing/types';
 

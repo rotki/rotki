@@ -1,13 +1,8 @@
 import map from 'lodash/map';
 import { ActionResult } from '@/model/action-result';
 import { BlockchainBalances } from '@/model/blockchain-balances';
-import {
-  BlockchainMetadata,
-  ExchangeMeta,
-  Task,
-  TaskMeta,
-  TaskType
-} from '@/model/task';
+import { BlockchainMetadata, ExchangeMeta, Task, TaskMeta } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import {
   ApiEventEntry,
   convertEventEntry,

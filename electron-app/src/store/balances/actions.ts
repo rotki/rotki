@@ -6,9 +6,9 @@ import {
   createTask,
   ExchangeMeta,
   taskCompletion,
-  TaskMeta,
-  TaskType
+  TaskMeta
 } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import {
   convertMakerDAOVaults,
   convertManualBalances,

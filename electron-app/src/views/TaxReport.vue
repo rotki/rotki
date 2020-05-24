@@ -38,7 +38,7 @@ import Generate from '@/components/taxreport/Generate.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
 import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 import { Currency } from '@/model/currency';
-import { TaskType } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import { Message } from '@/store/store';
 import { TaxReportEvent } from '@/typing/types';
 
