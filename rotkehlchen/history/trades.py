@@ -1,8 +1,9 @@
 import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
+from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
 from rotkehlchen.chain.manager import ChainManager
-from rotkehlchen.constants.assets import A_DAI
+from rotkehlchen.constants.assets import A_DAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -10,7 +11,7 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_ethereum_transactions
-from rotkehlchen.typing import AssetAmount, EthereumTransaction, Fee, FilePath, Location, Timestamp
+from rotkehlchen.typing import EthereumTransaction, FilePath, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -28,6 +29,7 @@ HistoryResult = Tuple[
     List[Loan],
     List[AssetMovement],
     List[EthereumTransaction],
+    List[DefiEvent],
 ]
 
 
@@ -151,23 +153,35 @@ class TradesHistorian():
         )
         history.extend(external_trades)
 
-        # Include makerdao DSR gains as a simple gains only blockchain loan entry for the given
-        # time period
+        # Include makerdao DSR gains and vault events
+        defi_events = []
         if self.chain_manager.makerdao and has_premium:
             gain = self.chain_manager.makerdao.get_dsr_gains_in_period(
                 from_ts=start_ts,
                 to_ts=end_ts,
             )
             if gain > ZERO:
-                loans.append(Loan(
-                    location=Location.BLOCKCHAIN,
-                    open_time=start_ts,
-                    close_time=end_ts,
-                    currency=A_DAI,
-                    fee=Fee(ZERO),
-                    earned=AssetAmount(gain),
-                    amount_lent=AssetAmount(ZERO),
+                defi_events.append(DefiEvent(
+                    timestamp=end_ts,
+                    event_type=DefiEventType.DSR_LOAN_GAIN,
+                    asset=A_DAI,
+                    amount=gain,
                 ))
+
+            vault_details = self.chain_manager.makerdao.get_vault_details()
+            # We count the loss on a vault in the period if the last event is within
+            # the given period. It's not a very accurate approach but it's good enough
+            # for now. A more detailed approach would need archive node or log querying
+            # to find owed debt at any given timestamp
+            for detail in vault_details:
+                last_event_ts = detail.events[-1].timestamp
+                if last_event_ts >= start_ts and last_event_ts <= end_ts:
+                    defi_events.append(DefiEvent(
+                        timestamp=last_event_ts,
+                        event_type=DefiEventType.MAKERDAO_VAULT_LOSS,
+                        asset=A_USD,
+                        amount=detail.total_liquidated_usd + detail.total_interest_owed,
+                    ))
 
         history.sort(key=lambda trade: action_get_timestamp(trade))
         return (
@@ -176,4 +190,5 @@ class TradesHistorian():
             loans,
             asset_movements,
             eth_transactions,
+            defi_events,
         )

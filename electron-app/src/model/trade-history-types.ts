@@ -18,6 +18,7 @@ export interface ApiEventEntry {
 
 export interface ApiTradeHistoryOverview {
   readonly loan_profit: string;
+  readonly defi_profit_loss: string;
   readonly margin_positions_profit_loss: string;
   readonly settlement_losses: string;
   readonly ethereum_transaction_gas_costs: string;
@@ -35,6 +36,7 @@ export interface TradeHistory {
 
 export interface TradeHistoryOverview {
   readonly loanProfit: BigNumber;
+  readonly defiProfitLoss: BigNumber;
   readonly marginPositionsProfitLoss: BigNumber;
   readonly settlementLosses: BigNumber;
   readonly ethereumTransactionGasCosts: BigNumber;
@@ -62,6 +64,7 @@ export interface EventEntry {
 
 export const tradeHistoryPlaceholder = (): TradeHistoryOverview => ({
   loanProfit: Zero,
+  defiProfitLoss: Zero,
   marginPositionsProfitLoss: Zero,
   settlementLosses: Zero,
   ethereumTransactionGasCosts: Zero,
@@ -80,6 +83,7 @@ export const convertTradeHistoryOverview = (
     overview.margin_positions_profit_loss
   ),
   settlementLosses: bigNumberify(overview.settlement_losses),
+  defiProfitLoss: bigNumberify(overview.defi_profit_loss),
   ethereumTransactionGasCosts: bigNumberify(
     overview.ethereum_transaction_gas_costs
   ),

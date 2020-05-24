@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.events import TaxableEvents
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
@@ -252,6 +253,7 @@ class Accountant():
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
+            defi_events: List[DefiEvent],
     ) -> Dict[str, Any]:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
@@ -288,6 +290,9 @@ class Accountant():
 
         if len(eth_transactions) != 0:
             actions.extend(eth_transactions)
+
+        if len(defi_events) != 0:
+            actions.extend(defi_events)
 
         actions.sort(
             key=lambda action: action_get_timestamp(action),
@@ -354,6 +359,7 @@ class Accountant():
 
         sum_other_actions = (
             self.events.margin_positions_profit_loss +
+            self.events.defi_profit_loss +
             self.events.loan_profit -
             self.events.settlement_losses -
             self.asset_movement_fees -
@@ -362,6 +368,7 @@ class Accountant():
         total_taxable_pl = self.events.taxable_trade_profit_loss + sum_other_actions
         return {
             'overview': {
+                'defi_profit_loss': str(self.events.defi_profit_loss),
                 'loan_profit': str(self.events.loan_profit),
                 'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
                 'settlement_losses': str(self.events.settlement_losses),
@@ -466,10 +473,13 @@ class Accountant():
             action = cast(EthereumTransaction, action)
             self.account_for_gas_costs(action, db_settings.include_gas_costs)
             return True, prev_time, count
+        elif action_type == 'defi_event':
+            action = cast(DefiEvent, action)
+            self.events.add_defi_event(action)
+            return True, prev_time, count
 
         # if we get here it's a trade
         trade = cast(Trade, action)
-
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
         # costs in cost_currency

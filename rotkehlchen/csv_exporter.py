@@ -4,10 +4,12 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
     EV_BUY,
+    EV_DEFI,
     EV_INTEREST_PAYMENT,
     EV_LOAN_SETTLE,
     EV_MARGIN_CLOSE,
@@ -39,6 +41,7 @@ FILENAME_ASSET_MOVEMENTS_CSV = 'asset_movements.csv'
 FILENAME_GAS_CSV = 'tx_gas_costs.csv'
 FILENAME_MARGIN_CSV = 'margin_positions.csv'
 FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
+FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
 
 
@@ -79,6 +82,7 @@ class CSVExporter():
             self.tx_gas_costs_csv: List[Dict[str, Any]] = []
             self.margin_positions_csv: List[Dict[str, Any]] = []
             self.loan_settlements_csv: List[Dict[str, Any]] = []
+            self.defi_events_csv: List[Dict[str, Any]] = []
             self.all_events_csv: List[Dict[str, Any]] = []
             self.all_events = []
 
@@ -109,7 +113,7 @@ class CSVExporter():
         elif event_type in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
             net_profit_or_loss = paid_in_profit_currency
             net_profit_or_loss_csv = '=-J{}'.format(row)
-        elif event_type in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE):
+        elif event_type in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE, EV_DEFI):
             net_profit_or_loss = taxable_received_in_profit_currency
             net_profit_or_loss_csv = '=K{}'.format(row)
         else:
@@ -411,6 +415,48 @@ class CSVExporter():
             timestamp=timestamp,
         )
 
+    def add_defi_event(self, event: DefiEvent, profit_loss_in_profit_currency: FVal) -> None:
+        if not self.create_csv:
+            return
+
+        self.defi_events_csv.append({
+            'time': timestamp_to_date(event.timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'type': str(event.event_type),
+            'asset': str(event.asset),
+            'amount': str(event.amount),
+            f'profit_loss_in_{self.profit_currency.identifier}': profit_loss_in_profit_currency,
+        })
+
+        paid_asset: Union[EmptyStr, Asset]
+        received_asset: Union[EmptyStr, Asset]
+        if event.event_type == DefiEventType.DSR_LOAN_GAIN:
+            paid_in_profit_currency = ZERO
+            paid_in_asset = ZERO
+            paid_asset = S_EMPTYSTR
+            received_asset = event.asset
+            received_in_asset = event.amount
+            received_in_profit_currency = profit_loss_in_profit_currency
+        elif event.event_type == DefiEventType.MAKERDAO_VAULT_LOSS:
+            paid_in_profit_currency = profit_loss_in_profit_currency
+            paid_in_asset = event.amount
+            paid_asset = event.asset
+            received_asset = S_EMPTYSTR
+            received_in_asset = ZERO
+            received_in_profit_currency = ZERO
+        else:
+            raise NotImplementedError('Not implemented Defi event encountered at csv export')
+
+        self.add_to_allevents(
+            event_type=EV_DEFI,
+            paid_in_profit_currency=paid_in_profit_currency,
+            paid_asset=paid_asset,
+            paid_in_asset=paid_in_asset,
+            received_asset=received_asset,
+            received_in_asset=received_in_asset,
+            taxable_received_in_profit_currency=received_in_profit_currency,
+            timestamp=event.timestamp,
+        )
+
     def create_files(self, dirpath: Path) -> Tuple[bool, str]:
         if not self.create_csv:
             return True, ''
@@ -442,6 +488,10 @@ class CSVExporter():
             _dict_to_csv_file(
                 FilePath(os.path.join(dirpath, FILENAME_LOAN_SETTLEMENTS_CSV)),
                 self.loan_settlements_csv,
+            )
+            _dict_to_csv_file(
+                FilePath(os.path.join(dirpath, FILENAME_DEFI_EVENTS_CSV)),
+                self.defi_events_csv,
             )
             _dict_to_csv_file(
                 FilePath(os.path.join(dirpath, FILENAME_ALL_CSV)),

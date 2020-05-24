@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Optional, Tuple
 
+from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
@@ -36,11 +37,13 @@ class TaxableEvents():
         self.events = {}
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
-        self.general_trade_profit_loss = FVal(0)
-        self.taxable_trade_profit_loss = FVal(0)
-        self.loan_profit = FVal(0)
-        self.settlement_losses = FVal(0)
-        self.margin_positions_profit_loss = FVal(0)
+        self.general_trade_profit_loss = ZERO
+        self.taxable_trade_profit_loss = ZERO
+        self.loan_profit = ZERO
+        self.defi_profit_loss = ZERO
+        self.settlement_losses = ZERO
+        self.margin_positions_profit_loss = ZERO
+        self.defi_profit_loss = ZERO
 
     @property
     def include_crypto2crypto(self) -> Optional[bool]:
@@ -605,10 +608,10 @@ class TaxableEvents():
         """
         remaining_sold_amount = selling_amount
         stop_index = -1
-        taxfree_bought_cost = FVal(0)
-        taxable_bought_cost = FVal(0)
-        taxable_amount = FVal(0)
-        taxfree_amount = FVal(0)
+        taxfree_bought_cost = ZERO
+        taxable_bought_cost = ZERO
+        taxable_amount = ZERO
+        taxfree_amount = ZERO
         remaining_amount_from_last_buy = FVal('-1')
         for idx, buy_event in enumerate(self.events[selling_asset].buys):
             if self.taxfree_after_period is None:
@@ -684,7 +687,7 @@ class TaxableEvents():
             # That means we had no documented buy for that asset. This is not good
             # because we can't prove a corresponding buy and as such we are burdened
             # calculating the entire sell as profit which needs to be taxed
-            return selling_amount, FVal(0), FVal(0)
+            return selling_amount, ZERO, ZERO
 
         # Otherwise, delete all the used up buys from the list
         del self.events[selling_asset].buys[:stop_index]
@@ -837,3 +840,19 @@ class TaxableEvents():
                 gain_loss_in_profit_currency=net_gain_loss_in_profit_currency,
                 timestamp=margin.close_time,
             )
+
+    def add_defi_event(self, event: DefiEvent) -> None:
+        log.debug(
+            'Accounting for DeFi event',
+            sensitive_log=True,
+            event=event,
+        )
+        rate = self.get_rate_in_profit_currency(event.asset, event.timestamp)
+        if event.event_type == DefiEventType.DSR_LOAN_GAIN:
+            self.defi_profit_loss += event.amount * rate
+        elif event.event_type == DefiEventType.MAKERDAO_VAULT_LOSS:
+            self.defi_profit_loss -= event.amount * rate
+        else:
+            raise NotImplementedError('Not implemented Defi event encountered at accounting')
+
+        self.csv_exporter.add_defi_event(event, rate)

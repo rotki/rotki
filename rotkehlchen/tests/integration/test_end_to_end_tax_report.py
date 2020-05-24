@@ -377,6 +377,8 @@ def test_end_to_end_tax_report(accountant):
     assert ethereum_transaction_gas_costs.is_close('2.736160')
     margin_pl = FVal(result['margin_positions_profit_loss'])
     assert margin_pl.is_close('232.8225695')
+    defi_pl = FVal(result['defi_profit_loss'])
+    assert defi_pl == ZERO
     expected_total_taxable_pl = (
         taxable_trade_pl +
         margin_pl +
@@ -432,6 +434,8 @@ def test_end_to_end_tax_report_in_period(accountant):
     assert ethereum_transaction_gas_costs.is_close('2.276810')
     margin_pl = FVal(result['margin_positions_profit_loss'])
     assert margin_pl.is_close('234.5323965')
+    defi_pl = FVal(result['defi_profit_loss'])
+    assert defi_pl == ZERO
     expected_total_taxable_pl = (
         taxable_trade_pl +
         margin_pl +
