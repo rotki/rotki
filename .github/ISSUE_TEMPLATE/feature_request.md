@@ -1,11 +1,11 @@
 ---
 name: Feature Request
-about: Requesting new features to be added to Rotkehlchen
+about: Requesting new features to be added to Rotki
 ---
 
 ## Abstract
 
-Please describe by example what problem you see in the current Rotkehlchen implementation that you would like addressed.
+Please describe by example what problem you see in the current Rotki implementation that you would like addressed.
 
 ## Motivation
 
