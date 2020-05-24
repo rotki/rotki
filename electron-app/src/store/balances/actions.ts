@@ -5,14 +5,22 @@ import {
   BlockchainMetadata,
   createTask,
   ExchangeMeta,
+  taskCompletion,
+  TaskMeta,
   TaskType
 } from '@/model/task';
 import {
+  convertMakerDAOVaults,
   convertManualBalances,
-  convertSupportedAssets
+  convertSupportedAssets,
+  convertVaultDetails
 } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
-import { ApiManualBalance } from '@/services/types-api';
+import {
+  ApiMakerDAOVault,
+  ApiMakerDAOVaultDetails,
+  ApiManualBalance
+} from '@/services/types-api';
 import { BalanceState } from '@/store/balances/state';
 import { notify } from '@/store/notifications/utils';
 import { Message, RotkehlchenState } from '@/store/store';
@@ -338,19 +346,69 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetchMakerDAOVaults({ commit, rootState: { session } }) {
+  async fetchMakerDAOVaults({
+    commit,
+    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+  }) {
+    if (isTaskRunning(TaskType.MAKEDAO_VAULTS)) {
+      return;
+    }
+
     try {
-      const makerDAOVaults = await api.makerDAOVaults();
-      commit('makerDAOVaults', makerDAOVaults);
-      if (session?.premium) {
-        const makerDAOVaultDetails = await api.makerDAOVaultDetails();
-        commit('makerDAOVaultDetails', makerDAOVaultDetails);
-      }
+      const { task_id } = await api.makerDAOVaults();
+      const task = createTask(task_id, TaskType.MAKEDAO_VAULTS, {
+        description: `Fetching MakerDAO Vaults`,
+        ignoreResult: false
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result: makerDAOVaults } = await taskCompletion<
+        ApiMakerDAOVault[],
+        TaskMeta
+      >(TaskType.MAKEDAO_VAULTS);
+      commit('makerDAOVaults', convertMakerDAOVaults(makerDAOVaults));
     } catch (e) {
       commit(
         'setMessage',
         {
           title: 'MakerDAO Vaults',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
+  },
+
+  async fetchMakerDAOVaultDetails({
+    commit,
+    rootState: { session },
+    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+  }) {
+    if (!session?.premium || isTaskRunning(TaskType.MAKERDAO_VAULT_DETAILS)) {
+      return;
+    }
+
+    try {
+      const { task_id } = await api.makerDAOVaultDetails();
+      const task = createTask(task_id, TaskType.MAKERDAO_VAULT_DETAILS, {
+        description: `Fetching MakerDAO Vault Details`,
+        ignoreResult: false
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result: makerDAOVaultDetails } = await taskCompletion<
+        ApiMakerDAOVaultDetails[],
+        TaskMeta
+      >(TaskType.MAKERDAO_VAULT_DETAILS);
+
+      commit('makerDAOVaultDetails', convertVaultDetails(makerDAOVaultDetails));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'MakerDAO Vault details',
           description: `${e.message}`
         } as Message,
         { root: true }

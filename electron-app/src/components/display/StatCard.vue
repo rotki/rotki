@@ -6,7 +6,10 @@
       <premium-lock v-if="locked"></premium-lock>
     </v-card-title>
     <v-card-text>
-      <slot v-if="!locked"></slot>
+      <span v-if="!locked && loading">
+        <v-progress-linear indeterminate color="primary"></v-progress-linear>
+      </span>
+      <slot v-else-if="!locked"></slot>
     </v-card-text>
   </v-card>
 </template>
@@ -23,6 +26,8 @@ export default class StatCard extends Vue {
   title!: string;
   @Prop({ required: false, type: Boolean, default: false })
   locked!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  loading!: boolean;
 }
 </script>
 

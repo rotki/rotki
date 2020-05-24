@@ -81,3 +81,5 @@ export interface ApiMakerDAOVaultEvent {
   readonly timestamp: number;
   readonly tx_hash: string;
 }
+
+export class TaskNotFoundError extends Error {}
