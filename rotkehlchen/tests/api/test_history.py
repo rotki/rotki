@@ -245,8 +245,9 @@ def test_query_history_async(rotkehlchen_api_server_with_exchanges):
 
     assert len(outcome['result']) == 2
     overview = outcome['result']['overview']
-    assert len(overview) == 9
+    assert len(overview) == 10
     assert overview["loan_profit"] is not None
+    assert overview["defi_profit_loss"] is not None
     assert overview["margin_positions_profit_loss"] is not None
     assert overview["settlement_losses"] is not None
     assert overview["ethereum_transaction_gas_costs"] is not None

@@ -2213,14 +2213,15 @@ Querying complete action history
           "result": {
               "overview": {
                   "loan_profit": "1500",
+                  "defi_profit_loss": "140",
                   "margin_positions_profit_loss": "500",
                   "settlement_losses": "200",
                   "ethereum_transaction_gas_costs": "2.5",
                   "asset_movement_fees": "3.45",
                   "general_trade_profit_loss": "5002",
                   "taxable_trade_profit_loss": "5002",
-                  "total_taxable_profit_loss": "6796.05",
-                  "total_profit_loss": "6796.05"
+                  "total_taxable_profit_loss": "6936.05",
+                  "total_profit_loss": "6936.05"
               },
               "all_events": [{
                   "type": "buy",
@@ -2256,6 +2257,7 @@ Querying complete action history
    The overview part of the result is a dictionary with the following keys:
 
    :resjson str loan_profit: The profit from loans inside the given time period denominated in the user's profit currency.
+   :resjson str defi_profit_loss: The profit/loss from Decentralized finance events inside the given time period denominated in the user's profit currency.
    :resjson str margin_positions_profit_loss: The profit/loss from margin positions inside the given time period denominated in the user's profit currency.
    :resjson str settlement_losses: The losses from margin settlements inside the given time period denominated in the user's profit currency.
    :resjson str ethereum_transactions_gas_costs: The losses from ethereum gas fees inside the given time period denominated in the user's profit currency.

@@ -1,5 +1,6 @@
 from typing import Optional, Tuple, Union
 
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import (
@@ -12,7 +13,7 @@ from rotkehlchen.exchanges.data_structures import (
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Timestamp
 
-TaxableAction = Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Loan]
+TaxableAction = Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Loan, DefiEvent]
 
 
 def action_get_timestamp(action: TaxableAction) -> Timestamp:
@@ -21,7 +22,7 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
 
     Can Raise assertion error if the action is not of any expected type
     """
-    if isinstance(action, (Trade, AssetMovement, EthereumTransaction)):
+    if isinstance(action, (Trade, AssetMovement, EthereumTransaction, DefiEvent)):
         return action.timestamp
     elif isinstance(action, (MarginPosition, Loan)):
         return action.close_time
@@ -40,6 +41,8 @@ def action_get_type(action: TaxableAction) -> str:
         return 'margin_position'
     elif isinstance(action, Loan):
         return 'loan'
+    elif isinstance(action, DefiEvent):
+        return 'defi_event'
 
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 

@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -129,11 +130,13 @@ def check_result_of_history_creation_for_remote_errors(
         loan_history: List[Loan],
         asset_movements: List[AssetMovement],
         eth_transactions: List[EthereumTransaction],
+        defi_events: List[DefiEvent],
 ) -> Dict[str, Any]:
     assert len(trade_history) == 0
     assert len(loan_history) == 0
     assert len(asset_movements) == 0
     assert len(eth_transactions) == 0
+    assert len(defi_events) == 0
     return {}
 
 
@@ -525,6 +528,7 @@ def mock_history_processing(
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
+            defi_events: List[DefiEvent],
     ) -> Dict[str, Any]:
         """This function offers some simple assertions on the result of the
         created history. The entire processing part of the history is mocked
@@ -643,6 +647,8 @@ def mock_history_processing(
         assert eth_transactions[2].value == FVal('500520300')
         assert eth_transactions[2].input_data == MOCK_INPUT_DATA
 
+        assert len(defi_events) == 0
+
         return {}
 
     def check_result_of_history_creation_and_process_it(
@@ -652,6 +658,7 @@ def mock_history_processing(
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
+            defi_events: List[DefiEvent],
     ) -> Dict[str, Any]:
         """Checks results of history creation but also proceeds to normal history processing"""
         check_result_of_history_creation(
@@ -661,6 +668,7 @@ def mock_history_processing(
             loan_history=loan_history,
             asset_movements=asset_movements,
             eth_transactions=eth_transactions,
+            defi_events=defi_events,
         )
         return original_history_processing_function(
             start_ts=start_ts,
@@ -669,6 +677,7 @@ def mock_history_processing(
             loan_history=loan_history,
             asset_movements=asset_movements,
             eth_transactions=eth_transactions,
+            defi_events=defi_events,
         )
 
     if should_mock_history_processing is True:

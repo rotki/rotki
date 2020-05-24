@@ -474,6 +474,7 @@ class Rotkehlchen():
             loan_history,
             asset_movements,
             eth_transactions,
+            defi_events,
         ) = self.trades_historian.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
@@ -486,6 +487,7 @@ class Rotkehlchen():
             loan_history=loan_history,
             asset_movements=asset_movements,
             eth_transactions=eth_transactions,
+            defi_events=defi_events,
         )
         return result, error_or_empty
 
