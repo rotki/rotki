@@ -35,13 +35,13 @@
           v-model="selection"
           class="borrowing__vault-selection"
           label="Vault"
-          return-object
+          item-key="identifier"
           :items="makerDAOVaults"
           item-text="identifier"
         ></v-autocomplete>
       </v-col>
     </v-row>
-    <vault :vault="selection" />
+    <vault :vault="selectedVault" />
   </v-container>
 </template>
 
@@ -52,6 +52,7 @@ import Vault from '@/components/defi/Vault.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import { MakerDAOVault } from '@/services/types-model';
 import {
   MakerDAOVaultModel,
   MakerDAOVaultSummary
@@ -67,9 +68,16 @@ const { mapGetters } = createNamespacedHelpers('balances');
 })
 export default class Borrowing extends Vue {
   loading: boolean = false;
-  selection: MakerDAOVaultModel | null = null;
+  selection: number = -1;
   makerDAOVaults!: MakerDAOVaultModel[];
   makerDAOVaultSummary!: MakerDAOVaultSummary;
+
+  get selectedVault(): MakerDAOVault | MakerDAOVaultModel | null {
+    return (
+      this.makerDAOVaults.find(vault => vault.identifier === this.selection) ??
+      null
+    );
+  }
 
   async mounted() {
     this.loading = true;
