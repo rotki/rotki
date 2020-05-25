@@ -62,7 +62,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     assert data['message'] == ''
     assert len(data['result']) == 2
     overview = data['result']['overview']
-    assert len(overview) == 9
+    assert len(overview) == 10
     assert overview["loan_profit"] is not None
     assert overview["margin_positions_profit_loss"] is not None
     assert overview["settlement_losses"] is not None
@@ -72,6 +72,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     assert overview["taxable_trade_profit_loss"] is not None
     assert overview["total_taxable_profit_loss"] is not None
     assert overview["total_profit_loss"] is not None
+    assert overview["defi_profit_loss"] is not None
     all_events = data['result']['all_events']
     assert isinstance(all_events, list)
     # TODO: These events are not actually checked anywhere for correctness
@@ -187,7 +188,7 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     assert data['message'] == ''
     assert len(data['result']) == 2
     overview = data['result']['overview']
-    assert len(overview) == 9
+    assert len(overview) == 10
     assert overview["loan_profit"] is not None
     assert overview["margin_positions_profit_loss"] is not None
     assert overview["settlement_losses"] is not None
@@ -197,6 +198,7 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     assert overview["taxable_trade_profit_loss"] is not None
     assert overview["total_taxable_profit_loss"] is not None
     assert overview["total_profit_loss"] is not None
+    assert overview["defi_profit_loss"] is not None
     all_events = data['result']['all_events']
     assert isinstance(all_events, list)
     assert len(all_events) == 4
