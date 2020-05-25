@@ -1,4 +1,3 @@
-import os
 from unittest.mock import patch
 
 import pytest
@@ -6,29 +5,20 @@ import requests
 
 from rotkehlchen.constants.assets import A_CNY, A_EUR, A_GBP, A_JPY, A_USD
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import _query_currency_converterapi, _query_exchanges_rateapi
+from rotkehlchen.inquirer import _query_exchanges_rateapi
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 
-@pytest.mark.skipif(
-    'CI' in os.environ,
-    reason='some of these APIs frequently become unavailable',
-)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_realtime_price_apis(inquirer):
-    result = _query_currency_converterapi(A_USD, A_EUR)
-    assert result and isinstance(result, FVal)
     result = _query_exchanges_rateapi(A_USD, A_GBP)
     assert result and isinstance(result, FVal)
     result = inquirer.query_historical_fiat_exchange_rates(A_USD, A_CNY, 1411603200)
     assert result == FVal('6.1371932033')
 
 
-@pytest.mark.skipif(
-    'CI' in os.environ,
-    reason='some of these APIs frequently become unavailable',
-)
+@pytest.mark.skip('The backup FIAT exchange rate API shut down. Unskip if new is found')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_switching_to_backup_api(inquirer):
@@ -51,15 +41,15 @@ def test_switching_to_backup_api(inquirer):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_caching(inquirer):
-    def mock_currency_converter_api(url, timeout):  # pylint: disable=unused-argument
-        return MockResponse(200, '{"results": {"USD_EUR": {"val": 1.1543, "id": "USD_EUR"}}}')
+    def mock_exchanges_rate_api(url, timeout):  # pylint: disable=unused-argument
+        return MockResponse(200, '{"rates":{"EUR":0.9165902841},"base":"USD","date":"2020-05-25"}')
 
-    with patch('requests.get', side_effect=mock_currency_converter_api):
+    with patch('requests.get', side_effect=mock_exchanges_rate_api):
         result = inquirer.query_fiat_pair(A_USD, A_EUR)
-        assert result == FVal('1.1543')
+        assert result == FVal('0.9165902841')
 
     # Now outside the mocked response, we should get same value due to caching
-    assert inquirer.query_fiat_pair(A_USD, A_EUR) == FVal('1.1543')
+    assert inquirer.query_fiat_pair(A_USD, A_EUR) == FVal('0.9165902841')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
