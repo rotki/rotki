@@ -47,7 +47,7 @@ export interface SupportedAsset {
 
 export interface MakerDAOVault {
   readonly identifier: number;
-  readonly name: string;
+  readonly collateralType: string;
   readonly collateralAsset: CollateralAssetType;
   readonly collateralAmount: BigNumber;
   readonly debtValue: BigNumber;

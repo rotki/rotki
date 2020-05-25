@@ -3,7 +3,7 @@
     <v-col cols="12">
       <v-row>
         <v-col>
-          <h1>{{ vault.identifier }} - {{ vault.name }}</h1>
+          <h1>{{ vault.identifier }} - {{ vault.collateralType }}</h1>
           <div class="vault__identifier">owned by {{ vault.owner }}</div>
         </v-col>
       </v-row>
