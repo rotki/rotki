@@ -115,7 +115,7 @@ def test_cryptocompare_dao_query(cryptocompare):
     }, {
         'asset': Asset('cBAT'),
         'expected_price1': FVal('0.003522603'),
-        'expected_price2': FVal('0.002713524'),
+        'expected_price2': FVal('0.002723634'),
     }, {
         'asset': Asset('cETH'),
         'expected_price1': FVal('2.903'),
