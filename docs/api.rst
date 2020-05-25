@@ -2760,7 +2760,8 @@ Getting MakerDAO vaults basic data
               "collateralization_ratio": "234.21%",
               "liquidation_ratio": "150%",
               "liquidation_price": "125.1",
-              "collateral_usd_value": "950.13"
+              "collateral_usd_value": "950.13",
+              "stability_fee": "0.00%",
           }, {
               "identifier": 55,
               "name": "USDC-A",
@@ -2771,7 +2772,8 @@ Getting MakerDAO vaults basic data
               "collateralization_ratio": "250.551%",
               "liquidation_ratio": "150%",
               "liquidation_price": "0.45",
-              "collateral_usd_value": "150"
+              "collateral_usd_value": "150",
+              "stability_fee": "0.75%",
           }]
           "message": ""
       }
@@ -2787,6 +2789,7 @@ Getting MakerDAO vaults basic data
    :resjsonarr string liquidation_ratio: This is the current minimum collateralization ratio. Less than this and the vault is going to get liquidated.
    :resjsonarr string liquidation_price: The USD price that the asset deposited in the vault as collateral at which the vault is going to get liquidated.
    :resjsonarr string collateral_usd_value: The current value in USD of all the collateral in the vault according to the MakerDAO price feed.
+   :resjsonarr string stability_fee: The current annual interest rate you have to pay for borrowing collateral from this vault type.
    :statuscode 200: Vaults succesfuly queried
    :statuscode 409: User is not logged in. Or makerdao module is not activated.
    :statuscode 500: Internal Rotki error.

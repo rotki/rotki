@@ -65,6 +65,7 @@ export interface ApiMakerDAOVault {
   readonly liquidation_ratio: string;
   readonly liquidation_price: string;
   readonly collateral_usd_value: string;
+  readonly stability_fee: string;
 }
 
 export interface ApiMakerDAOVaultDetails {

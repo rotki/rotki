@@ -101,6 +101,7 @@ export function convertMakerDAOVaults(
     liquidationPrice: bigNumberify(vault.liquidation_price),
     collateralizationRatio: vault.collateralization_ratio ?? undefined,
     collateralUsdValue: bigNumberify(vault.collateral_usd_value)
+    stabilityFee: vault.stabilityFee
   }));
 }
 
