@@ -92,7 +92,7 @@ export function convertMakerDAOVaults(
 ): MakerDAOVault[] {
   return vaults.map(vault => ({
     identifier: vault.identifier,
-    name: vault.name,
+    collateralType: vault.collateral_type,
     owner: vault.owner,
     collateralAsset: vault.collateral_asset,
     collateralAmount: bigNumberify(vault.collateral_amount),
@@ -100,8 +100,8 @@ export function convertMakerDAOVaults(
     liquidationRatio: vault.liquidation_ratio,
     liquidationPrice: bigNumberify(vault.liquidation_price),
     collateralizationRatio: vault.collateralization_ratio ?? undefined,
-    collateralUsdValue: bigNumberify(vault.collateral_usd_value)
-    stabilityFee: vault.stabilityFee
+    collateralUsdValue: bigNumberify(vault.collateral_usd_value),
+    stabilityFee: vault.stability_fee
   }));
 }
 

@@ -2752,7 +2752,7 @@ Getting MakerDAO vaults basic data
       {
           "result": [{
               "identifier": 1,
-              "name": "ETH-A",
+              "collateral_type": "ETH-A",
 	      "owner": "0xA76a9560ffFD9fC603F7d6A30c37D79665207876",
               "collateral_asset": "ETH",
               "collateral_amount": "5.232",
@@ -2764,7 +2764,7 @@ Getting MakerDAO vaults basic data
               "stability_fee": "0.00%",
           }, {
               "identifier": 55,
-              "name": "USDC-A",
+              "collateral_type": "USDC-A",
 	      "owner": "0xB26a9561ffFD9fC603F7d6A30c37D79665207876",
               "collateral_asset": "USDC",
               "collateral_amount": "150",
@@ -2780,7 +2780,7 @@ Getting MakerDAO vaults basic data
 
    :resjson object result: A list of all vaults auto detected for the user's accounts
    :resjsonarr string identifier: A unique integer identifier for the vault.
-   :resjsonarr string name: The name of the vault given by the system.
+   :resjsonarr string collateral_type: The collateral_type of the vault. e.g. ETH-A. Various collateral types can be seen here: https://catflip.co/
    :resjsonarr string owner: The address of the owner of the vault.
    :resjsonarr string collateral_asset: The asset deposited in the vault as collateral. As of this writing supported assets are ``["ETH", "BAT", "USDC", "WBTC"]``
    :resjsonarr string collateral_amount: The amount of collateral currently deposited in the vault

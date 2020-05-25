@@ -56,7 +56,7 @@ export interface ApiManualBalances {
 
 export interface ApiMakerDAOVault {
   readonly identifier: number;
-  readonly name: string;
+  readonly collateral_type: string;
   readonly owner: string;
   readonly collateral_asset: CollateralAssetType;
   readonly collateral_amount: string;

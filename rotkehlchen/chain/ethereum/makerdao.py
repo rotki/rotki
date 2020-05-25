@@ -113,7 +113,9 @@ class VaultEvent(NamedTuple):
 
 class MakerDAOVault(NamedTuple):
     identifier: int
-    name: str
+    # The type of collateral used for the vault. asset + set of parameters.
+    # e.g. ETH-A. Various types can be seen here: https://catflip.co/
+    collateral_type: str
     owner: ChecksumEthAddress
     collateral_asset: Asset
     # The amount of collateral tokens locked
@@ -352,8 +354,8 @@ class MakerDAO(EthereumModule):
             urn: ChecksumEthAddress,
             ilk: bytes,
     ) -> Optional[MakerDAOVault]:
-        name = ilk.split(b'\0', 1)[0].decode()
-        asset_symbol = name.split('-')[0]
+        collateral_type = ilk.split(b'\0', 1)[0].decode()
+        asset_symbol = collateral_type.split('-')[0]
         if asset_symbol not in ('ETH', 'BAT', 'USDC', 'WBTC'):
             self.msg_aggregator.add_warning(
                 f'Detected vault with {asset_symbol} as collateral. That is not yet '
@@ -405,7 +407,7 @@ class MakerDAO(EthereumModule):
         return MakerDAOVault(
             identifier=identifier,
             owner=owner,
-            name=name,
+            collateral_type=collateral_type,
             collateral_asset=asset,
             collateral_amount=collateral_amount,
             debt_value=debt_value,

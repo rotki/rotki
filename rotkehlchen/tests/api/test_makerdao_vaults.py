@@ -30,7 +30,7 @@ def mock_proxies(rotki, mapping) -> None:
 
 VAULT_8015 = {
     'identifier': 8015,  # owner is missing and is filled in by the test function
-    'name': 'ETH-A',
+    'collateral_type': 'ETH-A',
     'collateral_asset': 'ETH',
     'collateral_amount': ZERO,
     'collateral_usd_value': ZERO,
@@ -221,7 +221,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     vault_6021 = {
         'identifier': 6021,
         'owner': ethereum_accounts[2],
-        'name': 'ETH-A',
+        'collateral_type': 'ETH-A',
         'collateral_asset': 'ETH',
         'collateral_amount': ZERO,
         'collateral_usd_value': ZERO,
@@ -308,7 +308,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     vault_8913 = MakerDAOVault(
         identifier=8913,
         owner=ethereum_accounts[0],
-        name='WBTC-A',
+        collateral_type='WBTC-A',
         urn='0x37f7B3C82A9Edc13FdCcE66E7d500b3698A13294',
         collateral_asset=A_WBTC,
         collateral_amount=ZERO,
@@ -387,7 +387,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     vault_7588 = MakerDAOVault(
         identifier=7588,
         owner=ethereum_accounts[0],
-        name='USDC-A',
+        collateral_type='USDC-A',
         urn='0x56D88244073B2fC17af5B1E6088936D5bAaDc37B',
         collateral_asset=A_USDC,
         collateral_amount=ZERO,
@@ -466,7 +466,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     vault_7538 = MakerDAOVault(
         identifier=7538,
         owner=ethereum_accounts[0],
-        name='USDC-A',
+        collateral_type='USDC-A',
         urn='0x70E58566C7baB6faaFE03fbA69DF45Ef4f48223B',
         collateral_asset=A_USDC,
         collateral_amount=ZERO,

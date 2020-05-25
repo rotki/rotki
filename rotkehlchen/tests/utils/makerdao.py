@@ -45,7 +45,7 @@ def mock_get_cdps_asc(
     for entry in self.test_data.vaults:
         result[0].append(entry.identifier)
         result[1].append(entry.urn)
-        ilk = bytearray(entry.name.encode())
+        ilk = bytearray(entry.collateral_type.encode())
         ilk.extend(
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -76,7 +76,7 @@ def mock_vat_urns(
 
 def mock_vat_ilks(self, ilk) -> Tuple[int, int, FVal]:
     for vault in self.test_data.vaults:
-        vault_ilk = bytearray(vault.name.encode())
+        vault_ilk = bytearray(vault.collateral_type.encode())
         vault_ilk.extend(
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -93,7 +93,7 @@ def mock_vat_ilks(self, ilk) -> Tuple[int, int, FVal]:
 
 def mock_spot_ilks(self, ilk) -> Tuple[int, FVal]:
     for vault in self.test_data.vaults:
-        vault_ilk = bytearray(vault.name.encode())
+        vault_ilk = bytearray(vault.collateral_type.encode())
         vault_ilk.extend(
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
