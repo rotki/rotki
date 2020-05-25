@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Sequence, Union
 
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     MarginPosition,
@@ -19,6 +20,7 @@ def accounting_history_process(
         loans_list: List[Dict] = None,
         asset_movements_list: List[AssetMovement] = None,
         eth_transaction_list: List[Dict] = None,
+        defi_events_list: List[DefiEvent] = None,
 ) -> Dict[str, Any]:
     trade_history: Sequence[Union[Trade, MarginPosition]]
     # For filtering the taxable actions list we start with 0 ts so that we have the
@@ -51,6 +53,10 @@ def accounting_history_process(
     if eth_transaction_list:
         eth_transactions = eth_transaction_list
 
+    defi_events = []
+    if defi_events_list:
+        defi_events = defi_events_list
+
     result = accountant.process_history(
         start_ts=start_ts,
         end_ts=end_ts,
@@ -58,5 +64,6 @@ def accounting_history_process(
         loan_history=loan_history,
         asset_movements=asset_movements,
         eth_transactions=eth_transactions,
+        defi_events=defi_events,
     )
     return result
