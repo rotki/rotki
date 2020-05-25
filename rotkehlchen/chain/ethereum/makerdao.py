@@ -20,6 +20,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_DAI_JOIN,
     MAKERDAO_ETH_JOIN,
     MAKERDAO_GET_CDPS,
+    MAKERDAO_JUG,
     MAKERDAO_POT,
     MAKERDAO_PROXY_REGISTRY,
     MAKERDAO_SPOT,
@@ -27,6 +28,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_VAT,
     MAKERDAO_WBTC_JOIN,
 )
+from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
@@ -57,12 +59,12 @@ GEMJOIN_MAPPING = {
     'WBTC': MAKERDAO_WBTC_JOIN,
 }
 
-WAD = int(1e18)
 WAD_DIGITS = 18
-RAY = int(1e27)
+WAD = 10**WAD_DIGITS
 RAY_DIGITS = 27
-RAD = int(1e45)
+RAY = 10**RAY_DIGITS
 RAD_DIGITS = 45
+RAD = 10**RAD_DIGITS
 
 
 def _shift_num_right_by(num: int, digits: int) -> int:
@@ -127,11 +129,13 @@ class MakerDAOVault(NamedTuple):
     # The USD value of collateral locked, given the current price according to the price feed
     collateral_usd_value: FVal
     urn: ChecksumEthAddress
+    stability_fee: FVal
 
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        # But make sure to turn liquidation ratio to a percentage
+        # But make sure to turn liquidation ratio and stability fee to a percentage
         result['liquidation_ratio'] = self.liquidation_ratio.to_percentage(2)
+        result['stability_fee'] = self.stability_fee.to_percentage(2)
         # And don't send unneeded data
         del result['urn']
         return result
@@ -275,9 +279,25 @@ class MakerDAO(EthereumModule):
         self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
         self.usd_price: Dict[str, FVal] = defaultdict(FVal)
         self.vault_mappings: Dict[ChecksumEthAddress, List[MakerDAOVault]] = defaultdict(list)
+        self.ilk_to_stability_fee: Dict[bytes, FVal] = {}
 
     def premium_active(self) -> bool:
         return bool(self.premium and self.premium.is_active())
+
+    def get_stability_fee(self, ilk: bytes) -> FVal:
+        """If we already know the current stability_fee for ilk return it. If not query it"""
+        if ilk in self.ilk_to_stability_fee:
+            return self.ilk_to_stability_fee[ilk]
+
+        result = self.ethereum.call_contract(
+            contract_address=MAKERDAO_JUG.address,
+            abi=MAKERDAO_JUG.abi,
+            method_name='ilks',
+            arguments=[ilk],
+        )
+        # result[0] is the duty variable of the ilks in the contract
+        stability_fee = FVal(result[0] / RAY) ** (YEAR_IN_SECONDS) - 1
+        return stability_fee
 
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
         """Checks if a DSR proxy exists for the given address and returns it if it does
@@ -382,7 +402,6 @@ class MakerDAO(EthereumModule):
             liquidation_price = None
         else:
             liquidation_price = (debt_value * liquidation_ratio) / collateral_amount
-
         return MakerDAOVault(
             identifier=identifier,
             owner=owner,
@@ -395,6 +414,7 @@ class MakerDAO(EthereumModule):
             collateral_usd_value=collateral_usd_value,
             liquidation_price=liquidation_price,
             urn=urn,
+            stability_fee=self.get_stability_fee(ilk),
         )
 
     def _query_vault_details(

@@ -7,6 +7,7 @@ from web3 import Web3
 from rotkehlchen.chain.ethereum.makerdao import RAY, WAD, MakerDAOVault
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_GET_CDPS,
+    MAKERDAO_JUG,
     MAKERDAO_PROXY_REGISTRY,
     MAKERDAO_SPOT,
     MAKERDAO_VAT,
@@ -49,7 +50,7 @@ def mock_get_cdps_asc(
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
         )
-        result[2].append(ilk)
+        result[2].append(bytes(ilk))
 
     return result
 
@@ -105,6 +106,20 @@ def mock_spot_ilks(self, ilk) -> Tuple[int, FVal]:
     raise AssertionError(f'Could not find a mock for spot ilks for ilk {ilk}')
 
 
+def mock_jug_ilks(_, ilk) -> Tuple[int, int]:
+    if 'ETH-A' in str(ilk):
+        duty = 1000000000000000000000000000  # 0%
+    elif 'BAT-A' in str(ilk):
+        duty = 1000000000236936036262880196  # 0.75%
+    else:
+        raise AssertionError(f'Unexpected ilk {str(ilk)} in unit tests')
+
+    whatever = 1
+    return duty, whatever
+
+    raise AssertionError(f'Could not find a mock for spot ilks for ilk {ilk}')
+
+
 def create_web3_mock(web3: Web3, test_data: VaultTestData):
     def mock_contract(address, abi):  # pylint: disable=unused-argument
         mock_proxy_registry = (
@@ -119,6 +134,8 @@ def create_web3_mock(web3: Web3, test_data: VaultTestData):
             return MockContract(test_data, urns=mock_vat_urns, ilks=mock_vat_ilks)
         elif address == MAKERDAO_SPOT.address and 'SPOT' in test_data.mock_contracts:
             return MockContract(test_data, ilks=mock_spot_ilks)
+        elif address == MAKERDAO_JUG.address and 'JUG' in test_data.mock_contracts:
+            return MockContract(test_data, ilks=mock_jug_ilks)
         else:
             raise AssertionError('Got unexpected address for contract during tests')
 

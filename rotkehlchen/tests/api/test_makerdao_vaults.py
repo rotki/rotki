@@ -29,7 +29,7 @@ def mock_proxies(rotki, mapping) -> None:
 
 
 VAULT_8015 = {
-    'identifier': 8015,
+    'identifier': 8015,  # owner is missing and is filled in by the test function
     'name': 'ETH-A',
     'collateral_asset': 'ETH',
     'collateral_amount': ZERO,
@@ -38,6 +38,7 @@ VAULT_8015 = {
     'collateralization_ratio': None,
     'liquidation_ratio': '150.00%',
     'liquidation_price': None,
+    'stability_fee': '0.00%',
 }
 
 VAULT_8015_DETAILS = {
@@ -85,8 +86,10 @@ VAULT_8015_DETAILS = {
 }
 
 
-def _check_vaults_values(vaults):
-    expected_vaults = [VAULT_8015]
+def _check_vaults_values(vaults, owner):
+    expected_vault = VAULT_8015.copy()
+    expected_vault['owner'] = owner
+    expected_vaults = [expected_vault]
     assert_serialized_lists_equal(expected_vaults, vaults)
 
 
@@ -108,7 +111,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
         "makerdaovaultsresource",
     ))
     vaults = assert_proper_response_with_result(response)
-    _check_vaults_values(vaults)
+    _check_vaults_values(vaults, ethereum_accounts[0])
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -134,7 +137,7 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
     outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert outcome['message'] == ''
     vaults = outcome['result']
-    _check_vaults_values(vaults)
+    _check_vaults_values(vaults, ethereum_accounts[0])
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -168,7 +171,7 @@ def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_acco
         "makerdaovaultsresource",
     ))
     vaults = assert_proper_response_with_result(response)
-    _check_vaults_values(vaults)
+    _check_vaults_values(vaults, ethereum_accounts[0])
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -217,6 +220,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     vaults = assert_proper_response_with_result(response)
     vault_6021 = {
         'identifier': 6021,
+        'owner': ethereum_accounts[2],
         'name': 'ETH-A',
         'collateral_asset': 'ETH',
         'collateral_amount': ZERO,
@@ -225,8 +229,11 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         'collateralization_ratio': None,
         'liquidation_ratio': '150.00%',
         'liquidation_price': None,
+        'stability_fee': '0.00%',
     }
-    expected_vaults = [vault_6021, VAULT_8015]
+    vault_8015_with_owner = VAULT_8015.copy()
+    vault_8015_with_owner['owner'] = ethereum_accounts[0]
+    expected_vaults = [vault_6021, vault_8015_with_owner]
     assert_serialized_lists_equal(expected_vaults, vaults)
 
     response = requests.get(api_url_for(
@@ -310,6 +317,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         collateralization_ratio=None,
         liquidation_ratio=FVal(1.5),
         liquidation_price=None,
+        stability_fee=FVal(0.01),
     )
     expected_vaults = [vault_8913.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
@@ -388,6 +396,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         collateralization_ratio=None,
         liquidation_ratio=FVal(1.2),
         liquidation_price=None,
+        stability_fee=FVal(0.0075),
     )
     expected_vaults = [vault_7588.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)

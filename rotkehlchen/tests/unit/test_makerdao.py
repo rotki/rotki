@@ -3,6 +3,7 @@ from web3 import Web3
 
 from rotkehlchen.chain.ethereum.makerdao import MakerDAO, MakerDAOVault
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.constants import A_BAT
@@ -32,9 +33,10 @@ def use_etherscan() -> bool:
 
 @pytest.fixture
 def makerdao_test_data(ethereum_accounts) -> VaultTestData:
+    user_address = ethereum_accounts[1]
     vault0 = MakerDAOVault(
         identifier=1,
-        owner=make_ethereum_address(),
+        owner=user_address,
         urn=make_ethereum_address(),
         name='ETH-A',
         collateral_asset=A_ETH,
@@ -44,10 +46,11 @@ def makerdao_test_data(ethereum_accounts) -> VaultTestData:
         liquidation_ratio=FVal('1.5'),
         liquidation_price=FVal('307.3064516129032258064516129'),
         collateral_usd_value=FVal('850.1'),
+        stability_fee=ZERO,
     )
     vault1 = MakerDAOVault(
         identifier=2,
-        owner=make_ethereum_address(),
+        owner=user_address,
         urn=make_ethereum_address(),
         name='BAT-A',
         collateral_asset=A_BAT,
@@ -57,14 +60,14 @@ def makerdao_test_data(ethereum_accounts) -> VaultTestData:
         liquidation_ratio=FVal('1.5'),
         liquidation_price=FVal('0.09055272442179537436299490396'),
         collateral_usd_value=FVal('0.09055272442179537436299490395'),
+        stability_fee=FVal('0.0075'),
     )
     expected_vaults = [vault0, vault1]
-    user_address = ethereum_accounts[1]
     proxy_address = make_ethereum_address()
     return VaultTestData(
         vaults=expected_vaults,
         proxy_mappings={user_address: proxy_address},
-        mock_contracts=['GetCDPS', 'ProxyRegistry', 'VAT', 'SPOT'],
+        mock_contracts=['GetCDPS', 'ProxyRegistry', 'VAT', 'SPOT', 'JUG'],
     )
 
 
