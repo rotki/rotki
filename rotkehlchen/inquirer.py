@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Optional
 import requests
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
@@ -47,31 +47,6 @@ def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
     ):
         log.error(
             'Querying api.exchangeratesapi.io for fiat pair failed',
-            base_currency=base.identifier,
-            quote_currency=quote.identifier,
-        )
-        return None
-
-
-def _query_currency_converterapi(base: Asset, quote: Asset) -> Optional[Price]:
-    assert base.is_fiat(), 'fiat currency should have been provided'
-    assert quote.is_fiat(), 'fiat currency should have been provided'
-    log.debug(
-        'Query free.currencyconverterapi.com fiat pair',
-        base_currency=base.identifier,
-        quote_currency=quote.identifier,
-    )
-    pair = f'{base.identifier}_{quote.identifier}'
-    querystr = (
-        f'https://free.currencyconverterapi.com/api/v6/convert?'
-        f'q={pair}&apiKey={CURRENCYCONVERTER_API_KEY}'
-    )
-    try:
-        resp = request_get_dict(querystr)
-        return Price(FVal(resp['results'][pair]['val']))
-    except (ValueError, RemoteError, KeyError, UnableToDecryptRemoteData):
-        log.error(
-            'Querying free.currencyconverterapi.com fiat pair failed',
             base_currency=base.identifier,
             quote_currency=quote.identifier,
         )
@@ -261,8 +236,7 @@ class Inquirer():
             return price
 
         price = _query_exchanges_rateapi(base, quote)
-        if not price:
-            price = _query_currency_converterapi(base, quote)
+        # TODO: Find another backup API for fiat exchange rates
 
         if not price:
             # Search the cache for any price in the last month
