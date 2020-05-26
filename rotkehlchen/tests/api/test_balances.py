@@ -157,7 +157,6 @@ def test_query_all_balances(
         setup=setup,
     )
 
-    # rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     last_save_timestamp = rotki.data.db.get_last_balance_save_time()
 
     # now do the same but check to see if the balance save frequency delay works
@@ -175,7 +174,7 @@ def test_query_all_balances(
     assert last_save_timestamp == new_save_timestamp
 
     # now do the same but test that balance are saved since the balance save frequency delay
-    #  is overriden via `save_data` = True
+    # is overriden via `save_data` = True
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
         response = requests.get(
