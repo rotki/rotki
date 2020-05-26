@@ -85,17 +85,31 @@ VAULT_8015_DETAILS = {
     }],
 }
 
+VAULT_IGNORE_KEYS = [
+    'collateral_amount',
+    'collateral_usd_value',
+    'debt_value',
+    'collateralization_ratio',
+    'stability_fee',
+    'liquidation_price',
+]
+
 
 def _check_vaults_values(vaults, owner):
     expected_vault = VAULT_8015.copy()
     expected_vault['owner'] = owner
     expected_vaults = [expected_vault]
-    assert_serialized_lists_equal(expected_vaults, vaults)
+    assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=VAULT_IGNORE_KEYS)
 
 
 def _check_vault_details_values(details):
     expected_details = [VAULT_8015_DETAILS]
-    assert_serialized_lists_equal(expected_details, details)
+    assert_serialized_lists_equal(
+        expected_details,
+        details,
+        # Checking only the first 7 events
+        length_list_keymap={'events': 7},
+    )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -233,8 +247,13 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     }
     vault_8015_with_owner = VAULT_8015.copy()
     vault_8015_with_owner['owner'] = ethereum_accounts[0]
-    expected_vaults = [vault_6021, vault_8015_with_owner]
-    assert_serialized_lists_equal(expected_vaults, vaults)
+    assert_serialized_dicts_equal(vault_6021, vaults[0])
+    assert_serialized_dicts_equal(
+        vault_8015_with_owner,
+        vaults[1],
+        ignore_keys=VAULT_IGNORE_KEYS,
+    )
+    assert len(vaults) == 2
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -284,8 +303,9 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         }],
     }
     details = assert_proper_response_with_result(response)
-    expected_details = [vault_6021_details, VAULT_8015_DETAILS]
-    assert_serialized_lists_equal(expected_details, details)
+    assert len(details) == 2
+    assert_serialized_dicts_equal(vault_6021_details, details[0])
+    assert_serialized_dicts_equal(VAULT_8015_DETAILS, details[1], length_list_keymap={'events': 7})
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -332,8 +352,8 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         'identifier': 8913,
         'creation_ts': 1588664698,
         'total_interest_owed': FVal('0.1903819198'),
-        'total_liquidated_amount': FVal('141.7'),
-        'total_liquidated_usd': FVal('19191.848'),
+        'total_liquidated_amount': ZERO,
+        'total_liquidated_usd': ZERO,
         'events': [{
             'event_type': 'deposit',
             'amount': FVal('0.011'),
@@ -358,14 +378,12 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     }
     details = assert_proper_response_with_result(response)
     assert len(details) == 1
-    detail = details[0]
-    assert detail['identifier'] == vault_8913_details['identifier']
-    assert detail['creation_ts'] == vault_8913_details['creation_ts']
-    assert FVal(detail['total_interest_owed']).is_close(vault_8913_details['total_interest_owed'])
-    assert FVal(detail['total_liquidated_amount']) == ZERO
-    assert FVal(detail['total_liquidated_usd']) == ZERO
-    for idx, event in enumerate(vault_8913_details['events']):
-        assert_serialized_dicts_equal(event, detail['events'][idx])
+    assert_serialized_dicts_equal(
+        details[0],
+        vault_8913_details,
+        # Checking only the first 4 events
+        length_list_keymap={'events': 4},
+    )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
