@@ -34,7 +34,8 @@
             <v-icon class="ml-3" v-on="on">fa fa-info-circle</v-icon>
           </template>
           <div>
-            This will force taking a snapshot of all your balances, ignoring any cache.<br />
+            This will force taking a snapshot of all your balances, ignoring any
+            cache.<br />
             Use this sparingly as it may lead to you being rate-limited.
           </div>
         </v-tooltip>
