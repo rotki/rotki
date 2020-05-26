@@ -492,6 +492,8 @@ Getting or modifying settings
           "message": ""
       }
 
+   .. _balance_save_frequency:
+
    :resjson int version: The database version
    :resjson int last_write_ts: The unix timestamp at which an entry was last written in the database
    :resjson bool premium_should_sync: A boolean denoting whether premium users database should be synced from/to the server
@@ -1402,10 +1404,10 @@ Querying all balances
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
-   :reqjson bool save_data: Boolean denoting whether to force save data even if the balance save frequency has not lapsed (see `Getting or modifying settings`_ ).
+   :reqjson bool save_data: Boolean denoting whether to force save data even if the balance save frequency has not lapsed (see `here <balance_save_frequency_>`_ ).
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
-   :param bool save_data: Boolean denoting whether to force save data even if the balance save frequency has not lapsed (see `Getting or modifying settings`_ ).
+   :param bool save_data: Boolean denoting whether to force save data even if the balance save frequency has not lapsed (see `here <balance_save_frequency_>`_ ).
 
 
    **Example Response**:

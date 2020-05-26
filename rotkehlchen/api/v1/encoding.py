@@ -717,7 +717,7 @@ class NewUserSchema(BaseUserSchema):
 
 class AllBalancesQuerySchema(Schema):
     async_query = fields.Boolean(missing=False)
-    save_data = fields.Boolean(missing=None)
+    save_data = fields.Boolean(missing=False)
     ignore_cache = fields.Boolean(missing=False)
 
 
