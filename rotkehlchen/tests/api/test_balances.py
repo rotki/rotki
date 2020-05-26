@@ -157,6 +157,9 @@ def test_query_all_balances(
         setup=setup,
     )
 
+    # rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    last_save_timestamp = rotki.data.db.get_last_balance_save_time()
+
     # now do the same but check to see if the balance save frequency delay works
     # and thus data will not be saved
     with ExitStack() as stack:
@@ -168,13 +171,8 @@ def test_query_all_balances(
             ),
         )
     assert_proper_response(response)
-    json_data = response.json()
-    assert_all_balances(
-        data=json_data,
-        db=rotki.data.db,
-        expected_data_in_db=False,
-        setup=setup,
-    )
+    new_save_timestamp = rotki.data.db.get_last_balance_save_time()
+    assert last_save_timestamp == new_save_timestamp
 
     # now do the same but test that balance are saved since the balance save frequency delay
     #  is overriden via `save_data` = True
@@ -187,13 +185,8 @@ def test_query_all_balances(
             ), json={'save_data': True},
         )
     assert_proper_response(response)
-    json_data = response.json()
-    assert_all_balances(
-        data=json_data,
-        db=rotki.data.db,
-        expected_data_in_db=True,
-        setup=setup,
-    )
+    new_save_timestamp = rotki.data.db.get_last_balance_save_time()
+    assert last_save_timestamp != new_save_timestamp
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
