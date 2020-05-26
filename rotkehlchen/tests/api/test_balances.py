@@ -138,16 +138,35 @@ def test_query_all_balances(
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
-    # Test all balances request by requesting to not save the data
+    # Test that all balances request saves data on a fresh account
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ), json={'save_data': False},
+            ),
         )
 
+    assert_proper_response(response)
+    json_data = response.json()
+    assert_all_balances(
+        data=json_data,
+        db=rotki.data.db,
+        expected_data_in_db=True,
+        setup=setup,
+    )
+
+    # now do the same but check to see if the balance save frequency delay works
+    # and thus data will not be saved
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "allbalancesresource",
+            ),
+        )
     assert_proper_response(response)
     json_data = response.json()
     assert_all_balances(
@@ -157,15 +176,15 @@ def test_query_all_balances(
         setup=setup,
     )
 
-    # now do the same but save the data in the DB and test it works
-    # Omit the argument to test that default value of save_data is True
+    # now do the same but test that balance are saved since the balance save frequency delay
+    #  is overriden via `save_data` = True
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ),
+            ), json={'save_data': True},
         )
     assert_proper_response(response)
     json_data = response.json()
@@ -369,7 +388,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         manually_tracked_balances=manually_tracked_balances,
     )
     # now do the same but save the data in the DB and test it works
-    # Omit the argument to test that default value of save_data is True
+    # `save_data` is False by default but data will save since this is a fresh account
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
         response = requests.get(

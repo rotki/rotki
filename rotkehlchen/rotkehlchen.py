@@ -506,13 +506,15 @@ class Rotkehlchen():
 
     def query_balances(
             self,
-            requested_save_data: bool = None,
+            requested_save_data: bool = False,
             timestamp: Timestamp = None,
             ignore_cache: bool = False,
     ) -> Dict[str, Any]:
         """Query all balances rotkehlchen can see.
 
-        If requested_save_data is True then the data are saved in the DB.
+        If requested_save_data is True then the data are always saved in the DB,
+        if it is False then data are saved if self.data.should_save_balances()
+        is True.
         If timestamp is None then the current timestamp is used.
         If a timestamp is given then that is the time that the balances are going
         to be saved in the DB
@@ -583,15 +585,7 @@ class Rotkehlchen():
 
         result_dict = merge_dicts(combined, stats)
 
-        """
-        If requested_save_data is false, we never save.
-        We save user balances when should_save_balances() is true (i.e. if we haven't saved within
-        the last user-defined save period), or if save has been explicitly requested.
-        """
-        if requested_save_data is not False:
-            allowed_to_save = requested_save_data or self.data.should_save_balances()
-        else:
-            allowed_to_save = requested_save_data
+        allowed_to_save = requested_save_data or self.data.should_save_balances()
 
         if problem_free and allowed_to_save:
             if not timestamp:
