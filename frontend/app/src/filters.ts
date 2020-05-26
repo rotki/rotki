@@ -32,6 +32,19 @@ export function roundDown(value: BigNumber, precision: number) {
   return value.toFormat(precision, BigNumber.ROUND_DOWN);
 }
 
+// truncates blockchain addresses retaining `truncLength` characters
+// in the beginning and end of the address
+export function truncateAddress(
+  address: string,
+  truncLength: number = 4
+): string {
+  return (
+    address.slice(0, truncLength + 2) +
+    '...' +
+    address!.slice(address!.length - truncLength, address!.length)
+  );
+}
+
 export function calculatePrice(
   value: BigNumber,
   exchangeRate: number
@@ -82,5 +95,6 @@ Vue.filter('capitalize', capitalize);
 Vue.filter('roundDown', roundDown);
 Vue.filter('calculatePrice', calculatePrice);
 Vue.filter('balanceSum', balanceSum);
+Vue.filter('truncateAddress', truncateAddress);
 Vue.filter('aggregateTotal', aggregateTotal);
 Vue.filter('splitOnCapital', splitOnCapital);

@@ -10,9 +10,10 @@
         No premium subscription detected. Statistics are only available to
         premium users. <br />
         To get a premium subscription please visit our
-        <base-external-link :href="$interop.premiumURL">
-          website.
-        </base-external-link>
+        <base-external-link
+          text="website."
+          :href="$interop.premiumURL"
+        ></base-external-link>
       </div>
       <div v-else>
         <premium-statistics

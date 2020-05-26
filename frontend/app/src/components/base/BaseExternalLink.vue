@@ -4,7 +4,12 @@
     target="_blank"
     @click="$interop.isPackaged ? openLink() : undefined"
   >
-    <slot></slot>
+    <span v-if="truncate">
+      {{ text | truncateAddress }}
+    </span>
+    <span v-else>
+      {{ text }}
+    </span>
   </a>
 </template>
 
@@ -15,6 +20,10 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 export default class BaseExternalLink extends Vue {
   @Prop({ required: true })
   href!: string;
+  @Prop({ required: true })
+  text!: string;
+  @Prop({ required: false, type: Boolean, default: false })
+  truncate!: boolean;
 
   openLink() {
     this.$interop.openUrl(this.href);
