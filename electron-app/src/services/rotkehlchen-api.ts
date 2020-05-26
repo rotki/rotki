@@ -61,9 +61,9 @@ export class RotkehlchenApi {
     throw new Error(message);
   }
 
-  connect(port: number): void {
+  connect(): void {
     this._axios = axios.create({
-      baseURL: `http://localhost:${port}/api/1/`,
+      baseURL: `${process.env.VUE_APP_BACKEND_URL}/api/1/`,
       timeout: 30000
     });
   }
