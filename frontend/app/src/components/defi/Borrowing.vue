@@ -17,14 +17,16 @@
             :value="makerDAOVaultSummary.totalCollateralUsd"
             show-currency="symbol"
             fiat-currency="USD"
+            style="font-size: 2em;"
           ></amount-display>
         </stat-card>
       </v-col>
       <v-col>
-        <stat-card title="Total debt">
+        <stat-card title="Total oustanding debt">
           <amount-display
             :value="makerDAOVaultSummary.totalDebt"
             asset="DAI"
+            style="font-size: 2em;"
           ></amount-display>
         </stat-card>
       </v-col>

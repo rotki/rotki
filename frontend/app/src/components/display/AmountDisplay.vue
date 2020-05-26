@@ -1,5 +1,5 @@
 <template>
-  <span class="amount-display" :class="privacyMode ? 'blur-content' : ''">
+  <div class="amount-display" :class="privacyMode ? 'blur-content' : ''">
     <span
       v-if="fiatCurrency && fiatCurrency !== currency.ticker_symbol"
       class="amount-display__value"
@@ -19,7 +19,6 @@
     <span v-else class="amount-display__value">
       {{ renderValue | formatPrice(floatingPrecision) }}
     </span>
-
     <v-tooltip v-if="!fiatCurrency" top>
       <template #activator="{ on }">
         <span
@@ -37,22 +36,31 @@
         {{ renderValue }}
       </span>
     </v-tooltip>
-    <span v-if="showCurrency === 'ticker'" class="amount-display__currency">
+    <span
+      v-if="showCurrency === 'ticker' && !renderValue.isNaN()"
+      class="amount-display__currency"
+    >
       {{ currency.ticker_symbol }}
     </span>
     <span
-      v-else-if="showCurrency === 'symbol'"
+      v-else-if="showCurrency === 'symbol' && !renderValue.isNaN()"
       class="amount-display__currency"
     >
       {{ currency.unicode_symbol }}
     </span>
-    <span v-else-if="showCurrency === 'name'" class="amount-display__currency">
+    <span
+      v-else-if="showCurrency === 'name' && !renderValue.isNaN()"
+      class="amount-display__currency"
+    >
       {{ currency.name }}
     </span>
-    <span v-else-if="!!asset" class="amount-display__asset">
+    <span
+      v-else-if="!!asset && !renderValue.isNaN()"
+      class="amount-display__asset"
+    >
       {{ asset }}
     </span>
-  </span>
+  </div>
 </template>
 
 <script lang="ts">
@@ -147,15 +155,18 @@ td.text-end .amount-display {
     }
   }
 
+  // &__currency {
+  //   display: contents !important;
+  // }
+
+  &__asset,
   &__currency {
-    display: contents !important;
+    margin-left: 5px;
   }
 
   &__asset,
   &__currency {
-    font-size: 0.82em;
-    color: #616161;
-    margin-left: 5px;
+    font-size: 0.8em;
   }
 }
 
