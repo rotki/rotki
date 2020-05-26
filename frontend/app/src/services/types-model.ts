@@ -55,6 +55,7 @@ export interface MakerDAOVault {
   readonly collateralAmount: BigNumber;
   readonly debtValue: BigNumber;
   readonly collateralizationRatio?: string;
+  readonly stabilityFee: string;
   readonly liquidationRatio: string;
   readonly liquidationPrice: BigNumber;
   readonly collateralUsdValue: BigNumber;

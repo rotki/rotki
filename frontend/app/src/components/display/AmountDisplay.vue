@@ -1,65 +1,74 @@
 <template>
   <div class="amount-display" :class="privacyMode ? 'blur-content' : ''">
-    <span
-      v-if="fiatCurrency && fiatCurrency !== currency.ticker_symbol"
-      class="amount-display__value"
+    <v-skeleton-loader
+      :loading="loading"
+      min-width="60"
+      max-width="70"
+      type="text"
     >
-      {{
-        renderValue
-          | calculatePrice(exchangeRate(currency.ticker_symbol))
-          | roundDown(floatingPrecision)
-      }}
-    </span>
-    <span
-      v-else-if="fiatCurrency === currency.ticker_symbol"
-      class="amount-display__value"
-    >
-      {{ renderValue | roundDown(floatingPrecision) }}
-    </span>
-    <span v-else class="amount-display__value">
-      {{ renderValue | formatPrice(floatingPrecision) }}
-    </span>
-    <v-tooltip v-if="!fiatCurrency" top>
-      <template #activator="{ on }">
-        <span
-          v-if="renderValue.decimalPlaces() > floatingPrecision"
-          class="amount-display__asterisk"
-          v-on="on"
-        >
-          *
+      <span
+        v-if="fiatCurrency && fiatCurrency !== currency.ticker_symbol"
+        class="amount-display__value"
+      >
+        {{
+          renderValue
+            | calculatePrice(exchangeRate(currency.ticker_symbol))
+            | roundDown(floatingPrecision)
+        }}
+      </span>
+      <span
+        v-else-if="fiatCurrency === currency.ticker_symbol"
+        class="amount-display__value"
+      >
+        {{ renderValue | roundDown(floatingPrecision) }}
+      </span>
+      <span v-else class="amount-display__value">
+        {{ renderValue | formatPrice(floatingPrecision) }}
+      </span>
+      <v-tooltip v-if="!fiatCurrency" top>
+        <template #activator="{ on }">
+          <span
+            v-if="renderValue.decimalPlaces() > floatingPrecision"
+            class="amount-display__asterisk"
+            v-on="on"
+          >
+            *
+          </span>
+        </template>
+        <span v-if="fiatCurrency" class="amount-display__full-value">
+          {{
+            renderValue | calculatePrice(exchangeRate(currency.ticker_symbol))
+          }}
         </span>
-      </template>
-      <span v-if="fiatCurrency" class="amount-display__full-value">
-        {{ renderValue | calculatePrice(exchangeRate(currency.ticker_symbol)) }}
+        <span v-else class="amount-display__full-value">
+          {{ renderValue }}
+        </span>
+      </v-tooltip>
+      <span
+        v-if="showCurrency === 'ticker' && !renderValue.isNaN()"
+        class="amount-display__currency"
+      >
+        {{ currency.ticker_symbol }}
       </span>
-      <span v-else class="amount-display__full-value">
-        {{ renderValue }}
+      <span
+        v-else-if="showCurrency === 'symbol' && !renderValue.isNaN()"
+        class="amount-display__currency"
+      >
+        {{ currency.unicode_symbol }}
       </span>
-    </v-tooltip>
-    <span
-      v-if="showCurrency === 'ticker' && !renderValue.isNaN()"
-      class="amount-display__currency"
-    >
-      {{ currency.ticker_symbol }}
-    </span>
-    <span
-      v-else-if="showCurrency === 'symbol' && !renderValue.isNaN()"
-      class="amount-display__currency"
-    >
-      {{ currency.unicode_symbol }}
-    </span>
-    <span
-      v-else-if="showCurrency === 'name' && !renderValue.isNaN()"
-      class="amount-display__currency"
-    >
-      {{ currency.name }}
-    </span>
-    <span
-      v-else-if="!!asset && !renderValue.isNaN()"
-      class="amount-display__asset"
-    >
-      {{ asset }}
-    </span>
+      <span
+        v-else-if="showCurrency === 'name' && !renderValue.isNaN()"
+        class="amount-display__currency"
+      >
+        {{ currency.name }}
+      </span>
+      <span
+        v-else-if="!!asset && !renderValue.isNaN()"
+        class="amount-display__asset"
+      >
+        {{ asset }}
+      </span>
+    </v-skeleton-loader>
   </div>
 </template>
 
@@ -84,6 +93,8 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 export default class AmountDisplay extends Vue {
   @Prop({ required: true })
   value!: BigNumber;
+  @Prop({ required: false, type: Boolean, default: false })
+  loading!: boolean;
   @Prop({ required: false })
   amount!: BigNumber;
   @Prop({ required: false, default: null, type: String })

@@ -5,7 +5,7 @@
       <v-spacer v-if="locked"></v-spacer>
       <premium-lock v-if="locked"></premium-lock>
     </v-card-title>
-    <v-card-text>
+    <v-card-text class="flex">
       <span v-if="!locked && loading">
         <v-progress-linear indeterminate color="primary"></v-progress-linear>
       </span>
@@ -34,9 +34,6 @@ export default class StatCard extends Vue {
 <style scoped lang="scss">
 .stat-card {
   width: 100%;
-  padding-bottom: 12px;
-  padding-left: 12px;
-  padding-right: 12px;
   min-height: 130px;
   ::v-deep {
     .v-card__text {
