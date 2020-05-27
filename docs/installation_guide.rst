@@ -305,7 +305,7 @@ Installing Electron and Running Rotki
     cd frontend\app
     npm ci
 
-2. At this point, your terminal's cwd should be ``<rotki development directory>\frontend/app\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
+2. At this point, your terminal's cwd should be ``<rotki development directory>\frontend\app\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
 
     npm run electron:serve
 
