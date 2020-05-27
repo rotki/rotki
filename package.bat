@@ -67,7 +67,7 @@ if %errorlevel% neq 0 (
 )
 
 @echo on
-CD frontend/app/
+CD frontend\app\
 
 Rem npm stuff
 call npm ci
