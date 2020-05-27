@@ -14,8 +14,8 @@ flags:
       - rotkehlchen
   frontend_unit:
     paths:
-      - electron-app
+      - frontend/app
   frontend_integration:
     carryforward: true
     paths:
-      - electron-app
+      - frontend/app

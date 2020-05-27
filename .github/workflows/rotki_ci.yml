@@ -37,19 +37,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cypress-
       - name: Install dependencies
-        working-directory: ./electron-app
+        working-directory: ./frontend/app
         run: npm ci
       - name: Lint
-        working-directory: ./electron-app
+        working-directory: ./frontend/app
         run: npm run lint:check
       - name: Build
-        working-directory: ./electron-app
+        working-directory: ./frontend/app
         run: npm run build
       - name: Run unit tests
-        working-directory: ./electron-app
+        working-directory: ./frontend/app
         run: npm run test:unit
       - name: Upload coverage
-        working-directory: ./electron-app
+        working-directory: ./frontend/app
         run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_unit
   lint-backend:
     strategy:
@@ -235,24 +235,24 @@ jobs:
           pip install -e .
       - name: Run integration tests
         if: contains(steps.check.outputs.ui-tests, true)
-        working-directory: ./electron-app
+        working-directory: ./frontend/app
         run: |
           npm ci
           npm run test:integration-ci
       - name: Upload coverage
         if: contains(steps.check.outputs.ui-tests, true)
-        working-directory: ./electron-app
+        working-directory: ./frontend/app
         run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_integration
       - uses: actions/upload-artifact@v1
         if: failure() && contains(steps.check.outputs.ui-tests, true)
         with:
           name: screenshots-${{ runner.os }}
-          path: ./electron-app/tests/e2e/screenshots
+          path: ./frontend/app/tests/e2e/screenshots
       - uses: actions/upload-artifact@v1
         if: always() && contains(steps.check.outputs.ui-tests, true)
         with:
           name: videos-${{ runner.os }}
-          path: ./electron-app/tests/e2e/videos
+          path: ./frontend/app/tests/e2e/videos
   package:
     needs: test-backend
     if: startsWith(github.event.ref, 'refs/tags')

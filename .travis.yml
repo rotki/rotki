@@ -74,7 +74,7 @@ templates:
       node_js:
         - 12
       before_install:
-        - cd ./electron-app
+        - cd ./frontend/app
 
 cache:
   pip: true
@@ -127,7 +127,7 @@ jobs:
 #      <<: *job-template-osx
 #      script:
 #        - source terryfy/test_tools.sh
-#        - cd ./electron-app
+#        - cd ./frontend/app
 #        - npm ci
 #        - npm run test:integration-ci
 #      after_failure:

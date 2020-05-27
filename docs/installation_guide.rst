@@ -75,7 +75,7 @@ Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_:
 
 Install electron and any other npm dependencies by::
 
-    cd electron-app
+    cd frontend/app
     npm ci
 
 Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
@@ -95,7 +95,7 @@ Since the electron application is located in a different directory you also need
 
     pip install -e .
 
-Now to start the application you need to change to the ``electron-app`` directory and type ``npm run electron:serve``.
+Now to start the application you need to change to the ``frontend/app`` directory and type ``npm run electron:serve``.
 
 OSX
 =====
@@ -165,7 +165,7 @@ Almost there, we can now install all the NodeJS dependencies. Using a recent Nod
 
     $ npm ci
 
-You can now go to the ``electron-app`` directory and start Rotki::
+You can now go to the ``frontend/app`` directory and start Rotki::
 
     $ npm run electron:serve
 
@@ -302,10 +302,10 @@ Installing Electron and Running Rotki
 
 1. In your terminal, navigate to your rotki development directory and enter the following commands to install electron and its dependencies::
 
-    cd electron-app
+    cd frontend/app
     npm ci
 
-2. At this point, your terminal's cwd should be ``<rotki development directory>\electron-app\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
+2. At this point, your terminal's cwd should be ``<rotki development directory>\frontend/app\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
 
     npm run electron:serve
 

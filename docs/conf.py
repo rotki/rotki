@@ -114,7 +114,7 @@ html_static_path = ['_static']
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 #
-html_logo = '../electron-app/src/assets/images/rotkehlchen_no_text.png'
+html_logo = '../frontend/app/src/assets/images/rotkehlchen_no_text.png'
 
 html_show_copyright = False
 
