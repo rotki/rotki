@@ -144,3 +144,9 @@ def create_web3_mock(web3: Web3, test_data: VaultTestData):
         'contract',
         side_effect=mock_contract,
     )
+
+
+def mock_proxies(rotki, mapping) -> None:
+    def mock_get_proxies() -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
+        return mapping
+    rotki.chain_manager.makerdao._get_accounts_having_maker_proxy = mock_get_proxies

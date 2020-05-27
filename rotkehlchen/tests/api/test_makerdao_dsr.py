@@ -1,13 +1,14 @@
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any, Dict, NamedTuple
-from unittest.mock import _patch, patch
+from unittest.mock import DEFAULT, _patch, patch
 
 import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.makerdao import _dsrdai_to_dai
 from rotkehlchen.constants.ethereum import MAKERDAO_POT, MAKERDAO_PROXY_REGISTRY, MAKERDAO_VAT
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -17,7 +18,9 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.makerdao import mock_proxies
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ChecksumEthAddress
 
@@ -483,3 +486,85 @@ def test_query_historical_dsr_async(
     assert outcome['message'] == ''
     result = outcome['result']
     assert_dsr_history_result_is_correct(result, setup)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_historical_dsr_with_a_zero_withdrawal(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    """Test DSR for an account that was opened while DSR is 0 and made a 0 DAI withdrawal
+
+    Essentially reproduce DSR problem reported here: https://github.com/rotki/rotki/issues/1032
+
+    The account in question operates in a zero DSR environment but the reported
+    problem seems to be just because he tried a zero DAI withdrawal
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    original_get_logs = rotki.chain_manager.ethereum.get_logs
+    proxies_mapping = {
+        # proxy for 0x714696C5a872611F76655Bc163D0131cBAc60a70
+        ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
+    }
+    mock_proxies(rotki, proxies_mapping)
+
+    # Query only until a block we know DSR is 0 and we know the number
+    # of DSR events
+    def mock_get_logs(
+            contract_address,
+            abi,
+            event_name,
+            argument_filters,
+            from_block,
+            to_block='latest',
+    ):
+        return original_get_logs(
+            contract_address,
+            abi,
+            event_name,
+            argument_filters,
+            from_block,
+            to_block=10149816,  # A block at which DSR is still zero
+        )
+
+    patched_get_logs = patch.object(
+        rotki.chain_manager.ethereum,
+        'get_logs',
+        side_effect=mock_get_logs,
+    )
+
+    with patched_get_logs:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "makerdaodsrhistoryresource",
+        ))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    result = json_data['result'][ethereum_accounts[0]]
+    assert FVal(result['gain_so_far']) == ZERO
+    movements = result['movements']
+    expected_movements = [{
+        'movement_type': 'deposit',
+        'gain_so_far': ZERO,
+        'amount': FVal('79'),
+        'block_number': 9953028,
+        'timestamp': 1587970286,
+    }, {
+        'movement_type': 'withdrawal',
+        'gain_so_far': ZERO,
+        'amount': FVal('79'),
+        'block_number': 9968906,
+        'timestamp': 1588182567,
+    }, {
+        'movement_type': 'withdrawal',
+        'gain_so_far': ZERO,
+        'amount': ZERO,
+        'block_number': 9968906,
+        'timestamp': 1588182567,
+    }]
+    assert_serialized_lists_equal(movements, expected_movements)
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0

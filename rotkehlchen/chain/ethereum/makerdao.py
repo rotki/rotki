@@ -915,7 +915,7 @@ class MakerDAO(EthereumModule):
                 block_number=block_number,
                 transaction_index=join_event['transactionIndex'],
             )
-            if not dai_value:
+            if dai_value is None:
                 self.msg_aggregator.add_error(
                     'Did not find corresponding vat.move event for pot join. Skipping ...',
                 )
@@ -966,7 +966,7 @@ class MakerDAO(EthereumModule):
                 block_number=block_number,
                 transaction_index=exit_event['transactionIndex'],
             )
-            if not dai_value:
+            if dai_value is None:
                 self.msg_aggregator.add_error(
                     'Did not find corresponding vat.move event for pot exit. Skipping ...',
                 )
@@ -987,7 +987,15 @@ class MakerDAO(EthereumModule):
         amount_in_dsr = 0
         movements.sort(key=lambda x: x.block_number)
 
-        for m in movements:
+        for idx, m in enumerate(movements):
+            if m.normalized_balance == 0:
+                # skip 0 amount/balance movements. Consider last gain as last gain so far.
+                if idx == 0:
+                    m.gain_so_far = 0
+                else:
+                    m.gain_so_far = movements[idx - 1].gain_so_far
+                continue
+
             current_chi = FVal(m.amount) / FVal(m.normalized_balance)
             gain_so_far = normalized_balance * current_chi - amount_in_dsr
             m.gain_so_far = gain_so_far.to_int(exact=False)
