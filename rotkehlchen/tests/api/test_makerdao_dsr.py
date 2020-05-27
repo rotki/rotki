@@ -1,13 +1,18 @@
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any, Dict, NamedTuple
-from unittest.mock import DEFAULT, _patch, patch
+from unittest.mock import _patch, patch
 
 import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.makerdao import _dsrdai_to_dai
-from rotkehlchen.constants.ethereum import MAKERDAO_POT, MAKERDAO_PROXY_REGISTRY, MAKERDAO_VAT
+from rotkehlchen.constants.ethereum import (
+    MAKERDAO_DAI_JOIN,
+    MAKERDAO_POT,
+    MAKERDAO_PROXY_REGISTRY,
+    MAKERDAO_VAT,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -80,20 +85,20 @@ def mock_etherscan_for_dsr(
     account1_join1_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontacre", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     account1_join1_deposit = params.account1_join1_normalized_balance * params.account1_join1_chi
-    account1_join1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account1_join1_deposit)}"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontcare", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_join1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account1_join1_deposit // 10 ** 27)}"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontcare", "transactionIndex": "0x79"}}"""  # noqa: E501
     account1_join2_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join2_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_join2_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join2_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontacre", "transactionIndex": "0x79"}}"""  # noqa: E501
     account1_join2_deposit = params.account1_join2_normalized_balance * params.account1_join2_chi
-    account1_join2_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account1_join2_deposit)}"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join2_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontcare", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_join2_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account1_join2_deposit // 10 ** 27)}"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join2_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontcare", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     account1_exit1_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x7f8661a100000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_exit1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_exit1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_exit1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontacre", "transactionIndex": "0x79"}}"""  # noqa: E501
     account1_exit1_withdrawal = (
         params.account1_exit1_normalized_balance * params.account1_exit1_chi
     )
-    account1_exit1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{MAKERDAO_POT.address}", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(account1_exit1_withdrawal)}"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_exit1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_exit1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontcare", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_exit1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{MAKERDAO_POT.address}", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(account1_exit1_withdrawal // 10 ** 27)}"], "data": "0xwedontcare", "blockNumber": "{hex(params.account1_exit1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_exit1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontcare", "transactionIndex": "0x79"}}"""  # noqa: E501
     account2_join1_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{int_to_32byteshexstr(params.account2_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0xwedontcare", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontacre", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     account2_join1_deposit = params.account2_join1_normalized_balance * params.account2_join1_chi
-    account2_join1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account2_join1_deposit)}"], "data": "0xwedontcare", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontcare", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account2_join1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account2_join1_deposit // 10 ** 27)}"], "data": "0xwedontcare", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "dontcare", "gasUsed": "dontcare", "logIndex": "0x6c", "transactionHash": "dontcare", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     def mock_requests_get(url, *args, **kwargs):
         if 'etherscan.io/api?module=proxy&action=eth_blockNumber' in url:
@@ -200,6 +205,24 @@ def mock_etherscan_for_dsr(
                     response = f'{{"status":"1","message":"OK","result":[{",".join(events)}]}}'
                 else:
                     raise AssertionError('Etherscan unknown log query to makerdao VAT contract')
+            elif contract_address == MAKERDAO_DAI_JOIN.address:
+                events = []
+                if topic0.startswith('0x3b4da69f'):  # join
+                    if proxy1[2:].lower() in topic1:  # deposit from acc1
+                        if from_block <= params.account1_join1_blocknumber <= to_block:
+                            events.append(account1_join1_move_event)
+                        if from_block <= params.account1_join2_blocknumber <= to_block:
+                            events.append(account1_join2_move_event)
+                    elif proxy2[2:].lower() in topic1:  # deposit from acc2
+                        if from_block <= params.account2_join1_blocknumber <= to_block:
+                            events.append(account2_join1_move_event)
+                elif topic0.startswith('0xef693bed'):  # exit
+                    if from_block <= params.account1_exit1_blocknumber <= to_block:
+                        events.append(account1_exit1_move_event)
+                else:
+                    raise AssertionError('Etherscan unknown call to makerdao DAIJOIN contract')
+                response = f'{{"status":"1","message":"OK","result":[{",".join(events)}]}}'
+
             else:
                 raise AssertionError(
                     f'Etherscan getLogs call to unknown contract {contract_address} during tests',
@@ -427,7 +450,7 @@ def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestS
                             ), max_diff='1e-8')
 
             else:
-                assert FVal(result[account][key]) == FVal(val)
+                assert FVal(result[account][key]).is_close(FVal(val))
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
@@ -437,6 +460,14 @@ def test_query_historical_dsr(
         rotkehlchen_api_server,
         ethereum_accounts,
 ):
+    """Test DSR history is correctly queried
+
+    This (and the async version) is a very hard to maintain test due to mocking
+    everything.
+
+    TODO: Perhaps change it to querying etherscan/chain until a given block for a
+    given DSR account and check that until then all data match.
+    """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]
     account2 = ethereum_accounts[2]
@@ -518,7 +549,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
             event_name,
             argument_filters,
             from_block,
-            to_block='latest',
+            to_block='latest',  # pylint: disable=unused-argument
     ):
         return original_get_logs(
             contract_address,

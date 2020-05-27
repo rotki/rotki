@@ -225,8 +225,10 @@ def _normalize_amount(asset_symbol: str, amount: int) -> FVal:
 class DSRMovement:
     movement_type: Literal['deposit', 'withdrawal']
     address: ChecksumEthAddress
+    # normalized balance in DSR DAI (RAD precision 10**45)
     normalized_balance: int
     gain_so_far: int = field(init=False)
+    # dai balance in DSR DAI (RAD precision 10**45)
     amount: int
     block_number: int
     timestamp: Timestamp
@@ -261,7 +263,7 @@ class DSRAccountReport(NamedTuple):
 
 def _dsrdai_to_dai(value: Union[int, FVal]) -> FVal:
     """Turns a big integer that is the value of DAI in DSR into a proper DAI decimal FVal"""
-    return FVal(value / FVal(1e27) / FVal(1e18))
+    return FVal(value / FVal(RAD))
 
 
 class MakerDAO(EthereumModule):
@@ -814,19 +816,23 @@ class MakerDAO(EthereumModule):
 
             # Calculation is from here:
             # https://docs.makerdao.com/smart-contract-modules/rates-module#a-note-on-setting-rates
-            current_dsr_percentage = ((FVal(current_dsr / 1e27) ** 31622400) % 1) * 100
+            current_dsr_percentage = ((FVal(current_dsr / RAY) ** 31622400) % 1) * 100
             result = DSRCurrentBalances(balances=balances, current_dsr=current_dsr_percentage)
 
         return result
 
-    def _get_vat_move_event_value(
+    def _get_vat_join_exit_at_transaction(
             self,
-            from_address: ChecksumEthAddress,
-            to_address: ChecksumEthAddress,
+            movement_type: Literal['join', 'exit'],
+            proxy_address: ChecksumEthAddress,
             block_number: int,
             transaction_index: int,
     ) -> Optional[int]:
-        """Returns values in DAI that were moved from to address at a block number and tx index
+        """Returns values in DSR DAI that were deposited/withdrawn at a block number and tx index
+
+        DSR DAI means they need they have a lot more digits than normal DAI and they
+        need to be divided by RAD (10**45) in order to get real DAI value. Keeping
+        it like that since most calculations deal with RAD precision in DSR.
 
         Returns None if no value was found of if there was an error with conversion.
 
@@ -836,16 +842,13 @@ class MakerDAO(EthereumModule):
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
-        arg1 = address_to_bytes32(from_address)
-        arg2 = address_to_bytes32(to_address)
         argument_filters = {
-            'sig': '0xbb35783b',  # move
-            'arg1': arg1,  # src
-            'arg2': arg2,  # dst
+            'sig': '0x3b4da69f' if movement_type == 'join' else '0xef693bed',
+            'usr': proxy_address,
         }
         events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_VAT.address,
-            abi=MAKERDAO_VAT.abi,
+            contract_address=MAKERDAO_DAI_JOIN.address,
+            abi=MAKERDAO_DAI_JOIN.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
             from_block=block_number,
@@ -864,7 +867,7 @@ class MakerDAO(EthereumModule):
                     break
                 except ConversionError:
                     value = None
-        return value
+        return value * RAY  # turn it from DAI to RAD
 
     def _historical_dsr_for_account(
             self,
@@ -909,9 +912,9 @@ class MakerDAO(EthereumModule):
                 msg = f'Error at reading DSR join event block number. {str(e)}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
                 continue
-            dai_value = self._get_vat_move_event_value(
-                from_address=proxy,
-                to_address=MAKERDAO_POT.address,
+            dai_value = self._get_vat_join_exit_at_transaction(
+                movement_type='join',
+                proxy_address=proxy,
                 block_number=block_number,
                 transaction_index=join_event['transactionIndex'],
             )
@@ -960,9 +963,9 @@ class MakerDAO(EthereumModule):
                 continue
 
             # and now get the withdrawal amount
-            dai_value = self._get_vat_move_event_value(
-                from_address=MAKERDAO_POT.address,
-                to_address=proxy,
+            dai_value = self._get_vat_join_exit_at_transaction(
+                movement_type='exit',
+                proxy_address=proxy,
                 block_number=block_number,
                 transaction_index=exit_event['transactionIndex'],
             )
@@ -1156,20 +1159,13 @@ class MakerDAO(EthereumModule):
         if isinstance(first_topic, bytes):
             first_topic = first_topic.hex()
 
-        if first_topic.startswith('0x049878f3'):  # join
-            from_address = hex_or_bytes_to_address(found_event['topics'][1])
-            to_address = MAKERDAO_POT.address
-        else:
-            from_address = MAKERDAO_POT.address
-            to_address = hex_or_bytes_to_address(found_event['topics'][1])
-
-        amount = self._get_vat_move_event_value(
-            from_address=from_address,
-            to_address=to_address,
+        amount = self._get_vat_join_exit_at_transaction(
+            movement_type='join' if first_topic.startswith('0x049878f3') else 'exit',
+            proxy_address=hex_or_bytes_to_address(found_event['topics'][1]),
             block_number=event_block_number,
             transaction_index=found_event['transactionIndex'],
         )
-        if not amount:
+        if amount is None:
             raise ChiRetrievalError(
                 f'Found no VAT.move events around timestamp {time}. Cant query chi.',
             )
@@ -1263,7 +1259,7 @@ class MakerDAO(EthereumModule):
     def on_account_addition(self, address: ChecksumEthAddress) -> None:
         # Get the proxy of the account
         proxy_result = self._get_account_proxy(address)
-        if not proxy_result:
+        if proxy_result is None:
             return
 
         # add it to the mapping
