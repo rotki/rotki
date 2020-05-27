@@ -111,7 +111,9 @@ export class AccountBalancesPage {
             // loops over all manual balances rows and adds up the total per location
             // TODO: extract the replace(',', '') as to use user settings (when implemented)
             cy.wrap($row)
-              .find(':nth-child(4) > .amount-display > .amount-display__value')
+              .find(
+                ':nth-child(4) > .amount-display > .v-skeleton-loader > .amount-display__value'
+              )
               .then($amount => {
                 if (balanceLocation.renderedValue === Zero) {
                   balanceLocation.renderedValue = bigNumberify(
