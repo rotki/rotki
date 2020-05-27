@@ -302,7 +302,7 @@ Installing Electron and Running Rotki
 
 1. In your terminal, navigate to your rotki development directory and enter the following commands to install electron and its dependencies::
 
-    cd frontend/app
+    cd frontend\app
     npm ci
 
 2. At this point, your terminal's cwd should be ``<rotki development directory>\frontend/app\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
