@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import Dict
 
 import pytest
 import requests
@@ -19,14 +18,7 @@ from rotkehlchen.tests.utils.checks import (
     assert_serialized_lists_equal,
 )
 from rotkehlchen.tests.utils.constants import A_USDC, A_WBTC
-from rotkehlchen.typing import ChecksumEthAddress
-
-
-def mock_proxies(rotki, mapping) -> None:
-    def mock_get_proxies() -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
-        return mapping
-    rotki.chain_manager.makerdao._get_accounts_having_maker_proxy = mock_get_proxies
-
+from rotkehlchen.tests.utils.makerdao import mock_proxies
 
 VAULT_8015 = {
     'identifier': 8015,  # owner is missing and is filled in by the test function
@@ -473,8 +465,8 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         # proxy for 8632 and 8543
         ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
     }
-
     mock_proxies(rotki, proxies_mapping)
+
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
