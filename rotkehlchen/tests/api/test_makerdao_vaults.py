@@ -460,6 +460,137 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     assert_serialized_lists_equal(expected_details, details)
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereum_accounts):
+    """Check that no events are duplicated between vaults for same collateral by same account
+
+    Test for vaults side of https://github.com/rotki/rotki/issues/1032
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    proxies_mapping = {
+        # proxy for 8632 and 8543
+        ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
+    }
+
+    mock_proxies(rotki, proxies_mapping)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultsresource",
+    ))
+    vaults = assert_proper_response_with_result(response)
+    vault_8543 = {
+        'identifier': 8543,
+        'owner': ethereum_accounts[0],
+        'collateral_type': 'ETH-A',
+        'collateral_asset': 'ETH',
+        'collateral_amount': ZERO,
+        'collateral_usd_value': ZERO,
+        'debt_value': ZERO,
+        'collateralization_ratio': None,
+        'liquidation_ratio': '150.00%',
+        'liquidation_price': None,
+        'stability_fee': '0.00%',
+    }
+    vault_8632 = {
+        'identifier': 8632,
+        'owner': ethereum_accounts[0],
+        'collateral_type': 'ETH-A',
+        'collateral_asset': 'ETH',
+        'collateral_amount': '0.0',
+        'collateral_usd_value': '0.0',
+        'debt_value': '0.0',
+        'collateralization_ratio': None,
+        'liquidation_ratio': '150.00%',
+        'liquidation_price': None,
+        'stability_fee': '0.00%',
+    }
+    assert len(vaults) == 2
+    assert_serialized_dicts_equal(vaults[0], vault_8543)
+    assert_serialized_dicts_equal(vaults[1], vault_8632, ignore_keys=VAULT_IGNORE_KEYS)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaovaultdetailsresource",
+    ))
+    vault_8543_details = {
+        'identifier': 8543,
+        'creation_ts': 1587910979,
+        'total_interest_owed': ZERO,
+        'total_liquidated_amount': ZERO,
+        'total_liquidated_usd': ZERO,
+        'events': [{
+            'event_type': 'deposit',
+            'amount': FVal('1'),
+            'timestamp': 1587910979,
+            'tx_hash': '0xf59858df4e42cdc2aecfebdcf38e1df841866c6a9eb3adb6bde9a844564a3bb6',
+        }, {
+            'event_type': 'generate',
+            'amount': FVal('80'),
+            'timestamp': 1587910979,
+            'tx_hash': '0xf59858df4e42cdc2aecfebdcf38e1df841866c6a9eb3adb6bde9a844564a3bb6',
+        }, {
+            'event_type': 'payback',
+            'amount': FVal('80'),
+            'timestamp': 1589989097,
+            'tx_hash': '0x52396f7d20db54e2e9e716698b643a39815ff149a6cccbe9c7597dc9e06bb9d3',
+        }, {
+            'event_type': 'deposit',
+            'amount': FVal('3.5'),
+            'timestamp': 1589993538,
+            'tx_hash': '0x3c3942dc40fe68303098d91e765ceecaed4664bba0ef8f8e684b6f0e61968c6c',
+        }, {
+            'event_type': 'withdraw',
+            'amount': FVal('4.5'),
+            'timestamp': 1590043499,
+            'tx_hash': '0xbcd4158f0089404f6ab5378517762cddc13d21c9d2fcf3fd45cf1cf4b656242c',
+        }],
+    }
+    vault_8632_details = {
+        'identifier': 8632,
+        'creation_ts': 1588174425,
+        'total_interest_owed': ZERO,
+        'total_liquidated_amount': ZERO,
+        'total_liquidated_usd': ZERO,
+        'events': [{
+            'event_type': 'deposit',
+            'amount': FVal('2.4'),
+            'timestamp': 1588174425,
+            'tx_hash': '0xdb677a4257b5bdb305c278102d7b2460408bb7a3981414b994f4dd80a737ac2a',
+        }, {
+            'event_type': 'generate',
+            'amount': FVal('192'),
+            'timestamp': 1588174425,
+            'tx_hash': '0xdb677a4257b5bdb305c278102d7b2460408bb7a3981414b994f4dd80a737ac2a',
+        }, {
+            'event_type': 'payback',
+            'amount': FVal('192'),
+            'timestamp': 1590042891,
+            'tx_hash': '0x488a937677030cc810d0062001c08c944ecf6329b24a45ae9480bada8147bf75',
+        }, {
+            'event_type': 'deposit',
+            'amount': FVal('4.4'),
+            'timestamp': 1590043699,
+            'tx_hash': '0x712ddb654b878bcb30c5344d7c18f7f796fe94abd6e5b8a22b2da0a6c99bb425',
+        }, {
+            'event_type': 'generate',
+            'amount': FVal('429.79'),
+            'timestamp': 1590044118,
+            'tx_hash': '0x36bfa27e157c03393a8816f6c1e3e990474f8f7473413810d87e2f4981d58044',
+        }],
+    }
+    details = assert_proper_response_with_result(response)
+    assert len(details) == 2
+    assert_serialized_dicts_equal(details[0], vault_8543_details)
+    assert_serialized_dicts_equal(
+        details[1],
+        vault_8632_details,
+        ignore_keys=['total_interest_owed', 'total_liquidated_amount', 'total_liquidated_usd'],
+        # Checking only the first 5 events, since that's how many we had when the test was written
+        length_list_keymap={'events': 5},
+    )
+
+
 @pytest.mark.skip('This vault is special and does not work. needs investigation')
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])

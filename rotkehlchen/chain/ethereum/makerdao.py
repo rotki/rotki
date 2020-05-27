@@ -142,6 +142,11 @@ class MakerDAOVault(NamedTuple):
         del result['urn']
         return result
 
+    @property
+    def ilk(self) -> bytes:
+        """Returns the collateral type string encoded into bytes32, known as ilk in makerdao"""
+        return self.collateral_type.encode('utf-8').ljust(32, b'\x00')
+
 
 class MakerDAOVaultDetails(NamedTuple):
     identifier: int
@@ -453,6 +458,24 @@ class MakerDAO(EthereumModule):
             )
         creation_ts = self.ethereum.get_event_timestamp(events[0])
 
+        # get vat frob events for cross-checking
+        argument_filters = {
+            'sig': '0x76088703',  # frob
+            'arg1': '0x' + vault.ilk.hex(),  # ilk
+            'arg2': address_to_bytes32(urn),  # urn
+            # arg3 can be urn for the 1st deposit, and proxy/owner for the next ones
+            # so don't filter for it
+            # 'arg3': address_to_bytes32(proxy),  # proxy - owner
+        }
+        frob_events = self.ethereum.get_logs(
+            contract_address=MAKERDAO_VAT.address,
+            abi=MAKERDAO_VAT.abi,
+            event_name='LogNote',
+            argument_filters=argument_filters,
+            from_block=MAKERDAO_VAT.deployed_block,
+        )
+        frob_event_tx_hashes = [x['transactionHash'] for x in frob_events]
+
         gemjoin = GEMJOIN_MAPPING[vault.collateral_asset.identifier]
         vault_events = []
         # Get the collateral deposit events
@@ -492,6 +515,11 @@ class MakerDAO(EthereumModule):
             if tx_hash in deposit_tx_hashes:
                 # Skip duplicate deposit that would be detected in non migrated CDP case
                 continue
+
+            if tx_hash not in frob_event_tx_hashes:
+                # If there is no corresponding frob event then skip
+                continue
+
             deposit_tx_hashes.add(tx_hash)
             amount = _normalize_amount(
                 asset_symbol=asset_symbol,
@@ -517,6 +545,10 @@ class MakerDAO(EthereumModule):
             from_block=gemjoin.deployed_block,
         )
         for event in events:
+            tx_hash = event['transactionHash']
+            if tx_hash not in frob_event_tx_hashes:
+                # If there is no corresponding frob event then skip
+                continue
             amount = _normalize_amount(
                 asset_symbol=asset_symbol,
                 amount=hex_or_bytes_to_int(event['topics'][3]),
