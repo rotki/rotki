@@ -975,6 +975,51 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
     assert settings.taxfree_after_period is None
 
 
+def test_multiple_location_data_and_balances_same_timestamp(data_dir, username):
+    """Test that adding location and balance data with same timestamp does not crash.
+
+    Regression test for https://github.com/rotki/rotki/issues/1043
+    """
+    msg_aggregator = MessagesAggregator()
+    username = 'foo'
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    db = DBHandler(userdata_dir, '123', msg_aggregator)
+
+    balances = [
+        AssetBalance(
+            time=1590676728,
+            asset=A_BTC,
+            amount='1.0',
+            usd_value='8500',
+        ), AssetBalance(
+            time=1590676728,
+            asset=A_BTC,
+            amount='1.1',
+            usd_value='9100',
+        ),
+    ]
+    db.add_multiple_balances(balances)
+    balances = db.query_timed_balances(from_ts=0, to_ts=1590676728, asset=A_BTC)
+    assert len(balances) == 1
+
+    locations = [
+        LocationData(
+            time=1590676728,
+            location='H',
+            usd_value='55',
+        ), LocationData(
+            time=1590676728,
+            location='H',
+            usd_value='56',
+        ),
+    ]
+    db.add_multiple_location_data(locations)
+    locations = db.get_latest_location_value_distribution()
+    assert len(locations) == 1
+    assert locations[0].usd_value == '55'
+
+
 def test_set_get_rotkehlchen_premium_credentials(data_dir, username):
     """Test that setting the premium credentials and getting them back from the DB works
     """

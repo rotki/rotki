@@ -619,12 +619,19 @@ class DBHandler:
         cursor = self.conn.cursor()
 
         for entry in balances:
-            cursor.execute(
-                'INSERT INTO timed_balances('
-                '    time, currency, amount, usd_value) '
-                ' VALUES(?, ?, ?, ?)',
-                (entry.time, entry.asset.identifier, entry.amount, entry.usd_value),
-            )
+            try:
+                cursor.execute(
+                    'INSERT INTO timed_balances('
+                    '    time, currency, amount, usd_value) '
+                    ' VALUES(?, ?, ?, ?)',
+                    (entry.time, entry.asset.identifier, entry.amount, entry.usd_value),
+                )
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add a timed_balance for {entry.asset.identifier} at'
+                    f' already existing timestamp {entry.time}. Skipping.',
+                )
+                continue
         self.conn.commit()
         self.update_last_write()
 
@@ -674,12 +681,20 @@ class DBHandler:
         """Execute addition of multiple location data in the DB"""
         cursor = self.conn.cursor()
         for entry in location_data:
-            cursor.execute(
-                'INSERT INTO timed_location_data('
-                '    time, location, usd_value) '
-                ' VALUES(?, ?, ?)',
-                (entry.time, entry.location, entry.usd_value),
-            )
+            try:
+                cursor.execute(
+                    'INSERT INTO timed_location_data('
+                    '    time, location, usd_value) '
+                    ' VALUES(?, ?, ?)',
+                    (entry.time, entry.location, entry.usd_value),
+                )
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add a timed_location_data for '
+                    f'{str(deserialize_location_from_db(entry.location))} at'
+                    f' already existing timestamp {entry.time}. Skipping.',
+                )
+                continue
         self.conn.commit()
         self.update_last_write()
 
