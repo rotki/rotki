@@ -11,7 +11,7 @@ fi
 
 
 if [[ "$TESTS_TYPE" == "UI" ]]; then
-    cd electron-app
+    cd frontend/app
     npm ci
     npm run test:integration-ci
 else
