@@ -140,7 +140,7 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
         "makerdaovaultsresource",
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
-    outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=30)
     assert outcome['message'] == ''
     vaults = outcome['result']
     _check_vaults_values(vaults, ethereum_accounts[0])
@@ -150,7 +150,7 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
         "makerdaovaultdetailsresource",
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
-    outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=30)
     assert outcome['message'] == ''
     details = outcome['result']
     _check_vault_details_values(details)
