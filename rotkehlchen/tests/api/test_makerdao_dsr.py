@@ -599,3 +599,27 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     assert_serialized_lists_equal(movements, expected_movements)
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_dsr_for_account_with_proxy_but_no_dsr(
+        rotkehlchen_api_server,
+):
+    """Assure that an account with a DSR proxy but no DSR balance isn't returned in the balances"""
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaodsrbalanceresource",
+    ))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert len(json_data['result']['balances']) == 0
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "makerdaodsrhistoryresource",
+    ))
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert len(json_data['result']) == 0

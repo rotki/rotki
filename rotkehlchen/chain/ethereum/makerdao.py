@@ -799,6 +799,9 @@ class MakerDAO(EthereumModule):
                     method_name='pie',
                     arguments=[proxy],
                 )
+                if guy_slice == 0:
+                    # no current DSR balance for this proxy
+                    continue
                 chi = self.ethereum.call_contract(
                     contract_address=MAKERDAO_POT.address,
                     abi=MAKERDAO_POT.abi,
@@ -813,7 +816,6 @@ class MakerDAO(EthereumModule):
                 abi=MAKERDAO_POT.abi,
                 method_name='dsr',
             )
-
             # Calculation is from here:
             # https://docs.makerdao.com/smart-contract-modules/rates-module#a-note-on-setting-rates
             current_dsr_percentage = ((FVal(current_dsr / RAY) ** 31622400) % 1) * 100
@@ -1026,6 +1028,10 @@ class MakerDAO(EthereumModule):
             reports = {}
             for account, proxy in proxy_mappings.items():
                 report = self._historical_dsr_for_account(account, proxy)
+                if len(report.movements) == 0:
+                    # This proxy has never had any DSR events
+                    continue
+
                 reports[account] = report
 
         return reports
