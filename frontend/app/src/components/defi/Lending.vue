@@ -47,6 +47,9 @@
         <stat-card title="DAI earned" :locked="!premium">
           {{ accountGain(selection.address).dp(decimals) }}
         </stat-card>
+        <stat-card title="approximate $ earned" :locked="!premium">
+          {{ accountGainUsdValue(selection.address).dp(decimals) }}
+        </stat-card>
       </v-col>
     </v-row>
     <v-row class="loans__history">
@@ -99,6 +102,7 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
       'dsrBalances',
       'totalGain',
       'accountGain',
+      'accountGainUsdValue',
       'dsrHistory'
     ])
   }
@@ -111,6 +115,7 @@ export default class Lending extends Vue {
   selection: DSRBalance | null = null;
   totalGain!: BigNumber;
   accountGain!: (address: string) => BigNumber;
+  accountGainUsdValue!: (address: string) => BigNumber;
   dsrHistory!: AccountDSRMovement[];
   isTaskRunning!: (type: TaskType) => boolean;
 

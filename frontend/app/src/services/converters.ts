@@ -39,23 +39,33 @@ export function convertDSRHistory(history: ApiDSRHistory): DSRHistory {
     [address: string]: {
       movements: DSRMovement[];
       gainSoFar: BigNumber;
+      gainSoFarUsdValue: BigNumber;
     };
   } = {};
   for (const account of Object.keys(history)) {
-    const { gain_so_far: accountGain, movements } = history[account];
+    const {
+      gain_so_far: accountGain,
+      gain_so_far_usd_value: accountGainUsdValue,
+      movements
+    } = history[account];
     data[account] = {
       gainSoFar: bigNumberify(accountGain),
+      gainSoFarUsdValue: bigNumberify(accountGainUsdValue),
       movements: movements.map(
         ({
           amount,
+          amount_usd_value,
           block_number,
           gain_so_far: gain_so_far,
+          gain_so_far_usd_value: gain_so_far_usd_value,
           movement_type,
           timestamp
         }) => ({
           movementType: movement_type,
           gainSoFar: bigNumberify(gain_so_far),
+          gainSoFarUsdValue: bigNumberify(gain_so_far_usd_value),
           amount: bigNumberify(amount),
+          amountUsdValue: bigNumberify(amount_usd_value),
           blockNumber: block_number,
           timestamp
         })

@@ -157,7 +157,9 @@ export interface AccountDSRMovement {
   readonly address: string;
   readonly movementType: DSRMovementType;
   readonly gainSoFar: BigNumber;
+  readonly gainSoFarUsdValue: BigNumber;
   readonly amount: BigNumber;
+  readonly amountUsdValue: BigNumber;
   readonly blockNumber: number;
   readonly timestamp: number;
 }

@@ -14,6 +14,7 @@ export interface DSRBalances {
 export interface DSRHistory {
   readonly [address: string]: {
     gainSoFar: BigNumber;
+    gainSoFarUsdValue: BigNumber;
     movements: DSRMovement[];
   };
 }
@@ -21,7 +22,9 @@ export interface DSRHistory {
 export interface DSRMovement {
   readonly movementType: DSRMovementType;
   readonly gainSoFar: BigNumber;
+  readonly gainSoFarUsdValue: BigNumber;
   readonly amount: BigNumber;
+  readonly amountUsdValue: BigNumber;
   readonly blockNumber: number;
   readonly timestamp: number;
 }
