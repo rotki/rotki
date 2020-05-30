@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.makerdao import _dsrdai_to_dai
+from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_DAI_JOIN,
     MAKERDAO_POT,
@@ -28,6 +29,32 @@ from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.makerdao import mock_proxies
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ChecksumEthAddress
+
+mocked_prices = {
+    'DAI': {
+        'USD': {
+            1582699808: FVal('1.002'),
+            1584024065: FVal('1.002'),
+            1585286480: FVal('1.023'),
+            1585286769: FVal('1.023'),
+            1585290263: FVal('1.023'),
+            1586785858: FVal('1.024'),
+            1586788927: FVal('1.024'),
+            1586805054: FVal('1.024'),
+            1587539880: FVal('1.016'),
+            1587539889: FVal('1.016'),
+            1587910979: FVal('1.015'),
+            1588174425: FVal('1.014'),
+            1588664698: FVal('1.006'),
+            1588696496: FVal('1.006'),
+            1588964616: FVal('1.006'),
+            1589989097: FVal('1.003'),
+            1590042891: FVal('1.001'),
+            1590044118: FVal('1.001'),
+            1590521879: FVal('1.003'),
+        },
+    },
+}
 
 TEST_LATEST_BLOCKNUMBER = 9540749
 TEST_LATEST_BLOCKNUMBER_HEX = hex(TEST_LATEST_BLOCKNUMBER)
@@ -293,10 +320,13 @@ def setup_tests_for_dsr(
     dsr_history_response = {
         account1: {
             'gain_so_far': _dsrdai_to_dai(account1_gain_so_far),
+            'gain_so_far_usd_value': _dsrdai_to_dai(account1_gain_so_far),
             'movements': [{
                 'movement_type': 'deposit',
                 'gain_so_far': '0.0',
+                'gain_so_far_usd_value': '0.0',
                 'amount': _dsrdai_to_dai(account1_deposit1),
+                'amount_usd_value': _dsrdai_to_dai(account1_deposit1),
                 'block_number': params.account1_join1_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account1_join1_blocknumber),
             }, {
@@ -305,7 +335,12 @@ def setup_tests_for_dsr(
                     params.account1_join1_normalized_balance * params.account1_join2_chi -
                     account1_deposit1,
                 ),
+                'gain_so_far_usd_value': _dsrdai_to_dai(
+                    params.account1_join1_normalized_balance * params.account1_join2_chi -
+                    account1_deposit1,
+                ),
                 'amount': _dsrdai_to_dai(account1_deposit2),
+                'amount_usd_value': _dsrdai_to_dai(account1_deposit2),
                 'block_number': params.account1_join2_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account1_join2_blocknumber),
             }, {
@@ -317,17 +352,28 @@ def setup_tests_for_dsr(
                     ) * params.account1_exit1_chi -
                     (account1_deposit1 + account1_deposit2),
                 ),
+                'gain_so_far_usd_value': _dsrdai_to_dai(
+                    (
+                        params.account1_join1_normalized_balance +
+                        params.account1_join2_normalized_balance
+                    ) * params.account1_exit1_chi -
+                    (account1_deposit1 + account1_deposit2),
+                ),
                 'amount': _dsrdai_to_dai(account1_withdrawal1),
+                'amount_usd_value': _dsrdai_to_dai(account1_withdrawal1),
                 'block_number': params.account1_exit1_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account1_exit1_blocknumber),
             }],
         },
         account2: {
             'gain_so_far': _dsrdai_to_dai(account2_gain_so_far),
+            'gain_so_far_usd_value': _dsrdai_to_dai(account2_gain_so_far),
             'movements': [{
                 'movement_type': 'deposit',
                 'gain_so_far': '0.0',
+                'gain_so_far_usd_value': '0.0',
                 'amount': _dsrdai_to_dai(account2_deposit1),
+                'amount_usd_value': _dsrdai_to_dai(account2_deposit1),
                 'block_number': params.account2_join1_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account2_join1_blocknumber),
             }],
@@ -456,9 +502,12 @@ def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestS
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
 def test_query_historical_dsr(
         rotkehlchen_api_server,
         ethereum_accounts,
+        inquirer,  # pylint: disable=unused-argument
 ):
     """Test DSR history is correctly queried
 
@@ -493,9 +542,12 @@ def test_query_historical_dsr(
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
 def test_query_historical_dsr_async(
         rotkehlchen_api_server,
         ethereum_accounts,
+        inquirer,  # pylint: disable=unused-argument
 ):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]
@@ -522,9 +574,12 @@ def test_query_historical_dsr_async(
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
 def test_query_historical_dsr_with_a_zero_withdrawal(
         rotkehlchen_api_server,
         ethereum_accounts,
+        inquirer,  # pylint: disable=unused-argument
 ):
     """Test DSR for an account that was opened while DSR is 0 and made a 0 DAI withdrawal
 
@@ -576,23 +631,30 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     assert json_data['message'] == ''
     result = json_data['result'][ethereum_accounts[0]]
     assert FVal(result['gain_so_far']) == ZERO
+    assert FVal(result['gain_so_far_usd_value']) == ZERO
     movements = result['movements']
     expected_movements = [{
         'movement_type': 'deposit',
         'gain_so_far': ZERO,
+        'gain_so_far_usd_value': ZERO,
         'amount': FVal('79'),
+        'amount_usd_value': FVal('79'),
         'block_number': 9953028,
         'timestamp': 1587970286,
     }, {
         'movement_type': 'withdrawal',
         'gain_so_far': ZERO,
+        'gain_so_far_usd_value': ZERO,
         'amount': FVal('79'),
+        'amount_usd_value': FVal('79'),
         'block_number': 9968906,
         'timestamp': 1588182567,
     }, {
         'movement_type': 'withdrawal',
         'gain_so_far': ZERO,
+        'gain_so_far_usd_value': ZERO,
         'amount': ZERO,
+        'amount_usd_value': ZERO,
         'block_number': 9968906,
         'timestamp': 1588182567,
     }]
