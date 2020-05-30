@@ -2679,19 +2679,25 @@ Getting ethereum MakerDAO DSR historical report
                   "movements": [{
                       "movement_type": "deposit",
                       "gain_so_far": "0",
+                      "gain_so_far_usd_value": "0",
                       "amount": "350",
+                      "amount_usd_value": "351.21",
                       "block_number": 9128160,
                       "timestamp": 1582706553
                   }, {
                       "movement_type": "deposit",
                       "gain_so_far": "0.875232",
+                      "gain_so_far_usd_value": "0.885292",
                       "amount": "50",
+                      "amount_usd_value": "50.87",
                       "block_number": 9129165,
                       "timestamp": 1582806553
                   }, {
                       "movement_type": "withdrawal",
                       "gain_so_far": "1.12875932",
+                      "gain_so_far_usd_value": "1.34813",
                       "amount": "350",
+                      "amount_usd_value": "353.12",
                       "block_number": 9149160,
                       "timestamp": 1592706553
                   }, {
@@ -2702,11 +2708,14 @@ Getting ethereum MakerDAO DSR historical report
                   "movements": [{
                       "movement_type": "deposit",
                       "gain_so_far": "0",
+                      "gain_so_far_usd_value": "0",
                       "amount": "550",
+                      "amount_usd_value": "553.43",
                       "block_number": 9128174,
                       "timestamp": 1583706553
                   }],
                   "gain_so_far": "0.953423"
+                  "gain_so_far_usd_value": "0.998421"
               }
           },
           "message": ""
@@ -2714,10 +2723,13 @@ Getting ethereum MakerDAO DSR historical report
 
    :resjson object result: A mapping of accounts to the DSR history report of each account. If an account is not in the mapping Rotki does not see anything locked in DSR for it.
    :resjson object movements: A list of deposits/withdrawals to/from the DSR for each account.
-   :resjson string gain_so_far: The total gain so far from the DSR for this account.
+   :resjson string gain_so_far: The total gain so far in DAI from the DSR for this account.
+   :resjson string gain_so_far_usd_value: The total gain so far in USD from the DSR for this account. The USD value is approximate. It's essentially the known USD values at all movements and for whatever DAI remains the current DAI price is taken into account.
    :resjsonarr string movement_type: The type of movement involving the DSR. Can be either "deposit" or "withdrawal".
    :resjsonarr string gain_so_far: The amount of DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal.
+   :resjsonarr string gain_so_far_usd_value: The usd value equivalnt of the DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal. The rate is the DAI/USD rate at the movement's timestamp.
    :resjsonarr string amount: The amount of DAI deposited or withdrawn from the DSR.
+   :resjsonarr string amount_usd_value: The USD euivalent value of the amount of DAI deposited or withdrawn from the DSR. The rate is the DAI/USD rate at the movement's timestamp.
    :resjsonarr int block_number: The block number at which the deposit or withdrawal occured.
 
    :statuscode 200: DSR history succesfully queried.
