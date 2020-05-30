@@ -13,7 +13,9 @@ export interface ApiDSRBalances {
 export interface ApiDSRMovement {
   readonly movement_type: DSRMovementType;
   readonly gain_so_far: string;
+  readonly gain_so_far_usd_value: string;
   readonly amount: string;
+  readonly amount_usd_value: string;
   readonly block_number: number;
   readonly timestamp: number;
 }
@@ -21,6 +23,7 @@ export interface ApiDSRMovement {
 export interface ApiDSRHistory {
   readonly [address: string]: {
     gain_so_far: string;
+    gain_so_far_usd_value: string;
     movements: ApiDSRMovement[];
   };
 }

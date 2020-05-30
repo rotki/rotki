@@ -258,6 +258,12 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return dsrHistory[account]?.gainSoFar ?? Zero;
   },
 
+  accountGainUsdValue: ({ dsrHistory }: BalanceState) => (
+    account: string
+  ): BigNumber => {
+    return dsrHistory[account]?.gainSoFarUsdValue ?? Zero;
+  },
+
   dsrHistory: ({ dsrHistory }: BalanceState): AccountDSRMovement[] => {
     return Object.keys(dsrHistory).reduce((acc, address) => {
       const { movements } = dsrHistory[address];
