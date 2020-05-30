@@ -228,9 +228,12 @@ class DSRMovement:
     address: ChecksumEthAddress
     # normalized balance in DSR DAI (RAD precision 10**45)
     normalized_balance: int
+    # gain so far in DSR DAI (RAD precision 10**45)
     gain_so_far: int = field(init=False)
+    gain_so_far_usd_value: FVal = field(init=False)
     # dai balance in DSR DAI (RAD precision 10**45)
     amount: int
+    amount_usd_value: FVal
     block_number: int
     timestamp: Timestamp
 
@@ -254,7 +257,9 @@ class DSRAccountReport(NamedTuple):
             serialized_movement = {
                 'movement_type': movement.movement_type,
                 'gain_so_far': str(_dsrdai_to_dai(movement.gain_so_far)),
+                'gain_so_far_usd_value': str(movement.gain_so_far_usd_value),
                 'amount': str(_dsrdai_to_dai(movement.amount)),
+                'amount_usd_value': str(movement.amount_usd_value),
                 'block_number': movement.block_number,
                 'timestamp': movement.timestamp,
             }
@@ -265,6 +270,28 @@ class DSRAccountReport(NamedTuple):
 def _dsrdai_to_dai(value: Union[int, FVal]) -> FVal:
     """Turns a big integer that is the value of DAI in DSR into a proper DAI decimal FVal"""
     return FVal(value / FVal(RAD))
+
+
+def _query_usd_price_or_use_default(
+        asset: Asset,
+        time: Timestamp,
+        default_value: FVal,
+        location: str,
+) -> Price:
+    try:
+        usd_price = PriceHistorian().query_historical_price(
+            from_asset=asset,
+            to_asset=A_USD,
+            timestamp=time,
+        )
+    except RemoteError:
+        log.error(
+            f'Could not query usd price for {asset.identifier} when processing '
+            f'{location}. Assuming price of ${str(default_value)}',
+        )
+        usd_price = Price(default_value)
+
+    return usd_price
 
 
 class MakerDAO(EthereumModule):
@@ -529,18 +556,12 @@ class MakerDAO(EthereumModule):
                 amount=hex_or_bytes_to_int(event['topics'][3]),
             )
             timestamp = self.ethereum.get_event_timestamp(event)
-            try:
-                usd_price = PriceHistorian().query_historical_price(
-                    from_asset=vault.collateral_asset,
-                    to_asset=A_USD,
-                    timestamp=timestamp,
-                )
-            except RemoteError:
-                log.error(
-                    f'Could not query usd price for {vault.collateral_asset} when '
-                    f'processing vault collateral deposit',
-                )
-                usd_price = Price(ZERO)
+            usd_price = _query_usd_price_or_use_default(
+                asset=vault.collateral_asset,
+                time=timestamp,
+                default_value=ZERO,
+                location='vault collateral deposit',
+            )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.DEPOSIT_COLLATERAL,
                 amount=amount,
@@ -571,18 +592,12 @@ class MakerDAO(EthereumModule):
                 amount=hex_or_bytes_to_int(event['topics'][3]),
             )
             timestamp = self.ethereum.get_event_timestamp(event)
-            try:
-                usd_price = PriceHistorian().query_historical_price(
-                    from_asset=vault.collateral_asset,
-                    to_asset=A_USD,
-                    timestamp=timestamp,
-                )
-            except RemoteError:
-                log.error(
-                    f'Could not query usd price for {vault.collateral_asset} when '
-                    f'processing vault collateral withdrawal',
-                )
-                usd_price = Price(ZERO)
+            usd_price = _query_usd_price_or_use_default(
+                asset=vault.collateral_asset,
+                time=timestamp,
+                default_value=ZERO,
+                location='vault collateral withdrawal',
+            )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.WITHDRAW_COLLATERAL,
                 amount=amount,
@@ -616,18 +631,12 @@ class MakerDAO(EthereumModule):
                 amount=given_amount,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
-            try:
-                usd_price = PriceHistorian().query_historical_price(
-                    from_asset=A_DAI,
-                    to_asset=A_USD,
-                    timestamp=timestamp,
-                )
-            except RemoteError:
-                log.error(
-                    'Could not query usd price for DAI when '
-                    'processing vault debt generation. Defaulting to $1 price',
-                )
-                usd_price = Price(FVal(1))
+            usd_price = _query_usd_price_or_use_default(
+                asset=A_DAI,
+                time=timestamp,
+                default_value=FVal(1),
+                location='vault debt generation',
+            )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.GENERATE_DEBT,
                 amount=amount,
@@ -662,18 +671,12 @@ class MakerDAO(EthereumModule):
                 continue
 
             timestamp = self.ethereum.get_event_timestamp(event)
-            try:
-                usd_price = PriceHistorian().query_historical_price(
-                    from_asset=A_DAI,
-                    to_asset=A_USD,
-                    timestamp=timestamp,
-                )
-            except RemoteError:
-                log.error(
-                    'Could not query usd price for DAI when '
-                    'processing vault debt payback. Defaulting to $1 price',
-                )
-                usd_price = Price(FVal(1))
+            usd_price = _query_usd_price_or_use_default(
+                asset=A_DAI,
+                time=timestamp,
+                default_value=FVal(1),
+                location='vault debt payback',
+            )
 
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.PAYBACK_DEBT,
@@ -705,18 +708,12 @@ class MakerDAO(EthereumModule):
             )
             timestamp = self.ethereum.get_event_timestamp(event)
             sum_liquidation_amount += amount
-            try:
-                usd_price = PriceHistorian().query_historical_price(
-                    from_asset=vault.collateral_asset,
-                    to_asset=A_USD,
-                    timestamp=timestamp,
-                )
-            except RemoteError:
-                log.error(
-                    f'Could not query usd price for {vault.collateral_asset} when '
-                    f'processing vault debt generation',
-                )
-                usd_price = Price(ZERO)
+            usd_price = _query_usd_price_or_use_default(
+                asset=vault.collateral_asset,
+                time=timestamp,
+                default_value=ZERO,
+                location='vault collateral liquidation',
+            )
             amount_usd_value = amount * usd_price
             sum_liquidation_usd += amount_usd_value
             vault_events.append(VaultEvent(
@@ -994,14 +991,22 @@ class MakerDAO(EthereumModule):
                 )
                 continue
 
+            timestamp = self.ethereum.get_event_timestamp(join_event)
+            usd_price = _query_usd_price_or_use_default(
+                asset=A_DAI,
+                time=timestamp,
+                default_value=FVal(1),
+                location='DSR deposit',
+            )
             movements.append(
                 DSRMovement(
                     movement_type='deposit',
                     address=account,
                     normalized_balance=wad_val,
                     amount=dai_value,
+                    amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
                     block_number=deserialize_blocknumber(join_event['blockNumber']),
-                    timestamp=self.ethereum.get_event_timestamp(join_event),
+                    timestamp=timestamp,
                 ),
             )
 
@@ -1045,14 +1050,22 @@ class MakerDAO(EthereumModule):
                 )
                 continue
 
+            timestamp = self.ethereum.get_event_timestamp(exit_event)
+            usd_price = _query_usd_price_or_use_default(
+                asset=A_DAI,
+                time=timestamp,
+                default_value=FVal(1),
+                location='DSR withdrawal',
+            )
             movements.append(
                 DSRMovement(
                     movement_type='withdrawal',
                     address=account,
                     normalized_balance=wad_val,
                     amount=dai_value,
+                    amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
                     block_number=deserialize_blocknumber(exit_event['blockNumber']),
-                    timestamp=self.ethereum.get_event_timestamp(exit_event),
+                    timestamp=timestamp,
                 ),
             )
 
@@ -1065,13 +1078,22 @@ class MakerDAO(EthereumModule):
                 # skip 0 amount/balance movements. Consider last gain as last gain so far.
                 if idx == 0:
                     m.gain_so_far = 0
+                    m.gain_so_far_usd_value = ZERO
                 else:
                     m.gain_so_far = movements[idx - 1].gain_so_far
+                    m.gain_so_far_usd_value = movements[idx - 1].gain_so_far_usd_value
                 continue
 
             current_chi = FVal(m.amount) / FVal(m.normalized_balance)
             gain_so_far = normalized_balance * current_chi - amount_in_dsr
             m.gain_so_far = gain_so_far.to_int(exact=False)
+            usd_price = _query_usd_price_or_use_default(
+                asset=A_DAI,
+                time=m.timestamp,
+                default_value=FVal(1),
+                location='DSR movement',
+            )
+            m.gain_so_far_usd_value = _dsrdai_to_dai(m.gain_so_far) * usd_price
             if m.movement_type == 'deposit':
                 normalized_balance += m.normalized_balance
                 amount_in_dsr += m.amount
