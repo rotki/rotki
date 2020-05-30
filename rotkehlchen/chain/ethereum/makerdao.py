@@ -38,6 +38,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
@@ -247,10 +248,12 @@ class DSRCurrentBalances(NamedTuple):
 class DSRAccountReport(NamedTuple):
     movements: List[DSRMovement]
     gain_so_far: int
+    gain_so_far_usd_value: FVal
 
     def serialize(self) -> Dict[str, Any]:
         serialized_report = {
             'gain_so_far': str(_dsrdai_to_dai(self.gain_so_far)),
+            'gain_so_far_usd_value': str(self.gain_so_far_usd_value),
             'movements': [],
         }
         for movement in self.movements:
@@ -1109,8 +1112,24 @@ class MakerDAO(EthereumModule):
         normalized_balance = normalized_balance * chi
         amount_in_dsr = amount_in_dsr
         gain = normalized_balance - amount_in_dsr
+        try:
+            current_dai_price = Inquirer().find_usd_price(A_DAI)
+        except RemoteError:
+            current_dai_price = Price(FVal(1))
 
-        return DSRAccountReport(movements=movements, gain_so_far=gain)
+        # Calculate the total gain so far in USD
+        unaccounted_gain = gain
+        last_usd_value = ZERO
+        if len(movements) != 0:
+            unaccounted_gain = gain - movements[-1].gain_so_far
+            last_usd_value = movements[-1].gain_so_far_usd_value
+        gain_so_far_usd_value = unaccounted_gain * current_dai_price + last_usd_value
+
+        return DSRAccountReport(
+            movements=movements,
+            gain_so_far=gain,
+            gain_so_far_usd_value=gain_so_far_usd_value,
+        )
 
     def get_historical_dsr(self) -> Dict[ChecksumEthAddress, DSRAccountReport]:
         with self.lock:
