@@ -69,6 +69,7 @@ export interface MakerDAOVaultDetails {
 export interface MakerDAOVaultEvent {
   readonly eventType: MakerDAOVaultEventType;
   readonly amount: BigNumber;
+  readonly amountUsdValue: BigNumber;
   readonly timestamp: number;
   readonly txHash: string;
 }

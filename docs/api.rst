@@ -2844,11 +2844,13 @@ Getting MakerDAO vault details
               "events": [{
                   "event_type": "deposit",
                   "amount": "5.551",
+                  "amount_usd_value": "120.32",
                   "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "generate",
                   "amount": "325",
+                  "amount_usd_value": "12003.32",
                   "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }]
@@ -2861,21 +2863,25 @@ Getting MakerDAO vault details
               "events": [{
                   "event_type": "deposit",
                   "amount": "1050.21",
+                  "amount_usd_value": "10500.21",
                   "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "generate",
                   "amount": "721.32",
+                  "amount_usd_value": "7213.2",
                   "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "liquidation",
                   "amount": "500",
+                  "amount_usd_value": "5000",
                   "timestamp": 1589068000,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
 	      }, {
                   "event_type": "liquidation",
                   "amount": "550.21",
+                  "amount_usd_value": "5502.1",
                   "timestamp": 1589068001,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
 	      }]
@@ -2891,6 +2897,7 @@ Getting MakerDAO vault details
    :resjson object events: A list of all events that occured for this vault
    :resjsonarr string event_type: The type of the event. Valid types are: ``["deposit", "withdraw", "generate", "payback", "liquidation"]``
    :resjsonarr string amount: The amount associated with the event. So collateral deposited/withdrawn, debt generated/paid back, amount of collateral lost in liquidation.
+   :resjsonarr string amount_usd_value: The usd value of the amount associated with the event at the time the event occured.
    :resjsonarr int timestamp: The unix timestamp of the event
    :resjsonarr string tx_hash: The transaction hash associated with the event.
 

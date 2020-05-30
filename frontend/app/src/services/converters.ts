@@ -111,6 +111,7 @@ function convertVaultEvents(
   return apiVaultEvents.map(event => ({
     eventType: event.event_type,
     amount: bigNumberify(event.amount),
+    amountUsdValue: bigNumberify(event.amount_usd_value),
     timestamp: event.timestamp,
     txHash: event.tx_hash
   }));
