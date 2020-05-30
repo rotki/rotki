@@ -1118,11 +1118,13 @@ class MakerDAO(EthereumModule):
             current_dai_price = Price(FVal(1))
 
         # Calculate the total gain so far in USD
-        unaccounted_gain = gain
+        unaccounted_gain = _dsrdai_to_dai(gain)
         last_usd_value = ZERO
+        last_dai_gain = 0
         if len(movements) != 0:
-            unaccounted_gain = gain - movements[-1].gain_so_far
             last_usd_value = movements[-1].gain_so_far_usd_value
+            last_dai_gain = movements[-1].gain_so_far
+        unaccounted_gain = _dsrdai_to_dai(gain - last_dai_gain)
         gain_so_far_usd_value = unaccounted_gain * current_dai_price + last_usd_value
 
         return DSRAccountReport(
