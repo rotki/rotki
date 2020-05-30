@@ -921,6 +921,7 @@ def maybe_mock_historical_price_queries(
         historian,
         should_mock_price_queries: bool,
         mocked_price_queries,
+        default_mock_value: Optional[FVal] = None,
 ) -> None:
     """If needed will make sure the historian's price queries are mocked"""
     if not should_mock_price_queries:
@@ -933,10 +934,13 @@ def maybe_mock_historical_price_queries(
         try:
             price = mocked_price_queries[from_asset.identifier][to_asset.identifier][timestamp]
         except KeyError:
-            raise AssertionError(
-                f'No mocked price found from {from_asset.identifier} to '
-                f'{to_asset.identifier} at {timestamp}',
-            )
+            if default_mock_value is None:
+                raise AssertionError(
+                    f'No mocked price found from {from_asset.identifier} to '
+                    f'{to_asset.identifier} at {timestamp}',
+                )
+            # else just use the default
+            return default_mock_value
 
         return price
 

@@ -20,6 +20,60 @@ from rotkehlchen.tests.utils.checks import (
 from rotkehlchen.tests.utils.constants import A_USDC, A_WBTC
 from rotkehlchen.tests.utils.makerdao import mock_proxies
 
+mocked_prices = {
+    'ETH': {
+        'USD': {
+            1582699808: FVal('223.73'),
+            1583958747: FVal('194.86'),
+            1584061534: FVal('135.44'),
+            1584061897: FVal('135.44'),
+            1584061977: FVal('135.44'),
+            1586785858: FVal('156.82'),
+            1587910979: FVal('197.78'),
+            1588174425: FVal('215.55'),
+            1588964667: FVal('211.54'),
+            1589993538: FVal('209.85'),
+            1590043499: FVal('198.56'),
+            1590043699: FVal('198.56'),
+        },
+    },
+    'DAI': {
+        'USD': {
+            1582699808: FVal('1.002'),
+            1584024065: FVal('1.002'),
+            1585286480: FVal('1.023'),
+            1585286769: FVal('1.023'),
+            1585290263: FVal('1.023'),
+            1586785858: FVal('1.024'),
+            1586788927: FVal('1.024'),
+            1586805054: FVal('1.024'),
+            1587539880: FVal('1.016'),
+            1587539889: FVal('1.016'),
+            1587910979: FVal('1.015'),
+            1588174425: FVal('1.014'),
+            1588664698: FVal('1.006'),
+            1588696496: FVal('1.006'),
+            1588964616: FVal('1.006'),
+            1589989097: FVal('1.003'),
+            1590042891: FVal('1.001'),
+            1590044118: FVal('1.001'),
+            1590521879: FVal('1.003'),
+        },
+    },
+    'WBTC': {
+        'USD': {
+            1588664698: FVal('7915.09'),
+            1588720248: FVal('7915.09'),
+        },
+    },
+    'USDC': {
+        'USD': {
+            1585286480: FVal(1),
+            1585290300: FVal(1),
+        },
+    },
+}
+
 VAULT_8015 = {
     'identifier': 8015,  # owner is missing and is filled in by the test function
     'collateral_type': 'ETH-A',
@@ -42,36 +96,43 @@ VAULT_8015_DETAILS = {
     'events': [{
         'event_type': 'deposit',
         'amount': FVal('41.1641807'),
+        'amount_usd_value': FVal('6455.366829'),
         'timestamp': 1586785858,
         'tx_hash': '0xd382ea1efa843c68914b2377057d384aca2a41710b23be89f165bb0a21986512',
     }, {
         'event_type': 'generate',
         'amount': FVal('1800'),
+        'amount_usd_value': FVal('1843.2'),
         'timestamp': 1586785858,
         'tx_hash': '0xd382ea1efa843c68914b2377057d384aca2a41710b23be89f165bb0a21986512',
     }, {
         'event_type': 'payback',
         'amount': FVal('51'),
+        'amount_usd_value': FVal('52.224'),
         'timestamp': 1586788927,
         'tx_hash': '0xc4ddd0e1b0a6cb4e55ac0be34201a5176372734db3bada58a73bccf98e47b3e7',
     }, {
         'event_type': 'generate',
         'amount': FVal('1000'),
+        'amount_usd_value': FVal('1024'),
         'timestamp': 1586805054,
         'tx_hash': '0x135a1ce0059ea8ca161cff4dba0b579538aa4550c96a895f5cebcc0c56e598d8',
     }, {
         'event_type': 'payback',
         'amount': FVal('1076'),
+        'amount_usd_value': FVal('1093.216'),
         'timestamp': 1587539880,
         'tx_hash': '0x3dd24fc5c64f151bc4a8c1d1a0de39ba23aa760ed27a591a462d822eb5c8fb80',
     }, {
         'event_type': 'payback',
         'amount': FVal('1673.2743084'),
+        'amount_usd_value': FVal('1683.31395425'),
         'timestamp': 1588964616,
         'tx_hash': '0x317f829a351ad9a8fb1a1e5f2f1ee786c0081087dc3a9ece8489e4092f258956',
     }, {
         'event_type': 'withdraw',
         'amount': FVal('41.1641807'),
+        'amount_usd_value': FVal('8707.87080185'),
         'timestamp': 1588964667,
         'tx_hash': '0xa67149325d5e2e20fab2befc3553332866c27ed32a4d04a3975e6eb4b130263b',
     }],
@@ -107,6 +168,8 @@ def _check_vault_details_values(details):
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the vaults endpoint works. Uses real vault data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -130,6 +193,8 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the vaults endpoint asynchronously works. Uses real vault data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -159,6 +224,8 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the vaults details endpoint works before even querying vaults"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -198,15 +265,8 @@ def test_query_vaults_details_non_premium(rotkehlchen_api_server):
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('mocked_price_queries', [{
-    'ETH': {
-        'USD': {
-            1584061534: FVal(135.44),
-            1584061897: FVal(135.44),
-            1584061977: FVal(135.44),
-        },
-    },
-}])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accounts):
     """Check vault details of a vault with liquidations
 
@@ -260,36 +320,43 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         'events': [{
             'event_type': 'deposit',
             'amount': FVal('140'),
+            'amount_usd_value': FVal('31322.2'),
             'timestamp': 1582699808,
             'tx_hash': '0x3246ef91fd3d6e1f7c5766de4fa1f0991ba67d92e518447ba8207fe98569c309',
         }, {
             'event_type': 'generate',
             'amount': FVal('14000'),
+            'amount_usd_value': FVal('14028'),
             'timestamp': 1582699808,
             'tx_hash': '0x3246ef91fd3d6e1f7c5766de4fa1f0991ba67d92e518447ba8207fe98569c309',
         }, {
             'event_type': 'deposit',
             'amount': FVal('1.7'),
+            'amount_usd_value': FVal('331.262'),
             'timestamp': 1583958747,
             'tx_hash': '0x65ac798cb9f22068e43fd9ef8303a31e436989062ae87e25650cc44c7788ab62',
         }, {
             'event_type': 'payback',
             'amount': FVal('2921.344902'),
+            'amount_usd_value': FVal('2927.187591'),
             'timestamp': 1584024065,
             'tx_hash': '0x6e44d22d6898ee012369787cd75ea6fb9ace6f995cd157675f370e8ba4a7b9ad',
         }, {
             'event_type': 'liquidation',
             'amount': FVal('50'),
+            'amount_usd_value': FVal('6772'),
             'timestamp': 1584061534,
             'tx_hash': '0xb02050d914ab40f59a9e07eb4f8161ce36eb97cea9c189b027eb1ceeac83a516',
         }, {
             'event_type': 'liquidation',
             'amount': FVal('50'),
+            'amount_usd_value': FVal('6772'),
             'timestamp': 1584061897,
             'tx_hash': '0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd',
         }, {
             'event_type': 'liquidation',
             'amount': FVal('41.7'),
+            'amount_usd_value': FVal('5647.848'),
             'timestamp': 1584061977,
             'tx_hash': '0xded0f9de641087692555d92a7fa94fa9fa7abf22744b2d16c20a66c5e48a8edf',
         }],
@@ -303,6 +370,8 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     """Check vault info and details for a vault with WBTC as collateral"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -349,21 +418,25 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         'events': [{
             'event_type': 'deposit',
             'amount': FVal('0.011'),
+            'amount_usd_value': FVal('87.06599'),
             'timestamp': 1588664698,
             'tx_hash': '0x9ba4a6187fa2c49ba327e7c923846a08a1e972017ec41d3f9f66ef524f7dde59',
         }, {
             'event_type': 'generate',
             'amount': FVal('25'),
+            'amount_usd_value': FVal('25.15'),
             'timestamp': 1588664698,
             'tx_hash': '0x9ba4a6187fa2c49ba327e7c923846a08a1e972017ec41d3f9f66ef524f7dde59',
         }, {
             'event_type': 'payback',
             'amount': FVal('25.000248996'),
+            'amount_usd_value': FVal('25.15025'),
             'timestamp': 1588696496,
             'tx_hash': '0x8bd960e7eb8b9e2b81d2446d1844dd63f94636c7800ea5e3b4d926ea0244c66c',
         }, {
             'event_type': 'deposit',
             'amount': FVal('0.0113'),
+            'amount_usd_value': FVal('89.440517'),
             'timestamp': 1588720248,
             'tx_hash': '0x678c4da562173c102473f1904ff293a767ebac9ec6c7d728ef2fd41acf00a13a',
         }],  # way too many events in the vault, so no need to check them all
@@ -381,6 +454,8 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     """Check vault info and details for a vault with USDC as collateral"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -423,26 +498,31 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         'events': [{
             'event_type': 'deposit',
             'amount': FVal('45'),
+            'amount_usd_value': FVal('45'),
             'timestamp': 1585286480,
             'tx_hash': '0x8b553dd0e8ee5385ec91105bf911143666d9df0ecd84c04f288278f7658aa7d6',
         }, {
             'event_type': 'generate',
             'amount': FVal('20'),
+            'amount_usd_value': FVal('20.46'),
             'timestamp': 1585286480,
             'tx_hash': '0x8b553dd0e8ee5385ec91105bf911143666d9df0ecd84c04f288278f7658aa7d6',
         }, {
             'event_type': 'generate',
             'amount': FVal('15.99'),
+            'amount_usd_value': FVal('16.35777'),
             'timestamp': 1585286769,
             'tx_hash': '0xdb861c893a51e4649ff3740cd3658cd4c9b1d048d3b8b4d117f4319bd60aee01',
         }, {
             'event_type': 'payback',
             'amount': FVal('35.990506367'),
+            'amount_usd_value': FVal('36.818288'),
             'timestamp': 1585290263,
             'tx_hash': '0xdd7825fe4a93c6f1ffa25a91b6da2396c229fe16b17242ad5c0bf7962928b2ec',
         }, {
             'event_type': 'withdraw',
             'amount': FVal('45'),
+            'amount_usd_value': FVal('45'),
             'timestamp': 1585290300,
             'tx_hash': '0x97462ebba7ce2467787bf6de25a25c24e538cf8a647919112c5f048b6a293408',
         }],
@@ -455,6 +535,8 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereum_accounts):
     """Check that no events are duplicated between vaults for same collateral by same account
 
@@ -514,26 +596,31 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         'events': [{
             'event_type': 'deposit',
             'amount': FVal('1'),
+            'amount_usd_value': FVal('197.78'),
             'timestamp': 1587910979,
             'tx_hash': '0xf59858df4e42cdc2aecfebdcf38e1df841866c6a9eb3adb6bde9a844564a3bb6',
         }, {
             'event_type': 'generate',
             'amount': FVal('80'),
+            'amount_usd_value': FVal('81.2'),
             'timestamp': 1587910979,
             'tx_hash': '0xf59858df4e42cdc2aecfebdcf38e1df841866c6a9eb3adb6bde9a844564a3bb6',
         }, {
             'event_type': 'payback',
             'amount': FVal('80'),
+            'amount_usd_value': FVal('80.24'),
             'timestamp': 1589989097,
             'tx_hash': '0x52396f7d20db54e2e9e716698b643a39815ff149a6cccbe9c7597dc9e06bb9d3',
         }, {
             'event_type': 'deposit',
             'amount': FVal('3.5'),
+            'amount_usd_value': FVal('734.475'),
             'timestamp': 1589993538,
             'tx_hash': '0x3c3942dc40fe68303098d91e765ceecaed4664bba0ef8f8e684b6f0e61968c6c',
         }, {
             'event_type': 'withdraw',
             'amount': FVal('4.5'),
+            'amount_usd_value': FVal('893.52'),
             'timestamp': 1590043499,
             'tx_hash': '0xbcd4158f0089404f6ab5378517762cddc13d21c9d2fcf3fd45cf1cf4b656242c',
         }],
@@ -547,26 +634,31 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         'events': [{
             'event_type': 'deposit',
             'amount': FVal('2.4'),
+            'amount_usd_value': FVal('517.32'),
             'timestamp': 1588174425,
             'tx_hash': '0xdb677a4257b5bdb305c278102d7b2460408bb7a3981414b994f4dd80a737ac2a',
         }, {
             'event_type': 'generate',
             'amount': FVal('192'),
+            'amount_usd_value': FVal('194.688'),
             'timestamp': 1588174425,
             'tx_hash': '0xdb677a4257b5bdb305c278102d7b2460408bb7a3981414b994f4dd80a737ac2a',
         }, {
             'event_type': 'payback',
             'amount': FVal('192'),
+            'amount_usd_value': FVal('192.192'),
             'timestamp': 1590042891,
             'tx_hash': '0x488a937677030cc810d0062001c08c944ecf6329b24a45ae9480bada8147bf75',
         }, {
             'event_type': 'deposit',
             'amount': FVal('4.4'),
+            'amount_usd_value': FVal('873.664'),
             'timestamp': 1590043699,
             'tx_hash': '0x712ddb654b878bcb30c5344d7c18f7f796fe94abd6e5b8a22b2da0a6c99bb425',
         }, {
             'event_type': 'generate',
             'amount': FVal('429.79'),
+            'amount_usd_value': FVal('430.21979'),
             'timestamp': 1590044118,
             'tx_hash': '0x36bfa27e157c03393a8816f6c1e3e990474f8f7473413810d87e2f4981d58044',
         }],

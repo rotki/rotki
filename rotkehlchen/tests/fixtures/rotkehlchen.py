@@ -80,6 +80,7 @@ def initialize_mock_rotkehlchen_instance(
         ignored_assets,
         tags,
         manually_tracked_balances,
+        default_mock_price_value,
 ):
     if start_with_logged_in_user:
         rotki.unlock_user(
@@ -108,6 +109,7 @@ def initialize_mock_rotkehlchen_instance(
             historian=PriceHistorian(),
             should_mock_price_queries=should_mock_price_queries,
             mocked_price_queries=mocked_price_queries,
+            default_mock_value=default_mock_price_value,
         )
 
 
@@ -144,6 +146,7 @@ def rotkehlchen_api_server(
         ignored_assets,
         tags,
         manually_tracked_balances,
+        default_mock_price_value,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -167,6 +170,7 @@ def rotkehlchen_api_server(
         ignored_assets=ignored_assets,
         tags=tags,
         manually_tracked_balances=manually_tracked_balances,
+        default_mock_price_value=default_mock_price_value,
     )
     return api_server
 
@@ -190,6 +194,7 @@ def rotkehlchen_instance(
         ignored_assets,
         tags,
         manually_tracked_balances,
+        default_mock_price_value,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -211,6 +216,7 @@ def rotkehlchen_instance(
         ignored_assets=ignored_assets,
         tags=tags,
         manually_tracked_balances=manually_tracked_balances,
+        default_mock_price_value=default_mock_price_value,
     )
     return uninitialized_rotkehlchen
 
