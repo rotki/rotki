@@ -80,6 +80,7 @@ export interface ApiMakerDAOVaultDetails {
 export interface ApiMakerDAOVaultEvent {
   readonly event_type: MakerDAOVaultEventType;
   readonly amount: string;
+  readonly amount_usd_value: string;
   readonly timestamp: number;
   readonly tx_hash: string;
 }
