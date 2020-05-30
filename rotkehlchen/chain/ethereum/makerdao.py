@@ -12,7 +12,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_DAI, A_USD
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_BAT_JOIN,
     MAKERDAO_CAT,
@@ -40,7 +40,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_now
@@ -107,6 +107,7 @@ class VaultEventType(Enum):
 class VaultEvent(NamedTuple):
     event_type: VaultEventType
     amount: FVal
+    amount_usd_value: FVal
     timestamp: Timestamp
     tx_hash: str
 
@@ -120,6 +121,8 @@ class MakerDAOVault(NamedTuple):
     collateral_asset: Asset
     # The amount of collateral tokens locked
     collateral_amount: FVal
+    # The USD value of collateral locked, given the current price according to the price feed
+    collateral_usd_value: FVal
     # amount of DAI drawn
     debt_value: FVal
     # The current collateralization_ratio of the Vault. None if nothing is locked in.
@@ -128,8 +131,6 @@ class MakerDAOVault(NamedTuple):
     liquidation_ratio: FVal
     # The USD price of collateral at which the Vault becomes unsafe. None if nothing is locked in.
     liquidation_price: Optional[FVal]
-    # The USD value of collateral locked, given the current price according to the price feed
-    collateral_usd_value: FVal
     urn: ChecksumEthAddress
     stability_fee: FVal
 
@@ -527,10 +528,24 @@ class MakerDAO(EthereumModule):
                 asset_symbol=asset_symbol,
                 amount=hex_or_bytes_to_int(event['topics'][3]),
             )
+            timestamp = self.ethereum.get_event_timestamp(event)
+            try:
+                usd_price = PriceHistorian().query_historical_price(
+                    from_asset=vault.collateral_asset,
+                    to_asset=A_USD,
+                    timestamp=timestamp,
+                )
+            except RemoteError:
+                log.error(
+                    f'Could not query usd price for {vault.collateral_asset} when '
+                    f'processing vault collateral deposit',
+                )
+                usd_price = Price(ZERO)
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.DEPOSIT_COLLATERAL,
                 amount=amount,
-                timestamp=self.ethereum.get_event_timestamp(event),
+                amount_usd_value=amount * usd_price,
+                timestamp=timestamp,
                 tx_hash=tx_hash,
             ))
 
@@ -555,10 +570,24 @@ class MakerDAO(EthereumModule):
                 asset_symbol=asset_symbol,
                 amount=hex_or_bytes_to_int(event['topics'][3]),
             )
+            timestamp = self.ethereum.get_event_timestamp(event)
+            try:
+                usd_price = PriceHistorian().query_historical_price(
+                    from_asset=vault.collateral_asset,
+                    to_asset=A_USD,
+                    timestamp=timestamp,
+                )
+            except RemoteError:
+                log.error(
+                    f'Could not query usd price for {vault.collateral_asset} when '
+                    f'processing vault collateral withdrawal',
+                )
+                usd_price = Price(ZERO)
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.WITHDRAW_COLLATERAL,
                 amount=amount,
-                timestamp=self.ethereum.get_event_timestamp(event),
+                amount_usd_value=amount * usd_price,
+                timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
 
@@ -586,10 +615,24 @@ class MakerDAO(EthereumModule):
                 asset_symbol='DAI',
                 amount=given_amount,
             )
+            timestamp = self.ethereum.get_event_timestamp(event)
+            try:
+                usd_price = PriceHistorian().query_historical_price(
+                    from_asset=A_DAI,
+                    to_asset=A_USD,
+                    timestamp=timestamp,
+                )
+            except RemoteError:
+                log.error(
+                    'Could not query usd price for DAI when '
+                    'processing vault debt generation. Defaulting to $1 price',
+                )
+                usd_price = Price(FVal(1))
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.GENERATE_DEBT,
                 amount=amount,
-                timestamp=self.ethereum.get_event_timestamp(event),
+                amount_usd_value=amount * usd_price,
+                timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
 
@@ -617,10 +660,26 @@ class MakerDAO(EthereumModule):
                 # it seems there is a zero DAI value transfer from the urn when
                 # withdrawing ETH. So we should ignore these as events
                 continue
+
+            timestamp = self.ethereum.get_event_timestamp(event)
+            try:
+                usd_price = PriceHistorian().query_historical_price(
+                    from_asset=A_DAI,
+                    to_asset=A_USD,
+                    timestamp=timestamp,
+                )
+            except RemoteError:
+                log.error(
+                    'Could not query usd price for DAI when '
+                    'processing vault debt payback. Defaulting to $1 price',
+                )
+                usd_price = Price(FVal(1))
+
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.PAYBACK_DEBT,
                 amount=amount,
-                timestamp=self.ethereum.get_event_timestamp(event),
+                amount_usd_value=amount * usd_price,
+                timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
 
@@ -646,15 +705,24 @@ class MakerDAO(EthereumModule):
             )
             timestamp = self.ethereum.get_event_timestamp(event)
             sum_liquidation_amount += amount
-            usd_price = PriceHistorian().query_historical_price(
-                from_asset=vault.collateral_asset,
-                to_asset=A_USD,
-                timestamp=timestamp,
-            )
-            sum_liquidation_usd += amount * usd_price
+            try:
+                usd_price = PriceHistorian().query_historical_price(
+                    from_asset=vault.collateral_asset,
+                    to_asset=A_USD,
+                    timestamp=timestamp,
+                )
+            except RemoteError:
+                log.error(
+                    f'Could not query usd price for {vault.collateral_asset} when '
+                    f'processing vault debt generation',
+                )
+                usd_price = Price(ZERO)
+            amount_usd_value = amount * usd_price
+            sum_liquidation_usd += amount_usd_value
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.LIQUIDATION,
                 amount=amount,
+                amount_usd_value=amount_usd_value,
                 timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
