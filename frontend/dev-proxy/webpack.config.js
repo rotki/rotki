@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
+const dotenv = require('dotenv').config({ path: __dirname + '/.env' });
+const { DefinePlugin } = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const WebpackShellPlugin = require('webpack-shell-plugin');
+
+const environment = {};
+Object.keys(dotenv.parsed).forEach((key) => {
+  environment[key] = dotenv.parsed[key];
+});
 
 module.exports = {
   entry: './src/index',
@@ -39,5 +46,6 @@ module.exports = {
     new WebpackShellPlugin({
       onBuildEnd: ['npm run dev'],
     }),
+    new DefinePlugin(environment),
   ],
 };

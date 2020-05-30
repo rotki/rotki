@@ -22,6 +22,8 @@ You can configure the proxy, with the following environment variables:
 - `BACKEND` The url of the real backend. (Default: `http://localhost:4242`)
 - `PREMIUM_COMPONENT_DIR` The premium components directory. (Optional)
 
+You can provide this configuration in a `.env` file in the `dev-proxy` directory.
+
 ## Starting the proxy
 
 After entering the directory you have to run the following commands:
