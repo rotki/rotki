@@ -54,6 +54,18 @@ def should_mock_price_queries():
 
 
 @pytest.fixture
+def default_mock_price_value() -> Optional[FVal]:
+    """Determines test behavior If a mock price is not found
+
+    If it's None, then test fails with an error. If it is any other
+    value then this is returned by the price mocking function. It's used
+    for tests where other price queries may happen apart from the ones we check
+    but we never check them so we don't care about the price.
+    """
+    return None
+
+
+@pytest.fixture
 def mocked_price_queries():
     return defaultdict(defaultdict)
 
