@@ -7,34 +7,55 @@
   <v-container v-else>
     <v-row>
       <v-col cols="12">
-        <h2>MakerDAO DSR</h2>
+        <h2>Overall position</h2>
       </v-col>
     </v-row>
     <v-row>
       <v-col>
-        <stat-card title="Current DSR"> {{ currentDSR.dp(2) }}% </stat-card>
-      </v-col>
-      <v-col>
-        <stat-card title="Total DAI locked">
+        <stat-card title="Currently Deposited">
           {{ totalDai.dp(decimals) }}
+
+          this will be the total of all assets deposited for lending in
+          usdValue->mainCurrency
         </stat-card>
       </v-col>
       <v-col>
-        <stat-card title="Total DAI earned" :locked="!premium">
+        <stat-card>
+          <template #title>
+            Effective Savings Rate
+            <v-tooltip bottom>
+              <template #activator="{ on }">
+                <v-icon small class="mb-3 ml-1" v-on="on">
+                  fa fa-info-circle
+                </v-icon>
+              </template>
+              <div>
+                The savings rate across all of the protocols in which you are<br />
+                actively lending, weighted based on the relative position<br />
+                in each protocol.
+              </div>
+            </v-tooltip>
+          </template>
+          {{ currentDSR.dp(2) }}%
+        </stat-card>
+      </v-col>
+      <v-col>
+        <stat-card title="Total Interest Earned" :locked="!premium">
           {{ totalGain.dp(decimals) }}
+          this will be the total of all interest received from lending in
+          usdValue->mainCurrency
         </stat-card>
       </v-col>
     </v-row>
     <v-row>
       <v-col cols="12">
-        <v-select
-          v-model="selection"
-          class="loans__account-selector"
-          label="Account"
-          return-object
-          :items="dsrBalances"
-          item-text="address"
-        ></v-select>
+        <blockchain-account-selector
+          :addresses="lendingAddresses"
+          @selected-accounts-change="filteredAccounts = $event"
+        ></blockchain-account-selector>
+        <div>
+          {{ filteredAccounts }}
+        </div>
       </v-col>
     </v-row>
     <v-row v-if="!!selection">
@@ -72,10 +93,15 @@ import { Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
+import {
+  GeneralAccount,
+  default as BlockchainAccountSelector
+} from '@/components/helper/BlockchainAccountSelector.vue';
+// import { GeneralAccount } from '@/components/helper/BlockchainAccountSelector.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { TaskType } from '@/model/task-type';
-import { AccountDSRMovement, DSRBalance } from '@/typing/types';
+import { Account, AccountDSRMovement, DSRBalance } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';
 
@@ -88,6 +114,7 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 @Component({
   components: {
     PremiumCard,
+    BlockchainAccountSelector,
     StatCard,
     ProgressScreen,
     PremiumLock,
@@ -118,6 +145,33 @@ export default class Lending extends Vue {
   accountGainUsdValue!: (address: string) => BigNumber;
   dsrHistory!: AccountDSRMovement[];
   isTaskRunning!: (type: TaskType) => boolean;
+  filteredAccounts: GeneralAccount[] = [];
+
+  get lendingAddresses(): Account[] {
+    let addresses: Account[] = [];
+
+    // join addresses from dsrHistory and dsrBalances
+    const dsrHistoryAddresses = this.dsrHistory.map(dsrEvent => {
+      return { chain: 'ETH', address: dsrEvent.address } as Account;
+    });
+
+    const dsrBalanceAddresses = this.dsrBalances.map(dsrBalance => {
+      return { chain: 'ETH', address: dsrBalance.address } as Account;
+    });
+
+    addresses = [...dsrHistoryAddresses, ...dsrBalanceAddresses];
+
+    // remove duplicates
+    addresses = addresses.filter(
+      (value, index, array) =>
+        array.findIndex(
+          filterBy =>
+            filterBy.chain === value.chain && filterBy.address === value.address
+        ) === index
+    );
+
+    return addresses;
+  }
 
   get loading(): boolean {
     return (
