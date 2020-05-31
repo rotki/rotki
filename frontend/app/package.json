@@ -94,7 +94,8 @@
     "vue-cli-plugin-vuetify": "2.0.5",
     "vue-jest": "^3.0.5",
     "vue-template-compiler": "2.6.11",
-    "vuetify-loader": "1.4.3"
+    "vuetify-loader": "1.4.3",
+    "webpack": "^4.43.0"
   },
   "homepage": "https://rotki.com",
   "license": "BSD-3-Clause",
