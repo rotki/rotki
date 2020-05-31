@@ -5,6 +5,10 @@ const { DefinePlugin } = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const WebpackShellPlugin = require('webpack-shell-plugin');
 
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'development';
+}
+
 const environment = {};
 Object.keys(dotenv.parsed).forEach((key) => {
   environment[key] = dotenv.parsed[key];

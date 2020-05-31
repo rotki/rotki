@@ -36,7 +36,7 @@ npm run serve
 ## Setup Rotki
 
 In order to use rotki with this development proxy you need to create a `.env.development.local`
-environment file. Put the file in the frontend directory of rotki. (`electron-app`).
+environment file. Put the file in the frontend directory of rotki. (`frontend/app`).
 
 The file must contain the following entry:
 
