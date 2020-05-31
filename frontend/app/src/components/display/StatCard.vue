@@ -1,7 +1,7 @@
 <template>
   <v-card class="stat-card">
     <v-card-title>
-      {{ title }}
+      <slot name="title">{{ title }}</slot>
       <v-spacer v-if="locked"></v-spacer>
       <premium-lock v-if="locked"></premium-lock>
     </v-card-title>
@@ -22,7 +22,7 @@ import PremiumLock from '@/components/helper/PremiumLock.vue';
   components: { PremiumLock }
 })
 export default class StatCard extends Vue {
-  @Prop({ required: true })
+  @Prop({ required: false })
   title!: string;
   @Prop({ required: false, type: Boolean, default: false })
   locked!: boolean;
