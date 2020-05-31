@@ -60,13 +60,8 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import TagManager from '@/components/tags/TagManager.vue';
 import { TaskType } from '@/model/task-type';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
-import { notify } from '@/store/notifications/utils';
-import {
-  Account,
-  Blockchain,
-  Severity,
-  SupportedBlockchains
-} from '@/typing/types';
+import { Message } from '@/store/store';
+import { Account, Blockchain, SupportedBlockchains } from '@/typing/types';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters } = createNamespacedHelpers('balances');
@@ -88,7 +83,6 @@ export default class AccountForm extends Vue {
 
   accountTags!: (blockchain: Blockchain, address: string) => string[];
   accountLabel!: (blockchain: Blockchain, address: string) => string;
-
   @Prop({ required: false, default: null })
   edit!: Account | null;
 
@@ -151,11 +145,11 @@ export default class AccountForm extends Vue {
       );
       this.editComplete();
     } catch (e) {
-      notify(
-        `Error while adding account: ${e}`,
-        'Adding Account',
-        Severity.ERROR
-      );
+      this.$store.commit('setMessage', {
+        description: `Error while adding account: ${e}`,
+        title: 'Adding Account',
+        success: false
+      } as Message);
     }
     this.pending = false;
   }

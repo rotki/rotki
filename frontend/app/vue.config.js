@@ -1,4 +1,6 @@
 // vue.config.js
+const { ContextReplacementPlugin } = require('webpack');
+
 module.exports = {
   productionSourceMap: false,
   css: {
@@ -39,6 +41,9 @@ module.exports = {
         return `webpack-vue:///${info.resourcePath}`;
       };
     }
+    config.plugins.push(
+      new ContextReplacementPlugin(/moment[/\\]locale$/, /en/)
+    );
   },
   pluginOptions: {
     electronBuilder: {
