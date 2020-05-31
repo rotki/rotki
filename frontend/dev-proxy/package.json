@@ -4,8 +4,8 @@
   "description": "",
   "main": "build/dist.js",
   "scripts": {
-    "dev": "NODE_ENV=development nodemon build/dist.js",
-    "serve": "NODE_ENV=development webpack",
+    "dev": "nodemon build/dist.js",
+    "serve": "webpack",
     "build": "webpack --mode production",
     "lint": "eslint --fix .",
     "test": "echo \"Error: no test specified\" && exit 1"
