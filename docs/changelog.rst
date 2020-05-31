@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `836` Allows the use of non-checksum eth addresses in the frontend.
 * :bug:`1016` Rotki users can now delete their rotki premium API keys via API Keys -> Rotki Premium.
 * :feature:`1015` Rotki now lets the user manually refresh and take a snapshot of their balances, even if the balance save frequency has not lapsed. This functionality is accessible through the Save Indicator (floppy disk icon on the app bar).
 * :feature:`707` Rotki now supports makerdao vaults. The vaults of the user are autodetected and they can see all details of each
