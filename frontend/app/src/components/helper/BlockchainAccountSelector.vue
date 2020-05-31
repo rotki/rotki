@@ -4,33 +4,47 @@
       v-model="selectedAccounts"
       :items="filteredBlockchainAccounts"
       :filter="filter"
+      :search-input.sync="search"
+      :multiple="multiple"
       solo
-      chips
-      hide-selected
       return-object
+      hide-selected
       hide-no-data
-      label="Filter by account(s)"
+      chips
+      clearable
+      :open-on-clear="false"
+      label="Select blockchain account(s)"
       item-text="address"
       item-value="address"
-      multiple
     >
       <template #selection="data">
         <v-chip
+          v-if="multiple"
           :key="data.item.chain + data.item.label"
+          v-bind="data.attrs"
           :input-value="data.selected"
           :click="data.select"
-          v-bind="data.attrs"
+          filter
           close
           @click:close="data.parent.selectItem(data.item)"
         >
           <div class="pr-2">
             <v-avatar left>
-              <crypto-icon width="16px" :symbol="data.item.chain"></crypto-icon>
+              <crypto-icon :symbol="data.item.chain"></crypto-icon>
             </v-avatar>
             <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
             <span>({{ data.item.address | truncateAddress }})</span>
           </div>
         </v-chip>
+        <div v-else>
+          <div class="pr-2">
+            <v-avatar left>
+              <crypto-icon width="24px" :symbol="data.item.chain"></crypto-icon>
+            </v-avatar>
+            <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
+            <span>({{ data.item.address | truncateAddress }})</span>
+          </div>
+        </div>
       </template>
       <template #item="data">
         <div
@@ -93,13 +107,16 @@ const { mapState: mapBalanceState } = createNamespacedHelpers('balances');
 export default class BlockchainAccountSelector extends Vue {
   @Prop({ required: true, type: Array, default: [] })
   addresses!: Account[];
+  @Prop({ required: false, type: Boolean, default: false })
+  multiple!: boolean;
 
   ethAccounts!: AccountDataMap;
   btcAccounts!: AccountDataMap;
   tags!: Tags;
-  selectedAccounts: Account[] = [];
+  selectedAccounts: GeneralAccount[] | GeneralAccount | null = null;
   select = ['Vuetify', 'Programming'];
   items = ['Programming', 'Design', 'Vue', 'Vuetify'];
+  search: string = '';
 
   get filteredBlockchainAccounts(): any[] {
     let filteredAccounts: GeneralAccount[] = [];
@@ -122,6 +139,12 @@ export default class BlockchainAccountSelector extends Vue {
   @Watch('selectedAccounts')
   onSelectedAccountsChange() {
     this.$emit('selected-accounts-change', this.selectedAccounts);
+
+    // Force clear the search value on change (e.g. after searching for an account
+    // and then clicking enter)
+    if (this.search) {
+      this.search = '';
+    }
   }
 
   filter(item: GeneralAccount, queryText: string) {

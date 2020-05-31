@@ -51,6 +51,7 @@
       <v-col cols="12">
         <blockchain-account-selector
           :addresses="lendingAddresses"
+          :multiple="true"
           @selected-accounts-change="filteredAccounts = $event"
         ></blockchain-account-selector>
         <div>
