@@ -9474,6 +9474,12 @@
         "symbol": "VTC",
         "type": "own chain"
     },
+    "VTHO": {
+        "name": "VeChainThor",
+        "started": 1533254400,
+        "symbol": "VTHO",
+        "type": "vechain token"
+    },
     "VZT": {
         "ethereum_address": "0x9720b467a710382A232a32F540bDCed7d662a10B",
         "ethereum_token_decimals": 18,
