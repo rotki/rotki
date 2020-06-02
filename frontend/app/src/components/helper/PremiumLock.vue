@@ -7,7 +7,7 @@
         v-bind="lockSize"
         :href="$interop.isPackaged ? undefined : $interop.premiumURL"
         v-on="on"
-        @click="$interop.isPackaged ? $interop.navigateToPremium() : undefined" 
+        @click="$interop.isPackaged ? $interop.navigateToPremium() : undefined"
       >
         <v-icon>fa-lock</v-icon>
       </v-btn>
