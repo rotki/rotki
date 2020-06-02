@@ -2627,14 +2627,20 @@ Getting current ethereum MakerDAO DSR balance
           "result": {
               "current_dsr": "8.022774065220581075333120100",
               "balances": {
-                  "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": "125.24423",
-                  "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": "346.43433"
+                  "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+		      "amount": "125.24423",
+		      "usd_value": 126.5231"
+		  },
+                  "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+		      "amount": "456.323",
+		      "usd_value": 460.212"
+		  }
                 }
           },
           "message": ""
       }
 
-   :resjson object result: A mapping of accounts to the number of DAI they have locked in DSR. If an account is not in the mapping Rotki does not see anything locked in DSR for it.
+   :resjson object result: A mapping of accounts to the number of DAI they have locked in DSR and the corresponding USD value. If an account is not in the mapping Rotki does not see anything locked in DSR for it.
 
    :statuscode 200: DSR succesfully queried.
    :statuscode 409: User is not logged in. Or makerdao module is not activated.
