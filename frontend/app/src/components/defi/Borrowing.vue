@@ -7,7 +7,7 @@
   <v-container v-else>
     <v-row>
       <v-col cols="12">
-        <h2>MakerDAO Vaults</h2>
+        <h2>Collateralized Loans</h2>
       </v-col>
     </v-row>
     <v-row>
@@ -36,21 +36,21 @@
         <v-autocomplete
           v-model="selection"
           class="borrowing__vault-selection"
-          label="Vault"
+          label="Select Loan"
           item-key="identifier"
           :items="makerDAOVaults"
           item-text="identifier"
         ></v-autocomplete>
       </v-col>
     </v-row>
-    <vault :vault="selectedVault" />
+    <loan-info :vault="selectedVault" />
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import Vault from '@/components/defi/Vault.vue';
+import LoanInfo from '@/components/defi/LoanInfo.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -66,7 +66,7 @@ const { mapGetters } = createNamespacedHelpers('balances');
   computed: {
     ...mapGetters(['makerDAOVaults', 'makerDAOVaultSummary'])
   },
-  components: { AmountDisplay, StatCard, Vault, ProgressScreen }
+  components: { AmountDisplay, StatCard, LoanInfo, ProgressScreen }
 })
 export default class Borrowing extends Vue {
   loading: boolean = false;

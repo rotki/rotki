@@ -1,12 +1,12 @@
 <template>
-  <v-row v-if="!!vault" class="vault">
+  <v-row v-if="!!vault" class="loan-info">
     <v-col cols="12">
       <v-row>
-        <v-col class="vault__header">
-          <div class="vault__header__identifier">
-            Vault #{{ vault.identifier }} ({{ vault.collateralType }})
+        <v-col class="loan-info__header">
+          <div class="loan-info__header__identifier">
+            Maker Vault #{{ vault.identifier }} ({{ vault.collateralType }})
           </div>
-          <div class="vault__header__owner secondary--text text--lighten-2">
+          <div class="loan-info__header__owner secondary--text text--lighten-2">
             Owned by:
             <base-external-link
               truncate
@@ -41,7 +41,7 @@
               </div>
             </div>
             <v-divider class="my-4"></v-divider>
-            <div class="d-flex justify-space-between">
+            <div class="d-flex justify-space-between mb-2">
               <div>
                 Current ratio
               </div>
@@ -53,8 +53,22 @@
                 }}
               </div>
             </div>
+            <v-btn
+              x-small
+              rounded
+              block
+              depressed
+              color="grey lighten-3 grey--text text--darken-2"
+              @click="premium ? openWatcherDialog(vault) : ''"
+            >
+              <v-icon x-small left>fa fa-bell-o</v-icon>
+              <span style="text-transform: none;" class="caption">
+                Add a collateralization ratio watcher
+              </span>
+              <premium-lock v-if="!premium" size="x-small"></premium-lock>
+            </v-btn>
           </stat-card>
-          <stat-card class="vault__debt mt-5" title="Debt">
+          <stat-card class="loan-info__debt mt-5" title="Debt">
             <div class="d-flex justify-space-between">
               <div>
                 Outstanding debt
@@ -73,7 +87,7 @@
             </div>
             <v-divider class="my-4"></v-divider>
             <div
-              class="vault__debt__stability-fee d-flex justify-space-between mb-2"
+              class="loan-info__debt__stability-fee d-flex justify-space-between mb-2"
             >
               <div>
                 Stability fee
@@ -114,8 +128,8 @@
           </stat-card>
         </v-col>
         <v-col cols="12" md="6">
-          <stat-card title="Liquidation" class="vault__liquidation">
-            <div class="vault__liquidation__upper pb-5">
+          <stat-card title="Liquidation" class="loan-info__liquidation">
+            <div class="loan-info__liquidation__upper pb-5">
               <div class="d-flex justify-space-between">
                 <div>
                   Liquidation price
@@ -139,7 +153,7 @@
               </div>
             </div>
             <div>
-              <span class="vault__liquidation__liquidation-events__header">
+              <span class="loan-info__liquidation__liquidation-events__header">
                 Liquidation Events
               </span>
               <v-skeleton-loader
@@ -154,10 +168,10 @@
                     vault.totalLiquidatedAmount &&
                     vault.totalLiquidatedAmount.gt(0)
                   "
-                  class="vault__liquidation-events__content"
+                  class="loan-info__liquidation-events__content"
                 >
                   <div
-                    class="vault__liquidation-events__content__liquidated-collateral mb-2"
+                    class="loan-info__liquidation-events__content__liquidated-collateral mb-2"
                   >
                     <div class="d-flex justify-space-between">
                       <div>
@@ -208,7 +222,7 @@
                   </div>
                 </div>
                 <div v-else>
-                  No liquidation events have occurred for this vault.
+                  No liquidation events have occurred for this loan.
                 </div>
               </v-skeleton-loader>
               <div v-else class="text-right">
@@ -220,7 +234,7 @@
       </v-row>
       <v-row>
         <v-col cols="12">
-          <premium-card v-if="!premium" title="Vault History"></premium-card>
+          <premium-card v-if="!premium" title="Loan History"></premium-card>
           <vault-events-list
             v-else
             :asset="vault.collateralAsset"
@@ -231,11 +245,22 @@
         </v-col>
       </v-row>
     </v-col>
+    <watcher-dialog
+      :display="showWatcherDialog"
+      title="Add loan collateralization watcher"
+      :message="watcherMessage"
+      :watcher-content-id="watcherVaultId"
+      preselect-watcher-type="makervault_collateralization_ratio"
+      watcher-value-label="Collateralization Ratio"
+      @confirm="addWatcher()"
+      @cancel="showWatcherDialog = false"
+    >
+    </watcher-dialog>
   </v-row>
   <v-row v-else align="center" justify="center">
     <v-col>
       <span class="font-weight-light subtitle-2">
-        Please select a Vault to see information
+        Please select a loan to see information
       </span>
     </v-col>
   </v-row>
@@ -245,6 +270,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
@@ -262,32 +288,52 @@ const { mapState, mapGetters } = createNamespacedHelpers('session');
     PremiumLock,
     AmountDisplay,
     StatCard,
-    VaultEventsList
+    VaultEventsList,
+    WatcherDialog
   },
   computed: {
     ...mapState(['premium']),
     ...mapGetters(['dateDisplayFormat'])
   }
 })
-export default class Vault extends Vue {
+export default class LoanInfo extends Vue {
   @Prop({ required: true })
   vault!: MakerDAOVault | MakerDAOVaultModel | null;
 
   premium!: boolean;
   dateDisplayFormat!: string;
+  showWatcherDialog: boolean = false;
+  watcherMessage: string = '';
+  watcherVaultId: number | null = null;
+
+  openWatcherDialog(vault: MakerDAOVault) {
+    this.showWatcherDialog = true;
+    this.watcherVaultId = vault.identifier;
+    this.watcherMessage = `Please fill in the details for the watcher you would like to add for Maker Vault #${vault.identifier} with current collateralization ratio ${vault.collateralizationRatio} and liquidation ratio ${vault.liquidationRatio}.`;
+  }
 
   openTransaction(url: string) {
     this.$interop.openUrl(url);
+  }
+
+  addWatcher() {
+    this.showWatcherDialog = false;
+    window.alert('api thing in WatcherDialog');
   }
 }
 </script>
 
 <style scoped lang="scss">
-.vault {
+.loan-info {
   &__header {
     &__identifier {
       font-size: 24px;
       font-weight: bold;
+    }
+  }
+  &__collateral {
+    &__watcher {
+      border-radius: 15px;
     }
   }
 

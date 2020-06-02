@@ -4,9 +4,10 @@
       <v-btn
         text
         icon
+        v-bind="lockSize"
         :href="$interop.isPackaged ? undefined : $interop.premiumURL"
         v-on="on"
-        @click="$interop.isPackaged ? $interop.navigateToPremium() : undefined"
+        @click="$interop.isPackaged ? $interop.navigateToPremium() : undefined" 
       >
         <v-icon>fa-lock</v-icon>
       </v-btn>
@@ -17,8 +18,15 @@
   </v-tooltip>
 </template>
 <script lang="ts">
-import { Vue, Component } from 'vue-property-decorator';
+import { Vue, Component, Prop } from 'vue-property-decorator';
 
 @Component({})
-export default class PremiumLock extends Vue {}
+export default class PremiumLock extends Vue {
+  @Prop({ type: String, required: false, default: '' })
+  size!: string;
+
+  get lockSize() {
+    return { [this.size]: true };
+  }
+}
 </script>
