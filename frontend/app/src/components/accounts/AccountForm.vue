@@ -12,6 +12,7 @@
         v-model="address"
         class="blockchain-balances__address"
         label="Account"
+        :error-messages="errorMessages"
         :disabled="accountOperation || loading || !!edit"
       ></v-text-field>
       <v-text-field
@@ -59,6 +60,7 @@ import { createNamespacedHelpers } from 'vuex';
 import TagInput from '@/components/inputs/TagInput.vue';
 import TagManager from '@/components/tags/TagManager.vue';
 import { TaskType } from '@/model/task-type';
+import { deserializeApiErrorMessage } from '@/services/converters';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
 import { Message } from '@/store/store';
 import { Account, Blockchain, SupportedBlockchains } from '@/typing/types';
@@ -80,6 +82,7 @@ export default class AccountForm extends Vue {
   address: string = '';
   label: string = '';
   tags: string[] = [];
+  errorMessages: string[] = [];
 
   accountTags!: (blockchain: Blockchain, address: string) => string[];
   accountLabel!: (blockchain: Blockchain, address: string) => string;
@@ -100,6 +103,15 @@ export default class AccountForm extends Vue {
 
   mounted() {
     this.setEditMode();
+  }
+
+  @Watch('address')
+  onAddressChanged() {
+    if (this.errorMessages.length === 0) {
+      return;
+    }
+
+    this.clearErrors();
   }
 
   @Watch('edit')
@@ -145,6 +157,13 @@ export default class AccountForm extends Vue {
       );
       this.editComplete();
     } catch (e) {
+      const apiErrorMessage = deserializeApiErrorMessage(e.message);
+      if (apiErrorMessage && 'address' in apiErrorMessage) {
+        this.clearErrors();
+        this.errorMessages.push(...apiErrorMessage['address']);
+        this.pending = false;
+        return;
+      }
       this.$store.commit('setMessage', {
         description: `Error while adding account: ${e}`,
         title: 'Adding Account',
@@ -152,6 +171,12 @@ export default class AccountForm extends Vue {
       } as Message);
     }
     this.pending = false;
+  }
+
+  private clearErrors() {
+    for (let i = 0; i < this.errorMessages.length; i++) {
+      this.errorMessages.pop();
+    }
   }
 }
 </script>
