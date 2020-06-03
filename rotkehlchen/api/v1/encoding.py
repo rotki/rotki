@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import marshmallow
 import webargs
-from eth_utils import is_checksum_address
+from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
@@ -822,13 +822,18 @@ def _validate_blockchain_account_schemas(
     if data['blockchain'] == SupportedBlockchain.ETHEREUM:
         for account_data in data['accounts']:
             address = address_getter(account_data)
-            if not is_checksum_address(address):
+            # Make sure that given value is an ethereum address
+            try:
+                address = to_checksum_address(address)
+            except (ValueError, TypeError):
                 raise ValidationError(
-                    f'Given value {address} is not a checksummed ethereum address',
+                    f'Given value {address} is not an ethereum address',
+                    field_name='address',
                 )
             if address in given_addresses:
                 raise ValidationError(
                     f'Address {address} appears multiple times in the request data',
+                    field_name='address',
                 )
             given_addresses.add(address)
 
@@ -839,10 +844,12 @@ def _validate_blockchain_account_schemas(
             if not is_valid_btc_address(address):
                 raise ValidationError(
                     f'Given value {address} is not a valid bitcoin address',
+                    field_name='address',
                 )
             if address in given_addresses:
                 raise ValidationError(
                     f'Address {address} appears multiple times in the request data',
+                    field_name='address',
                 )
             given_addresses.add(address)
 
@@ -859,6 +866,17 @@ class BlockchainAccountsPatchSchema(Schema):
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
+    @post_load  # type: ignore
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+            for idx, account in enumerate(data['accounts']):
+                data['accounts'][idx]['address'] = to_checksum_address(account['address'])
+        return data
+
 
 class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
     async_query = fields.Boolean(missing=False)
@@ -870,12 +888,22 @@ class BlockchainAccountsDeleteSchema(Schema):
     async_query = fields.Boolean(missing=False)
 
     @validates_schema  # type: ignore
-    def validate_blockchain_accounts_patch_schema(  # pylint: disable=no-self-use
+    def validate_blockchain_accounts_delete_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x)
+
+    @post_load  # type: ignore
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+            data['accounts'] = [to_checksum_address(x) for x in data['accounts']]
+        return data
 
 
 class IgnoredAssetsSchema(Schema):
