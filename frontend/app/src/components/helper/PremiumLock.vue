@@ -26,7 +26,8 @@ export default class PremiumLock extends Vue {
   size!: string;
 
   get lockSize() {
-    return { [this.size]: true };
+    if (this.size !== '') return { [this.size]: true };
+    return null;
   }
 }
 </script>

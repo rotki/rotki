@@ -10,6 +10,7 @@ import {
   ManualBalancesByLocation,
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
+import { DSRHistory } from '@/services/types-model';
 import { BalanceState } from '@/store/balances/state';
 import {
   MakerDAOVaultModel,
@@ -276,6 +277,10 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       );
       return acc;
     }, new Array<AccountDSRMovement>());
+  },
+
+  dsrHistoryByAddress: ({ dsrHistory }: BalanceState): DSRHistory => {
+    return dsrHistory;
   },
 
   manualLabels: ({ manualBalances }: BalanceState) => {
