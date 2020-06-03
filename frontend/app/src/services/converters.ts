@@ -3,9 +3,9 @@ import {
   ApiDSRBalances,
   ApiDSRHistory,
   ApiMakerDAOVault,
-  ApiManualBalances,
   ApiMakerDAOVaultDetails,
   ApiMakerDAOVaultEvent,
+  ApiManualBalances,
   SupportedAssets
 } from '@/services/types-api';
 import {
@@ -13,10 +13,10 @@ import {
   DSRHistory,
   DSRMovement,
   MakerDAOVault,
-  ManualBalance,
-  SupportedAsset,
   MakerDAOVaultDetails,
-  MakerDAOVaultEvent
+  MakerDAOVaultEvent,
+  ManualBalance,
+  SupportedAsset
 } from '@/services/types-model';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -138,4 +138,14 @@ export function convertVaultDetails(
     totalLiquidatedUsd: bigNumberify(details.total_liquidated_usd),
     events: convertVaultEvents(details.events)
   }));
+}
+
+export function deserializeApiErrorMessage(
+  message: string
+): { [key: string]: string[] } | undefined {
+  try {
+    return JSON.parse(message.replace(/'/gi, '"'));
+  } catch (e) {
+    return undefined;
+  }
 }
