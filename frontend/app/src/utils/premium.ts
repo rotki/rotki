@@ -1,11 +1,13 @@
 import Chart from 'chart.js';
 import moment from 'moment';
 import Vue, { VueConstructor } from 'vue';
+import Vuex from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
 
 export const setupPremium = () => {
   window.Vue = Vue;
   window.Chart = Chart;
+  window.Vue.use(Vuex);
   window.moment = moment;
 };
 

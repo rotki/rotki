@@ -1,57 +1,45 @@
 <template>
-  <div>
-    <v-autocomplete
-      v-model="selectedAccounts"
-      :items="filteredBlockchainAccounts"
-      :filter="filter"
-      :search-input.sync="search"
-      :multiple="multiple"
-      solo
-      return-object
-      hide-selected
-      hide-no-data
-      chips
-      clearable
-      :open-on-clear="false"
-      label="Select blockchain account(s)"
-      item-text="address"
-      item-value="address"
-    >
-      <template #selection="data">
-        <v-chip
-          v-if="multiple"
-          :key="data.item.chain + data.item.label"
-          v-bind="data.attrs"
-          :input-value="data.selected"
-          :click="data.select"
-          filter
-          close
-          @click:close="data.parent.selectItem(data.item)"
-        >
-          <div class="pr-2">
-            <v-avatar left>
-              <crypto-icon :symbol="data.item.chain"></crypto-icon>
-            </v-avatar>
-            <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
-            <span>({{ data.item.address | truncateAddress }})</span>
-          </div>
-        </v-chip>
-        <div v-else>
-          <div class="pr-2">
-            <v-avatar left>
-              <crypto-icon width="24px" :symbol="data.item.chain"></crypto-icon>
-            </v-avatar>
-            <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
-            <span>({{ data.item.address | truncateAddress }})</span>
-          </div>
-        </div>
-      </template>
-      <template #item="data">
-        <div
-          class="blockchain-account-selector__list__item d-flex justify-space-between flex-grow-1"
-        >
-          <div class="blockchain-account-selector__list__item__address-label">
-            <v-chip color="grey lighten-3" filter>
+  <v-card>
+    <div class="mx-4 pt-2">
+      <v-autocomplete
+        v-model="selectedAccounts"
+        :items="filteredBlockchainAccounts"
+        :filter="filter"
+        :search-input.sync="search"
+        :multiple="multiple"
+        return-object
+        hide-details
+        hide-selected
+        hide-no-data
+        chips
+        clearable
+        :open-on-clear="false"
+        label="Filter account(s)"
+        item-text="address"
+        item-value="address"
+        class="blockchain-account-selector"
+      >
+        <template #selection="data">
+          <v-chip
+            v-if="multiple"
+            :key="data.item.chain + data.item.label"
+            v-bind="data.attrs"
+            :input-value="data.selected"
+            :click="data.select"
+            filter
+            close
+            @click:close="data.parent.selectItem(data.item)"
+          >
+            <div class="pr-2">
+              <v-avatar left>
+                <crypto-icon :symbol="data.item.chain"></crypto-icon>
+              </v-avatar>
+              <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
+              <span>({{ data.item.address | truncateAddress }})</span>
+            </div>
+          </v-chip>
+          <div v-else>
+            <div class="pr-2">
               <v-avatar left>
                 <crypto-icon
                   width="24px"
@@ -60,20 +48,47 @@
               </v-avatar>
               <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
               <span>({{ data.item.address | truncateAddress }})</span>
-            </v-chip>
+            </div>
           </div>
-          <div class="blockchain-account-selector__list__item__tags">
-            <tag-icon
-              v-for="tag in data.item.tags"
-              :key="tag"
-              class="mr-1"
-              :tag="tags[tag]"
-            ></tag-icon>
+        </template>
+        <template #item="data">
+          <div
+            class="blockchain-account-selector__list__item d-flex justify-space-between flex-grow-1"
+          >
+            <div class="blockchain-account-selector__list__item__address-label">
+              <v-chip color="grey lighten-3" filter>
+                <v-avatar left>
+                  <crypto-icon
+                    width="24px"
+                    :symbol="data.item.chain"
+                  ></crypto-icon>
+                </v-avatar>
+                <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
+                <span>({{ data.item.address | truncateAddress }})</span>
+              </v-chip>
+            </div>
+            <div class="blockchain-account-selector__list__item__tags">
+              <tag-icon
+                v-for="tag in data.item.tags"
+                :key="tag"
+                class="mr-1"
+                :tag="tags[tag]"
+              ></tag-icon>
+            </div>
           </div>
-        </div>
-      </template>
-    </v-autocomplete>
-  </div>
+        </template>
+      </v-autocomplete>
+    </div>
+    <v-card-text>
+      Showing results across
+      {{
+        selectedAccounts && selectedAccounts.length > 0
+          ? selectedAccounts.length
+          : 'all'
+      }}
+      accounts.
+    </v-card-text>
+  </v-card>
 </template>
 
 <script lang="ts">

@@ -17,8 +17,8 @@
               {{ message }}
             </v-col>
           </v-row>
-          <v-row>
-            <v-col v-if="preselectWatcherType === ''" cols="12">
+          <v-row v-if="preselectWatcherType === ''">
+            <v-col cols="12">
               <v-select
                 v-model="watcherType"
                 :items="watcherTypes"
@@ -139,10 +139,10 @@ export default class WatcherDialog extends Vue {
         vault_id: this.watcherContentId
       }
     };
-    console.log('-----------------------');
-    console.log('watcher payload');
-    console.log(watcherPaylod);
-    console.log('-----------------------');
+    console.log('-----------------------'); // eslint-disable-line
+    console.log('watcher payload'); // eslint-disable-line
+    console.log(watcherPaylod); // eslint-disable-line
+    console.log('-----------------------'); // eslint-disable-line
     this.$emit('confirm');
   }
 

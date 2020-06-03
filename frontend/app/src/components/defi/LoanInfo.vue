@@ -8,19 +8,17 @@
           </div>
           <div class="loan-info__header__owner secondary--text text--lighten-2">
             Owned by:
-            <base-external-link
-              truncate
+            <hash-link
               :text="vault.owner"
-              :href="`https://etherscan.io/address/${vault.owner}`"
-            >
-            </base-external-link>
+              class="d-inline font-weight-medium"
+            ></hash-link>
           </div>
         </v-col>
       </v-row>
       <v-row>
         <v-col cols="12" md="6">
           <stat-card title="Collateral">
-            <div class="d-flex justify-space-between">
+            <div class="d-flex justify-space-between font-weight-medium">
               <div>
                 Locked up collateral
               </div>
@@ -32,7 +30,7 @@
               </div>
             </div>
             <div class="text-right">
-              <div class="font-weight-light">
+              <div>
                 <amount-display
                   :value="vault.collateralUsdValue"
                   fiat-currency="USD"
@@ -41,7 +39,7 @@
               </div>
             </div>
             <v-divider class="my-4"></v-divider>
-            <div class="d-flex justify-space-between mb-2">
+            <div class="d-flex justify-space-between mb-2 font-weight-medium">
               <div>
                 Current ratio
               </div>
@@ -69,7 +67,7 @@
             </v-btn>
           </stat-card>
           <stat-card class="loan-info__debt mt-5" title="Debt">
-            <div class="d-flex justify-space-between">
+            <div class="d-flex justify-space-between font-weight-medium">
               <div>
                 Outstanding debt
               </div>
@@ -80,14 +78,9 @@
                 ></amount-display>
               </div>
             </div>
-            <div class="text-right">
-              <div class="font-weight-light">
-                xx.xx XYZ
-              </div>
-            </div>
             <v-divider class="my-4"></v-divider>
             <div
-              class="loan-info__debt__stability-fee d-flex justify-space-between mb-2"
+              class="loan-info__debt__stability-fee d-flex justify-space-between mb-2 font-weight-medium"
             >
               <div>
                 Stability fee
@@ -96,7 +89,7 @@
                 {{ vault.stabilityFee }}
               </div>
             </div>
-            <div class="d-flex justify-space-between">
+            <div class="d-flex justify-space-between font-weight-medium">
               <div>
                 Total interest owed
               </div>
@@ -120,17 +113,12 @@
                 <premium-lock></premium-lock>
               </div>
             </div>
-            <div v-if="premium" class="text-right">
-              <div class="font-weight-light">
-                xx.xx XYZ
-              </div>
-            </div>
           </stat-card>
         </v-col>
         <v-col cols="12" md="6">
           <stat-card title="Liquidation" class="loan-info__liquidation">
             <div class="loan-info__liquidation__upper pb-5">
-              <div class="d-flex justify-space-between">
+              <div class="d-flex justify-space-between font-weight-medium">
                 <div>
                   Liquidation price
                 </div>
@@ -143,7 +131,7 @@
                 </div>
               </div>
               <v-divider class="my-4"></v-divider>
-              <div class="d-flex justify-space-between font-weight-light">
+              <div class="d-flex justify-space-between">
                 <div>
                   Minimum ratio
                 </div>
@@ -173,7 +161,9 @@
                   <div
                     class="loan-info__liquidation-events__content__liquidated-collateral mb-2"
                   >
-                    <div class="d-flex justify-space-between">
+                    <div
+                      class="d-flex justify-space-between font-weight-medium"
+                    >
                       <div>
                         Liquidated collateral
                       </div>
@@ -184,7 +174,7 @@
                         ></amount-display>
                       </div>
                     </div>
-                    <div class="d-flex justify-end font-weight-light">
+                    <div class="d-flex justify-end">
                       <div>
                         <amount-display
                           :value="vault.totalLiquidatedUsd"
@@ -194,9 +184,9 @@
                       </div>
                     </div>
                   </div>
-                  <div class="d-flex justify-space-between">
+                  <div class="d-flex justify-space-between font-weight-medium">
                     <div>
-                      Outsanding debt at liquidation
+                      Outstanding debt at liquidation
                     </div>
                     <div>
                       <amount-display
@@ -206,7 +196,7 @@
                     </div>
                   </div>
                   <v-divider class="my-4"></v-divider>
-                  <div class="d-flex justify-space-between">
+                  <div class="d-flex justify-space-between font-weight-medium">
                     <div>
                       Total value lost
                     </div>
@@ -232,7 +222,7 @@
           </stat-card>
         </v-col>
       </v-row>
-      <v-row>
+      <v-row class="mt-6">
         <v-col cols="12">
           <premium-card v-if="!premium" title="Loan History"></premium-card>
           <vault-events-list
@@ -240,7 +230,7 @@
             :asset="vault.collateralAsset"
             :events="vault.events"
             :creation="vault.creationTs"
-            @open-transaction="openTransaction($event)"
+            @open-link="openLink($event)"
           ></vault-events-list>
         </v-col>
       </v-row>
@@ -274,6 +264,7 @@ import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
+import HashLink from '@/components/helper/HashLink.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import { MakerDAOVault } from '@/services/types-model';
 import { MakerDAOVaultModel } from '@/store/balances/types';
@@ -286,6 +277,7 @@ const { mapState, mapGetters } = createNamespacedHelpers('session');
     BaseExternalLink,
     PremiumCard,
     PremiumLock,
+    HashLink,
     AmountDisplay,
     StatCard,
     VaultEventsList,
@@ -312,7 +304,7 @@ export default class LoanInfo extends Vue {
     this.watcherMessage = `Please fill in the details for the watcher you would like to add for Maker Vault #${vault.identifier} with current collateralization ratio ${vault.collateralizationRatio} and liquidation ratio ${vault.liquidationRatio}.`;
   }
 
-  openTransaction(url: string) {
+  openLink(url: string) {
     this.$interop.openUrl(url);
   }
 

@@ -7,44 +7,60 @@
   <v-container v-else>
     <v-row>
       <v-col cols="12">
-        <h2>Overall position</h2>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <stat-card title="Currently Deposited">
-          {{ totalDai.dp(decimals) }}
-
-          this will be the total of all assets deposited for lending in
-          usdValue->mainCurrency
-        </stat-card>
-      </v-col>
-      <v-col>
-        <stat-card>
-          <template #title>
-            Effective Savings Rate
-            <v-tooltip bottom>
-              <template #activator="{ on }">
-                <v-icon small class="mb-3 ml-1" v-on="on">
-                  fa fa-info-circle
-                </v-icon>
-              </template>
-              <div>
-                The savings rate across all of the protocols in which you are<br />
-                actively lending, weighted based on the relative position<br />
-                in each protocol.
-              </div>
-            </v-tooltip>
+        <stat-card-wide cols="two">
+          <template #first-col>
+            <dl>
+              <dt class="title font-weight-regular">
+                Currently Deposited
+              </dt>
+              <dd class="primary--text headline font-weight-bold">
+                <amount-display :value="totalDai" asset="DAI"></amount-display>
+              </dd>
+            </dl>
           </template>
-          {{ currentDSR.dp(2) }}%
-        </stat-card>
-      </v-col>
-      <v-col>
-        <stat-card title="Total Interest Earned" :locked="!premium">
-          {{ totalGain.dp(decimals) }}
-          this will be the total of all interest received from lending in
-          usdValue->mainCurrency
-        </stat-card>
+          <template #second-col>
+            <dl>
+              <dt class="title font-weight-regular">
+                Effective Savings Rate
+                <v-tooltip bottom>
+                  <template #activator="{ on }">
+                    <v-icon small class="mb-3 ml-1" v-on="on">
+                      fa fa-info-circle
+                    </v-icon>
+                  </template>
+                  <div>
+                    The savings rate across all of the protocols in which<br />
+                    you are actively lending, weighted based on the<br />
+                    relative position in each protocol.
+                  </div>
+                </v-tooltip>
+              </dt>
+              <dd class="primary--text headline font-weight-bold">
+                {{ currentDSR.dp(2) }}%
+              </dd>
+            </dl>
+          </template>
+          <template #third-col>
+            <dl>
+              <dt
+                class="title font-weight-regular d-flex justify-space-between"
+              >
+                Interest Earned
+                <premium-lock v-if="!premium" class="d-inline"></premium-lock>
+              </dt>
+              <dd
+                v-if="premium"
+                class="primary--text headline font-weight-bold"
+              >
+                <amount-display
+                  :value="totalUsdGainAcrossFilteredAccounts"
+                  show-currency="symbol"
+                  fiat-currency="USD"
+                ></amount-display>
+              </dd>
+            </dl>
+          </template>
+        </stat-card-wide>
       </v-col>
     </v-row>
     <v-row>
@@ -54,24 +70,6 @@
           :multiple="true"
           @selected-accounts-change="filteredAccounts = $event"
         ></blockchain-account-selector>
-        <div>
-          {{ filteredAccounts }}
-        </div>
-      </v-col>
-    </v-row>
-    <v-row v-if="!!selection">
-      <v-col>
-        <stat-card title="DAI locked">
-          {{ selection.balance.dp(decimals) }}
-        </stat-card>
-      </v-col>
-      <v-col>
-        <stat-card title="DAI earned" :locked="!premium">
-          {{ accountGain(selection.address).dp(decimals) }}
-        </stat-card>
-        <stat-card title="approximate $ earned" :locked="!premium">
-          {{ accountGainUsdValue(selection.address).dp(decimals) }}
-        </stat-card>
       </v-col>
     </v-row>
     <v-row class="loans__history">
@@ -80,7 +78,9 @@
         <dsr-movement-history
           v-else
           :history="dsrHistory"
+          :account-filter="filteredAccounts.map(x => x.address)"
           :floating-precision="floatingPrecision"
+          @open-link="openLink($event)"
         ></dsr-movement-history>
       </v-col>
     </v-row>
@@ -92,16 +92,18 @@ import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
 import { Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
+import StatCardWide from '@/components/display/StatCardWide.vue';
 import {
   GeneralAccount,
   default as BlockchainAccountSelector
 } from '@/components/helper/BlockchainAccountSelector.vue';
-// import { GeneralAccount } from '@/components/helper/BlockchainAccountSelector.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { TaskType } from '@/model/task-type';
+import { DSRHistory } from '@/services/types-model';
 import { Account, AccountDSRMovement, DSRBalance } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';
@@ -114,9 +116,11 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 
 @Component({
   components: {
+    AmountDisplay,
     PremiumCard,
     BlockchainAccountSelector,
     StatCard,
+    StatCardWide,
     ProgressScreen,
     PremiumLock,
     DsrMovementHistory
@@ -131,7 +135,8 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
       'totalGain',
       'accountGain',
       'accountGainUsdValue',
-      'dsrHistory'
+      'dsrHistory',
+      'dsrHistoryByAddress'
     ])
   }
 })
@@ -145,8 +150,16 @@ export default class Lending extends Vue {
   accountGain!: (address: string) => BigNumber;
   accountGainUsdValue!: (address: string) => BigNumber;
   dsrHistory!: AccountDSRMovement[];
+  dsrHistoryByAddress!: DSRHistory;
   isTaskRunning!: (type: TaskType) => boolean;
   filteredAccounts: GeneralAccount[] = [];
+
+  async mounted() {
+    await this.$store.dispatch('balances/fetchDSRBalances');
+    if (this.premium) {
+      await this.$store.dispatch('balances/fetchDSRHistory');
+    }
+  }
 
   get lendingAddresses(): Account[] {
     let addresses: Account[] = [];
@@ -181,8 +194,6 @@ export default class Lending extends Vue {
     );
   }
 
-  readonly decimals: number = 8;
-
   get totalDai(): BigNumber {
     return this.dsrBalances.reduce(
       (sum, { balance }) => sum.plus(balance),
@@ -190,11 +201,63 @@ export default class Lending extends Vue {
     );
   }
 
-  async mounted() {
-    await this.$store.dispatch('balances/fetchDSRBalances');
-    if (this.premium) {
-      await this.$store.dispatch('balances/fetchDSRHistory');
-    }
+  get totalGainAcrossFilteredAccounts(): BigNumber {
+    const filteredAccounts = this.filteredAccounts.map(
+      account => account.address
+    );
+
+    // Map over all of our dsrHistory, passing those that match the
+    // filterd accounts to a reduce to aggregate. If no accounts are
+    // filtered then pass all of them.
+    return Object.keys(this.dsrHistoryByAddress)
+      .map(account => {
+        if (filteredAccounts.length === 0) {
+          return this.dsrHistoryByAddress[account];
+        } else if (
+          filteredAccounts.length > 0 &&
+          filteredAccounts.indexOf(account) > -1
+        ) {
+          return this.dsrHistoryByAddress[account];
+        }
+      })
+      .reduce((sum, account) => {
+        if (account) {
+          return sum.plus(account.gainSoFar);
+        }
+        return Zero;
+      }, Zero);
+  }
+
+  get totalUsdGainAcrossFilteredAccounts(): BigNumber {
+    const filteredAccounts = this.filteredAccounts.map(
+      account => account.address
+    );
+
+    // Map over all of our dsrHistory, passing those that match the
+    // filterd accounts to a reduce to aggregate. If no accounts are
+    // filtered then pass all of them.
+    return Object.keys(this.dsrHistoryByAddress)
+      .map(account => {
+        if (filteredAccounts.length === 0) {
+          return this.dsrHistoryByAddress[account];
+        } else if (
+          filteredAccounts.length > 0 &&
+          filteredAccounts.indexOf(account) > -1
+        ) {
+          return this.dsrHistoryByAddress[account];
+        }
+      })
+      .reduce((sum, account) => {
+        if (account) {
+          return sum.plus(account.gainSoFarUsdValue);
+        }
+        return Zero;
+      }, Zero);
+  }
+
+  openLink(url: string) {
+    this.$interop.openUrl(url);
   }
 }
 </script>
+<style scoped lang="scss"></style>
