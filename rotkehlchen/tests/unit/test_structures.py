@@ -13,6 +13,8 @@ def test_balance_addition():
     result = Balance(amount=FVal('7'), usd_value=FVal('7.51'))
     assert result == a + b + c
     assert a + b + c == result
+    result += c
+    assert result == Balance(amount=FVal('10'), usd_value=FVal('10.72'))
 
     with pytest.raises(InputError):
         result = a + 5

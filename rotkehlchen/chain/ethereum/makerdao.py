@@ -9,6 +9,7 @@ from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
 from rotkehlchen.constants import ZERO
@@ -240,7 +241,7 @@ class DSRMovement:
 
 
 class DSRCurrentBalances(NamedTuple):
-    balances: Dict[ChecksumEthAddress, FVal]
+    balances: Dict[ChecksumEthAddress, Balance]
     # The percentage of the current DSR. e.g. 8% would be 8.00
     current_dsr: FVal
 
@@ -860,6 +861,10 @@ class MakerDAO(EthereumModule):
         with self.lock:
             proxy_mappings = self._get_accounts_having_maker_proxy()
             balances = {}
+            try:
+                current_dai_price = Inquirer().find_usd_price(A_DAI)
+            except RemoteError:
+                current_dai_price = Price(FVal(1))
             for account, proxy in proxy_mappings.items():
                 guy_slice = self.ethereum.call_contract(
                     contract_address=MAKERDAO_POT.address,
@@ -875,9 +880,11 @@ class MakerDAO(EthereumModule):
                     abi=MAKERDAO_POT.abi,
                     method_name='chi',
                 )
-                balance = _dsrdai_to_dai(guy_slice * chi)
-
-                balances[account] = balance
+                dai_balance = _dsrdai_to_dai(guy_slice * chi)
+                balances[account] = Balance(
+                    amount=dai_balance,
+                    usd_value=current_dai_price * dai_balance,
+                )
 
             current_dsr = self.ethereum.call_contract(
                 contract_address=MAKERDAO_POT.address,
