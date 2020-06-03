@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Union
 
 from hexbytes import HexBytes
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.ethereum.makerdao import (
@@ -56,7 +57,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, (Trade, MakerDAOVault, DSRAccountReport)):
+    elif isinstance(entry, (Trade, MakerDAOVault, DSRAccountReport, Balance)):
         return process_result(entry.serialize())
     elif isinstance(entry, (
             DBSettings,
