@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Un
 import requests
 from web3.exceptions import BadFunctionCallOutput
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.makerdao import MakerDAO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_REP
@@ -48,18 +49,6 @@ class AccountAction(Enum):
     QUERY = 1
     APPEND = 2
     REMOVE = 3
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class Balance:
-    amount: FVal = ZERO
-    usd_value: FVal = ZERO
-
-    def serialize(self) -> Dict[str, str]:
-        return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
-
-    def to_dict(self) -> Dict[str, FVal]:
-        return {'amount': self.amount, 'usd_value': self.usd_value}
 
 
 Totals = Dict[Asset, Balance]
@@ -868,37 +857,18 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # If we have anything in DSR also count it towards total blockchain balances
         eth_balances = self.balances.eth
         if self.makerdao:
-            additional_total_dai = FVal(0)
-            try:
-                usd_price = Inquirer().find_usd_price(A_DAI)
-            except RemoteError:
-                # Let's try to continue with a usd/dai price of 1 if error
-                usd_price = Price(FVal('1'))
+            additional_total = Balance()
             current_dsr_report = self.makerdao.get_current_dsr()
-            for dsr_account, dai_value in current_dsr_report.balances.items():
+            for dsr_account, balance_entry in current_dsr_report.balances.items():
 
-                if dai_value == ZERO:
+                if balance_entry.amount == ZERO:
                     continue
+                eth_balances[dsr_account].asset_balances[A_DAI] += balance_entry
+                eth_balances[dsr_account].increase_total_usd_value(balance_entry.usd_value)
+                additional_total += balance_entry
 
-                usd_value = dai_value * usd_price
-                old_balance = eth_balances[dsr_account].asset_balances.get(
-                    A_DAI,
-                    Balance(amount=ZERO, usd_value=ZERO),
-                )
-                eth_balances[dsr_account].asset_balances[A_DAI] = Balance(
-                    amount=old_balance.amount + dai_value,
-                    usd_value=old_balance.usd_value + usd_value,
-                )
-                eth_balances[dsr_account].increase_total_usd_value(usd_value)
-                additional_total_dai += dai_value
-
-            old_total = self.totals.get(A_DAI, Balance(amount=ZERO, usd_value=ZERO))
-            new_total_amount = old_total.amount + additional_total_dai
-            if new_total_amount != ZERO:
-                self.totals[A_DAI] = Balance(
-                    amount=new_total_amount,
-                    usd_value=new_total_amount * usd_price,
-                )
+            if additional_total.amount != ZERO:
+                self.totals[A_DAI] += additional_total
 
     def query_ethereum_balances(self) -> None:
         """Queries the ethereum balances and populates the state

@@ -392,13 +392,16 @@ def assert_dsr_current_result_is_correct(result: Dict[str, Any], setup: DSRTestS
         if key == 'balances':
             assert len(val) == len(result['balances'])
             for account, balance_val in setup.dsr_balance_response['balances'].items():
-                assert FVal(balance_val) == FVal(result['balances'][account])
+                assert FVal(balance_val) == FVal(result['balances'][account]['amount'])
+                assert FVal(balance_val) == FVal(result['balances'][account]['usd_value'])
         else:
             assert FVal(val) == FVal(result[key])
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
 def test_query_current_dsr_balance(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -426,6 +429,8 @@ def test_query_current_dsr_balance(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
 def test_query_current_dsr_balance_async(
         rotkehlchen_api_server,
         ethereum_accounts,
