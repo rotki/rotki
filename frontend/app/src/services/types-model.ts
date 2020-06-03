@@ -8,7 +8,12 @@ import {
 
 export interface DSRBalances {
   readonly currentDSR: BigNumber;
-  readonly balances: { [account: string]: BigNumber };
+  readonly balances: {
+    [account: string]: {
+      amount: BigNumber;
+      usdValue: BigNumber;
+    };
+  };
 }
 
 export interface DSRHistory {

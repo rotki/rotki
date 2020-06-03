@@ -7,14 +7,18 @@
   <v-container v-else>
     <v-row>
       <v-col cols="12">
-        <stat-card-wide cols="two">
+        <stat-card-wide cols="three">
           <template #first-col>
             <dl>
               <dt class="title font-weight-regular">
                 Currently Deposited
               </dt>
               <dd class="primary--text headline font-weight-bold">
-                <amount-display :value="totalDai" asset="DAI"></amount-display>
+                <amount-display
+                  :value="totalDepositedUsd"
+                  fiat-currency="USD"
+                  show-currency="symbol"
+                ></amount-display>
               </dd>
             </dl>
           </template>
@@ -194,9 +198,16 @@ export default class Lending extends Vue {
     );
   }
 
-  get totalDai(): BigNumber {
+  get totalDeposited(): BigNumber {
     return this.dsrBalances.reduce(
-      (sum, { balance }) => sum.plus(balance),
+      (sum, { balance }) => sum.plus(balance.amount),
+      Zero
+    );
+  }
+
+  get totalDepositedUsd(): BigNumber {
+    return this.dsrBalances.reduce(
+      (sum, { balance }) => sum.plus(balance.usdValue),
       Zero
     );
   }

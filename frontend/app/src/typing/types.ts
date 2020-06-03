@@ -150,7 +150,10 @@ export interface Account {
 
 export interface DSRBalance {
   readonly address: string;
-  readonly balance: BigNumber;
+  readonly balance: {
+    readonly amount: BigNumber;
+    readonly usdValue: BigNumber;
+  };
 }
 
 export interface AccountDSRMovement {

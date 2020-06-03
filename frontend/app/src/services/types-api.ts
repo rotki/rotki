@@ -7,7 +7,12 @@ import {
 
 export interface ApiDSRBalances {
   readonly current_dsr: string;
-  readonly balances: { [account: string]: string };
+  readonly balances: {
+    readonly [account: string]: {
+      amount: string;
+      usd_value: string;
+    };
+  };
 }
 
 export interface ApiDSRMovement {
