@@ -24,9 +24,12 @@ export function convertDSRBalances({
   balances,
   current_dsr
 }: ApiDSRBalances): DSRBalances {
-  const data: { [account: string]: BigNumber } = {};
+  const data: {
+    [account: string]: { amount: BigNumber; usdValue: BigNumber };
+  } = {};
   for (const account of Object.keys(balances)) {
-    data[account] = bigNumberify(balances[account]);
+    data[account].amount = bigNumberify(balances[account].amount);
+    data[account].usdValue = bigNumberify(balances[account].usd_value);
   }
   return {
     currentDSR: bigNumberify(current_dsr),
