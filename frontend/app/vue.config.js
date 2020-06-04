@@ -1,6 +1,13 @@
 // vue.config.js
 module.exports = {
   productionSourceMap: false,
+  css: {
+    loaderOptions: {
+      scss: {
+        prependData: `@import "~@/main.scss";`
+      }
+    }
+  },
   configureWebpack: config => {
     if (
       process.env.NODE_ENV === 'development' ||

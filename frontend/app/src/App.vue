@@ -37,7 +37,7 @@
         <user-dropdown></user-dropdown>
         <currency-drop-down></currency-drop-down>
       </v-app-bar>
-      <v-content v-if="logged">
+      <v-content v-if="logged" class="fill-height">
         <router-view></router-view>
       </v-content>
     </div>
@@ -174,7 +174,18 @@ export default class App extends Vue {
   margin-bottom: 20px;
 }
 
-::v-deep .v-content__wrap {
-  border-top: #bcbcbc solid thin;
+::v-deep .v-content {
+  overflow-y: scroll;
+  margin-top: 64px;
+  padding-top: 0px !important;
+  height: calc(100vh - 64px);
+}
+
+::v-deep .v-app-bar::after {
+  height: 1px;
+  display: block;
+  width: 100%;
+  content: '';
+  border-bottom: #bcbcbc solid thin;
 }
 </style>
