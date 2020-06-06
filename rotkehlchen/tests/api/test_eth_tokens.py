@@ -151,7 +151,7 @@ def check_modifying_eth_tokens_error_responses(
     ), json={})
     assert_error_response(
         response=response,
-        contained_in_msg="eth_tokens': ['Missing data for required field",
+        contained_in_msg='eth_tokens": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # See that providing invalid type for eth_tokens is an error
@@ -161,7 +161,7 @@ def check_modifying_eth_tokens_error_responses(
     ), json={'eth_tokens': {}})
     assert_error_response(
         response=response,
-        contained_in_msg="'eth_tokens': ['Not a valid list.'",
+        contained_in_msg='"eth_tokens": ["Not a valid list."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # See that providing invalid type for eth_tokens is an error
@@ -171,7 +171,7 @@ def check_modifying_eth_tokens_error_responses(
     ), json={'eth_tokens': {}})
     assert_error_response(
         response=response,
-        contained_in_msg="'eth_tokens': ['Not a valid list.'",
+        contained_in_msg='"eth_tokens": ["Not a valid list."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # See that providing invalid type for a single eth token is an error

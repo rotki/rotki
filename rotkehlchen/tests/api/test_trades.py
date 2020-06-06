@@ -212,7 +212,7 @@ def assert_all_missing_fields_are_handled(correct_trade, server):
         )
         assert_error_response(
             response=response,
-            contained_in_msg=f"{field}': ['Missing data for required field",
+            contained_in_msg=f'"{field}": ["Missing data for required field',
             status_code=HTTPStatus.BAD_REQUEST,
         )
 

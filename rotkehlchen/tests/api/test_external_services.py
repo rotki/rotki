@@ -140,7 +140,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="services': ['Missing data for required field.",
+        contained_in_msg='services": ["Missing data for required field.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -152,7 +152,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'services': ['Not a valid list.'",
+        contained_in_msg='"services": ["Not a valid list."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -164,7 +164,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="services': {0: {'_schema': ['Invalid input type",
+        contained_in_msg='services": {"0": {"_schema": ["Invalid input type',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -176,7 +176,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'api_key': ['Missing data for required field.'",
+        contained_in_msg='"api_key": ["Missing data for required field."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -188,7 +188,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'name': ['Missing data for required field.'",
+        contained_in_msg='"name": ["Missing data for required field."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -200,7 +200,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'name': ['External service unknown is not known'",
+        contained_in_msg='"name": ["External service unknown is not known"',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -224,7 +224,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'api_key': ['Not a valid string.'",
+        contained_in_msg='"api_key": ["Not a valid string."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -237,7 +237,7 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="services': ['Missing data for required field.",
+        contained_in_msg='services": ["Missing data for required field.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -249,7 +249,7 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'services': ['Not a valid list.'",
+        contained_in_msg='"services": ["Not a valid list.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -261,7 +261,7 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'services': {0: ['External service name should be a string']",
+        contained_in_msg='"services": {"0": ["External service name should be a string"]',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

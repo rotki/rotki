@@ -795,7 +795,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     elif method == 'DELETE':
         message = 'Given value foo is not an ethereum address'
     else:
-        message = "'accounts': {0: {'_schema': ['Invalid input type.'"
+        message = '"accounts": {"0": {"_schema": ["Invalid input type.'
     assert_error_response(
         response=response,
         contained_in_msg=message,
@@ -1167,7 +1167,7 @@ def test_edit_blockchain_account_errors(
     ), json=request_data)
     assert_error_response(
         response=response,
-        contained_in_msg="accounts': ['Missing data for required field",
+        contained_in_msg='"accounts": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -1196,7 +1196,7 @@ def test_edit_blockchain_account_errors(
     ), json=request_data)
     assert_error_response(
         response=response,
-        contained_in_msg="address': ['Missing data for required field",
+        contained_in_msg='address": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -1213,7 +1213,7 @@ def test_edit_blockchain_account_errors(
     ), json=request_data)
     assert_error_response(
         response=response,
-        contained_in_msg="address': ['Not a valid string",
+        contained_in_msg='address": ["Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -1247,7 +1247,7 @@ def test_edit_blockchain_account_errors(
     ), json=request_data)
     assert_error_response(
         response=response,
-        contained_in_msg="label': ['Not a valid string",
+        contained_in_msg='label": ["Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -1264,7 +1264,7 @@ def test_edit_blockchain_account_errors(
     ), json=request_data)
     assert_error_response(
         response=response,
-        contained_in_msg="tags': ['Not a valid list",
+        contained_in_msg='tags": ["Not a valid list',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -1281,7 +1281,7 @@ def test_edit_blockchain_account_errors(
     ), json=request_data)
     assert_error_response(
         response=response,
-        contained_in_msg="tags': {0: ['Not a valid string",
+        contained_in_msg='tags": {"0": ["Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

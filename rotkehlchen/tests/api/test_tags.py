@@ -161,7 +161,7 @@ def test_add_edit_tag_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="name': ['Missing data for required field",
+        contained_in_msg='name": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -181,7 +181,7 @@ def test_add_edit_tag_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="name': ['Not a valid string",
+        contained_in_msg='name": ["Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Invalid type for description
@@ -200,7 +200,7 @@ def test_add_edit_tag_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="description': ['Not a valid string",
+        contained_in_msg='description": ["Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -225,7 +225,7 @@ def test_add_edit_tag_errors(
             )
             assert_error_response(
                 response=response,
-                contained_in_msg=f"{field}': ['Missing data for required field",
+                contained_in_msg=f'"{field}": ["Missing data for required field',
                 status_code=HTTPStatus.BAD_REQUEST,
             )
         # Invalid color type
@@ -240,7 +240,7 @@ def test_add_edit_tag_errors(
         )
         assert_error_response(
             response=response,
-            contained_in_msg=f"{field}': ['Failed to deserialize color code from int",
+            contained_in_msg=f'"{field}": ["Failed to deserialize color code from int',
             status_code=HTTPStatus.BAD_REQUEST,
         )
         # Wrong kind of string
@@ -256,8 +256,8 @@ def test_add_edit_tag_errors(
         assert_error_response(
             response=response,
             contained_in_msg=(
-                f"{field}': ['The given color code value \"went\" could "
-                f"not be processed as a hex color value"
+                f'"{field}": ["The given color code value \\"went\\" could '
+                f'not be processed as a hex color value'
             ),
             status_code=HTTPStatus.BAD_REQUEST,
         )
@@ -274,8 +274,8 @@ def test_add_edit_tag_errors(
         assert_error_response(
             response=response,
             contained_in_msg=(
-                f"{field}': ['The given color code value \"ffef01ff\" is out "
-                f"of range for a normal color field"
+                f'"{field}": ["The given color code value \\"ffef01ff\\" is out '
+                f'of range for a normal color field'
             ),
             status_code=HTTPStatus.BAD_REQUEST,
         )
@@ -292,8 +292,8 @@ def test_add_edit_tag_errors(
         assert_error_response(
             response=response,
             contained_in_msg=(
-                f"{field}': ['The given color code value \"ff\" does not "
-                f"have 6 hexadecimal digits"
+                f'"{field}": ["The given color code value \\"ff\\" does not '
+                f'have 6 hexadecimal digits'
             ),
             status_code=HTTPStatus.BAD_REQUEST,
         )
@@ -572,7 +572,7 @@ def test_delete_tag_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="name': ['Missing data for required field",
+        contained_in_msg='name": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Invalid type for name
@@ -585,7 +585,7 @@ def test_delete_tag_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="name': ['Not a valid string",
+        contained_in_msg='name": ["Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
