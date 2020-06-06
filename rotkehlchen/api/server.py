@@ -52,6 +52,7 @@ from rotkehlchen.api.v1.resources import (
     UsersByNameResource,
     UsersResource,
     VersionResource,
+    WatchersResource,
     create_blueprint,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -66,6 +67,7 @@ URLS = List[
 
 URLS_V1: URLS = [
     ('/users', UsersResource),
+    ('/watchers', WatchersResource),
     ('/users/<string:name>', UsersByNameResource),
     ('/users/<string:name>/password', UserPasswordChangeResource),
     ('/users/<string:name>/premium', UserPremiumKeyResource),

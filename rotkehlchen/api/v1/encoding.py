@@ -925,3 +925,42 @@ class FiatExchangeRatesSchema(Schema):
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(missing=False)
+
+
+class WatcherSchema(Schema):
+    type = fields.String(required=True)
+    args = fields.Dict(required=True)
+
+
+class WatchersAddSchema(Schema):
+    """The schema for adding a watcher.
+
+    No validation here since it happens server side and no need to duplicate code
+    TODO: When we have common libraries perhaps do validation here too to
+    avoid potential server roundtrip for nothing
+    """
+    watchers = fields.List(fields.Nested(WatcherSchema), required=True)
+
+
+class WatcherForEditingSchema(WatcherSchema):
+    identifier = fields.String(required=True)
+
+
+class WatchersEditSchema(WatchersAddSchema):
+    """The schema for editing a watcher.
+
+    No validation here since it happens server side and no need to duplicate code
+    TODO: When we have common libraries perhaps do validation here too to
+    avoid potential server roundtrip for nothing
+    """
+    watchers = fields.List(fields.Nested(WatcherForEditingSchema), required=True)
+
+
+class WatchersDeleteSchema(Schema):
+    """The schema for deleting watchers.
+
+    No validation here since it happens server side and no need to duplicate code
+    TODO: When we have common libraries perhaps do validation here too to
+    avoid potential server roundtrip for nothing
+    """
+    watchers = fields.List(fields.String(required=True), required=True)

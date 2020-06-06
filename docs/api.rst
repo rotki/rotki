@@ -3419,6 +3419,7 @@ Getting watchers
    :statuscode 200: Watchers succesfully queried
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Could not connect to or got unexpected response format from Rotki server
 
 
    .. _watcher_types_section:
@@ -3488,6 +3489,7 @@ Adding new watcher
    :statuscode 400: Provided JSON or data is in some way malformed. Or the same watcher already exists for this user in the DB.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Could not connect to or got unexpected response format from Rotki server
 
 Editing watchers
 ==================
@@ -3545,6 +3547,7 @@ Editing watchers
    :statuscode 400: Provided JSON or data is in some way malformed. Or a given identifier does not exist in the DB.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Could not connect to or got unexpected response format from Rotki server
 
 Deleting watchers
 ==================
@@ -3590,6 +3593,7 @@ Deleting watchers
    :statuscode 400: Provided JSON or data is in some way malformed. One of the identifiers  to remove did not exist.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Could not connect to or got unexpected response format from Rotki server
 		    
 Dealing with ignored assets
 ===========================

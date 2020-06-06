@@ -20,6 +20,10 @@ class PremiumAuthenticationError(Exception):
     pass
 
 
+class PremiumApiError(Exception):
+    pass
+
+
 class IncorrectApiKeyFormat(Exception):
     pass
 
