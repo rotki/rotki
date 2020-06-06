@@ -1,3 +1,4 @@
+import json
 import logging
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -159,7 +160,15 @@ def handle_request_parsing_error(
 ) -> None:
     """ This handles request parsing errors generated for example by schema
     field validation failing."""
-    abort(HTTPStatus.BAD_REQUEST, result=None, message=str(err))
+    msg = str(err)
+    if isinstance(err.messages, dict):
+        # first key is just the location. Ignore
+        key = list(err.messages.keys())[0]
+        msg = json.dumps(err.messages[key])
+    elif isinstance(err.messages, list):
+        msg = ','.join(err.messages)
+
+    abort(HTTPStatus.BAD_REQUEST, result=None, message=msg)
 
 
 class APIServer():
