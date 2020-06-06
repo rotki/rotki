@@ -3374,6 +3374,223 @@ Deleting manually tracked balances
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Cryptocompare. Check message for details.
 
+Getting watchers
+=====================================
+.. http:get:: /api/(version)/watchers
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a GET on the watchers endpoint, will return the currently installed watchers from the rotki server.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/watchers HTTP/1.1
+      Host: localhost:5042
+
+   .. _watchers_schema_section:
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+            "identifier": "6h3m7vRrLLOipwNmzhAVdo6FaGlr0XKGYLyjHqWa2KQ=",
+            "type": "makervault_collateralization_ratio",
+            "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
+            }, {
+             "identifier: "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
+             "type": "makervault_collateralization_ratio",
+             "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
+            }],
+          "message": ""
+      }
+
+   :resjson object result: An list containing all the watcher results.
+   :reqjsonarr string identifier: The identifier with which to identify this vault. It's unique per user and vault args + watcher combination. The client needs to keep this identifier. If the entry is edited, the identifier changes.
+   :reqjsonarr string type: The type of the watcher. Valid types are: "makervault_collateralization_ratio".
+   :reqjsonarr object args: An object containing the args for the vault. Depending on the vault type different args are possible. Check `here <watcher_types_section_>`__ to see the different options.
+   :statuscode 200: Watchers succesfully queried
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 500: Internal Rotki error
+
+
+   .. _watcher_types_section:
+
+   For makervault ratio the possible arguments are:
+    - vault_id: The id of the vault to watcher
+    - ratio: The target ratio to watch for
+    - op: The comparison operator:
+        * lt: less than the given ratio
+        * le: less than or equal to the given ratio
+        * gt: greater than the the given ratio
+        * ge: greater than or equal to the given ratio
+
+Adding new watcher
+====================
+
+.. http:put:: /api/(version)/watchers/
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a PUT on the the watchers endpoint you can install new watchers for watching to the server.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/watcher/ HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "watchers": [{
+            "type": "makervault_collateralization_ratio",
+            "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
+            }, {
+             "type": "makervault_collateralization_ratio",
+             "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
+            }],
+      }
+
+   :reqjson list[object] watchers: A list of watchers to add as defined in the `above section <watchers_shema_section_>`__ but without an identifier. The identifier is created server-side and returned in the response.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+            "identifier": "6h3m7vRrLLOipwNmzhAVdo6FaGlr0XKGYLyjHqWa2KQ=",
+            "type": "makervault_collateralization_ratio",
+            "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
+            }, {
+             "identifier: "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
+             "type": "makervault_collateralization_ratio",
+             "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
+            }],
+          "message": ""
+      }
+
+   :resjson object result: An object containing all the watchers, including the ones that were added. The watchers follow the schema defined `above <watchers_schema_section_>`__.
+   :statuscode 200: Watchers succesfully added
+   :statuscode 400: Provided JSON or data is in some way malformed. Or the same watcher already exists for this user in the DB.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 500: Internal Rotki error
+
+Editing watchers
+==================
+
+.. http:patch:: /api/(version)/watchers
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a PATCH on the the watchers endpoint allows you to edit a number of watchers by identifier. If one of the identifier is not found, the whole method fails.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/watchers/ HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "watchers": [{
+            "identifier": "6h3m7vRrLLOipwNmzhAVdo6FaGlr0XKGYLyjHqWa2KQ=",
+            "type": "makervault_collateralization_ratio",
+            "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
+            }, {
+             "identifier: "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
+             "type": "makervault_collateralization_ratio",
+             "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
+            }]
+      }
+
+   :reqjson list[object] watchers: A list of watcher to edit. As defined `here <watchers_shema_section_>`__.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+            "identifier": "6h3m7vRrLLOipwNmzhAVdo6FaGlr0XKGYLyjHqWa2KQ=",
+            "type": "makervault_collateralization_ratio",
+            "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
+            }, {
+             "identifier: "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
+             "type": "makervault_collateralization_ratio",
+             "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
+            }],
+          "message": ""
+      }
+
+   :resjson object result: An object containing all the watchers as defined `here <watchers_schema_section_>`__
+   :statuscode 200: Watchers succesfully edited
+   :statuscode 400: Provided JSON or data is in some way malformed. Or a given identifier does not exist in the DB.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 500: Internal Rotki error
+
+Deleting watchers
+==================
+
+.. http:delete:: /api/(version)/watchers/
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a DELETE on the the watchers endpoint with a list of identifiers will delete either all or none of them.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/watchers HTTP/1.1
+      Host: localhost:5042
+
+      {"watchers": ["6h3m7vRrLLOipwNmzhAVdo6FaGlr0XKGYLyjHqWa2KQ", "92Jm7vRrLLOipwNXzhAVdo6XaGAr0XKGYLyjHqWa2KA"]}
+
+
+   :reqjson list[string] watchers: A list of identifier of watchers to delete
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+            "identifier": "6h3m7vRrLLOipwNmzhAVdo6FaGlr0XKGYLyjHqWa2KQ=",
+            "type": "makervault_collateralization_ratio",
+            "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
+	   }],
+          "message": ""
+      }
+
+   :resjson object result: An object containing all the watchers after deletion. The watchers follow the schema defined `above <watchers_schema_section_>`__.
+   :statuscode 200: Watchers succesfully delete
+   :statuscode 400: Provided JSON or data is in some way malformed. One of the identifiers  to remove did not exist.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 500: Internal Rotki error
+		    
 Dealing with ignored assets
 ===========================
 
