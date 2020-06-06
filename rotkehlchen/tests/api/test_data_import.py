@@ -43,7 +43,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="filepath': ['Missing data for required field",
+        contained_in_msg='filepath": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -57,7 +57,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="source': ['Missing data for required field",
+        contained_in_msg='source": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -71,7 +71,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="source': ['Not a valid string.'",
+        contained_in_msg='source": ["Not a valid string."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -85,7 +85,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="source': ['Must be one of: cointracking.info",
+        contained_in_msg='source": ["Must be one of: cointracking.info',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

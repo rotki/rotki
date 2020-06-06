@@ -287,7 +287,7 @@ def test_add_edit_manually_tracked_balances_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="balances': ['Missing data for required field",
+        contained_in_msg='balances": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -301,7 +301,7 @@ def test_add_edit_manually_tracked_balances_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="balances': ['Not a valid list",
+        contained_in_msg='balances": ["Not a valid list',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -381,7 +381,7 @@ def test_add_edit_manually_tracked_balances_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="label': ['Not a valid string",
+        contained_in_msg='label": ["Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -474,7 +474,7 @@ def test_add_edit_manually_tracked_balances_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="tags': ['Not a valid list",
+        contained_in_msg='tags": ["Not a valid list',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # wrong type in list of tags
@@ -489,7 +489,7 @@ def test_add_edit_manually_tracked_balances_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'tags': {1: ['Not a valid string.'",
+        contained_in_msg='"tags": {"1": ["Not a valid string."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -597,7 +597,7 @@ def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="labels': ['Missing data for required field",
+        contained_in_msg='labels": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -610,7 +610,7 @@ def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="labels': ['Not a valid list",
+        contained_in_msg='"labels": ["Not a valid list',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -623,7 +623,7 @@ def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'labels': {1: ['Not a valid string.'",
+        contained_in_msg='"labels": {"1": ["Not a valid string."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

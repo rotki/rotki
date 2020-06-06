@@ -296,7 +296,7 @@ def test_query_history_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="async_query': ['Not a valid boolean",
+        contained_in_msg='async_query": ["Not a valid boolean',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -536,7 +536,7 @@ def test_history_export_csv_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg="'directory_path': ['Given path /idont/exist/for/sure/ does not exist",
+        contained_in_msg='"directory_path": ["Given path /idont/exist/for/sure/ does not exist',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

@@ -208,7 +208,7 @@ def test_set_unknown_settings(rotkehlchen_api_server):
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg="{'invalid_setting': ['Unknown field.'",
+        contained_in_msg='{"invalid_setting": ["Unknown field."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
