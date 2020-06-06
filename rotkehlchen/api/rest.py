@@ -29,6 +29,7 @@ from rotkehlchen.errors import (
     EthSyncError,
     IncorrectApiKeyFormat,
     InputError,
+    PremiumApiError,
     PremiumAuthenticationError,
     RemoteError,
     RotkehlchenPermissionError,
@@ -1419,3 +1420,37 @@ class RestAPI():
     @require_premium_user(active_check=False)
     def get_makerdao_vault_details(self, async_query: bool) -> Response:
         return self._api_query_for_makerdao(async_query, method='get_vault_details')
+
+    def _watcher_query(
+            self,
+            method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
+            data: Optional[Dict[str, Any]],
+    ) -> Response:
+        try:
+            # we know that premium exists here due to require_premium_user
+            result_json = self.rotkehlchen.premium.watcher_query(  # type:ignore
+                method=method,
+                data=data,
+            )
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
+        except PremiumApiError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        return api_response(_wrap_in_ok_result(result_json), status_code=HTTPStatus.OK)
+
+    @require_premium_user(active_check=False)
+    def get_watchers(self) -> Response:
+        return self._watcher_query(method='GET', data=None)
+
+    @require_premium_user(active_check=False)
+    def add_watchers(self, watchers: List[Dict[str, Any]]) -> Response:
+        return self._watcher_query(method='PUT', data={'watchers': watchers})
+
+    @require_premium_user(active_check=False)
+    def edit_watchers(self, watchers: List[Dict[str, Any]]) -> Response:
+        return self._watcher_query(method='PATCH', data={'watchers': watchers})
+
+    @require_premium_user(active_check=False)
+    def delete_watchers(self, watchers: List[str]) -> Response:
+        return self._watcher_query(method='DELETE', data={'watchers': watchers})

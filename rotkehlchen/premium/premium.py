@@ -7,14 +7,19 @@ from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
 from enum import Enum
 from http import HTTPStatus
-from typing import Any, Dict, NamedTuple, Tuple
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
 from typing_extensions import Literal
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.errors import IncorrectApiKeyFormat, PremiumAuthenticationError, RemoteError
+from rotkehlchen.errors import (
+    IncorrectApiKeyFormat,
+    PremiumApiError,
+    PremiumAuthenticationError,
+    RemoteError,
+)
 from rotkehlchen.typing import B64EncodedBytes, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
@@ -45,7 +50,7 @@ def _process_dict_response(response: requests.Response) -> Dict:
     if response.status_code not in HANDLABLE_STATUS_CODES:
         raise RemoteError(
             f'Unexpected status response({response.status_code}) from '
-            'rotkehlchen server',
+            'rotki server',
         )
 
     result_dict = rlk_jsonloads_dict(response.text)
@@ -86,6 +91,36 @@ class PremiumCredentials():
         if not isinstance(other, PremiumCredentials):
             return NotImplemented
         return self.api_key == other.api_key and self.api_secret == other.api_secret
+
+
+def _decode_response_json(response: requests.Response) -> Any:
+    """Decodes a python requests response to json and returns it.
+
+    May raise:
+    - RemoteError if the response does not contain valid json
+    """
+    try:
+        json_response = response.json()
+    except ValueError:
+        raise RemoteError(
+            f'Could not decode json from {response.text} to {response.request.method} '
+            f'query {response.url}',
+        )
+
+    return json_response
+
+
+def _decode_premium_json(response: requests.Response) -> Any:
+    """Decodes a python requests response to the premium server to json and returns it.
+
+    May raise:
+    - RemoteError if the response does not contain valid json
+    - PremiumApiError if there is an error in the returned json
+    """
+    json_data = _decode_response_json(response)
+    if 'error' in json_data:
+        raise PremiumApiError(json_data['error'])
+    return json_data
 
 
 class Premium():
@@ -140,8 +175,10 @@ class Premium():
         urlpath = '/api/' + self.apiversion + '/' + method
 
         req = kwargs
-        req['nonce'] = int(1000 * time.time())
-        # print('HASH OF BLOB: {}'.format(hashlib.sha256(req['data_blob']).digest()))
+        if method != 'watchers':
+            # the watchers endpoint accepts json and not url query data
+            # and since that endpoint we don't send nonces
+            req['nonce'] = int(1000 * time.time())
         post_data = urlencode(req)
         hashable = post_data.encode()
         message = urlpath.encode() + hashlib.sha256(hashable).digest()
@@ -184,7 +221,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotkehlchen server')
+            raise RemoteError('Could not connect to rotki server')
 
         return _process_dict_response(response)
 
@@ -206,7 +243,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotkehlchen server')
+            raise RemoteError('Could not connect to rotki server')
 
         return _process_dict_response(response)
 
@@ -229,7 +266,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotkehlchen server')
+            raise RemoteError('Could not connect to rotki server')
 
         result = _process_dict_response(response)
         metadata = RemoteMetadata(
@@ -258,10 +295,35 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotkehlchen server')
+            raise RemoteError('Could not connect to rotki server')
 
         result = _process_dict_response(response)
         return result['data']
+
+    def watcher_query(
+            self,
+            method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
+            data: Optional[Dict[str, Any]],
+    ) -> Any:
+        if data is None:
+            data = {}
+
+        signature, _ = self.sign('watchers', **data)
+        self.session.headers.update({
+            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
+        })
+
+        try:
+            response = self.session.request(
+                method=method,
+                url=self.uri + 'watchers',
+                json=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.ConnectionError:
+            raise RemoteError('Could not connect to rotki server')
+
+        return _decode_premium_json(response)
 
 
 def premium_create_and_verify(credentials: PremiumCredentials) -> Premium:

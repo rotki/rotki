@@ -48,6 +48,9 @@ from rotkehlchen.api.v1.encoding import (
     UserActionSchema,
     UserPasswordChangeSchema,
     UserPremiumKeyRemoveSchema,
+    WatchersAddSchema,
+    WatchersDeleteSchema,
+    WatchersEditSchema,
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -793,3 +796,25 @@ class MakerDAOVaultDetailsResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_makerdao_vault_details(async_query)
+
+
+class WatchersResource(BaseResource):
+
+    put_schema = WatchersAddSchema
+    patch_schema = WatchersEditSchema
+    delete_schema = WatchersDeleteSchema
+
+    def get(self) -> Response:
+        return self.rest_api.get_watchers()
+
+    @use_kwargs(put_schema, location='json')  # type: ignore
+    def put(self, watchers: List[Dict[str, Any]]) -> Response:
+        return self.rest_api.add_watchers(watchers)
+
+    @use_kwargs(patch_schema, location='json')  # type: ignore
+    def patch(self, watchers: List[Dict[str, Any]]) -> Response:
+        return self.rest_api.edit_watchers(watchers)
+
+    @use_kwargs(delete_schema, location='json')  # type: ignore
+    def delete(self, watchers: List[str]) -> Response:
+        return self.rest_api.delete_watchers(watchers)
