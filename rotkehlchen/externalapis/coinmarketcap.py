@@ -51,6 +51,8 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Missing from API, is in website https://coinmarketcap.com/currencies/coinomat/
     'CNMT',
     # Missing from API, is in website https://coinmarketcap.com/currencies/communitycoin/
+    # Missing from CMC, is in cryptocompare: https://www.cryptocompare.com/coins/cntm
+    'CNTM',
     'COMM',
     # Missing from API, is in website https://coinmarketcap.com/currencies/cryptcoin/
     'CRYPT',
