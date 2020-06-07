@@ -55,6 +55,7 @@ MANUALLY_CHECKED_TYPES = {
     'KUE': 'ethereum token',
     'LCT-2': 'ethereum token',
     'LGR': 'ethereum token',
+    'LOON': 'ethereum token',
     'MILC': 'ethereum token',
     'MNT': 'ethereum token',
     'MNTP': 'ethereum token',

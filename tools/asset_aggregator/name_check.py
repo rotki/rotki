@@ -35,6 +35,7 @@ MANUALLY_CHECKED_NAMES = {
     'JOY': 'JOYSO',
     'KUE': 'Kuende',
     'LGR': 'Logarithm',
+    'LOON': 'Loon Network',
     'MILC': 'Micro Licensing Coin',
     'MNT': 'Media Network Token',
     'MRP': 'Money Rebel',

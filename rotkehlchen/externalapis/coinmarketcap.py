@@ -108,6 +108,8 @@ KNOWN_TO_MISS_FROM_CMC = (
     'KEY-3',
     # Missing from API, is in https://coinmarketcap.com/currencies/leafcoin/
     'LEAF',
+    # Missing from CMC, is in cryptocompare: https://www.cryptocompare.com/coins/loon
+    'LOON',
     # Missing from API, is in https://coinmarketcap.com/currencies/ltbcoin/
     'LTBC',
     # Missing from API, is in https://coinmarketcap.com/currencies/litecoinx/
