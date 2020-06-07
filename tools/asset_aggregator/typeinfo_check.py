@@ -46,6 +46,7 @@ MANUALLY_CHECKED_TYPES = {
     'HKG': 'ethereum token',
     'ITM': 'ethereum token',
     'JOY': 'ethereum token',
+    'JST': 'tron token',
     'KUE': 'ethereum token',
     'LCT-2': 'ethereum token',
     'LGR': 'ethereum token',

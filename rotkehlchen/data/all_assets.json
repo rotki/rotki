@@ -4930,6 +4930,12 @@
         "symbol": "JPY",
         "type": "fiat"
     },
+    "JST": {
+        "name": "JUST",
+        "started": 1588862054,
+        "symbol": "JST",
+        "type": "tron token"
+    },
     "KAN": {
         "ethereum_address": "0x1410434b0346f5bE678d0FB554E5c7ab620f8f4a",
         "ethereum_token_decimals": 18,
