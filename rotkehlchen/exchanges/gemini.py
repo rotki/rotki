@@ -5,7 +5,7 @@ import logging
 from base64 import b64encode
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 import requests
@@ -14,7 +14,6 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -39,6 +38,10 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -79,7 +82,7 @@ class Gemini(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: DBHandler,
+            database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             base_uri: str = 'https://api.gemini.com',
     ):
