@@ -1374,6 +1374,14 @@
         "symbol": "BSVBEAR",
         "type": "ethereum token"
     },
+    "BSVBULL": {
+        "ethereum_address": "0x6e13A9e4AE3d0678E511Fb6d2ad531fcF0e247bf",
+        "ethereum_token_decimals": 18,
+        "name": "3x Long Bitcoin SV Token",
+        "started": 1566117890,
+        "symbol": "BSVBULL",
+        "type": "ethereum token"
+    },
     "BTC": {
         "name": "Bitcoin",
         "started": 1231006505,
