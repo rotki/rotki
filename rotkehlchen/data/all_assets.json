@@ -5403,6 +5403,14 @@
         "symbol": "LOOM",
         "type": "ethereum token"
     },
+    "LOON": {
+        "ethereum_address": "0x7C5d5100B339Fe7D995a893AF6CB496B9474373c",
+        "ethereum_token_decimals": 18,
+        "name": "Loon Network",
+        "started": 1578456235,
+        "symbol": "LOON",
+        "type": "ethereum token"
+    },
     "LPT": {
         "ethereum_address": "0x58b6A8A3302369DAEc383334672404Ee733aB239",
         "ethereum_token_decimals": 18,

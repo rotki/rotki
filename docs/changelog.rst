@@ -28,6 +28,7 @@ Changelog
   - `3x Short Bitcoin SV Token (BSVBEAR) <https://coinmarketcap.com/currencies/3x-short-bitcoin-sv-token/>`__
   - `3x Long Bitcoin SV Token (BSVBULL) <https://coinmarketcap.com/currencies/3x-long-bitcoin-sv-token/>`__
   - `Connectome (CNTM) <https://www.coingecko.com/en/coins/connectome>`__
+  - `Loon Network (LOON) <https://www.cryptocompare.com/coins/loon/overview>`__
 
 * :release:`1.4.2 <2020-04-29>`
 * :bug:`927` Rotki should no longer fail to handle HTTP Rate limiting if your web3 providing node rate limits you.
