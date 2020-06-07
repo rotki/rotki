@@ -852,6 +852,14 @@
         "symbol": "BCHBEAR",
         "type": "ethereum token"
     },
+    "BCHBULL": {
+        "ethereum_address": "0x4C133E081dFB5858e39ccA74E69bf603d409e57A",
+        "ethereum_token_decimals": 18,
+        "name": "3x Long Bitcoin Cash Token",
+        "started": 1566118953,
+        "symbol": "BCHBULL",
+        "type": "ethereum token"
+    },
     "BCN": {
         "name": "Bytecoin",
         "started": 1341360000,
