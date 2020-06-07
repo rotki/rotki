@@ -158,15 +158,23 @@ class EthereumManager():
     def set_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         """ Attempts to set the RPC endpoint for the ethereum client.
 
-        Returns a tuple (result, message)
-            - result: Boolean for success or failure of changing the rpc endpoint
-            - message: A message containing information on what happened. Can
-                       be populated both in case of success or failure"""
-        result, message = self.attempt_connect(endpoint)
-        if result:
-            log.info('Setting ETH RPC endpoint', endpoint=endpoint)
-            self.ethrpc_endpoint = endpoint
-        return result, message
+           Returns a tuple (result, message)
+               - result: Boolean for success or failure of changing the rpc endpoint
+               - message: A message containing information on what happened. Can
+                          be populated both in case of success or failure"""
+        if endpoint == '':
+            if self.web3:
+                del self.web3
+                self.web3 = None
+            self.connected = False
+            self.ethrpc_endpoint = ''
+            return True, ''
+        else:
+            result, message = self.attempt_connect(endpoint)
+            if result:
+                log.info('Setting ETH RPC endpoint', endpoint=endpoint)
+                self.ethrpc_endpoint = endpoint
+            return result, message
 
     def query_eth_highest_block(self) -> Optional[int]:
         """ Attempts to query an external service for the block height
