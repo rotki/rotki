@@ -355,6 +355,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # STPT. As of 06/06/2019 no data found outside of bittrex
     # https://twitter.com/BittrexIntl/status/1136045052164227079
     'STPT',
+    # PHNX. As of 07/06/2020 no data found outside of bittrex for PhoenixDAO
+    # https://www.coingecko.com/en/coins/phoenixdao
+    'PHNX',
     # PROM. As of 28/06/2019 no data found outside of bittrex for Prometheus
     # https://twitter.com/BittrexIntl/status/1144290718325858305
     'PROM',
