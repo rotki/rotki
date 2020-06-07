@@ -34,6 +34,7 @@ Changelog
   - `Handshake (HNS) <https://coinmarketcap.com/currencies/handshake/>`__
   - `DEAPcoin (DEP) <https://coinmarketcap.com/currencies/deapcoin/>`__
   - `VideoCoin (VID) <https://coinmarketcap.com/currencies/videocoin/>`__
+  - `Unicorn Technology International (UTI) <https://www.cryptocompare.com/coins/uti/overview>`__
 
 * :release:`1.4.2 <2020-04-29>`
 * :bug:`927` Rotki should no longer fail to handle HTTP Rate limiting if your web3 providing node rate limits you.

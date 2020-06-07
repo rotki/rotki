@@ -620,6 +620,7 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Urbit (https://www.cryptocompare.com/coins/urb/overview)
     # is not in coinmarketcap but is in cryptocompare
     'URB',
+    'UTI',
     # USDJ is missing from coinmarketcap but is in cryptocompare
     # https://www.cryptocompare.com/coins/usdj/overview
     'USDJ',

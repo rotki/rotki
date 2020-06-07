@@ -142,6 +142,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'TBT',
     'TROY',
     'URB',
+    'UTI',
     'USDJ',
     'VENUS',
     'WMK',
