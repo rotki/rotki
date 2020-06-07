@@ -2617,6 +2617,14 @@
         "symbol": "DENT",
         "type": "ethereum token"
     },
+    "DEP": {
+        "ethereum_address": "0x1A3496C18d558bd9C6C8f609E1B129f67AB08163",
+        "ethereum_token_decimals": 18,
+        "name": "DEAPcoin",
+        "started": 1566893360,
+        "symbol": "DEP",
+        "type": "ethereum token"
+    },
     "DEPO": {
         "ethereum_address": "0x89cbeAC5E8A13F0Ebb4C74fAdFC69bE81A501106",
         "ethereum_token_decimals": 18,
