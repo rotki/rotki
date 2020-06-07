@@ -50,6 +50,7 @@ MANUALLY_CHECKED_TYPES = {
     'HDAO': 'ethereum token',
     'HIVE': 'own chain',
     'HKG': 'ethereum token',
+    'HNS': 'own chain',
     'ITM': 'ethereum token',
     'JOY': 'ethereum token',
     'JST': 'tron token',
