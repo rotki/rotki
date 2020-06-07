@@ -405,6 +405,8 @@ UNSUPPORTED_BINANCE_ASSETS = (
     '123',  # https://twitter.com/rotkiapp/status/1161977327078838272
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
     'WRX',  # https://info.binance.com/en/currencies/WRX - not listed anywhere else
+    'BTCUP',  # https://www.binance.com/en/leveraged-tokens/tokens/allTokens
+    'BTCDOWN',  # https://www.binance.com/en/leveraged-tokens/tokens/allTokens
 )
 
 CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
