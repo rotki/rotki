@@ -9,6 +9,8 @@ MANUALLY_CHECKED_TYPES = {
     'BCHBULL': 'ethereum token',
     'BEAR': 'ethereum token',
     'BULL': 'ethereum token',
+    'BSVBEAR': 'ethereum token',
+    'BSVBULL': 'ethereum token',
     'BITCAR': 'ethereum token',
     'BNBBEAR': 'ethereum token',
     'BNBBULL': 'ethereum token',

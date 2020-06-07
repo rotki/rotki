@@ -25,6 +25,7 @@ Changelog
   - `JUST (JST) <https://coinmarketcap.com/currencies/just/>`__
   - `3x Short Bitcoin Cash Token (BCHBEAR) <https://coinmarketcap.com/currencies/3x-short-bitcoin-cash-token/>`__
   - `3x Long Bitcoin Cash Token (BCHBULL) <https://coinmarketcap.com/currencies/3x-long-bitcoin-cash-token/>`__
+  - `3x Short Bitcoin SV Token (BSVBEAR) <https://coinmarketcap.com/currencies/3x-short-bitcoin-sv-token/>`__
 
 * :release:`1.4.2 <2020-04-29>`
 * :bug:`927` Rotki should no longer fail to handle HTTP Rate limiting if your web3 providing node rate limits you.

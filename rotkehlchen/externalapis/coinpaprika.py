@@ -27,6 +27,8 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'BULL',  # The 3x BTC long
     'BNBBEAR',  # The 3x BNB short
     'BNBBULL',  # The 3x BNB long
+    'BSVBEAR',
+    'BSVBULL',
     'BKRW',  # https://www.cryptocompare.com/coins/bkrw/overview
     'CAIX',
     'CGA',
