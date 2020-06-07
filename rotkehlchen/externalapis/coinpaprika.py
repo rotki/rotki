@@ -57,6 +57,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'HBD',
     'HDAO',
     'HIVE',
+    'HNS',
     'HUGE',
     'HVC',
     'HZ',
