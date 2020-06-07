@@ -844,6 +844,14 @@
         "symbol": "BCH",
         "type": "own chain"
     },
+    "BCHBEAR": {
+        "ethereum_address": "0xa9fC65Da36064cE545e87690e06f5de10C52C690",
+        "ethereum_token_decimals": 18,
+        "name": "3x Short Bitcoin Cash Token",
+        "started": 1566117825,
+        "symbol": "BCHBEAR",
+        "type": "ethereum token"
+    },
     "BCN": {
         "name": "Bytecoin",
         "started": 1341360000,

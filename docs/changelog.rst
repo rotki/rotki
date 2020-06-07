@@ -23,6 +23,7 @@ Changelog
   - `HyperDAO (HDAO) <https://coinmarketcap.com/currencies/hyperdao/>`__
   - `VeChain Thor (VTHO) <https://www.cryptocompare.com/coins/vtho/overview>`__
   - `JUST (JST) <https://coinmarketcap.com/currencies/just/>`__
+  - `3x Short Bitcoin Cash Token (BCHBEAR) <https://coinmarketcap.com/currencies/3x-short-bitcoin-cash-token/>`__
 
 * :release:`1.4.2 <2020-04-29>`
 * :bug:`927` Rotki should no longer fail to handle HTTP Rate limiting if your web3 providing node rate limits you.

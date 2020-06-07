@@ -21,6 +21,8 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'AIR-2',
     'APH-2',
     'ARCH',
+    'BCHBEAR',
+    'BCHBULL',
     'BEAR',  # The 3x BTC short
     'BULL',  # The 3x BTC long
     'BNBBEAR',  # The 3x BNB short
