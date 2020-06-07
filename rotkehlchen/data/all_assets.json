@@ -9425,6 +9425,14 @@
         "symbol": "VIBE",
         "type": "ethereum token"
     },
+    "VID": {
+        "ethereum_address": "0x2C9023bBc572ff8dc1228c7858A280046Ea8C9E5",
+        "ethereum_token_decimals": 18,
+        "name": "VideoCoin",
+        "started": 1534139149,
+        "symbol": "VID",
+        "type": "ethereum token"
+    },
     "VIDT": {
         "ethereum_address": "0x445f51299Ef3307dBD75036dd896565F5B4BF7A5",
         "ethereum_token_decimals": 18,
