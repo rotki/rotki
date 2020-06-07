@@ -60,8 +60,15 @@
               @click="premium ? openWatcherDialog(vault) : ''"
             >
               <v-icon x-small left>fa fa-bell-o</v-icon>
-              <span style="text-transform: none;" class="caption">
-                Add a collateralization ratio watcher
+              <span
+                v-if="watchers.length > 0"
+                style="text-transform: none;"
+                class="caption"
+              >
+                Edit {{ watchers.length }} collateralization watcher(s)
+              </span>
+              <span v-else style="text-transform: none;" class="caption">
+                Add collateralization ratio watcher
               </span>
               <premium-lock v-if="!premium" size="x-small"></premium-lock>
             </v-btn>
@@ -237,9 +244,10 @@
     </v-col>
     <watcher-dialog
       :display="showWatcherDialog"
-      title="Add loan collateralization watcher"
+      title="Collateralization watchers"
       :message="watcherMessage"
       :watcher-content-id="watcherVaultId"
+      :existing-watchers="watchers"
       preselect-watcher-type="makervault_collateralization_ratio"
       watcher-value-label="Collateralization Ratio"
       @confirm="addWatcher()"
@@ -266,11 +274,13 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
-import { MakerDAOVault } from '@/services/types-model';
+import { WatcherArgs } from '@/services/types-api';
+import { MakerDAOVault, Watcher } from '@/services/types-model';
 import { MakerDAOVaultModel } from '@/store/balances/types';
 import { VaultEventsList } from '@/utils/premium';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
+const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
@@ -285,7 +295,8 @@ const { mapState, mapGetters } = createNamespacedHelpers('session');
   },
   computed: {
     ...mapState(['premium']),
-    ...mapGetters(['dateDisplayFormat'])
+    ...mapGetters(['dateDisplayFormat']),
+    ...mapBalanceGetters(['loanWatchers'])
   }
 })
 export default class LoanInfo extends Vue {
@@ -297,11 +308,31 @@ export default class LoanInfo extends Vue {
   showWatcherDialog: boolean = false;
   watcherMessage: string = '';
   watcherVaultId: number | null = null;
+  loanWatchers!: Watcher[];
+
+  get watchers(): Watcher[] {
+    if (this.vault) {
+      return this.loanWatchers.filter(watcher => {
+        const watcherArgs = watcher.args as WatcherArgs['makervault_collateralization_ratio'];
+
+        // if (watcherArgs.indexOf(this.vault_id) >-1)
+        if (watcherArgs.vault_id.indexOf(String(this.vault!.identifier)) > -1)
+          return watcher;
+      });
+      // this.loanWatchers
+      //   .map(watcher => {
+      //     const watcherArgs = watcher.args as WatcherArgs['makervault_collateralization_ratio'];
+      //     return watcherArgs.vault_id;
+      //   })
+      //   .indexOf(String(this.vault.identifier)) > -1;
+    }
+    return [];
+  }
 
   openWatcherDialog(vault: MakerDAOVault) {
     this.showWatcherDialog = true;
     this.watcherVaultId = vault.identifier;
-    this.watcherMessage = `Please fill in the details for the watcher you would like to add for Maker Vault #${vault.identifier} with current collateralization ratio ${vault.collateralizationRatio} and liquidation ratio ${vault.liquidationRatio}.`;
+    this.watcherMessage = `Add / Edit / Delete watchers for Maker Vault #${vault.identifier} with current collateralization ratio ${vault.collateralizationRatio} and liquidation ratio ${vault.liquidationRatio}.`;
   }
 
   openLink(url: string) {

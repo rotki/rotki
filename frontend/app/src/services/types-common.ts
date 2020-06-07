@@ -24,4 +24,6 @@ export type MakerDAOVaultEventType =
   | 'payback'
   | 'liquidation';
 
+export type WatcherType = 'makervault_collateralization_ratio';
+
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';

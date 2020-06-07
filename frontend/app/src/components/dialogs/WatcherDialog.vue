@@ -30,7 +30,55 @@
               </v-select>
             </v-col>
           </v-row>
+          <v-row v-for="(watcher, key) in loadedWatchers" :key="key">
+            <v-col cols="6">
+              <v-select
+                :value="loadedWatchers[key].args.op"
+                :items="watcherOperations[watcherType]"
+                :filled="!existingWatchersEdit[watcher.identifier]"
+                :readonly="!existingWatchersEdit[watcher.identifier]"
+                outlined
+                dense
+                label="Operation"
+                required
+                @input="loadedWatchers[key].args.op = $event"
+              >
+              </v-select>
+            </v-col>
+            <v-col cols="4">
+              <v-text-field
+                :value="loadedWatchers[key].args.ratio"
+                :label="watcherValueLabel"
+                :filled="!existingWatchersEdit[watcher.identifier]"
+                :readonly="!existingWatchersEdit[watcher.identifier]"
+                outlined
+                dense
+                suffix="%"
+                @input="loadedWatchers[key].args.ratio = $event"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="2" class="mt-1">
+              <v-btn small icon @click="editWatcher(loadedWatchers[key])">
+                <v-icon small>
+                  fa
+                  {{
+                    existingWatchersEdit[watcher.identifier]
+                      ? 'fa-check'
+                      : 'fa-pencil'
+                  }}
+                </v-icon>
+              </v-btn>
+              <v-btn small icon @click="deleteWatcher(watcher.identifier)">
+                <v-icon small>
+                  fa fa-trash
+                </v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
           <v-row>
+            <v-col cols="12">
+              <v-divider></v-divider>
+            </v-col>
             <v-col cols="6">
               <v-select
                 v-model="watcherOperation"
@@ -43,7 +91,7 @@
               >
               </v-select>
             </v-col>
-            <v-col cols="6">
+            <v-col cols="4">
               <v-text-field
                 v-model="watcherValue"
                 :label="watcherValueLabel"
@@ -52,6 +100,13 @@
                 suffix="%"
               ></v-text-field>
             </v-col>
+            <v-col cols="2">
+              <v-btn small icon class="mt-1" @click="addWatcher()">
+                <v-icon>
+                  fa fa-plus
+                </v-icon>
+              </v-btn>
+            </v-col>
           </v-row>
         </v-row>
       </v-card-text>
@@ -59,22 +114,12 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-          color="primary"
           depressed
-          outlined
-          text
-          class="watcher-dialog__buttons__cancel"
+          color="primary"
+          class="watcher-dialog__buttons__close"
           @click="cancel()"
         >
-          {{ secondaryAction }}
-        </v-btn>
-        <v-btn
-          depressed
-          color="primary"
-          class="watcher-dialog__buttons__confirm"
-          @click="confirm()"
-        >
-          {{ primaryAction }}
+          Close
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -83,8 +128,14 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import { Watcher, WatcherArgs } from '@/services/types-api';
+import { WatcherType } from '@/services/types-common';
+import { Message } from '@/store/store';
 
-@Component({})
+@Component({
+  components: { MessageDialog }
+})
 export default class WatcherDialog extends Vue {
   @Prop({ required: true })
   title!: string;
@@ -92,10 +143,6 @@ export default class WatcherDialog extends Vue {
   message!: string;
   @Prop({ type: Boolean, required: true })
   display!: boolean;
-  @Prop({ type: String, required: false, default: 'Add' })
-  primaryAction!: string;
-  @Prop({ type: String, required: false, default: 'Cancel' })
-  secondaryAction!: string;
 
   @Prop({ required: false, default: 'Watcher Value' })
   watcherValueLabel!: string;
@@ -103,13 +150,25 @@ export default class WatcherDialog extends Vue {
   watcherContentId!: string | number | null;
   @Prop({ required: false, default: '' })
   preselectWatcherType!: string;
+  @Prop({ required: false, type: Array, default: () => [] })
+  existingWatchers!: Watcher[];
 
   watcherType: string | null = null;
   watcherOperation: string | null = null;
   watcherValue: string | null = null;
 
+  loadedWatchers: Watcher[] = [];
+  existingWatchersEdit: {
+    [identifier: string]: boolean;
+  } = {};
+
   mounted() {
     this.watcherType = this.preselectWatcherType;
+    this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers)); // make a non-reactive copy
+
+    this.loadedWatchers.forEach(watcher => {
+      this.existingWatchersEdit[watcher.identifier] = false;
+    });
   }
 
   watcherTypes = [
@@ -129,30 +188,149 @@ export default class WatcherDialog extends Vue {
     ]
   };
 
-  confirm() {
-    window.alert('do api stuff');
-    const watcherPaylod = {
-      type: this.watcherType,
-      args: {
-        ratio: this.watcherValue,
-        op: this.watcherOperation,
-        vault_id: this.watcherContentId
-      }
+  changeEditMode(identifier: string) {
+    this.existingWatchersEdit = {
+      ...this.existingWatchersEdit,
+      [identifier]: !this.existingWatchersEdit[identifier]
     };
-    console.log('-----------------------'); // eslint-disable-line
-    console.log('watcher payload'); // eslint-disable-line
-    console.log(watcherPaylod); // eslint-disable-line
-    console.log('-----------------------'); // eslint-disable-line
-    this.$emit('confirm');
+  }
+
+  deleteWatcher(watcher: string) {
+    let watcherPayload: string[] = [];
+    watcherPayload.push(watcher);
+
+    const { commit } = this.$store;
+    this.$api
+      .deleteWatcher(watcherPayload)
+      .then(updatedWatchers => {
+        commit('balances/watchers', updatedWatchers);
+        commit('setMessage', {
+          title: 'Watcher Success',
+          description: 'Successfully deleted the watcher.',
+          success: true
+        } as Message);
+        this.watcherValue = null;
+        this.watcherOperation = null;
+        this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
+      })
+      .catch((reason: Error) => {
+        commit('setMessage', {
+          title: 'Watcher Error',
+          description: reason.message || 'Error deleting the watcher',
+          success: false
+        } as Message);
+      });
+  }
+
+  editWatcher(watcher: Watcher) {
+    if (this.existingWatchersEdit[watcher.identifier] === false) {
+      // If we're not in edit mode, just go into edit mode
+      this.changeEditMode(watcher.identifier);
+    } else {
+      // If we're in edit mode, check to see if the values have changed before
+      // sending an API call
+      const existingWatcherArgs = this.existingWatchers.find(
+        existingWatcher => existingWatcher.identifier === watcher.identifier
+      )!.args as WatcherArgs['makervault_collateralization_ratio'];
+      const modifiedWatcherArgs = watcher.args as WatcherArgs['makervault_collateralization_ratio'];
+
+      if (
+        existingWatcherArgs.op !== modifiedWatcherArgs.op ||
+        existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio
+      ) {
+        let watcherPayload: Watcher[] = [];
+        watcherPayload.push(watcher);
+
+        const { commit } = this.$store;
+        this.$api
+          .editWatcher(watcherPayload)
+          .then(updatedWatchers => {
+            commit('balances/watchers', updatedWatchers);
+            commit('setMessage', {
+              title: 'Watcher Success',
+              description: 'Successfully edited the watcher.',
+              success: true
+            } as Message);
+            this.changeEditMode(watcher.identifier);
+            this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
+          })
+          .catch((reason: Error) => {
+            commit('setMessage', {
+              title: 'Watcher Error',
+              description: reason.message || 'Error editing the watcher',
+              success: false
+            } as Message);
+          });
+      } else {
+        this.changeEditMode(watcher.identifier);
+      }
+    }
+  }
+
+  addWatcher() {
+    let watcherPayload: Omit<Watcher, 'identifier'>[] = [];
+
+    if (
+      this.watcherType &&
+      this.watcherValue &&
+      this.watcherOperation &&
+      this.watcherContentId
+    ) {
+      const { commit } = this.$store;
+      const watcherData: Omit<Watcher, 'identifier'> = {
+        type: this.watcherType as WatcherType,
+        args: {
+          ratio: this.watcherValue,
+          op: this.watcherOperation,
+          vault_id: this.watcherContentId.toString()
+        }
+      };
+      watcherPayload.push(watcherData);
+
+      this.$api
+        .addWatcher(watcherPayload)
+        .then(updatedWatchers => {
+          commit('balances/watchers', updatedWatchers);
+          commit('setMessage', {
+            title: 'Watcher Success',
+            description: 'Successfully added the watcher.',
+            success: true
+          } as Message);
+          this.watcherValue = null;
+          this.watcherOperation = null;
+          this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
+        })
+        .catch((reason: Error) => {
+          commit('setMessage', {
+            title: 'Watcher Error',
+            description: reason.message || 'Error adding the watcher',
+            success: false
+          } as Message);
+        });
+    }
   }
 
   @Emit()
-  cancel() {}
+  cancel() {
+    for (const index in this.existingWatchersEdit) {
+      // Reset edit mode on all fields
+      this.existingWatchersEdit[index] = false;
+
+      // Reset unsaved changes to the current saved state
+      this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers));
+    }
+  }
 }
 </script>
 
 <style scoped lang="scss">
-.watcher-dialog__body {
-  padding: 0 16px;
+.watcher-dialog {
+  &__body {
+    padding: 0 16px;
+
+    ::v-deep .v-text-field--filled .v-text-field__suffix {
+      margin-top: 0px;
+    }
+  }
 }
 </style>

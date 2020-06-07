@@ -22,6 +22,7 @@ import {
   ApiManualBalance,
   ApiManualBalances,
   SupportedAssets,
+  Watcher,
   TaskNotFoundError
 } from '@/services/types-api';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
@@ -103,11 +104,17 @@ export class RotkehlchenApi {
    * @return The validity of the status code
    */
   private static modifyWithExternalService(status: number): boolean {
-    return status === 200 || status === 400 || status === 409 || status == 502;
+    return (
+      status === 200 ||
+      status === 400 ||
+      status === 409 ||
+      status === 500 ||
+      status === 502
+    );
   }
 
   private static fetchWithExternalService(status: number): boolean {
-    return status === 200 || status === 409 || status == 502;
+    return status === 200 || status === 409 || status === 500 || status === 502;
   }
 
   logout(username: string): Promise<boolean> {
@@ -1454,6 +1461,49 @@ export class RotkehlchenApi {
           }
         }
       )
+      .then(this.handleResponse);
+  }
+
+  async watchers(): Promise<Watcher[]> {
+    return this.axios
+      .get<ActionResult<Watcher[]>>('/watchers', {
+        validateStatus: RotkehlchenApi.fetchWithExternalService
+      })
+      .then(this.handleResponse);
+  }
+
+  async addWatcher(
+    watchers: Omit<Watcher, 'identifier'>[]
+  ): Promise<Watcher[]> {
+    return this.axios
+      .put<ActionResult<Watcher[]>>(
+        '/watchers',
+        { watchers },
+        {
+          validateStatus: RotkehlchenApi.modifyWithExternalService
+        }
+      )
+      .then(this.handleResponse);
+  }
+
+  async editWatcher(watchers: Watcher[]): Promise<Watcher[]> {
+    return this.axios
+      .patch<ActionResult<Watcher[]>>(
+        '/watchers',
+        { watchers },
+        {
+          validateStatus: RotkehlchenApi.modifyWithExternalService
+        }
+      )
+      .then(this.handleResponse);
+  }
+
+  async deleteWatcher(identifiers: string[]): Promise<Watcher[]> {
+    return this.axios
+      .delete<ActionResult<Watcher[]>>('/watchers', {
+        data: { watchers: identifiers },
+        validateStatus: RotkehlchenApi.modifyWithExternalService
+      })
       .then(this.handleResponse);
   }
 }

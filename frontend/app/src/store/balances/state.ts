@@ -11,7 +11,8 @@ import {
   MakerDAOVault,
   MakerDAOVaultDetails,
   ManualBalance,
-  SupportedAsset
+  SupportedAsset,
+  Watcher
 } from '@/services/types-model';
 import {
   AccountDataMap,
@@ -37,6 +38,7 @@ export interface BalanceState {
   manualBalanceByLocation: ManualBalanceByLocation;
   makerDAOVaults: MakerDAOVault[];
   makerDAOVaultDetails: MakerDAOVaultDetails[];
+  watchers: Watcher[];
 }
 
 export const defaultState = (): BalanceState => ({
@@ -58,7 +60,8 @@ export const defaultState = (): BalanceState => ({
   manualBalances: [],
   manualBalanceByLocation: {},
   makerDAOVaults: [],
-  makerDAOVaultDetails: []
+  makerDAOVaultDetails: [],
+  watchers: []
 });
 
 export const state: BalanceState = defaultState();
