@@ -9300,6 +9300,11 @@
         "symbol": "UTC",
         "type": "own chain"
     },
+    "UTI": {
+        "name": "Unicorn Technology International",
+        "symbol": "UTI",
+        "type": "own chain"
+    },
     "UTIL": {
         "active": false,
         "ended": 1452038400,
