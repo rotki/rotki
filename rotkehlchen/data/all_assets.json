@@ -2059,6 +2059,14 @@
         "symbol": "CNN",
         "type": "ethereum token"
     },
+    "CNTM": {
+        "ethereum_address": "0x9a1bf361798Ef6538cCB8137EA900C4D4B48CA3D",
+        "ethereum_token_decimals": 18,
+        "name": "Connectome",
+        "started": 1557198886,
+        "symbol": "CNTM",
+        "type": "ethereum token"
+    },
     "CNY": {
         "name": "Chinese Yuan",
         "symbol": "CNY",
