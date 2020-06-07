@@ -32,6 +32,7 @@ Changelog
   - `Celo Gold (CGLD) <https://coinmarketcap.com/currencies/celo/>`__
   - `TNC Coin (TNC) <https://coinmarketcap.com/currencies/tnc-coin/>`__
   - `Handshake (HNS) <https://coinmarketcap.com/currencies/handshake/>`__
+  - `DEAPcoin (DEP) <https://coinmarketcap.com/currencies/deapcoin/>`__
 
 * :release:`1.4.2 <2020-04-29>`
 * :bug:`927` Rotki should no longer fail to handle HTTP Rate limiting if your web3 providing node rate limits you.
