@@ -8914,6 +8914,14 @@
         "symbol": "TNB",
         "type": "ethereum token"
     },
+    "TNC": {
+        "ethereum_address": "0x39e743fEE400a5D9b36f1167B70C10e8F06440E5",
+        "ethereum_token_decimals": 18,
+        "name": "TNC Coin",
+        "started": 1566476325,
+        "symbol": "TNC",
+        "type": "ethereum token"
+    },
     "TNS": {
         "ethereum_address": "0xb0280743b44bF7db4B6bE482b2Ba7b75E5dA096C",
         "ethereum_token_decimals": 18,

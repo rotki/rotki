@@ -808,6 +808,8 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen TCH is ThoreCash and TCH-2 is TigerCash
     'TCH': 3056,
     'TCH-2': 3806,
+    # For Rotkehlchen TNC is TNC Token and we don't deal with Trinity network yet (2443)
+    'TNC': 5524,
     # For Rotkehlchen WEB is Webcoin and WEB-2 Webchain
     'WEB': 3027,
     'WEB-2': 3361,

@@ -81,6 +81,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'SYNC',
     'TRXBEAR',  # The 3x TRX short
     'TRXBULL',  # The 3x TRX long
+    'TNC',  # TNC token
     'ULTC',
     'UTIL',
     'VOOT',
