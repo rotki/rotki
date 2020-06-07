@@ -314,9 +314,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # YinCoin. No data found except from here:
     # https://coinmarketcap.com/currencies/yincoin/
     'YIN',
-    # BSV, LINK, BEAR/BULL. No data found yet but should probably revisit
-    'BSVBEAR',
-    'BSVBULL',
+    # LINK, BEAR/BULL. No data found yet but should probably revisit
     'LINKBULL',
     'LINKBEAR',
     # Bitcoin and Volatility and Inverse volatility token.
