@@ -143,6 +143,28 @@ def test_set_rpc_endpoint_fail_not_set_others(rotkehlchen_api_server):
     assert result['eth_rpc_endpoint'] != 'http://working.nodes.com:8545'
 
 
+def test_unset_rpc_endpoint(rotkehlchen_api_server):
+    """Test the rpc endpoint can be unset"""
+    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    result = json_data['result']
+    assert result['eth_rpc_endpoint'] != ''
+
+    data = {
+        'eth_rpc_endpoint': '',
+    }
+
+    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    assert_proper_response(response)
+
+    json_data = response.json()
+    result = json_data['result']
+    assert json_data['message'] == ''
+    assert result['eth_rpc_endpoint'] == ''
+
+
 @pytest.mark.parametrize('added_exchanges', [('kraken',)])
 def test_set_kraken_account_type(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
