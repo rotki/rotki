@@ -1882,6 +1882,12 @@
         "symbol": "CGA",
         "type": "own chain"
     },
+    "CGLD": {
+        "name": "Celo Gold",
+        "started": 1590115455,
+        "symbol": "CGLD",
+        "type": "own chain"
+    },
     "CHAI": {
         "ethereum_address": "0x06af07097c9eeb7fd685c692751d5c66db49c215",
         "ethereum_token_decimals": 18,
