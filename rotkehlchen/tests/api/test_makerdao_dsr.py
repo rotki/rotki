@@ -663,7 +663,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
         'block_number': 9968906,
         'timestamp': 1588182567,
     }]
-    assert_serialized_lists_equal(movements, expected_movements)
+    assert_serialized_lists_equal(movements, expected_movements, max_diff="1e-26")
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
 
@@ -690,24 +690,3 @@ def test_dsr_for_account_with_proxy_but_no_dsr(
     json_data = response.json()
     assert json_data['message'] == ''
     assert len(json_data['result']) == 0
-
-
-@pytest.mark.parametrize('ethereum_accounts', [['0x714696C5a872611F76655Bc163D0131cBAc60a70']])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-def test_dsr_history_dai_zero_means_usd_zero(
-        rotkehlchen_api_server, ethereum_accounts
-):
-    """Regression test for a test case where zero earned gave non-zero usd value earned"""
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        "makerdaodsrhistoryresource",
-    ))
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
-    result = response.json()['result'][ethereum_accounts[0]]
-    assert FVal(result['gain_so_far']) == ZERO
-    assert FVal(result['gain_so_far_usd_value']) == ZERO

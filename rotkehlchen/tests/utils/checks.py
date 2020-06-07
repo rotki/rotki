@@ -9,6 +9,7 @@ def assert_serialized_lists_equal(
         max_length_to_check: Optional[int] = None,
         ignore_keys: Optional[List] = None,
         length_list_keymap: Optional[Dict] = None,
+        max_diff: str = "1e-6",
 ) -> None:
     """Compares lists of serialized dicts"""
     assert isinstance(a, list), "Expected 2 lists. Comparing {type(a)} to {type(b)}"
@@ -23,6 +24,7 @@ def assert_serialized_lists_equal(
             b=b[idx],
             ignore_keys=ignore_keys,
             length_list_keymap=length_list_keymap,
+            max_diff=max_diff,
         )
 
 
@@ -31,6 +33,7 @@ def assert_serialized_dicts_equal(
         b: Dict,
         ignore_keys: Optional[List] = None,
         length_list_keymap: Optional[Dict] = None,
+        max_diff: str = "1e-6",
 ) -> None:
     """Compares serialized dicts so that serialized numbers can be compared for equality"""
     assert len(a) == len(b), f"Dicts don't have the same key length {len(a)} != {len(b)}"
@@ -44,14 +47,15 @@ def assert_serialized_dicts_equal(
                 compare_val = FVal(b[a_key])
             except ValueError:
                 raise AssertionError(f'Could not turn {a_key} value {b[a_key]} into an FVal')
-            assert compare_val.is_close(a_val), f"{a_key} doesn't match. {compare_val} != {a_val}"
+            msg = f"{a_key} doesn't match. {compare_val} != {a_val}"
+            assert compare_val.is_close(a_val, max_diff=max_diff), msg
         elif isinstance(b[a_key], FVal):
             try:
                 compare_val = FVal(a_val)
             except ValueError:
                 raise AssertionError(f'Could not turn {a_key} value {a[a_key]} into an FVal')
             msg = f"{a_key} doesn't match. {compare_val} != {b[a_key]}"
-            assert compare_val.is_close(b[a_key]), msg
+            assert compare_val.is_close(b[a_key], max_diff=max_diff), msg
         elif isinstance(a_val, list):
             max_length_to_check = None
             if length_list_keymap and a_key in length_list_keymap:
