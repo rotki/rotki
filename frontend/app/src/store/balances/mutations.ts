@@ -10,7 +10,8 @@ import {
   MakerDAOVault,
   MakerDAOVaultDetails,
   ManualBalance,
-  SupportedAsset
+  SupportedAsset,
+  Watcher
 } from '@/services/types-model';
 import { BalanceState, defaultState } from '@/store/balances/state';
 import {
@@ -77,6 +78,9 @@ export const mutations: MutationTree<BalanceState> = {
   },
   manualBalances(state: BalanceState, manualBalances: ManualBalance[]) {
     state.manualBalances = manualBalances;
+  },
+  watchers(state: BalanceState, watchers: Watcher[]) {
+    state.watchers = watchers;
   },
   makerDAOVaults(state: BalanceState, makerDAOVaults: MakerDAOVault[]) {
     state.makerDAOVaults = makerDAOVaults;

@@ -19,7 +19,8 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   ApiMakerDAOVault,
   ApiMakerDAOVaultDetails,
-  ApiManualBalance
+  ApiManualBalance,
+  Watcher
 } from '@/services/types-api';
 import { BalanceState } from '@/store/balances/state';
 import { notify } from '@/store/notifications/utils';
@@ -351,6 +352,34 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         { root: true }
       );
     }
+  },
+
+  async fetchWatchers({ commit }) {
+    try {
+      const watchers = await api.watchers();
+      commit('watchers', watchers);
+    } catch (e) {
+      notify(`Error: ${e}`, 'Fetching watchers', Severity.ERROR);
+    }
+  },
+
+  async addWatcher({ commit }, watchers: Omit<Watcher, 'identifier'>[]) {
+    let result = false;
+    try {
+      const updatedWatchers = await api.addWatcher(watchers);
+      commit('watchers', updatedWatchers);
+      result = true;
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Adding watchers',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
+    return result;
   },
 
   async fetchMakerDAOVaults({
