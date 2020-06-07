@@ -32,6 +32,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'BKRW',  # https://www.cryptocompare.com/coins/bkrw/overview
     'CAIX',
     'CGA',
+    'CGLD',
     'CINNI',
     'CNL',
     'CNMT',
