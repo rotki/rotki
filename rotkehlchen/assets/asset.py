@@ -112,6 +112,7 @@ WORLD_TO_KRAKEN = {
     'PAXG': 'PAXG',
     'LSK': 'LSK',
     'TRX': 'TRX',
+    'OXT': 'OXT',
 }
 
 WORLD_TO_BINANCE = {
