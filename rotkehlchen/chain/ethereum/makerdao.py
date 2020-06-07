@@ -1094,9 +1094,13 @@ class MakerDAO(EthereumModule):
                     m.gain_so_far_usd_value = movements[idx - 1].gain_so_far_usd_value
                 continue
 
-            current_chi = FVal(m.amount) / FVal(m.normalized_balance)
-            gain_so_far = normalized_balance * current_chi - amount_in_dsr
-            m.gain_so_far = gain_so_far.to_int(exact=False)
+            if normalized_balance == m.normalized_balance:
+                m.gain_so_far = m.amount - amount_in_dsr
+            else:
+                current_chi = FVal(m.amount) / FVal(m.normalized_balance)
+                gain_so_far = normalized_balance * current_chi - amount_in_dsr
+                m.gain_so_far = gain_so_far.to_int(exact=False)
+
             usd_price = _query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=m.timestamp,
