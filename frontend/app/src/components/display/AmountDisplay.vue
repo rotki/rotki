@@ -166,10 +166,6 @@ td.text-end .amount-display {
     }
   }
 
-  // &__currency {
-  //   display: contents !important;
-  // }
-
   &__asset,
   &__currency {
     margin-left: 5px;

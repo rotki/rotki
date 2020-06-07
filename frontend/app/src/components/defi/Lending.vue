@@ -40,7 +40,8 @@
                 </v-tooltip>
               </dt>
               <dd class="primary--text headline font-weight-bold">
-                {{ currentDSR.dp(2) }}%
+                <amount-display :value="currentDSR"></amount-display>
+                <span style="margin-left: 5px; font-size: 0.8em;">%</span>
               </dd>
             </dl>
           </template>
@@ -217,26 +218,26 @@ export default class Lending extends Vue {
       account => account.address
     );
 
+    const accountsMap = Object.keys(this.dsrHistoryByAddress).map(account => {
+      return {
+        address: account,
+        ...this.dsrHistoryByAddress[account]
+      };
+    });
+
     // Map over all of our dsrHistory, passing those that match the
-    // filterd accounts to a reduce to aggregate. If no accounts are
-    // filtered then pass all of them.
-    return Object.keys(this.dsrHistoryByAddress)
-      .map(account => {
-        if (filteredAccounts.length === 0) {
-          return this.dsrHistoryByAddress[account];
-        } else if (
-          filteredAccounts.length > 0 &&
-          filteredAccounts.indexOf(account) > -1
-        ) {
-          return this.dsrHistoryByAddress[account];
-        }
-      })
-      .reduce((sum, account) => {
-        if (account) {
+    // filtered accounts to a reduce to aggregate. If no accounts are
+    // filtered then aggregate all of them.
+    if (filteredAccounts.length !== 0) {
+      return accountsMap
+        .filter(account => filteredAccounts.indexOf(account.address) > -1)
+        .reduce((sum, account) => {
           return sum.plus(account.gainSoFar);
-        }
-        return Zero;
-      }, Zero);
+        }, Zero);
+    }
+    return accountsMap.reduce((sum, account) => {
+      return sum.plus(account.gainSoFar);
+    }, Zero);
   }
 
   get totalUsdGainAcrossFilteredAccounts(): BigNumber {
@@ -244,26 +245,26 @@ export default class Lending extends Vue {
       account => account.address
     );
 
+    const accountsMap = Object.keys(this.dsrHistoryByAddress).map(account => {
+      return {
+        address: account,
+        ...this.dsrHistoryByAddress[account]
+      };
+    });
+
     // Map over all of our dsrHistory, passing those that match the
-    // filterd accounts to a reduce to aggregate. If no accounts are
-    // filtered then pass all of them.
-    return Object.keys(this.dsrHistoryByAddress)
-      .map(account => {
-        if (filteredAccounts.length === 0) {
-          return this.dsrHistoryByAddress[account];
-        } else if (
-          filteredAccounts.length > 0 &&
-          filteredAccounts.indexOf(account) > -1
-        ) {
-          return this.dsrHistoryByAddress[account];
-        }
-      })
-      .reduce((sum, account) => {
-        if (account) {
+    // filtered accounts to a reduce to aggregate. If no accounts are
+    // filtered then aggregate all of them.
+    if (filteredAccounts.length !== 0) {
+      return accountsMap
+        .filter(account => filteredAccounts.indexOf(account.address) > -1)
+        .reduce((sum, account) => {
           return sum.plus(account.gainSoFarUsdValue);
-        }
-        return Zero;
-      }, Zero);
+        }, Zero);
+    }
+    return accountsMap.reduce((sum, account) => {
+      return sum.plus(account.gainSoFarUsdValue);
+    }, Zero);
   }
 
   openLink(url: string) {
