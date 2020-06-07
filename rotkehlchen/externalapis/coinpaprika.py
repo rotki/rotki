@@ -54,6 +54,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'HUGE',
     'HVC',
     'HZ',
+    'JST',
     'KEY-3',  # KeyCoin
     'LTBC',
     'LTCX',
