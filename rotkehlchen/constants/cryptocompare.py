@@ -79,6 +79,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'PAI': 'PPAI',
     # PAI-2 is PCHAIN in Rotkehlchen but PAI in cryptocompare
     'PAI-2': 'PAI',
+    # TNC is TNC coin in Rotkehlchen but TNCC in cryptocompare
+    'TNC': 'TNCC',
     # CMT-2 is CometCoin in Rotkehlchen but CMTC in cryptocompare
     'CMT-2': 'CMTC',
     # GXChain is GXC in Rotkehlcen and GXS in cryptocompare

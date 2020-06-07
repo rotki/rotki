@@ -91,6 +91,7 @@ MANUALLY_CHECKED_TYPES = {
     'TBT': 'ethereum token',
     'TCH-2': 'ethereum token',
     'TEMCO': 'ethereum token',
+    'TNC': 'ethereum token',
     'TOMO': 'ethereum token',
     'TROY': 'own chain',
     'TRXBEAR': 'ethereum token',
