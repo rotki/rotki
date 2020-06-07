@@ -2629,11 +2629,11 @@ Getting current ethereum MakerDAO DSR balance
               "balances": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
 		      "amount": "125.24423",
-		      "usd_value": 126.5231"
+		      "usd_value": "126.5231"
 		  },
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
 		      "amount": "456.323",
-		      "usd_value": 460.212"
+		      "usd_value": "460.212"
 		  }
                 }
           },
@@ -3410,7 +3410,7 @@ Getting watchers
             "type": "makervault_collateralization_ratio",
             "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
             }, {
-             "identifier: "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
+             "identifier": "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
              "type": "makervault_collateralization_ratio",
              "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
             }],
@@ -3466,7 +3466,7 @@ Adding new watcher
             }],
       }
 
-   :reqjson list[object] watchers: A list of watchers to add as defined in the `above section <watchers_shema_section_>`__ but without an identifier. The identifier is created server-side and returned in the response.
+   :reqjson list[object] watchers: A list of watchers to add as defined in the `above section <watchers_shema_section>`__ but without an identifier. The identifier is created server-side and returned in the response.
 
 
    **Example Response**:
@@ -3482,7 +3482,7 @@ Adding new watcher
             "type": "makervault_collateralization_ratio",
             "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
             }, {
-             "identifier: "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
+             "identifier": "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
              "type": "makervault_collateralization_ratio",
              "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
             }],
@@ -3525,7 +3525,7 @@ Editing watchers
             }]
       }
 
-   :reqjson list[object] watchers: A list of watcher to edit. As defined `here <watchers_shema_section_>`__.
+   :reqjson list[object] watchers: A list of watcher to edit. As defined `here <watchers_shema_section>`__.
 
    **Example Response**:
 
@@ -3540,7 +3540,7 @@ Editing watchers
             "type": "makervault_collateralization_ratio",
             "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
             }, {
-             "identifier: "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
+             "identifier": "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
              "type": "makervault_collateralization_ratio",
              "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
             }],
