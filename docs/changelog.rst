@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `986` Allows the unsetting of the RPC endpoint
 * :feature: `918` Premium users can now set watchers for their vaults. When the watched vault gets below or above a certain collateralization ratio they get an email alert.
 * :bug: `836` Allows the use of non-checksummed eth addresses in the frontend.
 * :bug:`1016` Rotki users can now delete their rotki premium API keys via API Keys -> Rotki Premium.
