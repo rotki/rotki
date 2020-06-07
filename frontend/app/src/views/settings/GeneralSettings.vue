@@ -111,6 +111,9 @@
               data-vv-name="eth_rpc_endpoint"
               :success-messages="settingsMessages['rpcEndpoint'].success"
               :error-messages="settingsMessages['rpcEndpoint'].error"
+              clearable
+              @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
+              @click:clear="onRpcEndpointChange('')"
               @change="onRpcEndpointChange($event)"
             ></v-text-field>
 
@@ -415,20 +418,22 @@ export default class General extends Settings {
 
   onRpcEndpointChange(endpoint: string) {
     const { commit } = this.$store;
-    const previousValue = this.parseDate(this.generalSettings.ethRpcEndpoint);
+    const previousValue = this.generalSettings.ethRpcEndpoint;
 
-    if (this.execOnlyIfDifferent(endpoint, previousValue)) {
+    if (this.execOnlyIfDifferent(endpoint, previousValue) || endpoint === '') {
       this.$api
         .setSettings({ eth_rpc_endpoint: endpoint })
         .then(settings => {
           commit('session/generalSettings', {
             ...this.generalSettings,
-            rpcEndpoint: settings.eth_rpc_endpoint
+            ethRpcEndpoint: settings.eth_rpc_endpoint
           });
           this.validateSettingChange(
             'rpcEndpoint',
             'success',
-            `RPC endpoint set to ${endpoint}`
+            endpoint
+              ? `RPC endpoint set to ${endpoint}`
+              : 'RPC endpoint was successfully unset'
           );
         })
         .catch(reason => {
@@ -437,7 +442,7 @@ export default class General extends Settings {
             'error',
             `Error setting rpc endpoint ${reason.message}`
           );
-          this.rpcEndpoint = previousValue || 'http://localhost:8545';
+          this.rpcEndpoint = previousValue || '';
         });
     }
   }
