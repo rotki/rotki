@@ -82,8 +82,8 @@
     <v-card-text>
       Showing results across
       {{
-        selectedAccounts && selectedAccounts.length > 0
-          ? selectedAccounts.length
+        selectedAccountsArray && selectedAccountsArray.length > 0
+          ? selectedAccountsArray.length
           : 'all'
       }}
       accounts.
@@ -161,6 +161,7 @@ export default class BlockchainAccountSelector extends Vue {
       typeof this.selectedAccounts === 'object' &&
       !Array.isArray(this.selectedAccounts)
     ) {
+      this.selectedAccountsArray = [];
       this.selectedAccountsArray.push(this.selectedAccounts as GeneralAccount);
     } else if (!this.selectedAccounts) {
       this.selectedAccountsArray = [];
