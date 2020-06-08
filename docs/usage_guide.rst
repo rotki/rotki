@@ -152,6 +152,15 @@ Importing data
 
 In this section we will explain how you can import data by integrating with external services such as crypto exchanges
 
+Customizing user & security settings
+====================================
+
+By going to the user & security section of the settings you can change the user password.
+
+.. image:: images/sc_user_password_change.png
+   :alt: Changing the user's password
+   :align: center
+
 Adding an exchange
 =====================
 
