@@ -47,7 +47,7 @@ If after you have set up premium you wish to replace or disassociate keys with t
 Customizing
 **************
 
-This section contains information about how to customize the application through the settings.
+This section contains information about how to customize the application through the settings. By clicking on the user icon on the top right and choosing settings you can customize some basic settings for the application.
 
 
 .. _change_profit_currency:
@@ -64,7 +64,8 @@ Rotki calculates everything, including your profit/loss for your tax report into
 Customizing the application settings
 ====================================
 
-By clicking on the user icon on the top right and choosing settings you can customize some basic settings for the application.
+By choosing the "General" settings button you can customize some general application settings.
+
 
 .. image:: images/sc_settings.png
    :alt: Customizing the app settings
@@ -116,7 +117,7 @@ Set the display format of the dates in the Rotki user interface.
 Customizing the accounting settings
 ====================================
 
-By clicking on the user icon on the top right and choosing accounting settings you can customize some the settings that are used when calculating profit/loss for all your actions.
+By choosing the "Accounting" settings button you can customize some application settings that pertain to accounting calculations.
 
 You should understand what each setting does, consult with a tax accountant for your jurisdcition and then set them appropriately.
 
@@ -146,20 +147,21 @@ Ignored assets
 
 Specify which assets you own and would like to completely ignore from all calculations. Any actions that involve these assets are ignored.
 
+Customizing user & security settings
+====================================
+
+By choosing the "user & security" section of the settings you can change the user password.
+
+.. image:: images/sc_user_password_change.png
+   :alt: Changing the user's password
+   :align: center
+
 
 Importing data
 *******************
 
 In this section we will explain how you can import data by integrating with external services such as crypto exchanges
 
-Customizing user & security settings
-====================================
-
-By going to the user & security section of the settings you can change the user password.
-
-.. image:: images/sc_user_password_change.png
-   :alt: Changing the user's password
-   :align: center
 
 Adding an exchange
 =====================
@@ -317,10 +319,10 @@ Decentralized Finance
 To track and analyze your DeFi actions use the Decentralized Finance tab from the left side menu. You can choose from the different types of DeFi actions presented in the submenu.
 
 
-Loans
-=======
+Lending
+===========
 
-In the loans section you can see the status of your DAI in the DAI Savings Rate (DSR). The accounts that use DSR are auto-detected from your given blockchain accounts. You can see how much DAI you have locked over all of your accounts and how much DAI is locked for each account in the DSR.
+In the lending section you can see the status of your DAI in the DAI Savings Rate (DSR). The accounts that use DSR are auto-detected from your given blockchain accounts. You can see how much DAI you have locked over all of your accounts and how much DAI is locked for each account in the DSR.
 
 .. image:: images/sc_dsr_premium_all.png
    :alt: DSR with premium
@@ -347,6 +349,19 @@ If you don't have a premium subscription you can't see how much DAI was earned a
 Without a premium subscription you also can't see the amount of DAI earned per account.
 
 Finally you need to have premium in order for the total amount of DAI earned in a given time period to be counted in the profit/loss statements of the tax report.
+
+Borrowing
+=============
+
+In the borrowing section you can find information on your makerdao vaults. The vaults are autodetected from your ethereum accounts and information about them is shown.
+
+As a normal non-premium user you can see all your vaults, and for each one inspect the locked collateral, collateralization, debt generated and the liquidation price.
+
+With a premium subscription you can also see additional information such as the creation time of the vault, list of historical activities, total interest owed and liquidation events.
+
+Premium users can also have makervault interest taken into account in the profit/loss report.
+
+Finally premium users can create watchers for their vaults. They can add a target collateralization ratio they would like rotki to watch for in a vault. If the collateralization ration becomess less/greater than that ratio then an alert is sent to the user's email. This watcher service runs in the rotki server so you don't even need to leave the application open.
 
 Creating a tax report
 **********************
