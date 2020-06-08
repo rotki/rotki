@@ -317,6 +317,44 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 409: User is not logged in, or user does not exist, or db operation error
    :statuscode 500: Internal Rotki error
 
+Modify user password
+========================
+
+.. http:patch:: /api/(version)/users/(username)/password
+
+   By doing a ``PATCH`` at this endpoint you can change the specific user's password as long as that user is logged in.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/users/john/password HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "current_password": "supersecret"
+	  "new_password": "evenmoresecret",
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
+   :statuscode 200: Password changed succesfully
+   :statuscode 401: Password mismatch
+   :statuscode 400: Provided call is in some way malformed. For example a user who is not logged in has been specified.
+   :statuscode 409: User is not logged in, or user does not exist, or db operation error
+   :statuscode 500: Internal Rotki error
+
 Getting or modifying external services API credentials
 =======================================================
 
