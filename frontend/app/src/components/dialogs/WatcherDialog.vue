@@ -30,6 +30,17 @@
               </v-select>
             </v-col>
           </v-row>
+          <v-row v-if="loadedWatchers.length > 0">
+            <v-col cols="5">
+              <v-divider></v-divider>
+            </v-col>
+            <v-col cols="2" class="pa-0 text-center">
+              Edit watchers
+            </v-col>
+            <v-col cols="5">
+              <v-divider></v-divider>
+            </v-col>
+          </v-row>
           <v-row v-for="(watcher, key) in loadedWatchers" :key="key">
             <v-col cols="6">
               <v-select
@@ -37,6 +48,7 @@
                 :items="watcherOperations[watcherType]"
                 :filled="!existingWatchersEdit[watcher.identifier]"
                 :readonly="!existingWatchersEdit[watcher.identifier]"
+                hide-details
                 outlined
                 dense
                 label="Operation"
@@ -51,13 +63,14 @@
                 :label="watcherValueLabel"
                 :filled="!existingWatchersEdit[watcher.identifier]"
                 :readonly="!existingWatchersEdit[watcher.identifier]"
+                hide-details
                 outlined
                 dense
                 suffix="%"
                 @input="loadedWatchers[key].args.ratio = $event"
               ></v-text-field>
             </v-col>
-            <v-col cols="2" class="mt-1">
+            <v-col cols="2" class="d-flex align-center justify-space-between">
               <v-btn small icon @click="editWatcher(loadedWatchers[key])">
                 <v-icon small>
                   fa
@@ -76,15 +89,24 @@
             </v-col>
           </v-row>
           <v-row>
-            <v-col cols="12">
+            <v-col cols="5">
               <v-divider></v-divider>
             </v-col>
+            <v-col cols="2" class="pa-0 text-center justify-center">
+              Add watcher
+            </v-col>
+            <v-col cols="5">
+              <v-divider></v-divider>
+            </v-col>
+          </v-row>
+          <v-row>
             <v-col cols="6">
               <v-select
                 v-model="watcherOperation"
                 :items="watcherOperations[watcherType]"
                 dense
                 outlined
+                hide-details
                 :disabled="!watcherType"
                 label="Operation"
                 required
@@ -95,13 +117,20 @@
               <v-text-field
                 v-model="watcherValue"
                 :label="watcherValueLabel"
+                hide-details
                 dense
                 outlined
                 suffix="%"
               ></v-text-field>
             </v-col>
-            <v-col cols="2">
-              <v-btn small icon class="mt-1" @click="addWatcher()">
+            <v-col cols="2" class="d-flex align-center justify-center">
+              <v-btn
+                small
+                icon
+                class="mt-1"
+                :disabled="watcherOperation === null || watcherValue === null"
+                @click="addWatcher()"
+              >
                 <v-icon>
                   fa fa-plus
                 </v-icon>
@@ -127,7 +156,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Watcher, WatcherArgs } from '@/services/types-api';
 import { WatcherType } from '@/services/types-common';
@@ -162,13 +191,28 @@ export default class WatcherDialog extends Vue {
     [identifier: string]: boolean;
   } = {};
 
-  mounted() {
-    this.watcherType = this.preselectWatcherType;
-    this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers)); // make a non-reactive copy
+  // mounted() {
+  //   this.watcherType = this.preselectWatcherType;
+  //   this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers)); // make a non-reactive copy
 
-    this.loadedWatchers.forEach(watcher => {
-      this.existingWatchersEdit[watcher.identifier] = false;
-    });
+  //   this.loadedWatchers.forEach(watcher => {
+  //     this.existingWatchersEdit[watcher.identifier] = false;
+  //   });
+  // }
+
+  @Watch('display')
+  onDialogToggle() {
+    if (this.display) {
+      this.watcherType = this.preselectWatcherType;
+      this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers)); // make a non-reactive copy
+      this.loadedWatchers.forEach(watcher => {
+        this.existingWatchersEdit[watcher.identifier] = false;
+      });
+    } else {
+      this.watcherType = null;
+      this.loadedWatchers = [];
+      this.existingWatchersEdit = {};
+    }
   }
 
   watcherTypes = [

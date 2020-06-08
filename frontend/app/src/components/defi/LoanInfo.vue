@@ -52,7 +52,7 @@
               </div>
             </div>
             <v-btn
-              x-small
+              small
               rounded
               block
               depressed

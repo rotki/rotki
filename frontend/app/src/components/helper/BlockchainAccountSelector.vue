@@ -129,6 +129,7 @@ export default class BlockchainAccountSelector extends Vue {
   btcAccounts!: AccountDataMap;
   tags!: Tags;
   selectedAccounts: GeneralAccount[] | GeneralAccount | null = null;
+  selectedAccountsArray: GeneralAccount[] = [];
   select = ['Vuetify', 'Programming'];
   items = ['Programming', 'Design', 'Vue', 'Vuetify'];
   search: string = '';
@@ -153,7 +154,20 @@ export default class BlockchainAccountSelector extends Vue {
 
   @Watch('selectedAccounts')
   onSelectedAccountsChange() {
-    this.$emit('selected-accounts-change', this.selectedAccounts);
+    // When the component isn't in 'multiple' mode we have to make sure that we're still sending
+    // either an empty array or an array of one back so that the filterable methods do not break.
+    if (
+      this.selectedAccounts &&
+      typeof this.selectedAccounts === 'object' &&
+      !Array.isArray(this.selectedAccounts)
+    ) {
+      this.selectedAccountsArray.push(this.selectedAccounts as GeneralAccount);
+    } else if (!this.selectedAccounts) {
+      this.selectedAccountsArray = [];
+    } else {
+      this.selectedAccountsArray = this.selectedAccounts;
+    }
+    this.$emit('selected-accounts-change', this.selectedAccountsArray);
 
     // Force clear the search value on change (e.g. after searching for an account
     // and then clicking enter)
