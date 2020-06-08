@@ -863,6 +863,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
                 if balance_entry.amount == ZERO:
                     continue
+
+                if A_DAI not in eth_balances[dsr_account].asset_balances:
+                    eth_balances[dsr_account].asset_balances[A_DAI] = Balance()
+
                 eth_balances[dsr_account].asset_balances[A_DAI] += balance_entry
                 eth_balances[dsr_account].increase_total_usd_value(balance_entry.usd_value)
                 additional_total += balance_entry
