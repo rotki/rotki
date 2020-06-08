@@ -238,6 +238,7 @@ class DSRMovement:
     amount_usd_value: FVal
     block_number: int
     timestamp: Timestamp
+    tx_hash: str
 
 
 class DSRCurrentBalances(NamedTuple):
@@ -266,6 +267,7 @@ class DSRAccountReport(NamedTuple):
                 'amount_usd_value': str(movement.amount_usd_value),
                 'block_number': movement.block_number,
                 'timestamp': movement.timestamp,
+                'tx_hash': movement.tx_hash,
             }
             serialized_report['movements'].append(serialized_movement)  # type: ignore
         return serialized_report
@@ -1017,6 +1019,7 @@ class MakerDAO(EthereumModule):
                     amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
                     block_number=deserialize_blocknumber(join_event['blockNumber']),
                     timestamp=timestamp,
+                    tx_hash=join_event['transactionHash'],
                 ),
             )
 
@@ -1076,6 +1079,7 @@ class MakerDAO(EthereumModule):
                     amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
                     block_number=deserialize_blocknumber(exit_event['blockNumber']),
                     timestamp=timestamp,
+                    tx_hash=exit_event['transactionHash'],
                 ),
             )
 

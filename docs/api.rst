@@ -2689,7 +2689,8 @@ Getting ethereum MakerDAO DSR historical report
                       "amount": "350",
                       "amount_usd_value": "351.21",
                       "block_number": 9128160,
-                      "timestamp": 1582706553
+                      "timestamp": 1582706553,
+		      "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289"
                   }, {
                       "movement_type": "deposit",
                       "gain_so_far": "0.875232",
@@ -2697,7 +2698,8 @@ Getting ethereum MakerDAO DSR historical report
                       "amount": "50",
                       "amount_usd_value": "50.87",
                       "block_number": 9129165,
-                      "timestamp": 1582806553
+                      "timestamp": 1582806553,
+		      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
                   }, {
                       "movement_type": "withdrawal",
                       "gain_so_far": "1.12875932",
@@ -2705,7 +2707,8 @@ Getting ethereum MakerDAO DSR historical report
                       "amount": "350",
                       "amount_usd_value": "353.12",
                       "block_number": 9149160,
-                      "timestamp": 1592706553
+                      "timestamp": 1592706553,
+		      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756"
                   }, {
                   }],
                   "gain_so_far": "1.14875932"
@@ -2718,7 +2721,8 @@ Getting ethereum MakerDAO DSR historical report
                       "amount": "550",
                       "amount_usd_value": "553.43",
                       "block_number": 9128174,
-                      "timestamp": 1583706553
+                      "timestamp": 1583706553,
+		      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
                   }],
                   "gain_so_far": "0.953423"
                   "gain_so_far_usd_value": "0.998421"
@@ -2737,6 +2741,7 @@ Getting ethereum MakerDAO DSR historical report
    :resjsonarr string amount: The amount of DAI deposited or withdrawn from the DSR.
    :resjsonarr string amount_usd_value: The USD euivalent value of the amount of DAI deposited or withdrawn from the DSR. The rate is the DAI/USD rate at the movement's timestamp.
    :resjsonarr int block_number: The block number at which the deposit or withdrawal occured.
+   :resjsonarr int tx_hash: The transaction hash of the DSR movement
 
    :statuscode 200: DSR history succesfully queried.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or makerdao module is not activated.
