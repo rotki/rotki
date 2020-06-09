@@ -164,14 +164,11 @@
 </template>
 
 <script lang="ts">
+import cloneDeep from 'lodash/cloneDeep';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import { Watcher, WatcherArgs } from '@/services/types-api';
-import { WatcherType } from '@/services/types-common';
-
-interface VaultWatcher extends Watcher {
-  args: WatcherArgs['makervault_collateralization_ratio'];
-}
+import { Watcher } from '@/services/types-api';
+import { OpTypes, WatcherType, WatcherTypes } from '@/services/types-common';
 
 @Component({
   components: { MessageDialog }
@@ -187,19 +184,19 @@ export default class WatcherDialog extends Vue {
   @Prop({ required: false, default: 'Watcher Value' })
   watcherValueLabel!: string;
   @Prop({ required: true, default: null })
-  watcherContentId!: string | number | null;
+  watcherContentId!: number | null;
   @Prop({ required: false, default: '' })
-  preselectWatcherType!: string;
+  preselectWatcherType!: WatcherTypes;
   @Prop({ required: false, type: Array, default: () => [] })
-  existingWatchers!: Watcher[];
+  existingWatchers!: Watcher<WatcherType>[];
 
-  watcherType: string | null = null;
-  watcherOperation: string | null = null;
+  watcherType: WatcherTypes | null = null;
+  watcherOperation: OpTypes | null = null;
   watcherValue: string | null = null;
   validationMessage: string = '';
   validationStatus: 'success' | 'error' | '' = '';
 
-  loadedWatchers: Watcher[] = [];
+  loadedWatchers: Watcher<WatcherType>[] = [];
   existingWatchersEdit: {
     [identifier: string]: boolean;
   } = {};
@@ -208,7 +205,7 @@ export default class WatcherDialog extends Vue {
   onDialogToggle() {
     if (this.display) {
       this.watcherType = this.preselectWatcherType;
-      this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers)); // make a non-reactive copy
+      this.loadedWatchers = cloneDeep(this.existingWatchers);
       this.loadedWatchers.forEach(watcher => {
         this.existingWatchersEdit[watcher.identifier] = false;
       });
@@ -243,39 +240,38 @@ export default class WatcherDialog extends Vue {
     };
   }
 
-  deleteWatcher(watcher: string) {
-    let watcherPayload: string[] = [];
-    watcherPayload.push(watcher);
-
-    const { commit } = this.$store;
-    this.$api
-      .deleteWatcher(watcherPayload)
-      .then(updatedWatchers => {
-        commit('balances/watchers', updatedWatchers);
-
-        this.validateSettingChange('success', 'Successfully deleted watcher.');
-
-        this.watcherValue = null;
-        this.watcherOperation = null;
-
-        this.loadedWatchers = JSON.parse(
-          JSON.stringify(
-            updatedWatchers.filter(
-              watcher => watcher.args.vault_id === watcher.args.vault_id
-            )
-          )
-        );
-      })
-      .catch((reason: Error) => {
-        this.validateSettingChange(
-          'error',
-          `Error deleting the watcher: ${reason.message}`
-        );
-      });
+  async deleteWatcher(identifier: string) {
+    try {
+      const updatedWatchers = await this.$store.dispatch(
+        'balances/deleteWatcher',
+        [identifier]
+      );
+      this.validateSettingChange('success', 'Successfully deleted watcher.');
+      this.clear();
+      this.updateLoadedWatchers(updatedWatchers);
+    } catch (e) {
+      this.validateSettingChange(
+        'error',
+        `Error deleting the watcher: ${e.message}`
+      );
+    }
   }
 
-  editWatcher(watcher: Watcher) {
-    if (this.existingWatchersEdit[watcher.identifier] === false) {
+  private updateLoadedWatchers(updatedWatchers: Watcher<WatcherType>[]) {
+    this.loadedWatchers = cloneDeep(
+      updatedWatchers.filter(
+        watcher => this.watcherContentId?.toString() === watcher.args.vault_id
+      )
+    );
+  }
+
+  private clear() {
+    this.watcherValue = null;
+    this.watcherOperation = null;
+  }
+
+  async editWatcher(watcher: Watcher<WatcherType>) {
+    if (!this.existingWatchersEdit[watcher.identifier]) {
       // If we're not in edit mode, just go into edit mode
       this.changeEditMode(watcher.identifier);
     } else {
@@ -283,93 +279,67 @@ export default class WatcherDialog extends Vue {
       // sending an API call
       const existingWatcherArgs = this.existingWatchers.find(
         existingWatcher => existingWatcher.identifier === watcher.identifier
-      )!.args as WatcherArgs['makervault_collateralization_ratio'];
-      const modifiedWatcherArgs = watcher.args as WatcherArgs['makervault_collateralization_ratio'];
+      )!.args;
+      const modifiedWatcherArgs = watcher.args;
 
       if (
         existingWatcherArgs.op !== modifiedWatcherArgs.op ||
         existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio
       ) {
-        let watcherPayload: Watcher[] = [];
-        watcherPayload.push(watcher);
-
-        const { commit } = this.$store;
-        this.$api
-          .editWatcher(watcherPayload)
-          .then(updatedWatchers => {
-            commit('balances/watchers', updatedWatchers);
-
-            this.validateSettingChange(
-              'success',
-              'Successfully edited watcher.'
-            );
-
-            this.changeEditMode(watcher.identifier);
-            this.loadedWatchers = JSON.parse(
-              JSON.stringify(
-                updatedWatchers.filter(
-                  watcher => watcher.args.vault_id === watcher.args.vault_id
-                )
-              )
-            );
-          })
-          .catch((reason: Error) => {
-            this.validateSettingChange(
-              'error',
-              `Error editing the watcher: ${reason.message}`
-            );
-          });
+        try {
+          const updatedWatchers = await this.$store.dispatch(
+            'balances/editWatcher',
+            [watcher]
+          );
+          this.validateSettingChange('success', 'Successfully edited watcher.');
+          this.changeEditMode(watcher.identifier);
+          this.updateLoadedWatchers(updatedWatchers);
+        } catch (e) {
+          this.validateSettingChange(
+            'error',
+            `Error editing the watcher: ${e.message}`
+          );
+        }
       } else {
         this.changeEditMode(watcher.identifier);
       }
     }
   }
 
-  addWatcher() {
-    let watcherPayload: Omit<Watcher, 'identifier'>[] = [];
-
+  async addWatcher() {
     if (
-      this.watcherType &&
-      this.watcherValue &&
-      this.watcherOperation &&
-      this.watcherContentId
+      !(
+        this.watcherType &&
+        this.watcherValue &&
+        this.watcherOperation &&
+        this.watcherContentId
+      )
     ) {
-      const { commit } = this.$store;
-      const watcherData: Omit<Watcher, 'identifier'> = {
-        type: this.watcherType as WatcherType,
-        args: {
-          ratio: this.watcherValue,
-          op: this.watcherOperation,
-          vault_id: this.watcherContentId.toString()
-        }
-      };
-      watcherPayload.push(watcherData);
+      return;
+    }
 
-      this.$api
-        .addWatcher(watcherPayload)
-        .then(updatedWatchers => {
-          commit('balances/watchers', updatedWatchers);
+    const watcherData: Omit<Watcher<WatcherType>, 'identifier'> = {
+      type: this.watcherType,
+      args: {
+        ratio: this.watcherValue,
+        op: this.watcherOperation,
+        vault_id: this.watcherContentId.toString()
+      }
+    };
 
-          this.validateSettingChange('success', 'Successfully added watcher.');
-
-          this.watcherValue = null;
-          this.watcherOperation = null;
-
-          // TODO: Fix me senor kelsos (and all my clones)
-          this.loadedWatchers = JSON.parse(
-            JSON.stringify(
-              updatedWatchers.filter(
-                watcher => watcher.args.vault_id === watcher.args.vault_id
-              )
-            )
-          );
-        })
-        .catch((reason: Error) => {
-          this.validateSettingChange(
-            'error',
-            `Error adding the watcher: ${reason.message}`
-          );
-        });
+    try {
+      const updatedWatchers = await this.$store.dispatch(
+        'balances/addWatcher',
+        [watcherData]
+      );
+      this.validateSettingChange('success', 'Successfully added watcher.');
+      this.clear();
+      this.updateLoadedWatchers(updatedWatchers);
+    } catch (e) {
+      this.validateSettingChange(
+        'error',
+        `Error adding the watcher: ${e.message}`
+      );
     }
   }
 
@@ -395,11 +365,9 @@ export default class WatcherDialog extends Vue {
     for (const index in this.existingWatchersEdit) {
       // Reset edit mode on all fields
       this.existingWatchersEdit[index] = false;
-      this.watcherOperation = null;
-      this.watcherValue = null;
-
+      this.clear();
       // Reset unsaved changes to the current saved state
-      this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers));
+      this.loadedWatchers = cloneDeep(this.existingWatchers);
     }
   }
 }
@@ -425,7 +393,7 @@ export default class WatcherDialog extends Vue {
     }
 
     ::v-deep .v-text-field--filled .v-text-field__suffix {
-      margin-top: 0px;
+      margin-top: 0;
     }
   }
 }

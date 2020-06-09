@@ -22,6 +22,7 @@ import {
   ApiManualBalance,
   Watcher
 } from '@/services/types-api';
+import { WatcherTypes } from '@/services/types-common';
 import { BalanceState } from '@/store/balances/state';
 import { notify } from '@/store/notifications/utils';
 import { Message, RotkehlchenState } from '@/store/store';
@@ -367,23 +368,25 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async addWatcher({ commit }, watchers: Omit<Watcher, 'identifier'>[]) {
-    let result = false;
-    try {
-      const updatedWatchers = await api.addWatcher(watchers);
-      commit('watchers', updatedWatchers);
-      result = true;
-    } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Adding watchers',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
-    }
-    return result;
+  async addWatcher(
+    { commit },
+    watchers: Omit<Watcher<WatcherTypes>, 'identifier'>[]
+  ) {
+    const updatedWatchers = await api.addWatcher(watchers);
+    commit('watchers', updatedWatchers);
+    return updatedWatchers;
+  },
+
+  async deleteWatcher({ commit }, identifiers: string[]) {
+    const updatedWatchers = await api.deleteWatcher(identifiers);
+    commit('watchers', updatedWatchers);
+    return updatedWatchers;
+  },
+
+  async editWatcher({ commit }, watchers: Watcher<WatcherTypes>[]) {
+    const updatedWatchers = await api.editWatcher(watchers);
+    commit('watchers', updatedWatchers);
+    return updatedWatchers;
   },
 
   async fetchMakerDAOVaults({

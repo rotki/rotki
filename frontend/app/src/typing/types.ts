@@ -172,3 +172,7 @@ export interface AccountDSRMovement {
 export interface GeneralAccount extends AccountData {
   chain: Blockchain;
 }
+
+export type Properties<TObj, TResult> = {
+  [K in keyof TObj]: TObj[K] extends TResult ? K : never;
+}[keyof TObj];
