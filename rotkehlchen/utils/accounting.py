@@ -52,7 +52,7 @@ def action_get_assets(
 ) -> Tuple[Asset, Optional[Asset]]:
     if isinstance(action, Trade):
         return trade_get_assets(action)
-    elif isinstance(action, AssetMovement):
+    elif isinstance(action, (AssetMovement, DefiEvent)):
         return action.asset, None
     elif isinstance(action, EthereumTransaction):
         return A_ETH, None

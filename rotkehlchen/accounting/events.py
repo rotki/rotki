@@ -848,11 +848,12 @@ class TaxableEvents():
             event=event,
         )
         rate = self.get_rate_in_profit_currency(event.asset, event.timestamp)
+        profit_loss = event.amount * rate
         if event.event_type == DefiEventType.DSR_LOAN_GAIN:
-            self.defi_profit_loss += event.amount * rate
+            self.defi_profit_loss += profit_loss
         elif event.event_type == DefiEventType.MAKERDAO_VAULT_LOSS:
-            self.defi_profit_loss -= event.amount * rate
+            self.defi_profit_loss -= profit_loss
         else:
             raise NotImplementedError('Not implemented Defi event encountered at accounting')
 
-        self.csv_exporter.add_defi_event(event, rate)
+        self.csv_exporter.add_defi_event(event=event, profit_loss_in_profit_currency=profit_loss)
