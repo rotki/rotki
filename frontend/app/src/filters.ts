@@ -21,7 +21,7 @@ export function formatDate(value: number, format: string): string {
 }
 
 export function formatPrice(value: BigNumber, precision: number) {
-  return value.toFormat(precision);
+  return value.isNaN() ? '-' : value.toFormat(precision);
 }
 
 export function capitalize(string: string): string {
@@ -29,7 +29,7 @@ export function capitalize(string: string): string {
 }
 
 export function roundDown(value: BigNumber, precision: number) {
-  return value.toFormat(precision, BigNumber.ROUND_DOWN);
+  return value.isNaN() ? '-' : value.toFormat(precision, BigNumber.ROUND_DOWN);
 }
 
 /**
