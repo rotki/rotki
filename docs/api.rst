@@ -3486,7 +3486,7 @@ Adding new watcher
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/watcher/ HTTP/1.1
+      PUT /api/1/watchers/ HTTP/1.1
       Host: localhost:5042
 
       {
@@ -3499,7 +3499,7 @@ Adding new watcher
             }],
       }
 
-   :reqjson list[object] watchers: A list of watchers to add as defined in the `above section <watchers_shema_section>`__ but without an identifier. The identifier is created server-side and returned in the response.
+   :reqjson list[object] watchers: A list of watchers to add as defined in the `above section <watchers_schema_section>`__ but without an identifier. The identifier is created server-side and returned in the response.
 
 
    **Example Response**:
@@ -3558,7 +3558,7 @@ Editing watchers
             }]
       }
 
-   :reqjson list[object] watchers: A list of watcher to edit. As defined `here <watchers_shema_section>`__.
+   :reqjson list[object] watchers: A list of watcher to edit. As defined `here <watchers_schema_section>`__.
 
    **Example Response**:
 
