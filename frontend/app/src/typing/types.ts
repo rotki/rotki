@@ -168,3 +168,7 @@ export interface AccountDSRMovement {
   readonly timestamp: number;
   readonly txHash: string;
 }
+
+export interface GeneralAccount extends AccountData {
+  chain: Blockchain;
+}
