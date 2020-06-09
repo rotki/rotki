@@ -24,6 +24,7 @@ export interface ApiDSRMovement {
   readonly amount_usd_value: string;
   readonly block_number: number;
   readonly timestamp: number;
+  readonly tx_hash: string;
 }
 
 export interface ApiDSRHistory {

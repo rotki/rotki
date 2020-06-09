@@ -64,7 +64,8 @@ export function convertDSRHistory(history: ApiDSRHistory): DSRHistory {
           gain_so_far: gain_so_far,
           gain_so_far_usd_value: gain_so_far_usd_value,
           movement_type,
-          timestamp
+          timestamp,
+          tx_hash
         }) => ({
           movementType: movement_type,
           gainSoFar: bigNumberify(gain_so_far),
@@ -72,7 +73,8 @@ export function convertDSRHistory(history: ApiDSRHistory): DSRHistory {
           amount: bigNumberify(amount),
           amountUsdValue: bigNumberify(amount_usd_value),
           blockNumber: block_number,
-          timestamp
+          timestamp,
+          txHash: tx_hash
         })
       )
     };

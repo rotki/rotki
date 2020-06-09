@@ -33,6 +33,7 @@ export interface DSRMovement {
   readonly amountUsdValue: BigNumber;
   readonly blockNumber: number;
   readonly timestamp: number;
+  readonly txHash: string;
 }
 
 export interface ManualBalance {
