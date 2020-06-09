@@ -12,7 +12,7 @@
     </v-row>
     <v-row>
       <v-col cols="12">
-        <stat-card-wide cols="two">
+        <stat-card-wide :cols="2">
           <template #first-col>
             <dl>
               <dt class="title font-weight-regular">

@@ -7,7 +7,7 @@
   <v-container v-else>
     <v-row>
       <v-col cols="12">
-        <stat-card-wide cols="three">
+        <stat-card-wide :cols="3">
           <template #first-col>
             <dl>
               <dt class="title font-weight-regular">
@@ -41,7 +41,7 @@
               </dt>
               <dd class="primary--text headline font-weight-bold">
                 <amount-display :value="currentDSR"></amount-display>
-                <span style="margin-left: 5px; font-size: 0.8em;">%</span>
+                <span class="lending__percentage-sign">%</span>
               </dd>
             </dl>
           </template>
@@ -271,4 +271,11 @@ export default class Lending extends Vue {
   }
 }
 </script>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.lending {
+  &__percentage-sign {
+    margin-left: 5px;
+    font-size: 0.8em;
+  }
+}
+</style>

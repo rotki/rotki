@@ -130,8 +130,6 @@ export default class BlockchainAccountSelector extends Vue {
   tags!: Tags;
   selectedAccounts: GeneralAccount[] | GeneralAccount | null = null;
   selectedAccountsArray: GeneralAccount[] = [];
-  select = ['Vuetify', 'Programming'];
-  items = ['Programming', 'Design', 'Vue', 'Vuetify'];
   search: string = '';
 
   get filteredBlockchainAccounts(): any[] {

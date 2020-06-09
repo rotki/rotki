@@ -9,6 +9,9 @@ export default new Vuetify({
     iconfont: 'fa4'
   },
   theme: {
+    options: {
+      customProperties: true
+    },
     themes: {
       light: {
         primary: '#7e4a3b',

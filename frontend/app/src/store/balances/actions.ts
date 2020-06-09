@@ -354,7 +354,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetchWatchers({ commit }) {
+  async fetchWatchers({ commit, rootState: { session } }) {
+    if (!session?.premium) {
+      return;
+    }
+
     try {
       const watchers = await api.watchers();
       commit('watchers', watchers);

@@ -141,7 +141,15 @@
       </v-card-text>
 
       <v-card-actions>
-        <v-spacer></v-spacer>
+        <v-row class="d-flex flex-grow-1 mx-3 caption">
+          <v-col cols="12">
+            <div
+              :class="`watcher-dialog__body__messages watcher-dialog__body__messages--${validationStatus} py-1 px-3`"
+            >
+              {{ validationMessage }}
+            </div>
+          </v-col>
+        </v-row>
         <v-btn
           depressed
           color="primary"
@@ -160,7 +168,6 @@ import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Watcher, WatcherArgs } from '@/services/types-api';
 import { WatcherType } from '@/services/types-common';
-import { Message } from '@/store/store';
 
 @Component({
   components: { MessageDialog }
@@ -185,20 +192,13 @@ export default class WatcherDialog extends Vue {
   watcherType: string | null = null;
   watcherOperation: string | null = null;
   watcherValue: string | null = null;
+  validationMessage: string = '';
+  validationStatus: 'success' | 'error' | '' = '';
 
   loadedWatchers: Watcher[] = [];
   existingWatchersEdit: {
     [identifier: string]: boolean;
   } = {};
-
-  // mounted() {
-  //   this.watcherType = this.preselectWatcherType;
-  //   this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers)); // make a non-reactive copy
-
-  //   this.loadedWatchers.forEach(watcher => {
-  //     this.existingWatchersEdit[watcher.identifier] = false;
-  //   });
-  // }
 
   @Watch('display')
   onDialogToggle() {
@@ -248,21 +248,18 @@ export default class WatcherDialog extends Vue {
       .deleteWatcher(watcherPayload)
       .then(updatedWatchers => {
         commit('balances/watchers', updatedWatchers);
-        commit('setMessage', {
-          title: 'Watcher Success',
-          description: 'Successfully deleted the watcher.',
-          success: true
-        } as Message);
+
+        this.validateSettingChange('success', 'Successfully deleted watcher.');
+
         this.watcherValue = null;
         this.watcherOperation = null;
         this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
       })
       .catch((reason: Error) => {
-        commit('setMessage', {
-          title: 'Watcher Error',
-          description: reason.message || 'Error deleting the watcher',
-          success: false
-        } as Message);
+        this.validateSettingChange(
+          'error',
+          `Error deleting the watcher: ${reason.message}`
+        );
       });
   }
 
@@ -290,20 +287,20 @@ export default class WatcherDialog extends Vue {
           .editWatcher(watcherPayload)
           .then(updatedWatchers => {
             commit('balances/watchers', updatedWatchers);
-            commit('setMessage', {
-              title: 'Watcher Success',
-              description: 'Successfully edited the watcher.',
-              success: true
-            } as Message);
+
+            this.validateSettingChange(
+              'success',
+              'Successfully edited watcher.'
+            );
+
             this.changeEditMode(watcher.identifier);
             this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
           })
           .catch((reason: Error) => {
-            commit('setMessage', {
-              title: 'Watcher Error',
-              description: reason.message || 'Error editing the watcher',
-              success: false
-            } as Message);
+            this.validateSettingChange(
+              'error',
+              `Error editing the watcher: ${reason.message}`
+            );
           });
       } else {
         this.changeEditMode(watcher.identifier);
@@ -335,22 +332,36 @@ export default class WatcherDialog extends Vue {
         .addWatcher(watcherPayload)
         .then(updatedWatchers => {
           commit('balances/watchers', updatedWatchers);
-          commit('setMessage', {
-            title: 'Watcher Success',
-            description: 'Successfully added the watcher.',
-            success: true
-          } as Message);
+
+          this.validateSettingChange('success', 'Successfully added watcher.');
+
           this.watcherValue = null;
           this.watcherOperation = null;
           this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
         })
         .catch((reason: Error) => {
-          commit('setMessage', {
-            title: 'Watcher Error',
-            description: reason.message || 'Error adding the watcher',
-            success: false
-          } as Message);
+          this.validateSettingChange(
+            'error',
+            `Error adding the watcher: ${reason.message}`
+          );
         });
+    }
+  }
+
+  validateSettingChange(
+    targetState: string,
+    message: string = '',
+    timeOut: number = 5500
+  ) {
+    if (targetState === 'success' || targetState === 'error') {
+      setTimeout(() => {
+        this.validationMessage = message;
+        this.validationStatus = targetState;
+      }, 200);
+      setTimeout(() => {
+        this.validationMessage = '';
+        this.validationStatus = '';
+      }, timeOut);
     }
   }
 
@@ -359,6 +370,8 @@ export default class WatcherDialog extends Vue {
     for (const index in this.existingWatchersEdit) {
       // Reset edit mode on all fields
       this.existingWatchersEdit[index] = false;
+      this.watcherOperation = null;
+      this.watcherValue = null;
 
       // Reset unsaved changes to the current saved state
       this.loadedWatchers = JSON.parse(JSON.stringify(this.existingWatchers));
@@ -371,6 +384,20 @@ export default class WatcherDialog extends Vue {
 .watcher-dialog {
   &__body {
     padding: 0 16px;
+
+    &__messages {
+      min-height: 2.5em;
+      border-radius: 8px;
+
+      &--success {
+        background-color: var(--v-success-lighten4);
+        color: var(--v-success-darken2);
+      }
+      &--error {
+        background-color: var(--v-error-lighten4);
+        color: var(--v-error-darken2);
+      }
+    }
 
     ::v-deep .v-text-field--filled .v-text-field__suffix {
       margin-top: 0px;
