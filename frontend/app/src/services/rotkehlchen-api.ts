@@ -25,6 +25,7 @@ import {
   Watcher,
   TaskNotFoundError
 } from '@/services/types-api';
+import { WatcherTypes } from '@/services/types-common';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
   AccountSession,
@@ -104,17 +105,11 @@ export class RotkehlchenApi {
    * @return The validity of the status code
    */
   private static modifyWithExternalService(status: number): boolean {
-    return (
-      status === 200 ||
-      status === 400 ||
-      status === 409 ||
-      status === 500 ||
-      status === 502
-    );
+    return [200, 400, 409, 502].indexOf(status) >= 0;
   }
 
   private static fetchWithExternalService(status: number): boolean {
-    return status === 200 || status === 409 || status === 500 || status === 502;
+    return [200, 409, 502].indexOf(status) >= 0;
   }
 
   logout(username: string): Promise<boolean> {
@@ -1464,19 +1459,19 @@ export class RotkehlchenApi {
       .then(this.handleResponse);
   }
 
-  async watchers(): Promise<Watcher[]> {
+  async watchers<T extends WatcherTypes>(): Promise<Watcher<T>[]> {
     return this.axios
-      .get<ActionResult<Watcher[]>>('/watchers', {
+      .get<ActionResult<Watcher<T>[]>>('/watchers', {
         validateStatus: RotkehlchenApi.fetchWithExternalService
       })
       .then(this.handleResponse);
   }
 
-  async addWatcher(
-    watchers: Omit<Watcher, 'identifier'>[]
-  ): Promise<Watcher[]> {
+  async addWatcher<T extends WatcherTypes>(
+    watchers: Omit<Watcher<T>, 'identifier'>[]
+  ): Promise<Watcher<T>[]> {
     return this.axios
-      .put<ActionResult<Watcher[]>>(
+      .put<ActionResult<Watcher<T>[]>>(
         '/watchers',
         { watchers },
         {
@@ -1486,9 +1481,11 @@ export class RotkehlchenApi {
       .then(this.handleResponse);
   }
 
-  async editWatcher(watchers: Watcher[]): Promise<Watcher[]> {
+  async editWatcher<T extends WatcherTypes>(
+    watchers: Watcher<T>[]
+  ): Promise<Watcher<T>[]> {
     return this.axios
-      .patch<ActionResult<Watcher[]>>(
+      .patch<ActionResult<Watcher<T>[]>>(
         '/watchers',
         { watchers },
         {
@@ -1498,9 +1495,11 @@ export class RotkehlchenApi {
       .then(this.handleResponse);
   }
 
-  async deleteWatcher(identifiers: string[]): Promise<Watcher[]> {
+  async deleteWatcher<T extends WatcherTypes>(
+    identifiers: string[]
+  ): Promise<Watcher<T>[]> {
     return this.axios
-      .delete<ActionResult<Watcher[]>>('/watchers', {
+      .delete<ActionResult<Watcher<T>[]>>('/watchers', {
         data: { watchers: identifiers },
         validateStatus: RotkehlchenApi.modifyWithExternalService
       })

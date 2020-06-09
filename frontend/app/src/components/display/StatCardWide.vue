@@ -58,14 +58,6 @@ import PremiumLock from '@/components/helper/PremiumLock.vue';
   components: { PremiumLock }
 })
 export default class StatCardWide extends Vue {
-  @Prop({ required: false })
-  firstCol!: string;
-  @Prop({ required: false })
-  secondCol!: string;
-  @Prop({ required: false })
-  thirdCol!: string;
-  @Prop({ required: false })
-  fourthCol!: string;
   @Prop({ required: false, type: Boolean, default: false })
   locked!: boolean;
   @Prop({ required: false, type: Boolean, default: false })

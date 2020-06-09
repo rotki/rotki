@@ -5,14 +5,15 @@ import {
   ManualBalanceByLocation,
   FiatBalance
 } from '@/model/blockchain-balances';
+import { Watcher } from '@/services/types-api';
+import { WatcherTypes } from '@/services/types-common';
 import {
   DSRBalances,
   DSRHistory,
   MakerDAOVault,
   MakerDAOVaultDetails,
   ManualBalance,
-  SupportedAsset,
-  Watcher
+  SupportedAsset
 } from '@/services/types-model';
 import {
   AccountDataMap,
@@ -38,7 +39,7 @@ export interface BalanceState {
   manualBalanceByLocation: ManualBalanceByLocation;
   makerDAOVaults: MakerDAOVault[];
   makerDAOVaultDetails: MakerDAOVaultDetails[];
-  watchers: Watcher[];
+  watchers: Watcher<WatcherTypes>[];
 }
 
 export const defaultState = (): BalanceState => ({

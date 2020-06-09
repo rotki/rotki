@@ -3,8 +3,7 @@ import {
   CollateralAssetType,
   DSRMovementType,
   Location,
-  MakerDAOVaultEventType,
-  WatcherType
+  MakerDAOVaultEventType
 } from '@/services/types-common';
 
 export interface DSRBalances {
@@ -55,12 +54,6 @@ export interface SupportedAsset {
   readonly started?: number;
   readonly symbol: string;
   readonly type: string;
-}
-
-export interface Watcher {
-  readonly identifier: string;
-  readonly type: WatcherType;
-  readonly args: object;
 }
 
 export interface MakerDAOVault {

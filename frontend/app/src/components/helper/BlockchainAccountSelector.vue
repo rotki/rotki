@@ -92,7 +92,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
@@ -118,9 +118,42 @@ export default class BlockchainAccountSelector extends Vue {
   ethAccounts!: AccountDataMap;
   btcAccounts!: AccountDataMap;
   tags!: Tags;
-  selectedAccounts: GeneralAccount[] | GeneralAccount | null = null;
+
   selectedAccountsArray: GeneralAccount[] = [];
   search: string = '';
+
+  private unselectAll() {
+    for (let i = 0; i < this.selectedAccountsArray.length; i++) {
+      this.selectedAccountsArray.pop();
+    }
+  }
+
+  set selectedAccounts(value: GeneralAccount[] | GeneralAccount | null) {
+    if (!value) {
+      this.unselectAll();
+    } else if (Array.isArray(value)) {
+      this.selectedAccountsArray.push(...value);
+    } else {
+      if (!this.multiple) {
+        this.unselectAll();
+      }
+      this.selectedAccountsArray.push(value);
+    }
+    this.$emit('selected-accounts-change', this.selectedAccountsArray);
+    if (this.search) {
+      this.search = '';
+    }
+  }
+
+  get selectedAccounts(): GeneralAccount[] | GeneralAccount | null {
+    if (this.selectedAccountsArray.length === 0) {
+      return null;
+    } else if (this.selectedAccountsArray.length === 1) {
+      const [first] = this.selectedAccountsArray;
+      return first;
+    }
+    return this.selectedAccountsArray;
+  }
 
   get filteredBlockchainAccounts(): any[] {
     let filteredAccounts: GeneralAccount[] = [];
@@ -140,46 +173,17 @@ export default class BlockchainAccountSelector extends Vue {
     return filteredAccounts;
   }
 
-  @Watch('selectedAccounts')
-  onSelectedAccountsChange() {
-    // When the component isn't in 'multiple' mode we have to make sure that we're still sending
-    // either an empty array or an array of one back so that the filterable methods do not break.
-    if (
-      this.selectedAccounts &&
-      typeof this.selectedAccounts === 'object' &&
-      !Array.isArray(this.selectedAccounts)
-    ) {
-      this.selectedAccountsArray = [];
-      this.selectedAccountsArray.push(this.selectedAccounts as GeneralAccount);
-    } else if (!this.selectedAccounts) {
-      this.selectedAccountsArray = [];
-    } else {
-      this.selectedAccountsArray = this.selectedAccounts;
-    }
-    this.$emit('selected-accounts-change', this.selectedAccountsArray);
-
-    // Force clear the search value on change (e.g. after searching for an account
-    // and then clicking enter)
-    if (this.search) {
-      this.search = '';
-    }
-  }
-
   filter(item: GeneralAccount, queryText: string) {
-    const hasValue = (val: string | null) => (val != null ? val : '');
+    const text = item.label.toLocaleLowerCase();
+    const query = queryText.toLocaleLowerCase();
 
-    const text = hasValue(item.label);
-    const query = hasValue(queryText);
-
-    const labelMatches =
-      text.toString().toLowerCase().indexOf(query.toString().toLowerCase()) >
-      -1;
+    const labelMatches = text.indexOf(query) > -1;
 
     const tagMatches =
       item.tags
-        .toString()
-        .toLowerCase()
-        .indexOf(query.toString().toLowerCase()) > -1;
+        .map(tag => tag.toLocaleLowerCase())
+        .join(' ')
+        .indexOf(query) > -1;
 
     return labelMatches || tagMatches;
   }

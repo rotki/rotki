@@ -228,7 +228,10 @@
       </v-row>
       <v-row class="mt-6">
         <v-col cols="12">
-          <premium-card v-if="!premium" title="Borrowing History"></premium-card>
+          <premium-card
+            v-if="!premium"
+            title="Borrowing History"
+          ></premium-card>
           <vault-events-list
             v-else
             :asset="vault.collateralAsset"
@@ -270,8 +273,9 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
-import { WatcherArgs } from '@/services/types-api';
-import { MakerDAOVault, Watcher } from '@/services/types-model';
+import { Watcher } from '@/services/types-api';
+import { WatcherType } from '@/services/types-common';
+import { MakerDAOVault } from '@/services/types-model';
 import { MakerDAOVaultModel } from '@/store/balances/types';
 import { VaultEventsList } from '@/utils/premium';
 
@@ -304,14 +308,14 @@ export default class LoanInfo extends Vue {
   showWatcherDialog: boolean = false;
   watcherMessage: string = '';
   watcherVaultId: number | null = null;
-  loanWatchers!: Watcher[];
+  loanWatchers!: Watcher<WatcherType>[];
 
-  get watchers(): Watcher[] {
+  get watchers(): Watcher<WatcherType>[] {
     if (!this.vault) {
       return [];
     }
     return this.loanWatchers.filter(watcher => {
-      const watcherArgs = watcher.args as WatcherArgs['makervault_collateralization_ratio'];
+      const watcherArgs = watcher.args;
 
       if (watcherArgs.vault_id.indexOf(String(this.vault!.identifier)) > -1)
         return watcher;

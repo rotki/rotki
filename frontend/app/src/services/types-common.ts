@@ -26,4 +26,8 @@ export type MakerDAOVaultEventType =
 
 export type WatcherType = 'makervault_collateralization_ratio';
 
+export type WatcherTypes = WatcherType;
+
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
+
+export type OpTypes = 'lt' | 'le' | 'gt' | 'ge';

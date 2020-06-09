@@ -109,7 +109,8 @@ import {
   Account,
   AccountDSRMovement,
   DSRBalance,
-  GeneralAccount
+  GeneralAccount,
+  Properties
 } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';
@@ -117,7 +118,9 @@ import { DsrMovementHistory } from '@/utils/premium';
 const { mapState, mapGetters: mapSessionGetters } = createNamespacedHelpers(
   'session'
 );
-const { mapGetters } = createNamespacedHelpers('balances');
+const { mapGetters, mapState: mapBalanceState } = createNamespacedHelpers(
+  'balances'
+);
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 
 @Component({
@@ -141,9 +144,11 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
       'totalGain',
       'accountGain',
       'accountGainUsdValue',
-      'dsrHistory',
-      'dsrHistoryByAddress'
-    ])
+      'dsrHistory'
+    ]),
+    ...mapBalanceState({
+      dsrHistoryByAddress: 'dsrHistory'
+    })
   }
 })
 export default class Lending extends Vue {
@@ -239,10 +244,6 @@ export default class Lending extends Vue {
     this.$interop.openUrl(url);
   }
 }
-
-type Properties<TObj, TResult> = {
-  [K in keyof TObj]: TObj[K] extends TResult ? K : never;
-}[keyof TObj];
 </script>
 <style scoped lang="scss">
 .lending {

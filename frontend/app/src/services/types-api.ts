@@ -3,7 +3,8 @@ import {
   DSRMovementType,
   Location,
   MakerDAOVaultEventType,
-  WatcherType
+  OpTypes,
+  WatcherTypes
 } from '@/services/types-common';
 
 export interface ApiDSRBalances {
@@ -48,18 +49,20 @@ export interface SupportedAssets {
   readonly [key: string]: ApiSupportedAsset;
 }
 
-export interface Watcher {
+export interface Watcher<T extends WatcherTypes> {
   readonly identifier: string;
-  readonly type: WatcherType;
-  readonly args: any;
+  readonly type: T;
+  readonly args: WatcherArgs[T];
+}
+
+export interface MakerVaultCollateralizationRatio {
+  readonly ratio: string;
+  readonly op: OpTypes;
+  readonly vault_id: string;
 }
 
 export interface WatcherArgs {
-  readonly makervault_collateralization_ratio: {
-    readonly ratio: string;
-    readonly op: 'lt' | 'le' | 'gt' | 'ge';
-    readonly vault_id: string;
-  };
+  readonly makervault_collateralization_ratio: MakerVaultCollateralizationRatio;
 }
 
 export interface ApiManualBalance {

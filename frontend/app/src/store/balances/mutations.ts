@@ -4,14 +4,15 @@ import {
   EthBalances,
   FiatBalance
 } from '@/model/blockchain-balances';
+import { Watcher } from '@/services/types-api';
+import { WatcherTypes } from '@/services/types-common';
 import {
   DSRBalances,
   DSRHistory,
   MakerDAOVault,
   MakerDAOVaultDetails,
   ManualBalance,
-  SupportedAsset,
-  Watcher
+  SupportedAsset
 } from '@/services/types-model';
 import { BalanceState, defaultState } from '@/store/balances/state';
 import {
@@ -79,7 +80,7 @@ export const mutations: MutationTree<BalanceState> = {
   manualBalances(state: BalanceState, manualBalances: ManualBalance[]) {
     state.manualBalances = manualBalances;
   },
-  watchers(state: BalanceState, watchers: Watcher[]) {
+  watchers(state: BalanceState, watchers: Watcher<WatcherTypes>[]) {
     state.watchers = watchers;
   },
   makerDAOVaults(state: BalanceState, makerDAOVaults: MakerDAOVault[]) {
