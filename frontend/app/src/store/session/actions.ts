@@ -43,12 +43,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       await dispatch('balances/fetchManualBalances', null, {
         root: true
       });
-      await dispatch('balances/fetchWatchers', null, {
-        root: true
-      });
 
       await dispatch('start', {
         settings
+      });
+
+      await dispatch('balances/fetchWatchers', null, {
+        root: true
       });
 
       monitor.start();

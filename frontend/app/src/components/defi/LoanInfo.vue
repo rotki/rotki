@@ -228,7 +228,7 @@
       </v-row>
       <v-row class="mt-6">
         <v-col cols="12">
-          <premium-card v-if="!premium" title="Loan History"></premium-card>
+          <premium-card v-if="!premium" title="Borrowing History"></premium-card>
           <vault-events-list
             v-else
             :asset="vault.collateralAsset"
