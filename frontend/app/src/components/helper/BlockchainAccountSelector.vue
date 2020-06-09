@@ -97,17 +97,7 @@ import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 
-import {
-  Account,
-  AccountData,
-  AccountDataMap,
-  Tags,
-  Blockchain
-} from '@/typing/types';
-
-export interface GeneralAccount extends AccountData {
-  chain: Blockchain;
-}
+import { Account, AccountDataMap, GeneralAccount, Tags } from '@/typing/types';
 
 const { mapState } = createNamespacedHelpers('session');
 const { mapState: mapBalanceState } = createNamespacedHelpers('balances');

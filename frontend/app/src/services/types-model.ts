@@ -17,12 +17,14 @@ export interface DSRBalances {
   };
 }
 
+export interface DSRHistoryItem {
+  readonly gainSoFar: BigNumber;
+  readonly gainSoFarUsdValue: BigNumber;
+  readonly movements: DSRMovement[];
+}
+
 export interface DSRHistory {
-  readonly [address: string]: {
-    gainSoFar: BigNumber;
-    gainSoFarUsdValue: BigNumber;
-    movements: DSRMovement[];
-  };
+  readonly [address: string]: DSRHistoryItem;
 }
 
 export interface DSRMovement {

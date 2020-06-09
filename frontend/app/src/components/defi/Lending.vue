@@ -100,15 +100,17 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
-import {
-  GeneralAccount,
-  default as BlockchainAccountSelector
-} from '@/components/helper/BlockchainAccountSelector.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { TaskType } from '@/model/task-type';
-import { DSRHistory } from '@/services/types-model';
-import { Account, AccountDSRMovement, DSRBalance } from '@/typing/types';
+import { DSRHistory, DSRHistoryItem } from '@/services/types-model';
+import {
+  Account,
+  AccountDSRMovement,
+  DSRBalance,
+  GeneralAccount
+} from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';
 
@@ -166,29 +168,16 @@ export default class Lending extends Vue {
   }
 
   get lendingAddresses(): Account[] {
-    let addresses: Account[] = [];
-
     // join addresses from dsrHistory and dsrBalances
-    const dsrHistoryAddresses = this.dsrHistory.map(dsrEvent => {
-      return { chain: 'ETH', address: dsrEvent.address } as Account;
-    });
-
-    const dsrBalanceAddresses = this.dsrBalances.map(dsrBalance => {
-      return { chain: 'ETH', address: dsrBalance.address } as Account;
-    });
-
-    addresses = [...dsrHistoryAddresses, ...dsrBalanceAddresses];
-
-    // remove duplicates
-    addresses = addresses.filter(
-      (value, index, array) =>
-        array.findIndex(
-          filterBy =>
-            filterBy.chain === value.chain && filterBy.address === value.address
-        ) === index
+    const dsrHistoryAddresses = this.dsrHistory.map(
+      dsrEvent => dsrEvent.address
     );
-
-    return addresses;
+    const dsrBalanceAddresses = this.dsrBalances.map(
+      dsrBalance => dsrBalance.address
+    );
+    return [...dsrHistoryAddresses, ...dsrBalanceAddresses]
+      .filter((account, index, accounts) => accounts.indexOf(account) === index)
+      .map(address => ({ chain: 'ETH', address: address }));
   }
 
   get loading(): boolean {
@@ -219,56 +208,30 @@ export default class Lending extends Vue {
   }
 
   get totalGainAcrossFilteredAccounts(): BigNumber {
-    const filteredAccounts = this.filteredAccounts.map(
-      account => account.address
-    );
-
-    const accountsMap = Object.keys(this.dsrHistoryByAddress).map(account => {
-      return {
-        address: account,
-        ...this.dsrHistoryByAddress[account]
-      };
-    });
-
-    // Map over all of our dsrHistory, passing those that match the
-    // filtered accounts to a reduce to aggregate. If no accounts are
-    // filtered then aggregate all of them.
-    if (filteredAccounts.length !== 0) {
-      return accountsMap
-        .filter(account => filteredAccounts.indexOf(account.address) > -1)
-        .reduce((sum, account) => {
-          return sum.plus(account.gainSoFar);
-        }, Zero);
-    }
-    return accountsMap.reduce((sum, account) => {
-      return sum.plus(account.gainSoFar);
-    }, Zero);
+    return this.calculateTotal('gainSoFar');
   }
 
   get totalUsdGainAcrossFilteredAccounts(): BigNumber {
-    const filteredAccounts = this.filteredAccounts.map(
-      account => account.address
-    );
+    return this.calculateTotal('gainSoFarUsdValue');
+  }
 
-    const accountsMap = Object.keys(this.dsrHistoryByAddress).map(account => {
+  private calculateTotal<K extends Properties<DSRHistoryItem, BigNumber>>(
+    property: K
+  ): BigNumber {
+    const filter = this.filteredAccounts.map(account => account.address);
+    let addresses = Object.keys(this.dsrHistoryByAddress);
+    if (filter.length !== 0) {
+      addresses = addresses.filter(address => filter.indexOf(address) > -1);
+    }
+    const accounts = addresses.map(account => {
       return {
         address: account,
         ...this.dsrHistoryByAddress[account]
       };
     });
 
-    // Map over all of our dsrHistory, passing those that match the
-    // filtered accounts to a reduce to aggregate. If no accounts are
-    // filtered then aggregate all of them.
-    if (filteredAccounts.length !== 0) {
-      return accountsMap
-        .filter(account => filteredAccounts.indexOf(account.address) > -1)
-        .reduce((sum, account) => {
-          return sum.plus(account.gainSoFarUsdValue);
-        }, Zero);
-    }
-    return accountsMap.reduce((sum, account) => {
-      return sum.plus(account.gainSoFarUsdValue);
+    return accounts.reduce((sum, account) => {
+      return sum.plus(account[property]);
     }, Zero);
   }
 
@@ -276,6 +239,10 @@ export default class Lending extends Vue {
     this.$interop.openUrl(url);
   }
 }
+
+type Properties<TObj, TResult> = {
+  [K in keyof TObj]: TObj[K] extends TResult ? K : never;
+}[keyof TObj];
 </script>
 <style scoped lang="scss">
 .lending {
