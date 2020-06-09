@@ -1,5 +1,9 @@
 import { default as BigNumber } from 'bignumber.js';
-import { ApiAssetBalance, AssetBalances } from '@/model/blockchain-balances';
+import {
+  ApiAssetBalance,
+  AssetBalances,
+  Balance
+} from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { DSRMovementType } from '@/services/types-common';
 
@@ -150,10 +154,7 @@ export interface Account {
 
 export interface DSRBalance {
   readonly address: string;
-  readonly balance: {
-    readonly amount: BigNumber;
-    readonly usdValue: BigNumber;
-  };
+  readonly balance: Balance;
 }
 
 export interface AccountDSRMovement {

@@ -21,12 +21,12 @@
           <slot name="second-col"></slot>
         </div>
         <v-divider
-          v-if="cols !== 'two'"
+          v-if="cols > 2"
           :vertical="$vuetify.breakpoint.smAndUp"
         ></v-divider>
       </v-col>
       <v-col
-        v-if="cols !== 'two'"
+        v-if="cols > 2"
         class="stat-card-wide__third-col pa-6"
         cols="12"
         :sm="colsSize[cols]"
@@ -34,7 +34,7 @@
         <slot name="third-col"></slot>
       </v-col>
       <v-col
-        v-if="cols !== 'two' && cols !== 'three'"
+        v-if="cols > 3"
         class="stat-card-wide__fourth-col pa-6"
         cols="12"
         :sm="colsSize[cols]"
@@ -70,13 +70,16 @@ export default class StatCardWide extends Vue {
   locked!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   loading!: boolean;
-  @Prop({ required: false, type: String, default: 'three' })
-  cols!: boolean;
+
+  // Determines how many cells wide the stat-card should be and
+  // adjusts `<v-col cols=` accordingly via colsSize
+  @Prop({ required: false, type: Number, default: 3 })
+  cols!: number;
 
   colsSize = {
-    two: 6,
-    three: 4,
-    four: 3
+    2: 6,
+    3: 4,
+    4: 3
   };
 }
 </script>

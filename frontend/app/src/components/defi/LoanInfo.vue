@@ -47,7 +47,7 @@
                 {{
                   vault.collateralizationRatio
                     ? vault.collateralizationRatio
-                    : 'NaN'
+                    : '-'
                 }}
               </div>
             </div>
@@ -57,17 +57,14 @@
               block
               depressed
               color="grey lighten-3 grey--text text--darken-2"
+              class="loan-info__watcher-button"
               @click="premium ? openWatcherDialog(vault) : ''"
             >
               <v-icon x-small left>fa fa-bell-o</v-icon>
-              <span
-                v-if="watchers.length > 0"
-                style="text-transform: none;"
-                class="caption"
-              >
+              <span v-if="watchers.length > 0" class="caption">
                 Edit {{ watchers.length }} collateralization watcher(s)
               </span>
-              <span v-else style="text-transform: none;" class="caption">
+              <span v-else class="caption">
                 Add collateralization ratio watcher
               </span>
               <premium-lock v-if="!premium" size="x-small"></premium-lock>
@@ -111,7 +108,7 @@
                 ></amount-display>
                 <amount-display
                   v-else
-                  :loading="typeof vault.totalInterestOwed === 'undefined'"
+                  :loading="vault.totalInterestOwed === undefined"
                   :value="'0.00'"
                   asset="DAI"
                 ></amount-display>
@@ -250,7 +247,6 @@
       :existing-watchers="watchers"
       preselect-watcher-type="makervault_collateralization_ratio"
       watcher-value-label="Collateralization Ratio"
-      @confirm="addWatcher()"
       @cancel="showWatcherDialog = false"
     >
     </watcher-dialog>
@@ -311,22 +307,15 @@ export default class LoanInfo extends Vue {
   loanWatchers!: Watcher[];
 
   get watchers(): Watcher[] {
-    if (this.vault) {
-      return this.loanWatchers.filter(watcher => {
-        const watcherArgs = watcher.args as WatcherArgs['makervault_collateralization_ratio'];
-
-        // if (watcherArgs.indexOf(this.vault_id) >-1)
-        if (watcherArgs.vault_id.indexOf(String(this.vault!.identifier)) > -1)
-          return watcher;
-      });
-      // this.loanWatchers
-      //   .map(watcher => {
-      //     const watcherArgs = watcher.args as WatcherArgs['makervault_collateralization_ratio'];
-      //     return watcherArgs.vault_id;
-      //   })
-      //   .indexOf(String(this.vault.identifier)) > -1;
+    if (!this.vault) {
+      return [];
     }
-    return [];
+    return this.loanWatchers.filter(watcher => {
+      const watcherArgs = watcher.args as WatcherArgs['makervault_collateralization_ratio'];
+
+      if (watcherArgs.vault_id.indexOf(String(this.vault!.identifier)) > -1)
+        return watcher;
+    });
   }
 
   openWatcherDialog(vault: MakerDAOVault) {
@@ -337,11 +326,6 @@ export default class LoanInfo extends Vue {
 
   openLink(url: string) {
     this.$interop.openUrl(url);
-  }
-
-  addWatcher() {
-    this.showWatcherDialog = false;
-    window.alert('api thing in WatcherDialog');
   }
 }
 </script>
@@ -358,6 +342,10 @@ export default class LoanInfo extends Vue {
     &__watcher {
       border-radius: 15px;
     }
+  }
+
+  &__watcher-button {
+    text-transform: none;
   }
 
   &__liquidation {

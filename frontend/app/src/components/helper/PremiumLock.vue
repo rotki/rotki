@@ -22,9 +22,11 @@ import { Vue, Component, Prop } from 'vue-property-decorator';
 
 @Component({})
 export default class PremiumLock extends Vue {
+  // Supply a `size` (x-small, small, large, x-large)
   @Prop({ type: String, required: false, default: '' })
   size!: string;
 
+  // Changes the size of the button based on the `size` prop
   get lockSize() {
     if (this.size !== '') return { [this.size]: true };
     return null;

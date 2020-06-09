@@ -32,8 +32,13 @@ export function roundDown(value: BigNumber, precision: number) {
   return value.toFormat(precision, BigNumber.ROUND_DOWN);
 }
 
-// truncates blockchain addresses retaining `truncLength` characters
-// in the beginning and end of the address
+/**
+ * Truncates blockchain hashes (addresses / txs) retaining `truncLength+2` characters
+ * from the beginning and `truncLength` characters from the end of the string.
+ * @param address
+ * @param [truncLength]
+ * @returns truncated address
+ */
 export function truncateAddress(
   address: string,
   truncLength: number = 4

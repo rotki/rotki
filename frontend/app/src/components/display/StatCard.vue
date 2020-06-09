@@ -1,7 +1,7 @@
 <template>
   <v-card class="stat-card">
     <v-card-title>
-      <slot name="title">{{ title }}</slot>
+      {{ title }}
       <v-spacer v-if="locked"></v-spacer>
       <premium-lock v-if="locked"></premium-lock>
     </v-card-title>
