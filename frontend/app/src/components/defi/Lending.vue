@@ -15,7 +15,7 @@
               </dt>
               <dd class="primary--text headline font-weight-bold">
                 <amount-display
-                  :value="totalDepositedUsd"
+                  :value="totalDepositedUsdAcrossFilteredAccounts"
                   fiat-currency="USD"
                   show-currency="symbol"
                 ></amount-display>
@@ -198,15 +198,21 @@ export default class Lending extends Vue {
     );
   }
 
-  get totalDeposited(): BigNumber {
-    return this.dsrBalances.reduce(
-      (sum, { balance }) => sum.plus(balance.amount),
-      Zero
+  get totalDepositedUsdAcrossFilteredAccounts(): BigNumber {
+    const filteredAccounts = this.filteredAccounts.map(
+      account => account.address
     );
-  }
+    if (filteredAccounts.length === 0) {
+      return this.dsrBalances.reduce(
+        (sum, { balance }) => sum.plus(balance.usdValue),
+        Zero
+      );
+    }
+    const filteredBalances = this.dsrBalances.filter(
+      balance => filteredAccounts.indexOf(balance.address) > -1
+    );
 
-  get totalDepositedUsd(): BigNumber {
-    return this.dsrBalances.reduce(
+    return filteredBalances.reduce(
       (sum, { balance }) => sum.plus(balance.usdValue),
       Zero
     );
