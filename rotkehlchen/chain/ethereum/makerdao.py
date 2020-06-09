@@ -317,12 +317,19 @@ class MakerDAO(EthereumModule):
         self.lock = Semaphore()
         self.vaults_lock = Semaphore()
         self.historical_dsr_reports: Dict[ChecksumEthAddress, DSRAccountReport] = {}
-        self.last_proxy_mapping_query_ts = 0
-        self.last_vault_mapping_query_ts = 0
+        self.reset_last_query_ts()
         self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
         self.usd_price: Dict[str, FVal] = defaultdict(FVal)
         self.vault_mappings: Dict[ChecksumEthAddress, List[MakerDAOVault]] = defaultdict(list)
         self.ilk_to_stability_fee: Dict[bytes, FVal] = {}
+        self.vault_details: List[MakerDAOVaultDetails] = []
+
+    def reset_last_query_ts(self) -> None:
+        """Reset the last query timestamps, effectively cleaning the caches"""
+        self.last_proxy_mapping_query_ts = 0
+        self.last_vault_mapping_query_ts = 0
+        self.last_vault_details_query_ts = 0
+        self.last_historical_dsr_query_ts = 0
 
     def premium_active(self) -> bool:
         return bool(self.premium and self.premium.is_active())
@@ -829,13 +836,20 @@ class MakerDAO(EthereumModule):
 
         This is a premium only call
 
+        If the details have been queried in the past REQUERY_PERIOD
+        seconds then the old result is used.
+
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result.
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
-        vault_details = []
+        now = ts_now()
+        if now - self.last_vault_details_query_ts < REQUERY_PERIOD:
+            return self.vault_details
+
+        self.vault_details = []
         proxy_mappings = self._get_accounts_having_maker_proxy()
         # Make sure that before querying vault details there has been a recent vaults call
         vault_mappings = self._get_vault_mappings()
@@ -844,11 +858,12 @@ class MakerDAO(EthereumModule):
             for vault in vaults:
                 vault_detail = self._query_vault_details(vault, proxy, vault.urn)
                 if vault_detail:
-                    vault_details.append(vault_detail)
+                    self.vault_details.append(vault_detail)
 
         # Returns vault details sorted. Oldest identifier first
-        vault_details.sort(key=lambda details: details.identifier)
-        return vault_details
+        self.vault_details.sort(key=lambda details: details.identifier)
+        self.last_vault_details_query_ts = ts_now()
+        return self.vault_details
 
     def get_current_dsr(self) -> DSRCurrentBalances:
         """Gets the current DSR balance for all accounts that have DAI in DSR
@@ -1149,6 +1164,10 @@ class MakerDAO(EthereumModule):
         )
 
     def get_historical_dsr(self) -> Dict[ChecksumEthAddress, DSRAccountReport]:
+        now = ts_now()
+        if now - self.last_historical_dsr_query_ts < REQUERY_PERIOD:
+            return self.historical_dsr_reports
+
         with self.lock:
             proxy_mappings = self._get_accounts_having_maker_proxy()
             reports = {}
@@ -1160,7 +1179,9 @@ class MakerDAO(EthereumModule):
 
                 reports[account] = report
 
-        return reports
+        self.historical_dsr_reports = reports
+        self.last_historical_dsr_query_ts = ts_now()
+        return self.historical_dsr_reports
 
     def _get_join_exit_events(
             self,
@@ -1389,6 +1410,7 @@ class MakerDAO(EthereumModule):
         pass
 
     def on_account_addition(self, address: ChecksumEthAddress) -> None:
+        self.reset_last_query_ts()
         # Get the proxy of the account
         proxy_result = self._get_account_proxy(address)
         if proxy_result is None:
@@ -1400,5 +1422,6 @@ class MakerDAO(EthereumModule):
         self._get_vaults_of_address(user_address=address, proxy_address=proxy_result)
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        self.reset_last_query_ts()
         with self.lock:
             self.historical_dsr_reports.pop(address, 'None')
