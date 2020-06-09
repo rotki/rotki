@@ -169,6 +169,10 @@ import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Watcher, WatcherArgs } from '@/services/types-api';
 import { WatcherType } from '@/services/types-common';
 
+interface VaultWatcher extends Watcher {
+  args: WatcherArgs['makervault_collateralization_ratio'];
+}
+
 @Component({
   components: { MessageDialog }
 })
@@ -253,7 +257,14 @@ export default class WatcherDialog extends Vue {
 
         this.watcherValue = null;
         this.watcherOperation = null;
-        this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
+
+        this.loadedWatchers = JSON.parse(
+          JSON.stringify(
+            updatedWatchers.filter(
+              watcher => watcher.args.vault_id === watcher.args.vault_id
+            )
+          )
+        );
       })
       .catch((reason: Error) => {
         this.validateSettingChange(
@@ -294,7 +305,13 @@ export default class WatcherDialog extends Vue {
             );
 
             this.changeEditMode(watcher.identifier);
-            this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
+            this.loadedWatchers = JSON.parse(
+              JSON.stringify(
+                updatedWatchers.filter(
+                  watcher => watcher.args.vault_id === watcher.args.vault_id
+                )
+              )
+            );
           })
           .catch((reason: Error) => {
             this.validateSettingChange(
@@ -337,7 +354,15 @@ export default class WatcherDialog extends Vue {
 
           this.watcherValue = null;
           this.watcherOperation = null;
-          this.loadedWatchers = JSON.parse(JSON.stringify(updatedWatchers));
+
+          // TODO: Fix me senor kelsos (and all my clones)
+          this.loadedWatchers = JSON.parse(
+            JSON.stringify(
+              updatedWatchers.filter(
+                watcher => watcher.args.vault_id === watcher.args.vault_id
+              )
+            )
+          );
         })
         .catch((reason: Error) => {
           this.validateSettingChange(

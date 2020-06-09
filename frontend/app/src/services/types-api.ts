@@ -51,7 +51,7 @@ export interface SupportedAssets {
 export interface Watcher {
   readonly identifier: string;
   readonly type: WatcherType;
-  readonly args: object;
+  readonly args: any;
 }
 
 export interface WatcherArgs {
