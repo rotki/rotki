@@ -166,4 +166,5 @@ export interface AccountDSRMovement {
   readonly amountUsdValue: BigNumber;
   readonly blockNumber: number;
   readonly timestamp: number;
+  readonly txHash: string;
 }
