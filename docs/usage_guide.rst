@@ -119,7 +119,7 @@ Customizing the accounting settings
 
 By choosing the "Accounting" settings button you can customize some application settings that pertain to accounting calculations.
 
-You should understand what each setting does, consult with a tax accountant for your jurisdcition and then set them appropriately.
+You should understand what each setting does, consult with a tax accountant for your jurisdiction and then set them appropriately.
 
 The default settings are at the moment set for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings can be adjusted.
 
@@ -324,44 +324,59 @@ Lending
 
 In the lending section you can see the status of your DAI in the DAI Savings Rate (DSR). The accounts that use DSR are auto-detected from your given blockchain accounts. You can see how much DAI you have locked over all of your accounts and how much DAI is locked for each account in the DSR.
 
-.. image:: images/sc_dsr_premium_all.png
-   :alt: DSR with premium
-   :align: center
-
-If you have a premium subscription you can also see how much DAI you have gained in total or over each account. You can also see your deposits/withdrawals and how much DAI was earned until that point.
-
-.. image:: images/sc_dsr_premium_account.png
-   :alt: DSR with premium per account
-   :align: center
-
-You can also filter by account and see how much DAI is locked in the DSR for each account or how much DAI was earned for each account.
-
 .. image:: images/sc_dsr_nonpremium_all.png
    :alt: DSR without premium
    :align: center
 
-If you don't have a premium subscription you can't see how much DAI was earned and you also can't see the history of deposits/withdrawals.
+You can also filter by account and see how much DAI is locked in the DSR for each account.
 
-.. image:: images/sc_dsr_nonpremium_account.png
-   :alt: DSR without premium per account
+If you have a premium subscription you can also see how much DAI you have gained in total or over each account, the history of deposits/withdrawals and how much DAI was earned at the point in time for each action.
+
+.. image:: images/sc_dsr_premium_all.png
+   :alt: DSR with premium
    :align: center
 
-Without a premium subscription you also can't see the amount of DAI earned per account.
-
 Finally you need to have premium in order for the total amount of DAI earned in a given time period to be counted in the profit/loss statements of the tax report.
+
+Below you can see a small demonstration of the usage of DSR by a premium account.
+
+.. image:: images/dsr_premium_demo.gif
+   :alt: DSR premium demo
+   :align: center
 
 Borrowing
 =============
 
-In the borrowing section you can find information on your makerdao vaults. The vaults are autodetected from your ethereum accounts and information about them is shown.
+In the borrowing section you can find information on your makerdao vaults. The vaults are autodetected from your ethereum accounts and information about each one of them is displayed.
 
 As a normal non-premium user you can see all your vaults, and for each one inspect the locked collateral, collateralization, debt generated and the liquidation price.
 
+.. image:: images/sc_vaults_nonpremium.png
+   :alt: Makerdao vaults without a premium account
+   :align: center
+
+
 With a premium subscription you can also see additional information such as the creation time of the vault, list of historical activities, total interest owed and liquidation events.
+
+.. image:: images/sc_vaults_premium.png
+   :alt: Makerdao vaults with a premium account
+   :align: center
 
 Premium users can also have makervault interest taken into account in the profit/loss report.
 
-Finally premium users can create watchers for their vaults. They can add a target collateralization ratio they would like rotki to watch for in a vault. If the collateralization ration becomess less/greater than that ratio then an alert is sent to the user's email. This watcher service runs in the rotki server so you don't even need to leave the application open.
+Finally premium users can create watchers for their vaults.
+
+.. image:: images/sc_vaults_premium_watchers.png
+   :alt: Makerdao vaults with a premium account
+   :align: center
+
+They can add a target collateralization ratio they would like rotki to watch for in a vault. If the collateralization ratio becomes less/greater than that ratio then an alert is sent to your email. This watcher service runs on the rotki server so you don't even need to leave the application open.
+
+Below you can see a small demonstration of the usage of makerdao vaults by a premium account.
+
+.. image:: images/vaults_premium_demo.gif
+   :alt: Makerdao vaults premium demo
+   :align: center
 
 Creating a tax report
 **********************
