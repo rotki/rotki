@@ -4,10 +4,15 @@ import store from '@/store/store';
 class Monitoring {
   private monitoring?: NodeJS.Timer;
   private taskMonitoring?: NodeJS.Timer;
+  private watcherMonitoring?: NodeJS.Timer;
 
   private fetch() {
     store.dispatch('notifications/consume');
     store.dispatch('session/periodicCheck');
+  }
+
+  private fetchWatchers() {
+    store.dispatch('balances/fetchWatchers');
   }
 
   /**
@@ -23,6 +28,11 @@ class Monitoring {
     if (!this.taskMonitoring) {
       taskManager.monitor();
       this.taskMonitoring = setInterval(() => taskManager.monitor(), 2000);
+    }
+
+    if (!this.watcherMonitoring) {
+      this.fetchWatchers();
+      this.watcherMonitoring = setInterval(this.fetchWatchers, 60000);
     }
   }
 
