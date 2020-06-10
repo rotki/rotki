@@ -1,5 +1,5 @@
 import astroid
-from tools.pylint.log_checker import LogNokwargsChecker
+from tools.pylint import LogNokwargsChecker
 
 
 def test_simple_logger_with_kwargs(pylint_test_linter):

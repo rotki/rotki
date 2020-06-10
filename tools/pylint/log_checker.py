@@ -2,9 +2,7 @@ from astroid.exceptions import InferenceError
 from pylint.checkers import BaseChecker
 from pylint.interfaces import IAstroidChecker
 
-# LOGNOKWARGS_ID = "lognokwargs"
-LOGNOKWARGS_ID = 'E5001'
-LOGNOKWARGS_NAME = 'rotki-lognokwargs'
+LOGNOKWARGS_SYMBOL = 'rotki-lognokwargs'
 LOGNOKWARGS_MSG = (
     'Normal loggers can not receive kwargs. To pass kwargs to a logger please '
     'use RotkehlchenLogsAdapter.'
@@ -27,12 +25,12 @@ class LogNokwargsChecker(BaseChecker):
     """A pylint custom checker to detect if we ever use kwargs in a normal Logger call"""
     __implements__ = IAstroidChecker
 
-    name = LOGNOKWARGS_NAME
+    name = 'lognokwargs'
     priority = -1
     msgs = {
-        LOGNOKWARGS_ID: (
+        'E9001': (
             LOGNOKWARGS_MSG,
-            LOGNOKWARGS_NAME,
+            LOGNOKWARGS_SYMBOL,
             "Message Help is empty",
         ),
     }
@@ -60,4 +58,4 @@ class LogNokwargsChecker(BaseChecker):
         for inferred_func in node.func.infer():
             if is_normal_logging_call(inferred_func):
                 if node.keywords and len(node.keywords) != 0:
-                    self.add_message(LOGNOKWARGS_ID, node=node)
+                    self.add_message(LOGNOKWARGS_SYMBOL, node=node)
