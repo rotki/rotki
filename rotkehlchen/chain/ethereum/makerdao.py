@@ -1332,7 +1332,7 @@ class MakerDAO(EthereumModule):
             movements: List[DSRMovement],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> FVal:
+    ) -> Tuple[FVal, Timestamp]:
         """Get DSR gain for the account in a given period
 
         May raise:
@@ -1356,6 +1356,7 @@ class MakerDAO(EthereumModule):
         gain_at_to_ts = ZERO
         gain_at_from_ts_found = False
         gain_at_to_ts_found = False
+        last_timestamp = to_ts
         for m in movements:
             if not gain_at_from_ts_found and m.timestamp >= from_ts:
                 gain_at_from_ts = normalized_balance * from_chi - amount_in_dsr
@@ -1368,34 +1369,41 @@ class MakerDAO(EthereumModule):
             if m.movement_type == 'deposit':
                 normalized_balance += m.normalized_balance
                 amount_in_dsr += m.amount
+                if amount_in_dsr > ZERO:
+                    last_timestamp = to_ts
             else:  # withdrawal
                 amount_in_dsr -= m.amount
                 normalized_balance -= m.normalized_balance
+                if FVal(amount_in_dsr).is_close(ZERO, max_diff="1e10"):
+                    last_timestamp = m.timestamp
 
         if not gain_at_from_ts_found:
-            return ZERO
+            return ZERO, last_timestamp
         if not gain_at_to_ts_found:
             gain_at_to_ts = normalized_balance * to_chi - amount_in_dsr
 
-        return _dsrdai_to_dai(gain_at_to_ts - gain_at_from_ts)
+        return _dsrdai_to_dai(gain_at_to_ts - gain_at_from_ts), last_timestamp
 
-    def get_dsr_gains_in_period(self, from_ts: Timestamp, to_ts: Timestamp) -> FVal:
+    def get_dsr_gains_in_period(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> List[Tuple[FVal, Timestamp]]:
         """Get DSR gains for all accounts in a given period
 
         This is a best effort attempt and may also fail due to inability to find
         the required data via logs
         """
-        with self.lock:
-            history = self.historical_dsr_reports
+        history = self.get_historical_dsr()
 
-        gain = ZERO
+        gains = []
         for account, report in history.items():
             try:
-                gain += self._get_dsr_account_gain_in_period(
+                gains.append(self._get_dsr_account_gain_in_period(
                     movements=report.movements,
                     from_ts=from_ts,
                     to_ts=to_ts,
-                )
+                ))
             except (ChiRetrievalError, RemoteError, BlockchainQueryError) as e:
                 self.msg_aggregator.add_warning(
                     f'Failed to get DSR gains for {account} between '
@@ -1403,7 +1411,7 @@ class MakerDAO(EthereumModule):
                 )
                 continue
 
-        return gain
+        return gains
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

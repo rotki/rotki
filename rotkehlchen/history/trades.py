@@ -156,17 +156,19 @@ class TradesHistorian():
         # Include makerdao DSR gains and vault events
         defi_events = []
         if self.chain_manager.makerdao and has_premium:
-            gain = self.chain_manager.makerdao.get_dsr_gains_in_period(
+            dsr_gains = self.chain_manager.makerdao.get_dsr_gains_in_period(
                 from_ts=start_ts,
                 to_ts=end_ts,
             )
-            if gain > ZERO:
-                defi_events.append(DefiEvent(
-                    timestamp=end_ts,
-                    event_type=DefiEventType.DSR_LOAN_GAIN,
-                    asset=A_DAI,
-                    amount=gain,
-                ))
+            log.debug('DSR GAINS: {dsr_gains}')
+            for gain, timestamp in dsr_gains:
+                if gain > ZERO:
+                    defi_events.append(DefiEvent(
+                        timestamp=timestamp,
+                        event_type=DefiEventType.DSR_LOAN_GAIN,
+                        asset=A_DAI,
+                        amount=gain,
+                    ))
 
             vault_details = self.chain_manager.makerdao.get_vault_details()
             # We count the loss on a vault in the period if the last event is within
