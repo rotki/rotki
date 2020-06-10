@@ -70,7 +70,7 @@ export default class PyHandler {
     let args: string[] = [];
     this.loadArgumentsFromFile(args);
 
-    if (PyHandler.guessPackaged()) {
+    if (this.guessPackaged()) {
       this.startProcessPackaged(port, args);
     } else {
       this.startProcess(port, args);
@@ -126,8 +126,12 @@ export default class PyHandler {
     }
   }
 
-  private static guessPackaged() {
-    return fs.existsSync(PyHandler.packagedBackendPath());
+  private guessPackaged() {
+    let path = PyHandler.packagedBackendPath();
+    this.logToFile(
+      `Determining if we are packaged by seeing if ${path} exists`
+    );
+    return fs.existsSync(path);
   }
 
   private static packagedBackendPath() {

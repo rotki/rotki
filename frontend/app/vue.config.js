@@ -64,7 +64,7 @@ module.exports = {
           '${productName}-${platform}_${arch}-v${buildVersion}.${ext}',
         extraResources: [
           {
-            from: '../rotkehlchen_py_dist',
+            from: '../../rotkehlchen_py_dist',
             to: 'rotkehlchen_py_dist',
             filter: ['**/*']
           }
