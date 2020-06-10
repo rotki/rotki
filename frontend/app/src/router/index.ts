@@ -58,7 +58,23 @@ export default new Router({
     {
       path: '/settings/api-keys',
       name: 'api-keys',
-      component: () => import('../views/settings/ApiKeys.vue')
+      component: () => import('../views/settings/ApiKeys.vue'),
+      children: [
+        {
+          path: 'rotki-premium',
+          component: () => import('../components/settings/PremiumSettings.vue')
+        },
+        {
+          path: 'exchanges',
+          component: () =>
+            import('../components/settings/api-keys/ExchangeSettings.vue')
+        },
+        {
+          path: 'external-services',
+          component: () =>
+            import('../components/settings/api-keys/ExternalServices.vue')
+        }
+      ]
     },
     {
       path: '/exchange-balances/:exchange',

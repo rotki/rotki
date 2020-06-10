@@ -15,7 +15,7 @@
         <v-list-item-title>Accounts & Balances</v-list-item-title>
       </v-list-item-content>
     </v-list-item>
-    <v-list-item to="/settings/api-keys" class="navigation__api-keys">
+    <v-list-item to="/settings/api-keys/rotki-premium" class="navigation__api-keys">
       <v-list-item-action><v-icon>fa-key</v-icon></v-list-item-action>
       <v-list-item-content>
         <v-list-item-title>API Keys</v-list-item-title>
