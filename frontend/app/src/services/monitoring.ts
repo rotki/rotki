@@ -30,7 +30,7 @@ class Monitoring {
       this.taskMonitoring = setInterval(() => taskManager.monitor(), 2000);
     }
 
-    if (!this.watcherMonitoring && store.state.session?.premium) {
+    if (!this.watcherMonitoring) {
       this.fetchWatchers();
       // check for watchers every 6 minutes (approx. half the firing time
       // of the server-side watchers)
@@ -46,6 +46,10 @@ class Monitoring {
     if (this.taskMonitoring) {
       clearInterval(this.taskMonitoring);
       this.taskMonitoring = undefined;
+    }
+    if (this.watcherMonitoring) {
+      clearInterval(this.watcherMonitoring);
+      this.watcherMonitoring = undefined;
     }
   }
 }
