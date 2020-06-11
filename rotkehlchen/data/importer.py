@@ -99,7 +99,7 @@ class DataImporter():
         if row_type in ('Gift/Tip', 'Trade', 'Income'):
             base_asset = Asset(csv_row['Cur.Buy'])
             quote_asset = None if csv_row['Cur.Sell'] == '' else Asset(csv_row['Cur.Sell'])
-            if not quote_asset and row_type not in ('Gift/Tip', 'Income'):
+            if quote_asset is None and row_type not in ('Gift/Tip', 'Income'):
                 raise DeserializationError('Got a trade entry with an empty quote asset')
 
             if quote_asset is None:

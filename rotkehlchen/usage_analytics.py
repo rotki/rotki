@@ -130,7 +130,7 @@ def create_usage_analytics() -> Dict[str, Any]:
     analytics['rotki_version'] = get_system_spec()['rotkehlchen']
 
     location_data = retrieve_location_data()
-    if not location_data:
+    if location_data is None:
         location_data = GeolocationData('unknown', 'unknown')
 
     analytics['country'] = location_data.country_code
