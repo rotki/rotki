@@ -238,7 +238,7 @@ class Inquirer():
         price = _query_exchanges_rateapi(base, quote)
         # TODO: Find another backup API for fiat exchange rates
 
-        if not price:
+        if price is None:
             # Search the cache for any price in the last month
             for i in range(1, 31):
                 now = Timestamp(now - Timestamp(86401))

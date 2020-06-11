@@ -52,7 +52,7 @@ class PremiumSyncManager():
         should be asked a message is also returned
         """
         log.debug('can sync data from server -- start')
-        if not self.premium:
+        if self.premium is None:
             return SyncCheckResult(can_sync=CanSync.NO, message='')
 
         b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
@@ -137,7 +137,7 @@ class PremiumSyncManager():
 
     def maybe_upload_data_to_server(self) -> None:
         # if user has no premium do nothing
-        if not self.premium:
+        if self.premium is None:
             return
 
         # upload only once per hour
@@ -248,7 +248,7 @@ class PremiumSyncManager():
                 log.error(message)
                 raise PremiumAuthenticationError(message)
 
-        if not self.premium:
+        if self.premium is None:
             return None
 
         result = self._can_sync_data_from_server(new_account=create_new)

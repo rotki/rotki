@@ -1,5 +1,6 @@
 import astroid
 from tools.pylint import LogNokwargsChecker
+from tools.pylint.log_checker import LOGNOKWARGS_SYMBOL
 
 
 def test_simple_logger_with_kwargs(pylint_test_linter):
@@ -19,7 +20,7 @@ def test_simple_logger_with_kwargs(pylint_test_linter):
         checker.visit_call(node)
         messages = checker.linter.release_messages()
         assert len(messages) == 1
-        assert messages[0].msg_id == 'E5001'
+        assert messages[0].msg_id == LOGNOKWARGS_SYMBOL
         assert messages[0].node == node
 
     # But also check that if it's a RotkehlchenLogsAdapter there is no error
