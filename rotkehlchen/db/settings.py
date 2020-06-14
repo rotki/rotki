@@ -1,4 +1,5 @@
-from typing import Any, Dict, NamedTuple, Optional, Union
+import json
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
@@ -22,6 +23,7 @@ DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
+DEFAULT_ACTIVE_MODULES = ['makerdao_dsr', 'makerdao_vaults']
 
 
 class DBSettings(NamedTuple):
@@ -43,6 +45,7 @@ class DBSettings(NamedTuple):
     last_balance_save: Timestamp = Timestamp(0)
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
     kraken_account_type: KrakenAccountType = DEFAULT_KRAKEN_ACCOUNT_TYPE
+    active_modules: List[str] = DEFAULT_ACTIVE_MODULES
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -59,6 +62,7 @@ class ModifiableDBSettings(NamedTuple):
     date_display_format: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
     kraken_account_type: Optional[KrakenAccountType] = None
+    active_modules: Optional[List[str]] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -76,6 +80,8 @@ class ModifiableDBSettings(NamedTuple):
                     value = None
                 elif setting == 'kraken_account_type':
                     value = value.serialize()
+                elif setting == 'active_modules':
+                    value = json.dumps(value)
 
                 settings_dict[setting] = value
 
@@ -151,6 +157,8 @@ def db_settings_from_dict(
             specified_args[key] = read_boolean(value)
         elif key == 'kraken_account_type':
             specified_args[key] = KrakenAccountType.deserialize(value)
+        elif key == 'active_modules':
+            specified_args[key] = json.loads(value)
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '
