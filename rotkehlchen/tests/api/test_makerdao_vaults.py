@@ -3,7 +3,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.makerdao import MakerDAOVault
+from rotkehlchen.chain.ethereum.makerdao.vaults import MakerDAOVault
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (

@@ -153,14 +153,13 @@ class TradesHistorian():
         )
         history.extend(external_trades)
 
-        # Include makerdao DSR gains and vault events
+        # Include makerdao DSR gains
         defi_events = []
-        if self.chain_manager.makerdao and has_premium:
-            dsr_gains = self.chain_manager.makerdao.get_dsr_gains_in_period(
+        if self.chain_manager.makerdao_dsr and has_premium:
+            dsr_gains = self.chain_manager.makerdao_dsr.get_dsr_gains_in_period(
                 from_ts=start_ts,
                 to_ts=end_ts,
             )
-            log.debug('DSR GAINS: {dsr_gains}')
             for gain, timestamp in dsr_gains:
                 if gain > ZERO:
                     defi_events.append(DefiEvent(
@@ -170,7 +169,9 @@ class TradesHistorian():
                         amount=gain,
                     ))
 
-            vault_details = self.chain_manager.makerdao.get_vault_details()
+        # Include makerdao vault events
+        if self.chain_manager.makerdao_vaults and has_premium:
+            vault_details = self.chain_manager.makerdao_vaults.get_vault_details()
             # We count the loss on a vault in the period if the last event is within
             # the given period. It's not a very accurate approach but it's good enough
             # for now. A more detailed approach would need archive node or log querying

@@ -6,7 +6,7 @@ from unittest.mock import _patch, patch
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.makerdao import _dsrdai_to_dai
+from rotkehlchen.chain.ethereum.makerdao.dsr import _dsrdai_to_dai
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_DAI_JOIN,

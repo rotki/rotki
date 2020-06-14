@@ -1376,17 +1376,17 @@ class RestAPI():
         self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _makerdao_query(self, method: str) -> Dict[str, Any]:
+    def _makerdao_query(self, module: str, method: str) -> Dict[str, Any]:
         result = None
         msg = ''
         status_code = HTTPStatus.OK
 
-        makerdao = self.rotkehlchen.chain_manager.makerdao
+        makerdao = getattr(self.rotkehlchen.chain_manager, module)
         if not makerdao:
             return {
                 'result': None,
                 'status_code': HTTPStatus.CONFLICT,
-                'message': 'MakerDAO module is not activated',
+                'message': f'MakerDAO {module} module is not activated',
             }
 
         try:
@@ -1397,29 +1397,44 @@ class RestAPI():
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    def _api_query_for_makerdao(self, async_query: bool, method: str) -> Response:
+    def _api_query_for_makerdao(self, async_query: bool, module: str, method: str) -> Response:
         if async_query:
-            return self._query_async(command='_makerdao_query', method=method)
+            return self._query_async(command='_makerdao_query', module=module, method=method)
 
-        response = self._makerdao_query(method=method)
+        response = self._makerdao_query(module=module, method=method)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
     def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
-        return self._api_query_for_makerdao(async_query, method='get_current_dsr')
+        return self._api_query_for_makerdao(
+            async_query=async_query,
+            module='makerdao_dsr',
+            method='get_current_dsr',
+        )
 
     @require_premium_user(active_check=False)
     def get_makerdao_dsr_history(self, async_query: bool) -> Response:
-        return self._api_query_for_makerdao(async_query, method='get_historical_dsr')
+        return self._api_query_for_makerdao(
+            async_query=async_query,
+            module='makerdao_dsr',
+            method='get_historical_dsr',
+        )
 
     @require_loggedin_user()
     def get_makerdao_vaults(self, async_query: bool) -> Response:
-        return self._api_query_for_makerdao(async_query, method='get_vaults')
+        return self._api_query_for_makerdao(
+            async_query=async_query,
+            module='makerdao_vaults',
+            method='get_vaults',
+        )
 
     @require_premium_user(active_check=False)
     def get_makerdao_vault_details(self, async_query: bool) -> Response:
-        return self._api_query_for_makerdao(async_query, method='get_vault_details')
+        return self._api_query_for_makerdao(
+            async_query=async_query,
+            module='makerdao_vaults',
+            method='get_vault_details')
 
     def _watcher_query(
             self,
