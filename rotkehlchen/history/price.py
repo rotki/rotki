@@ -2,6 +2,8 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -13,6 +15,28 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def query_usd_price_or_use_default(
+        asset: Asset,
+        time: Timestamp,
+        default_value: FVal,
+        location: str,
+) -> Price:
+    try:
+        usd_price = PriceHistorian().query_historical_price(
+            from_asset=asset,
+            to_asset=A_USD,
+            timestamp=time,
+        )
+    except RemoteError:
+        log.error(
+            f'Could not query usd price for {asset.identifier} when processing '
+            f'{location}. Assuming price of ${str(default_value)}',
+        )
+        usd_price = Price(default_value)
+
+    return usd_price
 
 
 class PriceHistorian():

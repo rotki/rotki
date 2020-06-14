@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, List, Union
 
 import gevent
 import requests
+from eth_utils.address import to_checksum_address
 from rlp.sedes import big_endian_int
 
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
@@ -23,7 +24,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee, FilePath, Timestamp, TimestampMS
+from rotkehlchen.typing import ChecksumEthAddress, Fee, FilePath, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -361,3 +362,18 @@ def hex_or_bytes_to_int(value: Union[bytes, str]) -> int:
         raise ConversionError(f'Unexpected type {type(value)} given to hex_or_bytes_to_int()')
 
     return int_value
+
+
+def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
+    """Turns a 32bit bytes/HexBytes or a hexstring into an address
+
+    May raise:
+    - ConversionError if it can't convert a value to an int or if an unexpected
+    type is given.
+    """
+    if isinstance(value, bytes):
+        hexstr = value.hex()
+    else:
+        hexstr = value
+
+    return ChecksumEthAddress(to_checksum_address('0x' + hexstr[26:]))

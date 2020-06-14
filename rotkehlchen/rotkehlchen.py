@@ -155,7 +155,7 @@ class Rotkehlchen():
             sync_approval=sync_approval,
         )
         if given_ethereum_modules is None:
-            ethereum_modules = ['makerdao']  # Default: ALL
+            ethereum_modules = ['makerdao_dsr', 'makerdao_vaults']  # Default: ALL
         else:
             ethereum_modules = given_ethereum_modules
 
@@ -313,9 +313,7 @@ class Rotkehlchen():
         """Deactivate premium in the current session"""
         self.premium = None
         self.premium_sync_manager.premium = None
-        makerdao = self.chain_manager.makerdao
-        if makerdao:
-            makerdao.premium = None
+        self.chain_manager.deactivate_premium_status()
 
     def start(self) -> gevent.Greenlet:
         return gevent.spawn(self.main_loop)

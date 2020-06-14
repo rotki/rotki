@@ -5,9 +5,8 @@ from hexbytes import HexBytes
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
-from rotkehlchen.chain.ethereum.makerdao import (
-    DSRAccountReport,
-    DSRCurrentBalances,
+from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
+from rotkehlchen.chain.ethereum.makerdao.vaults import (
     MakerDAOVault,
     MakerDAOVaultDetails,
     VaultEvent,

@@ -1,7 +1,7 @@
 import pytest
 from web3 import Web3
 
-from rotkehlchen.chain.ethereum.makerdao import MakerDAO, MakerDAOVault
+from rotkehlchen.chain.ethereum.makerdao.vaults import MakerDAOVault, MakerDAOVaults
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -72,7 +72,7 @@ def makerdao_test_data(ethereum_accounts) -> VaultTestData:
 
 
 @pytest.fixture
-def makerdao(
+def makerdao_vaults(
         ethereum_manager,
         database,
         function_scope_messages_aggregator,
@@ -91,20 +91,20 @@ def makerdao(
 
     web3_patch = create_web3_mock(web3=ethereum_manager.web3, test_data=makerdao_test_data)
     with web3_patch:
-        makerdao = MakerDAO(
+        makerdao_vaults = MakerDAOVaults(
             ethereum_manager=ethereum_manager,
             database=database,
             premium=premium,
             msg_aggregator=function_scope_messages_aggregator,
         )
-    return makerdao
+    return makerdao_vaults
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
-def test_get_vaults(makerdao, makerdao_test_data):
-    web3_patch = create_web3_mock(web3=makerdao.ethereum.web3, test_data=makerdao_test_data)
+def test_get_vaults(makerdao_vaults, makerdao_test_data):
+    web3_patch = create_web3_mock(web3=makerdao_vaults.ethereum.web3, test_data=makerdao_test_data)
     with web3_patch:
-        vaults = makerdao.get_vaults()
+        vaults = makerdao_vaults.get_vaults()
 
     for idx, vault in enumerate(vaults):
         assert_vaults_equal(vault, makerdao_test_data.vaults[idx])

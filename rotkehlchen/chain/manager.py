@@ -10,7 +10,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.makerdao import MakerDAO
+from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_REP
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -151,14 +151,25 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.eth_modules = {}
         if eth_modules:
             for given_module in eth_modules:
-                if given_module == 'makerdao':
+                if given_module == 'makerdao_dsr':
                     assert self.alethio.db, 'Alethio should have an instantiated DB'
-                    self.eth_modules['makerdao'] = MakerDAO(
+                    self.eth_modules['makerdao_dsr'] = MakerDAODSR(
                         ethereum_manager=ethereum_manager,
                         database=self.alethio.db,
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
+                elif given_module == 'makerdao_vaults':
+                    assert self.alethio.db, 'Alethio should have an instantiated DB'
+                    self.eth_modules['makerdao_vaults'] = MakerDAOVaults(
+                        ethereum_manager=ethereum_manager,
+                        database=self.alethio.db,
+                        premium=premium,
+                        msg_aggregator=msg_aggregator,
+                    )
+                else:
+                    log.error(f'Unrecognized module value {given_module} given. Skipping...')
+
         self.greenlet_manager = greenlet_manager
 
         for name, module in self.eth_modules.items():
@@ -173,9 +184,25 @@ class ChainManager(CacheableObject, LockableQueryObject):
     def set_eth_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         return self.ethereum.set_rpc_endpoint(endpoint)
 
+    def deactivate_premium_status(self) -> None:
+        dsr = self.makerdao_dsr
+        if dsr:
+            dsr.premium = None
+        vaults = self.makerdao_vaults
+        if vaults:
+            vaults.premium = None
+
     @property
-    def makerdao(self) -> Optional[MakerDAO]:
-        module = self.eth_modules.get('makerdao', None)
+    def makerdao_dsr(self) -> Optional[MakerDAODSR]:
+        module = self.eth_modules.get('makerdao_dsr', None)
+        if not module:
+            return None
+
+        return module
+
+    @property
+    def makerdao_vaults(self) -> Optional[MakerDAOVaults]:
+        module = self.eth_modules.get('makerdao_vaults', None)
         if not module:
             return None
 
@@ -856,9 +883,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         # If we have anything in DSR also count it towards total blockchain balances
         eth_balances = self.balances.eth
-        if self.makerdao:
+        if self.makerdao_dsr:
             additional_total = Balance()
-            current_dsr_report = self.makerdao.get_current_dsr()
+            current_dsr_report = self.makerdao_dsr.get_current_dsr()
             for dsr_account, balance_entry in current_dsr_report.balances.items():
 
                 if balance_entry.amount == ZERO:
