@@ -147,7 +147,14 @@ def create_web3_mock(web3: Web3, test_data: VaultTestData):
     )
 
 
-def mock_proxies(rotki, mapping) -> None:
+def mock_proxies(
+        rotki,
+        mapping: Dict[ChecksumEthAddress, ChecksumEthAddress],
+        given_module: str,
+) -> None:
     def mock_get_proxies() -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
         return mapping
-    rotki.chain_manager.makerdao._get_accounts_having_maker_proxy = mock_get_proxies
+
+    module = getattr(rotki.chain_manager, given_module)
+    assert module, f'module {module} not found in chain manager'
+    module._get_accounts_having_maker_proxy = mock_get_proxies

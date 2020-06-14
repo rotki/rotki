@@ -399,7 +399,7 @@ def assert_dsr_current_result_is_correct(result: Dict[str, Any], setup: DSRTestS
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
 def test_query_current_dsr_balance(
@@ -428,7 +428,7 @@ def test_query_current_dsr_balance(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
 def test_query_current_dsr_balance_async(
@@ -457,7 +457,7 @@ def test_query_current_dsr_balance_async(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_historical_dsr_non_premium(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -505,7 +505,7 @@ def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestS
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
@@ -545,7 +545,7 @@ def test_query_historical_dsr(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
@@ -577,7 +577,7 @@ def test_query_historical_dsr_async(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
@@ -599,7 +599,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
         # proxy for 0x714696C5a872611F76655Bc163D0131cBAc60a70
         ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
     }
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_dsr')
 
     # Query only until a block we know DSR is 0 and we know the number
     # of DSR events
@@ -672,7 +672,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662']])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_dsr_for_account_with_proxy_but_no_dsr(
         rotkehlchen_api_server,

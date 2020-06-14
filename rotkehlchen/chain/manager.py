@@ -11,6 +11,7 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
+from rotkehlchen.chain.ethereum.makerdao.common import MakerDAOCommon
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_REP
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -148,7 +149,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.balances = BlockchainBalances()
         # Per asset total balances
         self.totals: Totals = defaultdict(Balance)
-        self.eth_modules = {}
+        self.eth_modules: Dict[str, MakerDAOCommon] = {}
         if eth_modules:
             for given_module in eth_modules:
                 if given_module == 'makerdao_dsr':
@@ -198,7 +199,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
-        return module
+        return module  # type: ignore
 
     @property
     def makerdao_vaults(self) -> Optional[MakerDAOVaults]:
@@ -206,7 +207,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
-        return module
+        return module  # type: ignore
 
     @property
     def eth_tokens(self) -> List[EthereumToken]:
