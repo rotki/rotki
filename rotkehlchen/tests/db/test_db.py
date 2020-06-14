@@ -14,6 +14,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.settings import (
+    DEFAULT_ACTIVE_MODULES,
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_DATE_DISPLAY_FORMAT,
@@ -267,6 +268,7 @@ def test_writting_fetching_data(data_dir, username):
         'submit_usage_analytics': True,
         'last_write_ts': 0,
         'kraken_account_type': DEFAULT_KRAKEN_ACCOUNT_TYPE,
+        'active_modules': DEFAULT_ACTIVE_MODULES,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
@@ -323,6 +325,8 @@ def test_settings_entry_types(database):
     assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
     assert isinstance(res.submit_usage_analytics, bool)
     assert res.submit_usage_analytics is False
+    assert isinstance(res.active_modules, list)
+    assert res.active_modules == DEFAULT_ACTIVE_MODULES
 
 
 def test_balance_save_frequency_check(data_dir, username):
