@@ -7,7 +7,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethere.makerdao.common import (
+from rotkehlchen.chain.ethereum.makerdao.common import (
     MAKERDAO_REQUERY_PERIOD,
     RAD,
     RAY,
@@ -706,10 +706,10 @@ class MakerDAODSR(MakerDAOCommon):
     def on_startup(self) -> None:
         super().on_startup()
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:  # pylint: disable=unused-argument  # noqa: E501
-        super().on_account_addition()
+    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+        super().on_account_addition(address)
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
-        super().on_account_addition()
+        super().on_account_removal(address)
         with self.lock:
             self.historical_dsr_reports.pop(address, 'None')

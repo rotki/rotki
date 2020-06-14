@@ -166,7 +166,7 @@ def _check_vault_details_values(details):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
@@ -174,7 +174,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the vaults endpoint works. Uses real vault data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     proxies_mapping = {ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB'}
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -191,7 +191,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
@@ -199,7 +199,7 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the vaults endpoint asynchronously works. Uses real vault data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     proxies_mapping = {ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB'}
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -222,7 +222,7 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
@@ -230,7 +230,7 @@ def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_acco
     """Check querying the vaults details endpoint works before even querying vaults"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     proxies_mapping = {ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB'}
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
     # Query the details first
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -248,7 +248,7 @@ def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_acco
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 def test_query_vaults_details_non_premium(rotkehlchen_api_server):
     """Check querying the vaults details endpoint without premium does not work"""
     response = requests.get(api_url_for(
@@ -263,7 +263,7 @@ def test_query_vaults_details_non_premium(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
@@ -278,7 +278,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB',
         ethereum_accounts[2]: '0x420F88De6dadA0a77Db7b9EdBe3A0C614346031E',
     }
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -368,7 +368,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
@@ -379,7 +379,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         ethereum_accounts[0]: '0x9684e6C1c7B79868839b27F88bA6d5A176367075',  # 8913
     }
 
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -403,7 +403,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     expected_vaults = [vault_8913.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
     # And also make sure that the internal mapping will only query details of 8913
-    rotki.chain_manager.makerdao.vault_mappings = {ethereum_accounts[0]: [vault_8913]}
+    rotki.chain_manager.makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_8913]}
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -452,7 +452,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
@@ -463,7 +463,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         ethereum_accounts[0]: '0xBE79958661741079679aFf75DbEd713cE71a979d',  # 7588
     }
 
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -533,7 +533,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
@@ -547,7 +547,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         # proxy for 8632 and 8543
         ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
     }
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -677,7 +677,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
 
 @pytest.mark.skip('This vault is special and does not work. needs investigation')
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     """Strange case of a USDC vault that is not queried correctly
@@ -689,7 +689,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
         ethereum_accounts[0]: '0x15fEaFd4358b8C03c889D6661b0CA1Be3389792F',  # 7538
     }
 
-    mock_proxies(rotki, proxies_mapping)
+    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -712,7 +712,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     expected_vaults = [vault_7538.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
     # And also make sure that the internal mapping will only query details of 7538
-    rotki.chain_manager.makerdao.vault_mappings = {ethereum_accounts[0]: [vault_7538]}
+    rotki.chain_manager.makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_7538]}
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,

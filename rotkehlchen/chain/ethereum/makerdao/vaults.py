@@ -7,7 +7,7 @@ from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethere.makerdao.common import (
+from rotkehlchen.chain.ethereum.makerdao.common import (
     MAKERDAO_REQUERY_PERIOD,
     RAY,
     RAY_DIGITS,
@@ -674,12 +674,12 @@ class MakerDAOVaults(MakerDAOCommon):
         super().on_startup()
 
     def on_account_addition(self, address: ChecksumEthAddress) -> None:
-        super().on_account_addition()
+        super().on_account_addition(address)
         # Check if it has been added to the mapping
         proxy_address = self.proxy_mappings.get(address)
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:  # pylint: disable=unused-argument  # noqa: E501
-        super().on_account_addition()
+    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        super().on_account_removal(address)
