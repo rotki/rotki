@@ -136,7 +136,6 @@ class Rotkehlchen():
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
             premium_credentials: Optional[PremiumCredentials],
-            given_ethereum_modules: Optional[List[str]] = None,
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True
 
@@ -154,10 +153,6 @@ class Rotkehlchen():
             create_new=create_new,
             sync_approval=sync_approval,
         )
-        if given_ethereum_modules is None:
-            ethereum_modules = ['makerdao_dsr', 'makerdao_vaults']  # Default: ALL
-        else:
-            ethereum_modules = given_ethereum_modules
 
         # unlock or create the DB
         self.password = password
@@ -230,7 +225,7 @@ class Rotkehlchen():
             alethio=alethio,
             greenlet_manager=self.greenlet_manager,
             premium=self.premium,
-            eth_modules=ethereum_modules,
+            eth_modules=settings.active_modules,
         )
         self.ethereum_analyzer = EthereumAnalyzer(
             ethereum_manager=ethereum_manager,
