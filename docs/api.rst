@@ -139,7 +139,8 @@ Handling user creation, sign-in, log-out and querying
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
                   "last_balance_save": 1571552172,
                   "submit_usage_analytics": true,
-                  "kraken_account_type": "intermediate"
+                  "kraken_account_type": "intermediate",
+                  "active_modules": ["makerdao_dsr", "makerdao_vaults"]
               }
           },
           "message": ""
@@ -201,6 +202,7 @@ Handling user creation, sign-in, log-out and querying
                   "last_balance_save": 1571552172,
                   "submit_usage_analytics": true,
                   "kraken_account_type": "intermediate"
+                  "active_modules": ["makerdao_dsr", "makerdao_vaults"]
               }
           },
           "message": ""
@@ -333,7 +335,7 @@ Modify user password
 
       {
           "current_password": "supersecret"
-	  "new_password": "evenmoresecret",
+          "new_password": "evenmoresecret",
       }
 
    **Example Response**:
@@ -525,7 +527,8 @@ Getting or modifying settings
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
               "last_balance_save": 1571552172,
               "submit_usage_analytics": true,
-              "kraken_account_type": "intermediate"
+              "kraken_account_type": "intermediate",
+              "active_modules": ["makerdao_dsr", "makerdao_vaults"]
           },
           "message": ""
       }
@@ -549,6 +552,7 @@ Getting or modifying settings
    :resjson int last_balance_save: The timestamp at which the balances were last saved in the database.
    :resjson bool submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the Rotki server.
    :resjson string kraken_account_type: The type of the user's kraken account if he has one. Valid values are "starter", "intermediate" and "pro".
+   :resjson list active_module: A list of strings denoting the active modules with which Rotki is running.
 
    :statuscode 200: Querying of settings was succesful
    :statuscode 409: There is no logged in user
@@ -583,6 +587,7 @@ Getting or modifying settings
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :reqjson bool[optional] submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the Rotki server.
+   :reqjson list active_module: A list of strings denoting the active modules with which Rotki should run.
 
    **Example Response**:
 
@@ -610,7 +615,8 @@ Getting or modifying settings
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
               "last_balance_save": 1571552172,
               "submit_usage_analytics": true,
-              "kraken_account_type": "intermediate"
+              "kraken_account_type": "intermediate",
+              "active_modules": ["makerdao_dsr", "makerdao_vaults"]
           },
           "message": ""
       }
@@ -1135,18 +1141,18 @@ Querying tags
 
       {
           "result": {
-	      "hw": {
+              "hw": {
                   "name": "hw",
                   "description": "Accounts that are stored in hardware wallets",
                   "background_color": "fafafa",
                   "foreground_color": "ffffff"
               },
-	      "mobile": {
-	          "name": "mobile",
-	          "description": "Accounts that are stored in mobile devices",
-	          "background_color": "ffffff",
-	          "foreground_color": "fafafa"
-	     }},
+              "mobile": {
+                  "name": "mobile",
+                  "description": "Accounts that are stored in mobile devices",
+                  "background_color": "ffffff",
+                  "foreground_color": "fafafa"
+             }},
           "message": ""
       }
 
@@ -1197,25 +1203,25 @@ Adding new tags
 
       {
           "result": {
-	      "hw": {
+              "hw": {
                   "name": "hw",
                   "description": "Accounts that are stored in hardware wallets",
                   "background_color": "fafafa",
                   "foreground_color": "ffffff"
               },
-	      "mobile": {
-	          "name": "mobile",
-	          "description": "Accounts that are stored in mobile devices",
-	          "background_color": "ffffff",
-	          "foreground_color": "fafafa"
-	     },
-	      "not public": {
-	          "name": "not public",
-	          "description": "Accounts that are not publically associated with me",
-	          "background_color": "f8f8f8",
-	          "foreground_color": "f1f1f1"
-	     }
-	  },
+              "mobile": {
+                  "name": "mobile",
+                  "description": "Accounts that are stored in mobile devices",
+                  "background_color": "ffffff",
+                  "foreground_color": "fafafa"
+             },
+              "not public": {
+                  "name": "not public",
+                  "description": "Accounts that are not publically associated with me",
+                  "background_color": "f8f8f8",
+                  "foreground_color": "f1f1f1"
+             }
+          },
           "message": ""
       }
 
@@ -1263,25 +1269,25 @@ Editing a tag
 
       {
           "result": {
-	      "hw": {
+              "hw": {
                   "name": "hw",
                   "description": "Accounts that are stored in hardware wallets",
                   "background_color": "fafafa",
                   "foreground_color": "ffffff"
               },
-	      "mobile": {
-	          "name": "mobile",
-	          "description": "Accounts that are stored in mobile devices",
-	          "background_color": "ffffff",
-	          "foreground_color": "fafafa"
-	     },
-	      "not public": {
-	          "name": "not public",
-	          "description": "Accounts that are private",
-	          "background_color": "f9f9f9",
-	          "foreground_color": "f2f2f2"
-	     }
-	  },
+              "mobile": {
+                  "name": "mobile",
+                  "description": "Accounts that are stored in mobile devices",
+                  "background_color": "ffffff",
+                  "foreground_color": "fafafa"
+             },
+              "not public": {
+                  "name": "not public",
+                  "description": "Accounts that are private",
+                  "background_color": "f9f9f9",
+                  "foreground_color": "f2f2f2"
+             }
+          },
           "message": ""
       }
 
@@ -1323,19 +1329,19 @@ Deleting a tag
 
       {
           "result": {
-	      "hw": {
+              "hw": {
                   "name": "hw",
                   "description": "Accounts that are stored in hardware wallets",
                   "background_color": "fafafa",
                   "foreground_color": "ffffff"
               },
-	      "mobile": {
-	          "name": "mobile",
-	          "description": "Accounts that are stored in mobile devices",
-	          "background_color": "ffffff",
-	          "foreground_color": "fafafa"
-	     }
-	  },
+              "mobile": {
+                  "name": "mobile",
+                  "description": "Accounts that are stored in mobile devices",
+                  "background_color": "ffffff",
+                  "foreground_color": "fafafa"
+             }
+          },
           "message": ""
       }
 
@@ -2666,13 +2672,13 @@ Getting current ethereum MakerDAO DSR balance
               "current_dsr": "8.022774065220581075333120100",
               "balances": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-		      "amount": "125.24423",
-		      "usd_value": "126.5231"
-		  },
+                      "amount": "125.24423",
+                      "usd_value": "126.5231"
+                  },
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-		      "amount": "456.323",
-		      "usd_value": "460.212"
-		  }
+                      "amount": "456.323",
+                      "usd_value": "460.212"
+                  }
                 }
           },
           "message": ""
@@ -2728,7 +2734,7 @@ Getting ethereum MakerDAO DSR historical report
                       "amount_usd_value": "351.21",
                       "block_number": 9128160,
                       "timestamp": 1582706553,
-		      "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289"
+                      "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289"
                   }, {
                       "movement_type": "deposit",
                       "gain_so_far": "0.875232",
@@ -2737,7 +2743,7 @@ Getting ethereum MakerDAO DSR historical report
                       "amount_usd_value": "50.87",
                       "block_number": 9129165,
                       "timestamp": 1582806553,
-		      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
+                      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
                   }, {
                       "movement_type": "withdrawal",
                       "gain_so_far": "1.12875932",
@@ -2746,7 +2752,7 @@ Getting ethereum MakerDAO DSR historical report
                       "amount_usd_value": "353.12",
                       "block_number": 9149160,
                       "timestamp": 1592706553,
-		      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756"
+                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756"
                   }, {
                   }],
                   "gain_so_far": "1.14875932"
@@ -2760,7 +2766,7 @@ Getting ethereum MakerDAO DSR historical report
                       "amount_usd_value": "553.43",
                       "block_number": 9128174,
                       "timestamp": 1583706553,
-		      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
+                      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
                   }],
                   "gain_so_far": "0.953423"
                   "gain_so_far_usd_value": "0.998421"
@@ -2819,7 +2825,7 @@ Getting MakerDAO vaults basic data
           "result": [{
               "identifier": 1,
               "collateral_type": "ETH-A",
-	      "owner": "0xA76a9560ffFD9fC603F7d6A30c37D79665207876",
+              "owner": "0xA76a9560ffFD9fC603F7d6A30c37D79665207876",
               "collateral_asset": "ETH",
               "collateral_amount": "5.232",
               "debt_value": "650",
@@ -2831,7 +2837,7 @@ Getting MakerDAO vaults basic data
           }, {
               "identifier": 55,
               "collateral_type": "USDC-A",
-	      "owner": "0xB26a9561ffFD9fC603F7d6A30c37D79665207876",
+              "owner": "0xB26a9561ffFD9fC603F7d6A30c37D79665207876",
               "collateral_asset": "USDC",
               "collateral_amount": "150",
               "debt_value": "50",
@@ -2900,8 +2906,8 @@ Getting MakerDAO vault details
               "identifier": 1,
               "creation_ts": 1589067898,
               "total_interest_owed": "0.02341",
-	      "total_liquidated_amount": "0",
-	      "total_liquidated_usd": "0",
+              "total_liquidated_amount": "0",
+              "total_liquidated_usd": "0",
               "events": [{
                   "event_type": "deposit",
                   "amount": "5.551",
@@ -2919,8 +2925,8 @@ Getting MakerDAO vault details
               "identifier": 56,
               "creation_ts": 1589067897,
               "total_interest_owed": "-751.32",
-	      "total_liquidated_amount": "1050.21",
-	      "total_liquidated_usd": "2501.234",
+              "total_liquidated_amount": "1050.21",
+              "total_liquidated_usd": "2501.234",
               "events": [{
                   "event_type": "deposit",
                   "amount": "1050.21",
@@ -2939,13 +2945,13 @@ Getting MakerDAO vault details
                   "amount_usd_value": "5000",
                   "timestamp": 1589068000,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
-	      }, {
+              }, {
                   "event_type": "liquidation",
                   "amount": "550.21",
                   "amount_usd_value": "5502.1",
                   "timestamp": 1589068001,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
-	      }]
+              }]
           }]
           "message": ""
       }
@@ -3390,23 +3396,23 @@ Deleting manually tracked balances
           "balances": [{
                   "asset": "XMR",
                   "label": "My monero wallet",
-		  "amount": "4.5",
-		  "usd_value": "210.548",
+                  "amount": "4.5",
+                  "usd_value": "210.548",
                   "tags": ["public"]
-		  "location": "blockchain"
+                  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
-		  "amount": "1.425",
-		  "usd_value": "9087.22",
-		  "location": "blockchain"
+                  "amount": "1.425",
+                  "usd_value": "9087.22",
+                  "location": "blockchain"
               }, {
-	          "asset": "ZEC",
-		  "label" "My favorite wallet",
-		  "amount": "10"
-		  "usd_value": "1330.85"
-		  "location": "blockchain"
-	      }]
+                  "asset": "ZEC",
+                  "label" "My favorite wallet",
+                  "amount": "10"
+                  "usd_value": "1330.85"
+                  "location": "blockchain"
+              }]
           "message": ""
       }
 
@@ -3627,7 +3633,7 @@ Deleting watchers
             "identifier": "6h3m7vRrLLOipwNmzhAVdo6FaGlr0XKGYLyjHqWa2KQ=",
             "type": "makervault_collateralization_ratio",
             "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
-	   }],
+           }],
           "message": ""
       }
 
@@ -3637,7 +3643,7 @@ Deleting watchers
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal Rotki error
    :statuscode 502: Could not connect to or got unexpected response format from Rotki server
-		    
+
 Dealing with ignored assets
 ===========================
 
