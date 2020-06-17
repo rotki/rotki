@@ -460,3 +460,25 @@ def test_set_settings_errors(rotkehlchen_api_server):
         contained_in_msg='is not a valid kraken account type',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    # invalid type for active modules
+    data = {
+        'active_modules': 55,
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='"active_modules": ["Not a valid list."',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # invalid module for active modules
+    data = {
+        'active_modules': ['makerdao_dsr', 'foo'],
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='"active_modules": ["foo is not a valid module"]',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

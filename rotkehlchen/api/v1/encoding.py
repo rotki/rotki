@@ -11,6 +11,7 @@ from webargs.compat import MARSHMALLOW_VERSION_INFO
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import is_valid_btc_address
+from rotkehlchen.chain.manager import AVAILABLE_MODULES
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -662,8 +663,21 @@ class ModifiableSettingsSchema(Schema):
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
-    # TODO: Add some validation to this field
     active_modules = fields.List(fields.String(), missing=None)
+
+    @validates_schema  # type: ignore
+    def validate_settings_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['active_modules'] is not None:
+            for module in data['active_modules']:
+                if module not in AVAILABLE_MODULES:
+                    raise ValidationError(
+                        message=f'{module} is not a valid module',
+                        field_name='active_modules',
+                    )
 
 
 class BaseUserSchema(Schema):

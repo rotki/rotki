@@ -46,6 +46,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults']
+
+
 class AccountAction(Enum):
     QUERY = 1
     APPEND = 2
