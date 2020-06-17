@@ -1,10 +1,6 @@
 <template>
   <v-container class="accounts-balances">
-    <v-row>
-      <v-col>
-        <h1>Accounts & Balances</h1>
-      </v-col>
-    </v-row>
+    <base-page-header text="accounts & balances"></base-page-header>
     <blockchain-balances></blockchain-balances>
     <fiat-balances></fiat-balances>
     <manual-balances></manual-balances>
@@ -16,10 +12,12 @@ import { Component, Vue } from 'vue-property-decorator';
 import BlockchainBalances from '@/components/accounts/BlockchainBalances.vue';
 import FiatBalances from '@/components/accounts/FiatBalances.vue';
 import ManualBalances from '@/components/accounts/ManualBalances.vue';
+import BasePageHeader from '@/components/base/BasePageHeader.vue';
 
 @Component({
   components: {
     ManualBalances,
+    BasePageHeader,
     FiatBalances,
     BlockchainBalances
   }
