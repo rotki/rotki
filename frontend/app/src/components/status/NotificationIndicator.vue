@@ -7,13 +7,18 @@
       @cancel="confirmClear = false"
       @confirm="reset()"
     ></confirm-dialog>
-    <v-menu transition="slide-y-transition" bottom>
+    <v-menu transition="slide-y-transition" bottom offset-y>
       <template #activator="{ on }">
-        <v-badge color="accent" right overlap>
+        <v-badge color="primary" right overlap>
           <template #badge>
             <span>{{ count }}</span>
           </template>
-          <v-btn color="primary" dark icon text v-on="on">
+          <v-btn
+            icon
+            retain-focus-on-click
+            class="secondary--text text--lighten-2"
+            v-on="on"
+          >
             <v-icon>
               fa fa-bell
             </v-icon>

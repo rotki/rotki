@@ -51,7 +51,7 @@
             "
           >
             <v-card-actions>
-              <v-btn text color="primary" to="/blockchain-accounts">
+              <v-btn text color="primary" to="/accounts-balances">
                 Add blockchain address
               </v-btn>
             </v-card-actions>
@@ -77,7 +77,7 @@
           </div>
           <div v-if="Object.keys(manualBalanceByLocation).length < 1">
             <v-card-actions>
-              <v-btn text color="primary" to="/blockchain-accounts">
+              <v-btn text color="primary" to="/accounts-balances">
                 Add a manual balance
               </v-btn>
             </v-card-actions>

@@ -1,9 +1,15 @@
 <template>
   <div>
-    <v-overlay class="account-management__loading">
+    <v-overlay
+      class="account-management__loading"
+      color="grey lighten-4"
+      opacity="0.8"
+    >
       <v-dialog :value="true && !premiumVisible" persistent max-width="450">
         <v-card class="account-management__card pb-6">
-          <div class="pt-6 pb-3 text-h2 font-weight-black primary white--text">
+          <div
+            class="pt-6 pb-3 display-3 font-weight-black white--text account-management__card__title"
+          >
             <span class="px-6">rotki</span>
             <span class="d-block mb-3 pl-6 text-caption">
               the opensource portfolio manager that respects your privacy
@@ -240,7 +246,7 @@ export default class AccountManagement extends Vue {
 }
 
 .v-overlay {
-  z-index: 200 !important;
+  z-index: 300 !important;
 }
 
 .v-dialog {
@@ -250,12 +256,20 @@ export default class AccountManagement extends Vue {
 }
 
 .account-management {
+  &__card {
+    &__title {
+      background-color: var(--v-primary-base);
+    }
+  }
+
   &__loading {
-    height: 400%;
-    width: 400%;
-    top: -40% !important;
-    left: -100% !important;
-    background: #42210b url(~@/assets/images/rotkipattern2.png);
+    height: 800%;
+    width: 800%;
+    top: -150% !important;
+    left: -40% !important;
+    background: white url(~@/assets/images/rotkipattern2.svg);
+    background-size: 450px 150px;
+    filter: grayscale(0.5);
     -webkit-animation-name: scrollLarge;
     animation-name: scrollLarge;
     -webkit-animation-duration: 35s;

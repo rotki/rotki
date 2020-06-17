@@ -179,6 +179,6 @@ td {
 }
 
 .blur-content {
-  filter: blur(0.3em);
+  filter: blur(0.75em);
 }
 </style>

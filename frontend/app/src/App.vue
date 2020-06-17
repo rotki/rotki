@@ -1,41 +1,45 @@
 <template>
   <v-app id="rotki">
-    <div v-show="logged">
+    <div :show="logged" class="app__content rotki-light-grey">
       <v-navigation-drawer
         v-model="drawer"
         width="300"
+        class="app__navigation-drawer"
         fixed
-        :clipped="$vuetify.breakpoint.mdAndUp"
-        class="grey lighten-4"
+        :mini-variant="mini"
+        clipped
         app
       >
-        <div class="text-center">
-          <img
-            id="rotkehlchen_no_text"
-            :src="require('./assets/images/rotkehlchen_no_text.png')"
-            class="rotki__logo"
-            alt=""
-            @click="openSite()"
-          />
+        <div v-if="!mini" class="text-center app__logo"></div>
+        <div v-else class="app__logo-mini">
+          rotki
         </div>
-        <div class="text-center rotki__welcome-text font-weight-medium">
-          Welcome {{ username }}
+        <navigation-menu :show-tooltips="mini"></navigation-menu>
+        <v-spacer></v-spacer>
+        <div v-if="!mini" class="my-2 text-center px-2">
+          <v-divider class="mx-3 my-1"></v-divider>
+          <span class="app__navigation-drawer__version overline">
+            {{ version }}
+          </span>
         </div>
-        <navigation-menu></navigation-menu>
       </v-navigation-drawer>
-      <v-app-bar app fixed clipped-left flat class="grey lighten-4">
-        <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-        <v-toolbar-title class="font-weight-light rotki__version">
-          Rotki {{ version }}
-        </v-toolbar-title>
+      <v-app-bar app fixed clipped-left flat color="white" class="app__app-bar">
+        <v-app-bar-nav-icon
+          class="secondary--text text--lighten-2"
+          @click="toggleDrawer()"
+        ></v-app-bar-nav-icon>
         <node-status-indicator></node-status-indicator>
         <balance-saved-indicator></balance-saved-indicator>
         <v-spacer></v-spacer>
         <update-indicator></update-indicator>
-        <notification-indicator></notification-indicator>
-        <progress-indicator></progress-indicator>
-        <user-dropdown></user-dropdown>
-        <currency-drop-down></currency-drop-down>
+        <notification-indicator
+          class="app__app-bar__button"
+        ></notification-indicator>
+        <progress-indicator class="app__app-bar__button"></progress-indicator>
+        <currency-drop-down
+          class="red--text app__app-bar__button"
+        ></currency-drop-down>
+        <user-dropdown class="app__app-bar__button"></user-dropdown>
       </v-app-bar>
       <v-main v-if="logged" class="fill-height">
         <router-view></router-view>
@@ -121,6 +125,7 @@ export default class App extends Vue {
   }
 
   drawer = true;
+  mini = false;
 
   startupError: string = '';
 
@@ -130,6 +135,15 @@ export default class App extends Vue {
 
   dismiss() {
     this.$store.commit('resetMessage');
+  }
+
+  toggleDrawer() {
+    if (!this.drawer) {
+      this.drawer = !this.drawer;
+      this.mini = false;
+    } else {
+      this.mini = !this.mini;
+    }
   }
 
   async created(): Promise<void> {
@@ -150,13 +164,48 @@ export default class App extends Vue {
   }
 
   &--is-mobile {
-    z-index: 200 !important;
+    padding-top: 60px;
+    z-index: 300 !important;
   }
 }
 
-.rotki {
+.app {
+  &__app-bar {
+    z-index: 2015;
+
+    &__button {
+      i {
+        &:focus {
+          color: var(--v-primary-base) !important;
+        }
+      }
+
+      button {
+        &:focus {
+          color: var(--v-primary-base) !important;
+        }
+      }
+    }
+  }
+
   &__logo {
-    max-height: 150px;
+    min-height: 150px;
+    margin-bottom: 15px;
+    margin-top: 15px;
+    background: url(~@/assets/images/rotkehlchen_no_text.png) no-repeat center;
+    background-size: contain;
+  }
+
+  &__logo-mini {
+    text-align: center;
+    align-self: center;
+    font-size: 3em;
+    font-weight: bold;
+    height: 150px;
+    writing-mode: vertical-lr;
+    transform: rotate(-180deg);
+    margin-bottom: 15px;
+    margin-top: 15px;
   }
 
   &__version {
@@ -168,13 +217,15 @@ export default class App extends Vue {
     margin-top: 16px;
     margin-bottom: 20px;
   }
-}
 
-#rotkehlchen_no_text {
-  width: 150px;
-  display: block;
-  margin: 10px auto;
-  padding: 15px;
+  &__navigation-drawer {
+    box-shadow: 14px 0 10px -10px var(--v-rotki-light-grey-darken1);
+    z-index: 200 !important;
+
+    &__version {
+      overflow-wrap: break-word;
+    }
+  }
 }
 
 ::v-deep {
@@ -183,6 +234,10 @@ export default class App extends Vue {
     margin-top: 64px;
     padding-top: 0 !important;
     height: calc(100vh - 64px);
+
+    &__wrap {
+      padding-left: 25px;
+    }
   }
 
   .v-app-bar {
@@ -191,7 +246,7 @@ export default class App extends Vue {
       display: block;
       width: 100%;
       content: '';
-      border-bottom: #bcbcbc solid thin;
+      border-bottom: var(--v-rotki-light-grey-darken1) solid thin;
     }
   }
 }

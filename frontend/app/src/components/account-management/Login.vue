@@ -7,8 +7,10 @@
           v-model="username"
           autofocus
           class="login__fields__username"
+          color="secondary"
           label="Username"
           prepend-icon="fa-user"
+          validate-on-blur
           :rules="usernameRules"
           :disabled="loading || !!syncConflict"
           required
@@ -16,6 +18,7 @@
         <v-text-field
           v-model="password"
           class="login__fields__password"
+          color="secondary"
           label="Password"
           prepend-icon="fa-lock"
           :rules="passwordRules"
@@ -70,7 +73,10 @@
       </span>
       <v-divider class="my-3"></v-divider>
       <span class="login__actions__footer">
-        <a class="login__button__new-account" @click="newAccount()">
+        <a
+          class="login__button__new-account font-weight-bold secondary--text"
+          @click="newAccount()"
+        >
           Create New Account
         </a>
       </span>

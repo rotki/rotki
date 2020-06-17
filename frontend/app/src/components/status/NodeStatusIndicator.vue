@@ -2,11 +2,12 @@
   <v-menu
     class="node-status-indicator"
     transition="slide-y-transition"
+    offset-y
     bottom
-    z-index="105"
+    z-index="215"
   >
     <template #activator="{ on }">
-      <v-btn color="primary" dark icon text v-on="on">
+      <v-btn icon class="secondary--text text--lighten-2" v-on="on">
         <v-icon
           :class="`node-status-indicator__icon--${
             nodeConnection ? 'connected' : 'disconnected'

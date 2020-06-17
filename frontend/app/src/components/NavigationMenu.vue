@@ -1,101 +1,151 @@
 <template>
-  <v-list>
-    <v-list-item to="/" class="navigation__dashboard">
-      <v-list-item-action><v-icon>fa-dashboard</v-icon></v-list-item-action>
-      <v-list-item-content>
-        <v-list-item-title>Dashboard</v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list-item
-      to="/blockchain-accounts"
-      class="navigation__accounts-balances"
-    >
-      <v-list-item-action><v-icon>fa-user</v-icon></v-list-item-action>
-      <v-list-item-content>
-        <v-list-item-title>Accounts & Balances</v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list-item
-      to="/settings/api-keys/rotki-premium"
-      class="navigation__api-keys"
-    >
-      <v-list-item-action><v-icon>fa-key</v-icon></v-list-item-action>
-      <v-list-item-content>
-        <v-list-item-title>API Keys</v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list-item to="/import" class="navigation__import">
-      <v-list-item-action><v-icon>fa-download</v-icon></v-list-item-action>
-      <v-list-item-content>
-        <v-list-item-title>Import Data</v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list-group
-      prepend-icon="fa-exchange"
-      value="true"
-      class="navigation__trades"
-    >
-      <template #activator>
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title>Trade</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </template>
-
-      <v-list-item to="/otc-trades" class="navigation__otc-trades">
-        <v-list-item-content>
-          <v-list-item-title>OTC Trades</v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list-group>
-    <v-list-group
-      prepend-icon="fa-line-chart"
-      value="true"
-      class="navigation__defi"
-    >
-      <template #activator>
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title>Decentralized Finance</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </template>
-
-      <v-list-item to="/defi/lending" class="navigation__defi__lending">
-        <v-list-item-content>
-          <v-list-item-title>Lending</v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-      <v-list-item to="/defi/borrowing" class="navigation__defi__borrowing">
-        <v-list-item-content>
-          <v-list-item-title>Borrowing</v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list-group>
-    <v-list-item to="/statistics" class="navigation__statistics">
-      <v-list-item-action><v-icon>fa-bar-chart</v-icon></v-list-item-action>
-      <v-list-item-content>
-        <v-list-item-title>Statistics</v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list-item to="/tax-report" class="navigation__tax-report">
-      <v-list-item-action><v-icon>fa-calculator</v-icon></v-list-item-action>
-      <v-list-item-content>
-        <v-list-item-title>Tax Report</v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
-  </v-list>
+  <div>
+    <v-list nav class="navigation-menu">
+      <v-list-item-group>
+        <template v-for="(navItem, i) in navItems">
+          <v-list-item
+            v-if="navItem.type === 'item'"
+            :key="i"
+            :class="`navigation__${navItem.class}`"
+            active-class="navigation-menu__item--active"
+            :to="navItem.route"
+          >
+            <navigation-menu-item
+              :show-tooltips="showTooltips"
+              :text="navItem.text"
+              :icon="navItem.icon"
+            ></navigation-menu-item>
+          </v-list-item>
+          <v-list-group v-else-if="navItem.type === 'group'" :key="i">
+            <template #activator>
+              <navigation-menu-item
+                :show-tooltips="showTooltips"
+                :text="navItem.text"
+                :icon="navItem.icon"
+                :class="`navigation__${navItem.class}`"
+              ></navigation-menu-item>
+            </template>
+            <v-list-item
+              v-for="(subNavItem, si) in navItem.items"
+              :key="si"
+              :class="`navigation__${subNavItem.class}`"
+              active-class="navigation-menu__item--active"
+              :to="subNavItem.route"
+            >
+              <navigation-menu-item
+                :show-tooltips="showTooltips"
+                :text="subNavItem.text"
+                :icon="subNavItem.icon"
+              ></navigation-menu-item>
+            </v-list-item>
+          </v-list-group>
+        </template>
+      </v-list-item-group>
+    </v-list>
+  </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Prop } from 'vue-property-decorator';
+import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 
-@Component({})
-export default class NavigationMenu extends Vue {}
+@Component({
+  components: { NavigationMenuItem }
+})
+export default class NavigationMenu extends Vue {
+  @Prop({ required: false, default: false })
+  showTooltips!: boolean;
+
+  navItems = [
+    {
+      type: 'item',
+      text: 'Dashboard',
+      route: '/dashboard',
+      class: 'dashboard',
+      icon: 'fa-dashboard'
+    },
+    {
+      type: 'item',
+      text: 'Accounts & Balances',
+      route: '/accounts-balances',
+      class: 'accounts-balances',
+      icon: 'fa-briefcase'
+    },
+    {
+      type: 'item',
+      text: 'API Keys',
+      route: '/settings/api-keys/rotki-premium',
+      class: 'settings__api-keys',
+      icon: 'fa-key'
+    },
+    { type: 'item', text: 'Import Data', route: '/import', icon: 'fa-upload' },
+    {
+      type: 'group',
+      text: 'Trades',
+      route: '',
+      icon: 'fa-exchange',
+      class: 'trades',
+      items: [
+        {
+          type: 'item',
+          text: 'OTC Trades',
+          route: '/otc-trades',
+          class: 'otc-trades',
+          icon: 'fa-exchange'
+        }
+      ]
+    },
+    {
+      type: 'group',
+      text: 'DeFi',
+      route: '',
+      icon: 'fa-line-chart',
+      class: 'defi',
+      items: [
+        {
+          type: 'item',
+          text: 'Lending',
+          route: '/defi/lending',
+          class: 'defi-lending',
+          icon: 'fa-long-arrow-left'
+        },
+        {
+          type: 'item',
+          text: 'Borrowing',
+          route: '/defi/borrowing',
+          class: 'defi-borrowing',
+          icon: 'fa-long-arrow-right'
+        }
+      ]
+    },
+    {
+      type: 'item',
+      text: 'Statistics',
+      route: '/statistics',
+      class: 'statistics',
+      icon: 'fa-bar-chart'
+    },
+    {
+      type: 'item',
+      text: 'Tax Report',
+      route: '/tax-report',
+      class: 'tax-report',
+      icon: 'fa-calculator'
+    }
+  ];
+}
 </script>
 
 <style scoped lang="scss">
+.navigation-menu {
+  &__item {
+    &--active {
+      background-color: var(--v-primary-base);
+      color: white !important;
+    }
+  }
+}
+
 ::v-deep {
   .v-list-group {
     &__header {

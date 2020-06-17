@@ -12,7 +12,8 @@ export default new Router({
       redirect: '/'
     },
     {
-      path: '/',
+      path: '/dashboard',
+      alias: '/',
       name: 'dashboard',
       component: () => import('../views/Dashboard.vue')
     },
@@ -87,8 +88,8 @@ export default new Router({
       component: () => import('../views/ImportData.vue')
     },
     {
-      path: '/blockchain-accounts',
-      name: 'blockchain-accounts',
+      path: '/accounts-balances',
+      name: 'accounts-balances',
       component: () => import('../views/AccountsBalances.vue')
     },
     {
