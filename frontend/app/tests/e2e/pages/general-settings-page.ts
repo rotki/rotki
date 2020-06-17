@@ -168,7 +168,7 @@ export class GeneralSettingsPage {
 
   navigateAway() {
     cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__otc-trades').click();
+    cy.get('.navigation__dashboard').click();
   }
 
   setRpcEndpoint(value: string) {

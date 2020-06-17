@@ -3,6 +3,7 @@ import { OTCTrade } from '../support/types';
 export class OtcPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
+    cy.get('.navigation__trades').click();
     cy.get('.navigation__otc-trades').click();
   }
 

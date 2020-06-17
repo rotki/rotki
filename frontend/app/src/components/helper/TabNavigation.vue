@@ -46,12 +46,27 @@ export default class TabNavigation extends Vue {
 
 .tab-navigation {
   &__tabs {
+    ::v-deep {
+      .v-tabs-bar {
+        background-color: var(--v-rotki-light-grey-base) !important;
+      }
+    }
+
     &__tab {
-      border: 1px solid #7e4a3b;
+      background-color: white;
+
+      &:hover {
+        background-color: var(--v-rotki-light-grey-base);
+      }
+
+      a {
+        border: 1px solid var(--v-primary-base);
+        background-color: white;
+      }
 
       &--active {
-        background-color: #7e4a3b;
-        color: #fff;
+        color: white;
+        background-color: var(--v-primary-base) !important;
       }
 
       &:first-of-type {

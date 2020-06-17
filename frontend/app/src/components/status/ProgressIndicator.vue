@@ -1,46 +1,53 @@
 <template>
-  <v-menu id="notification-indicator" transition="slide-y-transition" bottom>
-    <template #activator="{ on }">
-      <v-btn color="primary" dark icon text v-on="on">
-        <v-icon v-if="hasRunningTasks" class="top-loading-icon">
-          fa fa-circle-o-notch fa-spin
-        </v-icon>
-        <v-icon v-else>
-          fa fa-check-circle
-        </v-icon>
-      </v-btn>
-    </template>
-    <v-row class="progress-indicator__details">
-      <v-col v-if="tasks.length > 0">
-        <v-list two-line>
-          <template v-for="task in tasks">
-            <v-list-item :key="task.id" class="progress-indicator__task">
-              <v-list-item-content>
-                <v-list-item-title
-                  v-text="task.meta.description"
-                ></v-list-item-title>
-                <v-progress-linear
-                  v-if="task.type !== 'process_trade_history'"
-                  indeterminate
-                  class="progress-indicator__task__progress"
-                ></v-progress-linear>
-                <v-progress-linear
-                  v-else
-                  :value="progress"
-                  class="progress-indicator__task__progress"
-                ></v-progress-linear>
-              </v-list-item-content>
-            </v-list-item>
-            <v-divider :key="`task-${task.id}`"></v-divider>
-          </template>
-        </v-list>
-      </v-col>
-      <v-col v-else class="progress-indicator__no-tasks align justify">
-        <v-icon color="primary">fa fa-info-circle</v-icon>
-        <p class="progress-indicator__no-tasks__label">No running tasks</p>
-      </v-col>
-    </v-row>
-  </v-menu>
+  <div>
+    <v-menu
+      id="notification-indicator"
+      transition="slide-y-transition"
+      bottom
+      offset-y
+    >
+      <template #activator="{ on }">
+        <v-btn icon class="secondary--text text--lighten-2" v-on="on">
+          <v-icon v-if="hasRunningTasks" class="top-loading-icon">
+            fa fa-circle-o-notch fa-spin
+          </v-icon>
+          <v-icon v-else>
+            fa fa-check-circle
+          </v-icon>
+        </v-btn>
+      </template>
+      <v-row class="progress-indicator__details">
+        <v-col v-if="tasks.length > 0">
+          <v-list two-line>
+            <template v-for="task in tasks">
+              <v-list-item :key="task.id" class="progress-indicator__task">
+                <v-list-item-content>
+                  <v-list-item-title
+                    v-text="task.meta.description"
+                  ></v-list-item-title>
+                  <v-progress-linear
+                    v-if="task.type !== 'process_trade_history'"
+                    indeterminate
+                    class="progress-indicator__task__progress"
+                  ></v-progress-linear>
+                  <v-progress-linear
+                    v-else
+                    :value="progress"
+                    class="progress-indicator__task__progress"
+                  ></v-progress-linear>
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider :key="`task-${task.id}`"></v-divider>
+            </template>
+          </v-list>
+        </v-col>
+        <v-col v-else class="progress-indicator__no-tasks align justify">
+          <v-icon color="primary">fa fa-info-circle</v-icon>
+          <p class="progress-indicator__no-tasks__label">No running tasks</p>
+        </v-col>
+      </v-row>
+    </v-menu>
+  </div>
 </template>
 
 <script lang="ts">

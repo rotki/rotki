@@ -3,7 +3,7 @@
     :id="`${name}_box`"
     :ripple="false"
     class="manual-balance-box__item"
-    to="/blockchain-accounts"
+    to="/accounts-balances"
   >
     <v-list-item-avatar tile class="manual-balance-box__icon">
       <v-icon>

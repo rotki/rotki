@@ -1,31 +1,37 @@
 <template>
-  <v-menu transition="slide-y-transition" bottom>
-    <template #activator="{ on }">
-      <v-btn class="currency-dropdown" color="primary" dark icon text v-on="on">
-        {{ currency.unicode_symbol }}
-      </v-btn>
-    </template>
-    <v-list>
-      <v-list-item
-        v-for="currency in currencies"
-        :id="`change-to-${currency.ticker_symbol.toLocaleLowerCase()}`"
-        :key="currency.ticker_symbol"
-        @click="onSelected(currency)"
-      >
-        <v-list-item-avatar class="currency-list primary--text">
+  <div>
+    <v-menu transition="slide-y-transition" bottom offset-y>
+      <template #activator="{ on }">
+        <v-btn
+          class="currency-dropdown secondary--text text--lighten-2"
+          icon
+          v-on="on"
+        >
           {{ currency.unicode_symbol }}
-        </v-list-item-avatar>
-        <v-list-item-content>
-          <v-list-item-title>
-            {{ currency.name }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            Select as the main currency
-          </v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-  </v-menu>
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-item
+          v-for="currency in currencies"
+          :id="`change-to-${currency.ticker_symbol.toLocaleLowerCase()}`"
+          :key="currency.ticker_symbol"
+          @click="onSelected(currency)"
+        >
+          <v-list-item-avatar class="currency-list primary--text">
+            {{ currency.unicode_symbol }}
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ currency.name }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              Select as the main currency
+            </v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+  </div>
 </template>
 
 <script lang="ts">

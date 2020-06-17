@@ -1,13 +1,27 @@
 <template>
   <div>
-    <v-menu id="user-dropdown" transition="slide-y-transition" bottom>
+    <v-menu
+      id="user-dropdown"
+      transition="slide-y-transition"
+      max-width="250px"
+      offset-y
+    >
       <template #activator="{ on }">
-        <v-btn color="primary" dark icon text class="user-dropdown" v-on="on">
-          <v-icon>fa fa-user</v-icon>
+        <v-btn
+          class="user-dropdown secondary--text text--lighten-2"
+          icon
+          v-on="on"
+        >
+          <v-icon>fa fa-user-circle</v-icon>
         </v-btn>
       </template>
-
       <v-list>
+        <v-list-item key="username" class="user-username">
+          <v-list-item-title class="font-weight-bold text-center">
+            {{ username }}
+          </v-list-item-title>
+        </v-list-item>
+        <v-divider class="mx-4"></v-divider>
         <v-list-item
           key="settings"
           class="user-dropdown__settings"
@@ -29,9 +43,7 @@
           </v-list-item-avatar>
           <v-list-item-title>Toggle Privacy Mode</v-list-item-title>
         </v-list-item>
-
-        <v-divider></v-divider>
-
+        <v-divider class="mx-4"></v-divider>
         <v-list-item
           key="logout"
           class="user-dropdown__logout"
@@ -60,11 +72,15 @@ import { createNamespacedHelpers } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
 const { mapState } = createNamespacedHelpers('session');
+const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
-  computed: mapState(['privacyMode']),
   components: {
     ConfirmDialog
+  },
+  computed: {
+    ...mapState(['privacyMode']),
+    ...mapSessionState(['username'])
   }
 })
 export default class UserDropdown extends Vue {

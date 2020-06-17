@@ -1,7 +1,7 @@
 export class ApiKeysPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__api-keys').click();
+    cy.get('.navigation__settings__api-keys').click();
   }
 
   addExchange(apiKey: string, apiSecret: string, exchange: string) {

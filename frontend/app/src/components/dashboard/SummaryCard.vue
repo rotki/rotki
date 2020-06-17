@@ -4,10 +4,7 @@
     :class="`dashboard__summary-card__${name}`"
     class="pb-3"
   >
-    <v-row
-      no-gutters
-      class="pa-3 rotkibeige primary--text summary-card__header"
-    >
+    <v-row no-gutters class="pa-3 secondary--text summary-card__header">
       <v-toolbar-title class="font-weight-medium">
         {{ name }} balances
         <v-tooltip v-if="this.$slots.tooltip" bottom>
