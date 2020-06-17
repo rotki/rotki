@@ -2,6 +2,9 @@
 const { ContextReplacementPlugin } = require('webpack');
 
 module.exports = {
+  devServer: {
+    progress: false
+  },
   productionSourceMap: false,
   css: {
     loaderOptions: {
