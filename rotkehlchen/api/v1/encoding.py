@@ -662,6 +662,8 @@ class ModifiableSettingsSchema(Schema):
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
+    # TODO: Add some validation to this field
+    active_modules = fields.List(fields.String(), missing=None)
 
 
 class BaseUserSchema(Schema):

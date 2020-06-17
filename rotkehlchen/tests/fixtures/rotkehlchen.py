@@ -1,9 +1,11 @@
 import base64
 from collections import namedtuple
+from unittest.mock import patch
 
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
+from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -82,35 +84,43 @@ def initialize_mock_rotkehlchen_instance(
         manually_tracked_balances,
         default_mock_price_value,
 ):
-    if start_with_logged_in_user:
+    if not start_with_logged_in_user:
+        return
+
+    # Mock the initial get settings to include the specified ethereum modules
+    def mock_get_settings() -> DBSettings:
+        settings = DBSettings(active_modules=ethereum_modules)
+        return settings
+    settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
+
+    with settings_patch:
         rotki.unlock_user(
             user=username,
             password=db_password,
             create_new=True,
             sync_approval='no',
             premium_credentials=None,
-            given_ethereum_modules=ethereum_modules,
         )
-        if start_with_valid_premium:
-            rotki.premium = Premium(rotki_premium_credentials)
-            rotki.premium_sync_manager.premium = rotki.premium
+    if start_with_valid_premium:
+        rotki.premium = Premium(rotki_premium_credentials)
+        rotki.premium_sync_manager.premium = rotki.premium
 
-        # After unlocking when all objects are created we need to also include
-        # customized fixtures that may have been set by the tests
-        rotki.chain_manager.owned_eth_tokens = owned_eth_tokens
-        rotki.chain_manager.accounts = blockchain_accounts
-        add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets)
-        maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
-        maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
-        add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
-        add_tags_to_test_db(rotki.data.db, tags)
-        add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
-        maybe_mock_historical_price_queries(
-            historian=PriceHistorian(),
-            should_mock_price_queries=should_mock_price_queries,
-            mocked_price_queries=mocked_price_queries,
-            default_mock_value=default_mock_price_value,
-        )
+    # After unlocking when all objects are created we need to also include
+    # customized fixtures that may have been set by the tests
+    rotki.chain_manager.owned_eth_tokens = owned_eth_tokens
+    rotki.chain_manager.accounts = blockchain_accounts
+    add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets)
+    maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
+    maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
+    add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
+    add_tags_to_test_db(rotki.data.db, tags)
+    add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
+    maybe_mock_historical_price_queries(
+        historian=PriceHistorian(),
+        should_mock_price_queries=should_mock_price_queries,
+        mocked_price_queries=mocked_price_queries,
+        default_mock_value=default_mock_price_value,
+    )
 
 
 @pytest.fixture()

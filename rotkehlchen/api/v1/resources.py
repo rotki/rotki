@@ -161,6 +161,7 @@ class SettingsResource(BaseResource):
             main_currency: Optional[Asset],
             date_display_format: Optional[str],
             kraken_account_type: Optional[KrakenAccountType],
+            active_modules: Optional[List[str]],
     ) -> Response:
         settings = ModifiableDBSettings(
             premium_should_sync=premium_should_sync,
@@ -176,6 +177,7 @@ class SettingsResource(BaseResource):
             date_display_format=date_display_format,
             submit_usage_analytics=submit_usage_analytics,
             kraken_account_type=kraken_account_type,
+            active_modules=active_modules,
         )
         return self.rest_api.set_settings(settings)
 
