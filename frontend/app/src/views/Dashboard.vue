@@ -1,13 +1,12 @@
 <template>
   <v-container>
+    <base-page-header text="dashboard"></base-page-header>
     <v-row>
       <v-col cols="12">
-        <overall-balances
-          :is-loading="blockchainIsLoading || exchangeIsLoading"
-        ></overall-balances>
+        <overall-balances :is-loading="anyIsLoading"></overall-balances>
       </v-col>
     </v-row>
-    <v-row class="mx-0 flex" justify="center">
+    <v-row class="mr--1" justify="center">
       <v-col cols="12" md="4" lg="4">
         <summary-card
           name="exchange"
@@ -97,7 +96,7 @@
     <v-row>
       <v-col cols="12">
         <v-card>
-          <v-row no-gutters class="pa-3 rotkibeige primary--text">
+          <v-row no-gutters class="pa-3 secondary--text">
             <v-toolbar-title class="font-weight-medium">
               balance per asset
             </v-toolbar-title>
@@ -116,7 +115,7 @@
             :headers="headers"
             :items="aggregatedBalances"
             :search="search"
-            :loading="blockchainIsLoading || exchangeIsLoading"
+            :loading="anyIsLoading"
             sort-by="usdValue"
             sort-desc
           >
@@ -150,7 +149,7 @@
               v-if="aggregatedBalances.length > 0 && search.length < 1"
               #body.append
             >
-              <tr class="dashboard__balances__total">
+              <tr class="dashboard__balances__total font-weight-medium">
                 <td>Total</td>
                 <td></td>
                 <td class="text-end">
@@ -179,6 +178,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceCardList.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
@@ -214,6 +214,7 @@ interface BlockchainBalances {
 @Component({
   components: {
     AmountDisplay,
+    BasePageHeader,
     OverallBalances,
     AssetDetails,
     SummaryCard,
@@ -277,6 +278,18 @@ export default class Dashboard extends Vue {
     return this.isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
   }
 
+  get allBalancesIsLoading(): boolean {
+    return this.isTaskRunning(TaskType.QUERY_BALANCES);
+  }
+
+  get anyIsLoading(): boolean {
+    return (
+      this.blockchainIsLoading ||
+      this.exchangeIsLoading ||
+      this.allBalancesIsLoading
+    );
+  }
+
   refreshBalance(balanceSource: string) {
     switch (balanceSource) {
       case 'blockchain':
@@ -319,4 +332,12 @@ export default class Dashboard extends Vue {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.dashboard {
+  &__balances {
+    &__total:hover {
+      background-color: transparent !important;
+    }
+  }
+}
+</style>
