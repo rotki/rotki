@@ -81,6 +81,8 @@ def test_set_settings(rotkehlchen_api_server):
             # Change the account type to anything other than default
             assert value != str(KrakenAccountType.PRO)
             value = str(KrakenAccountType.PRO)
+        elif setting == 'active_modules':
+            value = ['makerdao_vaults']
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 
