@@ -10,9 +10,11 @@ if (!process.env.NODE_ENV) {
 }
 
 const environment = {};
-Object.keys(dotenv.parsed).forEach((key) => {
-  environment[key] = dotenv.parsed[key];
-});
+if (dotenv.parsed) {
+  Object.keys(dotenv.parsed).forEach((key) => {
+    environment[key] = dotenv.parsed[key];
+  });
+}
 
 module.exports = {
   entry: './src/index',

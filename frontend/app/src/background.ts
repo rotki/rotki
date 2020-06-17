@@ -1,4 +1,3 @@
-'use strict';
 import path from 'path';
 import {
   app,
@@ -7,7 +6,8 @@ import {
   Menu,
   ipcMain,
   shell,
-  dialog
+  dialog,
+  MenuItemConstructorOptions
 } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import {
@@ -15,7 +15,6 @@ import {
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib';
 import PyHandler from './py-handler';
-import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
@@ -144,8 +143,8 @@ const defaultMenuTemplate: any[] = [
       },
       {
         label: 'Logs Directory',
-        click: () => {
-          shell.openItem(app.getPath('logs'));
+        click: async () => {
+          await shell.openPath(app.getPath('logs'));
         }
       }
     ]
@@ -157,7 +156,7 @@ const defaultMenuTemplate: any[] = [
 
 function createWindow() {
   // set default window Width and Height in case not specific
-  let mainWindowState = windowStateKeeper({
+  const mainWindowState = windowStateKeeper({
     defaultWidth: 1200,
     defaultHeight: 800
   });

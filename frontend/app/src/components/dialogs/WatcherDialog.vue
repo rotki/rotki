@@ -7,7 +7,7 @@
     @keydown.esc.stop="cancel()"
   >
     <v-card>
-      <v-card-title class="headline watcher-dialog__title">
+      <v-card-title class="text-h5 watcher-dialog__title">
         {{ title }}
       </v-card-title>
       <v-card-text>
@@ -141,7 +141,7 @@
       </v-card-text>
 
       <v-card-actions>
-        <v-row class="d-flex flex-grow-1 mx-3 caption">
+        <v-row class="d-flex flex-grow-1 mx-3 text-caption">
           <v-col cols="12">
             <div
               :class="`watcher-dialog__body__messages watcher-dialog__body__messages--${validationStatus} py-1 px-3`"

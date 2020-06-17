@@ -145,7 +145,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
       // to avoid double-conversion, we take as usdValue the amount property when the original asset type and
       // user's main currency coincide
-      let { location, usdValue }: ManualBalancesByLocation = {
+      const { location, usdValue }: ManualBalancesByLocation = {
         location: perLocationBalance.location,
         usdValue: convertedValue
       };
@@ -153,7 +153,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     });
 
     // Aggregate all balances per location
-    let aggregateManualBalancesByLocation: ManualBalanceByLocation = simplifyManualBalances.reduce(
+    const aggregateManualBalancesByLocation: ManualBalanceByLocation = simplifyManualBalances.reduce(
       (
         result: ManualBalanceByLocation,
         manualBalance: ManualBalancesByLocation

@@ -61,10 +61,10 @@
               @click="premium ? openWatcherDialog(vault) : ''"
             >
               <v-icon x-small left>fa fa-bell-o</v-icon>
-              <span v-if="watchers.length > 0" class="caption">
+              <span v-if="watchers.length > 0" class="text-caption">
                 Edit {{ watchers.length }} collateralization watcher(s)
               </span>
-              <span v-else class="caption">
+              <span v-else class="text-caption">
                 Add collateralization ratio watcher
               </span>
               <premium-lock v-if="!premium" size="x-small"></premium-lock>
@@ -256,7 +256,7 @@
   </v-row>
   <v-row v-else align="center" justify="center">
     <v-col>
-      <span class="font-weight-light subtitle-2">
+      <span class="font-weight-light text-subtitle-2">
         Please select a loan to see information
       </span>
     </v-col>

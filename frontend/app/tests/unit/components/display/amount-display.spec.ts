@@ -15,7 +15,7 @@ function createWrapper(
   amount: BigNumber,
   fiatCurrency: string | null
 ) {
-  let vuetify: typeof Vuetify = new Vuetify();
+  const vuetify: typeof Vuetify = new Vuetify();
   return mount(AmountDisplay, {
     store,
     vuetify,

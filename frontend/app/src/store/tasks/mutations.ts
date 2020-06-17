@@ -27,8 +27,8 @@ export const mutations: MutationTree<TaskState> = {
     state.tasks = tasks;
     state.locked = unlockTask(state, taskId);
   },
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset: (state: TaskState) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     state = Object.assign(state, defaultState());
   }
 };

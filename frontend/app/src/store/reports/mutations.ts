@@ -31,8 +31,8 @@ export const mutations: MutationTree<TaxReportState> = {
     state.historyEnd = payload.end;
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset(state: TaxReportState) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     state = Object.assign(state, defaultState());
   }
 };

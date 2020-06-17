@@ -3,11 +3,9 @@
     <v-overlay class="account_management__loading">
       <v-dialog :value="true && !premiumVisible" persistent max-width="450">
         <v-card class="account_management__card pb-6">
-          <div
-            class="pt-6 pb-3 display-3 font-weight-black primary white--text"
-          >
+          <div class="pt-6 pb-3 text-h2 font-weight-black primary white--text">
             <span class="px-6">rotki</span>
-            <span class="d-block mb-3 pl-6 caption">
+            <span class="d-block mb-3 pl-6 text-caption">
               the opensource portfolio manager that respects your privacy
             </span>
           </div>

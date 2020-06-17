@@ -7,7 +7,7 @@
     @keydown.esc.stop="cancel()"
   >
     <v-card>
-      <v-card-title class="headline confirm-dialog__title">
+      <v-card-title class="text-h5 confirm-dialog__title">
         {{ title }}
       </v-card-title>
       <v-row align="center" class="mx-0 confirm-dialog__body">

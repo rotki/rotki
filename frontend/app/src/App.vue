@@ -37,9 +37,9 @@
         <user-dropdown></user-dropdown>
         <currency-drop-down></currency-drop-down>
       </v-app-bar>
-      <v-content v-if="logged" class="fill-height">
+      <v-main v-if="logged" class="fill-height">
         <router-view></router-view>
-      </v-content>
+      </v-main>
     </div>
     <message-dialog
       :title="message.title"
@@ -174,10 +174,10 @@ export default class App extends Vue {
   margin-bottom: 20px;
 }
 
-::v-deep .v-content {
+::v-deep .v-main {
   overflow-y: scroll;
   margin-top: 64px;
-  padding-top: 0px !important;
+  padding-top: 0 !important;
   height: calc(100vh - 64px);
 }
 

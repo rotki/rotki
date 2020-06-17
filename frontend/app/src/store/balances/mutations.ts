@@ -92,8 +92,8 @@ export const mutations: MutationTree<BalanceState> = {
   ) {
     state.makerDAOVaultDetails = makerDAOVaultDetails;
   },
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset(state: BalanceState) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     state = Object.assign(state, defaultState());
   }
 };
