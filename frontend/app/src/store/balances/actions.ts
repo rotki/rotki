@@ -588,6 +588,17 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       xpubs
     });
   },
+  async fetchNetvalueData({ commit, rootState: { session } }) {
+    if (!session?.premium) {
+      return;
+    }
+    try {
+      const netvalueData = await api.queryNetvalueData();
+      commit('netvalueData', netvalueData);
+    } catch (e) {
+      notify(`Failed: ${e}`, 'Retrieving net value data', Severity.ERROR);
+    }
+  },
 
   async fetchSupportedAssets({ commit, state }) {
     if (state.supportedAssets.length > 0) {
