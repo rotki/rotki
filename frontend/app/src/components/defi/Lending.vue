@@ -13,7 +13,7 @@
               <dt class="title font-weight-regular">
                 Currently Deposited
               </dt>
-              <dd class="primary--text headline font-weight-bold">
+              <dd class="primary--text text-h5 font-weight-bold">
                 <amount-display
                   :value="totalDepositedUsdAcrossFilteredAccounts"
                   fiat-currency="USD"
@@ -39,7 +39,7 @@
                   </div>
                 </v-tooltip>
               </dt>
-              <dd class="primary--text headline font-weight-bold">
+              <dd class="primary--text text-h5 font-weight-bold">
                 <amount-display :value="currentDSR"></amount-display>
                 <span class="lending__percentage-sign">%</span>
               </dd>
@@ -53,10 +53,7 @@
                 Interest Earned
                 <premium-lock v-if="!premium" class="d-inline"></premium-lock>
               </dt>
-              <dd
-                v-if="premium"
-                class="primary--text headline font-weight-bold"
-              >
+              <dd v-if="premium" class="primary--text text-h5 font-weight-bold">
                 <amount-display
                   :value="totalUsdGainAcrossFilteredAccounts"
                   show-currency="symbol"

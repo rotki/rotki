@@ -2,12 +2,12 @@
   <v-card class="overall-balances-box mt-3 mb-6" :loading="isLoading">
     <v-row no-gutters>
       <v-col cols="12" md="4" lg="4" class="d-flex flex-column justify-center">
-        <div class="rotkibeige display-3 pa-5 primary--text font-weight-bold">
+        <div class="rotkibeige text-h2 pa-5 primary--text font-weight-bold">
           net worth
         </div>
       </v-col>
       <v-col cols="12" md="8" lg="8">
-        <div class="display-3 pa-5 d-flex justify-center align-center">
+        <div class="text-h2 pa-5 d-flex justify-center align-center">
           <amount-display
             show-currency="symbol"
             :fiat-currency="currency.ticker_symbol"

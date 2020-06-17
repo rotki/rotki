@@ -3,7 +3,7 @@
     <v-card>
       <v-card-title
         :class="{ 'green--text': success, 'red--text': !success }"
-        class="headline message-dialog__title"
+        class="text-h5 message-dialog__title"
       >
         {{ title }}
       </v-card-title>

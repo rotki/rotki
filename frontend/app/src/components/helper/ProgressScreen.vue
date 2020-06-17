@@ -50,7 +50,7 @@
       justify="center"
       class="progress-screen__progress__warning"
     >
-      <div class="font-weight-light subtitle-2">
+      <div class="font-weight-light text-subtitle-2">
         <slot></slot>
       </div>
     </v-row>

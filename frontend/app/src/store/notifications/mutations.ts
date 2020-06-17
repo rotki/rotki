@@ -16,8 +16,9 @@ export const mutations: MutationTree<NotificationState> = {
 
     state.data = notifications;
   },
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   reset(state: NotificationState) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     state = Object.assign(state, defaultState());
   }
 };

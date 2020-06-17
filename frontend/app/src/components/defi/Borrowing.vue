@@ -18,7 +18,7 @@
               <dt class="title font-weight-regular">
                 Total collateral locked
               </dt>
-              <dd class="primary--text headline font-weight-bold">
+              <dd class="primary--text text-h5 font-weight-bold">
                 <amount-display
                   :value="makerDAOVaultSummary.totalCollateralUsd"
                   show-currency="symbol"
@@ -32,7 +32,7 @@
               <dt class="title font-weight-regular">
                 Total outstanding debt
               </dt>
-              <dd class="primary--text headline font-weight-bold">
+              <dd class="primary--text text-h5 font-weight-bold">
                 <amount-display
                   :value="makerDAOVaultSummary.totalDebt"
                   asset="DAI"

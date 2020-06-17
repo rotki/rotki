@@ -66,8 +66,8 @@ export default class PyHandler {
       return;
     }
 
-    let port = this.selectPort();
-    let args: string[] = [];
+    const port = this.selectPort();
+    const args: string[] = [];
     this.loadArgumentsFromFile(args);
 
     if (this.guessPackaged()) {
@@ -76,7 +76,7 @@ export default class PyHandler {
       this.startProcess(port, args);
     }
 
-    let childProcess = this.childProcess;
+    const childProcess = this.childProcess;
     if (!childProcess) {
       return;
     }
@@ -114,7 +114,7 @@ export default class PyHandler {
     if (process.platform === 'win32') {
       await this.terminateWindowsProcesses();
     } else {
-      let client = this.childProcess;
+      const client = this.childProcess;
       if (client) {
         client.kill();
         this.logToFile(
@@ -127,7 +127,7 @@ export default class PyHandler {
   }
 
   private guessPackaged() {
-    let path = PyHandler.packagedBackendPath();
+    const path = PyHandler.packagedBackendPath();
     this.logToFile(
       `Determining if we are packaged by seeing if ${path} exists`
     );
@@ -152,7 +152,7 @@ export default class PyHandler {
   }
 
   private startProcess(port: number, args: string[]) {
-    let defaultArgs: string[] = [
+    const defaultArgs: string[] = [
       '-m',
       'rotkehlchen',
       '--api-port',
@@ -166,7 +166,7 @@ export default class PyHandler {
     defaultArgs.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
 
     if (process.env.ROTKEHLCHEN_ENVIRONMENT === 'test') {
-      let tempPath = path.join(this.app.getPath('temp'), 'rotkehlchen');
+      const tempPath = path.join(this.app.getPath('temp'), 'rotkehlchen');
       if (!fs.existsSync(tempPath)) {
         fs.mkdirSync(tempPath);
       }
@@ -197,8 +197,8 @@ export default class PyHandler {
   }
 
   private startProcessPackaged(port: number, args: string[]) {
-    let dist_dir = PyHandler.packagedBackendPath();
-    let files = fs.readdirSync(dist_dir);
+    const dist_dir = PyHandler.packagedBackendPath();
+    const files = fs.readdirSync(dist_dir);
     if (files.length === 0) {
       this.logAndQuit('ERROR: No files found in the dist directory');
     } else if (files.length !== 1) {
@@ -279,10 +279,10 @@ export default class PyHandler {
   private loadArgumentsFromFile(args: string[]) {
     // try to see if there is a configfile
     if (fs.existsSync('rotki_config.json')) {
-      let raw_data: Buffer = fs.readFileSync('rotki_config.json');
+      const raw_data: Buffer = fs.readFileSync('rotki_config.json');
 
       try {
-        let jsondata = JSON.parse(raw_data.toString());
+        const jsondata = JSON.parse(raw_data.toString());
         if (Object.prototype.hasOwnProperty.call(jsondata, 'loglevel')) {
           args.push('--loglevel', jsondata['loglevel']);
         }
