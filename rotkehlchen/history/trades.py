@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
-from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_DAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
@@ -18,6 +17,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.chain.manager import ChainManager
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -63,7 +63,7 @@ class TradesHistorian():
             db: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
-            chain_manager: ChainManager,
+            chain_manager: 'ChainManager',
     ) -> None:
 
         self.msg_aggregator = msg_aggregator
