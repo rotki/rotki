@@ -27,6 +27,9 @@ def test_coverage_of_kraken_balances(kraken):
     expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)).union({'BSV'})
     # Ignore the staking assets from the got assets
     got_assets.remove('XTZ.S')
+    got_assets.remove('EUR.M')
+    got_assets.remove('USD.M')
+    got_assets.remove('XBT.M')
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:
@@ -41,6 +44,7 @@ def test_coverage_of_kraken_balances(kraken):
 
     # also check that staked assets are properly processed
     assert asset_from_kraken('XTZ.S') == Asset('XTZ')
+    assert asset_from_kraken('EUR.M') == Asset('EUR')
 
 
 def test_querying_balances(function_scope_kraken):
