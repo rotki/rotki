@@ -453,7 +453,7 @@ def asset_from_kraken(kraken_name: str) -> Asset:
         name = 'BTC'
     elif kraken_name == 'XDG':
         name = 'DOGE'
-    elif kraken_name in ('ETH', 'EUR', 'USD', 'GBP', 'CAD', 'JPY', 'KRW', 'CHF'):
+    elif kraken_name in ('ETH', 'EUR', 'USD', 'GBP', 'CAD', 'JPY', 'KRW', 'CHF', 'AUD'):
         name = kraken_name
     else:
         name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)

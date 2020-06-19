@@ -624,6 +624,11 @@
         "symbol": "AUC",
         "type": "ethereum token"
     },
+    "AUD": {
+        "name": "Australian Dollar",
+        "symbol": "AUD",
+        "type": "fiat"
+    },
     "AUR": {
         "name": "Auroracoin",
         "started": 1393479207,

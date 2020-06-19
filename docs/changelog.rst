@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature: `-` Support Australian Dollar (AUD) as fiat currency
+
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
 * :feature: `918` Premium users can now set watchers for their vaults. When the watched vault gets below or above a certain collateralization ratio they get an email alert.

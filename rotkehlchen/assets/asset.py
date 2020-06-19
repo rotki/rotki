@@ -68,6 +68,7 @@ WORLD_TO_POLONIEX = {
 WORLD_TO_KRAKEN = {
     'ATOM': 'ATOM',
     'ALGO': 'ALGO',
+    'AUD': 'AUD',
     'BAT': 'BAT',
     'LINK': 'LINK',
     'BSV': 'BSV',
