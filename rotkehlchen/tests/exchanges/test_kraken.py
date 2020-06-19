@@ -43,8 +43,8 @@ def test_coverage_of_kraken_balances(kraken):
     assert asset_from_kraken('XTZ.S') == Asset('XTZ')
 
 
-def test_querying_balances(kraken):
-    result, error_or_empty = kraken.query_balances()
+def test_querying_balances(function_scope_kraken):
+    result, error_or_empty = function_scope_kraken.query_balances()
     assert error_or_empty == ''
     assert isinstance(result, dict)
     for asset, entry in result.items():
@@ -53,9 +53,9 @@ def test_querying_balances(kraken):
         assert 'amount' in entry
 
 
-def test_querying_trade_history(kraken):
+def test_querying_trade_history(function_scope_kraken):
     now = ts_now()
-    result = kraken.query_trade_history(
+    result = function_scope_kraken.query_trade_history(
         start_ts=1451606400,
         end_ts=now,
     )
@@ -66,9 +66,9 @@ def test_querying_trade_history(kraken):
         assert isinstance(kraken_trade, Trade)
 
 
-def test_querying_deposits_withdrawals(kraken):
+def test_querying_deposits_withdrawals(function_scope_kraken):
     now = ts_now()
-    result = kraken.query_deposits_withdrawals(
+    result = function_scope_kraken.query_deposits_withdrawals(
         start_ts=1451606400,
         end_ts=now,
     )
