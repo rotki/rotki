@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature: `-` Support Australian Dollar (AUD) as fiat currency
+* :feature: `-` Count Kraken `off-chain staked assets <https://support.kraken.com/hc/en-us/articles/360039879471-What-is-Asset-S-and-Asset-M->`__ as normal Kraken balance.
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
