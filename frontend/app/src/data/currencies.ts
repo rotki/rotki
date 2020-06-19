@@ -8,6 +8,7 @@ export const currencies: Currency[] = [
   new Currency('Chinese Yuan', 'CNY', '¥'),
   new Currency('Korean Won', 'KRW', '₩'),
   new Currency('Canadian Dollar', 'CAD', '$'),
+  new Currency('Australian Dollar', 'AUD', '$'),
   new Currency('Russian Ruble', 'RUB', '₽'),
   new Currency('South African Rand', 'ZAR', 'R'),
   new Currency('Turkish Lira', 'TRY', '₺')
