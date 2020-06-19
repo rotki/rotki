@@ -270,7 +270,7 @@ def generate_random_single_kraken_ledger_data(
     return ledger
 
 
-def generate_random_kraken_ledger_data(start: Timestamp, end: Timestamp, ledger_type):
+def generate_random_kraken_ledger_data(start: Timestamp, end: Timestamp, ledger_type: str):
     ledgers_num = random.randint(1, 49)
     # Ledgers is a dict with txid as the key
     ledgers = {}
