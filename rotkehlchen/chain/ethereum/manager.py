@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 import requests
 from ens import ENS
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
-from ens.auto import ns
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_utils.address import to_checksum_address
@@ -15,6 +14,7 @@ from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
+from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
@@ -25,7 +25,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, request_get_dict
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str, request_get_dict
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -47,9 +47,8 @@ class EthereumManager():
             attempt_connect: bool = True,
             eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
     ) -> None:
-        self.web3: Web3 = None
+        self.web3: Optional[Web3] = None
         self.rpc_endpoint = ethrpc_endpoint
-        self.connected = False
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
@@ -66,7 +65,7 @@ class EthereumManager():
             mainnet_check: bool = True,
     ) -> Tuple[bool, str]:
         message = ''
-        if self.rpc_endpoint == ethrpc_endpoint and self.connected:
+        if self.rpc_endpoint == ethrpc_endpoint and self.web3 is not None:
             # We are already connected
             return True, 'Already connected to an ethereum node'
 
@@ -86,7 +85,7 @@ class EthereumManager():
             self.web3.middleware_onion.inject(http_retry_request_middleware, layer=0)
         except requests.exceptions.ConnectionError:
             log.warning('Could not connect to an ethereum node. Will use etherscan only')
-            self.connected = False
+            self.web3 = None
             return False, f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
         if self.web3.isConnected():
@@ -100,21 +99,21 @@ class EthereumManager():
             synchronized = True
             msg = ''
             if mainnet_check:
-                chain_id = self.web3.eth.chainId
-                if chain_id != 1:
+                network_id = int(self.web3.net.version)
+                if network_id != 1:
                     message = (
                         f'Connected to ethereum node at endpoint {ethrpc_endpoint} but '
                         f'it is not on the ethereum mainnet. The chain id '
-                        f'the node is in is {chain_id}.'
+                        f'the node is in is {network_id}.'
                     )
                     log.warning(message)
-                    self.connected = False
+                    self.web3 = None
                     return False, message
 
-                if self.web3.eth.syncing:  # pylint: disable=no-member
-                    current_block = self.web3.eth.syncing.currentBlock  # pylint: disable=no-member
-                    latest_block = self.web3.eth.syncing.highestBlock  # pylint: disable=no-member
-                    synchronized, msg = self.is_synchronized(current_block, latest_block)
+                if not isinstance(self.web3.eth.syncing, bool):  # pylint: disable=no-member
+                    current_block = self.web3.eth.syncing.currentBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
+                    latest_block = self.web3.eth.syncing.highestBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
+                    synchronized, msg = self._is_synchronized(current_block, latest_block)
                 else:
                     current_block = self.web3.eth.blockNumber  # pylint: disable=no-member
                     latest_block = self.query_eth_highest_block()
@@ -123,7 +122,7 @@ class EthereumManager():
                         log.warning(msg)
                         synchronized = False
                     else:
-                        synchronized, msg = self.is_synchronized(current_block, latest_block)
+                        synchronized, msg = self._is_synchronized(current_block, latest_block)
 
             if not synchronized:
                 self.msg_aggregator.add_warning(
@@ -132,18 +131,17 @@ class EthereumManager():
                     'may be incorrect.',
                 )
 
-            self.connected = True
             log.info(f'Connected to ethereum node at {ethrpc_endpoint}')
             return True, ''
         else:
             log.warning('Could not connect to an ethereum node. Will use etherscan only')
-            self.connected = False
+            self.web3 = None
             message = f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
         # If we get here we did not connnect
         return False, message
 
-    def is_synchronized(self, current_block: int, latest_block: int) -> Tuple[bool, str]:
+    def _is_synchronized(self, current_block: int, latest_block: int) -> Tuple[bool, str]:
         """ Validate that the ethereum node is synchronized
             within 20 blocks of latest block
 
@@ -157,7 +155,6 @@ class EthereumManager():
                 f'{latest_block}. Will use etherscan.'
             )
             log.warning(message)
-            self.connected = False
             return False, message
 
         return True, message
@@ -173,7 +170,6 @@ class EthereumManager():
             if self.web3:
                 del self.web3
                 self.web3 = None
-            self.connected = False
             self.ethrpc_endpoint = ''
             return True, ''
         else:
@@ -340,10 +336,12 @@ class EthereumManager():
         - RemoteError if an external service such as Etherscan is queried and
         there is a problem with its query.
         """
-        if not self.connected:
+        if self.web3 is None:
             return self.etherscan.get_block_by_number(num)
 
-        return self.web3.eth.getBlock(num)  # pylint: disable=no-member
+        block_data: MutableAttributeDict = MutableAttributeDict(self.web3.eth.getBlock(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
+        block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
+        return block_data  # type: ignore
 
     def get_code(self, account: ChecksumEthAddress) -> str:
         """Gets the deployment bytecode at the given address
@@ -352,12 +350,10 @@ class EthereumManager():
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        if self.connected:
-            result = self.web3.eth.getCode(account)
-        else:
-            result = self.etherscan.get_code(account)
+        if self.web3 is None:
+            return self.etherscan.get_code(account)
 
-        return result
+        return self.web3.eth.getCode(account)
 
     def ens_lookup(self, name: str) -> Optional[ChecksumEthAddress]:
         """Performs an ENS lookup and returns address if found else None
@@ -366,7 +362,7 @@ class EthereumManager():
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        if self.connected:
+        if self.web3 is not None:
             return self.web3.ens.resolve(name)
 
         # else we gotta manually query contracts via etherscan
@@ -435,23 +431,23 @@ class EthereumManager():
         reaching it or with the returned result
         - ValueError if web3 is used and there is a VM execution error
         """
-        if self.connected:
-            contract = self.web3.eth.contract(address=contract_address, abi=abi)
-            try:
-                method = getattr(contract.caller, method_name)
-                result = method(*arguments if arguments else [])
-            except ValueError as e:
-                raise BlockchainQueryError(
-                    f'Error doing call on contract {contract_address}: {str(e)}',
-                )
-            return result
-        else:
+        if self.web3 is None:
             return self._call_contract_etherscan(
                 contract_address=contract_address,
                 abi=abi,
                 method_name=method_name,
                 arguments=arguments,
             )
+
+        contract = self.web3.eth.contract(address=contract_address, abi=abi)
+        try:
+            method = getattr(contract.caller, method_name)
+            result = method(*arguments if arguments else [])
+        except ValueError as e:
+            raise BlockchainQueryError(
+                f'Error doing call on contract {contract_address}: {str(e)}',
+            )
+        return result
 
     def get_logs(
             self,
@@ -482,7 +478,7 @@ class EthereumManager():
             filter_args['topics'] = filter_args['topics'][1:]
         events: List[Dict[str, Any]] = []
         start_block = from_block
-        if self.connected:
+        if self.web3 is not None:
             until_block = self.web3.eth.blockNumber if to_block == 'latest' else to_block
             while start_block <= until_block:
                 filter_args['fromBlock'] = start_block

@@ -15,7 +15,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import convert_to_int, hexstring_to_bytes
+from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -334,8 +334,12 @@ class Etherscan(ExternalServiceWithApiKey):
         - RemoteError due to self._query().
         """
         options = {'tag': hex(block_number), 'boolean': 'true'}
-        result = self._query(module='proxy', action='eth_getBlockByNumber', options=options)
-        return result
+        block_data = self._query(module='proxy', action='eth_getBlockByNumber', options=options)
+        # We need to convert some data from hex here
+        block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])
+        block_data['number'] = hex_or_bytes_to_int(block_data['number'])
+
+        return block_data
 
     def get_code(self, account: ChecksumEthAddress) -> str:
         """Gets the deployment bytecode at the given address

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List
+from typing import List, Optional
 
 import pytest
 from eth_utils.address import to_checksum_address
@@ -76,6 +76,16 @@ def ethrpc_port(port_generator):
 
 
 @pytest.fixture
+def ethrpc_endpoint() -> Optional[str]:
+    return None
+
+
+@pytest.fixture
+def ethereum_manager_connect_at_start() -> bool:
+    return False
+
+
+@pytest.fixture
 def eth_p2p_port(port_generator):
     port = next(port_generator)
     return port
@@ -101,13 +111,23 @@ def alethio(database, messages_aggregator, all_eth_tokens):
 
 
 @pytest.fixture
-def ethereum_manager(ethrpc_port, etherscan, messages_aggregator):
-    ethrpc_endpoint = f'http://localhost:{ethrpc_port}'
+def ethereum_manager(
+        ethrpc_port,
+        etherscan,
+        messages_aggregator,
+        ethrpc_endpoint,
+        ethereum_manager_connect_at_start,
+):
+    if ethrpc_endpoint is None:
+        endpoint = f'http://localhost:{ethrpc_port}'
+    else:
+        endpoint = ethrpc_endpoint
+
     return EthereumManager(
-        ethrpc_endpoint=ethrpc_endpoint,
+        ethrpc_endpoint=endpoint,
         etherscan=etherscan,
         msg_aggregator=messages_aggregator,
-        attempt_connect=False,
+        attempt_connect=ethereum_manager_connect_at_start,
     )
 
 
@@ -122,7 +142,6 @@ def _geth_blockchain(
         random_marker,
         genesis_path,
 ):
-
     """ Helper to do proper cleanup. """
     geth_process = geth_create_blockchain(
         ethereum_manager=ethereum_manager,
