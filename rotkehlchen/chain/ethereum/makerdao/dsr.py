@@ -31,7 +31,12 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_now
+from rotkehlchen.utils.misc import (
+    hex_or_bytes_to_address,
+    hex_or_bytes_to_int,
+    hex_or_bytes_to_str,
+    ts_now,
+)
 
 log = logging.getLogger(__name__)
 
@@ -597,9 +602,7 @@ class MakerDAODSR(MakerDAOCommon):
 
         assert found_event, 'at this point found_event should be populated'  # helps mypy
         event_block_number = deserialize_blocknumber(found_event['blockNumber'])
-        first_topic = found_event['topics'][0]
-        if isinstance(first_topic, bytes):
-            first_topic = first_topic.hex()
+        first_topic = hex_or_bytes_to_str(found_event['topics'][0])
 
         amount = self._get_vat_join_exit_at_transaction(
             movement_type='join' if first_topic.startswith('0x049878f3') else 'exit',

@@ -364,6 +364,16 @@ def hex_or_bytes_to_int(value: Union[bytes, str]) -> int:
     return int_value
 
 
+def hex_or_bytes_to_str(value: Union[bytes, str]) -> str:
+    """Turns a bytes/HexBytes or a hexstring into an hex string"""
+    if isinstance(value, bytes):
+        hexstr = value.hex()
+    else:
+        hexstr = value
+
+    return hexstr
+
+
 def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
     """Turns a 32bit bytes/HexBytes or a hexstring into an address
 
@@ -371,9 +381,5 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
     - ConversionError if it can't convert a value to an int or if an unexpected
     type is given.
     """
-    if isinstance(value, bytes):
-        hexstr = value.hex()
-    else:
-        hexstr = value
-
+    hexstr = hex_or_bytes_to_str(value)
     return ChecksumEthAddress(to_checksum_address('0x' + hexstr[26:]))
