@@ -1,11 +1,11 @@
 gevent==1.5a2
-web3==5.3.0
+web3==5.11.1
 pysqlcipher3==1.0.3
 requests==2.20.0
 pycryptodome==3.6.6
 pycryptodomex==3.6.6
 coincurve==13.0.0
-typing-extensions==3.7.4
+typing-extensions==3.7.4.2
 base58check==1.0.2
 bech32==1.2.0
 
@@ -19,5 +19,4 @@ webargs==6.0.0
 
 #constraints
 setuptools==40.6.2  # constraint required by pyinstaller==3.5.0
-eth-account==0.4.0
-eth-utils==1.8.0  # constraint required by web3==5.3.0
+eth-utils==1.8.4  # constraint required by web3==5.3.0
