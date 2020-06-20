@@ -5,6 +5,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
+from ens import ENS
+from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
+from ens.auto import ns
+from ens.main import ENS_MAINNET_ADDR
+from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
+from eth_utils.address import to_checksum_address
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
@@ -75,7 +81,8 @@ class EthereumManager():
                 endpoint_uri=ethrpc_endpoint,
                 request_kwargs={'timeout': self.eth_rpc_timeout},
             )
-            self.web3 = Web3(provider)
+            ens = ENS(provider)
+            self.web3 = Web3(provider, ens=ens)
             self.web3.middleware_onion.inject(http_retry_request_middleware, layer=0)
         except requests.exceptions.ConnectionError:
             log.warning('Could not connect to an ethereum node. Will use etherscan only')
@@ -351,6 +358,59 @@ class EthereumManager():
             result = self.etherscan.get_code(account)
 
         return result
+
+    def _single_ens_lookup(self, name: str, resolver: Optional[ChecksumEthAddress]) -> Optional[ChecksumEthAddress]:
+        """Performs an ENS lookup and returns address if found else None
+
+        May raise:
+        - RemoteError if Etherscan is used and there is a problem querying it or
+        parsing its response
+        """
+        if self.connected:
+            return self.web3.ens.resolve(name)
+
+        # else we gotta manually query contracts via etherscan
+        normal_name = normalize_name(name)
+        resolver_addr = self._call_contract_etherscan(
+            ENS_MAINNET_ADDR,
+            abi=ENS_ABI,
+            method_name='resolver',
+            arguments=[normal_name_to_hash(normal_name)],
+        )
+        if is_none_or_zero_address(resolver_addr):
+            return None
+        address = self._call_contract_etherscan(
+            to_checksum_address(resolver_addr),
+            abi=ENS_RESOLVER_ABI,
+            method_name='addr',
+            arguments=[normal_name_to_hash(normal_name)],
+        )
+
+        if is_none_or_zero_address(address):
+            return None
+        return to_checksum_address(address)
+
+    def ens_lookup(self, name: str) -> Optional[ChecksumEthAddress]:
+        """Performs an ENS lookup and returns address if found else None
+
+        May raise:
+        - RemoteError if Etherscan is used and there is a problem querying it or
+        parsing its response
+        """
+        parts = name.split('.')
+        parts_num = len(parts)
+        if parts_num < 2:
+            return None  # invalid name
+        if parts[-1] != 'eth':
+            return None  # we only resolve eth names for now
+        if parts_num == 2:
+            return self._single_ens_lookup(name)
+
+        parts = parts[:-2]
+        parts[-1] = parts[-1] + '.eth'
+        for part in reversed(parts)[1:]:
+            address = 1
+            
 
     def _call_contract_etherscan(
             self,
