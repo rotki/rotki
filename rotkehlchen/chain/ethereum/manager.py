@@ -359,7 +359,7 @@ class EthereumManager():
 
         return result
 
-    def _single_ens_lookup(self, name: str, resolver: Optional[ChecksumEthAddress]) -> Optional[ChecksumEthAddress]:
+    def ens_lookup(self, name: str) -> Optional[ChecksumEthAddress]:
         """Performs an ENS lookup and returns address if found else None
 
         May raise:
@@ -389,28 +389,6 @@ class EthereumManager():
         if is_none_or_zero_address(address):
             return None
         return to_checksum_address(address)
-
-    def ens_lookup(self, name: str) -> Optional[ChecksumEthAddress]:
-        """Performs an ENS lookup and returns address if found else None
-
-        May raise:
-        - RemoteError if Etherscan is used and there is a problem querying it or
-        parsing its response
-        """
-        parts = name.split('.')
-        parts_num = len(parts)
-        if parts_num < 2:
-            return None  # invalid name
-        if parts[-1] != 'eth':
-            return None  # we only resolve eth names for now
-        if parts_num == 2:
-            return self._single_ens_lookup(name)
-
-        parts = parts[:-2]
-        parts[-1] = parts[-1] + '.eth'
-        for part in reversed(parts)[1:]:
-            address = 1
-            
 
     def _call_contract_etherscan(
             self,
