@@ -67,11 +67,11 @@ Linux
 
 Make sure you have `node.js <https://nodejs.org/en/>`_ and `npm <https://www.npmjs.com/>`_. If you don't, use your linux distro's package manager to get them.
 
-Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_:
+Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_ version 4:
 
-- If you're running Archlinux you can install the `package <https://www.archlinux.org/packages/community/x86_64/sqlcipher/>`_ with ``pacman``.
+- If you are running Archlinux you can install the `package <https://www.archlinux.org/packages/community/x86_64/sqlcipher/>`_ with ``pacman``.
 
-- If you're running Ubuntu you will need to install `libsqlcipher-dev <https://packages.ubuntu.com/trusty/libdevel/libsqlcipher-dev>`_ with ``apt-get`` instead.
+- If you are running Ubuntu, at the time of writing of this article Ubuntu is still using sqlcipher v3 which is not supported by rotki. So you should build sqlcipher v4 by hand. We have a script for that which is also used by our CI. Check it out `here <https://github.com/rotki/rotki/blob/7573bcbd9bfc83e0ef352701ae2772a040b4ab5b/install_deps.sh>`__.
 
 Install electron and any other npm dependencies by::
 
