@@ -20,6 +20,7 @@ from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -276,9 +277,9 @@ class EthereumManager():
         )
         for acc_idx, account in enumerate(accounts):
             for tk_idx, token in enumerate(tokens):
-                token_amount = FVal(result[acc_idx][tk_idx])
+                token_amount = result[acc_idx][tk_idx]
                 if token_amount != 0:
-                    balances[token][account] = token_amount / (FVal(10) ** FVal(token.decimals))
+                    balances[token][account] = token_normalized_value(token_amount, token.decimals)
         return balances
 
     def get_multiaccount_token_balance(
@@ -312,9 +313,9 @@ class EthereumManager():
         )
         for idx, account in enumerate(accounts):
             # 0 is since we only provide 1 token here
-            token_amount = FVal(result[idx][0])
+            token_amount = result[idx][0]
             if token_amount != 0:
-                balances[account] = token_amount / (FVal(10) ** FVal(token.decimals))
+                balances[account] = token_normalized_value(token_amount, token.decimals)
         return balances
 
     def get_token_balance(
