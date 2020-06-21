@@ -9,7 +9,9 @@ from ens import ENS
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
+from eth_typing import BlockNumber
 from eth_utils.address import to_checksum_address
+from typing_extensions import Literal
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
@@ -36,6 +38,26 @@ DEFAULT_ETH_RPC_TIMEOUT = 10
 
 def address_to_bytes32(address: ChecksumEthAddress) -> str:
     return '0x' + 24 * '0' + address.lower()[2:]
+
+
+def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
+    """ Validate that the ethereum node is synchronized
+            within 20 blocks of latest block
+
+        Returns a tuple (results, message)
+            - result: Boolean for confirmation of synchronized
+            - message: A message containing information on what the status is.
+    """
+    message = ''
+    if current_block < (latest_block - 20):
+        message = (
+            f'Found ethereum node but it is out of sync. {current_block} / '
+            f'{latest_block}. Will use etherscan.'
+        )
+        log.warning(message)
+        return False, message
+
+    return True, message
 
 
 class EthereumManager():
@@ -113,16 +135,17 @@ class EthereumManager():
                 if not isinstance(self.web3.eth.syncing, bool):  # pylint: disable=no-member
                     current_block = self.web3.eth.syncing.currentBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
                     latest_block = self.web3.eth.syncing.highestBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
-                    synchronized, msg = self._is_synchronized(current_block, latest_block)
+                    synchronized, msg = _is_synchronized(current_block, latest_block)
                 else:
                     current_block = self.web3.eth.blockNumber  # pylint: disable=no-member
-                    latest_block = self.query_eth_highest_block()
-                    if latest_block is None:
+                    try:
+                        latest_block = self.query_eth_highest_block()
+                    except RemoteError:
                         msg = 'Could not query latest block'
                         log.warning(msg)
                         synchronized = False
                     else:
-                        synchronized, msg = self._is_synchronized(current_block, latest_block)
+                        synchronized, msg = _is_synchronized(current_block, latest_block)
 
             if not synchronized:
                 self.msg_aggregator.add_warning(
@@ -140,24 +163,6 @@ class EthereumManager():
 
         # If we get here we did not connnect
         return False, message
-
-    def _is_synchronized(self, current_block: int, latest_block: int) -> Tuple[bool, str]:
-        """ Validate that the ethereum node is synchronized
-            within 20 blocks of latest block
-
-        Returns a tuple (results, message)
-            - result: Boolean for confirmation of synchronized
-            - message: A message containing information on what the status is. """
-        message = ''
-        if current_block < (latest_block - 20):
-            message = (
-                f'Found ethereum node but it is out of sync. {current_block} / '
-                f'{latest_block}. Will use etherscan.'
-            )
-            log.warning(message)
-            return False, message
-
-        return True, message
 
     def set_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         """ Attempts to set the RPC endpoint for the ethereum client.
@@ -179,10 +184,13 @@ class EthereumManager():
                 self.ethrpc_endpoint = endpoint
             return result, message
 
-    def query_eth_highest_block(self) -> Optional[int]:
+    def query_eth_highest_block(self) -> BlockNumber:
         """ Attempts to query an external service for the block height
 
-        Returns the highest blockNumber"""
+        Returns the highest blockNumber
+
+        May Raise RemoteError if querying fails
+        """
 
         url = 'https://api.blockcypher.com/v1/eth/main'
         log.debug('Querying blockcypher for ETH highest block', url=url)
@@ -197,13 +205,10 @@ class EthereumManager():
             block_number = int(eth_resp['height'])
             log.debug('ETH highest block result', block=block_number)
         else:
-            try:
-                block_number = self.etherscan.get_latest_block_number()
-                log.debug('ETH highest block result', block=block_number)
-            except RemoteError:
-                block_number = None
+            block_number = self.etherscan.get_latest_block_number()
+            log.debug('ETH highest block result', block=block_number)
 
-        return block_number
+        return BlockNumber(block_number)
 
     def get_eth_balance(self, account: ChecksumEthAddress) -> FVal:
         """Gets the balance of the given account in ETH
@@ -353,7 +358,7 @@ class EthereumManager():
         if self.web3 is None:
             return self.etherscan.get_code(account)
 
-        return self.web3.eth.getCode(account)
+        return hex_or_bytes_to_str(self.web3.eth.getCode(account))
 
     def ens_lookup(self, name: str) -> Optional[ChecksumEthAddress]:
         """Performs an ENS lookup and returns address if found else None
@@ -456,7 +461,7 @@ class EthereumManager():
             event_name: str,
             argument_filters: Dict[str, Any],
             from_block: int,
-            to_block: Union[int, str] = 'latest',
+            to_block: Union[int, Literal['latest']] = 'latest',
     ) -> List[Dict[str, Any]]:
         """Queries logs of an ethereum contract
 
@@ -494,9 +499,9 @@ class EthereumManager():
                 )
                 # WTF: for some reason the first time we get in here the loop resets
                 # to the start without querying eth_getLogs and ends up with double logging
-                new_events = self.web3.eth.getLogs(filter_args)
+                new_events_web3 = self.web3.eth.getLogs(filter_args)
                 start_block = end_block + 1
-                events.extend(new_events)
+                events.extend(new_events_web3)  # type: ignore
         else:
             until_block = (
                 self.etherscan.get_latest_block_number() if to_block == 'latest' else to_block
@@ -505,7 +510,7 @@ class EthereumManager():
                 end_block = min(start_block + 300000, until_block)
                 new_events = self.etherscan.get_logs(
                     contract_address=contract_address,
-                    topics=filter_args['topics'],
+                    topics=filter_args['topics'],  # type: ignore
                     from_block=start_block,
                     to_block=end_block,
                 )
