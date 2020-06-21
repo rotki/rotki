@@ -678,7 +678,7 @@ class Rotkehlchen():
 
         if self.user_is_logged_in:
             result['last_balance_save'] = self.data.db.get_last_balance_save_time()
-            result['eth_node_connection'] = self.chain_manager.ethereum.connected
+            result['eth_node_connection'] = self.chain_manager.ethereum.web3 is not None
             result['history_process_start_ts'] = self.accountant.started_processing_timestamp
             result['history_process_current_ts'] = self.accountant.currently_processing_timestamp
         return result
