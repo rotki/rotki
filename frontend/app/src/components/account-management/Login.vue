@@ -69,7 +69,7 @@
         </v-btn>
       </span>
       <v-divider class="my-3"></v-divider>
-      <span style="font-size: 0.9em;">
+      <span class="login__actions__footer">
         <a class="login__button__new-account" @click="newAccount()">
           Create New Account
         </a>
@@ -132,6 +132,14 @@ export default class Login extends Vue {
 </script>
 
 <style scoped lang="scss">
+.login {
+  &__actions {
+    &__footer {
+      font-size: 0.9em;
+    }
+  }
+}
+
 .login__sync-error__body {
   margin-top: 5px;
   margin-bottom: 8px;

@@ -80,6 +80,12 @@ module.exports = {
           }
         ]
       }
+    ],
+    'vue/no-static-inline-styles': [
+      'error',
+      {
+        allowBinding: false
+      }
     ]
   },
 
