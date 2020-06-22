@@ -38,7 +38,7 @@ export default class Settings extends Vue {
     },
     {
       name: 'User & Security',
-      routerTo: '/settings/usersecurity'
+      routerTo: '/settings/user-security'
     }
   ];
 
