@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, List, NamedTuple, Tuple
 
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
@@ -11,7 +11,8 @@ from rotkehlchen.constants.ethereum import ZERION_ADAPTER_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -52,9 +53,18 @@ class Zerion():
     ) -> None:
         self.ethereum = ethereum_manager
         self.msg_aggregator = msg_aggregator
-        self.contract_address = self.ethereum.ens_lookup('api.zerion.eth')
+        result = self.ethereum.ens_lookup('api.zerion.eth')
+        if result is None:
+            self.msg_aggregator.add_error(
+                'Could not query api.zerion.eth address. Using last known address',
+            )
+            self.contract_address = deserialize_ethereum_address(
+                '0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672',
+            )
+        else:
+            self.contract_address = result
 
-    def all_balances_for_account(self, account: ChecksumEthAddress) -> None:
+    def all_balances_for_account(self, account: ChecksumEthAddress) -> List[DefiProtocolBalances]:
         """Calls the contract's getBalances() to get all protocol balances for account
 
         https://docs.zerion.io/smart-contracts/adapterregistry-v3#getbalances
@@ -92,7 +102,7 @@ class Zerion():
 
         return protocol_balances
 
-    def _get_single_balance(self, entry: Tuple[Tuple[Any], int]) -> DefiBalance:
+    def _get_single_balance(self, entry: Tuple[Tuple[str, str, str, int], int]) -> DefiBalance:
         metadata = entry[0]
         balance_value = entry[1]
         decimals = metadata[3]
@@ -106,7 +116,7 @@ class Zerion():
                 self.msg_aggregator.add_error(
                     f'Unsupported asset {token_symbol} encountered during DeFi protocol queries',
                 )
-            usd_price = ZERO
+            usd_price = Price(ZERO)
 
         usd_value = normalized_value * usd_price
 
