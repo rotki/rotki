@@ -2131,6 +2131,14 @@
         "symbol": "COMM",
         "type": "own chain"
     },
+    "COMP": {
+        "ethereum_address": "0xc00e94Cb662C3520282E6f5717214004A7f26888",
+        "ethereum_token_decimals": 18,
+        "name": "Compound",
+        "started": 1583323735,
+        "symbol": "COMP",
+        "type": "ethereum token"
+    },
     "COS": {
         "active": true,
         "name": "Contentos",
