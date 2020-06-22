@@ -77,7 +77,7 @@
               </v-col>
             </v-row>
             <v-row>
-              <v-col cols="10" style="display: flex;">
+              <v-col cols="10" class="d-flex">
                 <asset-select
                   v-model="assetToRemove"
                   label="Select asset to remove from ignored assets"

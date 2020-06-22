@@ -4,7 +4,7 @@
       <v-card>
         <v-card-title>
           Fiat Balances
-          <v-tooltip bottom style="z-index: 200;">
+          <v-tooltip bottom class="fiat-balances__summary">
             <template #activator="{ on }">
               <v-icon
                 small
@@ -182,6 +182,9 @@ export default class FiatBalances extends Vue {
 
 <style scoped lang="scss">
 .fiat-balances {
+  &__summary {
+    z-index: 200;
+  }
   &__total {
     font-weight: 500;
   }
