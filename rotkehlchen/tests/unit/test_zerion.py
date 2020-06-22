@@ -14,7 +14,7 @@ from rotkehlchen.fval import FVal
 def test_query_all_protocol_balances_for_account(
         ethereum_manager,
         function_scope_messages_aggregator,
-        inquirer,
+        inquirer,  # pylint: disable=unused-argument
 ):
     """Simple test that we can get balances for various defi protocols via zerion
 
