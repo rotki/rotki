@@ -10418,6 +10418,14 @@
         "symbol": "cUSDC",
         "type": "ethereum token"
     },
+    "cUSDT": {
+        "ethereum_address": "",
+        "ethereum_token_decimals": 8,
+        "name": "Compound USDT",
+        "started": 1586985186,
+        "symbol": "cUSDT",
+        "type": "ethereum token"
+    },
     "cWBTC": {
         "ethereum_address": "0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
         "ethereum_token_decimals": 8,
