@@ -73,6 +73,7 @@ export default class CurrencyDropDown extends Vue {
   font-size: 1.6em !important;
   font-weight: bold !important;
 }
+
 .currency-list {
   font-size: 2em;
   font-weight: bold;

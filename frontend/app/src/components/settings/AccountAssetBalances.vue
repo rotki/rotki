@@ -75,24 +75,28 @@ export default class AccountAssetBalances extends Vue {
 <style scoped lang="scss">
 .account-asset-balances {
   background-color: #fafafa;
-}
 
-.account-asset-balances ::v-deep .v-data-table {
-  background-color: #fafafa;
-}
+  ::v-deep {
+    .v-data-table {
+      background-color: #fafafa;
+    }
+  }
 
-.account-asset-balances__table {
-  margin-left: 12px;
-  margin-right: 12px;
-}
+  &__table {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
 
-.account-asset-balances__balance__asset {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
+  &__balance {
+    &__asset {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
 
-.account-asset-balances__balance__asset__icon {
-  margin-right: 8px;
+      &__icon {
+        margin-right: 8px;
+      }
+    }
+  }
 }
 </style>

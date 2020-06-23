@@ -50,7 +50,9 @@ export default class ApiKeys extends Vue {
 </script>
 
 <style scoped lang="scss">
-.api-keys > * {
-  margin-bottom: 16px;
+.api-keys {
+  * {
+    margin-bottom: 16px;
+  }
 }
 </style>

@@ -54,7 +54,9 @@ export default class MessageOverlay extends Vue {
 }
 </script>
 <style scoped lang="scss">
-.message-overlay__icon {
-  padding: 8px;
+.message-overlay {
+  &__icon {
+    padding: 8px;
+  }
 }
 </style>

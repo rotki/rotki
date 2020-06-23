@@ -239,10 +239,14 @@ export default class ExchangeSettings extends Vue {
     padding: 8px;
   }
 
-  ::v-deep .v-input--is-disabled {
-    .v-icon,
-    .v-label {
-      color: green !important;
+  ::v-deep {
+    .v-input {
+      &--is-disabled {
+        .v-icon,
+        .v-label {
+          color: green !important;
+        }
+      }
     }
   }
 }

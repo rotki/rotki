@@ -160,9 +160,11 @@ export default class TokenTrack extends Vue {
 .token-track {
   margin-top: 16px;
   margin-bottom: 16px;
-}
 
-.token-track__chip__text {
-  margin-left: 8px;
+  &__chip {
+    &__text {
+      margin-left: 8px;
+    }
+  }
 }
 </style>

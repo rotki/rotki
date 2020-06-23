@@ -35,10 +35,13 @@ export default class StatCard extends Vue {
 .stat-card {
   width: 100%;
   min-height: 130px;
+
   ::v-deep {
-    .v-card__text {
-      padding-top: 12px;
-      font-size: 1em;
+    .v-card {
+      &__text {
+        padding-top: 12px;
+        font-size: 1em;
+      }
     }
   }
 }

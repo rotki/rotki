@@ -63,14 +63,16 @@ export default class MessageDialog extends Vue {
 }
 </script>
 
-<style scoped>
-.message-dialog__message {
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
-}
+<style scoped lang="scss">
+.message-dialog {
+  &__message {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: auto;
+  }
 
-.message-dialog__body {
-  padding: 0 16px;
+  &__body {
+    padding: 0 16px;
+  }
 }
 </style>

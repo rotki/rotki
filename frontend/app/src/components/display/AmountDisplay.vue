@@ -141,14 +141,6 @@ export default class AmountDisplay extends Vue {
 </script>
 
 <style scoped lang="scss">
-td.text-end .amount-display {
-  &__asterisk {
-    float: right;
-    margin-right: -0.6em;
-    top: -0.2em;
-  }
-}
-
 .amount-display {
   display: inline-block;
 
@@ -161,6 +153,7 @@ td.text-end .amount-display {
     top: -0.2em;
     font-weight: 500;
     font-size: 0.8em;
+
     &:hover {
       cursor: pointer;
     }
@@ -169,11 +162,19 @@ td.text-end .amount-display {
   &__asset,
   &__currency {
     margin-left: 5px;
-  }
-
-  &__asset,
-  &__currency {
     font-size: 0.8em;
+  }
+}
+
+td {
+  &.text-end {
+    .amount-display {
+      &__asterisk {
+        float: right;
+        margin-right: -0.6em;
+        top: -0.2em;
+      }
+    }
   }
 }
 

@@ -220,18 +220,20 @@ export default class PremiumSettings extends Vue {
 </script>
 
 <style scoped lang="scss">
-.premium-settings__sync {
-  margin-left: 20px;
-}
+.premium-settings {
+  &__sync {
+    margin-left: 20px;
+  }
 
-.premium-settings__premium-active {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-}
+  &__premium-active {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
 
-.premium-settings__premium-active div {
-  margin-left: 10px;
+    div {
+      margin-left: 10px;
+    }
+  }
 }
 </style>

@@ -57,34 +57,42 @@ export default class OverallBox extends Vue {
     display: flex;
     justify-content: center;
     align-items: baseline;
-  }
-  .overall-balances-box__balance__change {
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    margin-bottom: 1em;
+
+    &__change {
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
+      margin-bottom: 1em;
+    }
   }
 
-  &__timeframe ul {
-    display: flex;
-    justify-content: center;
-    padding: 0;
-    font-size: 0.9em;
-    & li {
-      display: inline;
-      margin-left: 0.2em;
-      margin-right: 0.2em;
-      padding-left: 0.5em;
-      padding-right: 0.5em;
-      border-radius: 0.8em;
-    }
-    &--selected {
-      background-color: #7e4a3b;
-      color: white;
+  &__timeframe {
+    ul {
+      display: flex;
+      justify-content: center;
+      padding: 0;
+      font-size: 0.9em;
+
+      li {
+        display: inline;
+        margin-left: 0.2em;
+        margin-right: 0.2em;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        border-radius: 0.8em;
+      }
+
+      &--selected {
+        background-color: #7e4a3b;
+        color: white;
+      }
     }
   }
-  &__currency__symbol {
-    font-size: 2.2em;
+
+  &__currency {
+    &__symbol {
+      font-size: 2.2em;
+    }
   }
 }
 </style>

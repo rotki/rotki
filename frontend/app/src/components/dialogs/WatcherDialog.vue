@@ -386,14 +386,23 @@ export default class WatcherDialog extends Vue {
         background-color: var(--v-success-lighten4);
         color: var(--v-success-darken2);
       }
+
       &--error {
         background-color: var(--v-error-lighten4);
         color: var(--v-error-darken2);
       }
     }
 
-    ::v-deep .v-text-field--filled .v-text-field__suffix {
-      margin-top: 0;
+    ::v-deep {
+      .v-text-field {
+        &--filled {
+          .v-text-field {
+            &__suffix {
+              margin-top: 0;
+            }
+          }
+        }
+      }
     }
   }
 }

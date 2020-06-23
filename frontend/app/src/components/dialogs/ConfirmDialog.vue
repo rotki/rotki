@@ -79,7 +79,9 @@ export default class ConfirmDialog extends Vue {
 </script>
 
 <style scoped lang="scss">
-.confirm-dialog__body {
-  padding: 0 16px;
+.confirm-dialog {
+  &__body {
+    padding: 0 16px;
+  }
 }
 </style>

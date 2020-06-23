@@ -62,9 +62,11 @@ export default class NodeStatusIndicator extends Vue {
 </script>
 
 <style scoped lang="scss">
-.node-status-indicator__content {
-  background: white;
-  padding: 16px;
-  width: 420px;
+.node-status-indicator {
+  &__content {
+    background: white;
+    padding: 16px;
+    width: 420px;
+  }
 }
 </style>

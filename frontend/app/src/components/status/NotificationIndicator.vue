@@ -193,62 +193,70 @@ export default class NotificationIndicator extends Vue {
 </script>
 
 <style scoped lang="scss">
-.notification-indicator__details {
-  width: 400px;
-  height: 350px;
-  background-color: white;
-  overflow-y: scroll;
-  font-weight: 400;
-  color: rgba(0, 0, 0, 0.87);
+.notification-indicator {
+  &__details {
+    width: 400px;
+    height: 350px;
+    background-color: white;
+    overflow-y: scroll;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  &__no-messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    &__label {
+      font-size: 22px;
+      margin-top: 22px;
+      font-weight: 300;
+      color: rgb(0, 0, 0, 0.6);
+    }
+  }
+
+  &__messages {
+    padding-right: 0 !important;
+
+    &__clear {
+      display: flex;
+      flex-direction: row-reverse;
+      padding-right: 8px;
+    }
+
+    &__message {
+      font-size: 13px;
+      color: rgb(0, 0, 0, 0.6);
+      min-height: 60px;
+    }
+
+    &__severity {
+      margin-top: 2px;
+      margin-bottom: 10px;
+    }
+  }
+
+  &__copy-text {
+    position: absolute;
+    left: -999em;
+  }
 }
 
-.notification-indicator__no-messages {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
+::v-deep {
+  .v-badge {
+    &__badge {
+      top: 0 !important;
+      right: 0 !important;
+    }
+  }
 
-.notification-indicator__no-messages__label {
-  font-size: 22px;
-  margin-top: 22px;
-  font-weight: 300;
-  color: rgb(0, 0, 0, 0.6);
-}
-
-.notification-indicator__messages {
-  padding-right: 0 !important;
-}
-
-.notification-indicator__messages__clear {
-  display: flex;
-  flex-direction: row-reverse;
-  padding-right: 8px;
-}
-
-.notification-indicator__messages__message {
-  font-size: 13px;
-  color: rgb(0, 0, 0, 0.6);
-  min-height: 60px;
-}
-
-.notification-indicator__copy-text {
-  position: absolute;
-  left: -999em;
-}
-
-.notification-indicator__messages__severity {
-  margin-top: 2px;
-  margin-bottom: 10px;
-}
-
-::v-deep .v-badge__badge {
-  top: 0 !important;
-  right: 0 !important;
-}
-
-::v-deep .v-list-item__action-text {
-  margin-right: -8px;
-  margin-top: -8px;
+  .v-list-item {
+    &__action-text {
+      margin-right: -8px;
+      margin-top: -8px;
+    }
+  }
 }
 </style>

@@ -342,6 +342,7 @@ export default class LoanInfo extends Vue {
       font-weight: bold;
     }
   }
+
   &__collateral {
     &__watcher {
       border-radius: 15px;
@@ -362,9 +363,13 @@ export default class LoanInfo extends Vue {
       height: 45%;
     }
 
-    ::v-deep .v-card__text {
-      display: flex;
-      flex-direction: column;
+    ::v-deep {
+      .v-card {
+        &__text {
+          display: flex;
+          flex-direction: column;
+        }
+      }
     }
 
     &__liquidation-events {

@@ -313,6 +313,7 @@ export default class AccountBalances extends Vue {
   &__account {
     display: flex;
     flex-direction: column;
+
     &__address {
       font-weight: 500;
       padding-top: 6px;

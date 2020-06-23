@@ -69,13 +69,15 @@ export default class BalanceSavedIndicator extends Vue {
 </script>
 
 <style lang="scss" scoped>
-.balance-saved-indicator__content {
-  background: white;
-  width: 280px;
-  padding: 16px;
-}
+.balance-saved-indicator {
+  &__content {
+    background: white;
+    width: 280px;
+    padding: 16px;
 
-.balance-saved-indicator__content > * {
-  padding: 4px 16px;
+    * {
+      padding: 4px 16px;
+    }
+  }
 }
 </style>

@@ -163,14 +163,17 @@ export default class TagCreator extends Vue {
     margin-left: 12px;
     margin-bottom: 10px;
   }
+
   &__color-picker {
     display: flex;
     align-items: center;
     justify-content: center;
   }
+
   &__random {
     margin-left: 16px;
   }
+
   &__buttons {
     &__save {
       margin-right: 8px;

@@ -53,26 +53,36 @@ export default class ExchangeBox extends Vue {
 }
 </script>
 <style scoped lang="scss">
-.exchange-box__currency__symbol {
-  font-size: 2em;
-}
+.exchange-box {
+  &__icon {
+    filter: grayscale(100%);
 
-.exchange-box__icon {
-  filter: grayscale(100%);
+    &__exchange {
+      margin: 0;
+      margin-right: 5px !important;
+    }
 
-  &__exchange {
-    margin: 0;
-    margin-right: 5px !important;
+    &--inverted {
+      margin-left: 8px;
+      width: 45px;
+      filter: grayscale(100%) invert(100%);
+    }
   }
-}
 
-.exchange-box__item:hover .exchange-box__icon {
-  filter: grayscale(0);
-}
+  &__currency {
+    &__symbol {
+      font-size: 2em;
+    }
+  }
 
-.exchange-box__icon--inverted {
-  margin-left: 8px;
-  width: 45px;
-  filter: grayscale(100%) invert(100%);
+  &__item {
+    &:hover {
+      .exchange-box {
+        &__icon {
+          filter: grayscale(0);
+        }
+      }
+    }
+  }
 }
 </style>

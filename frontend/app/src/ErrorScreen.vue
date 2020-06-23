@@ -40,15 +40,15 @@ export default class ErrorScreen extends Vue {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
 
-.error-screen__title {
-  margin-top: 25px;
-  margin-bottom: 5px;
-}
+  &__title {
+    margin-top: 25px;
+    margin-bottom: 5px;
+  }
 
-.error-screen__description {
-  margin-top: 50px;
-  margin-bottom: 80px;
+  &__description {
+    margin-top: 50px;
+    margin-bottom: 80px;
+  }
 }
 </style>
