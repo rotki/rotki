@@ -156,7 +156,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 self.msg_aggregator.add_warning(
                     'You do not have an Etherscan API key configured. Rotki '
                     'etherscan queries will still work but will be very slow. '
-                    'If you are not using your own ethereum node, it iss recommended '
+                    'If you are not using your own ethereum node, it is recommended '
                     'to go to https://etherscan.io/register, create an API '
                     'key and then input it in the external service credentials setting of Rotki',
                 )
