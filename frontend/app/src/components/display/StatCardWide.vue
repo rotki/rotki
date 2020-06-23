@@ -80,6 +80,7 @@ export default class StatCardWide extends Vue {
 .stat-card-wide {
   &__second-col {
     flex-direction: column;
+
     &--horizontal {
       flex-direction: row;
     }

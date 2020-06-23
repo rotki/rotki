@@ -185,6 +185,7 @@ export default class FiatBalances extends Vue {
   &__summary {
     z-index: 200;
   }
+
   &__total {
     font-weight: 500;
   }

@@ -137,19 +137,21 @@ export default class Login extends Vue {
     &__footer {
       font-size: 0.9em;
     }
+
+    span,
+    button {
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
   }
-}
 
-.login__sync-error__body {
-  margin-top: 5px;
-  margin-bottom: 8px;
-}
-
-.login__actions span,
-.login__actions button {
-  display: block;
-  width: 100%;
-  text-align: center;
+  &__sync-error {
+    &__body {
+      margin-top: 5px;
+      margin-bottom: 8px;
+    }
+  }
 }
 
 .bounce-enter-active {
@@ -164,9 +166,11 @@ export default class Login extends Vue {
   0% {
     transform: scale(0);
   }
+
   50% {
     transform: scale(1.1);
   }
+
   100% {
     transform: scale(1);
   }

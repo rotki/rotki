@@ -85,11 +85,20 @@ export default class SummaryCard extends Vue {
     }
   }
 
-  &__header__tooltip {
-    visibility: hidden;
-  }
-  &__header:hover .summary-card__header__tooltip {
-    visibility: visible;
+  &__header {
+    &__tooltip {
+      visibility: hidden;
+    }
+
+    &:hover {
+      .summary-card {
+        &__header {
+          &__tooltip {
+            visibility: visible;
+          }
+        }
+      }
+    }
   }
 }
 </style>

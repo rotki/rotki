@@ -92,46 +92,51 @@ export default class InformationBox extends Vue {
 </script>
 
 <style scoped lang="scss">
-.information-box__currency__symbol {
-  font-size: 2em;
-}
-
 .information-box {
   min-height: 72px;
-}
 
-.information-box__icon {
-  margin-left: 8px;
-}
+  &__currency {
+    &__symbol {
+      font-size: 2em;
+    }
+  }
 
-.information-box__amount {
-  color: white;
-}
+  &__icon {
+    margin-left: 8px;
+  }
 
-.information-box__amount__number {
-  font-size: 34px;
-}
+  &__amount {
+    color: white;
 
-.information-box__amount__currency {
-  margin-top: -15px;
-}
+    &__number {
+      font-size: 34px;
+    }
 
-.information-box__actions {
-  background-color: white;
-}
+    &__currency {
+      margin-top: -15px;
+    }
+  }
 
-.information-box__content {
-  width: 100%;
-}
+  &__actions {
+    background-color: white;
+  }
 
-.information-box__footer {
-  background-color: white;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  ::v-deep .col {
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
-    padding-right: 10px !important;
+  &__content {
+    width: 100%;
+  }
+
+  &__footer {
+    background-color: white;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+
+    ::v-deep {
+      .col {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        padding-right: 10px !important;
+      }
+    }
   }
 }
 </style>

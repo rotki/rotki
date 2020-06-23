@@ -61,19 +61,24 @@ export default class ManualBalanceCardList extends Vue {
 </script>
 <style scoped lang="scss">
 .manual-balance-box {
-  &__currency__symbol {
-    font-size: 2em;
+  &__currency {
+    &__symbol {
+      font-size: 2em;
+    }
   }
+
   &__icon {
     filter: grayscale(100%);
+
+    &--inverted {
+      margin-left: 8px;
+      width: 45px;
+      filter: grayscale(100%) invert(100%);
+    }
   }
+
   &__item:hover &__icon {
     filter: grayscale(0);
-  }
-  &__icon--inverted {
-    margin-left: 8px;
-    width: 45px;
-    filter: grayscale(100%) invert(100%);
   }
 }
 </style>

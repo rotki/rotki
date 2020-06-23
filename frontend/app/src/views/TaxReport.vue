@@ -94,11 +94,13 @@ export default class TaxReport extends Vue {
 </script>
 
 <style scoped lang="scss">
-.tax-report__section {
-  margin-top: 20px;
-}
+.tax-report {
+  &__section {
+    margin-top: 20px;
+  }
 
-.tax-report__export-csv {
-  margin-top: 20px;
+  &__export-csv {
+    margin-top: 20px;
+  }
 }
 </style>

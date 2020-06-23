@@ -149,14 +149,16 @@ export default class DateTimePicker extends Vue {
   display: flex;
   flex-direction: row;
 
-  //noinspection CssInvalidPseudoSelector
-  ::v-deep .v-picker .v-picker__title {
-    height: 102px;
-  }
+  ::v-deep {
+    .v-picker {
+      &__title {
+        height: 102px;
+      }
+    }
 
-  //noinspection CssInvalidPseudoSelector
-  ::v-deep .v-card {
-    box-shadow: none;
+    .v-card {
+      box-shadow: none;
+    }
   }
 }
 </style>

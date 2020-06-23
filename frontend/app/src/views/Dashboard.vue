@@ -335,8 +335,10 @@ export default class Dashboard extends Vue {
 <style scoped lang="scss">
 .dashboard {
   &__balances {
-    &__total:hover {
-      background-color: transparent !important;
+    &__total {
+      &:hover {
+        background-color: transparent !important;
+      }
     }
   }
 }

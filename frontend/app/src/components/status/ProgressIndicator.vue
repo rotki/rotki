@@ -65,31 +65,33 @@ export default class ProgressIndicator extends Vue {
 </script>
 
 <style scoped lang="scss">
-.progress-indicator__details {
-  width: 300px;
-  height: 350px;
-  background-color: white;
-}
+.progress-indicator {
+  &__details {
+    width: 300px;
+    height: 350px;
+    background-color: white;
+  }
 
-.progress-indicator__no-tasks {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
+  &__no-tasks {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 
-.progress-indicator__task {
-  min-height: 35px;
-}
+    &__label {
+      font-size: 22px;
+      margin-top: 22px;
+      font-weight: 300;
+      color: rgb(0, 0, 0, 0.6);
+    }
+  }
 
-.progress-indicator__task__progress {
-  margin-top: 8px;
-}
+  &__task {
+    min-height: 35px;
 
-.progress-indicator__no-tasks__label {
-  font-size: 22px;
-  margin-top: 22px;
-  font-weight: 300;
-  color: rgb(0, 0, 0, 0.6);
+    &__progress {
+      margin-top: 8px;
+    }
+  }
 }
 </style>

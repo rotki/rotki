@@ -95,19 +95,21 @@ export default class AssetBalances extends Vue {
 .asset-balances {
   margin-top: 16px;
   margin-bottom: 16px;
-}
 
-.asset-balances__balance__asset {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
+  &__balance {
+    &__asset {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
 
-.asset-balances__balance__asset__icon {
-  margin-right: 8px;
-}
+      &__icon {
+        margin-right: 8px;
+      }
+    }
+  }
 
-.asset-balances__total {
-  font-weight: 500;
+  &__total {
+    font-weight: 500;
+  }
 }
 </style>

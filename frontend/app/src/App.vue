@@ -145,20 +145,30 @@ export default class App extends Vue {
 </script>
 
 <style scoped lang="scss">
-.v-navigation-drawer--fixed {
-  z-index: 100 !important;
+.v-navigation-drawer {
+  &--fixed {
+    z-index: 100 !important;
+  }
+
+  &--is-mobile {
+    z-index: 200 !important;
+  }
 }
 
-.v-navigation-drawer--is-mobile {
-  z-index: 200 !important;
-}
+.rotki {
+  &__logo {
+    max-height: 150px;
+  }
 
-.rotki__logo {
-  max-height: 150px;
-}
+  &__version {
+    margin-right: 16px;
+  }
 
-.rotki__version {
-  margin-right: 16px;
+  &__welcome-text {
+    font-size: 18px;
+    margin-top: 16px;
+    margin-bottom: 20px;
+  }
 }
 
 #rotkehlchen_no_text {
@@ -168,24 +178,22 @@ export default class App extends Vue {
   padding: 15px;
 }
 
-.rotki__welcome-text {
-  font-size: 18px;
-  margin-top: 16px;
-  margin-bottom: 20px;
-}
+::v-deep {
+  .v-main {
+    overflow-y: scroll;
+    margin-top: 64px;
+    padding-top: 0 !important;
+    height: calc(100vh - 64px);
+  }
 
-::v-deep .v-main {
-  overflow-y: scroll;
-  margin-top: 64px;
-  padding-top: 0 !important;
-  height: calc(100vh - 64px);
-}
-
-::v-deep .v-app-bar::after {
-  height: 1px;
-  display: block;
-  width: 100%;
-  content: '';
-  border-bottom: #bcbcbc solid thin;
+  .v-app-bar {
+    &::after {
+      height: 1px;
+      display: block;
+      width: 100%;
+      content: '';
+      border-bottom: #bcbcbc solid thin;
+    }
+  }
 }
 </style>

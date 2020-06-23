@@ -97,12 +97,15 @@ export default class NavigationMenu extends Vue {}
 
 <style scoped lang="scss">
 ::v-deep {
-  .v-list-group__header {
-    &__append-icon {
-      margin-left: -18px !important;
-    }
-    .v-list-item {
-      padding-left: 0 !important;
+  .v-list-group {
+    &__header {
+      &__append-icon {
+        margin-left: -18px !important;
+      }
+
+      .v-list-item {
+        padding-left: 0 !important;
+      }
     }
   }
 }

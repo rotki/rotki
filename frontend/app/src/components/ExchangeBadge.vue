@@ -28,17 +28,17 @@ export default class ExchangeBadge extends Vue {
   align-items: center;
   width: 350px;
   padding: 8px;
-}
 
-.exchange-badge__icon {
-  height: 50px;
-  max-width: 50px;
-  filter: grayscale(100%);
-}
+  &__icon {
+    height: 50px;
+    max-width: 50px;
+    filter: grayscale(100%);
+  }
 
-.exchange-badge__name {
-  margin-left: 16px;
-  padding: 8px;
-  font-size: 30px;
+  &__name {
+    margin-left: 16px;
+    padding: 8px;
+    font-size: 30px;
+  }
 }
 </style>

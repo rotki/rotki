@@ -1,8 +1,8 @@
 <template>
   <div>
-    <v-overlay class="account_management__loading">
+    <v-overlay class="account-management__loading">
       <v-dialog :value="true && !premiumVisible" persistent max-width="450">
-        <v-card class="account_management__card pb-6">
+        <v-card class="account-management__card pb-6">
           <div class="pt-6 pb-3 text-h2 font-weight-black primary white--text">
             <span class="px-6">rotki</span>
             <span class="d-block mb-3 pl-6 text-caption">
@@ -17,10 +17,10 @@
             class="my-3"
           >
             <v-col
-              class="account_management__loading__content grey-darken-1--text"
+              class="account-management__loading__content grey-darken-1--text"
             >
               <span
-                class="account_management__loading__content__text my-3 pb-6"
+                class="account-management__loading__content__text my-3 pb-6"
               >
                 Connecting to rotki backend
               </span>
@@ -49,13 +49,12 @@
             ></create-account>
           </v-slide-y-transition>
         </v-card>
-        <div class="account_management__privacy_notice">
+        <div class="account-management__privacy-notice">
           <v-alert
-            id="privacy_notice__message"
             outlined
             dense
             color="primary"
-            class="account_management__privacy_notice__message"
+            class="account-management__privacy-notice__message"
           >
             <div>rotki is a local application that respects your privacy.</div>
             <div>
@@ -75,9 +74,9 @@
         <v-card
           light
           max-width="500"
-          class="mx-auto account_management__premium_dialog"
+          class="mx-auto account-management__premium_dialog"
         >
-          <v-card-title class="account_management__premium_dialog__title">
+          <v-card-title class="account-management__premium_dialog__title">
             Upgrade to Premium
           </v-card-title>
           <v-card-text>
@@ -100,7 +99,7 @@
             <v-spacer></v-spacer>
             <v-btn
               color="primary"
-              class="account_management__premium_dialog__buttons__cancel"
+              class="account-management__premium_dialog__buttons__cancel"
               depressed
               outlined
               @click="loginComplete()"
@@ -110,7 +109,7 @@
             <v-btn
               color="primary"
               depressed
-              class="account_management__premium_dialog__buttons__confirm"
+              class="account-management__premium_dialog__buttons__confirm"
               @click="upgrade()"
             >
               Upgrade
@@ -222,11 +221,12 @@ export default class AccountManagement extends Vue {
 }
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 @keyframes scrollLarge {
   0% {
     transform: rotate(-13deg) translateY(0);
   }
+
   100% {
     transform: rotate(-13deg) translateY(-1200px);
   }
@@ -236,18 +236,19 @@ export default class AccountManagement extends Vue {
   z-index: 200 !important;
 }
 
-.v-dialog__content {
-  z-index: 9999 !important;
+.v-dialog {
+  &__content {
+    z-index: 9999 !important;
+  }
 }
 
-.account_management {
+.account-management {
   &__loading {
     height: 400%;
     width: 400%;
     top: -40% !important;
     left: -100% !important;
-    background-color: #42210b;
-    background: url(~@/assets/images/rotkipattern2.png);
+    background: #42210b url(~@/assets/images/rotkipattern2.png);
     -webkit-animation-name: scrollLarge;
     animation-name: scrollLarge;
     -webkit-animation-duration: 35s;
@@ -262,6 +263,7 @@ export default class AccountManagement extends Vue {
       justify-content: center;
       display: flex;
       flex-direction: column;
+
       &__text {
         margin-top: 48px;
         font-weight: 400;
@@ -269,7 +271,8 @@ export default class AccountManagement extends Vue {
       }
     }
   }
-  &__privacy_notice {
+
+  &__privacy-notice {
     width: 100%;
     max-width: 600px;
     position: absolute;
@@ -287,11 +290,8 @@ export default class AccountManagement extends Vue {
       text-align: center;
       max-width: 650px;
       font-size: 14px !important;
+      background: #e0e0e0 !important;
     }
   }
-}
-
-#privacy_notice__message {
-  background: #e0e0e0 !important;
 }
 </style>

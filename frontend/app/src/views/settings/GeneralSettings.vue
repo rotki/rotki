@@ -556,9 +556,11 @@ export default class General extends Settings {
   }
 }
 </script>
-<style scoped>
-.general-settings__currency-list {
-  font-size: 2em;
-  font-weight: bold;
+<style scoped lang="scss">
+.general-settings {
+  &__currency-list {
+    font-size: 2em;
+    font-weight: bold;
+  }
 }
 </style>

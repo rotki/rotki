@@ -139,11 +139,17 @@ export default class ServiceKey extends Vue {
 </script>
 
 <style scoped lang="scss">
-.service-key__content {
-  ::v-deep .v-input--is-disabled {
-    .v-icon,
-    .v-label {
-      color: green !important;
+.service-key {
+  &__content {
+    ::v-deep {
+      .v-input {
+        &--is-disabled {
+          .v-icon,
+          .v-label {
+            color: green !important;
+          }
+        }
+      }
     }
   }
 }
