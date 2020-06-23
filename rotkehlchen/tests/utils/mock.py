@@ -1,3 +1,4 @@
+from collections import namedtuple
 from typing import Dict
 
 from hexbytes import HexBytes
@@ -39,9 +40,13 @@ class MockMiddlewareOnion():
 
 class MockWeb3():
 
-    def __init__(self, _providers=None, _middlewares=None):
+    def __init__(self, providers=None, middlewares=None, ens=None):  # pylint: disable=unused-argument  # noqa: E501
         self.eth = MockEth(0)
         self.middleware_onion = MockMiddlewareOnion()
 
     def isConnected(self) -> bool:  # noqa: N802 pylint: disable=no-self-use
         return True
+
+    @property
+    def net(self):
+        return namedtuple('Version', ['version'])(version=1)

@@ -24,7 +24,7 @@ def test_eth_connection_initial_balances(
 
     But probably (1) makes more sense
     """
-    assert blockchain.ethereum.connected is True, 'Should be connected to ethereum node'
+    assert blockchain.ethereum.web3 is not None, 'Should be connected to ethereum node'
 
 
 def test_query_btc_balances(blockchain):
