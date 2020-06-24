@@ -1,3 +1,4 @@
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -52,6 +53,7 @@ from rotkehlchen.api.v1.encoding import (
     WatchersDeleteSchema,
     WatchersEditSchema,
 )
+from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -667,15 +669,23 @@ class EthereumTokensResource(BaseResource):
 class BlockchainsAccountsResource(BaseResource):
 
     get_schema = BlockchainAccountsGetSchema()
-    put_schema = BlockchainAccountsPutSchema()
-    patch_schema = BlockchainAccountsPatchSchema()
     delete_schema = BlockchainAccountsDeleteSchema()
+
+    def make_put_schema(self) -> BlockchainAccountsPutSchema:
+        return BlockchainAccountsPutSchema(
+            self.rest_api.rotkehlchen.chain_manager.ethereum,
+        )
+
+    def make_patch_schema(self) -> BlockchainAccountsPatchSchema:
+        return BlockchainAccountsPatchSchema(
+            self.rest_api.rotkehlchen.chain_manager.ethereum,
+        )
 
     @use_kwargs(get_schema, location='view_args')  # type: ignore
     def get(self, blockchain: SupportedBlockchain) -> Response:
         return self.rest_api.get_blockchain_accounts(blockchain)
 
-    @use_kwargs(put_schema, location='json_and_view_args')  # type: ignore
+    @resource_parser.use_kwargs(make_put_schema, location='json_and_view_args')  # type: ignore
     def put(
             self,
             blockchain: SupportedBlockchain,
@@ -695,7 +705,7 @@ class BlockchainsAccountsResource(BaseResource):
             async_query=async_query,
         )
 
-    @use_kwargs(patch_schema, location='json_and_view_args')  # type: ignore
+    @resource_parser.use_kwargs(make_patch_schema, location='json_and_view_args')  # type: ignore
     def patch(
             self,
             blockchain: SupportedBlockchain,
