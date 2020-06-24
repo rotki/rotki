@@ -97,7 +97,7 @@ ChecksumEthAddress = ChecksumAddress
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
-BlockchainAddress = Union[EthAddress, BTCAddress, ChecksumEthAddress]
+BlockchainAddress = Union[EthAddress, BTCAddress, ChecksumEthAddress, str]
 ListOfBlockchainAddresses = Union[List[BTCAddress], List[ChecksumEthAddress]]
 
 

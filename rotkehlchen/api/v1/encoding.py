@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
@@ -11,6 +12,7 @@ from webargs.compat import MARSHMALLOW_VERSION_INFO
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import is_valid_btc_address
+from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import AVAILABLE_MODULES
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset
@@ -43,6 +45,8 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+log = logging.getLogger(__name__)
 
 
 class DelimitedOrNormalList(webargs.fields.DelimitedList):
@@ -828,6 +832,7 @@ class BlockchainAccountsGetSchema(Schema):
 
 
 def _validate_blockchain_account_schemas(
+        ethereum_manager: EthereumManager,
         data: Dict[str, Any],
         address_getter: Callable,
 ) -> None:
@@ -837,15 +842,27 @@ def _validate_blockchain_account_schemas(
     # Make sure ethereum addresses are checksummed
     if data['blockchain'] == SupportedBlockchain.ETHEREUM:
         for account_data in data['accounts']:
-            address = address_getter(account_data)
-            # Make sure that given value is an ethereum address
-            try:
-                address = to_checksum_address(address)
-            except (ValueError, TypeError):
-                raise ValidationError(
-                    f'Given value {address} is not an ethereum address',
-                    field_name='address',
-                )
+            address_string = address_getter(account_data)
+            if not address_string.endswith('.eth'):
+                # Make sure that given value is an ethereum address
+                try:
+                    address = to_checksum_address(address_string)
+                except (ValueError, TypeError):
+                    raise ValidationError(
+                        f'Given value {address_string} is not an ethereum address',
+                        field_name='address',
+                    )
+            else:
+                # see if it resolves to anything
+                address = ethereum_manager.ens_lookup(address_string)
+                if address is None:
+                    raise ValidationError(
+                        f'Given ENS address {address_string} could not be resolved',
+                        field_name='address',
+                    )
+                else:
+                    log.info(f'Resolved ENS {address_string} to {address}')
+
             if address in given_addresses:
                 raise ValidationError(
                     f'Address {address} appears multiple times in the request data',
@@ -874,13 +891,17 @@ class BlockchainAccountsPatchSchema(Schema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
+    def __init__(self, ethereum_manager: EthereumManager):
+        super().__init__()
+        self.ethereum_manager = ethereum_manager
+
     @validates_schema  # type: ignore
     def validate_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        _validate_blockchain_account_schemas(data, lambda x: x['address'])
+        _validate_blockchain_account_schemas(self.ethereum_manager, data, lambda x: x['address'])
 
     @post_load  # type: ignore
     def transform_data(  # pylint: disable=no-self-use
@@ -909,7 +930,7 @@ class BlockchainAccountsDeleteSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        _validate_blockchain_account_schemas(data, lambda x: x)
+        _validate_blockchain_account_schemas(self.ethereum_manager, data, lambda x: x)
 
     @post_load  # type: ignore
     def transform_data(  # pylint: disable=no-self-use
