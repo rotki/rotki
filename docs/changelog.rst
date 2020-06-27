@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `1110` DSR Dai balance will now not be recounted with every force refresh querying of blockchain balances
 * :feature: `-` Support Australian Dollar (AUD) as fiat currency
 * :feature: `-` Count Kraken `off-chain staked assets <https://support.kraken.com/hc/en-us/articles/360039879471-What-is-Asset-S-and-Asset-M->`__ as normal Kraken balance.
 
