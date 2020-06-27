@@ -876,6 +876,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
+        # Clear out all previous token balances
+        tokens = [x for x, _ in self.totals.items() if isinstance(x, EthereumToken)]
+        for token in tokens:
+            del self.totals[token]
+
         try:
             self._query_ethereum_tokens_alethio(action=AccountAction.QUERY)
         except RemoteError as e:
