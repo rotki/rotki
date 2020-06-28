@@ -789,8 +789,22 @@ def test_addding_editing_ens_account_works(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
         contained_in_msg='Given ENS address ishouldnotexistforrealz.eth could not be resolved',
     )
-    request_data = {'accounts': [{'address': 'ishouldnotexistforrealz.eth'}]}
-    response = requests.put(api_url_for(
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_deleting_ens_account_works(rotkehlchen_api_server):
+    """Test that deleting an ENS eth account can be handled properly"""
+    request_data = {'accounts': ['rotki.eth']}
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    result = assert_proper_response_with_result(response)
+    assert result['per_account'] == {}
+
+    request_data = {'accounts': ['ishouldnotexistforrealz.eth']}
+    response = requests.delete(api_url_for(
         rotkehlchen_api_server,
         "blockchainsaccountsresource",
         blockchain='ETH',

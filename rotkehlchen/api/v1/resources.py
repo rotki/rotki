@@ -669,7 +669,6 @@ class EthereumTokensResource(BaseResource):
 class BlockchainsAccountsResource(BaseResource):
 
     get_schema = BlockchainAccountsGetSchema()
-    delete_schema = BlockchainAccountsDeleteSchema()
 
     def make_put_schema(self) -> BlockchainAccountsPutSchema:
         return BlockchainAccountsPutSchema(
@@ -678,6 +677,11 @@ class BlockchainsAccountsResource(BaseResource):
 
     def make_patch_schema(self) -> BlockchainAccountsPatchSchema:
         return BlockchainAccountsPatchSchema(
+            self.rest_api.rotkehlchen.chain_manager.ethereum,
+        )
+
+    def make_delete_schema(self) -> BlockchainAccountsDeleteSchema:
+        return BlockchainAccountsDeleteSchema(
             self.rest_api.rotkehlchen.chain_manager.ethereum,
         )
 
@@ -723,7 +727,7 @@ class BlockchainsAccountsResource(BaseResource):
             account_data=account_data,
         )
 
-    @use_kwargs(delete_schema, location='json_and_view_args')  # type: ignore
+    @resource_parser.use_kwargs(make_delete_schema, location='json_and_view_args')  # type: ignore
     def delete(
             self,
             blockchain: SupportedBlockchain,
