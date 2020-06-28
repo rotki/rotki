@@ -4,6 +4,7 @@ Changelog
 
 * :feature: `530` You can now add ethereum addresses by ENS name. Simply use an ENS name in the ETH address field and if it can be resolved it will be appended to the tracked accounts.
 * :bug: `1110` DSR Dai balance will now not be recounted with every force refresh querying of blockchain balances
+* :feature: `-` Support TUSD, KNC, ZRX and the special USDC-B collateral types for makerdao vaults.
 * :feature: `-` Support Australian Dollar (AUD) as fiat currency
 * :feature: `-` Count Kraken `off-chain staked assets <https://support.kraken.com/hc/en-us/articles/360039879471-What-is-Asset-S-and-Asset-M->`__ as normal Kraken balance.
 
