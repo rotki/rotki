@@ -853,15 +853,8 @@ def _validate_blockchain_account_schemas(
                         field_name='address',
                     )
             else:
-                # see if it resolves to anything
-                address = ethereum_manager.ens_lookup(address_string)
-                if address is None:
-                    raise ValidationError(
-                        f'Given ENS address {address_string} could not be resolved',
-                        field_name='address',
-                    )
-                else:
-                    log.info(f'Resolved ENS {address_string} to {address}')
+                # else it's ENS name and will be checked in the transformation step and not here
+                address = address_string
 
             if address in given_addresses:
                 raise ValidationError(
@@ -911,7 +904,22 @@ class BlockchainAccountsPatchSchema(Schema):
     ) -> Any:
         if data['blockchain'] == SupportedBlockchain.ETHEREUM:
             for idx, account in enumerate(data['accounts']):
-                data['accounts'][idx]['address'] = to_checksum_address(account['address'])
+                try:
+                    data['accounts'][idx]['address'] = to_checksum_address(account['address'])
+                except ValueError:
+                    # Validation will only let .eth names come here.
+                    # So let's see if it resolves to anything
+                    address_string = account['address']
+                    address = self.ethereum_manager.ens_lookup(address_string)
+                    if address is None:
+                        raise ValidationError(
+                            f'Given ENS address {address_string} could not be resolved',
+                            field_name='address',
+                        )
+                    else:
+                        address = to_checksum_address(address)
+                        log.info(f'Resolved ENS {address_string} to {address}')
+                        data['accounts'][idx]['address'] = address
         return data
 
 
