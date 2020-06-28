@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
+    assert_proper_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.blockchain import (
@@ -735,6 +736,31 @@ def test_addding_non_checksummed_eth_account_works(rotkehlchen_api_server):
             blockchain='ETH',
         ), json=request_data)
     assert_proper_response(response)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_addding_ens_account_works(rotkehlchen_api_server):
+    """Test that adding an ENS eth account can be handled properly"""
+    request_data = {'accounts': [{'address': 'rotki.eth'}]}
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    result = assert_proper_response_with_result(response)
+    assert '0x9531C059098e3d194fF87FebB587aB07B30B1306' in result['per_account']['ETH']
+
+    request_data = {'accounts': [{'address': 'ishouldnotexistforrealz.eth'}]}
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='Given ENS address ishouldnotexistforrealz.eth could not be resolved',
+    )
 
 
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])

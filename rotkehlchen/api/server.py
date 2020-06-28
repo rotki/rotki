@@ -14,6 +14,7 @@ from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
+from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.api.v1.resources import (
     AllAssetsResource,
     AllBalancesResource,
@@ -145,7 +146,7 @@ def setup_urls(
 
 def endpoint_not_found(e: NotFound) -> Response:
     msg = 'invalid endpoint'
-    # The isinstance check is because I am not sure if e is always going to
+    # The isinstance check is because I am not sure if `e` is always going to
     # be a "NotFound" error here
     if isinstance(e, NotFound):
         msg = e.description
@@ -153,6 +154,7 @@ def endpoint_not_found(e: NotFound) -> Response:
 
 
 @parser.error_handler  # type: ignore
+@resource_parser.error_handler  # type: ignore
 def handle_request_parsing_error(
         err: ValidationError,
         _request: werkzeug.local.LocalProxy,
