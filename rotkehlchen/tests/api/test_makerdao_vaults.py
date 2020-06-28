@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import List, Optional
 
 import pytest
 import requests
@@ -84,13 +85,13 @@ VAULT_8015 = {
     'collateralization_ratio': None,
     'liquidation_ratio': '150.00%',
     'liquidation_price': None,
-    'stability_fee': '0.00%',
+    'stability_fee': '0.25%',
 }
 
 VAULT_8015_DETAILS = {
     'identifier': 8015,
     'creation_ts': 1586785858,
-    'total_interest_owed': FVal('0.2743084'),
+    'total_interest_owed': FVal('0.2810015984764'),
     'total_liquidated_amount': ZERO,
     'total_liquidated_usd': ZERO,
     'events': [{
@@ -155,14 +156,20 @@ def _check_vaults_values(vaults, owner):
     assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=VAULT_IGNORE_KEYS)
 
 
-def _check_vault_details_values(details):
+def _check_vault_details_values(details, total_interest_owed_list: List[Optional[FVal]]):
     expected_details = [VAULT_8015_DETAILS]
     assert_serialized_lists_equal(
         expected_details,
         details,
         # Checking only the first 7 events
         length_list_keymap={'events': 7},
+        ignore_keys=['total_interest_owed'],
     )
+    for idx, entry in enumerate(total_interest_owed_list):
+        if entry is not None:
+            # We check if the total interest owed is bigger than the given one since
+            # with a non-zero stability fee, interest always increases
+            assert FVal(details[idx]['total_interest_owed']) >= entry
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -187,7 +194,10 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
         "makerdaovaultdetailsresource",
     ))
     details = assert_proper_response_with_result(response)
-    _check_vault_details_values(details)
+    _check_vault_details_values(
+        details=details,
+        total_interest_owed_list=[FVal('0.2810015984764')],
+    )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -218,7 +228,10 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
     outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=30)
     assert outcome['message'] == ''
     details = outcome['result']
-    _check_vault_details_values(details)
+    _check_vault_details_values(
+        details=details,
+        total_interest_owed_list=[FVal('0.2810015984764')],
+    )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -237,7 +250,10 @@ def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_acco
         "makerdaovaultdetailsresource",
     ))
     details = assert_proper_response_with_result(response)
-    _check_vault_details_values(details)
+    _check_vault_details_values(
+        details=details,
+        total_interest_owed_list=[FVal('0.2810015984764')],
+    )
     # And then query the vaults, which should just use the cached value
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -295,7 +311,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         'collateralization_ratio': None,
         'liquidation_ratio': '150.00%',
         'liquidation_price': None,
-        'stability_fee': '0.00%',
+        'stability_fee': '0.25%',
     }
     vault_8015_with_owner = VAULT_8015.copy()
     vault_8015_with_owner['owner'] = ethereum_accounts[0]
@@ -364,7 +380,13 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     details = assert_proper_response_with_result(response)
     assert len(details) == 2
     assert_serialized_dicts_equal(vault_6021_details, details[0])
-    assert_serialized_dicts_equal(VAULT_8015_DETAILS, details[1], length_list_keymap={'events': 7})
+    assert_serialized_dicts_equal(
+        VAULT_8015_DETAILS,
+        details[1],
+        length_list_keymap={'events': 7},
+        ignore_keys=['total_interest_owed'],
+    )
+    assert FVal(details[1]['total_interest_owed']) >= VAULT_8015_DETAILS['total_interest_owed']
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -398,7 +420,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         collateralization_ratio=None,
         liquidation_ratio=FVal(1.5),
         liquidation_price=None,
-        stability_fee=FVal(0.01),
+        stability_fee=FVal(0.0125),
     )
     expected_vaults = [vault_8913.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
@@ -481,7 +503,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         collateralization_ratio=None,
         liquidation_ratio=FVal(1.2),
         liquidation_price=None,
-        stability_fee=FVal(0.0075),
+        stability_fee=FVal(0.01),
     )
     expected_vaults = [vault_7588.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
@@ -565,7 +587,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         'collateralization_ratio': None,
         'liquidation_ratio': '150.00%',
         'liquidation_price': None,
-        'stability_fee': '0.00%',
+        'stability_fee': '0.25%',
     }
     vault_8632 = {
         'identifier': 8632,
@@ -578,7 +600,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         'collateralization_ratio': None,
         'liquidation_ratio': '150.00%',
         'liquidation_price': None,
-        'stability_fee': '0.00%',
+        'stability_fee': '0.25%',
     }
     assert len(vaults) == 2
     assert_serialized_dicts_equal(vaults[0], vault_8543)
