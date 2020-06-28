@@ -18,17 +18,18 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import (
-    MAKERDAO_BAT_JOIN,
+    MAKERDAO_BAT_A_JOIN,
     MAKERDAO_CAT,
     MAKERDAO_CDP_MANAGER,
     MAKERDAO_DAI_JOIN,
-    MAKERDAO_ETH_JOIN,
+    MAKERDAO_ETH_A_JOIN,
     MAKERDAO_GET_CDPS,
     MAKERDAO_JUG,
     MAKERDAO_SPOT,
-    MAKERDAO_USDC_JOIN,
+    MAKERDAO_USDC_A_JOIN,
+    MAKERDAO_USDC_B_JOIN,
     MAKERDAO_VAT,
-    MAKERDAO_WBTC_JOIN,
+    MAKERDAO_WBTC_A_JOIN,
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
@@ -43,10 +44,11 @@ log = logging.getLogger(__name__)
 
 
 GEMJOIN_MAPPING = {
-    'ETH': MAKERDAO_ETH_JOIN,
-    'BAT': MAKERDAO_BAT_JOIN,
-    'USDC': MAKERDAO_USDC_JOIN,
-    'WBTC': MAKERDAO_WBTC_JOIN,
+    'ETH-A': MAKERDAO_ETH_A_JOIN,
+    'BAT-A': MAKERDAO_BAT_A_JOIN,
+    'USDC-A': MAKERDAO_USDC_A_JOIN,
+    'USDC-B': MAKERDAO_USDC_B_JOIN,
+    'WBTC-A': MAKERDAO_WBTC_A_JOIN,
 }
 
 
@@ -323,7 +325,7 @@ class MakerDAOVaults(MakerDAOCommon):
         )
         frob_event_tx_hashes = [x['transactionHash'] for x in frob_events]
 
-        gemjoin = GEMJOIN_MAPPING[vault.collateral_asset.identifier]
+        gemjoin = GEMJOIN_MAPPING[vault.collateral_type]
         vault_events = []
         # Get the collateral deposit events
         argument_filters = {
