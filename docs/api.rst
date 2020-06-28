@@ -3003,7 +3003,7 @@ Adding blockchain accounts
       }
 
    :reqjson list[object] accounts: A list of account data to add for the given blockchain
-   :reqjsonarr string address: The address of the account to add
+   :reqjsonarr string address: The address of the account to add. Can either be a hexadecimal address or an ENS name.
    :reqjsonarr string[optional] label: An optional label to describe the new account
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the new account
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -3070,13 +3070,13 @@ Editing blockchain account data
               "label": "my new metamask",
               "tags": ["public", metamask"]
               }, {
-              "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b,
+              "address": "johndoe.eth",
               "label": "my hardware wallet"
               }]
       }
 
    :reqjson list[object] accounts: A list of account data to edit for the given blockchain
-   :reqjsonarr string address: The address of the account to edit
+   :reqjsonarr string address: The address of the account to edit. Can either be a hexadecimal address or an ENS name.
    :reqjsonarr string[optional] label: An optional label to edit for the account
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the account
 
@@ -3128,7 +3128,7 @@ Removing blockchain accounts
 
       {"accounts": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]}
 
-   :reqjson list[string] accounts: A list of accounts to delete for the given blockchain
+   :reqjson list[string] accounts: A list of accounts to delete for the given blockchain. Each account Can either be a hexadecimal address or an ENS name.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    **Example Response**:
