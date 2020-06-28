@@ -25,11 +25,13 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_ETH_A_JOIN,
     MAKERDAO_GET_CDPS,
     MAKERDAO_JUG,
+    MAKERDAO_KNC_A_JOIN,
     MAKERDAO_SPOT,
     MAKERDAO_USDC_A_JOIN,
     MAKERDAO_USDC_B_JOIN,
     MAKERDAO_VAT,
     MAKERDAO_WBTC_A_JOIN,
+    MAKERDAO_ZRX_A_JOIN,
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
@@ -44,11 +46,13 @@ log = logging.getLogger(__name__)
 
 
 GEMJOIN_MAPPING = {
-    'ETH-A': MAKERDAO_ETH_A_JOIN,
     'BAT-A': MAKERDAO_BAT_A_JOIN,
+    'ETH-A': MAKERDAO_ETH_A_JOIN,
+    'KNC-A': MAKERDAO_KNC_A_JOIN,
     'USDC-A': MAKERDAO_USDC_A_JOIN,
     'USDC-B': MAKERDAO_USDC_B_JOIN,
     'WBTC-A': MAKERDAO_WBTC_A_JOIN,
+    'ZRX-A': MAKERDAO_ZRX_A_JOIN,
 }
 
 
@@ -65,7 +69,7 @@ def _shift_num_right_by(num: int, digits: int) -> int:
 
 def _normalize_amount(asset_symbol: str, amount: int) -> FVal:
     """Take in the big integer amount of the asset and normalizes it by decimals"""
-    if asset_symbol in ('ETH', 'BAT', 'DAI'):
+    if asset_symbol in ('ETH', 'BAT', 'DAI', 'KNC', 'ZRX'):
         return FVal(amount / WAD)
     elif asset_symbol == 'USDC':
         return FVal(amount / int(1e6))
@@ -210,7 +214,7 @@ class MakerDAOVaults(MakerDAOCommon):
     ) -> Optional[MakerDAOVault]:
         collateral_type = ilk.split(b'\0', 1)[0].decode()
         asset_symbol = collateral_type.split('-')[0]
-        if asset_symbol not in ('ETH', 'BAT', 'USDC', 'WBTC'):
+        if asset_symbol not in ('ETH', 'BAT', 'USDC', 'WBTC', 'KNC', 'ZRX'):
             self.msg_aggregator.add_warning(
                 f'Detected vault with {asset_symbol} as collateral. That is not yet '
                 f'supported by rotki',
