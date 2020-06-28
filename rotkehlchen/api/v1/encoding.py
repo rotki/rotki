@@ -33,6 +33,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    ChecksumEthAddress,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -832,7 +833,6 @@ class BlockchainAccountsGetSchema(Schema):
 
 
 def _validate_blockchain_account_schemas(
-        ethereum_manager: EthereumManager,
         data: Dict[str, Any],
         address_getter: Callable,
 ) -> None:
@@ -880,6 +880,26 @@ def _validate_blockchain_account_schemas(
             given_addresses.add(address)
 
 
+def _transform_eth_address(
+        ethereum: EthereumManager, given_address: str) -> ChecksumEthAddress:
+    try:
+        address = to_checksum_address(given_address)
+    except ValueError:
+        # Validation will only let .eth names come here.
+        # So let's see if it resolves to anything
+        resolved_address = ethereum.ens_lookup(given_address)
+        if resolved_address is None:
+            raise ValidationError(
+                f'Given ENS address {given_address} could not be resolved',
+                field_name='address',
+            )
+        else:
+            address = to_checksum_address(resolved_address)
+            log.info(f'Resolved ENS {given_address} to {address}')
+
+    return address
+
+
 class BlockchainAccountsPatchSchema(Schema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
@@ -894,7 +914,7 @@ class BlockchainAccountsPatchSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        _validate_blockchain_account_schemas(self.ethereum_manager, data, lambda x: x['address'])
+        _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
     @post_load  # type: ignore
     def transform_data(  # pylint: disable=no-self-use
@@ -904,22 +924,11 @@ class BlockchainAccountsPatchSchema(Schema):
     ) -> Any:
         if data['blockchain'] == SupportedBlockchain.ETHEREUM:
             for idx, account in enumerate(data['accounts']):
-                try:
-                    data['accounts'][idx]['address'] = to_checksum_address(account['address'])
-                except ValueError:
-                    # Validation will only let .eth names come here.
-                    # So let's see if it resolves to anything
-                    address_string = account['address']
-                    address = self.ethereum_manager.ens_lookup(address_string)
-                    if address is None:
-                        raise ValidationError(
-                            f'Given ENS address {address_string} could not be resolved',
-                            field_name='address',
-                        )
-                    else:
-                        address = to_checksum_address(address)
-                        log.info(f'Resolved ENS {address_string} to {address}')
-                        data['accounts'][idx]['address'] = address
+                data['accounts'][idx]['address'] = _transform_eth_address(
+                    ethereum=self.ethereum_manager,
+                    given_address=account['address'],
+                )
+
         return data
 
 
@@ -932,13 +941,17 @@ class BlockchainAccountsDeleteSchema(Schema):
     accounts = fields.List(fields.String(), required=True)
     async_query = fields.Boolean(missing=False)
 
+    def __init__(self, ethereum_manager: EthereumManager):
+        super().__init__()
+        self.ethereum_manager = ethereum_manager
+
     @validates_schema  # type: ignore
     def validate_blockchain_accounts_delete_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        _validate_blockchain_account_schemas(self.ethereum_manager, data, lambda x: x)
+        _validate_blockchain_account_schemas(data, lambda x: x)
 
     @post_load  # type: ignore
     def transform_data(  # pylint: disable=no-self-use
@@ -947,7 +960,9 @@ class BlockchainAccountsDeleteSchema(Schema):
             **_kwargs: Any,
     ) -> Any:
         if data['blockchain'] == SupportedBlockchain.ETHEREUM:
-            data['accounts'] = [to_checksum_address(x) for x in data['accounts']]
+            data['accounts'] = [
+                _transform_eth_address(self.ethereum_manager, x) for x in data['accounts']
+            ]
         return data
 
 
