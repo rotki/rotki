@@ -10394,6 +10394,14 @@
         "symbol": "aDAI",
         "type": "ethereum token"
     },
+    "aSUSD": {
+        "ethereum_address": "0x625aE63000f46200499120B906716420bd059240",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing SUSD",
+        "started": 1578501472,
+        "symbol": "aSUSD",
+        "type": "ethereum token"
+    },
     "aUSDC": {
         "ethereum_address": "0x9bA00D6856a4eDF4665BcA2C2309936572473B7E",
         "ethereum_token_decimals": 6,

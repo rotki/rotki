@@ -11,6 +11,7 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `Aave Interest bearing ETH (aETH) <https://www.coingecko.com/en/coins/aave-eth>`__
+  - `Aave Interest bearing SUSD (aSUSD) <https://www.coingecko.com/en/coins/aave-susd>`__
   - `Aave Interest bearing USDC (aUSDC) <https://www.coingecko.com/en/coins/aave-usdc>`__
   - `Compound USDT (cUSDT) <https://www.coingecko.com/en/coins/compound-usdt>`__
   - `Compound (COMP) <https://coinmarketcap.com/currencies/compound/>`__
