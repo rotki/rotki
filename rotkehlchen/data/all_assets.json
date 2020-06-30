@@ -10402,6 +10402,14 @@
         "symbol": "aSUSD",
         "type": "ethereum token"
     },
+    "aTUSD": {
+        "ethereum_address": "0x4DA9b813057D04BAef4e5800E36083717b4a0341",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing TUSD",
+        "started": 1578501282,
+        "symbol": "aTUSD",
+        "type": "ethereum token"
+    },
     "aUSDC": {
         "ethereum_address": "0x9bA00D6856a4eDF4665BcA2C2309936572473B7E",
         "ethereum_token_decimals": 6,
