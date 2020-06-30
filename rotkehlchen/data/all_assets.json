@@ -10426,6 +10426,14 @@
         "symbol": "aLEND",
         "type": "ethereum token"
     },
+    "aLINK": {
+        "ethereum_address": "0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing LINK",
+        "started": 1578501727,
+        "symbol": "aLINK",
+        "type": "ethereum token"
+    },
     "aSUSD": {
         "ethereum_address": "0x625aE63000f46200499120B906716420bd059240",
         "ethereum_token_decimals": 18,
