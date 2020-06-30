@@ -25,6 +25,7 @@ Changelog
   - `Aave Interest bearing USDC (aUSDC) <https://www.coingecko.com/en/coins/aave-usdc>`__
   - `Aave Interest bearing USDT (aUSDT) <https://www.coingecko.com/en/coins/aave-usdt>`__
   - `Aave Interest bearing WBTC (aWBTC) <https://www.coingecko.com/en/coins/aave-wbtc>`__
+  - `Aave Interest bearing ZRX (aZRX) <https://www.coingecko.com/en/coins/aave-zrx>`__
   - `Compound USDT (cUSDT) <https://www.coingecko.com/en/coins/compound-usdt>`__
   - `Compound (COMP) <https://coinmarketcap.com/currencies/compound/>`__
 
