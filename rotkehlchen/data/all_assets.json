@@ -10378,6 +10378,14 @@
         "symbol": "ZXC",
         "type": "ethereum token"
     },
+    "aBUSD": {
+        "ethereum_address": "0x6Ee0f7BB50a54AB5253dA0667B0Dc2ee526C30a8",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing Binance USD",
+        "started": 1585230197,
+        "symbol": "aBUSD",
+        "type": "ethereum token"
+    },
     "aETH": {
         "ethereum_address": "0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04",
         "ethereum_token_decimals": 18,
