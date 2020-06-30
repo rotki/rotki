@@ -10442,6 +10442,14 @@
         "symbol": "aMANA",
         "type": "ethereum token"
     },
+    "aMKR": {
+        "ethereum_address": "0x7deB5e830be29F91E298ba5FF1356BB7f8146998",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing MKR",
+        "started": 1578502011,
+        "symbol": "aMKR",
+        "type": "ethereum token"
+    },
     "aSUSD": {
         "ethereum_address": "0x625aE63000f46200499120B906716420bd059240",
         "ethereum_token_decimals": 18,
