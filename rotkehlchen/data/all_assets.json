@@ -10378,6 +10378,14 @@
         "symbol": "ZXC",
         "type": "ethereum token"
     },
+    "aETH": {
+        "ethereum_address": "0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing ETH",
+        "started": 1578501678,
+        "symbol": "aETH",
+        "type": "ethereum token"
+    },
     "aDAI": {
         "ethereum_address": "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
         "ethereum_token_decimals": 18,
