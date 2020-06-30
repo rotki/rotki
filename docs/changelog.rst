@@ -10,6 +10,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens
 
+  - `Aave Interest bearing ETH (aETH) <https://www.coingecko.com/en/coins/aave-eth>`__
   - `Compound USDT (cUSDT) <https://www.coingecko.com/en/coins/compound-usdt>`__
   - `Compound (COMP) <https://coinmarketcap.com/currencies/compound/>`__
 
