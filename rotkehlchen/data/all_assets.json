@@ -10410,6 +10410,14 @@
         "symbol": "aDAI",
         "type": "ethereum token"
     },
+    "aKNC": {
+        "ethereum_address": "0x9D91BE44C06d373a8a226E1f3b146956083803eB",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing KNC",
+        "started": 1578501790,
+        "symbol": "aKNC",
+        "type": "ethereum token"
+    },
     "aSUSD": {
         "ethereum_address": "0x625aE63000f46200499120B906716420bd059240",
         "ethereum_token_decimals": 18,

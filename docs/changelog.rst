@@ -13,6 +13,7 @@ Changelog
   - `Aave Interest bearing BAT (aBAT) <https://www.coingecko.com/en/coins/aave-bat>`__
   - `Aave Interest bearing Binance USD (aBUSD) <https://www.coingecko.com/en/coins/aave-busd>`__
   - `Aave Interest bearing ETH (aETH) <https://www.coingecko.com/en/coins/aave-eth>`__
+  - `Aave Interest bearing KNC (aKNC) <https://www.coingecko.com/en/coins/aave-knc>`__
   - `Aave Interest bearing SUSD (aSUSD) <https://www.coingecko.com/en/coins/aave-susd>`__
   - `Aave Interest bearing TUSD (aTUSD) <https://www.coingecko.com/en/coins/aave-tusd>`__
   - `Aave Interest bearing USDC (aUSDC) <https://www.coingecko.com/en/coins/aave-usdc>`__
