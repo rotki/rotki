@@ -10418,6 +10418,14 @@
         "symbol": "aKNC",
         "type": "ethereum token"
     },
+    "aLEND": {
+        "ethereum_address": "0x7D2D3688Df45Ce7C552E19c27e007673da9204B8",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing LEND",
+        "started": 1578501530,
+        "symbol": "aLEND",
+        "type": "ethereum token"
+    },
     "aSUSD": {
         "ethereum_address": "0x625aE63000f46200499120B906716420bd059240",
         "ethereum_token_decimals": 18,
