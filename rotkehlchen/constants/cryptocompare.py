@@ -1,7 +1,24 @@
 WORLD_TO_CRYPTOCOMPARE = {
-    # Botch CHAI and aDAI should be switched to proper queries with coingecko support
+    # Both CHAI and aave tokens should be switched to proper queries with coingecko support.
+    # We can think about the aave tokens as they are supposed to be pegged to their counterparts
     'CHAI': 'DAI',
+    'aBAT': 'BAT',
+    'aBUSD': 'BUSD',
+    'aETH': 'ETH',
     'aDAI': 'DAI',
+    'aKNC': 'KNC',
+    'aLEND': 'LEND',
+    'aLINK': 'LINK',
+    'aMANA': 'MANA',
+    'aMKR': 'MKR',
+    'aREP': 'REP',
+    'aSNX': 'SNX',
+    'aSUSD': 'SUSD',
+    'aTUSD': 'TUSD',
+    'aUSDC': 'USDC',
+    'aUSDT': 'USDT',
+    'aWBTC': 'WBTC',
+    'aZRX': 'ZRX',
     'LBRY': 'LBC',
     'DATAcoin': 'DATA',
     'IOTA': 'MIOTA',
