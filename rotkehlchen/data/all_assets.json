@@ -10458,6 +10458,14 @@
         "symbol": "aREP",
         "type": "ethereum token"
     },
+    "aSNX": {
+        "ethereum_address": "0x328C4c80BC7aCa0834Db37e6600A6c49E12Da4DE",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing SNX",
+        "started": 1578502126,
+        "symbol": "aSNX",
+        "type": "ethereum token"
+    },
     "aSUSD": {
         "ethereum_address": "0x625aE63000f46200499120B906716420bd059240",
         "ethereum_token_decimals": 18,
