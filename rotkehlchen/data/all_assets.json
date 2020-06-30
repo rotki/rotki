@@ -10506,6 +10506,14 @@
         "symbol": "aWBTC",
         "type": "ethereum token"
     },
+    "aZRX": {
+        "ethereum_address": "0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing ZRX",
+        "started": 1578502051,
+        "symbol": "aZRX",
+        "type": "ethereum token"
+    },
     "cBAT": {
         "ethereum_address": "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
         "ethereum_token_decimals": 8,
