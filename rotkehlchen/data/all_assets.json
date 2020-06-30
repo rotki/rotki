@@ -10434,6 +10434,14 @@
         "symbol": "aLINK",
         "type": "ethereum token"
     },
+    "aMANA": {
+        "ethereum_address": "0x6FCE4A401B6B80ACe52baAefE4421Bd188e76F6f",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing MANA",
+        "started": 1578502029,
+        "symbol": "aMANA",
+        "type": "ethereum token"
+    },
     "aSUSD": {
         "ethereum_address": "0x625aE63000f46200499120B906716420bd059240",
         "ethereum_token_decimals": 18,

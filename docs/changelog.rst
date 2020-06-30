@@ -16,6 +16,7 @@ Changelog
   - `Aave Interest bearing KNC (aKNC) <https://www.coingecko.com/en/coins/aave-knc>`__
   - `Aave Interest bearing LEND (aLEND) <https://www.coingecko.com/en/coins/aave-lend>`__
   - `Aave Interest bearing LINK (aLINK) <https://www.coingecko.com/en/coins/aave-link>`__
+  - `Aave Interest bearing MANA (aMANA) <https://www.coingecko.com/en/coins/aave-mana>`__
   - `Aave Interest bearing SUSD (aSUSD) <https://www.coingecko.com/en/coins/aave-susd>`__
   - `Aave Interest bearing TUSD (aTUSD) <https://www.coingecko.com/en/coins/aave-tusd>`__
   - `Aave Interest bearing USDC (aUSDC) <https://www.coingecko.com/en/coins/aave-usdc>`__
