@@ -10378,6 +10378,14 @@
         "symbol": "ZXC",
         "type": "ethereum token"
     },
+    "aBAT": {
+        "ethereum_address": "0xE1BA0FB44CCb0D11b80F92f4f8Ed94CA3fF51D00",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing BAT",
+        "started": 1578501629,
+        "symbol": "aBAT",
+        "type": "ethereum token"
+    },
     "aBUSD": {
         "ethereum_address": "0x6Ee0f7BB50a54AB5253dA0667B0Dc2ee526C30a8",
         "ethereum_token_decimals": 18,
