@@ -14,6 +14,7 @@ Changelog
   - `Aave Interest bearing SUSD (aSUSD) <https://www.coingecko.com/en/coins/aave-susd>`__
   - `Aave Interest bearing TUSD (aTUSD) <https://www.coingecko.com/en/coins/aave-tusd>`__
   - `Aave Interest bearing USDC (aUSDC) <https://www.coingecko.com/en/coins/aave-usdc>`__
+  - `Aave Interest bearing USDT (aUSDT) <https://www.coingecko.com/en/coins/aave-usdt>`__
   - `Compound USDT (cUSDT) <https://www.coingecko.com/en/coins/compound-usdt>`__
   - `Compound (COMP) <https://coinmarketcap.com/currencies/compound/>`__
 
