@@ -10394,6 +10394,14 @@
         "symbol": "aDAI",
         "type": "ethereum token"
     },
+    "aUSDC": {
+        "ethereum_address": "0x9bA00D6856a4eDF4665BcA2C2309936572473B7E",
+        "ethereum_token_decimals": 6,
+        "name": "Aave Interest bearing USDC",
+        "started": 1578501407,
+        "symbol": "aUSDC",
+        "type": "ethereum token"
+    },
     "cBAT": {
         "ethereum_address": "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
         "ethereum_token_decimals": 8,
