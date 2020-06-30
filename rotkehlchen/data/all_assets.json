@@ -10498,6 +10498,14 @@
         "symbol": "aUSDT",
         "type": "ethereum token"
     },
+    "aWBTC": {
+        "ethereum_address": "0xFC4B8ED459e00e5400be803A9BB3954234FD50e3",
+        "ethereum_token_decimals": 8,
+        "name": "Aave Interest bearing WBTC",
+        "started": 1578503540,
+        "symbol": "aWBTC",
+        "type": "ethereum token"
+    },
     "cBAT": {
         "ethereum_address": "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
         "ethereum_token_decimals": 8,
