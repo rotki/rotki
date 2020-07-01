@@ -140,7 +140,7 @@ Handling user creation, sign-in, log-out and querying
                   "last_balance_save": 1571552172,
                   "submit_usage_analytics": true,
                   "kraken_account_type": "intermediate",
-                  "active_modules": ["makerdao_dsr", "makerdao_vaults"]
+                  "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"]
               }
           },
           "message": ""
@@ -202,7 +202,7 @@ Handling user creation, sign-in, log-out and querying
                   "last_balance_save": 1571552172,
                   "submit_usage_analytics": true,
                   "kraken_account_type": "intermediate"
-                  "active_modules": ["makerdao_dsr", "makerdao_vaults"]
+                  "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"]
               }
           },
           "message": ""
@@ -528,7 +528,7 @@ Getting or modifying settings
               "last_balance_save": 1571552172,
               "submit_usage_analytics": true,
               "kraken_account_type": "intermediate",
-              "active_modules": ["makerdao_dsr", "makerdao_vaults"]
+              "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"]
           },
           "message": ""
       }
@@ -616,7 +616,7 @@ Getting or modifying settings
               "last_balance_save": 1571552172,
               "submit_usage_analytics": true,
               "kraken_account_type": "intermediate",
-              "active_modules": ["makerdao_dsr", "makerdao_vaults"]
+              "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"]
           },
           "message": ""
       }

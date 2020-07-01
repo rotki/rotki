@@ -10,6 +10,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.makerdao.common import MakerDAOCommon
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_REP
@@ -46,7 +47,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults']
+AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave']
 
 
 class AccountAction(Enum):
@@ -171,6 +172,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
+                elif given_module == 'aave':
+                    assert self.alethio.db, 'Alethio should have an instantiated DB'
+                    self.eth_modules['aave'] = Aave(
+                        ethereum_manager=ethereum_manager,
+                        database=self.alethio.db,
+                        msg_aggregator=msg_aggregator,
+                    )
                 else:
                     log.error(f'Unrecognized module value {given_module} given. Skipping...')
 
@@ -207,6 +215,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
     @property
     def makerdao_vaults(self) -> Optional[MakerDAOVaults]:
         module = self.eth_modules.get('makerdao_vaults', None)
+        if not module:
+            return None
+
+        return module  # type: ignore
+
+    @property
+    def aave(self) -> Optional[Aave]:
+        module = self.eth_modules.get('aave', None)
         if not module:
             return None
 

@@ -23,7 +23,7 @@ DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
-DEFAULT_ACTIVE_MODULES = ['makerdao_dsr', 'makerdao_vaults']
+DEFAULT_ACTIVE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave']
 
 
 class DBSettings(NamedTuple):
