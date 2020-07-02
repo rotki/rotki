@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.ethereum import ATOKEN_ABI, ZERO_ADDRESS
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -40,10 +41,12 @@ class Aave():
             self,
             ethereum_manager: 'EthereumManager',
             database: DBHandler,
+            premium: Premium,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_manager
         self.msg_aggregator = msg_aggregator
+        self.premium = premium
 
     def get_deposits_for_atoken_and_address(
             self,
