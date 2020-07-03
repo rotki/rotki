@@ -13,6 +13,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ class AaveLendingProfit(NamedTuple):
     total_earned: Balance
 
 
-class Aave():
+class Aave(EthereumModule):
     """Aave integration module
 
     https://docs.aave.com/developers/developing-on-aave/the-protocol/
@@ -212,3 +213,13 @@ class Aave():
 
         profit_events.sort(key=lambda event: event.timestamp)
         return profit_events
+
+    # -- Methods following the EthereumModule interface -- #
+    def on_startup(self) -> None:
+        pass
+
+    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+        pass
+
+    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        pass
