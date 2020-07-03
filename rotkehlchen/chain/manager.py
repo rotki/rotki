@@ -33,6 +33,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import (
     CacheableObject,
+    EthereumModule,
     LockableQueryObject,
     cache_response_timewise,
     protect_with_lock,
@@ -153,7 +154,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Per asset total balances
         self.totals: Totals = defaultdict(Balance)
         # TODO: Perhaps turn this mapping into a typed dict?
-        self.eth_modules: Dict[str, Any] = {}
+        self.eth_modules: Dict[str, EthereumModule] = {}
         if eth_modules:
             for given_module in eth_modules:
                 if given_module == 'makerdao_dsr':
@@ -211,7 +212,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
-        return module
+        return module  # type: ignore
 
     @property
     def makerdao_vaults(self) -> Optional[MakerDAOVaults]:
@@ -219,7 +220,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
-        return module
+        return module  # type: ignore
 
     @property
     def aave(self) -> Optional[Aave]:
@@ -227,7 +228,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
-        return module
+        return module  # type: ignore
 
     @property
     def eth_tokens(self) -> List[EthereumToken]:
