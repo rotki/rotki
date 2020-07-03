@@ -8,6 +8,7 @@ from rotkehlchen.constants.ethereum import AAVE_LENDING_POOL, ATOKEN_ABI, ZERO_A
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
@@ -50,6 +51,16 @@ class AaveInterestPayment(NamedTuple):
     timestamp: Timestamp
 
 
+class AaveLendingProfit(NamedTuple):
+    """All events and total interest accrued for an Atoken and an address
+
+    The type of token not included here since these are in a mapping with a list
+    per aToken so it would be redundant
+    """
+    events: List[AaveInterestPayment]
+    total_earned: Balance
+
+
 class Aave():
     """Aave integration module
 
@@ -68,13 +79,13 @@ class Aave():
         self.msg_aggregator = msg_aggregator
         self.premium = premium
 
-    def get_lending_profit_events_for_address(
+    def get_lending_profit_for_address(
             self,
             user_address: ChecksumEthAddress,
             given_from_block: Optional[int] = None,
             given_to_block: Optional[int] = None,
             atokens_list: Optional[List[EthereumToken]] = None,
-    ) -> Dict[EthereumToken, List]:
+    ) -> Dict[EthereumToken, AaveLendingProfit]:
         # Get all deposit events for the address
         from_block = AAVE_LENDING_POOL.deployed_block if given_from_block is None else given_from_block  # noqa: E501
         to_block: Union[int, Literal['latest']] = 'latest' if given_to_block is None else given_to_block  # noqa: E501
@@ -94,13 +105,39 @@ class Aave():
         tokens = atokens_list if atokens_list is not None else ATOKENS_LIST
         profit_map = {}
         for token in tokens:
-            profit_map[token] = self.get_profit_events_for_atoken_and_address(
+            events = self.get_profit_events_for_atoken_and_address(
                 user_address=user_address,
                 atoken=token,
                 deposit_events=deposit_events,
                 given_from_block=given_from_block,
                 given_to_block=given_to_block,
             )
+            total_balance = Balance()
+            for x in events:
+                total_balance += x.balance
+            # If the user still has balance in Aave we also need to see how much
+            # accrued interest has not been yet paid out
+            # TODO: ARCHIVE if to_block is not latest here we should get the balance
+            # from the old block. Means using archive node
+            balance = self.ethereum.call_contract(
+                contract_address=token.ethereum_address,
+                abi=ATOKEN_ABI,
+                method_name='balanceOf',
+                arguments=[user_address],
+            )
+            principal_balance = self.ethereum.call_contract(
+                contract_address=token.ethereum_address,
+                abi=ATOKEN_ABI,
+                method_name='principalBalanceOf',
+                arguments=[user_address],
+            )
+            unpaid_interest = (balance - principal_balance) / (FVal(10) ** FVal(token.decimals))
+            usd_price = Inquirer().find_usd_price(token)
+            total_balance += Balance(
+                amount=unpaid_interest,
+                usd_value=unpaid_interest * usd_price,
+            )
+            profit_map[token] = AaveLendingProfit(events=events, total_earned=total_balance)
 
         return profit_map
 
