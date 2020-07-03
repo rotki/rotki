@@ -3,11 +3,13 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FilePath, Price, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp
 
 if TYPE_CHECKING:
@@ -35,6 +37,28 @@ def query_usd_price_or_use_default(
             f'{location}. Assuming price of ${str(default_value)}',
         )
         usd_price = Price(default_value)
+
+    return usd_price
+
+
+def query_usd_price_zero_if_error(
+        asset: Asset,
+        time: Timestamp,
+        location: str,
+        msg_aggregator: MessagesAggregator,
+) -> Price:
+    try:
+        usd_price = PriceHistorian().query_historical_price(
+            from_asset=asset,
+            to_asset=A_USD,
+            timestamp=time,
+        )
+    except RemoteError:
+        msg_aggregator.add_error(
+            f'Could not query usd price for {asset.identifier} when processing '
+            f'{location}. Using zero price',
+        )
+        usd_price = Price(ZERO)
 
     return usd_price
 
