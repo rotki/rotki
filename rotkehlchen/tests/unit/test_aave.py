@@ -28,7 +28,7 @@ def aave(
     return aave
 
 
-mocked_prices = {
+mocked_historical_prices = {
     'aDAI': {
         'USD': {
             1589155650: FVal('1.007'),
@@ -40,15 +40,18 @@ mocked_prices = {
         },
     },
 }
+mocked_current_prices = {'aDAI': FVal('1.017')}
 
 
-@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_historical_prices])
+@pytest.mark.parametrize('mocked_current_prices', [mocked_current_prices])
 def test_get_lending_profit_for_address(aave, price_historian):  # pylint: disable=unused-argument
-    profit_map = aave.get_lending_profit_events_for_address(
+    profit_map = aave.get_lending_profit_for_address(
         user_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         atokens_list=[EthereumToken('aDAI')],
-        given_to_block=10386830,  # we know results until this block
+        given_to_block=10386830,  # test was written at this block
     )
+
     expected_events = [
         AaveInterestPayment(
             balance=Balance(
@@ -88,4 +91,7 @@ def test_get_lending_profit_for_address(aave, price_historian):  # pylint: disab
         ),
     ]
     assert len(profit_map) == 1
-    assert profit_map['aDAI'] == expected_events
+    assert profit_map['aDAI'].events == expected_events
+    # comparison is greater than since interest is always accruing since writing the test
+    assert profit_map['aDAI'].total_earned.amount >= FVal('14.639592665598308240')
+    assert profit_map['aDAI'].total_earned.usd_value >= FVal('14.855619384119985440682')
