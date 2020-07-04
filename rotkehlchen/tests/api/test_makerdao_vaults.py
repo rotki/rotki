@@ -85,7 +85,7 @@ VAULT_8015 = {
     'collateralization_ratio': None,
     'liquidation_ratio': '150.00%',
     'liquidation_price': None,
-    'stability_fee': '0.25%',
+    'stability_fee': '0.00%',
 }
 
 VAULT_8015_DETAILS = {
@@ -311,7 +311,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         'collateralization_ratio': None,
         'liquidation_ratio': '150.00%',
         'liquidation_price': None,
-        'stability_fee': '0.25%',
+        'stability_fee': '0.00%',
     }
     vault_8015_with_owner = VAULT_8015.copy()
     vault_8015_with_owner['owner'] = ethereum_accounts[0]
@@ -420,7 +420,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         collateralization_ratio=None,
         liquidation_ratio=FVal(1.5),
         liquidation_price=None,
-        stability_fee=FVal(0.0125),
+        stability_fee=FVal(0.02),
     )
     expected_vaults = [vault_8913.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
@@ -503,7 +503,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         collateralization_ratio=None,
         liquidation_ratio=FVal(1.2),
         liquidation_price=None,
-        stability_fee=FVal(0.01),
+        stability_fee=FVal(0.04),
     )
     expected_vaults = [vault_7588.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
@@ -587,7 +587,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         'collateralization_ratio': None,
         'liquidation_ratio': '150.00%',
         'liquidation_price': None,
-        'stability_fee': '0.25%',
+        'stability_fee': '0.00%',
     }
     vault_8632 = {
         'identifier': 8632,
@@ -600,7 +600,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         'collateralization_ratio': None,
         'liquidation_ratio': '150.00%',
         'liquidation_price': None,
-        'stability_fee': '0.25%',
+        'stability_fee': '0.00%',
     }
     assert len(vaults) == 2
     assert_serialized_dicts_equal(vaults[0], vault_8543)
