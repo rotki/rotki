@@ -157,7 +157,8 @@ INITIAL_BACKOFF = 3
 # Some symbols in coin paprika exists multiple times with different ids each time.
 # This requires manual intervention and a lock in of the id mapping by hand
 WORLD_TO_PAPRIKA_ID = {
-    # ICN has both icn-iconomi and icn-icoin. The correct one appears to be the first
+    'ALQO': 'xlq-alqo',
+    # ICN has both icn-iconomi and icn-icoin. The correct one appears to be the firest
     'ICN': 'icn-iconomi',
     # In Rotkehlchen BAT means the basic attention token and not bat-batcoin
     'BAT': 'bat-basic-attention-token',
