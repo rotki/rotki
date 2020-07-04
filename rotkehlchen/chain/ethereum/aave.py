@@ -1,10 +1,17 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.constants.ethereum import AAVE_LENDING_POOL, ATOKEN_ABI, ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.makerdao.common import RAY
+from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances
+from rotkehlchen.constants.ethereum import (
+    AAVE_ETH_RESERVE_ADDRESS,
+    AAVE_LENDING_POOL,
+    ATOKEN_ABI,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -52,6 +59,31 @@ class AaveInterestPayment(NamedTuple):
     timestamp: Timestamp
 
 
+class AaveLendingBalance(NamedTuple):
+    """A balance for Aave lending.
+
+    Asset not included here since it's the key in the map that leads to this structure
+    """
+    balance: Balance
+    apy: FVal
+
+
+class AaveBorrowingBalance(NamedTuple):
+    """A balance for Aave borrowing.
+
+    Asset not included here since it's the key in the map that leads to this structure
+    """
+    balance: Balance
+    variable_apr: FVal
+    stable_apr: FVal
+
+
+class AaveBalances(NamedTuple):
+    """The Aave balances per account. Using str for symbol since ETH is not a token"""
+    lending: Dict[str, AaveLendingBalance]
+    borrowing: Dict[str, AaveBorrowingBalance]
+
+
 class AaveLendingProfit(NamedTuple):
     """All events and total interest accrued for an Atoken and an address
 
@@ -60,6 +92,19 @@ class AaveLendingProfit(NamedTuple):
     """
     events: List[AaveInterestPayment]
     total_earned: Balance
+
+
+def _get_reserve_address_decimals(symbol: str) -> Tuple[ChecksumEthAddress, int]:
+    """Get the reserve address and the number of decimals for symbol"""
+    if symbol == 'ETH':
+        reserve_address = AAVE_ETH_RESERVE_ADDRESS
+        decimals = 18
+    else:
+        token = EthereumToken(symbol)
+        reserve_address = token.ethereum_address
+        decimals = token.decimals
+
+    return reserve_address, decimals
 
 
 class Aave(EthereumModule):
@@ -79,6 +124,54 @@ class Aave(EthereumModule):
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium
+
+    def get_balances(
+            self,
+            defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
+    ) -> Dict[ChecksumEthAddress, AaveBalances]:
+        aave_balances = {}
+        reserve_cache: Dict[str, Tuple[Any, ...]] = {}
+        for account, balance_entries in defi_balances.items():
+            lending_map = {}
+            borrowing_map = {}
+            for balance_entry in balance_entries:
+                if balance_entry.protocol.name != 'Aave':
+                    continue
+
+                # aave only has one underlying balance per base balance which
+                # is what we will show. This is also the reserve asset
+                asset = balance_entry.underlying_balances[0]
+                reserve_address, _ = _get_reserve_address_decimals(asset.token_symbol)
+
+                reserve_data = reserve_cache.get(reserve_address, None)
+                if reserve_data is None:
+                    reserve_data = self.ethereum.call_contract(
+                        contract_address=AAVE_LENDING_POOL.address,
+                        abi=AAVE_LENDING_POOL.abi,
+                        method_name='getReserveData',
+                        arguments=[reserve_address],
+                    )
+                    reserve_cache[balance_entry.base_balance.token_symbol] = reserve_data
+
+                if balance_entry.balance_type == 'Asset':
+                    lending_map[asset.token_symbol] = AaveLendingBalance(
+                        balance=asset.balance,
+                        apy=FVal(reserve_data[4] / RAY),
+                    )
+                else:  # 'Debt'
+                    borrowing_map[asset.token_symbol] = AaveBorrowingBalance(
+                        balance=asset.balance,
+                        variable_apr=FVal(reserve_data[4] / RAY),
+                        stable_apr=FVal(reserve_data[4] / RAY),
+                    )
+
+            if lending_map == {} and borrowing_map == {}:
+                # no aave balances for the account
+                continue
+
+            aave_balances[account] = AaveBalances(lending=lending_map, borrowing=borrowing_map)
+
+        return aave_balances
 
     def get_lending_profit_for_address(
             self,
@@ -175,14 +268,7 @@ class Aave(EthereumModule):
                 self.ethereum.get_event_timestamp(event),
             ))
 
-        normal_token_symbol = atoken.identifier[1:]
-        if normal_token_symbol == 'ETH':
-            reserve_address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-            decimals = 18
-        else:
-            token = EthereumToken(normal_token_symbol)
-            reserve_address = token.ethereum_address
-            decimals = token.decimals
+        reserve_address, decimals = _get_reserve_address_decimals(atoken.identifier[1:])
         for event in deposit_events:
             if hex_or_bytes_to_address(event['topics'][1]) == reserve_address:
                 # first 32 bytes of the data are the amount
