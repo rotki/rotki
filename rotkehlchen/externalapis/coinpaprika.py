@@ -240,6 +240,9 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen BTT is BitTorrent and BTT-2 is blocktrade token
     'BTT': 'btt-bittorrent',
     'BTT-2': 'btt-blocktrade-token',
+    # For Rotkehlchen ONE is Menlo One and ONE-2 is Harmony
+    'ONE': 'one-menlo-one',
+    'ONE-2': 'one-harmony',
     # For Rotkehlchen ONG is Ontology gas and ONG-2 is SoMee.Social
     'ONG': 'ong-ong',
     'ONG-2': 'ong-someesocial',

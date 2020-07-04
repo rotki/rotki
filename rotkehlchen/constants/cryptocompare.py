@@ -236,6 +236,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     'MTN': 'MDCL',
     # For Rotkehlchen OCC-2 is Original Cryptocoin but it's OCC in cryptocompare
     'OCC-2': 'OCC',
+    # For Rotkehlchen ONE is Menlo One and ONE-2 is Harmony, but in
+    # cryptocompare ONE is harmony and Menlo One is Menlo
+    'ONE': 'MENLO',
+    'ONE-2': 'ONE',
     # For Rotkehlchen ORS is OriginSport Token and ORS-2 is ORS group, but in
     # cryptocompare OriginSport Token is OGSP and ORS Group is ORS
     'ORS': 'OGSP',

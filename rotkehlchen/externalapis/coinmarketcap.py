@@ -795,6 +795,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen NTK is Neurotoken and NTK-2 is NetKoin
     'NTK': 2536,
     'NTK-2': 3149,
+    # For Rotkehlchen ONE is Menlo One and ONE-2 is Harmony
+    'ONE': 3603,
+    'ONE-2': 3945,
     # For Rotkehlchen ORS is OriginSport Token and ORS-2 is ORS Group
     'ORS': 2879,
     'ORS-2': 2911,
