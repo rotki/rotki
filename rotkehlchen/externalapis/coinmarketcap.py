@@ -666,6 +666,7 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen AID is AidCoin and AID-2 is Aidus token
     'AID': 2462,
     'AID-2': 3785,
+    'ALQO': 2199,
     # For Rotkehlchen ATOM is Cosmos and ATOM-2 is Atomic Coin
     'ATOM': 3794,
     'ATOM-2': 1420,

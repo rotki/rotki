@@ -28,6 +28,7 @@ Changelog
   - `Aave Interest bearing ZRX (aZRX) <https://www.coingecko.com/en/coins/aave-zrx>`__
   - `Compound USDT (cUSDT) <https://www.coingecko.com/en/coins/compound-usdt>`__
   - `Compound (COMP) <https://coinmarketcap.com/currencies/compound/>`__
+  - `ALQO (ALQO) <https://coinmarketcap.com/currencies/alqo/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint

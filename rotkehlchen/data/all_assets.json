@@ -322,6 +322,12 @@
         "symbol": "ALIS",
         "type": "ethereum token"
     },
+    "ALQO": {
+        "name": "ALQO",
+        "started": 1509321600,
+        "symbol": "ALQO",
+        "type": "own chain"
+    },
     "ALX": {
         "ethereum_address": "0x49b127Bc33ce7E1586EC28CEC6a65b112596C822",
         "ethereum_token_decimals": 18,
@@ -10394,20 +10400,20 @@
         "symbol": "aBUSD",
         "type": "ethereum token"
     },
-    "aETH": {
-        "ethereum_address": "0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04",
-        "ethereum_token_decimals": 18,
-        "name": "Aave Interest bearing ETH",
-        "started": 1578501678,
-        "symbol": "aETH",
-        "type": "ethereum token"
-    },
     "aDAI": {
         "ethereum_address": "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing DAI",
         "started": 1578501167,
         "symbol": "aDAI",
+        "type": "ethereum token"
+    },
+    "aETH": {
+        "ethereum_address": "0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing ETH",
+        "started": 1578501678,
+        "symbol": "aETH",
         "type": "ethereum token"
     },
     "aKNC": {
