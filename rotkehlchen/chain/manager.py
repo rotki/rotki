@@ -12,6 +12,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
+from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances, Zerion
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_REP
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -29,6 +30,7 @@ from rotkehlchen.typing import (
     ListOfBlockchainAddresses,
     Price,
     SupportedBlockchain,
+    Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import (
@@ -38,7 +40,7 @@ from rotkehlchen.utils.interfaces import (
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import request_get, request_get_dict, satoshis_to_btc
+from rotkehlchen.utils.misc import request_get, request_get_dict, satoshis_to_btc, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -48,6 +50,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave']
+DEFI_BALANCES_REQUERY_SECONDS = 600
 
 
 class AccountAction(Enum):
@@ -149,6 +152,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.owned_eth_tokens = owned_eth_tokens
         self.accounts = blockchain_accounts
 
+        self.defi_balances_last_query_ts = Timestamp(0)
+        self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
         # Per account balances
         self.balances = BlockchainBalances()
         # Per asset total balances
@@ -686,11 +691,18 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         'an eth account but the chain is not synced.',
                     )
 
-            for _, module in self.eth_modules.items():
+                # Also modify defi balances
+                zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
                 if append_or_remove == 'append':
-                    module.on_account_addition(address)
+                    self.defi_balances[address] = zerion.all_balances_for_account(address)
                 else:  # remove
-                    module.on_account_removal(address)
+                    self.defi_balances.pop(address, None)
+                # For each module run the corresponding callback for the address
+                for _, module in self.eth_modules.items():
+                    if append_or_remove == 'append':
+                        module.on_account_addition(address)
+                    else:  # remove
+                        module.on_account_removal(address)
 
         else:
             # That should not happen. Should be checked by marshmallow
@@ -931,8 +943,28 @@ class ChainManager(CacheableObject, LockableQueryObject):
             if additional_total.amount != ZERO:
                 self.totals[A_DAI] += additional_total
 
+    def query_defi_balances(self) -> Dict[ChecksumEthAddress, List[DefiProtocolBalances]]:
+        """Queries DeFi balances from Zerion contract and updates the state
+
+        - RemoteError if an external service such as Etherscan or cryptocompare
+        is queried and there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+        client and the chain is not synced
+        """
+        if ts_now() - self.defi_balances_last_query_ts < DEFI_BALANCES_REQUERY_SECONDS:
+            return self.defi_balances
+
+        # now also query defi balances
+        zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
+        self.defi_balances = {}
+        for account in self.accounts.eth:
+            self.defi_balances[account] = zerion.all_balances_for_account(account)
+
+        self.defi_balances_last_query_ts = ts_now()
+        return self.defi_balances
+
     def query_ethereum_balances(self) -> None:
-        """Queries the ethereum balances and populates the state
+        """Queries all the ethereum balances and populates the state
 
         May raise:
         - RemoteError if an external service such as Etherscan or cryptocompare
@@ -943,6 +975,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if len(self.accounts.eth) == 0:
             return
 
+        # Query ethereum ETH balances
         eth_accounts = self.accounts.eth
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balances = self.ethereum.get_multieth_balance(eth_accounts)
@@ -956,5 +989,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
             )
 
         self.totals[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
-        # And now also query tokens to complete the picture
+
+        self.query_defi_balances()
         self.query_ethereum_tokens(self.owned_eth_tokens)
