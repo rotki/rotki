@@ -136,6 +136,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'SKR',
     'SKYM',
     'SPICE',
+    'SOL-2',
     'SSH',
     'STP',
     'TAN',

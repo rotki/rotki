@@ -8234,6 +8234,12 @@
         "symbol": "SOL",
         "type": "ethereum token"
     },
+    "SOL-2": {
+        "name": "Solana",
+        "started": 1586494758,
+        "symbol": "SOL",
+        "type": "own chain"
+    },
     "SOLVE": {
         "ethereum_address": "0x446C9033E7516D820cc9a2ce2d0B7328b579406F",
         "ethereum_token_decimals": 8,

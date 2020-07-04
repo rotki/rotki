@@ -92,6 +92,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'SLT': 'SLST',
     # SLT-2 is Social Lending Network in Rotkehlchen but SLT in cryptocompare
     'SLT-2': 'SLT',
+    # SOL-2 is Solana in Rotkehlchen but SOLAN in cryptocompare
+    'SOL-2': 'SOLAN',
     # PAI is Project Pai in Rotkehlchen but PPAI in cryptocompare
     'PAI': 'PPAI',
     # PAI-2 is PCHAIN in Rotkehlchen but PAI in cryptocompare

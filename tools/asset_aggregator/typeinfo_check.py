@@ -86,6 +86,7 @@ MANUALLY_CHECKED_TYPES = {
     'SKYM': 'ethereum token',
     'SPHTX': 'ethereum token',
     'SPICE': 'ethereum token',
+    'SOL-2': 'own chain',
     'SS': 'ethereum token',
     'SSH': 'ethereum token',
     'STP': 'ethereum token',
