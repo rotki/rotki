@@ -69,6 +69,7 @@ MANUALLY_CHECKED_TYPES = {
     'OCC-2': 'ethereum token',
     'OXT': 'ethereum token',
     'OGN': 'ethereum token',
+    'ONE-2': 'own chain',
     # In reality this is ethereum token and Waves token but got no way to
     # signify this with the current system apart from creating a new type.
     # So now I created a new generic type.

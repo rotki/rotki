@@ -30,6 +30,7 @@ Changelog
   - `Compound (COMP) <https://coinmarketcap.com/currencies/compound/>`__
   - `ALQO (ALQO) <https://coinmarketcap.com/currencies/alqo/>`__
   - `Solana (SOL) <https://coinmarketcap.com/currencies/solana/>`__
+  - `Harmony (ONE) <https://coinmarketcap.com/currencies/harmony/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
