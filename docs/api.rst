@@ -2973,6 +2973,131 @@ Getting MakerDAO vault details
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+Getting Aave historical data
+============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/aave/history
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a GET on the makerdao dsrhistory resource will return the history of deposits,withdrawals and interest payments of each account in Aave's lending.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/aave/history HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+                  "events": [{
+                      "event_type": "deposit",
+		      "asset": "DAI",
+                      "value": {
+		          "amount": "350.0",
+			  "usd_value": "351.21"
+		      },
+                      "block_number": 9128160,
+                      "timestamp": 1582706553,
+                      "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289"
+                  }, {
+                      "event_type": "interest",
+		      "asset": "DAI",
+		      "value": {
+		          "amount": "0.5323",
+			  "usd_value": "0.5482"
+		      },
+                      "block_number": 9129165,
+                      "timestamp": 1582806553,
+                      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
+                  }, {
+                      "event_type": "withdrawal",
+		      "asset": "DAI,
+                      "value": {
+		          "amount": "150",
+			  "usd_value": "150.87"
+		      },
+                      "block_number": 9149160,
+                      "timestamp": 1592706553,
+                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756"
+                  }, {
+                      "event_type": "deposit",
+		      "asset": "ZRX,
+                      "value": {
+		          "amount": "150",
+			  "usd_value": "60.995"
+		      },
+                      "block_number": 9149160,
+                      "timestamp": 1592706553,
+                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a755"
+                  }],
+                  "total_earned": {
+		      "DAI": {
+		          "amount": "0.9482",
+			  "usd_value": "1.001"
+		      },
+		      "ZRX": {
+		          "amount": "0.523",
+			  "usd_value": "0.0253"
+		      }
+		  }
+              },
+              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+                  "events": [{
+                      "event_type": "deposit",
+		      "asset": "BAT,
+                      "value": {
+		          "amount": "500",
+			  "usd_value": "124.1"
+		      },
+                      "block_number": 9149160,
+                      "timestamp": 1592706553,
+                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a755"
+                  }],
+                  "total_earned": {
+		      "BAT": {
+		          "amount": "0.9482",
+			  "usd_value": "0.2312"
+		      }
+		  },
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of accounts to the Aave history report of each account. If an account is not in the mapping Rotki does not see anything ever deposited in Aave for it.
+   :resjson object events: A list of deposits/withdrawals/interest payments to/from Aave for each account.
+   :resjson object total_earned: A mapping of asset identifier to total earned (amount + usd_value mapping) for each asset. The total earned is essentially the sum of all interest payments plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
+   :resjsonarr string event_type: The type of Aave event involving the DSR. Can be "deposit", "withdrawal" or "interest".
+   :resjsonarr string asset: The asset that this event is about. This can only be an underlying asset of an aToken.
+   :resjsonarr string value: The value of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr int timestamp: The unix timestamp at which the event occured.
+   :resjsonarr int block_number: The block number at which the event occured.
+   :resjsonarr int tx_hash: The transaction hash of the event.
+
+   :statuscode 200: Aave history succesfully queried.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or aave module is not activated.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 Adding blockchain accounts
 ===========================
 
