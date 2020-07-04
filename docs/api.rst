@@ -2978,7 +2978,7 @@ Getting Aave balances
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/aave/balances
 
-   Doing a GET on the aave balances resource will return the balances that the user has locked in Aave along with their current APYs.
+   Doing a GET on the aave balances resource will return the balances that the user has locked in Aave for lending and borrowing along with their current APYs.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -3005,35 +3005,50 @@ Getting Aave balances
       {
           "result": {
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-	          "DAI": {
-                      "balance": {
-		          "amount": "350.0",
-			  "usd_value": "351.21"
-		      },
-		      "APY": "3.51%"
-		  },
-		  "KNC": {
-                      "balance": {
-		          "amount": "220.21",
-			  "usd_value": "363.3465"
-		      },
-		      "APY": "0.53%"
-		  },
-	      },
-	      "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-	          "BAT": {
-                      "balance": {
-		          "amount": "560",
-			  "usd_value": "156.8"
-		      },
-		      "APY": "4.53%"
-		  }
-	      }
-	  },
+                  "lending": {
+                      "DAI": {
+                          "balance": {
+                              "amount": "350.0",
+                              "usd_value": "351.21"
+                          },
+                          "apy": "3.51%"
+                      },
+                      "KNC": {
+                          "balance": {
+                              "amount": "220.21",
+                              "usd_value": "363.3465"
+                          },
+                          "apy": "0.53%"
+                      },
+                  },
+                  "borrowing": {
+                      "LEND": {
+                          "balance": {
+                              "amount": "590.21",
+                              "usd_value": "146.076975"
+                          },
+                          "apy": "0.53%"
+                      }
+                  }
+              },
+              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+                  "lending": {},
+                  "borrowing": {
+                      "BAT": {
+                          "balance": {
+                              "amount": "560",
+                              "usd_value": "156.8"
+                          },
+                          "variable_apr": "7.46%"
+                          "stable_apr": "9.03%"
+                      }
+                  }
+              }
+          },
           "message": ""
       }
 
-   :resjson object result: A mapping of all accounts that currently have Aave balance to the balances and APY data for each account. Each key is an asset and its values are the current balance and the APY in %
+   :resjson object result: A mapping of all accounts that currently have Aave balance to the balances and APY data for each account for lending and borrowing. Each key is an asset and its values are the current balance and the APY in %
 
    :statuscode 200: Aave balances succesfully queried.
    :statuscode 409: User is not logged in. Or aave module is not activated.

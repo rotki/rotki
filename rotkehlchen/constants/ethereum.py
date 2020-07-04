@@ -6,6 +6,7 @@ from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress
 
 ZERO_ADDRESS = deserialize_ethereum_address('0x0000000000000000000000000000000000000000')
+AAVE_ETH_RESERVE_ADDRESS = deserialize_ethereum_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 
 
 class EthereumContract(NamedTuple):
