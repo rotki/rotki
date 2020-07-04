@@ -801,6 +801,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen PLA is Plair and PLA-2 is Playchip
     'PLA': 3711,
     'PLA-2': 3731,
+    # For Rotkehlcen SOL is Sola token and SOL-2 is Solana
+    'SOL': 3333,
+    'SOL-2': 5426,
     # For Rotkehlchen SOUL is Phantasma and SOUL-2 is CryptoSoul
     'SOUL': 2827,
     'SOUL-2': 3501,
