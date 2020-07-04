@@ -74,9 +74,9 @@
         <v-card
           light
           max-width="500"
-          class="mx-auto account-management__premium_dialog"
+          class="mx-auto account-management__premium-dialog"
         >
-          <v-card-title class="account-management__premium_dialog__title">
+          <v-card-title class="account-management__premium-dialog__title">
             Upgrade to Premium
           </v-card-title>
           <v-card-text>
@@ -99,7 +99,7 @@
             <v-spacer></v-spacer>
             <v-btn
               color="primary"
-              class="account-management__premium_dialog__buttons__cancel"
+              class="account-management__premium-dialog__buttons__cancel"
               depressed
               outlined
               @click="loginComplete()"
@@ -109,7 +109,7 @@
             <v-btn
               color="primary"
               depressed
-              class="account-management__premium_dialog__buttons__confirm"
+              class="account-management__premium-dialog__buttons__confirm"
               @click="upgrade()"
             >
               Upgrade

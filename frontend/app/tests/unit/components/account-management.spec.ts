@@ -33,11 +33,11 @@ describe('AccountManagement.vue', () => {
       wrapper.vm.showPremiumDialog();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.account-management__premium_dialog').exists()).toBe(
+      expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
         true
       );
       wrapper
-        .find('.account-management__premium_dialog__buttons__cancel')
+        .find('.account-management__premium-dialog__buttons__cancel')
         .trigger('click');
       await wrapper.vm.$nextTick();
 
@@ -65,11 +65,11 @@ describe('AccountManagement.vue', () => {
       wrapper.vm.showPremiumDialog();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.account-management__premium_dialog').exists()).toBe(
+      expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
         true
       );
       wrapper
-        .find('.account-management__premium_dialog__buttons__cancel')
+        .find('.account-management__premium-dialog__buttons__cancel')
         .trigger('click');
       await wrapper.vm.$nextTick();
 

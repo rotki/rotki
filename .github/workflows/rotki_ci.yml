@@ -42,6 +42,9 @@ jobs:
       - name: Lint
         working-directory: ./frontend/app
         run: npm run lint:check
+      - name: Stylelint
+        working-directory: ./frontend/app
+        run: npm run stylelint
       - name: Build
         working-directory: ./frontend/app
         run: npm run build
