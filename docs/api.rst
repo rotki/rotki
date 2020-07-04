@@ -2973,6 +2973,74 @@ Getting MakerDAO vault details
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+Getting Aave balances
+========================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/aave/balances
+
+   Doing a GET on the aave balances resource will return the balances that the user has locked in Aave along with their current APYs.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/aave/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+	          "DAI": {
+                      "balance": {
+		          "amount": "350.0",
+			  "usd_value": "351.21"
+		      },
+		      "APY": "3.51%"
+		  },
+		  "KNC": {
+                      "balance": {
+		          "amount": "220.21",
+			  "usd_value": "363.3465"
+		      },
+		      "APY": "0.53%"
+		  },
+	      },
+	      "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+	          "BAT": {
+                      "balance": {
+		          "amount": "560",
+			  "usd_value": "156.8"
+		      },
+		      "APY": "4.53%"
+		  }
+	      }
+	  },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of all accounts that currently have Aave balance to the balances and APY data for each account. Each key is an asset and its values are the current balance and the APY in %
+
+   :statuscode 200: Aave balances succesfully queried.
+   :statuscode 409: User is not logged in. Or aave module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
 Getting Aave historical data
 ============================
 
