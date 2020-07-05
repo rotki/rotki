@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.makerdao.common import RAY
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances
 from rotkehlchen.constants.ethereum import (
@@ -52,11 +52,9 @@ class AaveEvent(NamedTuple):
     """An event related to an Aave aToken
 
     Can be a deposit, withdrawal or interest payment
-
-    The type of token not included here since these are in a mapping with a list
-    per aToken so it would be redundant
     """
     event_type: Literal['deposit', 'withdrawal', 'interest']
+    asset: Asset
     value: Balance
     block_number: int
     timestamp: Timestamp
@@ -102,13 +100,10 @@ class AaveBalances(NamedTuple):
 
 
 class AaveHistory(NamedTuple):
-    """All events and total interest accrued for an Atoken and an address
-
-    The type of token not included here since these are in a mapping with a list
-    per aToken so it would be redundant
+    """All events and total interest accrued for all Atoken of an address
     """
     events: List[AaveEvent]
-    total_earned: Balance
+    total_earned: Dict[EthereumToken, Balance]
 
 
 def _get_reserve_address_decimals(symbol: str) -> Tuple[ChecksumEthAddress, int]:
@@ -193,23 +188,23 @@ class Aave(EthereumModule):
     def get_history(
             self,
             addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Dict[EthereumToken, AaveHistory]]:
+    ) -> Dict[ChecksumEthAddress, AaveHistory]:
         result = {}
         for address in addresses:
-            profit_map = self.get_lending_profit_for_address(user_address=address)
-            if profit_map == {}:
+            history_results = self.get_history_for_address(user_address=address)
+            if len(history_results) == 0:
                 continue
-            result[address] = profit_map
+            result[address] = history_results
 
         return result
 
-    def get_lending_profit_for_address(
+    def get_history_for_address(
             self,
             user_address: ChecksumEthAddress,
             given_from_block: Optional[int] = None,
             given_to_block: Optional[int] = None,
             atokens_list: Optional[List[EthereumToken]] = None,
-    ) -> Dict[EthereumToken, AaveHistory]:
+    ) -> AaveHistory:
         # Get all deposit events for the address
         from_block = AAVE_LENDING_POOL.deployed_block if given_from_block is None else given_from_block  # noqa: E501
         to_block: Union[int, Literal['latest']] = 'latest' if given_to_block is None else given_to_block  # noqa: E501
@@ -235,7 +230,8 @@ class Aave(EthereumModule):
 
         # now for each atoken get all mint events and pass then to profit calculation
         tokens = atokens_list if atokens_list is not None else ATOKENS_LIST
-        profit_map = {}
+        total_address_events = []
+        total_earned_map = {}
         for token in tokens:
             events = self.get_events_for_atoken_and_address(
                 user_address=user_address,
@@ -276,9 +272,11 @@ class Aave(EthereumModule):
                 amount=unpaid_interest,
                 usd_value=unpaid_interest * usd_price,
             )
-            profit_map[token] = AaveHistory(events=events, total_earned=total_balance)
+            total_earned_map[token] = total_balance
+            total_address_events.extend(events)
 
-        return profit_map
+        total_address_events.sort(key=lambda event: event.timestamp)
+        return AaveHistory(events=total_address_events, total_earned=total_earned_map)
 
     def get_events_for_atoken_and_address(
             self,
@@ -315,7 +313,8 @@ class Aave(EthereumModule):
                 event['transactionHash'],
             ))
 
-        reserve_address, decimals = _get_reserve_address_decimals(atoken.identifier[1:])
+        reserve_asset = Asset(atoken.identifier[1:])
+        reserve_address, decimals = _get_reserve_address_decimals(reserve_asset.identifier)
         aave_events = []
         for event in deposit_events:
             if hex_or_bytes_to_address(event['topics'][1]) == reserve_address:
@@ -329,7 +328,7 @@ class Aave(EthereumModule):
                     mint_data.remove((block_number, deposit, timestamp, tx_hash))
 
                 usd_price = query_usd_price_zero_if_error(
-                    asset=atoken,
+                    asset=reserve_asset,
                     time=timestamp,
                     location='aave deposit',
                     msg_aggregator=self.msg_aggregator,
@@ -337,6 +336,7 @@ class Aave(EthereumModule):
                 deposit_amount = deposit / (FVal(10) ** FVal(decimals))
                 aave_events.append(AaveEvent(
                     event_type='deposit',
+                    asset=reserve_asset,
                     value=Balance(
                         amount=deposit_amount,
                         usd_value=deposit_amount * usd_price,
@@ -356,6 +356,7 @@ class Aave(EthereumModule):
             interest_amount = data[1] / (FVal(10) ** FVal(decimals))
             aave_events.append(AaveEvent(
                 event_type='interest',
+                asset=atoken,
                 value=Balance(
                     amount=interest_amount,
                     usd_value=interest_amount * usd_price,
@@ -373,7 +374,7 @@ class Aave(EthereumModule):
                 timestamp = self.ethereum.get_event_timestamp(event)
                 tx_hash = event['transactionHash']
                 usd_price = query_usd_price_zero_if_error(
-                    asset=atoken,
+                    asset=reserve_asset,
                     time=timestamp,
                     location='aave withdrawal',
                     msg_aggregator=self.msg_aggregator,
@@ -381,6 +382,7 @@ class Aave(EthereumModule):
                 withdrawal_amount = withdrawal / (FVal(10) ** FVal(decimals))
                 aave_events.append(AaveEvent(
                     event_type='withdrawal',
+                    asset=reserve_asset,
                     value=Balance(
                         amount=withdrawal_amount,
                         usd_value=withdrawal_amount * usd_price,
@@ -390,7 +392,6 @@ class Aave(EthereumModule):
                     tx_hash=tx_hash,
                 ))
 
-        aave_events.sort(key=lambda event: event.timestamp)
         return aave_events
 
     # -- Methods following the EthereumModule interface -- #
