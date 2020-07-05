@@ -16,6 +16,8 @@ from werkzeug.exceptions import NotFound
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.api.v1.resources import (
+    AaveBalancesResource,
+    AaveHistoryResource,
     AllAssetsResource,
     AllBalancesResource,
     AsyncTasksResource,
@@ -110,6 +112,8 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/makerdao/dsrhistory', MakerDAODSRHistoryResource),
     ('/blockchains/ETH/modules/makerdao/vaults', MakerDAOVaultsResource),
     ('/blockchains/ETH/modules/makerdao/vaultdetails', MakerDAOVaultDetailsResource),
+    ('/blockchains/ETH/modules/aave/balances', AaveBalancesResource),
+    ('/blockchains/ETH/modules/aave/history', AaveHistoryResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/assets', OwnedAssetsResource),
     ('/assets/all', AllAssetsResource),

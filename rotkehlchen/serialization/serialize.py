@@ -5,6 +5,13 @@ from hexbytes import HexBytes
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
+from rotkehlchen.chain.ethereum.aave import (
+    AaveBalances,
+    AaveBorrowingBalance,
+    AaveInterestPayment,
+    AaveLendingBalance,
+    AaveLendingProfit,
+)
 from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
     MakerDAOVault,
@@ -56,7 +63,14 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, (Trade, MakerDAOVault, DSRAccountReport, Balance)):
+    elif isinstance(entry, (
+            Trade,
+            MakerDAOVault,
+            DSRAccountReport,
+            Balance,
+            AaveLendingBalance,
+            AaveBorrowingBalance,
+    )):
         return process_result(entry.serialize())
     elif isinstance(entry, (
             DBSettings,
@@ -67,6 +81,9 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             ManuallyTrackedBalanceWithValue,
             VaultEvent,
             MakerDAOVaultDetails,
+            AaveBalances,
+            AaveInterestPayment,
+            AaveLendingProfit,
     )):
         return process_result(entry._asdict())
     elif isinstance(entry, tuple):

@@ -54,7 +54,7 @@ class AaveInterestPayment(NamedTuple):
     The type of token not included here since these are in a mapping with a list
     per aToken so it would be redundant
     """
-    balance: Balance
+    value: Balance
     block_number: int
     timestamp: Timestamp
 
@@ -67,6 +67,12 @@ class AaveLendingBalance(NamedTuple):
     balance: Balance
     apy: FVal
 
+    def serialize(self):
+        return {
+            'balance': self.balance.serialize(),
+            'apy': self.apy.to_percentage(precision=2),
+        }
+
 
 class AaveBorrowingBalance(NamedTuple):
     """A balance for Aave borrowing.
@@ -76,6 +82,13 @@ class AaveBorrowingBalance(NamedTuple):
     balance: Balance
     variable_apr: FVal
     stable_apr: FVal
+
+    def serialize(self):
+        return {
+            'balance': self.balance.serialize(),
+            'variable_apr': self.variable_apr.to_percentage(precision=2),
+            'stable_apr': self.stable_apr.to_percentage(precision=2)
+        }
 
 
 class AaveBalances(NamedTuple):
@@ -172,6 +185,19 @@ class Aave(EthereumModule):
             aave_balances[account] = AaveBalances(lending=lending_map, borrowing=borrowing_map)
 
         return aave_balances
+
+    def get_history(
+            self,
+            addresses: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, Dict[EthereumToken, AaveLendingProfit]]:
+        result = {}
+        for address in addresses:
+            profit_map = self.get_lending_profit_for_address(user_address=address)
+            if profit_map == {}:
+                continue
+            result[address] = profit_map
+
+        return result
 
     def get_lending_profit_for_address(
             self,
@@ -289,7 +315,7 @@ class Aave(EthereumModule):
             )
             interest_amount = data[1] / (FVal(10) ** FVal(decimals))
             profit_events.append(AaveInterestPayment(
-                balance=Balance(
+                value=Balance(
                     amount=interest_amount,
                     usd_value=interest_amount * usd_price,
                 ),

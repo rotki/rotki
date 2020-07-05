@@ -694,7 +694,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 # Also modify defi balances
                 zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
                 if append_or_remove == 'append':
-                    self.defi_balances[address] = zerion.all_balances_for_account(address)
+                    balances = zerion.all_balances_for_account(address)
+                    if len(balances) != 0:
+                        self.defi_balances[address] = balances
                 else:  # remove
                     self.defi_balances.pop(address, None)
                 # For each module run the corresponding callback for the address
@@ -958,7 +960,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
         zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
         self.defi_balances = {}
         for account in self.accounts.eth:
-            self.defi_balances[account] = zerion.all_balances_for_account(account)
+            balances = zerion.all_balances_for_account(account)
+            if len(balances) != 0:
+                self.defi_balances[account] = balances
 
         self.defi_balances_last_query_ts = ts_now()
         return self.defi_balances

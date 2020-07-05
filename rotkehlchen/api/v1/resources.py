@@ -814,6 +814,24 @@ class MakerDAOVaultDetailsResource(BaseResource):
         return self.rest_api.get_makerdao_vault_details(async_query)
 
 
+class AaveBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_aave_balances(async_query)
+
+
+class AaveHistoryResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_aave_history(async_query)
+
+
 class WatchersResource(BaseResource):
 
     put_schema = WatchersAddSchema
