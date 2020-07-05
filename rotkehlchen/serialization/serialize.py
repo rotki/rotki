@@ -8,9 +8,9 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.ethereum.aave import (
     AaveBalances,
     AaveBorrowingBalance,
-    AaveInterestPayment,
+    AaveEvent,
+    AaveHistory,
     AaveLendingBalance,
-    AaveLendingProfit,
 )
 from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
@@ -82,8 +82,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             VaultEvent,
             MakerDAOVaultDetails,
             AaveBalances,
-            AaveInterestPayment,
-            AaveLendingProfit,
+            AaveEvent,
+            AaveHistory,
     )):
         return process_result(entry._asdict())
     elif isinstance(entry, tuple):

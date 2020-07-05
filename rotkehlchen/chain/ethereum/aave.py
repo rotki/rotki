@@ -48,15 +48,19 @@ ATOKEN_TO_DEPLOYED_BLOCK = {
 ATOKENS_LIST = [EthereumToken(x) for x in ATOKEN_TO_DEPLOYED_BLOCK]
 
 
-class AaveInterestPayment(NamedTuple):
-    """An interest payment from an aToken.
+class AaveEvent(NamedTuple):
+    """An event related to an Aave aToken
+
+    Can be a deposit, withdrawal or interest payment
 
     The type of token not included here since these are in a mapping with a list
     per aToken so it would be redundant
     """
+    event_type: Literal['deposit', 'withdrawal', 'interest']
     value: Balance
     block_number: int
     timestamp: Timestamp
+    tx_hash: str
 
 
 class AaveLendingBalance(NamedTuple):
@@ -67,7 +71,7 @@ class AaveLendingBalance(NamedTuple):
     balance: Balance
     apy: FVal
 
-    def serialize(self):
+    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
         return {
             'balance': self.balance.serialize(),
             'apy': self.apy.to_percentage(precision=2),
@@ -83,11 +87,11 @@ class AaveBorrowingBalance(NamedTuple):
     variable_apr: FVal
     stable_apr: FVal
 
-    def serialize(self):
+    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
         return {
             'balance': self.balance.serialize(),
             'variable_apr': self.variable_apr.to_percentage(precision=2),
-            'stable_apr': self.stable_apr.to_percentage(precision=2)
+            'stable_apr': self.stable_apr.to_percentage(precision=2),
         }
 
 
@@ -97,13 +101,13 @@ class AaveBalances(NamedTuple):
     borrowing: Dict[str, AaveBorrowingBalance]
 
 
-class AaveLendingProfit(NamedTuple):
+class AaveHistory(NamedTuple):
     """All events and total interest accrued for an Atoken and an address
 
     The type of token not included here since these are in a mapping with a list
     per aToken so it would be redundant
     """
-    events: List[AaveInterestPayment]
+    events: List[AaveEvent]
     total_earned: Balance
 
 
@@ -189,7 +193,7 @@ class Aave(EthereumModule):
     def get_history(
             self,
             addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Dict[EthereumToken, AaveLendingProfit]]:
+    ) -> Dict[ChecksumEthAddress, Dict[EthereumToken, AaveHistory]]:
         result = {}
         for address in addresses:
             profit_map = self.get_lending_profit_for_address(user_address=address)
@@ -205,7 +209,7 @@ class Aave(EthereumModule):
             given_from_block: Optional[int] = None,
             given_to_block: Optional[int] = None,
             atokens_list: Optional[List[EthereumToken]] = None,
-    ) -> Dict[EthereumToken, AaveLendingProfit]:
+    ) -> Dict[EthereumToken, AaveHistory]:
         # Get all deposit events for the address
         from_block = AAVE_LENDING_POOL.deployed_block if given_from_block is None else given_from_block  # noqa: E501
         to_block: Union[int, Literal['latest']] = 'latest' if given_to_block is None else given_to_block  # noqa: E501
@@ -220,21 +224,31 @@ class Aave(EthereumModule):
             from_block=from_block,
             to_block=to_block,
         )
+        withdraw_events = self.ethereum.get_logs(
+            contract_address=AAVE_LENDING_POOL.address,
+            abi=AAVE_LENDING_POOL.abi,
+            event_name='RedeemUnderlying',
+            argument_filters=argument_filters,
+            from_block=from_block,
+            to_block=to_block,
+        )
 
         # now for each atoken get all mint events and pass then to profit calculation
         tokens = atokens_list if atokens_list is not None else ATOKENS_LIST
         profit_map = {}
         for token in tokens:
-            events = self.get_profit_events_for_atoken_and_address(
+            events = self.get_events_for_atoken_and_address(
                 user_address=user_address,
                 atoken=token,
                 deposit_events=deposit_events,
+                withdraw_events=withdraw_events,
                 given_from_block=given_from_block,
                 given_to_block=given_to_block,
             )
             total_balance = Balance()
             for x in events:
-                total_balance += x.balance
+                if x.event_type == 'interest':
+                    total_balance += x.value
             # If the user still has balance in Aave we also need to see how much
             # accrued interest has not been yet paid out
             # TODO: ARCHIVE if to_block is not latest here we should get the balance
@@ -251,24 +265,30 @@ class Aave(EthereumModule):
                 method_name='principalBalanceOf',
                 arguments=[user_address],
             )
+
+            if len(events) == 0 and balance == 0 and principal_balance == 0:
+                # Nothing for this aToken for this address
+                continue
+
             unpaid_interest = (balance - principal_balance) / (FVal(10) ** FVal(token.decimals))
             usd_price = Inquirer().find_usd_price(token)
             total_balance += Balance(
                 amount=unpaid_interest,
                 usd_value=unpaid_interest * usd_price,
             )
-            profit_map[token] = AaveLendingProfit(events=events, total_earned=total_balance)
+            profit_map[token] = AaveHistory(events=events, total_earned=total_balance)
 
         return profit_map
 
-    def get_profit_events_for_atoken_and_address(
+    def get_events_for_atoken_and_address(
             self,
             user_address: ChecksumEthAddress,
             atoken: EthereumToken,
             deposit_events: List[Dict[str, Any]],
+            withdraw_events: List[Dict[str, Any]],
             given_from_block: Optional[int] = None,
             given_to_block: Optional[int] = None,
-    ) -> List[AaveInterestPayment]:
+    ) -> List[AaveEvent]:
         from_block = ATOKEN_TO_DEPLOYED_BLOCK[atoken.identifier] if given_from_block is None else given_from_block  # noqa: E501
         to_block: Union[int, Literal['latest']] = 'latest' if given_to_block is None else given_to_block  # noqa: E501
         argument_filters = {
@@ -292,20 +312,40 @@ class Aave(EthereumModule):
                 deserialize_blocknumber(event['blockNumber']),
                 amount,
                 self.ethereum.get_event_timestamp(event),
+                event['transactionHash'],
             ))
 
         reserve_address, decimals = _get_reserve_address_decimals(atoken.identifier[1:])
+        aave_events = []
         for event in deposit_events:
             if hex_or_bytes_to_address(event['topics'][1]) == reserve_address:
                 # first 32 bytes of the data are the amount
                 deposit = hex_or_bytes_to_int(event['data'][:66])
                 block_number = deserialize_blocknumber(event['blockNumber'])
                 timestamp = self.ethereum.get_event_timestamp(event)
+                tx_hash = event['transactionHash']
                 # If there is a corresponding deposit event remove the minting event data
-                if (block_number, deposit, timestamp) in mint_data:
-                    mint_data.remove((block_number, deposit, timestamp))
+                if (block_number, deposit, timestamp, tx_hash) in mint_data:
+                    mint_data.remove((block_number, deposit, timestamp, tx_hash))
 
-        profit_events = []
+                usd_price = query_usd_price_zero_if_error(
+                    asset=atoken,
+                    time=timestamp,
+                    location='aave deposit',
+                    msg_aggregator=self.msg_aggregator,
+                )
+                deposit_amount = deposit / (FVal(10) ** FVal(decimals))
+                aave_events.append(AaveEvent(
+                    event_type='deposit',
+                    value=Balance(
+                        amount=deposit_amount,
+                        usd_value=deposit_amount * usd_price,
+                    ),
+                    block_number=block_number,
+                    timestamp=timestamp,
+                    tx_hash=tx_hash,
+                ))
+
         for data in mint_data:
             usd_price = query_usd_price_zero_if_error(
                 asset=atoken,
@@ -314,17 +354,44 @@ class Aave(EthereumModule):
                 msg_aggregator=self.msg_aggregator,
             )
             interest_amount = data[1] / (FVal(10) ** FVal(decimals))
-            profit_events.append(AaveInterestPayment(
+            aave_events.append(AaveEvent(
+                event_type='interest',
                 value=Balance(
                     amount=interest_amount,
                     usd_value=interest_amount * usd_price,
                 ),
                 block_number=data[0],
                 timestamp=data[2],
+                tx_hash=data[3],
             ))
 
-        profit_events.sort(key=lambda event: event.timestamp)
-        return profit_events
+        for event in withdraw_events:
+            if hex_or_bytes_to_address(event['topics'][0]) == reserve_address:
+                # first 32 bytes of the data are the amount
+                withdrawal = hex_or_bytes_to_int(event['data'][:66])
+                block_number = deserialize_blocknumber(event['blockNumber'])
+                timestamp = self.ethereum.get_event_timestamp(event)
+                tx_hash = event['transactionHash']
+                usd_price = query_usd_price_zero_if_error(
+                    asset=atoken,
+                    time=timestamp,
+                    location='aave withdrawal',
+                    msg_aggregator=self.msg_aggregator,
+                )
+                withdrawal_amount = withdrawal / (FVal(10) ** FVal(decimals))
+                aave_events.append(AaveEvent(
+                    event_type='withdrawal',
+                    value=Balance(
+                        amount=withdrawal_amount,
+                        usd_value=withdrawal_amount * usd_price,
+                    ),
+                    block_number=block_number,
+                    timestamp=timestamp,
+                    tx_hash=tx_hash,
+                ))
+
+        aave_events.sort(key=lambda event: event.timestamp)
+        return aave_events
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
