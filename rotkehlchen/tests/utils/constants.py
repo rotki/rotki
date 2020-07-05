@@ -12,6 +12,7 @@ A_MKR = EthereumToken('MKR')
 A_BAT = EthereumToken('BAT')
 A_WBTC = EthereumToken('WBTC')
 A_USDC = EthereumToken('USDC')
+A_ADAI = Asset('aDAI')
 
 A_DOGE = Asset('DOGE')
 A_LTC = Asset('LTC')
