@@ -826,7 +826,6 @@ class RestAPI():
             password: str,
             sync_approval: Literal['yes', 'no', 'unknown'],
     ) -> Response:
-
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
         if self.rotkehlchen.user_is_logged_in:
             result_dict['message'] = (
@@ -1376,38 +1375,49 @@ class RestAPI():
         self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _makerdao_query(self, module: str, method: str) -> Dict[str, Any]:
+    def _eth_module_query(self, module: str, method: str, **kwargs: Any) -> Dict[str, Any]:
         result = None
         msg = ''
         status_code = HTTPStatus.OK
 
-        makerdao = getattr(self.rotkehlchen.chain_manager, module)
-        if not makerdao:
+        module = getattr(self.rotkehlchen.chain_manager, module)
+        if not module:
             return {
                 'result': None,
                 'status_code': HTTPStatus.CONFLICT,
-                'message': f'MakerDAO {module} module is not activated',
+                'message': f'{module} module is not activated',
             }
 
         try:
-            result = getattr(makerdao, method)()
+            result = getattr(module, method)(**kwargs)
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    def _api_query_for_makerdao(self, async_query: bool, module: str, method: str) -> Response:
+    def _api_query_for_eth_module(
+            self,
+            async_query: bool,
+            module: str,
+            method: str,
+            **kwargs: Any,
+    ) -> Response:
         if async_query:
-            return self._query_async(command='_makerdao_query', module=module, method=method)
+            return self._query_async(
+                command='_eth_module_query',
+                module=module,
+                method=method,
+                **kwargs,
+            )
 
-        response = self._makerdao_query(module=module, method=method)
+        response = self._eth_module_query(module=module, method=method, **kwargs)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
     def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
-        return self._api_query_for_makerdao(
+        return self._api_query_for_eth_module(
             async_query=async_query,
             module='makerdao_dsr',
             method='get_current_dsr',
@@ -1415,7 +1425,7 @@ class RestAPI():
 
     @require_premium_user(active_check=False)
     def get_makerdao_dsr_history(self, async_query: bool) -> Response:
-        return self._api_query_for_makerdao(
+        return self._api_query_for_eth_module(
             async_query=async_query,
             module='makerdao_dsr',
             method='get_historical_dsr',
@@ -1423,7 +1433,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_makerdao_vaults(self, async_query: bool) -> Response:
-        return self._api_query_for_makerdao(
+        return self._api_query_for_eth_module(
             async_query=async_query,
             module='makerdao_vaults',
             method='get_vaults',
@@ -1431,10 +1441,32 @@ class RestAPI():
 
     @require_premium_user(active_check=False)
     def get_makerdao_vault_details(self, async_query: bool) -> Response:
-        return self._api_query_for_makerdao(
+        return self._api_query_for_eth_module(
             async_query=async_query,
             module='makerdao_vaults',
             method='get_vault_details')
+
+    @require_loggedin_user()
+    def get_aave_balances(self, async_query: bool) -> Response:
+        # Make sure ethereum balances are queried (this is protected by lock and by time cache)
+        # so most of the times it should have already ran
+        self.rotkehlchen.chain_manager.query_balances(blockchain=SupportedBlockchain.ETHEREUM)
+        # Once that has ran we can be sure that defi_balances mapping is populated
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module='aave',
+            method='get_balances',
+            defi_balances=self.rotkehlchen.chain_manager.defi_balances,
+        )
+
+    @require_premium_user(active_check=False)
+    def get_aave_history(self, async_query: bool) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module='aave',
+            method='get_history',
+            addresses=self.rotkehlchen.chain_manager.accounts.eth,
+        )
 
     def _watcher_query(
             self,
