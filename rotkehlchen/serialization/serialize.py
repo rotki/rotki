@@ -19,6 +19,7 @@ from rotkehlchen.chain.ethereum.makerdao.vaults import (
     VaultEvent,
     VaultEventType,
 )
+from rotkehlchen.chain.ethereum.zerion import DefiBalance, DefiProtocol, DefiProtocolBalances
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -63,6 +64,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
+    elif isinstance(entry, DefiProtocol):
+        return entry.serialize()
     elif isinstance(entry, (
             Trade,
             MakerDAOVault,
@@ -84,6 +87,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveBalances,
             AaveEvent,
             AaveHistory,
+            DefiBalance,
+            DefiProtocolBalances,
     )):
         return process_result(entry._asdict())
     elif isinstance(entry, tuple):

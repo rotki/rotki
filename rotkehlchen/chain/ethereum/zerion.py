@@ -28,6 +28,9 @@ class DefiProtocol(NamedTuple):
     icon_link: str
     version: int
 
+    def serialize(self) -> str:
+        return self.name
+
 
 class DefiBalance(NamedTuple):
     token_address: ChecksumEthAddress
