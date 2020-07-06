@@ -68,4 +68,26 @@ export class DefiApi {
       )
       .then(handleResponse);
   }
+
+  async fetchAaveBalances(): Promise<AsyncQuery> {
+    return this.axios
+      .get<ActionResult<AsyncQuery>>('/blockchains/ETH/modules/aave/balances', {
+        validateStatus: fetchWithExternalService,
+        params: {
+          async_query: true
+        }
+      })
+      .then(handleResponse);
+  }
+
+  async fetchAaveHistory(): Promise<AsyncQuery> {
+    return this.axios
+      .get<ActionResult<AsyncQuery>>('/blockchains/ETH/modules/aave/history', {
+        validateStatus: fetchWithExternalService,
+        params: {
+          async_query: true
+        }
+      })
+      .then(handleResponse);
+  }
 }

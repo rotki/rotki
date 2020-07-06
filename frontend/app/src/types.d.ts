@@ -12,3 +12,5 @@ declare global {
     interop?: Interop;
   }
 }
+
+type Writeable<T> = { -readonly [P in keyof T]: T[P] };

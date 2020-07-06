@@ -1,5 +1,10 @@
 import { default as BigNumber } from 'bignumber.js';
+import { ApiBalance, Balance } from '@/model/blockchain-balances';
 import {
+  ApiAaveAsset,
+  ApiAaveBalances,
+  ApiAaveHistory,
+  ApiAaveHistoryEvents,
   ApiDSRBalances,
   ApiDSRHistory,
   ApiMakerDAOVault,
@@ -7,6 +12,13 @@ import {
   ApiMakerDAOVaultEvent
 } from '@/services/defi/types';
 import {
+  AaveAsset,
+  AaveBalances,
+  AaveBorrowing,
+  AaveHistory,
+  AaveHistoryEvents,
+  AaveHistoryTotalEarned,
+  AaveLending,
   DSRBalances,
   DSRHistory,
   DSRMovement,
@@ -14,6 +26,7 @@ import {
   MakerDAOVaultDetails,
   MakerDAOVaultEvent
 } from '@/store/defi/types';
+import { Writeable } from '@/types';
 import { bigNumberify } from '@/utils/bignumbers';
 
 export function convertDSRBalances({
@@ -24,10 +37,7 @@ export function convertDSRBalances({
     [account: string]: { amount: BigNumber; usdValue: BigNumber };
   } = {};
   for (const account of Object.keys(balances)) {
-    data[account] = {
-      amount: bigNumberify(balances[account].amount),
-      usdValue: bigNumberify(balances[account].usd_value)
-    };
+    data[account] = convertBalance(balances[account]);
   }
   return {
     currentDSR: bigNumberify(current_dsr),
@@ -119,4 +129,79 @@ export function convertVaultDetails(
     totalLiquidatedUsd: bigNumberify(details.total_liquidated_usd),
     events: convertVaultEvents(details.events)
   }));
+}
+
+function convertBalance({ amount, usd_value }: ApiBalance): Balance {
+  return {
+    amount: bigNumberify(amount),
+    usdValue: bigNumberify(usd_value)
+  };
+}
+
+function convertAaveAsset({
+  apy,
+  stable_apy,
+  variable_apy,
+  balance
+}: ApiAaveAsset): AaveAsset {
+  return {
+    apy: apy,
+    stableApy: stable_apy,
+    variableApy: variable_apy,
+    balance: convertBalance(balance)
+  };
+}
+
+export function convertAaveBalances(
+  apiBalances: ApiAaveBalances
+): AaveBalances {
+  const aaveBalances: Writeable<AaveBalances> = {};
+  for (const address of Object.keys(apiBalances)) {
+    const convertedBorrowing: Writeable<AaveBorrowing> = {};
+    const convertedLending: Writeable<AaveLending> = {};
+    const { borrowing, lending } = apiBalances[address];
+    for (const asset of Object.keys(borrowing)) {
+      convertedBorrowing[asset] = convertAaveAsset(borrowing[asset]);
+    }
+    for (const asset of Object.keys(lending)) {
+      convertedLending[asset] = convertAaveAsset(lending[asset]);
+    }
+    aaveBalances[address] = {
+      lending: convertedLending,
+      borrowing: convertedBorrowing
+    };
+  }
+  return aaveBalances;
+}
+
+function convertAaveEvents(
+  events: ApiAaveHistoryEvents[]
+): AaveHistoryEvents[] {
+  return events.map(event => ({
+    eventType: event.event_type,
+    asset: event.asset,
+    value: convertBalance(event.value),
+    blockNumber: event.block_number,
+    timestamp: event.timestamp,
+    txHash: event.tx_hash
+  }));
+}
+
+export function convertAaveHistory(apiHistory: ApiAaveHistory): AaveHistory {
+  const aaveHistory: Writeable<AaveHistory> = {};
+  for (const address of Object.keys(apiHistory)) {
+    const totalEarned: Writeable<AaveHistoryTotalEarned> = {};
+    const { events, total_earned } = apiHistory[address];
+
+    for (const asset of Object.keys(total_earned)) {
+      totalEarned[asset] = convertBalance(total_earned[asset]);
+    }
+
+    aaveHistory[address] = {
+      events: convertAaveEvents(events),
+      totalEarned
+    };
+  }
+
+  return aaveHistory;
 }
