@@ -75,10 +75,10 @@ import StatCard from '@/components/display/StatCard.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import {
+  MakerDAOVault,
   MakerDAOVaultModel,
   MakerDAOVaultSummary
-} from '@/store/balances/types';
-import { MakerDAOVault } from '@/store/defi/types';
+} from '@/store/defi/types';
 
 @Component({
   computed: {

@@ -124,6 +124,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('notifications/reset', {}, { root: true });
       commit('reports/reset', {}, { root: true });
       commit('balances/reset', {}, { root: true });
+      commit('defi/reset', {}, { root: true });
       commit('tasks/reset', {}, { root: true });
     } catch (e) {
       commit(
