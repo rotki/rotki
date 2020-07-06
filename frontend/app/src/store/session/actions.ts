@@ -53,7 +53,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         settings
       });
 
-      await dispatch('balances/fetchWatchers', null, {
+      await dispatch('defi/fetchWatchers', null, {
         root: true
       });
 

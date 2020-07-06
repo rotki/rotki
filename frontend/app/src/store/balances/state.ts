@@ -5,22 +5,12 @@ import {
   ManualBalanceByLocation,
   FiatBalance
 } from '@/model/blockchain-balances';
-import { Watcher } from '@/services/types-api';
-import { WatcherTypes } from '@/services/types-common';
-import {
-  DSRBalances,
-  DSRHistory,
-  MakerDAOVault,
-  MakerDAOVaultDetails,
-  ManualBalance,
-  SupportedAsset
-} from '@/services/types-model';
+import { ManualBalance, SupportedAsset } from '@/services/types-model';
 import {
   AccountDataMap,
   ExchangeData,
   UsdToFiatExchangeRates
 } from '@/typing/types';
-import { Zero } from '@/utils/bignumbers';
 
 export interface BalanceState {
   eth: EthBalances;
@@ -32,14 +22,9 @@ export interface BalanceState {
   fiatBalances: FiatBalance[];
   ethAccounts: AccountDataMap;
   btcAccounts: AccountDataMap;
-  dsrHistory: DSRHistory;
-  dsrBalances: DSRBalances;
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalance[];
   manualBalanceByLocation: ManualBalanceByLocation;
-  makerDAOVaults: MakerDAOVault[];
-  makerDAOVaultDetails: MakerDAOVaultDetails[];
-  watchers: Watcher<WatcherTypes>[];
 }
 
 export const defaultState = (): BalanceState => ({
@@ -52,17 +37,9 @@ export const defaultState = (): BalanceState => ({
   fiatBalances: [],
   ethAccounts: {},
   btcAccounts: {},
-  dsrHistory: {},
-  dsrBalances: {
-    currentDSR: Zero,
-    balances: {}
-  },
   supportedAssets: [],
   manualBalances: [],
-  manualBalanceByLocation: {},
-  makerDAOVaults: [],
-  makerDAOVaultDetails: [],
-  watchers: []
+  manualBalanceByLocation: {}
 });
 
 export const state: BalanceState = defaultState();

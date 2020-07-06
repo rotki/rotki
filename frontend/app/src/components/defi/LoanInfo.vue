@@ -265,7 +265,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -273,14 +273,10 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
-import { Watcher } from '@/services/types-api';
-import { WatcherType } from '@/services/types-common';
-import { MakerDAOVault } from '@/services/types-model';
+import { Watcher, WatcherType } from '@/services/defi/types';
 import { MakerDAOVaultModel } from '@/store/balances/types';
+import { MakerDAOVault } from '@/store/defi/types';
 import { VaultEventsList } from '@/utils/premium';
-
-const { mapState, mapGetters } = createNamespacedHelpers('session');
-const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
@@ -294,9 +290,9 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
     WatcherDialog
   },
   computed: {
-    ...mapState(['premium']),
-    ...mapGetters(['dateDisplayFormat']),
-    ...mapBalanceGetters(['loanWatchers'])
+    ...mapState('session', ['premium']),
+    ...mapGetters('session', ['dateDisplayFormat']),
+    ...mapGetters('defi', ['loanWatchers'])
   }
 })
 export default class LoanInfo extends Vue {

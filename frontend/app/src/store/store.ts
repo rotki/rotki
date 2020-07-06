@@ -4,6 +4,7 @@ import { VersionCheck } from '@/model/version-check';
 import { api } from '@/services/rotkehlchen-api';
 import { balances } from '@/store/balances';
 import { BalanceState } from '@/store/balances/state';
+import { defi } from '@/store/defi';
 import { notifications } from '@/store/notifications';
 import { NotificationState } from '@/store/notifications/state';
 import { reports } from '@/store/reports';
@@ -95,6 +96,7 @@ const store: StoreOptions<RotkehlchenState> = {
   modules: {
     notifications,
     balances,
+    defi,
     tasks,
     session,
     reports

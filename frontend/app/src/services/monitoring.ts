@@ -12,7 +12,7 @@ class Monitoring {
   }
 
   private fetchWatchers() {
-    store.dispatch('balances/fetchWatchers');
+    store.dispatch('defi/fetchWatchers');
   }
 
   /**

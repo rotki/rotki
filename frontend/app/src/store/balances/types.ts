@@ -1,5 +1,5 @@
 import { default as BigNumber } from 'bignumber.js';
-import { MakerDAOVault, MakerDAOVaultDetails } from '@/services/types-model';
+import { MakerDAOVault, MakerDAOVaultDetails } from '@/store/defi/types';
 
 export type MakerDAOVaultModel =
   | MakerDAOVault

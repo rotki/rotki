@@ -5,7 +5,7 @@ import {
   Balance
 } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
-import { DSRMovementType } from '@/services/types-common';
+import { DSRMovementType } from '@/services/defi/types';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;

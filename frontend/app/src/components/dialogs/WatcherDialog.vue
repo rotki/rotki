@@ -166,12 +166,20 @@
 <script lang="ts">
 import cloneDeep from 'lodash/cloneDeep';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import { Watcher } from '@/services/types-api';
-import { OpTypes, WatcherType, WatcherTypes } from '@/services/types-common';
+import {
+  OpTypes,
+  Watcher,
+  WatcherType,
+  WatcherTypes
+} from '@/services/defi/types';
 
 @Component({
-  components: { MessageDialog }
+  components: { MessageDialog },
+  methods: {
+    ...mapActions('defi', ['addWatchers', 'deleteWatchers', 'editWatchers'])
+  }
 })
 export default class WatcherDialog extends Vue {
   @Prop({ required: true })
@@ -195,6 +203,14 @@ export default class WatcherDialog extends Vue {
   watcherValue: string | null = null;
   validationMessage: string = '';
   validationStatus: 'success' | 'error' | '' = '';
+
+  addWatchers!: (
+    watchers: Omit<Watcher<WatcherTypes>, 'identifier'>[]
+  ) => Promise<Watcher<WatcherType>[]>;
+  editWatchers!: (
+    watchers: Watcher<WatcherType>[]
+  ) => Promise<Watcher<WatcherType>[]>;
+  deleteWatchers!: (identifiers: string[]) => Promise<Watcher<WatcherType>[]>;
 
   loadedWatchers: Watcher<WatcherType>[] = [];
   existingWatchersEdit: {
@@ -242,10 +258,7 @@ export default class WatcherDialog extends Vue {
 
   async deleteWatcher(identifier: string) {
     try {
-      const updatedWatchers = await this.$store.dispatch(
-        'balances/deleteWatcher',
-        [identifier]
-      );
+      const updatedWatchers = await this.deleteWatchers([identifier]);
       this.validateSettingChange('success', 'Successfully deleted watcher.');
       this.clear();
       this.updateLoadedWatchers(updatedWatchers);
@@ -287,10 +300,7 @@ export default class WatcherDialog extends Vue {
         existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio
       ) {
         try {
-          const updatedWatchers = await this.$store.dispatch(
-            'balances/editWatcher',
-            [watcher]
-          );
+          const updatedWatchers = await this.editWatchers([watcher]);
           this.validateSettingChange('success', 'Successfully edited watcher.');
           this.changeEditMode(watcher.identifier);
           this.updateLoadedWatchers(updatedWatchers);
@@ -328,10 +338,7 @@ export default class WatcherDialog extends Vue {
     };
 
     try {
-      const updatedWatchers = await this.$store.dispatch(
-        'balances/addWatcher',
-        [watcherData]
-      );
+      const updatedWatchers = await this.addWatchers([watcherData]);
       this.validateSettingChange('success', 'Successfully added watcher.');
       this.clear();
       this.updateLoadedWatchers(updatedWatchers);

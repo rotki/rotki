@@ -92,7 +92,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
 import { Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
@@ -101,7 +101,7 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { TaskType } from '@/model/task-type';
-import { DSRHistory, DSRHistoryItem } from '@/services/types-model';
+import { DSRHistory, DSRHistoryItem } from '@/store/defi/types';
 import {
   Account,
   AccountDSRMovement,
@@ -111,14 +111,6 @@ import {
 } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';
-
-const { mapState, mapGetters: mapSessionGetters } = createNamespacedHelpers(
-  'session'
-);
-const { mapGetters, mapState: mapBalanceState } = createNamespacedHelpers(
-  'balances'
-);
-const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 
 @Component({
   components: {
@@ -132,10 +124,10 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
     DsrMovementHistory
   },
   computed: {
-    ...mapTaskGetters(['isTaskRunning']),
-    ...mapState(['premium']),
-    ...mapSessionGetters(['floatingPrecision']),
-    ...mapGetters([
+    ...mapGetters('tasks', ['isTaskRunning']),
+    ...mapState('session', ['premium']),
+    ...mapGetters('session', ['floatingPrecision']),
+    ...mapGetters('defi', [
       'currentDSR',
       'dsrBalances',
       'totalGain',
@@ -143,9 +135,12 @@ const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
       'accountGainUsdValue',
       'dsrHistory'
     ]),
-    ...mapBalanceState({
+    ...mapState('defi', {
       dsrHistoryByAddress: 'dsrHistory'
     })
+  },
+  methods: {
+    ...mapActions('defi', ['fetchDSRBalances', 'fetchDSRHistory'])
   }
 })
 export default class Lending extends Vue {
@@ -161,11 +156,13 @@ export default class Lending extends Vue {
   dsrHistoryByAddress!: DSRHistory;
   isTaskRunning!: (type: TaskType) => boolean;
   filteredAccounts: GeneralAccount[] = [];
+  fetchDSRBalances!: () => Promise<void>;
+  fetchDSRHistory!: () => Promise<void>;
 
   async mounted() {
-    await this.$store.dispatch('balances/fetchDSRBalances');
+    await this.fetchDSRBalances();
     if (this.premium) {
-      await this.$store.dispatch('balances/fetchDSRHistory');
+      await this.fetchDSRHistory();
     }
   }
 
