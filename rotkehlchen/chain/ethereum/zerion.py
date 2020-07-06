@@ -96,6 +96,13 @@ class Zerion():
                         defi_balance = self._get_single_balance(balance)
                         underlying_balances.append(defi_balance)
 
+                    if base_balance.balance.usd_value == ZERO:
+                        # This can happen. We can't find a price for some assets
+                        # such as combined pool assets. But we can instead use
+                        # the sum of the usd_value of the underlying_balances
+                        usd_sum = sum(x.balance.usd_value for x in underlying_balances)
+                        base_balance.balance.usd_value = usd_sum  # type: ignore
+
                 protocol_balances.append(DefiProtocolBalances(
                     protocol=protocol,
                     balance_type=balance_type,
@@ -111,18 +118,18 @@ class Zerion():
         decimals = metadata[3]
         normalized_value = token_normalized_value(balance_value, decimals)
         token_symbol = metadata[2]
+
         try:
             asset = Asset(token_symbol)
             usd_price = Inquirer().find_usd_price(asset)
         except (UnknownAsset, UnsupportedAsset):
-            if '+' not in token_symbol:  # ignore the curve fi "pool" combined base asset
+            if '+' not in token_symbol:  # ignore the curvefinance pool combined base asset
                 self.msg_aggregator.add_error(
                     f'Unsupported asset {token_symbol} encountered during DeFi protocol queries',
                 )
             usd_price = Price(ZERO)
 
         usd_value = normalized_value * usd_price
-
         defi_balance = DefiBalance(
             token_address=to_checksum_address(metadata[0]),
             token_name=metadata[1],
