@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature: `1004` Aave Lending is now supported. Users can see their deposited balance for lending, the borrowed balances and the respective APY/APR. Premium users can also retrieve all events history and get a total amount earned by lending per aToken. 
 * :feature: `530` You can now add ethereum addresses by ENS name. Simply use an ENS name in the ETH address field and if it can be resolved it will be appended to the tracked accounts.
 * :bug: `1110` DSR Dai balance will now not be recounted with every force refresh querying of blockchain balances
 * :feature: `-` Support TUSD, KNC, ZRX and the special USDC-B collateral types for makerdao vaults.
