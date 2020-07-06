@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import {
   AccountState,
   ActionResult,
@@ -17,14 +17,18 @@ import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { StoredTrade, Trade } from '@/model/stored-trade';
 import { VersionCheck } from '@/model/version-check';
+import { DefiApi } from '@/services/defi/defi-api';
 import {
   ApiManualBalance,
   ApiManualBalances,
   SupportedAssets,
-  Watcher,
   TaskNotFoundError
 } from '@/services/types-api';
-import { WatcherTypes } from '@/services/types-common';
+import {
+  fetchWithExternalService,
+  handleResponse,
+  modifyWithExternalService
+} from '@/services/utils';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
   AccountSession,
@@ -45,28 +49,15 @@ import {
 import { convertAccountData } from '@/utils/conversion';
 
 export class RotkehlchenApi {
-  private _axios?: AxiosInstance;
+  private readonly axios: AxiosInstance;
+  readonly defi: DefiApi;
 
-  private get axios(): AxiosInstance {
-    if (!this._axios) {
-      throw new Error('Axios is not initialized');
-    }
-    return this._axios;
-  }
-
-  private handleResponse<T>(response: AxiosResponse<ActionResult<T>>): T {
-    const { result, message } = response.data;
-    if (result) {
-      return result;
-    }
-    throw new Error(message);
-  }
-
-  connect(): void {
-    this._axios = axios.create({
+  constructor() {
+    this.axios = axios.create({
       baseURL: `${process.env.VUE_APP_BACKEND_URL}/api/1/`,
       timeout: 30000
     });
+    this.defi = new DefiApi(this.axios);
   }
 
   checkIfLogged(username: string): Promise<boolean> {
@@ -95,20 +86,6 @@ export class RotkehlchenApi {
       status == 401 ||
       status == 409
     );
-  }
-
-  /**
-   * This is a status validation function for a PUT/PATCH/POST action that
-   * also involves calling an external service.
-   * @param status The status code of the request 2xx-5xx
-   * @return The validity of the status code
-   */
-  private static modifyWithExternalService(status: number): boolean {
-    return [200, 400, 409, 502].indexOf(status) >= 0;
-  }
-
-  private static fetchWithExternalService(status: number): boolean {
-    return [200, 409, 502].indexOf(status) >= 0;
   }
 
   logout(username: string): Promise<boolean> {
@@ -199,7 +176,7 @@ export class RotkehlchenApi {
           );
         }
       })
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   changeUserPassword(
@@ -227,7 +204,7 @@ export class RotkehlchenApi {
           }
         }
       )
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   removeOwnedEthTokens(tokens: string[]): Promise<BlockchainAccount> {
@@ -350,7 +327,7 @@ export class RotkehlchenApi {
   async ping(): Promise<AsyncQuery> {
     return this.axios
       .get<ActionResult<AsyncQuery>>('/ping') // no validate status here since defaults work
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   checkVersion(): Promise<VersionCheck> {
@@ -399,7 +376,7 @@ export class RotkehlchenApi {
           return status == 200 || status == 400 || status == 409;
         }
       })
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   queryBalancesAsync(
@@ -494,7 +471,7 @@ export class RotkehlchenApi {
         }
         return response;
       })
-      .then(this.handleResponse)
+      .then(handleResponse)
       .then(value => {
         if (value.outcome) {
           return value.outcome;
@@ -885,7 +862,7 @@ export class RotkehlchenApi {
           );
         }
       })
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   addBlockchainAccount(payload: BlockchainAccountPayload): Promise<AsyncQuery> {
@@ -908,7 +885,7 @@ export class RotkehlchenApi {
             status == 200 || status == 400 || status == 409 || status == 502
         }
       )
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async editBlockchainAccount(
@@ -932,7 +909,7 @@ export class RotkehlchenApi {
             status == 200 || status == 400 || status == 409 || status == 502
         }
       )
-      .then(this.handleResponse)
+      .then(handleResponse)
       .then(accounts => accounts.map(convertAccountData));
   }
 
@@ -1265,7 +1242,7 @@ export class RotkehlchenApi {
           return status === 200 || status === 409;
         }
       })
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async addTag(tag: Tag): Promise<Tags> {
@@ -1279,7 +1256,7 @@ export class RotkehlchenApi {
           }
         }
       )
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async editTag(tag: Tag): Promise<Tags> {
@@ -1293,7 +1270,7 @@ export class RotkehlchenApi {
           }
         }
       )
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async deleteTag(tagName: string): Promise<Tags> {
@@ -1306,7 +1283,7 @@ export class RotkehlchenApi {
           return status === 200 || status === 400 || status === 409;
         }
       })
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async accounts(blockchain: Blockchain): Promise<AccountData[]> {
@@ -1316,56 +1293,24 @@ export class RotkehlchenApi {
           return status === 200 || status === 409;
         }
       })
-      .then(this.handleResponse)
+      .then(handleResponse)
       .then(accounts => accounts.map(convertAccountData));
-  }
-
-  async dsrBalance(): Promise<AsyncQuery> {
-    return this.axios
-      .get<ActionResult<AsyncQuery>>(
-        'blockchains/ETH/modules/makerdao/dsrbalance',
-        {
-          params: {
-            async_query: true
-          },
-          validateStatus: function (status: number) {
-            return status === 200 || status === 409 || status == 502;
-          }
-        }
-      )
-      .then(this.handleResponse);
-  }
-
-  async dsrHistory(): Promise<AsyncQuery> {
-    return this.axios
-      .get<ActionResult<AsyncQuery>>(
-        'blockchains/ETH/modules/makerdao/dsrhistory',
-        {
-          params: {
-            async_query: true
-          },
-          validateStatus: function (status: number) {
-            return status === 200 || status === 409 || status == 502;
-          }
-        }
-      )
-      .then(this.handleResponse);
   }
 
   async supportedAssets(): Promise<SupportedAssets> {
     return this.axios
       .get<ActionResult<SupportedAssets>>('assets/all', {
-        validateStatus: RotkehlchenApi.fetchWithExternalService
+        validateStatus: fetchWithExternalService
       })
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async manualBalances(): Promise<ApiManualBalances> {
     return this.axios
       .get<ActionResult<ApiManualBalances>>('balances/manual', {
-        validateStatus: RotkehlchenApi.fetchWithExternalService
+        validateStatus: fetchWithExternalService
       })
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async addManualBalances(
@@ -1378,10 +1323,10 @@ export class RotkehlchenApi {
           balances
         },
         {
-          validateStatus: RotkehlchenApi.modifyWithExternalService
+          validateStatus: modifyWithExternalService
         }
       )
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async editManualBalances(
@@ -1394,94 +1339,19 @@ export class RotkehlchenApi {
           balances
         },
         {
-          validateStatus: RotkehlchenApi.modifyWithExternalService
+          validateStatus: modifyWithExternalService
         }
       )
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   async deleteManualBalances(labels: string[]): Promise<ApiManualBalances> {
     return this.axios
       .delete<ActionResult<ApiManualBalances>>('balances/manual', {
         data: { labels },
-        validateStatus: RotkehlchenApi.modifyWithExternalService
+        validateStatus: modifyWithExternalService
       })
-      .then(this.handleResponse);
-  }
-
-  async makerDAOVaults(): Promise<AsyncQuery> {
-    return this.axios
-      .get<ActionResult<AsyncQuery>>(
-        'blockchains/ETH/modules/makerdao/vaults',
-        {
-          validateStatus: RotkehlchenApi.fetchWithExternalService,
-          params: {
-            async_query: true
-          }
-        }
-      )
-      .then(this.handleResponse);
-  }
-
-  async makerDAOVaultDetails(): Promise<AsyncQuery> {
-    return this.axios
-      .get<ActionResult<AsyncQuery>>(
-        '/blockchains/ETH/modules/makerdao/vaultdetails',
-        {
-          validateStatus: RotkehlchenApi.fetchWithExternalService,
-          params: {
-            async_query: true
-          }
-        }
-      )
-      .then(this.handleResponse);
-  }
-
-  async watchers<T extends WatcherTypes>(): Promise<Watcher<T>[]> {
-    return this.axios
-      .get<ActionResult<Watcher<T>[]>>('/watchers', {
-        validateStatus: RotkehlchenApi.fetchWithExternalService
-      })
-      .then(this.handleResponse);
-  }
-
-  async addWatcher<T extends WatcherTypes>(
-    watchers: Omit<Watcher<T>, 'identifier'>[]
-  ): Promise<Watcher<T>[]> {
-    return this.axios
-      .put<ActionResult<Watcher<T>[]>>(
-        '/watchers',
-        { watchers },
-        {
-          validateStatus: RotkehlchenApi.modifyWithExternalService
-        }
-      )
-      .then(this.handleResponse);
-  }
-
-  async editWatcher<T extends WatcherTypes>(
-    watchers: Watcher<T>[]
-  ): Promise<Watcher<T>[]> {
-    return this.axios
-      .patch<ActionResult<Watcher<T>[]>>(
-        '/watchers',
-        { watchers },
-        {
-          validateStatus: RotkehlchenApi.modifyWithExternalService
-        }
-      )
-      .then(this.handleResponse);
-  }
-
-  async deleteWatcher<T extends WatcherTypes>(
-    identifiers: string[]
-  ): Promise<Watcher<T>[]> {
-    return this.axios
-      .delete<ActionResult<Watcher<T>[]>>('/watchers', {
-        data: { watchers: identifiers },
-        validateStatus: RotkehlchenApi.modifyWithExternalService
-      })
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 }
 

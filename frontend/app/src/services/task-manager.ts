@@ -9,13 +9,10 @@ import {
   convertTradeHistoryOverview,
   TradeHistory
 } from '@/model/trade-history-types';
-import { convertDSRBalances, convertDSRHistory } from '@/services/converters';
+import { ApiDSRBalances, ApiDSRHistory } from '@/services/defi/types';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  ApiDSRBalances,
-  ApiDSRHistory,
-  TaskNotFoundError
-} from '@/services/types-api';
+import { TaskNotFoundError } from '@/services/types-api';
+import { convertDSRBalances, convertDSRHistory } from '@/store/defi/converters';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
 import { ApiAssetBalances, Severity } from '@/typing/types';
@@ -124,7 +121,7 @@ export class TaskManager {
 
       return;
     }
-    store.commit('balances/dsrBalances', convertDSRBalances(result));
+    store.commit('defi/dsrBalances', convertDSRBalances(result));
   }
 
   private static dsrHistory(
@@ -141,7 +138,7 @@ export class TaskManager {
 
       return;
     }
-    store.commit('balances/dsrHistory', convertDSRHistory(result));
+    store.commit('defi/dsrHistory', convertDSRHistory(result));
   }
 
   monitor() {

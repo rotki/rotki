@@ -68,23 +68,24 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import LoanInfo from '@/components/defi/LoanInfo.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { MakerDAOVault } from '@/services/types-model';
 import {
   MakerDAOVaultModel,
   MakerDAOVaultSummary
 } from '@/store/balances/types';
-
-const { mapGetters } = createNamespacedHelpers('balances');
+import { MakerDAOVault } from '@/store/defi/types';
 
 @Component({
   computed: {
-    ...mapGetters(['makerDAOVaults', 'makerDAOVaultSummary'])
+    ...mapGetters('defi', ['makerDAOVaults', 'makerDAOVaultSummary'])
+  },
+  methods: {
+    ...mapActions('defi', ['fetchMakerDAOVaults', 'fetchMakerDAOVaultDetails'])
   },
   components: {
     AmountDisplay,
@@ -99,6 +100,8 @@ export default class Borrowing extends Vue {
   selection: number = -1;
   makerDAOVaults!: MakerDAOVaultModel[];
   makerDAOVaultSummary!: MakerDAOVaultSummary;
+  fetchMakerDAOVaults!: () => Promise<void>;
+  fetchMakerDAOVaultDetails!: () => Promise<void>;
 
   get selectedVault(): MakerDAOVault | MakerDAOVaultModel | null {
     return (
@@ -109,9 +112,9 @@ export default class Borrowing extends Vue {
 
   async mounted() {
     this.loading = true;
-    await this.$store.dispatch('balances/fetchMakerDAOVaults');
+    await this.fetchMakerDAOVaults();
     this.loading = false;
-    await this.$store.dispatch('balances/fetchMakerDAOVaultDetails');
+    await this.fetchMakerDAOVaultDetails();
   }
 }
 </script>

@@ -11,12 +11,8 @@ import {
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
 import { BalanceState } from '@/store/balances/state';
-import {
-  MakerDAOVaultModel,
-  MakerDAOVaultSummary
-} from '@/store/balances/types';
 import { RotkehlchenState } from '@/store/store';
-import { AccountDSRMovement, Blockchain, DSRBalance } from '@/typing/types';
+import { Blockchain } from '@/typing/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 
@@ -235,89 +231,11 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return data[address]?.label ?? '';
   },
 
-  dsrBalances: ({ dsrBalances }: BalanceState): DSRBalance[] => {
-    const { balances } = dsrBalances;
-    return Object.keys(balances).map(address => ({
-      address,
-      balance: balances[address]
-    }));
-  },
-
-  currentDSR: ({ dsrBalances }: BalanceState): BigNumber => {
-    return dsrBalances.currentDSR;
-  },
-
-  totalGain: ({ dsrHistory }: BalanceState): BigNumber => {
-    return Object.keys(dsrHistory)
-      .map(account => dsrHistory[account])
-      .reduce((sum, account) => sum.plus(account.gainSoFar), Zero);
-  },
-
-  accountGain: ({ dsrHistory }: BalanceState) => (
-    account: string
-  ): BigNumber => {
-    return dsrHistory[account]?.gainSoFar ?? Zero;
-  },
-
-  accountGainUsdValue: ({ dsrHistory }: BalanceState) => (
-    account: string
-  ): BigNumber => {
-    return dsrHistory[account]?.gainSoFarUsdValue ?? Zero;
-  },
-
-  dsrHistory: ({ dsrHistory }: BalanceState): AccountDSRMovement[] => {
-    return Object.keys(dsrHistory).reduce((acc, address) => {
-      const { movements } = dsrHistory[address];
-      acc.push(
-        ...movements.map(movement => ({
-          address,
-          ...movement
-        }))
-      );
-      return acc;
-    }, new Array<AccountDSRMovement>());
-  },
-
   manualLabels: ({ manualBalances }: BalanceState) => {
     return manualBalances.map(value => value.label);
   },
 
   assetInfo: ({ supportedAssets }: BalanceState) => (key: string) => {
     return supportedAssets.find(asset => asset.key === key);
-  },
-
-  makerDAOVaults: ({
-    makerDAOVaults,
-    makerDAOVaultDetails
-  }: BalanceState): MakerDAOVaultModel[] => {
-    const vaults: MakerDAOVaultModel[] = [];
-    for (let i = 0; i < makerDAOVaults.length; i++) {
-      const vault = makerDAOVaults[i];
-      const details = makerDAOVaultDetails.find(
-        details => details.identifier === vault.identifier
-      );
-      vaults.push(details ? { ...vault, ...details } : vault);
-    }
-    return vaults;
-  },
-
-  makerDAOVaultSummary: ({
-    makerDAOVaults
-  }: BalanceState): MakerDAOVaultSummary => {
-    const totalCollateralUsd = makerDAOVaults
-      .map(vault => vault.collateralUsdValue)
-      .reduce((sum, collateralUsdValue) => sum.plus(collateralUsdValue), Zero);
-    const totalDebt = makerDAOVaults
-      .map(vault => vault.debtValue)
-      .reduce((sum, debt) => sum.plus(debt), Zero);
-    return { totalCollateralUsd, totalDebt };
-  },
-
-  loanWatchers: ({ watchers }) => {
-    const loanWatcherTypes = ['makervault_collateralization_ratio'];
-
-    return watchers.filter(
-      watcher => loanWatcherTypes.indexOf(watcher.type) > -1
-    );
   }
 };

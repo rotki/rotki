@@ -4,16 +4,7 @@ import {
   EthBalances,
   FiatBalance
 } from '@/model/blockchain-balances';
-import { Watcher } from '@/services/types-api';
-import { WatcherTypes } from '@/services/types-common';
-import {
-  DSRBalances,
-  DSRHistory,
-  MakerDAOVault,
-  MakerDAOVaultDetails,
-  ManualBalance,
-  SupportedAsset
-} from '@/services/types-model';
+import { ManualBalance, SupportedAsset } from '@/services/types-model';
 import { BalanceState, defaultState } from '@/store/balances/state';
 import {
   AccountDataMap,
@@ -68,29 +59,11 @@ export const mutations: MutationTree<BalanceState> = {
   btcAccounts(state: BalanceState, accounts: AccountDataMap) {
     state.btcAccounts = accounts;
   },
-  dsrHistory(state: BalanceState, history: DSRHistory) {
-    state.dsrHistory = history;
-  },
-  dsrBalances(state: BalanceState, balances: DSRBalances) {
-    state.dsrBalances = balances;
-  },
   supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {
     state.supportedAssets = supportedAssets;
   },
   manualBalances(state: BalanceState, manualBalances: ManualBalance[]) {
     state.manualBalances = manualBalances;
-  },
-  watchers(state: BalanceState, watchers: Watcher<WatcherTypes>[]) {
-    state.watchers = watchers;
-  },
-  makerDAOVaults(state: BalanceState, makerDAOVaults: MakerDAOVault[]) {
-    state.makerDAOVaults = makerDAOVaults;
-  },
-  makerDAOVaultDetails(
-    state: BalanceState,
-    makerDAOVaultDetails: MakerDAOVaultDetails[]
-  ) {
-    state.makerDAOVaultDetails = makerDAOVaultDetails;
   },
   reset(state: BalanceState) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

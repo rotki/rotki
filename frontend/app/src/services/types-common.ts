@@ -1,5 +1,3 @@
-export type DSRMovementType = 'withdrawal' | 'deposit';
-
 export enum Location {
   EXTERNAL = 'external',
   KRAKEN = 'kraken',
@@ -16,18 +14,3 @@ export enum Location {
   REALESTATE = 'real estate',
   COMMODITIES = 'commodities'
 }
-
-export type MakerDAOVaultEventType =
-  | 'deposit'
-  | 'withdraw'
-  | 'generate'
-  | 'payback'
-  | 'liquidation';
-
-export type WatcherType = 'makervault_collateralization_ratio';
-
-export type WatcherTypes = WatcherType;
-
-export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
-
-export type OpTypes = 'lt' | 'le' | 'gt' | 'ge';
