@@ -2762,7 +2762,7 @@ Getting all DeFi balances
                   },
                   "underlying_balances": [{
                       "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-                      "token_name": "Dai Stablecoind",
+                      "token_name": "Dai Stablecoin",
                       "token_symbol": "DAI",
                       "balance": {
                           "amount": "2000",
@@ -2781,7 +2781,7 @@ Getting all DeFi balances
    :resjsonarr string underlying_balances: A list of underlying DefiBalances supporting the base balance. Can also be an empty list. The format of each balance is thesame as that of base_balance. For lending this is going to be the normal token. For example for aDAI this is DAI. For cBAT this is BAT etc. For pools this list contains all tokens that are contained in the pool.
 
    :statuscode 200: Balances succesfully queried.
-   :statuscode 409: User is not logged in
+   :statuscode 409: User is not logged in or if using own chain the chain is not synced.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
