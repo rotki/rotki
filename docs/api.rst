@@ -2637,6 +2637,154 @@ Getting blockchain account data
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
 
+Getting all DeFi balances
+=========================
+
+.. http:get:: /api/(version)/blockchains/ETH/defi
+
+   Doing a GET on the DeFi balances endpoint will return a mapping of all accounts to their respective balances in DeFi protocols.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/defi HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": [{
+                  "protocol": "Curve",
+                  "balance_type": "Asset",
+                  "base_balance": {
+                      "token_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+                      "token_name": "Y Pool",
+                      "token_symbol": "yDAI+yUSDC+yUSDT+yTUSD",
+                      "balance": {
+                          "amount": "1000",
+                          "usd_value": "1009.12"
+                      }
+                  },
+                  "underlying_balances": [{
+                      "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "token_name": "Dai Stablecoin",
+                      "token_symbol": "DAI",
+                      "balance": {
+                          "amount": "200",
+                          "usd_value": "201.12"
+                      }
+                  }, {
+                      "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                      "token_name": "USD//C",
+                      "token_symbol": "USDC",
+                      "balance": {
+                          "amount": "300",
+                          "usd_value": "302.14"
+                      }
+                  }, {
+                      "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+                      "token_name": "Tether USD",
+                      "token_symbol": "USDT",
+                      "balance": {
+                          "amount": "280",
+                          "usd_value": "281.98"
+                      }
+                  }, {
+                      "token_address": "0x0000000000085d4780B73119b644AE5ecd22b376",
+                      "token_name": "TrueUSD",
+                      "token_symbol": "TUSD",
+                      "balance": {
+                          "amount": "220",
+                          "usd_value": "221.201"
+                      }
+                  }]
+              }, {
+                  "protocol": "Compound",
+                  "balance_type": "Asset",
+                  "base_balance": {
+                      "token_address": "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
+                      "token_name": "Compound Basic Attention Token",
+                      "token_symbol": "cBAT",
+                      "balance": {
+                          "amount": "8000",
+                          "usd_value": "36.22"
+                      }
+                  },
+                  "underlying_balances": [{
+                      "token_address": "0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
+                      "token_name": "Basic Attention Token",
+                      "token_symbol": "BAT",
+                      "balance": {
+                          "amount": "150",
+                          "usd_value": "36.21"
+                      }
+                  }]
+              }, {
+                  "protocol": "Compound",
+                  "balance_type": "Asset",
+                  "base_balance": {
+                      "token_address": "0xc00e94Cb662C3520282E6f5717214004A7f26888",
+                      "token_name": "Compound",
+                      "token_symbol": "COMP",
+                      "balance": {
+                          "amount": "0.01",
+                          "usd_value": "1.9"
+                      }
+                  },
+                  "underlying_balances": []
+              }],
+              "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": [{
+                  "protocol": "Aave",
+                  "balance_type": "Asset",
+                  "base_balance": {
+                      "token_address": "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
+                      "token_name": "Aave Interest bearing DAI",
+                      "token_symbol": "aDAI",
+                      "balance": {
+                          "amount": "2000",
+                          "usd_value": "2001.95"
+                      }
+                  },
+                  "underlying_balances": [{
+                      "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "token_name": "Dai Stablecoind",
+                      "token_symbol": "DAI",
+                      "balance": {
+                          "amount": "2000",
+                          "usd_value": "2001.95"
+                      }
+                  }]
+              }],
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping from account to list of DeFi balances.
+   :resjsonarr string protocol: The name of the protocol. Since these names come from Zerion check `here <https://github.com/zeriontech/defi-sdk#supported-protocols>`__ for supported names.
+   :resjsonarr string balance_type: One of ``"Asset"`` or ``"Debt"`` denoting that one if deposited asset in DeFi and the other a debt or liability.
+   :resjsonarr string base_balance: A single DefiBalance entry. It's comprised of a token address, name, symbol and a balance. This is the actually deposited asset in the protocol. Can also be a synthetic in case of synthetic protocols or lending pools.
+   :resjsonarr string underlying_balances: A list of underlying DefiBalances supporting the base balance. Can also be an empty list. The format of each balance is thesame as that of base_balance. For lending this is going to be the normal token. For example for aDAI this is DAI. For cBAT this is BAT etc. For pools this list contains all tokens that are contained in the pool.
+
+   :statuscode 200: Balances succesfully queried.
+   :statuscode 409: User is not logged in
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 
 Getting current ethereum MakerDAO DSR balance
 =================================================
