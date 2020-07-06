@@ -1,10 +1,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import { GetterTree } from 'vuex';
-import {
-  MakerDAOVaultModel,
-  MakerDAOVaultSummary
-} from '@/store/balances/types';
 import { DefiState } from '@/store/defi/state';
+import { MakerDAOVaultModel, MakerDAOVaultSummary } from '@/store/defi/types';
 import { RotkehlchenState } from '@/store/store';
 import { AccountDSRMovement, DSRBalance } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';

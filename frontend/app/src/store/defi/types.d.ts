@@ -65,3 +65,12 @@ export interface MakerDAOVaultEvent {
   readonly timestamp: number;
   readonly txHash: string;
 }
+
+export type MakerDAOVaultModel =
+  | MakerDAOVault
+  | (MakerDAOVault & MakerDAOVaultDetails);
+
+export interface MakerDAOVaultSummary {
+  readonly totalCollateralUsd: BigNumber;
+  readonly totalDebt: BigNumber;
+}

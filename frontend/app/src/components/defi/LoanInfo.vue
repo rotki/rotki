@@ -274,8 +274,7 @@ import StatCard from '@/components/display/StatCard.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import { Watcher, WatcherType } from '@/services/defi/types';
-import { MakerDAOVaultModel } from '@/store/balances/types';
-import { MakerDAOVault } from '@/store/defi/types';
+import { MakerDAOVault, MakerDAOVaultModel } from '@/store/defi/types';
 import { VaultEventsList } from '@/utils/premium';
 
 @Component({
