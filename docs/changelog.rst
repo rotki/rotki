@@ -27,6 +27,7 @@ Changelog
   - `Aave Interest bearing WBTC (aWBTC) <https://www.coingecko.com/en/coins/aave-wbtc>`__
   - `Aave Interest bearing ZRX (aZRX) <https://www.coingecko.com/en/coins/aave-zrx>`__
   - `Compound USDT (cUSDT) <https://www.coingecko.com/en/coins/compound-usdt>`__
+  - `Compound SAI (cSAI) <https://www.coingecko.com/en/coins/compound-sai>`__
   - `Compound (COMP) <https://coinmarketcap.com/currencies/compound/>`__
   - `ALQO (ALQO) <https://coinmarketcap.com/currencies/alqo/>`__
   - `Solana (SOL) <https://coinmarketcap.com/currencies/solana/>`__

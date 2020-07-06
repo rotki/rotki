@@ -10558,6 +10558,14 @@
         "symbol": "cREP",
         "type": "ethereum token"
     },
+    "cSAI": {
+        "ethereum_address": "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC",
+        "ethereum_token_decimals": 8,
+        "name": "Compound Sai",
+        "started": 1557192252,
+        "symbol": "cSAI",
+        "type": "ethereum token"
+    },
     "cUSDC": {
         "ethereum_address": "0x39AA39c021dfbaE8faC545936693aC917d5E7563",
         "ethereum_token_decimals": 8,

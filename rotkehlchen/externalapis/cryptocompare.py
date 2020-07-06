@@ -42,7 +42,9 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('cDAI'): A_DAI,
     Asset('cBAT'): Asset('BAT'),
     Asset('cREP'): Asset('REP'),
+    Asset('cSAI'): Asset('SAI'),
     Asset('cUSDC'): Asset('USDC'),
+    Asset('cUSDT'): Asset('USDT'),
     Asset('cWBTC'): Asset('WBTC'),
     Asset('cZRX'): Asset('ZRX'),
 }
