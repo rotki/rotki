@@ -8,5 +8,7 @@ export enum TaskType {
   DSR_BALANCE = 'dsr_balance',
   DSR_HISTORY = 'dsr_history',
   MAKEDAO_VAULTS = 'makerdao_vaults',
-  MAKERDAO_VAULT_DETAILS = 'makerdao_vault_details'
+  MAKERDAO_VAULT_DETAILS = 'makerdao_vault_details',
+  AAVE_BALANCES = 'aave_balances',
+  AAVE_HISTORY = 'aave_history'
 }

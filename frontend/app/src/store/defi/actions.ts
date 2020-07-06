@@ -2,11 +2,15 @@ import { ActionTree } from 'vuex';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import {
+  ApiAaveBalances,
+  ApiAaveHistory,
   ApiMakerDAOVault,
   ApiMakerDAOVaultDetails
 } from '@/services/defi/types';
 import { api } from '@/services/rotkehlchen-api';
 import {
+  convertAaveBalances,
+  convertAaveHistory,
   convertMakerDAOVaults,
   convertVaultDetails
 } from '@/store/defi/converters';
@@ -95,6 +99,76 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         'setMessage',
         {
           title: 'MakerDAO Vault details',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
+  },
+
+  async fetchAaveBalances({
+    commit,
+    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+  }) {
+    const taskType = TaskType.AAVE_BALANCES;
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+    try {
+      const { task_id } = await api.defi.fetchAaveBalances();
+      const task = createTask(task_id, taskType, {
+        description: `Fetching Aave balances`,
+        ignoreResult: false
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<ApiAaveBalances, TaskMeta>(
+        taskType
+      );
+
+      commit('aaveBalances', convertAaveBalances(result));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Fetching Aave Balances',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
+  },
+
+  async fetchAaveHistory({
+    commit,
+    rootState: { session },
+    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+  }) {
+    const taskType = TaskType.AAVE_HISTORY;
+    if (!session?.premium || isTaskRunning(taskType)) {
+      return;
+    }
+
+    try {
+      const { task_id } = await api.defi.fetchAaveHistory();
+      const task = createTask(task_id, taskType, {
+        description: `Fetching Aave history`,
+        ignoreResult: false
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<ApiAaveHistory, TaskMeta>(
+        taskType
+      );
+
+      commit('aaveHistory', convertAaveHistory(result));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Fetching Aave History',
           description: `${e.message}`
         } as Message,
         { root: true }

@@ -1,3 +1,5 @@
+import { ApiBalance } from '@/model/blockchain-balances';
+
 export interface ApiDSRBalances {
   readonly current_dsr: string;
   readonly balances: {
@@ -15,6 +17,7 @@ export type MakerDAOVaultEventType =
   | 'generate'
   | 'payback'
   | 'liquidation';
+export type AaveEventType = 'deposit' | 'interest' | 'withdrawal';
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
 
 export interface ApiDSRMovement {
@@ -65,4 +68,50 @@ export interface ApiMakerDAOVaultEvent {
   readonly amount_usd_value: string;
   readonly timestamp: number;
   readonly tx_hash: string;
+}
+
+export interface ApiAaveAsset {
+  readonly apy?: string;
+  readonly stable_apy?: string;
+  readonly variable_apy?: string;
+  readonly balance: ApiBalance;
+}
+
+export interface ApiAaveBorrowing {
+  readonly [asset: string]: ApiAaveAsset;
+}
+
+export interface ApiAaveLending {
+  readonly [asset: string]: ApiAaveAsset;
+}
+
+interface ApiAaveBalance {
+  readonly lending: ApiAaveLending;
+  readonly borrowing: ApiAaveBorrowing;
+}
+
+export interface ApiAaveBalances {
+  readonly [address: string]: ApiAaveBalance;
+}
+
+export interface ApiAaveHistoryEvents {
+  event_type: AaveEventType;
+  asset: string;
+  value: ApiBalance;
+  block_number: number;
+  timestamp: number;
+  tx_hash: string;
+}
+
+export interface ApiAaveHistoryTotalEarned {
+  readonly [asset: string]: ApiBalance;
+}
+
+export interface ApiAaveAccountHistory {
+  readonly events: ApiAaveHistoryEvents[];
+  readonly total_earned: ApiAaveHistoryTotalEarned;
+}
+
+export interface ApiAaveHistory {
+  readonly [address: string]: ApiAaveAccountHistory;
 }

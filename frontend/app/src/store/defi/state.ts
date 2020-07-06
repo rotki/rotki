@@ -1,4 +1,6 @@
 import {
+  AaveBalances,
+  AaveHistory,
   DSRBalances,
   DSRHistory,
   MakerDAOVault,
@@ -11,6 +13,8 @@ export interface DefiState {
   dsrBalances: DSRBalances;
   makerDAOVaults: MakerDAOVault[];
   makerDAOVaultDetails: MakerDAOVaultDetails[];
+  aaveBalances: AaveBalances;
+  aaveHistory: AaveHistory;
 }
 
 export const defaultState = (): DefiState => ({
@@ -20,7 +24,9 @@ export const defaultState = (): DefiState => ({
     balances: {}
   },
   makerDAOVaults: [],
-  makerDAOVaultDetails: []
+  makerDAOVaultDetails: [],
+  aaveBalances: {},
+  aaveHistory: {}
 });
 
 export const state: DefiState = defaultState();

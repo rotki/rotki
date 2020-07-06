@@ -1,5 +1,7 @@
 import { default as BigNumber } from 'bignumber.js';
+import { ApiBalance, Balance } from '@/model/blockchain-balances';
 import {
+  AaveEventType,
   CollateralAssetType,
   DSRMovementType,
   MakerDAOVaultEventType
@@ -73,4 +75,50 @@ export type MakerDAOVaultModel =
 export interface MakerDAOVaultSummary {
   readonly totalCollateralUsd: BigNumber;
   readonly totalDebt: BigNumber;
+}
+
+export interface AaveAsset {
+  readonly apy?: string;
+  readonly stableApy?: string;
+  readonly variableApy?: string;
+  readonly balance: Balance;
+}
+
+export interface AaveBorrowing {
+  readonly [asset: string]: AaveAsset;
+}
+
+export interface AaveLending {
+  readonly [asset: string]: AaveAsset;
+}
+
+interface AaveBalance {
+  readonly lending: AaveLending;
+  readonly borrowing: AaveBorrowing;
+}
+
+export interface AaveBalances {
+  readonly [address: string]: AaveBalance;
+}
+
+export interface AaveHistoryEvents {
+  eventType: AaveEventType;
+  asset: string;
+  value: Balance;
+  blockNumber: number;
+  timestamp: number;
+  txHash: string;
+}
+
+export interface AaveHistoryTotalEarned {
+  readonly [asset: string]: Balance;
+}
+
+export interface AaveAccountHistory {
+  readonly events: AaveHistoryEvents[];
+  readonly totalEarned: AaveHistoryTotalEarned;
+}
+
+export interface AaveHistory {
+  readonly [address: string]: AaveAccountHistory;
 }
