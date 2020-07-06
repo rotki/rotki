@@ -778,6 +778,15 @@ class DataImportResource(BaseResource):
         return self.rest_api.import_data(source=source, filepath=filepath)
 
 
+class DefiBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_defi_balances(async_query)
+
+
 class MakerDAODSRBalanceResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
