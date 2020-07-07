@@ -167,18 +167,16 @@
 import cloneDeep from 'lodash/cloneDeep';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import {
-  OpTypes,
+  WatcherOpTypes,
   Watcher,
   WatcherType,
   WatcherTypes
-} from '@/services/defi/types';
+} from '@/services/session/types';
 
 @Component({
-  components: { MessageDialog },
   methods: {
-    ...mapActions('defi', ['addWatchers', 'deleteWatchers', 'editWatchers'])
+    ...mapActions('session', ['addWatchers', 'deleteWatchers', 'editWatchers'])
   }
 })
 export default class WatcherDialog extends Vue {
@@ -199,7 +197,7 @@ export default class WatcherDialog extends Vue {
   existingWatchers!: Watcher<WatcherType>[];
 
   watcherType: WatcherTypes | null = null;
-  watcherOperation: OpTypes | null = null;
+  watcherOperation: WatcherOpTypes | null = null;
   watcherValue: string | null = null;
   validationMessage: string = '';
   validationStatus: 'success' | 'error' | '' = '';

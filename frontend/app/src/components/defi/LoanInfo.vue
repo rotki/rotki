@@ -273,7 +273,7 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
-import { Watcher, WatcherType } from '@/services/defi/types';
+import { Watcher, WatcherType } from '@/services/session/types';
 import { MakerDAOVault, MakerDAOVaultModel } from '@/store/defi/types';
 import { VaultEventsList } from '@/utils/premium';
 
@@ -290,8 +290,7 @@ import { VaultEventsList } from '@/utils/premium';
   },
   computed: {
     ...mapState('session', ['premium']),
-    ...mapGetters('session', ['dateDisplayFormat']),
-    ...mapGetters('defi', ['loanWatchers'])
+    ...mapGetters('session', ['dateDisplayFormat', 'loanWatchers'])
   }
 })
 export default class LoanInfo extends Vue {

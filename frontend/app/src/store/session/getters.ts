@@ -25,5 +25,13 @@ export const getters: GetterTree<SessionState, RotkehlchenState> = {
 
   krakenAccountType: (state: SessionState) => {
     return state.generalSettings.krakenAccountType;
+  },
+
+  loanWatchers: ({ watchers }) => {
+    const loanWatcherTypes = ['makervault_collateralization_ratio'];
+
+    return watchers.filter(
+      watcher => loanWatcherTypes.indexOf(watcher.type) > -1
+    );
   }
 };
