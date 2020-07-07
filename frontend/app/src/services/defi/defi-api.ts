@@ -1,11 +1,6 @@
 import { AxiosInstance } from 'axios';
 import { ActionResult, AsyncQuery } from '@/model/action-result';
-import { Watcher, WatcherTypes } from '@/services/defi/types';
-import {
-  fetchWithExternalService,
-  handleResponse,
-  modifyWithExternalService
-} from '@/services/utils';
+import { fetchWithExternalService, handleResponse } from '@/services/utils';
 
 export class DefiApi {
   private readonly axios: AxiosInstance;
@@ -71,53 +66,6 @@ export class DefiApi {
           }
         }
       )
-      .then(handleResponse);
-  }
-
-  async watchers<T extends WatcherTypes>(): Promise<Watcher<T>[]> {
-    return this.axios
-      .get<ActionResult<Watcher<T>[]>>('/watchers', {
-        validateStatus: fetchWithExternalService
-      })
-      .then(handleResponse);
-  }
-
-  async addWatcher<T extends WatcherTypes>(
-    watchers: Omit<Watcher<T>, 'identifier'>[]
-  ): Promise<Watcher<T>[]> {
-    return this.axios
-      .put<ActionResult<Watcher<T>[]>>(
-        '/watchers',
-        { watchers },
-        {
-          validateStatus: modifyWithExternalService
-        }
-      )
-      .then(handleResponse);
-  }
-
-  async editWatcher<T extends WatcherTypes>(
-    watchers: Watcher<T>[]
-  ): Promise<Watcher<T>[]> {
-    return this.axios
-      .patch<ActionResult<Watcher<T>[]>>(
-        '/watchers',
-        { watchers },
-        {
-          validateStatus: modifyWithExternalService
-        }
-      )
-      .then(handleResponse);
-  }
-
-  async deleteWatcher<T extends WatcherTypes>(
-    identifiers: string[]
-  ): Promise<Watcher<T>[]> {
-    return this.axios
-      .delete<ActionResult<Watcher<T>[]>>('/watchers', {
-        data: { watchers: identifiers },
-        validateStatus: modifyWithExternalService
-      })
       .then(handleResponse);
   }
 }

@@ -1,5 +1,4 @@
 import { MutationTree } from 'vuex';
-import { Watcher, WatcherTypes } from '@/services/defi/types';
 import { defaultState, DefiState } from '@/store/defi/state';
 import {
   DSRBalances,
@@ -14,9 +13,6 @@ export const mutations: MutationTree<DefiState> = {
   },
   dsrBalances(state: DefiState, balances: DSRBalances) {
     state.dsrBalances = balances;
-  },
-  watchers(state: DefiState, watchers: Watcher<WatcherTypes>[]) {
-    state.watchers = watchers;
   },
   makerDAOVaults(state: DefiState, makerDAOVaults: MakerDAOVault[]) {
     state.makerDAOVaults = makerDAOVaults;

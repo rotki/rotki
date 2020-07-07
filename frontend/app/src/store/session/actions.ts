@@ -6,11 +6,13 @@ import {
 import { DBSettings } from '@/model/action-result';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
+import { Watcher, WatcherTypes } from '@/services/session/types';
 import { notify } from '@/store/notifications/utils';
 import { SessionState } from '@/store/session/state';
 import { Message, RotkehlchenState } from '@/store/store';
 import {
   SettingsUpdate,
+  Severity,
   SyncConflictError,
   Tag,
   UnlockPayload
@@ -53,7 +55,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         settings
       });
 
-      await dispatch('defi/fetchWatchers', null, {
+      await dispatch('session/fetchWatchers', null, {
         root: true
       });
 
@@ -226,5 +228,39 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         { root: true }
       );
     }
+  },
+
+  async fetchWatchers({ commit, rootState: { session } }) {
+    if (!session?.premium) {
+      return;
+    }
+
+    try {
+      const watchers = await api.session.watchers();
+      commit('watchers', watchers);
+    } catch (e) {
+      notify(`Error: ${e}`, 'Fetching watchers', Severity.ERROR);
+    }
+  },
+
+  async addWatchers(
+    { commit },
+    watchers: Omit<Watcher<WatcherTypes>, 'identifier'>[]
+  ) {
+    const updatedWatchers = await api.session.addWatcher(watchers);
+    commit('watchers', updatedWatchers);
+    return updatedWatchers;
+  },
+
+  async deleteWatchers({ commit }, identifiers: string[]) {
+    const updatedWatchers = await api.session.deleteWatcher(identifiers);
+    commit('watchers', updatedWatchers);
+    return updatedWatchers;
+  },
+
+  async editWatchers({ commit }, watchers: Watcher<WatcherTypes>[]) {
+    const updatedWatchers = await api.session.editWatcher(watchers);
+    commit('watchers', updatedWatchers);
+    return updatedWatchers;
   }
 };

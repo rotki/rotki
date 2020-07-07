@@ -2,6 +2,7 @@ import {
   defaultAccountingSettings,
   defaultGeneralSettings
 } from '@/data/factories';
+import { Watcher, WatcherTypes } from '@/services/session/types';
 import { AccountingSettings, GeneralSettings, Tags } from '@/typing/types';
 
 export interface SessionState {
@@ -17,6 +18,7 @@ export interface SessionState {
   nodeConnection: boolean;
   syncConflict: string;
   tags: Tags;
+  watchers: Watcher<WatcherTypes>[];
 }
 
 export const defaultState: () => SessionState = () => ({
@@ -31,7 +33,8 @@ export const defaultState: () => SessionState = () => ({
   premiumSync: false,
   nodeConnection: false,
   syncConflict: '',
-  tags: {}
+  tags: {},
+  watchers: []
 });
 
 export const state: SessionState = defaultState();

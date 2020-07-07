@@ -73,13 +73,5 @@ export const getters: GetterTree<DefiState, RotkehlchenState> = {
       .map(vault => vault.debtValue)
       .reduce((sum, debt) => sum.plus(debt), Zero);
     return { totalCollateralUsd, totalDebt };
-  },
-
-  loanWatchers: ({ watchers }) => {
-    const loanWatcherTypes = ['makervault_collateralization_ratio'];
-
-    return watchers.filter(
-      watcher => loanWatcherTypes.indexOf(watcher.type) > -1
-    );
   }
 };

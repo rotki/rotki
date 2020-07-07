@@ -3,9 +3,7 @@ import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import {
   ApiMakerDAOVault,
-  ApiMakerDAOVaultDetails,
-  Watcher,
-  WatcherTypes
+  ApiMakerDAOVaultDetails
 } from '@/services/defi/types';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -13,9 +11,7 @@ import {
   convertVaultDetails
 } from '@/store/defi/converters';
 import { DefiState } from '@/store/defi/state';
-import { notify } from '@/store/notifications/utils';
 import { Message, RotkehlchenState } from '@/store/store';
-import { Severity } from '@/typing/types';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
   async fetchDSRBalances({ commit }) {
@@ -34,40 +30,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       ignoreResult: false
     });
     commit('tasks/add', task, { root: true });
-  },
-
-  async fetchWatchers({ commit, rootState: { session } }) {
-    if (!session?.premium) {
-      return;
-    }
-
-    try {
-      const watchers = await api.defi.watchers();
-      commit('watchers', watchers);
-    } catch (e) {
-      notify(`Error: ${e}`, 'Fetching watchers', Severity.ERROR);
-    }
-  },
-
-  async addWatchers(
-    { commit },
-    watchers: Omit<Watcher<WatcherTypes>, 'identifier'>[]
-  ) {
-    const updatedWatchers = await api.defi.addWatcher(watchers);
-    commit('watchers', updatedWatchers);
-    return updatedWatchers;
-  },
-
-  async deleteWatchers({ commit }, identifiers: string[]) {
-    const updatedWatchers = await api.defi.deleteWatcher(identifiers);
-    commit('watchers', updatedWatchers);
-    return updatedWatchers;
-  },
-
-  async editWatchers({ commit }, watchers: Watcher<WatcherTypes>[]) {
-    const updatedWatchers = await api.defi.editWatcher(watchers);
-    commit('watchers', updatedWatchers);
-    return updatedWatchers;
   },
 
   async fetchMakerDAOVaults({

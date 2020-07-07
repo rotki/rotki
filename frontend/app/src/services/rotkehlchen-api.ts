@@ -18,6 +18,7 @@ import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { StoredTrade, Trade } from '@/model/stored-trade';
 import { VersionCheck } from '@/model/version-check';
 import { DefiApi } from '@/services/defi/defi-api';
+import { SessionApi } from '@/services/session/session-api';
 import {
   ApiManualBalance,
   ApiManualBalances,
@@ -51,6 +52,7 @@ import { convertAccountData } from '@/utils/conversion';
 export class RotkehlchenApi {
   private readonly axios: AxiosInstance;
   readonly defi: DefiApi;
+  readonly session: SessionApi;
 
   constructor() {
     this.axios = axios.create({
@@ -58,6 +60,7 @@ export class RotkehlchenApi {
       timeout: 30000
     });
     this.defi = new DefiApi(this.axios);
+    this.session = new SessionApi(this.axios);
   }
 
   checkIfLogged(username: string): Promise<boolean> {
@@ -359,7 +362,7 @@ export class RotkehlchenApi {
         },
         { validateStatus: this.validate_status_put_settings }
       )
-      .then(this.handleResponse);
+      .then(handleResponse);
   }
 
   queryExchangeBalancesAsync(

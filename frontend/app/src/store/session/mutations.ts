@@ -1,4 +1,5 @@
 import { MutationTree } from 'vuex';
+import { Watcher, WatcherTypes } from '@/services/session/types';
 import { defaultState, SessionState } from '@/store/session/state';
 import {
   AccountingSettings,
@@ -56,5 +57,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   tags(state: SessionState, tags: Tags) {
     state.tags = { ...tags };
+  },
+  watchers(state: SessionState, watchers: Watcher<WatcherTypes>[]) {
+    state.watchers = watchers;
   }
 };

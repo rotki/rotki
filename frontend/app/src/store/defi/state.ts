@@ -1,4 +1,3 @@
-import { Watcher, WatcherTypes } from '@/services/defi/types';
 import {
   DSRBalances,
   DSRHistory,
@@ -12,7 +11,6 @@ export interface DefiState {
   dsrBalances: DSRBalances;
   makerDAOVaults: MakerDAOVault[];
   makerDAOVaultDetails: MakerDAOVaultDetails[];
-  watchers: Watcher<WatcherTypes>[];
 }
 
 export const defaultState = (): DefiState => ({
@@ -22,8 +20,7 @@ export const defaultState = (): DefiState => ({
     balances: {}
   },
   makerDAOVaults: [],
-  makerDAOVaultDetails: [],
-  watchers: []
+  makerDAOVaultDetails: []
 });
 
 export const state: DefiState = defaultState();

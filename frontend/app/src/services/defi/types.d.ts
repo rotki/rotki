@@ -15,10 +15,7 @@ export type MakerDAOVaultEventType =
   | 'generate'
   | 'payback'
   | 'liquidation';
-export type WatcherType = 'makervault_collateralization_ratio';
-export type WatcherTypes = WatcherType;
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
-export type OpTypes = 'lt' | 'le' | 'gt' | 'ge';
 
 export interface ApiDSRMovement {
   readonly movement_type: DSRMovementType;
@@ -37,22 +34,6 @@ export interface ApiDSRHistory {
     gain_so_far_usd_value: string;
     movements: ApiDSRMovement[];
   };
-}
-
-export interface Watcher<T extends WatcherTypes> {
-  readonly identifier: string;
-  readonly type: T;
-  readonly args: WatcherArgs[T];
-}
-
-export interface MakerVaultCollateralizationRatio {
-  readonly ratio: string;
-  readonly op: OpTypes;
-  readonly vault_id: string;
-}
-
-export interface WatcherArgs {
-  readonly makervault_collateralization_ratio: MakerVaultCollateralizationRatio;
 }
 
 export interface ApiMakerDAOVault {
