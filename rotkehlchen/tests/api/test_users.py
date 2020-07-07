@@ -1,7 +1,7 @@
 import os
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pytest
 import requests
@@ -21,7 +21,10 @@ from rotkehlchen.tests.utils.premium import (
 )
 
 
-def check_proper_unlock_result(response_data: Dict[str, Any]) -> None:
+def check_proper_unlock_result(
+        response_data: Dict[str, Any],
+        settings_to_check: Optional[Dict[str, Any]] = None,
+) -> None:
     assert response_data['result'] is not None
     assert response_data['message'] == ''
     result = response_data['result']
@@ -30,6 +33,10 @@ def check_proper_unlock_result(response_data: Dict[str, Any]) -> None:
     assert result['settings']['version'] == ROTKEHLCHEN_DB_VERSION
     for setting in DBSettings._fields:
         assert setting in result['settings']
+
+    if settings_to_check is not None:
+        for setting, value in settings_to_check.items():
+            assert result['settings'][setting] == value
 
 
 def check_user_status(api_server) -> Dict[str, str]:
@@ -82,7 +89,32 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_proper_response(response)
-    check_proper_unlock_result(response.json())
+    check_proper_unlock_result(response.json(), {'submit_usage_analytics': True})
+
+    # Query users and make sure the new user is logged in
+    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    assert_proper_response(response)
+    json = response.json()
+    assert json['result'][username] == 'loggedin'
+    assert len(json['result']) == 1
+
+    # Check that the directory was created
+    assert Path(data_dir / username / 'rotkehlchen.db').exists()
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_user_creation_with_no_analytics(rotkehlchen_api_server, data_dir):
+    """Test that providing specific settings at user creation works"""
+    # Create a user without any premium credentials
+    username = 'hania'
+    data = {
+        'name': username,
+        'password': '1234',
+        'initial_settings': {'submit_usage_analytics': False},
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    assert_proper_response(response)
+    check_proper_unlock_result(response.json(), {'submit_usage_analytics': False})
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))

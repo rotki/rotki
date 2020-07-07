@@ -14,6 +14,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import AuthenticationError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import AssetAmount, B64EncodedBytes, B64EncodedString, FilePath, Timestamp
@@ -58,6 +59,7 @@ class DataHandler():
             username: str,
             password: str,
             create_new: bool,
+            initial_settings: Optional[ModifiableDBSettings] = None,
     ) -> FilePath:
         """Unlocks a user, either logging them in or creating a new user
 
@@ -102,7 +104,12 @@ class DataHandler():
                     'Please recreate the user account. '
                     'A backup of the user directory was created.'.format(username))
 
-        self.db: DBHandler = DBHandler(user_data_dir, password, self.msg_aggregator)
+        self.db: DBHandler = DBHandler(
+            user_data_dir=user_data_dir,
+            password=password,
+            msg_aggregator=self.msg_aggregator,
+            initial_settings=initial_settings,
+        )
         self.user_data_dir = user_data_dir
         self.logged_in = True
         self.username = username

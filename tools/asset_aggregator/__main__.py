@@ -142,6 +142,7 @@ def main():
         user_data_dir=user_data_dir,
         password=args.db_password,
         msg_aggregator=msg_aggregator,
+        initial_settings=None,
     )
     our_data = AssetResolver().assets
     paprika = CoinPaprika()

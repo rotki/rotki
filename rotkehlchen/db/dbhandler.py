@@ -151,7 +151,13 @@ def db_tuple_to_str(
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
 class DBHandler:
-    def __init__(self, user_data_dir: FilePath, password: str, msg_aggregator: MessagesAggregator):
+    def __init__(
+            self,
+            user_data_dir: FilePath,
+            password: str,
+            msg_aggregator: MessagesAggregator,
+            initial_settings: Optional[ModifiableDBSettings],
+    ):
         """Database constructor
 
         May raise:
@@ -187,6 +193,8 @@ class DBHandler:
             self.connect(password)
 
         self._run_actions_after_first_connection(password)
+        if initial_settings is not None:
+            self.set_settings(initial_settings)
 
     def __del__(self) -> None:
         self.disconnect()
