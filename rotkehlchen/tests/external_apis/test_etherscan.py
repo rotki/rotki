@@ -16,6 +16,7 @@ def temp_etherscan(function_scope_messages_aggregator, tmpdir_factory):
         user_data_dir=directory,
         password='123',
         msg_aggregator=function_scope_messages_aggregator,
+        initial_settings=None,
     )
 
     # Test with etherscan API key

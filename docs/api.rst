@@ -104,12 +104,16 @@ Handling user creation, sign-in, log-out and querying
             "password": "supersecurepassword",
             "premium_api_key": "dasdsda",
             "premium_api_secret": "adsadasd",
+	    "initial_settings": {
+	        "submit_usage_analytics": false
+	    }
       }
 
    :reqjson string name: The name to give to the new user
    :reqjson string password: The password with which to encrypt the database for the new user
    :reqjson string[optional] premium_api_key: An optional api key if the user has a Rotki premium account.
    :reqjson string[optional] premium_api_secret: An optional api secret if the user has a Rotki premium account.
+   :reqjson object[optional] initial_settings: Optionally provide DB settings to set when creating the new user. If not provided, default settings are used.
 
    **Example Response**:
 

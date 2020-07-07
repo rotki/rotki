@@ -46,7 +46,12 @@ def price_historian(
 
 @pytest.fixture
 def trades_historian(data_dir, function_scope_messages_aggregator, blockchain):
-    database = DBHandler(data_dir, '123', function_scope_messages_aggregator)
+    database = DBHandler(
+        user_data_dir=data_dir,
+        password='123',
+        msg_aggregator=function_scope_messages_aggregator,
+        initial_settings=None,
+    )
     exchange_manager = ExchangeManager(msg_aggregator=function_scope_messages_aggregator)
     historian = TradesHistorian(
         user_directory=data_dir,

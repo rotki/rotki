@@ -117,7 +117,12 @@ def _init_database(
         tags: List[Dict[str, Any]],
         manually_tracked_balances: List[ManuallyTrackedBalance],
 ) -> DBHandler:
-    db = DBHandler(data_dir, password, msg_aggregator)
+    db = DBHandler(
+        user_data_dir=data_dir,
+        password=password,
+        msg_aggregator=msg_aggregator,
+        initial_settings=None,
+    )
     # Make sure that the fixture provided data are included in the DB
     add_settings_to_test_db(db, db_settings, ignored_assets)
     add_blockchain_accounts_to_db(db, blockchain_accounts)

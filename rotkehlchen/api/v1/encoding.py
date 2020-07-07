@@ -15,6 +15,7 @@ from rotkehlchen.chain.bitcoin import is_valid_btc_address
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import AVAILABLE_MODULES
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -684,6 +685,29 @@ class ModifiableSettingsSchema(Schema):
                         field_name='active_modules',
                     )
 
+    @post_load  # type: ignore
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        return ModifiableDBSettings(
+            premium_should_sync=data['premium_should_sync'],
+            include_crypto2crypto=data['include_crypto2crypto'],
+            anonymized_logs=data['anonymized_logs'],
+            ui_floating_precision=data['ui_floating_precision'],
+            taxfree_after_period=data['taxfree_after_period'],
+            balance_save_frequency=data['balance_save_frequency'],
+            include_gas_costs=data['include_gas_costs'],
+            historical_data_start=data['historical_data_start'],
+            eth_rpc_endpoint=data['eth_rpc_endpoint'],
+            main_currency=data['main_currency'],
+            date_display_format=data['date_display_format'],
+            submit_usage_analytics=data['submit_usage_analytics'],
+            kraken_account_type=data['kraken_account_type'],
+            active_modules=data['active_modules'],
+        )
+
 
 class BaseUserSchema(Schema):
     name = fields.String(required=True)
@@ -734,6 +758,7 @@ class UserPremiumKeyRemoveSchema(Schema):
 class NewUserSchema(BaseUserSchema):
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')
+    initial_settings = fields.Nested(ModifiableSettingsSchema, missing=None)
 
 
 class AllBalancesQuerySchema(Schema):

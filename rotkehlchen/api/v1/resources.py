@@ -57,7 +57,6 @@ from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -150,37 +149,8 @@ class SettingsResource(BaseResource):
     @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
             self,
-            premium_should_sync: Optional[bool],
-            include_crypto2crypto: Optional[bool],
-            anonymized_logs: Optional[bool],
-            submit_usage_analytics: Optional[bool],
-            ui_floating_precision: Optional[int],
-            taxfree_after_period: Optional[int],
-            balance_save_frequency: Optional[int],
-            include_gas_costs: Optional[bool],
-            historical_data_start: Optional[str],
-            eth_rpc_endpoint: Optional[str],
-            main_currency: Optional[Asset],
-            date_display_format: Optional[str],
-            kraken_account_type: Optional[KrakenAccountType],
-            active_modules: Optional[List[str]],
+            settings: ModifiableDBSettings,
     ) -> Response:
-        settings = ModifiableDBSettings(
-            premium_should_sync=premium_should_sync,
-            include_crypto2crypto=include_crypto2crypto,
-            anonymized_logs=anonymized_logs,
-            ui_floating_precision=ui_floating_precision,
-            taxfree_after_period=taxfree_after_period,
-            balance_save_frequency=balance_save_frequency,
-            include_gas_costs=include_gas_costs,
-            historical_data_start=historical_data_start,
-            eth_rpc_endpoint=eth_rpc_endpoint,
-            main_currency=main_currency,
-            date_display_format=date_display_format,
-            submit_usage_analytics=submit_usage_analytics,
-            kraken_account_type=kraken_account_type,
-            active_modules=active_modules,
-        )
         return self.rest_api.set_settings(settings)
 
     def get(self) -> Response:
@@ -497,12 +467,14 @@ class UsersResource(BaseResource):
             password: str,
             premium_api_key: str,
             premium_api_secret: str,
+            initial_settings: Optional[ModifiableDBSettings],
     ) -> Response:
         return self.rest_api.create_new_user(
             name=name,
             password=password,
             premium_api_key=premium_api_key,
             premium_api_secret=premium_api_secret,
+            initial_settings=initial_settings,
         )
 
 

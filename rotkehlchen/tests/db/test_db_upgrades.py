@@ -60,6 +60,21 @@ def target_patch(target_version: int):
         yield (a, b, c)
 
 
+def _init_db_with_target_version(
+        target_version: int,
+        userdata_dir: FilePath,
+        msg_aggregator: MessagesAggregator,
+) -> DBHandler:
+    with target_patch(target_version=target_version):
+        db = DBHandler(
+            user_data_dir=userdata_dir,
+            password='123',
+            msg_aggregator=msg_aggregator,
+            initial_settings=None,
+        )
+    return db
+
+
 def populate_db_and_check_for_asset_renaming(
         cursor: Cursor,
         data: DataHandler,
@@ -404,10 +419,11 @@ def test_upgrade_db_5_to_6(data_dir, username):
     ]
     for filename in fake_cache_files:
         Path(filename).touch()
-
-    with target_patch(target_version=6):
-        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
-
+    db = _init_db_with_target_version(
+        target_version=6,
+        userdata_dir=userdata_dir,
+        msg_aggregator=msg_aggregator,
+    )
     cursor = db.conn.cursor()
     query = (
         'SELECT id,'
@@ -491,11 +507,13 @@ def test_upgrade_db_6_to_7(data_dir, username):
         os.path.join(os.path.dirname(dir_path), 'data', 'v6_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
-
-    with target_patch(target_version=7):
-        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
-
+    db = _init_db_with_target_version(
+        target_version=7,
+        userdata_dir=userdata_dir,
+        msg_aggregator=msg_aggregator,
+    )
     cursor = db.conn.cursor()
+
     query = (
         'SELECT id,'
         '  time,'
@@ -555,8 +573,11 @@ def test_upgrade_db_7_to_8(data_dir, username):
         os.path.join(os.path.dirname(dir_path), 'data', 'v7_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
-    with target_patch(target_version=8):
-        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+    db = _init_db_with_target_version(
+        target_version=8,
+        userdata_dir=userdata_dir,
+        msg_aggregator=msg_aggregator,
+    )
     cursor = db.conn.cursor()
 
     # Check that trades got upgraded properly
@@ -714,8 +735,11 @@ def test_upgrade_broken_db_7_to_8(data_dir, username):
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
     with pytest.raises(DBUpgradeError):
-        with target_patch(target_version=8):
-            DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+        _init_db_with_target_version(
+            target_version=8,
+            userdata_dir=userdata_dir,
+            msg_aggregator=msg_aggregator,
+        )
 
 
 def test_upgrade_db_8_to_9(data_dir, username):
@@ -730,9 +754,11 @@ def test_upgrade_db_8_to_9(data_dir, username):
         os.path.join(os.path.dirname(dir_path), 'data', 'v8_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
-
-    with target_patch(target_version=9):
-        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+    db = _init_db_with_target_version(
+        target_version=9,
+        userdata_dir=userdata_dir,
+        msg_aggregator=msg_aggregator,
+    )
 
     cursor = db.conn.cursor()
     results = cursor.execute(
@@ -766,9 +792,11 @@ def test_upgrade_db_9_to_10(data_dir, username):
         os.path.join(os.path.dirname(dir_path), 'data', 'v9_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
-
-    with target_patch(target_version=10):
-        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+    db = _init_db_with_target_version(
+        target_version=10,
+        userdata_dir=userdata_dir,
+        msg_aggregator=msg_aggregator,
+    )
 
     cursor = db.conn.cursor()
     results = cursor.execute(
@@ -791,9 +819,11 @@ def test_upgrade_db_10_to_11(data_dir, username):
         os.path.join(os.path.dirname(dir_path), 'data', 'v10_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
-
-    with target_patch(target_version=11):
-        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+    db = _init_db_with_target_version(
+        target_version=11,
+        userdata_dir=userdata_dir,
+        msg_aggregator=msg_aggregator,
+    )
 
     # Make sure that the blockchain accounts table is upgraded
     expected_results = [

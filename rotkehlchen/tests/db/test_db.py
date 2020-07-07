@@ -130,7 +130,7 @@ def test_add_remove_exchange(data_dir, username):
     username = 'foo'
     userdata_dir = os.path.join(data_dir, username)
     os.mkdir(userdata_dir)
-    db = DBHandler(userdata_dir, '123', msg_aggregator)
+    db = DBHandler(userdata_dir, '123', msg_aggregator, None)
 
     # Test that an unknown exchange fails
     with pytest.raises(InputError):
@@ -369,7 +369,7 @@ def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(data_dir):
 
     # the constructor should migrate it in-place and we should have a working DB
     msg_aggregator = MessagesAggregator()
-    db = DBHandler(userdata_dir, '123', msg_aggregator)
+    db = DBHandler(userdata_dir, '123', msg_aggregator, None)
     assert db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
@@ -394,7 +394,7 @@ def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(data_dir):
 
     # the constructor should migrate it in-place and we should have a working DB
     msg_aggregator = MessagesAggregator()
-    db = DBHandler(userdata_dir, '123', msg_aggregator)
+    db = DBHandler(userdata_dir, '123', msg_aggregator, None)
     assert db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
@@ -988,7 +988,7 @@ def test_multiple_location_data_and_balances_same_timestamp(data_dir, username):
     username = 'foo'
     userdata_dir = os.path.join(data_dir, username)
     os.mkdir(userdata_dir)
-    db = DBHandler(userdata_dir, '123', msg_aggregator)
+    db = DBHandler(userdata_dir, '123', msg_aggregator, None)
 
     balances = [
         AssetBalance(

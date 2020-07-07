@@ -136,6 +136,7 @@ class Rotkehlchen():
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
             premium_credentials: Optional[PremiumCredentials],
+            initial_settings: Optional[ModifiableDBSettings] = None,
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True
 
@@ -152,11 +153,12 @@ class Rotkehlchen():
             user=user,
             create_new=create_new,
             sync_approval=sync_approval,
+            initial_settings=initial_settings,
         )
 
         # unlock or create the DB
         self.password = password
-        self.user_directory = self.data.unlock(user, password, create_new)
+        self.user_directory = self.data.unlock(user, password, create_new, initial_settings)
         self.data_importer = DataImporter(db=self.data.db)
         self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
