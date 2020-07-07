@@ -74,6 +74,54 @@
         Create
       </v-btn>
     </v-card-actions>
+    <v-dialog persistent max-width="450">
+      <v-card
+        light
+        max-width="500"
+        class="mx-auto account-management__premium-dialog"
+      >
+        <v-card-title class="account-management__premium-dialog__title">
+          Anonymous usage analytics
+        </v-card-title>
+        <v-card-text>
+          <v-row class="mx-auto text-justify">
+            <v-col cols="2" align-self="center">
+              <v-icon color="success" size="48">
+                fa fa-info-circle
+              </v-icon>
+            </v-col>
+            <v-col cols="10">
+              rotki is a local application and anonymous usage analytics is the
+              only way for us to have an idea of how many people use our
+              software, where they are from etc. These data are really important
+              to us, are completely anonymous and help us create a better
+              product for you. Are you sure you want to disable submitting usage
+              analytics?
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            class="account-management__premium-dialog__buttons__cancel"
+            depressed
+            outlined
+            @click="acceptAnalytics()"
+          >
+            Keep usage analytics
+          </v-btn>
+          <v-btn
+            color="primary"
+            depressed
+            class="account-management__premium-dialog__buttons__confirm"
+            @click="rejectAnalytics()"
+          >
+            Disable usage analytics
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -159,7 +207,19 @@ export default class CreateAccount extends Vue {
   @Emit()
   submitUsageanalyticsChanged(_enabled: boolean) {
     this.submitUsageAnalytics = _enabled;
+    if (!_enabled) {
+      // here show the popup
+    }
   }
+
+  acceptAnalytics() {
+    this.submitUsageAnalytics = true;
+  }
+
+  rejectAnalytics() {
+    this.submitUsageAnalytics = false;
+  }
+
   confirm() {
     const premiumKeys = {
       apiKey: this.apiKey,
