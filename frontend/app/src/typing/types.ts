@@ -39,6 +39,7 @@ export interface Credentials {
   readonly syncApproval?: SyncApproval;
   readonly apiKey?: string;
   readonly apiSecret?: string;
+  readonly submitUsageAnalytics?: boolean;
 }
 
 export type UsdToFiatExchangeRates = { [key: string]: number };
@@ -100,6 +101,7 @@ export interface UnlockPayload {
   readonly syncApproval: SyncApproval;
   readonly apiKey?: string;
   readonly apiSecret?: string;
+  readonly submitUsageAnalytics?: boolean;
 }
 
 export type SettingsUpdate = {

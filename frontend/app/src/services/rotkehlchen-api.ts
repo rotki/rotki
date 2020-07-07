@@ -749,10 +749,19 @@ export class RotkehlchenApi {
       password,
       apiKey,
       apiSecret,
-      syncApproval
+      syncApproval,
+      submitUsageAnalytics
     } = payload;
     if (create) {
-      return this.registerUser(username, password, apiKey, apiSecret);
+      return this.registerUser(
+        username,
+        password,
+        apiKey,
+        apiSecret,
+        submitUsageAnalytics !== undefined
+          ? { submit_usage_analytics: submitUsageAnalytics }
+          : undefined
+      );
     }
     return this.login(username, password, syncApproval);
   }
@@ -761,7 +770,8 @@ export class RotkehlchenApi {
     name: string,
     password: string,
     apiKey?: string,
-    apiSecret?: string
+    apiSecret?: string,
+    initialSettings?: SettingsUpdate
   ): Promise<AccountState> {
     return new Promise<AccountState>((resolve, reject) => {
       this.axios
@@ -771,7 +781,8 @@ export class RotkehlchenApi {
             name,
             password,
             premium_api_key: apiKey,
-            premium_api_secret: apiSecret
+            premium_api_secret: apiSecret,
+            initial_settings: initialSettings
           },
           {
             validateStatus: function (status) {
