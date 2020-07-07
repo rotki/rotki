@@ -177,7 +177,13 @@ export default class AccountManagement extends Vue {
   }
 
   async createAccount(credentials: Credentials) {
-    const { username, password, apiKey, apiSecret } = credentials;
+    const {
+      username,
+      password,
+      apiKey,
+      apiSecret,
+      submitUsageAnalytics
+    } = credentials;
     this.loading = true;
     await this.$store.dispatch('session/unlock', {
       username,
@@ -185,7 +191,8 @@ export default class AccountManagement extends Vue {
       create: true,
       syncApproval: 'unknown',
       apiKey,
-      apiSecret
+      apiSecret,
+      submitUsageAnalytics
     } as UnlockPayload);
     this.loading = false;
     if (this.logged) {

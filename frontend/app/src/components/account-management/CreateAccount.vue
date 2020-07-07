@@ -35,6 +35,11 @@
           required
         >
         </v-text-field>
+        <v-checkbox
+          v-model="submitUsageAnalytics"
+          label="Submit anonymous usage analytics"
+          @change="submitUsageanalyticsChanged"
+        ></v-checkbox>
         <premium-credentials
           :enabled="premiumEnabled"
           :api-secret="apiSecret"
@@ -92,6 +97,8 @@ export default class CreateAccount extends Vue {
   passwordConfirm: string = '';
 
   premiumEnabled: boolean = false;
+
+  submitUsageAnalytics: boolean = true;
   apiKey: string = '';
   apiSecret: string = '';
 
@@ -149,6 +156,10 @@ export default class CreateAccount extends Vue {
     }
   }
 
+  @Emit()
+  submitUsageanalyticsChanged(_enabled: boolean) {
+    this.submitUsageAnalytics = _enabled;
+  }
   confirm() {
     const premiumKeys = {
       apiKey: this.apiKey,
@@ -157,7 +168,8 @@ export default class CreateAccount extends Vue {
 
     const accountCredentials: Credentials = {
       username: this.username,
-      password: this.password
+      password: this.password,
+      submitUsageAnalytics: this.submitUsageAnalytics
     };
 
     const credentials: Credentials = {
