@@ -2,7 +2,6 @@ import argparse
 import sys
 from typing import Any, List, Sequence, Union
 
-from rotkehlchen.config import default_data_directory
 from rotkehlchen.utils.misc import get_system_spec
 
 
@@ -49,7 +48,8 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         '--data-dir',
         help='The directory where all data and configs are placed',
-        default=default_data_directory(),
+        type=str,
+        default=None,
     )
     p.add_argument(
         '--api-host',
