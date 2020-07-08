@@ -1,5 +1,4 @@
 import { MutationTree } from 'vuex';
-import { Currency } from '@/model/currency';
 import { defaultState, SessionState } from '@/store/session/state';
 import {
   AccountingSettings,
@@ -9,11 +8,6 @@ import {
 } from '@/typing/types';
 
 export const mutations: MutationTree<SessionState> = {
-  defaultCurrency(state: SessionState, currency: Currency) {
-    state.generalSettings = Object.assign(state.generalSettings, {
-      selectedCurrency: currency
-    });
-  },
   login(
     state: SessionState,
     payload: { username: string; newAccount: boolean }

@@ -2,6 +2,7 @@ import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ManualBalancesList from '@/components/accounts/ManualBalancesList.vue';
+import { findCurrency } from '@/data/converters';
 import { currencies } from '@/data/currencies';
 import store from '@/store/store';
 
@@ -25,7 +26,9 @@ describe('ManualBalanceList.vue', () => {
 
   test('currency header is properly updated', async () => {
     expect(wrapper.find('th:nth-child(4)').text()).toMatch('USD Value');
-    store.commit('session/defaultCurrency', currencies[1]);
+    store.commit('session/generalSettings', {
+      selectedCurrency: findCurrency(currencies[1].ticker_symbol)
+    });
     await wrapper.vm.$nextTick();
     expect(wrapper.find('th:nth-child(4)').text()).toMatch('EUR Value');
   });

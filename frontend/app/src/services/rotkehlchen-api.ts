@@ -8,7 +8,6 @@ import {
   ExternalServiceKeys
 } from '@/model/action-result';
 import { BlockchainAccount } from '@/model/blockchain_account_result';
-import { Currency } from '@/model/currency';
 import { DBAssetBalance } from '@/model/db-asset-balance';
 import { EthTokens } from '@/model/eth_token';
 import { LocationData } from '@/model/location-data';
@@ -375,47 +374,15 @@ export class RotkehlchenApi {
   }
 
   setSettings(settings: SettingsUpdate): Promise<DBSettings> {
-    return new Promise<DBSettings>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<DBSettings>>(
-          '/settings',
-          {
-            settings: settings
-          },
-          { validateStatus: this.validate_status_put_settings }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
-  }
-
-  setMainCurrency(currency: Currency): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<DBSettings>>(
-          '/settings',
-          {
-            main_currency: currency.ticker_symbol
-          },
-          { validateStatus: this.validate_status_put_settings }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(true);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .put<ActionResult<DBSettings>>(
+        '/settings',
+        {
+          settings: settings
+        },
+        { validateStatus: this.validate_status_put_settings }
+      )
+      .then(this.handleResponse);
   }
 
   queryExchangeBalancesAsync(
