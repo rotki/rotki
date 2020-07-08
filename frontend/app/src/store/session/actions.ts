@@ -9,7 +9,12 @@ import { api } from '@/services/rotkehlchen-api';
 import { notify } from '@/store/notifications/utils';
 import { SessionState } from '@/store/session/state';
 import { Message, RotkehlchenState } from '@/store/store';
-import { SyncConflictError, Tag, UnlockPayload } from '@/typing/types';
+import {
+  SettingsUpdate,
+  SyncConflictError,
+  Tag,
+  UnlockPayload
+} from '@/typing/types';
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
   start({ commit }, payload: { settings: DBSettings }) {
@@ -199,6 +204,23 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         {
           title: 'Error setting kraken account type',
           description: e.message || ''
+        } as Message,
+        { root: true }
+      );
+    }
+  },
+
+  async updateSettings({ commit }, update: SettingsUpdate): Promise<void> {
+    try {
+      const settings = await api.setSettings(update);
+      commit('generalSettings', convertToGeneralSettings(settings));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Error',
+          description: `Setting the main currency was not successful: ${e.message}`,
+          success: false
         } as Message,
         { root: true }
       );

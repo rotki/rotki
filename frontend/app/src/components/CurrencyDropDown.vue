@@ -30,40 +30,31 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
-import { Message } from '@/store/store';
-
-const { mapGetters } = createNamespacedHelpers('session');
+import { SettingsUpdate } from '@/typing/types';
 
 @Component({
-  computed: mapGetters(['currency'])
+  computed: mapGetters('session', ['currency']),
+  methods: {
+    ...mapActions('session', ['updateSettings'])
+  }
 })
 export default class CurrencyDropDown extends Vue {
   currency!: Currency;
+  updateSettings!: (update: SettingsUpdate) => Promise<void>;
 
   get currencies(): Currency[] {
     return currencies;
   }
 
-  onSelected(currency: Currency) {
+  async onSelected(currency: Currency) {
     if (currency.ticker_symbol === this.currency.ticker_symbol) {
       return;
     }
 
-    this.$api
-      .setMainCurrency(currency)
-      .then(() => {
-        this.$store.commit('session/defaultCurrency', currency);
-      })
-      .catch((reason: Error) => {
-        this.$store.commit('setMessage', {
-          title: 'Error',
-          description: `Setting the main currency was not successful: ${reason.message}`,
-          success: false
-        } as Message);
-      });
+    await this.updateSettings({ main_currency: currency.ticker_symbol });
   }
 }
 </script>
