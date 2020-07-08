@@ -97,7 +97,7 @@ def test_set_settings(rotkehlchen_api_server):
     with block_query, mock_web3:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, "settingsresource"),
-            json=new_settings,
+            json={'settings': new_settings},
         )
     # Check that new settings are returned in the response
     assert_proper_response(response)
@@ -123,10 +123,10 @@ def test_set_rpc_endpoint_fail_not_set_others(rotkehlchen_api_server):
     """Test that setting a non-existing eth rpc along with other settings does not modify them"""
     eth_rpc_endpoint = 'http://working.nodes.com:8545'
     main_currency = A_JPY
-    data = {
+    data = {'settings': {
         'eth_rpc_endpoint': eth_rpc_endpoint,
         'main_currency': main_currency.identifier,
-    }
+    }}
 
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -155,7 +155,7 @@ def test_unset_rpc_endpoint(rotkehlchen_api_server):
     assert result['eth_rpc_endpoint'] != ''
 
     data = {
-        'eth_rpc_endpoint': '',
+        'settings': {'eth_rpc_endpoint': ''},
     }
 
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
@@ -176,7 +176,7 @@ def test_set_kraken_account_type(rotkehlchen_api_server_with_exchanges):
     assert kraken.call_limit == 15
     assert kraken.reduction_every_secs == 3
 
-    data = {'kraken_account_type': 'intermediate'}
+    data = {'settings': {'kraken_account_type': 'intermediate'}}
     response = requests.put(api_url_for(server, "settingsresource"), json=data)
     assert_proper_response(response)
     json_data = response.json()
@@ -191,7 +191,7 @@ def test_set_kraken_account_type(rotkehlchen_api_server_with_exchanges):
 def test_disable_taxfree_after_period(rotkehlchen_api_server):
     """Test that providing -1 for the taxfree_after_period setting disables it """
     data = {
-        'taxfree_after_period': -1,
+        'settings': {'taxfree_after_period': -1},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_proper_response(response)
@@ -200,7 +200,7 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server):
 
     # Test that any other negative value is refused
     data = {
-        'taxfree_after_period': -5,
+        'settings': {'taxfree_after_period': -5},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -210,7 +210,7 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server):
     )
     # Test that zero value is refused
     data = {
-        'taxfree_after_period': 0,
+        'settings': {'taxfree_after_period': 0},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -227,7 +227,7 @@ def test_set_unknown_settings(rotkehlchen_api_server):
     https://github.com/rotki/rotki/issues/532 was implemented"""
     # Unknown setting
     data = {
-        'invalid_setting': 5555,
+        'settings': {'invalid_setting': 5555},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -245,7 +245,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Eth rpc endpoint to which we can't connect
     data = {
-        'eth_rpc_endpoint': 'http://lol.com:5555',
+        'settings': {'eth_rpc_endpoint': 'http://lol.com:5555'},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -256,7 +256,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid type for eth_rpc_endpoint
     data = {
-        'eth_rpc_endpoint': 5555,
+        'settings': {'eth_rpc_endpoint': 5555},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -267,7 +267,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid type for premium_should_sync
     data = {
-        'premium_should_sync': 444,
+        'settings': {'premium_should_sync': 444},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -278,7 +278,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid type for include_crypto2crypto
     data = {
-        'include_crypto2crypto': 'ffdsdasd',
+        'settings': {'include_crypto2crypto': 'ffdsdasd'},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -289,7 +289,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid type for anonymized_logs
     data = {
-        'anonymized_logs': 555.1,
+        'settings': {'anonymized_logs': 555.1},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -300,7 +300,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid range for ui_floating_precision
     data = {
-        'ui_floating_precision': -1,
+        'settings': {'ui_floating_precision': -1},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -309,7 +309,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
     data = {
-        'ui_floating_precision': 9,
+        'settings': {'ui_floating_precision': 9},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -320,7 +320,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid type for ui_floating_precision
     data = {
-        'ui_floating_precision': 'dasdsds',
+        'settings': {'ui_floating_precision': 'dasdsds'},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -331,7 +331,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid range for taxfree_after_period
     data = {
-        'taxfree_after_period': -2,
+        'settings': {'taxfree_after_period': -2},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -342,7 +342,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid type for taxfree_after_period
     data = {
-        'taxfree_after_period': 'dsad',
+        'settings': {'taxfree_after_period': 'dsad'},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -353,7 +353,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid range for balance_save_frequency
     data = {
-        'balance_save_frequency': 0,
+        'settings': {'balance_save_frequency': 0},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -364,7 +364,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid range for balance_save_frequency
     data = {
-        'balance_save_frequency': 'dasdsd',
+        'settings': {'balance_save_frequency': 'dasdsd'},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -375,7 +375,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid type for include_gas_cost
     data = {
-        'include_gas_costs': 55.1,
+        'settings': {'include_gas_costs': 55.1},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -386,7 +386,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid type for historical_data_start
     data = {
-        'historical_data_start': 12,
+        'settings': {'historical_data_start': 12},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -397,7 +397,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # Invalid asset for main currenty
     data = {
-        'main_currency': 'DSDSDSAD',
+        'settings': {'main_currency': 'DSDSDSAD'},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -408,7 +408,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # non FIAT asset for main currency
     data = {
-        'main_currency': 'ETH',
+        'settings': {'main_currency': 'ETH'},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -419,7 +419,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # invalid type main currency
     data = {
-        'main_currency': 243243,
+        'settings': {'main_currency': 243243},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -430,7 +430,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # invalid type date_display_format
     data = {
-        'date_display_format': 124.1,
+        'settings': {'date_display_format': 124.1},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -441,7 +441,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # invalid type kraken_account_type
     data = {
-        'kraken_account_type': 124.1,
+        'settings': {'kraken_account_type': 124.1},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -452,7 +452,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # invalid value kraken_account_type
     data = {
-        'kraken_account_type': 'super hyper pro',
+        'settings': {'kraken_account_type': 'super hyper pro'},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -463,7 +463,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # invalid type for active modules
     data = {
-        'active_modules': 55,
+        'settings': {'active_modules': 55},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
@@ -474,7 +474,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
     # invalid module for active modules
     data = {
-        'active_modules': ['makerdao_dsr', 'foo'],
+        'settings': {'active_modules': ['makerdao_dsr', 'foo']},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(

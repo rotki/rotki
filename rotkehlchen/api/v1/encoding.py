@@ -709,6 +709,10 @@ class ModifiableSettingsSchema(Schema):
         )
 
 
+class EditSettingsSchema(Schema):
+    settings = fields.Nested(ModifiableSettingsSchema, required=True)
+
+
 class BaseUserSchema(Schema):
     name = fields.String(required=True)
     password = fields.String(required=True)

@@ -575,8 +575,10 @@ Getting or modifying settings
       Content-Type: application/json
 
       {
-          "ui_floating_precision": 4,
-          "include_gas_costs": false
+          "settings": {
+              "ui_floating_precision": 4,
+              "include_gas_costs": false,
+          }
       }
 
    :reqjson bool[optional] premium_should_sync: A boolean denoting whether premium users database should be synced from/to the server

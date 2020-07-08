@@ -21,6 +21,7 @@ from rotkehlchen.api.v1.encoding import (
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
     DataImportSchema,
+    EditSettingsSchema,
     EthTokensSchema,
     ExchangeBalanceQuerySchema,
     ExchangesResourceAddSchema,
@@ -35,7 +36,6 @@ from rotkehlchen.api.v1.encoding import (
     IgnoredAssetsSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
-    ModifiableSettingsSchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
@@ -144,7 +144,7 @@ class BaseResource(Resource):
 
 class SettingsResource(BaseResource):
 
-    put_schema = ModifiableSettingsSchema()
+    put_schema = EditSettingsSchema()
 
     @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
