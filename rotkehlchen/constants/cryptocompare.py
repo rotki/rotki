@@ -280,6 +280,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen WEB is Webcoin and WEB-2 Webchain, but in cryptocompare
     # Webchain is WEBC
     'WEB-2': 'WEBC',
+    # Cryptocompare does not have WETH, so report price for ETH
+    'WETH': 'ETH',
     # For Rotkehlchen WIN is Winchain Token and WIN-2 WCoin, but in cryptocompare
     # Wcoin is WIN and there is no Winchain Token
     'WIN-2': 'WIN',
