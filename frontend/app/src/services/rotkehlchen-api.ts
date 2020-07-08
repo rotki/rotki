@@ -380,7 +380,7 @@ export class RotkehlchenApi {
         .put<ActionResult<DBSettings>>(
           '/settings',
           {
-            ...settings
+            settings: settings
           },
           { validateStatus: this.validate_status_put_settings }
         )
