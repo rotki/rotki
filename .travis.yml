@@ -47,7 +47,7 @@ templates:
   job-template-osx: &job-template-osx
     os: osx
     language: generic
-    osx_image: xcode10
+    osx_image: xcode12
     env: INSTALL_TYPE=macpython VERSION=3.7.0 VENV=venv
     before_install:
       # Travis has very low openfiles limit and fails often for OSX. Change that here.
