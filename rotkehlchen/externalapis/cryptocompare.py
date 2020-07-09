@@ -3,6 +3,7 @@ import logging
 import os
 import re
 from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
 
 import gevent
@@ -19,7 +20,7 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ExternalService, FilePath, Price, Timestamp
+from rotkehlchen.typing import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import (
     convert_to_int,
     timestamp_to_date,
@@ -118,11 +119,11 @@ def _check_hourly_data_sanity(
 
 
 class Cryptocompare(ExternalServiceWithApiKey):
-    def __init__(self, data_directory: FilePath, database: Optional[DBHandler]) -> None:
+    def __init__(self, data_directory: Path, database: Optional[DBHandler]) -> None:
         super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
         self.data_directory = data_directory
         self.price_history: Dict[PairCacheKey, PriceHistoryData] = {}
-        self.price_history_file: Dict[PairCacheKey, FilePath] = {}
+        self.price_history_file: Dict[PairCacheKey, Path] = {}
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
@@ -133,11 +134,11 @@ class Cryptocompare(ExternalServiceWithApiKey):
         files_list = glob.glob(prefix + '*.json')
 
         for file_ in files_list:
-            file_ = FilePath(file_.replace('\\\\', '\\'))
+            file_ = file_.replace('\\\\', '\\')
             match = regex.match(file_)
             assert match
             cache_key = PairCacheKey(match.group(1))
-            self.price_history_file[cache_key] = file_
+            self.price_history_file[cache_key] = Path(file_)
 
     def set_database(self, database: DBHandler) -> None:
         """If the cryptocompare instance was initialized without a DB this sets its DB"""
@@ -510,9 +511,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         # Let's always check for data sanity for the hourly prices.
         _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
         # and now since we actually queried the data let's also cache them
-        filename = FilePath(
-            os.path.join(self.data_directory, 'price_history_' + cache_key + '.json'),
-        )
+        filename = self.data_directory / ('price_history_' + cache_key + '.json')
         log.info(
             'Updating price history cache',
             filename=filename,

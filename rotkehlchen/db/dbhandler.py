@@ -5,6 +5,7 @@ import re
 import shutil
 import tempfile
 from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 from eth_utils import is_checksum_address
@@ -72,7 +73,6 @@ from rotkehlchen.typing import (
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
-    FilePath,
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
@@ -153,7 +153,7 @@ def db_tuple_to_str(
 class DBHandler:
     def __init__(
             self,
-            user_data_dir: FilePath,
+            user_data_dir: Path,
             password: str,
             msg_aggregator: MessagesAggregator,
             initial_settings: Optional[ModifiableDBSettings],
@@ -205,7 +205,7 @@ class DBHandler:
             log.error(f'At DB teardown could not open the DB: {str(e)}')
             return
 
-        with open(os.path.join(self.user_data_dir, DBINFO_FILENAME), 'w') as f:
+        with open(self.user_data_dir / DBINFO_FILENAME, 'w') as f:
             f.write(rlk_jsondumps(dbinfo))
 
     def _run_actions_after_first_connection(self, password: str) -> None:
@@ -247,7 +247,7 @@ class DBHandler:
         """
         no_active_connection = not hasattr(self, 'conn') or not self.conn
         assert no_active_connection, 'md5hash should be taken only with a closed DB'
-        filename = os.path.join(self.user_data_dir, 'rotkehlchen.db')
+        filename = self.user_data_dir / 'rotkehlchen.db'
         md5_hash = hashlib.md5()
         try:
             with open(filename, 'rb') as f:
@@ -267,7 +267,7 @@ class DBHandler:
         """
         dbinfo = None
         action = DBStartupAction.NOTHING
-        filepath = os.path.join(self.user_data_dir, DBINFO_FILENAME)
+        filepath = self.user_data_dir / DBINFO_FILENAME
 
         if not os.path.exists(filepath):
             return action
@@ -334,7 +334,7 @@ class DBHandler:
         - SystemPermissionError if we are unable to open the DB file,
         probably due to permission errors
         """
-        fullpath = os.path.join(self.user_data_dir, 'rotkehlchen.db')
+        fullpath = self.user_data_dir / 'rotkehlchen.db'
         try:
             self.conn = sqlcipher.connect(fullpath)  # pylint: disable=no-member
         except sqlcipher.OperationalError:  # pylint: disable=no-member
@@ -390,7 +390,7 @@ class DBHandler:
             self.conn.close()
             self.conn = None
 
-    def export_unencrypted(self, temppath: FilePath) -> None:
+    def export_unencrypted(self, temppath: Path) -> None:
         self.conn.executescript(
             'ATTACH DATABASE "{}" AS plaintext KEY "";'
             'SELECT sqlcipher_export("plaintext");'
@@ -405,13 +405,13 @@ class DBHandler:
         there is a DB upgrade and there is an error.
         """
         self.disconnect()
-        rdbpath = os.path.join(self.user_data_dir, 'rotkehlchen.db')
+        rdbpath = self.user_data_dir / 'rotkehlchen.db'
         # Make copy of existing encrypted DB before removing it
         shutil.copy2(
             rdbpath,
-            os.path.join(self.user_data_dir, 'rotkehlchen_temp_backup.db'),
+            self.user_data_dir / 'rotkehlchen_temp_backup.db',
         )
-        os.remove(rdbpath)
+        rdbpath.unlink()
 
         # dump the unencrypted data into a temporary file
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -437,7 +437,7 @@ class DBHandler:
             )
         self._run_actions_after_first_connection(password)
         # all went okay, remove the original temp backup
-        os.remove(os.path.join(self.user_data_dir, 'rotkehlchen_temp_backup.db'))
+        (self.user_data_dir / 'rotkehlchen_temp_backup.db').unlink()
 
     def update_last_write(self) -> None:
         # Also keep it in memory for faster querying

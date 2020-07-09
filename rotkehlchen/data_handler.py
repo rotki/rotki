@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import logging
-import os
 import shutil
 import tempfile
 import time
@@ -17,7 +16,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import AuthenticationError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import AssetAmount, B64EncodedBytes, B64EncodedString, FilePath, Timestamp
+from rotkehlchen.typing import AssetAmount, B64EncodedBytes, B64EncodedString, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
@@ -29,7 +28,7 @@ DEFAULT_START_DATE = "01/08/2015"
 
 class DataHandler():
 
-    def __init__(self, data_directory: FilePath, msg_aggregator: MessagesAggregator):
+    def __init__(self, data_directory: Path, msg_aggregator: MessagesAggregator):
 
         self.logged_in = False
         self.data_directory = data_directory
@@ -41,7 +40,7 @@ class DataHandler():
         if self.logged_in:
             self.username = 'no_user'
             self.password = ''
-            self.user_data_dir: Optional[FilePath] = None
+            self.user_data_dir: Optional[Path] = None
             del self.db
             self.logged_in = False
 
@@ -60,7 +59,7 @@ class DataHandler():
             password: str,
             create_new: bool,
             initial_settings: Optional[ModifiableDBSettings] = None,
-    ) -> FilePath:
+    ) -> Path:
         """Unlocks a user, either logging them in or creating a new user
 
         May raise:
@@ -71,31 +70,28 @@ class DataHandler():
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error.
         """
-        user_data_dir = FilePath(os.path.join(self.data_directory, username))
+        user_data_dir = self.data_directory / username
         if create_new:
-            if os.path.exists(user_data_dir):
+            if user_data_dir.exists():
                 raise AuthenticationError('User {} already exists'.format(username))
             else:
                 try:
-                    os.mkdir(user_data_dir)
+                    user_data_dir.mkdir()
                 except PermissionError as e:
                     raise SystemPermissionError(f'Failed to create directory for user: {str(e)}')
 
         else:
-            if not os.path.exists(user_data_dir):
+            if not user_data_dir.exists():
                 raise AuthenticationError('User {} does not exist'.format(username))
 
-            if not os.path.exists(os.path.join(user_data_dir, 'rotkehlchen.db')):
+            if not (user_data_dir / 'rotkehlchen.db').exists():
                 # This is bad. User directory exists but database is missing.
                 # Make a backup of the directory that user should probably remove
                 # on their own. At the same time delete the directory so that a new
                 # user account can be created
                 shutil.move(
-                    user_data_dir,
-                    os.path.join(
-                        self.data_directory,
-                        f'auto_backup_{username}_{ts_now()}',
-                    ),
+                    user_data_dir,  # type: ignore
+                    self.data_directory / f'auto_backup_{username}_{ts_now()}',
                 )
 
                 raise SystemPermissionError(
@@ -177,8 +173,7 @@ class DataHandler():
         particular user is logged in or not
         """
         users = {}
-        data_dir = Path(self.data_directory)
-        for x in data_dir.iterdir():
+        for x in self.data_directory.iterdir():
             try:
                 if x.is_dir() and (x / 'rotkehlchen.db').exists():
                     users[x.stem] = 'loggedin' if x.stem == self.username else 'loggedout'
@@ -215,7 +210,7 @@ class DataHandler():
         Returns a b64 encoded binary blob"""
         log.info('Compress and encrypt DB')
         with tempfile.TemporaryDirectory() as tmpdirname:
-            tempdb = FilePath(os.path.join(tmpdirname, 'temp.db'))
+            tempdb = Path(tmpdirname) / 'temp.db'
             self.db.export_unencrypted(tempdb)
             with open(tempdb, 'rb') as f:
                 data_blob = f.read()
@@ -244,8 +239,8 @@ class DataHandler():
         # First make a backup of the DB we are about to replace
         date = timestamp_to_date(ts=ts_now(), formatstr='%Y_%m_%d_%H_%M_%S')
         shutil.copyfile(
-            os.path.join(self.data_directory, self.username, 'rotkehlchen.db'),
-            os.path.join(self.data_directory, self.username, f'rotkehlchen_db_{date}.backup'),
+            self.data_directory / self.username / 'rotkehlchen.db',
+            self.data_directory / self.username / f'rotkehlchen_db_{date}.backup',
         )
 
         decrypted_data = decrypt(password.encode(), encrypted_data)

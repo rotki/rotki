@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
@@ -8,7 +9,7 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import FilePath, Price, Timestamp
+from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp
 
@@ -70,7 +71,7 @@ class PriceHistorian():
 
     def __new__(
             cls,
-            data_directory: FilePath = None,
+            data_directory: Path = None,
             history_date_start: str = None,
             cryptocompare: 'Cryptocompare' = None,
     ) -> 'PriceHistorian':

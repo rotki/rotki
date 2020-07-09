@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 import logging
-import os
 from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, Optional
 
 import requests
@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import FilePath, Price, Timestamp
+from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import request_get_dict, retry_calls, timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
@@ -56,12 +56,12 @@ def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
 class Inquirer():
     __instance: Optional['Inquirer'] = None
     _cached_forex_data: Dict
-    _data_directory: FilePath
+    _data_directory: Path
     _cryptocompare: 'Cryptocompare'
 
     def __new__(
             cls,
-            data_dir: FilePath = None,
+            data_dir: Path = None,
             cryptocompare: 'Cryptocompare' = None,
     ) -> 'Inquirer':
         if Inquirer.__instance is not None:
@@ -74,7 +74,7 @@ class Inquirer():
 
         Inquirer.__instance._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
-        filename = os.path.join(data_dir, 'price_history_forex.json')
+        filename = data_dir / 'price_history_forex.json'
         try:
             with open(filename, 'r') as f:
                 # we know price_history_forex contains a dict
@@ -219,7 +219,7 @@ class Inquirer():
     @staticmethod
     def save_historical_forex_data() -> None:
         instance = Inquirer()
-        filename = os.path.join(instance._data_directory, 'price_history_forex.json')
+        filename = instance._data_directory / 'price_history_forex.json'
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(instance._cached_forex_data))
 

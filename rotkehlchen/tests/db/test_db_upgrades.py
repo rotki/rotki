@@ -26,7 +26,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 )
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
-from rotkehlchen.typing import FilePath, Timestamp
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 creation_patch = patch(
@@ -62,12 +62,12 @@ def target_patch(target_version: int):
 
 def _init_db_with_target_version(
         target_version: int,
-        userdata_dir: FilePath,
+        user_data_dir: Path,
         msg_aggregator: MessagesAggregator,
 ) -> DBHandler:
     with target_patch(target_version=target_version):
         db = DBHandler(
-            user_data_dir=userdata_dir,
+            user_data_dir=user_data_dir,
             password='123',
             msg_aggregator=msg_aggregator,
             initial_settings=None,
@@ -75,10 +75,18 @@ def _init_db_with_target_version(
     return db
 
 
+def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', filename),
+        user_data_dir / 'rotkehlchen.db',
+    )
+
+
 def populate_db_and_check_for_asset_renaming(
         cursor: Cursor,
         data: DataHandler,
-        data_dir: FilePath,
+        data_dir: Path,
         msg_aggregator: MessagesAggregator,
         username: str,
         to_rename_asset: str,
@@ -397,31 +405,25 @@ def test_upgrade_db_4_to_5(data_dir, username):
     assert data.db.get_version() == 5
 
 
-def test_upgrade_db_5_to_6(data_dir, username):
+def test_upgrade_db_5_to_6(user_data_dir):
     """Test upgrading the DB from version 5 to version 6.
 
     Test that the trades table is upgraded.
     Test that cache files are removed
     """
     msg_aggregator = MessagesAggregator()
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'v5_rotkehlchen.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
-    )
+    _use_prepared_db(user_data_dir, 'v5_rotkehlchen.db')
     # Create fake cache files and make sure they are deleted.
     fake_cache_files = [
-        os.path.join(userdata_dir, 'kraken_trades.json'),
-        os.path.join(userdata_dir, 'trades_history.json'),
-        os.path.join(userdata_dir, 'binance_deposits_withdrawals.json'),
+        user_data_dir / 'kraken_trades.json',
+        user_data_dir / 'trades_history.json',
+        user_data_dir / 'binance_deposits_withdrawals.json',
     ]
     for filename in fake_cache_files:
-        Path(filename).touch()
+        filename.touch()
     db = _init_db_with_target_version(
         target_version=6,
-        userdata_dir=userdata_dir,
+        user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
@@ -494,22 +496,16 @@ def test_upgrade_db_5_to_6(data_dir, username):
     assert db.get_version() == 6
 
 
-def test_upgrade_db_6_to_7(data_dir, username):
+def test_upgrade_db_6_to_7(user_data_dir):
     """Test upgrading the DB from version 6 to version 7.
 
     Test that the trades tables has the new trade ids.
     """
     msg_aggregator = MessagesAggregator()
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'v6_rotkehlchen.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
-    )
+    _use_prepared_db(user_data_dir, 'v6_rotkehlchen.db')
     db = _init_db_with_target_version(
         target_version=7,
-        userdata_dir=userdata_dir,
+        user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
@@ -560,22 +556,16 @@ def test_upgrade_db_6_to_7(data_dir, username):
     assert db.get_version() == 7
 
 
-def test_upgrade_db_7_to_8(data_dir, username):
+def test_upgrade_db_7_to_8(user_data_dir):
     """Test upgrading the DB from version 7 to version 8.
 
     Test that the SAI to DAI upgrade and renaming is done succesfully.
     """
     msg_aggregator = MessagesAggregator()
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'v7_rotkehlchen.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
-    )
+    _use_prepared_db(user_data_dir, 'v7_rotkehlchen.db')
     db = _init_db_with_target_version(
         target_version=8,
-        userdata_dir=userdata_dir,
+        user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
@@ -724,39 +714,27 @@ def test_upgrade_db_7_to_8(data_dir, username):
     assert db.get_version() == 8
 
 
-def test_upgrade_broken_db_7_to_8(data_dir, username):
+def test_upgrade_broken_db_7_to_8(user_data_dir):
     """Test that if SAI is already in owned tokens upgrade fails"""
     msg_aggregator = MessagesAggregator()
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'v7_rotkehlchen_broken.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
-    )
+    _use_prepared_db(user_data_dir, 'v7_rotkehlchen_broken.db')
     with pytest.raises(DBUpgradeError):
         _init_db_with_target_version(
             target_version=8,
-            userdata_dir=userdata_dir,
+            user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
         )
 
 
-def test_upgrade_db_8_to_9(data_dir, username):
+def test_upgrade_db_8_to_9(user_data_dir):
     """Test upgrading the DB from version 8 to version 9.
 
     Adding the passphrase column to user credentials"""
     msg_aggregator = MessagesAggregator()
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'v8_rotkehlchen.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
-    )
+    _use_prepared_db(user_data_dir, 'v8_rotkehlchen.db')
     db = _init_db_with_target_version(
         target_version=9,
-        userdata_dir=userdata_dir,
+        user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
 
@@ -780,21 +758,15 @@ def test_upgrade_db_8_to_9(data_dir, username):
     assert db.get_version() == 9
 
 
-def test_upgrade_db_9_to_10(data_dir, username):
+def test_upgrade_db_9_to_10(user_data_dir):
     """Test upgrading the DB from version 9 to version 10.
 
     Deleting all entries from used_query_ranges"""
     msg_aggregator = MessagesAggregator()
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'v9_rotkehlchen.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
-    )
+    _use_prepared_db(user_data_dir, 'v9_rotkehlchen.db')
     db = _init_db_with_target_version(
         target_version=10,
-        userdata_dir=userdata_dir,
+        user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
 
@@ -807,21 +779,15 @@ def test_upgrade_db_9_to_10(data_dir, username):
     assert db.get_version() == 10
 
 
-def test_upgrade_db_10_to_11(data_dir, username):
+def test_upgrade_db_10_to_11(user_data_dir):
     """Test upgrading the DB from version 10 to version 11.
 
     Deleting all entries from used_query_ranges"""
     msg_aggregator = MessagesAggregator()
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'v10_rotkehlchen.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
-    )
+    _use_prepared_db(user_data_dir, 'v10_rotkehlchen.db')
     db = _init_db_with_target_version(
         target_version=11,
-        userdata_dir=userdata_dir,
+        user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
 

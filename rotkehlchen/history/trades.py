@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
@@ -10,7 +11,7 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_ethereum_transactions
-from rotkehlchen.typing import EthereumTransaction, FilePath, Location, Timestamp
+from rotkehlchen.typing import EthereumTransaction, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -59,7 +60,7 @@ class TradesHistorian():
 
     def __init__(
             self,
-            user_directory: FilePath,
+            user_directory: Path,
             db: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
