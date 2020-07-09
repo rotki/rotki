@@ -1,6 +1,6 @@
 <template>
   <v-container class="accounts-balances">
-    <base-page-header text="accounts & balances"></base-page-header>
+    <base-page-header text="Accounts & Balances"></base-page-header>
     <blockchain-balances></blockchain-balances>
     <fiat-balances></fiat-balances>
     <manual-balances></manual-balances>
