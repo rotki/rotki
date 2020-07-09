@@ -7,11 +7,11 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 
-def get_xdg_config_home() -> Path:
-    directory = os.environ.get('XDG_CONFIG_HOME', None)
+def get_xdg_data_home() -> Path:
+    directory = os.environ.get('XDG_DATA_HOME', None)
     if directory is None:
         home = os.path.expanduser("~")
-        directory = os.path.join(home, '.config')
+        directory = os.path.join(home, '.local', 'share')
 
     return Path(directory)
 
@@ -40,7 +40,7 @@ def default_data_directory() -> Path:
     https://github.com/ActiveState/appdirs/blob/master/appdirs.py
     """
     if platform.system() == 'Linux':
-        xdgconfig = get_xdg_config_home()
+        xdgconfig = get_xdg_data_home()
         datadir = xdgconfig / 'rotki' / 'data'
     elif platform.system() == 'Windows':
         appdata = get_win32_appdata()

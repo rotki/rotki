@@ -2,8 +2,8 @@
 Changelog
 =========
 
-* :feature: `1105` Rotki now uses a standard compliant directory per OS to store user data.
-  - Linux: ``~/.local/config/rotki/data``
+* :feature: `1105` Rotki now uses a standard compliant directory per OS to store user data. If the directory does not exist it is created and at the same time the old directory is migrated by copying it to the new one. The new directories per OS are:
+  - Linux: ``~/.local/share/rotki/data``
   - OSX: ``~/Library/Application Support/rotki/data``
   - Windows: ``%LOCALAPPDATA%/rotki/data``
 * :feature: `1004` Aave Lending is now supported. Users can see their deposited balance for lending, the borrowed balances and the respective APY/APR. Premium users can also retrieve all events history and get a total amount earned by lending per aToken. 
