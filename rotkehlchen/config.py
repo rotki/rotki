@@ -16,6 +16,17 @@ def get_xdg_config_home() -> Path:
     return Path(directory)
 
 
+def get_win32_appdata() -> Path:
+    directory = os.environ.get('LOCALAPPDATA', None)
+    if not directory:
+        # In windows XP there is no localappdata
+        directory = os.environ.get('APPDATA', None)
+        if not directory:
+            raise AssertionError('Could not detect an APPDATA directory')
+
+    return Path(directory)
+
+
 def old_data_directory() -> Path:
     home = os.path.expanduser("~")
     directory = os.path.join(home, '.rotkehlchen')
@@ -23,15 +34,20 @@ def old_data_directory() -> Path:
 
 
 def default_data_directory() -> Path:
+    """Find the default data directory for Rotki for each different OS
+
+    An interesting lirary that finds the data directories per OS is this:
+    https://github.com/ActiveState/appdirs/blob/master/appdirs.py
+    """
     if platform.system() == 'Linux':
         xdgconfig = get_xdg_config_home()
         datadir = xdgconfig / 'rotki' / 'data'
     elif platform.system() == 'Windows':
-        # TODO
+        appdata = get_win32_appdata()
+        datadir = appdata / 'rotki' / 'data'
         pass
     elif platform.system() == 'Darwin':
-        # TODO
-        pass
+        datadir = Path(os.path.expanduser('~/Library/Application Support/rotki/data'))
     else:
         raise AssertionError(f'Rotki running in unknown system: {platform.system()}')
 
