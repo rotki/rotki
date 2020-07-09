@@ -1,4 +1,3 @@
-import errno
 import os
 import shutil
 from collections import defaultdict
@@ -8,6 +7,7 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.config import default_data_directory
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -26,26 +26,20 @@ def data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
     if use_clean_caching_directory:
         return Path(tmpdir_factory.mktemp('test_data_dir'))
 
-    home = os.path.expanduser("~")
     if 'CI' in os.environ:
-        data_directory = os.path.join(home, '.cache', '.rotkehlchen-test-dir')
+        data_directory = Path.home() / '.cache' / '.rotkehlchen-test-dir'
     else:
-        data_directory = os.path.join(home, '.rotkehlchen', 'tests_data_directory')
+        data_directory = default_data_directory().parent / 'test_data'
 
-    try:
-        os.makedirs(data_directory)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            raise
+        data_directory.mkdir(parents=True, exist_ok=True)
 
     # Remove any old accounts. The only reason we keep this directory around is for
     # cached price queries, not for user DBs
-    data_dir = Path(data_directory)
-    for x in data_dir.iterdir():
+    for x in data_directory.iterdir():
         if x.is_dir() and (x / 'rotkehlchen.db').exists():
             shutil.rmtree(x)
 
-    return data_dir
+    return data_directory
 
 
 @pytest.fixture
@@ -136,14 +130,14 @@ def session_mocked_current_prices():
     return {}
 
 
-def create_inquirer(data_dir, should_mock_current_price_queries, mocked_prices) -> Inquirer:
+def create_inquirer(data_directory, should_mock_current_price_queries, mocked_prices) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     Inquirer._Inquirer__instance = None  # type: ignore
     # Get a cryptocompare without a DB since invoking DB fixture here causes problems
     # of existing user for some tests
-    cryptocompare = Cryptocompare(data_directory=data_dir, database=None)
-    inquirer = Inquirer(data_dir=data_dir, cryptocompare=cryptocompare)
+    cryptocompare = Cryptocompare(data_directory=data_directory, database=None)
+    inquirer = Inquirer(data_dir=data_directory, cryptocompare=cryptocompare)
     if not should_mock_current_price_queries:
         return inquirer
 
