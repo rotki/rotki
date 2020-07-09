@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pytest
@@ -16,7 +17,6 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
 )
-from rotkehlchen.typing import FilePath
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -41,25 +41,23 @@ def session_username():
 
 
 @pytest.fixture(scope='session')
-def session_data_dir(tmpdir_factory) -> FilePath:
-    return FilePath(tmpdir_factory.mktemp('session_data'))
+def session_data_dir(tmpdir_factory) -> Path:
+    return Path(tmpdir_factory.mktemp('session_data'))
 
 
 @pytest.fixture
-def user_data_dir(data_dir, username) -> FilePath:
+def user_data_dir(data_dir, username) -> Path:
     """Create and return the user data directory"""
-    user_data_dir = os.path.join(data_dir, username)
-    if not os.path.exists(user_data_dir):
-        os.mkdir(user_data_dir)
-    return FilePath(user_data_dir)
+    user_data_dir = data_dir / username
+    user_data_dir.mkdir(exists_ok=True)
+    return user_data_dir
 
 
 @pytest.fixture(scope='session')
-def session_user_data_dir(session_data_dir, session_username):
+def session_user_data_dir(session_data_dir, session_username) -> Path:
     """Create and return the session scoped user data directory"""
-    user_data_dir = os.path.join(session_data_dir, session_username)
-    if not os.path.exists(user_data_dir):
-        os.mkdir(user_data_dir)
+    user_data_dir = session_data_dir / session_username
+    user_data_dir.mkdir(exists_ok=True)
     return user_data_dir
 
 
@@ -106,7 +104,7 @@ def session_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
 
 
 def _init_database(
-        data_dir: FilePath,
+        data_dir: Path,
         password: str,
         msg_aggregator: MessagesAggregator,
         db_settings: Optional[Dict[str, Any]],

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.events import TaxableEvents
@@ -28,7 +29,7 @@ from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Fee, FilePath, Timestamp
+from rotkehlchen.typing import Fee, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import (
     TaxableAction,
@@ -47,7 +48,7 @@ class Accountant():
     def __init__(
             self,
             db: DBHandler,
-            user_directory: FilePath,
+            user_directory: Path,
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
     ) -> None:

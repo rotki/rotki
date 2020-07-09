@@ -83,9 +83,6 @@ class ExternalServiceApiCredentials(NamedTuple):
         return (self.service.name.lower(), self.api_key)
 
 
-T_FilePath = str
-FilePath = NewType('FilePath', T_FilePath)
-
 T_TradePair = str
 TradePair = NewType('TradePair', T_TradePair)
 

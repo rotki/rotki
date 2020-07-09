@@ -1,6 +1,5 @@
 import base64
 import logging
-import os
 import shutil
 from enum import Enum
 from typing import NamedTuple, Optional
@@ -224,10 +223,7 @@ class PremiumSyncManager():
                 # and the directory contained data we did not want to lose
                 shutil.move(
                     self.data.user_data_dir,  # type: ignore
-                    os.path.join(
-                        self.data.data_directory,
-                        f'auto_backup_{username}_{ts_now()}',
-                    ),
+                    self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
                 )
                 raise PremiumAuthenticationError(
                     'Could not verify keys for the new account. '

@@ -16,6 +16,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
+from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
@@ -103,7 +104,11 @@ class Rotkehlchen():
             logging.getLogger('urllib3.connectionpool').setLevel(logging.CRITICAL)
 
         self.sleep_secs = args.sleep_secs
-        self.data_dir = args.data_dir
+        if args.data_dir is None:
+            self.data_dir = default_data_directory()
+        else:
+            self.data_dir = args.data_dir
+
         if not os.access(self.data_dir, os.W_OK | os.R_OK):
             raise SystemPermissionError(
                 f'The given data directory {self.data_dir} is not readable or writable',

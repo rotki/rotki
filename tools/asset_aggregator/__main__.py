@@ -137,7 +137,7 @@ def main():
     arg_parser = aggregator_args()
     args = arg_parser.parse_args()
     msg_aggregator = MessagesAggregator()
-    user_data_dir = Path(default_data_directory()) / args.db_user
+    user_data_dir = default_data_directory() / args.db_user
     database = DBHandler(
         user_data_dir=user_data_dir,
         password=args.db_password,
@@ -149,7 +149,7 @@ def main():
     cmc = None
     cmc_list = None
     root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    data_directory = f'{Path.home()}/.rotkehlchen'
+    data_directory = Path(f'{Path.home()}/.rotkehlchen')
     if args.cmc_api_key:
         cmc = Coinmarketcap(
             data_directory=data_directory,

@@ -1,6 +1,5 @@
 import csv
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -21,15 +20,7 @@ from rotkehlchen.constants import (
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
-from rotkehlchen.typing import (
-    AssetMovementCategory,
-    EmptyStr,
-    EventType,
-    Fee,
-    FilePath,
-    Location,
-    Timestamp,
-)
+from rotkehlchen.typing import AssetMovementCategory, EmptyStr, EventType, Fee, Location, Timestamp
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 
 logger = logging.getLogger(__name__)
@@ -45,7 +36,7 @@ FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
 
 
-def _dict_to_csv_file(path: FilePath, dictionary_list: List) -> None:
+def _dict_to_csv_file(path: Path, dictionary_list: List) -> None:
     """Takes a filepath and a list of dictionaries representing the rows and writes them
     into the file as a CSV"""
     if len(dictionary_list) == 0:
@@ -64,7 +55,7 @@ class CSVExporter():
     def __init__(
             self,
             profit_currency: Asset,
-            user_directory: FilePath,
+            user_directory: Path,
             create_csv: bool,
     ):
         self.user_directory = user_directory
@@ -462,39 +453,37 @@ class CSVExporter():
             return True, ''
 
         try:
-            if not dirpath.exists():
-                os.makedirs(dirpath)
-
+            dirpath.mkdir(parents=True, exist_ok=True)
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, FILENAME_TRADES_CSV)),
+                dirpath / FILENAME_TRADES_CSV,
                 self.trades_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, FILENAME_LOAN_PROFITS_CSV)),
+                dirpath / FILENAME_LOAN_PROFITS_CSV,
                 self.loan_profits_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, FILENAME_ASSET_MOVEMENTS_CSV)),
+                dirpath / FILENAME_ASSET_MOVEMENTS_CSV,
                 self.asset_movements_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, FILENAME_GAS_CSV)),
+                dirpath / FILENAME_GAS_CSV,
                 self.tx_gas_costs_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, FILENAME_MARGIN_CSV)),
+                dirpath / FILENAME_MARGIN_CSV,
                 self.margin_positions_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, FILENAME_LOAN_SETTLEMENTS_CSV)),
+                dirpath / FILENAME_LOAN_SETTLEMENTS_CSV,
                 self.loan_settlements_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, FILENAME_DEFI_EVENTS_CSV)),
+                dirpath / FILENAME_DEFI_EVENTS_CSV,
                 self.defi_events_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, FILENAME_ALL_CSV)),
+                dirpath / FILENAME_ALL_CSV,
                 self.all_events_csv,
             )
         except PermissionError as e:

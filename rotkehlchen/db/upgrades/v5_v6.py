@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -9,32 +8,32 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def _remove_cache_files(user_data_dir: str) -> None:
+def _remove_cache_files(user_data_dir: Path) -> None:
     """At 5->6 version upgrade all cache files should be removed
 
     That's since we moved all trades in the DB and as such it no longer makes
     any sense to have the cache files.
     """
-    for p in Path(user_data_dir).glob('*_trades.json'):
+    for p in user_data_dir.glob('*_trades.json'):
         try:
             p.unlink()
         except OSError:
             pass
 
-    for p in Path(user_data_dir).glob('*_history.json'):
+    for p in user_data_dir.glob('*_history.json'):
         try:
             p.unlink()
         except OSError:
             pass
 
-    for p in Path(user_data_dir).glob('*_deposits_withdrawals.json'):
+    for p in user_data_dir.glob('*_deposits_withdrawals.json'):
         try:
             p.unlink()
         except OSError:
             pass
 
     try:
-        os.remove(os.path.join(user_data_dir, 'ethereum_tx_log.json'))
+        (user_data_dir / 'ethereum_tx_log.json').unlink()
     except OSError:
         pass
 

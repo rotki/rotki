@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import gevent
@@ -9,7 +10,6 @@ import requests
 
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import FilePath
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
@@ -867,7 +867,7 @@ def find_cmc_coin_data(
 
 class Coinmarketcap():
 
-    def __init__(self, data_directory: FilePath, api_key: str):
+    def __init__(self, data_directory: Path, api_key: str):
         self.prefix = 'https://pro-api.coinmarketcap.com/'
         self.backoff_limit = 180
         self.data_directory = data_directory

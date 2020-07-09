@@ -7,6 +7,7 @@ import re
 import sys
 import time
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Union
 
 import gevent
@@ -24,7 +25,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, Fee, FilePath, Timestamp, TimestampMS
+from rotkehlchen.typing import ChecksumEthAddress, Fee, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -326,7 +327,7 @@ def get_system_spec() -> Dict[str, str]:
 
 def write_history_data_in_file(
         data: List[Dict[str, Any]],
-        filepath: FilePath,
+        filepath: Path,
         start_ts: Timestamp,
         end_ts: Timestamp,
 ) -> None:

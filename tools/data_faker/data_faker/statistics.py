@@ -1,6 +1,5 @@
 import argparse
 import operator
-import os
 import random
 import sys
 from typing import Tuple
@@ -11,7 +10,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location
-from rotkehlchen.typing import FilePath, Location, Timestamp
+from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -34,9 +33,8 @@ def divide_number_in_parts(number: int, parts_number: int):
 class StatisticsFaker():
 
     def __init__(self, args: argparse.Namespace) -> None:
-        user_path = FilePath(os.path.join(str(default_data_directory()), args.user_name))
         self.db = DBHandler(
-            user_data_dir=user_path,
+            user_data_dir=default_data_directory() / args.user_name,
             password=args.user_password,
             msg_aggregator=MessagesAggregator(),
             initial_settings=None,
