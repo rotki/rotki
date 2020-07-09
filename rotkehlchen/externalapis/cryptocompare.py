@@ -128,7 +128,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
         # Check the data folder and remember the filenames of any cached history
-        prefix = os.path.join(self.data_directory, 'price_history_')
+        prefix = os.path.join(str(self.data_directory), 'price_history_')
         prefix = prefix.replace('\\', '\\\\')
         regex = re.compile(prefix + r'(.*)\.json')
         files_list = glob.glob(prefix + '*.json')

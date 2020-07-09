@@ -336,7 +336,7 @@ class DBHandler:
         """
         fullpath = self.user_data_dir / 'rotkehlchen.db'
         try:
-            self.conn = sqlcipher.connect(fullpath)  # pylint: disable=no-member
+            self.conn = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member
         except sqlcipher.OperationalError:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
