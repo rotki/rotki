@@ -21,6 +21,16 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+def _is_symbol_non_standard(symbol: str) -> bool:
+    """ignore some non standard asset symbols like Curve finance and Pool together"""
+    if '+' in symbol:
+        return True
+    if symbol == 'PLT':
+        return True
+
+    return False
+
+
 class DefiProtocol(NamedTuple):
     name: str
     description: str
@@ -123,7 +133,7 @@ class Zerion():
             asset = Asset(token_symbol)
             usd_price = Inquirer().find_usd_price(asset)
         except (UnknownAsset, UnsupportedAsset):
-            if '+' not in token_symbol:  # ignore the curvefinance pool combined base asset
+            if not _is_symbol_non_standard(token_symbol):
                 self.msg_aggregator.add_error(
                     f'Unsupported asset {token_symbol} encountered during DeFi protocol queries',
                 )
