@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :feature: `1105` Rotki now uses a standard compliant directory per OS to store user data.
+  - Linux: ``~/.local/config/rotki/data``
+  - OSX: ``~/Library/Application Support/rotki/data``
+  - Windows: ``%LOCALAPPDATA%/rotki/data``
 * :feature: `1004` Aave Lending is now supported. Users can see their deposited balance for lending, the borrowed balances and the respective APY/APR. Premium users can also retrieve all events history and get a total amount earned by lending per aToken. 
 * :feature: `530` You can now add ethereum addresses by ENS name. Simply use an ENS name in the ETH address field and if it can be resolved it will be appended to the tracked accounts.
 * :bug: `1110` DSR Dai balance will now not be recounted with every force refresh querying of blockchain balances
