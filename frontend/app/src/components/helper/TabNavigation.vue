@@ -1,5 +1,6 @@
 <template>
   <v-tabs
+    v-model="selectedTab"
     fixed-tabs
     height="36px"
     hide-slider
@@ -9,12 +10,15 @@
     <v-tab
       v-for="tab in tabContents"
       :key="tab.name"
-      :to="tab.routerTo"
+      :to="tab.routeTo"
       class="tab-navigation__tabs__tab"
-      :class="tab.routerTo.toLowerCase().replace('/', '').replace(/\//g, '__')"
+      :class="tab.routeTo.toLowerCase().replace('/', '').replace(/\//g, '__')"
     >
       {{ tab.name }}
     </v-tab>
+    <v-tab-item v-for="tab of tabContents" :key="tab.id" :value="tab.routeTo">
+      <router-view v-if="tab.routeTo === selectedTab"></router-view>
+    </v-tab-item>
   </v-tabs>
 </template>
 
@@ -23,13 +27,14 @@ import { Component, Vue, Prop } from 'vue-property-decorator';
 
 export interface TabContent {
   name: string;
-  routerTo: string;
+  routeTo: string;
 }
 
 @Component({})
 export default class TabNavigation extends Vue {
   @Prop({ required: true, type: Array })
   tabContents!: TabContent[];
+  selectedTab: string = '';
 }
 </script>
 
@@ -51,6 +56,11 @@ export default class TabNavigation extends Vue {
         background-color: var(--v-rotki-light-grey-base) !important;
         border: var(--v-rotki-light-grey-darken1) solid thin;
         border-radius: 8px;
+        margin-bottom: 40px;
+      }
+
+      .v-tabs-items {
+        background-color: transparent !important;
       }
     }
 
