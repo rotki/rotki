@@ -6,15 +6,14 @@
         <tab-navigation :tab-contents="settingsTabs"></tab-navigation>
       </v-col>
     </v-row>
-    <v-slide-x-transition>
-      <router-view />
-    </v-slide-x-transition>
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import TabNavigation from '@/components/helper/TabNavigation.vue';
+import TabNavigation, {
+  TabContent
+} from '@/components/helper/TabNavigation.vue';
 
 export interface SettingsMessages {
   [index: string]: {
@@ -27,18 +26,18 @@ export interface SettingsMessages {
   components: { TabNavigation }
 })
 export default class Settings extends Vue {
-  settingsTabs = [
+  readonly settingsTabs: TabContent[] = [
     {
       name: 'General',
-      routerTo: '/settings/general'
+      routeTo: '/settings/general'
     },
     {
       name: 'Accounting',
-      routerTo: '/settings/accounting'
+      routeTo: '/settings/accounting'
     },
     {
       name: 'User & Security',
-      routerTo: '/settings/user-security'
+      routeTo: '/settings/user-security'
     }
   ];
 
