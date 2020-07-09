@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <base-page-header text="dashboard"></base-page-header>
+    <base-page-header text="Dashboard"></base-page-header>
     <v-row>
       <v-col cols="12">
         <overall-balances :is-loading="anyIsLoading"></overall-balances>

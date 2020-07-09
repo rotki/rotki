@@ -49,11 +49,15 @@ export default class TabNavigation extends Vue {
     ::v-deep {
       .v-tabs-bar {
         background-color: var(--v-rotki-light-grey-base) !important;
+        border: var(--v-rotki-light-grey-darken1) solid thin;
+        border-radius: 8px;
       }
     }
 
     &__tab {
       background-color: white;
+      border-left: var(--v-rotki-light-grey-darken1) solid thin;
+      border-right: var(--v-rotki-light-grey-darken1) solid thin;
 
       &:hover {
         background-color: var(--v-rotki-light-grey-base);

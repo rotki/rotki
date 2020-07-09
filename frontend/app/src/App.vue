@@ -16,9 +16,12 @@
         </div>
         <navigation-menu :show-tooltips="mini"></navigation-menu>
         <v-spacer></v-spacer>
-        <div v-if="!mini" class="my-2 text-center px-2">
-          <v-divider class="mx-3 my-1"></v-divider>
-          <span class="app__navigation-drawer__version overline">
+        <div
+          v-if="!mini"
+          class="my-2 text-center px-2 app__navigation-drawer__version"
+        >
+          <span class="overline">
+            <v-divider class="mx-3 my-1"></v-divider>
             {{ version }}
           </span>
         </div>
@@ -67,7 +70,7 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -82,8 +85,6 @@ import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import ErrorScreen from '@/ErrorScreen.vue';
 import { Message } from '@/store/store';
-
-const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
@@ -102,7 +103,7 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
   },
   computed: {
     ...mapState(['message']),
-    ...mapSessionState(['logged', 'username']),
+    ...mapState('session', ['logged', 'username']),
     ...mapGetters(['version'])
   }
 })
@@ -121,6 +122,8 @@ export default class App extends Vue {
   onLoggedChange() {
     if (!this.logged) {
       this.loginComplete = false;
+    } else {
+      this.$router.push({ name: 'dashboard' });
     }
   }
 
@@ -202,28 +205,22 @@ export default class App extends Vue {
     font-size: 3em;
     font-weight: bold;
     height: 150px;
+    width: 64px;
     writing-mode: vertical-lr;
     transform: rotate(-180deg);
     margin-bottom: 15px;
     margin-top: 15px;
   }
 
-  &__version {
-    margin-right: 16px;
-  }
-
-  &__welcome-text {
-    font-size: 18px;
-    margin-top: 16px;
-    margin-bottom: 20px;
-  }
-
   &__navigation-drawer {
     box-shadow: 14px 0 10px -10px var(--v-rotki-light-grey-darken1);
     z-index: 200 !important;
+    padding-bottom: 48px;
 
     &__version {
-      overflow-wrap: break-word;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
     }
   }
 }
