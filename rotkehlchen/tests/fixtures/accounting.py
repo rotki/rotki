@@ -31,7 +31,7 @@ def data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
     else:
         data_directory = default_data_directory().parent / 'test_data'
 
-        data_directory.mkdir(parents=True, exist_ok=True)
+    data_directory.mkdir(parents=True, exist_ok=True)
 
     # Remove any old accounts. The only reason we keep this directory around is for
     # cached price queries, not for user DBs

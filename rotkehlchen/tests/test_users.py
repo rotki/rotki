@@ -78,7 +78,7 @@ def test_users_query_permission_error(data_dir, function_scope_messages_aggregat
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_new_user_permission_error(data_dir, function_scope_messages_aggregator):
-    not_allowed_dir = os.path.join(data_dir, 'notallowed')
+    not_allowed_dir = data_dir / 'notallowed'
     os.mkdir(not_allowed_dir)
     os.chmod(not_allowed_dir, 0o200)
     handler = DataHandler(
