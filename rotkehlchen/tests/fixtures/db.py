@@ -49,7 +49,7 @@ def session_data_dir(tmpdir_factory) -> Path:
 def user_data_dir(data_dir, username) -> Path:
     """Create and return the user data directory"""
     user_data_dir = data_dir / username
-    user_data_dir.mkdir(exists_ok=True)
+    user_data_dir.mkdir(exist_ok=True)
     return user_data_dir
 
 
@@ -57,7 +57,7 @@ def user_data_dir(data_dir, username) -> Path:
 def session_user_data_dir(session_data_dir, session_username) -> Path:
     """Create and return the session scoped user data directory"""
     user_data_dir = session_data_dir / session_username
-    user_data_dir.mkdir(exists_ok=True)
+    user_data_dir.mkdir(exist_ok=True)
     return user_data_dir
 
 

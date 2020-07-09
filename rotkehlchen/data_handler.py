@@ -72,20 +72,27 @@ class DataHandler():
         """
         user_data_dir = self.data_directory / username
         if create_new:
-            if user_data_dir.exists():
-                raise AuthenticationError('User {} already exists'.format(username))
-            else:
-                try:
+            try:
+                if user_data_dir.exists():
+                    raise AuthenticationError(
+                        f'User {username} already exists. User data dir: {user_data_dir}',
+                    )
+                else:
                     user_data_dir.mkdir()
-                except PermissionError as e:
-                    raise SystemPermissionError(f'Failed to create directory for user: {str(e)}')
+            except PermissionError as e:
+                raise SystemPermissionError(f'Failed to create directory for user: {str(e)}')
 
         else:
-            if not user_data_dir.exists():
-                raise AuthenticationError('User {} does not exist'.format(username))
+            try:
+                if not user_data_dir.exists():
+                    raise AuthenticationError('User {} does not exist'.format(username))
 
-            if not (user_data_dir / 'rotkehlchen.db').exists():
+                if not (user_data_dir / 'rotkehlchen.db').exists():
+                    raise PermissionError
+
+            except PermissionError:
                 # This is bad. User directory exists but database is missing.
+                # Or either DB or user directory can't be accessed due to permissions
                 # Make a backup of the directory that user should probably remove
                 # on their own. At the same time delete the directory so that a new
                 # user account can be created
