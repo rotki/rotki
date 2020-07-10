@@ -121,16 +121,13 @@ def test_data_init_and_password(data_dir, username):
         data.unlock(username, '1234', create_new=False)
 
 
-def test_add_remove_exchange(data_dir, username):
+def test_add_remove_exchange(user_data_dir):
     """Tests that adding and removing an exchange in the DB works.
 
     Also unknown exchanges should fail
     """
     msg_aggregator = MessagesAggregator()
-    username = 'foo'
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    db = DBHandler(userdata_dir, '123', msg_aggregator, None)
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
 
     # Test that an unknown exchange fails
     with pytest.raises(InputError):
@@ -348,7 +345,7 @@ def test_balance_save_frequency_check(data_dir, username):
     assert last_save_ts == data_save_ts
 
 
-def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(data_dir):
+def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(user_data_dir):
     """Test that we can upgrade from an sqlcipher v3 to v4 rotkehlchen database
     Issue: https://github.com/rotki/rotki/issues/229
     """
@@ -357,44 +354,38 @@ def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(data_dir):
         # nothing to test
         return
 
-    username = 'foo'
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
     # get the v3 database file and copy it into the user's data directory
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(
         os.path.join(os.path.dirname(dir_path), 'data', 'sqlcipher_v3_rotkehlchen.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
+        user_data_dir / 'rotkehlchen.db',
     )
 
     # the constructor should migrate it in-place and we should have a working DB
     msg_aggregator = MessagesAggregator()
-    db = DBHandler(userdata_dir, '123', msg_aggregator, None)
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
     assert db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
-def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(data_dir):
+def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(user_data_dir):
     sqlcipher_version = detect_sqlcipher_version()
     if sqlcipher_version != 4:
         # nothing to test
         return
 
-    username = 'foo'
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
     # get the v3 database file and copy it into the user's data directory
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(
         os.path.join(os.path.dirname(dir_path), 'data', 'sqlcipher_v3_rotkehlchen.db'),
-        os.path.join(userdata_dir, 'rotkehlchen.db'),
+        user_data_dir / 'rotkehlchen.db',
     )
     dbinfo = {'sqlcipher_version': 3, 'md5_hash': '20c910c28ca42370e4a5f24d6d4a73d2'}
-    with open(os.path.join(userdata_dir, DBINFO_FILENAME), 'w') as f:
+    with open(os.path.join(user_data_dir, DBINFO_FILENAME), 'w') as f:
         f.write(rlk_jsondumps(dbinfo))
 
     # the constructor should migrate it in-place and we should have a working DB
     msg_aggregator = MessagesAggregator()
-    db = DBHandler(userdata_dir, '123', msg_aggregator, None)
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
     assert db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
@@ -979,16 +970,13 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
     assert settings.taxfree_after_period is None
 
 
-def test_multiple_location_data_and_balances_same_timestamp(data_dir, username):
+def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
     """Test that adding location and balance data with same timestamp does not crash.
 
     Regression test for https://github.com/rotki/rotki/issues/1043
     """
     msg_aggregator = MessagesAggregator()
-    username = 'foo'
-    userdata_dir = os.path.join(data_dir, username)
-    os.mkdir(userdata_dir)
-    db = DBHandler(userdata_dir, '123', msg_aggregator, None)
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
 
     balances = [
         AssetBalance(
