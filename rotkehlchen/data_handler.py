@@ -73,12 +73,12 @@ class DataHandler():
         user_data_dir = self.data_directory / username
         if create_new:
             try:
-                if user_data_dir.exists():
+                if (user_data_dir / 'rotkehlchen.db').exists():
                     raise AuthenticationError(
                         f'User {username} already exists. User data dir: {user_data_dir}',
                     )
                 else:
-                    user_data_dir.mkdir()
+                    user_data_dir.mkdir(exist_ok=True)
             except PermissionError as e:
                 raise SystemPermissionError(f'Failed to create directory for user: {str(e)}')
 
