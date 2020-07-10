@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gevent
@@ -107,7 +108,7 @@ class Rotkehlchen():
         if args.data_dir is None:
             self.data_dir = default_data_directory()
         else:
-            self.data_dir = args.data_dir
+            self.data_dir = Path(args.data_dir)
 
         if not os.access(self.data_dir, os.W_OK | os.R_OK):
             raise SystemPermissionError(
