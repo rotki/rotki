@@ -101,10 +101,7 @@ export default class NetworthChart extends Vue {
   createChart() {
     const chartCanvas = this.canvasContext('networth-chart__chart');
     const areaGradient = chartCanvas.createLinearGradient(0, 0, 0, 160);
-    areaGradient.addColorStop(
-      0,
-      String(this.$vuetify.theme.currentTheme['rotki-light-blue'])
-    );
+    areaGradient.addColorStop(0, 'rgba(228,83,37,0.647)');
     areaGradient.addColorStop(1, 'white');
 
     return new Chart(chartCanvas, {
@@ -115,16 +112,12 @@ export default class NetworthChart extends Vue {
             data: this.filteredData,
             lineTension: 0,
             backgroundColor: areaGradient,
-            borderColor: String(
-              this.$vuetify.theme.currentTheme['rotki-light-blue']
-            ),
+            borderColor: 'rgba(228,83,37,0.647)',
             borderWidth: 2,
             pointHoverBorderWidth: 2,
             pointHoverBorderColor: 'white',
             pointBackgroundColor: 'white',
-            pointHoverBackgroundColor: String(
-              this.$vuetify.theme.currentTheme['rotki-light-blue']
-            )
+            pointHoverBackgroundColor: 'rgba(228,83,37,0.647)'
           }
         ]
       },
@@ -250,7 +243,7 @@ export default class NetworthChart extends Vue {
   opacity: 0;
   background-color: white;
   padding: 8px 15px;
-  font-family: 'Roboto';
+  font-family: 'Roboto', sans-serif;
   font-size: 14px;
   border-radius: 15px;
   box-shadow: 0px 0px 8px var(--v-rotki-grey-base);

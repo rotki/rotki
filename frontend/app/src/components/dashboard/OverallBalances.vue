@@ -222,37 +222,52 @@ export default class OverallBox extends Vue {
     justify-content: center;
     align-items: baseline;
   }
-  &__networth ::v-deep .amount-display__value {
-    font-size: 3.5em;
+
+  &__networth {
+    ::v-deep {
+      .amount-display {
+        &__value {
+          font-size: 3.5em;
+        }
+
+        &__currency {
+          font-size: 3em;
+        }
+      }
+    }
   }
-  &__networth ::v-deep .amount-display__currency {
-    font-size: 3em;
-  }
+
   &__networth-change {
     display: flex;
     justify-content: center;
     align-items: baseline;
     margin-bottom: 1em;
+
     span {
       border-radius: 0.75em;
     }
   }
+
   &__timeframe-chips {
     .v-chip {
       cursor: pointer;
     }
+
     &--active {
-      color: white;
+      color: white !important;
       background-color: var(--v-primary-base) !important;
     }
   }
-  &__networth-chart__loader {
-    display: flex;
-    height: 100%;
-    flex-direction: column;
-    align-content: center;
-    justify-content: center;
-    text-align: center;
+
+  &__networth-chart {
+    &__loader {
+      display: flex;
+      height: 100%;
+      flex-direction: column;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+    }
   }
 }
 </style>

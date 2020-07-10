@@ -177,6 +177,7 @@ export default class NavigationMenu extends Vue {
       &__append-icon {
         margin-left: -18px !important;
       }
+
       .v-list-item {
         padding-left: 0 !important;
       }
