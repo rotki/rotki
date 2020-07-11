@@ -150,9 +150,11 @@ class Aave(EthereumModule):
                 if balance_entry.protocol.name != 'Aave':
                     continue
 
-                # aave only has one underlying balance per base balance which
-                # is what we will show. This is also the reserve asset
-                asset = balance_entry.underlying_balances[0]
+                # Depending on whether it's asset or debt we find what the reserve asset is
+                if balance_entry.balance_type == 'Asset':
+                    asset = balance_entry.underlying_balances[0]
+                else:
+                    asset = balance_entry.base_balance
                 reserve_address, _ = _get_reserve_address_decimals(asset.token_symbol)
 
                 reserve_data = reserve_cache.get(reserve_address, None)
