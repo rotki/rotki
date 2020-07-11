@@ -415,7 +415,7 @@ class EthereumManager():
         if result == '0x':
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address} via etherscan.'
-                f' Returned 0x result'
+                f' Returned 0x result',
             )
 
         fn_abi = contract._find_matching_fn_abi(
