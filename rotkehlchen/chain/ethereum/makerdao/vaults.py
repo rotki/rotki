@@ -603,13 +603,26 @@ class MakerDAOVaults(MakerDAOCommon):
     def get_vaults(self) -> List[MakerDAOVault]:
         """Detects vaults the user has and returns basic info about each one
 
+        If the vaults have been queried in the past REQUERY_PERIOD
+        seconds then the old result is used.
+
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result.
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
+        now = ts_now()
+        if now - self.last_vault_mapping_query_ts < MAKERDAO_REQUERY_PERIOD:
+            prequeried_vaults = []
+            for _, vaults in self.vault_mappings.items():
+                prequeried_vaults.extend(vaults)
+
+            prequeried_vaults.sort(key=lambda vault: vault.identifier)
+            return prequeried_vaults
+
         with self.lock:
+            self.vault_mappings = defaultdict(list)
             proxy_mappings = self._get_accounts_having_maker_proxy()
             vaults = []
             for user_address, proxy in proxy_mappings.items():
@@ -621,27 +634,6 @@ class MakerDAOVaults(MakerDAOCommon):
             # Returns vaults sorted. Oldest identifier first
             vaults.sort(key=lambda vault: vault.identifier)
         return vaults
-
-    def _get_vault_mappings(self) -> Dict[ChecksumEthAddress, List[MakerDAOVault]]:
-        """Returns a mapping of accounts to vault lists
-
-        If the mappings have been queried in the past REQUERY_PERIOD
-        seconds then the old result is used.
-
-        May raise:
-        - RemoteError if etherscan is used and there is a problem with
-        reaching it or with the returned result.
-        - BlockchainQueryError if an ethereum node is used and the contract call
-        queries fail for some reason
-        """
-        now = ts_now()
-        if now - self.last_vault_mapping_query_ts < MAKERDAO_REQUERY_PERIOD:
-            return self.vault_mappings
-
-        # reset vault mappings, and set them with get_vaults
-        self.vault_mappings = defaultdict(list)
-        self.get_vaults()
-        return self.vault_mappings
 
     def get_vault_details(self) -> List[MakerDAOVaultDetails]:
         """Queries vault details for the auto detected vaults of the user
@@ -664,13 +656,12 @@ class MakerDAOVaults(MakerDAOCommon):
         self.vault_details = []
         proxy_mappings = self._get_accounts_having_maker_proxy()
         # Make sure that before querying vault details there has been a recent vaults call
-        vault_mappings = self._get_vault_mappings()
-        for address, vaults in vault_mappings.items():
-            proxy = proxy_mappings[address]
-            for vault in vaults:
-                vault_detail = self._query_vault_details(vault, proxy, vault.urn)
-                if vault_detail:
-                    self.vault_details.append(vault_detail)
+        vaults = self.get_vaults()
+        for vault in vaults:
+            proxy = proxy_mappings[vault.owner]
+            vault_detail = self._query_vault_details(vault, proxy, vault.urn)
+            if vault_detail:
+                self.vault_details.append(vault_detail)
 
         # Returns vault details sorted. Oldest identifier first
         self.vault_details.sort(key=lambda details: details.identifier)
