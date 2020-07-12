@@ -113,12 +113,12 @@ class Zerion():
                         usd_sum = sum(x.balance.usd_value for x in underlying_balances)
                         base_balance.balance.usd_value = usd_sum  # type: ignore
 
-                protocol_balances.append(DefiProtocolBalances(
-                    protocol=protocol,
-                    balance_type=balance_type,
-                    base_balance=base_balance,
-                    underlying_balances=underlying_balances,
-                ))
+                    protocol_balances.append(DefiProtocolBalances(
+                        protocol=protocol,
+                        balance_type=balance_type,
+                        base_balance=base_balance,
+                        underlying_balances=underlying_balances,
+                    ))
 
         return protocol_balances
 
