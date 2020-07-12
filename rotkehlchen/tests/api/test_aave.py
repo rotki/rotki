@@ -48,6 +48,7 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):  # pyli
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data."""
     response = requests.get(api_url_for(
@@ -64,7 +65,8 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
     assert FVal(total_earned['aDAI']['amount']) >= FVal('24.207179802347627414')
     assert FVal(total_earned['aDAI']['usd_value']) >= FVal('24.580592532348742989192')
     expected_events = process_result_list(expected_aave_test_events)
-    assert events == expected_events
+    assert len(events) >= 12
+    assert events[:12] == expected_events
 
 
 @pytest.mark.parametrize('ethereum_modules', [['aave']])

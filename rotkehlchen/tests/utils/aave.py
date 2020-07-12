@@ -14,6 +14,7 @@ aave_mocked_historical_prices = {
             1588463542: FVal('1.009'),
             1588430911: FVal('1.009'),
             1592175763: FVal('1.013'),
+            1594502373: FVal('1.019'),
         },
     },
     'DAI': {
@@ -24,6 +25,7 @@ aave_mocked_historical_prices = {
             1588463542: FVal('1.009'),
             1588430911: FVal('1.009'),
             1592175763: FVal('1.013'),
+            1594502373: FVal('1.019'),
         },
     },
 }
@@ -130,5 +132,25 @@ expected_aave_test_events = [
         block_number=10266740,
         timestamp=Timestamp(1592175763),
         tx_hash='0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
+    ), AaveEvent(
+        event_type='deposit',
+        asset=A_DAI,
+        value=Balance(
+            amount=FVal('1939.840878392183347402'),
+            usd_value=FVal('1976.697855081634831002638'),
+        ),
+        block_number=10440633,
+        timestamp=Timestamp(1594502373),
+        tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
+    ), AaveEvent(
+        event_type='interest',
+        asset=A_ADAI,
+        value=Balance(
+            amount=FVal('27.824509817913242961'),
+            usd_value=FVal('28.353175504453594577259'),
+        ),
+        block_number=10440633,
+        timestamp=Timestamp(1594502373),
+        tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
     ),
 ]
