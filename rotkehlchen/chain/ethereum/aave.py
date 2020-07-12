@@ -181,41 +181,6 @@ class Aave(EthereumModule):
                         stable_apr=FVal(reserve_data[6] / RAY),
                     )
 
-            lend_reserve_data = reserve_cache.get(reserve_address, None)
-            if lend_reserve_data is None:
-                lend_reserve_data = self.ethereum.call_contract(
-                    contract_address=AAVE_LENDING_POOL.address,
-                    abi=AAVE_LENDING_POOL.abi,
-                    method_name='getReserveData',
-                    arguments=[A_LEND.ethereum_address],
-                )
-                reserve_cache['LEND'] = lend_reserve_data
-
-            user_lend_data = self.ethereum.call_contract(
-                contract_address=AAVE_LENDING_POOL.address,
-                abi=AAVE_LENDING_POOL.abi,
-                method_name='getUserReserveData',
-                arguments=[A_LEND.ethereum_address, account],
-            )
-            if user_lend_data[0] != 0 or user_lend_data[1] != 0:
-                lend_usd_price = Inquirer().find_usd_price(A_LEND)
-
-                if user_lend_data[0] != 0:
-                    amount = FVal(user_lend_data[0] / (10 ** A_LEND.decimals))
-                    balance = Balance(amount=amount, usd_value=amount * lend_usd_price)
-                    lending_map['LEND'] = AaveLendingBalance(
-                        balance=balance,
-                        apy=FVal(lend_reserve_data[4] / RAY),
-                    )
-                if user_lend_data[1] != 0:
-                    amount = FVal(user_lend_data[1] / (10 ** A_LEND.decimals))
-                    balance = Balance(amount=amount, usd_value=amount * lend_usd_price)
-                    borrowing_map['LEND'] = AaveBorrowingBalance(
-                        balance=balance,
-                        variable_apr=FVal(lend_reserve_data[5] / RAY),
-                        stable_apr=FVal(lend_reserve_data[6] / RAY),
-                    )
-
             if lending_map == {} and borrowing_map == {}:
                 # no aave balances for the account
                 continue
