@@ -996,3 +996,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         self.query_defi_balances()
         self.query_ethereum_tokens(self.owned_eth_tokens)
+        vaults_module = self.makerdao_vaults
+        if vaults_module is not None:
+            normalized_balances = vaults_module.get_normalized_balances()
+            for asset, normalized_vault_balance in normalized_balances.items():
+                self.totals[asset] += normalized_vault_balance

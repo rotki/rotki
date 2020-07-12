@@ -683,6 +683,20 @@ class MakerDAOVaults(MakerDAOCommon):
         self.last_vault_details_query_ts = ts_now()
         return self.vault_details
 
+    def get_normalized_balances(self) -> Dict[Asset, Balance]:
+        """Return a mapping of asset to balance indicating all normalized balances in vaults
+
+        Normalized balance is defined as the balance of the collateral asset minus
+        that of the generated debt.
+        """
+        vaults = self.get_vaults()
+        balances: Dict[Asset, Balance] = defaultdict(Balance)
+        for vault in vaults:
+            normalized_balance = get_vault_normalized_balance(vault)
+            balances[vault.collateral_asset] += normalized_balance
+
+        return balances
+
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
         super().on_startup()
