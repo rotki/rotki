@@ -1,7 +1,12 @@
 import pytest
 from web3 import Web3
 
-from rotkehlchen.chain.ethereum.makerdao.vaults import MakerDAOVault, MakerDAOVaults
+from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.chain.ethereum.makerdao.vaults import (
+    MakerDAOVault,
+    MakerDAOVaults,
+    get_vault_normalized_balance,
+)
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -108,3 +113,26 @@ def test_get_vaults(makerdao_vaults, makerdao_test_data):
 
     for idx, vault in enumerate(vaults):
         assert_vaults_equal(vault, makerdao_test_data.vaults[idx])
+
+
+@pytest.mark.parametrize('mocked_current_prices', [{
+    'ETH': FVal('200'),
+    'DAI': FVal('1.01'),
+}])
+def test_get_vault_normalized_balance(inquirer):  # pylint: disable=unused-argument
+    vault = MakerDAOVault(
+        identifier=1,
+        collateral_type='ETH-A',
+        collateral_asset=A_ETH,
+        owner=make_ethereum_address(),
+        collateral_amount=FVal('100'),
+        collateral_usd_value=FVal('20000'),
+        debt_value=FVal('2000'),
+        collateralization_ratio='990%',
+        liquidation_ratio=FVal(1.5),
+        liquidation_price=FVal('50'),  # not calculated to be correct
+        urn=make_ethereum_address(),
+        stability_fee=ZERO,
+    )
+    expected_result = Balance(amount=FVal('89.9'), usd_value=FVal('17980'))
+    assert get_vault_normalized_balance(vault) == expected_result

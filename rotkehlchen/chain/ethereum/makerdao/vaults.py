@@ -6,6 +6,7 @@ from typing import Any, Dict, List, NamedTuple, Optional
 from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.makerdao.common import (
     MAKERDAO_REQUERY_PERIOD,
@@ -38,6 +39,7 @@ from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -161,6 +163,19 @@ class MakerDAOVaultDetails(NamedTuple):
     # all liquidation events amounts multiplied by the USD price of collateral at the time.
     total_liquidated_usd: FVal
     events: List[VaultEvent]
+
+
+def get_vault_normalized_balance(vault: MakerDAOVault) -> Balance:
+    """Get the balance in the vault's collateral asset after deducting the generated debt"""
+    collateral_usd_price = Inquirer().find_usd_price(vault.collateral_asset)
+    dai_usd_price = Inquirer().find_usd_price(A_DAI)
+    debt_usd_value = dai_usd_price * vault.debt_value
+    normalized_usd_value = vault.collateral_usd_value - debt_usd_value
+
+    return Balance(
+        amount=normalized_usd_value / collateral_usd_price,
+        usd_value=normalized_usd_value,
+    )
 
 
 class MakerDAOVaults(MakerDAOCommon):
