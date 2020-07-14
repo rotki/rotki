@@ -85,7 +85,11 @@ def deserialize_timestamp(timestamp: Union[int, str, FVal]) -> Timestamp:
     return processed_timestamp
 
 
-def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) -> Timestamp:
+def deserialize_timestamp_from_date(
+        date: Optional[str],
+        formatstr: str,
+        location: str,
+) -> Timestamp:
     """Deserializes a timestamp from a date entry depending on the format str
 
     formatstr can also have a special value of 'iso8601' in which case the iso8601
@@ -124,7 +128,7 @@ def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
     return deserialize_timestamp_from_date(date, '%Y-%m-%d %H:%M:%S', 'poloniex')
 
 
-def deserialize_timestamp_from_bittrex_date(date: str) -> Timestamp:
+def deserialize_timestamp_from_bittrex_date(date: Optional[str]) -> Timestamp:
     """Deserializes a timestamp from a bittrex api query result date entry
 
     Bittrex trades follow the given format and unfortunately
@@ -134,7 +138,7 @@ def deserialize_timestamp_from_bittrex_date(date: str) -> Timestamp:
     Can throw DeserializationError if the data is not as expected
     """
     # Some dates have milliseconds, some not. Add 0 milliseconds for this to work
-    if '.' not in date:
+    if date is not None and '.' not in date:
         date += '.0'
     return deserialize_timestamp_from_date(date, '%Y-%m-%dT%H:%M:%S.%f', 'bittrex')
 
