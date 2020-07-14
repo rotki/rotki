@@ -9,9 +9,22 @@ from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_bittrex_date
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
+
+
+def test_deserialize_timestamp_from_bittrex_date():
+    """Test for deserialize_timestamp_from_bittrex_date() and regression for #1151
+
+    In https://github.com/rotki/rotki/issues/1151 a user encountered an error with
+    the following date: 2017-07-08T07:57:12
+    """
+    assert deserialize_timestamp_from_bittrex_date('2014-02-13T00:00:00.00') == 1392249600
+    assert deserialize_timestamp_from_bittrex_date('2015-06-15T07:38:53.883') == 1434353933
+    assert deserialize_timestamp_from_bittrex_date('2015-08-19T04:24:47.217') == 1439958287
+    assert deserialize_timestamp_from_bittrex_date('2017-07-08T07:57:12') == 1499500632
 
 
 def test_name():
