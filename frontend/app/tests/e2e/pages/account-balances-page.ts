@@ -18,7 +18,7 @@ export class AccountBalancesPage {
     }
     cy.get('.manual-balances-form__location').click();
     cy.get(`#balance-location__${balances.location}`).click();
-    cy.get('.manual-balances-form__save').click();
+    cy.get('.big-dialog__buttons__confirm').click();
   }
 
   visibleEntries(visible: number) {
@@ -148,10 +148,10 @@ export class AccountBalancesPage {
       .find('button.manual-balances-list__actions__edit')
       .click();
 
-    cy.get('.manual-balances-list__edit-form').as('edit-form');
+    cy.get('.manual-balances-form').as('edit-form');
     cy.get('@edit-form').find('.manual-balances-form__amount input').clear();
     cy.get('@edit-form').find('.manual-balances-form__amount').type(amount);
-    cy.get('@edit-form').find('.manual-balances-form__save').click();
+    cy.get('.big-dialog__buttons__confirm').click();
   }
 
   deleteBalance(position: number) {

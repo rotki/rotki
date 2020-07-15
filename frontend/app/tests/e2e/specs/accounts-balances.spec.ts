@@ -39,9 +39,11 @@ describe('Accounts', () => {
       cy.fixture('manual-balances').then(balances => {
         manualBalances = balances;
       });
+      cy.get('.accounts-balances__manual-balances').click();
     });
 
     it('add first entry', () => {
+      cy.get('.manual-balances__addBalance').click();
       tagManager.addTag(
         '.manual-balances-form',
         'public',
@@ -60,9 +62,12 @@ describe('Accounts', () => {
     });
 
     it('add second & third entires', () => {
+      cy.get('.manual-balances__addBalance').click();
       page.addBalance(manualBalances[1]);
       page.visibleEntries(2);
       page.isVisible(1, manualBalances[1]);
+
+      cy.get('.manual-balances__addBalance').click();
       page.addBalance(manualBalances[2]);
       page.visibleEntries(3);
       page.isVisible(2, manualBalances[2]);
@@ -88,29 +93,35 @@ describe('Accounts', () => {
     });
 
     it('test privacy mode is off', () => {
+      cy.get('.accounts-balances__manual-balances').click();
       page.amountDisplayIsNotBlurred();
     });
 
     it('test privacy mode is on', () => {
+      cy.get('.accounts-balances__manual-balances').click();
       app.togglePrivacyMode();
       page.amountDisplayIsBlurred();
       app.togglePrivacyMode();
     });
 
     it('test scramble mode', () => {
+      cy.get('.accounts-balances__manual-balances').click();
       page.balanceShouldMatch(manualBalances);
 
       settings.visit();
       settings.toggleScrambleData();
       page.visit();
+      cy.get('.accounts-balances__manual-balances').click();
       page.balanceShouldNotMatch(manualBalances);
 
       settings.visit();
       settings.toggleScrambleData();
       page.visit();
+      cy.get('.accounts-balances__manual-balances').click();
     });
 
     it('edit', () => {
+      cy.get('.accounts-balances__manual-balances').click();
       page.editBalance(1, '200');
       page.visibleEntries(3);
       page.isVisible(1, {
@@ -120,6 +131,7 @@ describe('Accounts', () => {
     });
 
     it('delete', () => {
+      cy.get('.accounts-balances__manual-balances').click();
       page.deleteBalance(1);
       page.confirmDelete();
       page.visibleEntries(2);
