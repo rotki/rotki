@@ -21,8 +21,8 @@ E<template>
             <v-tab
               v-for="(exchange, i) in connectedExchanges"
               :key="i"
-              class="exchangeBalances__tab my-3"
-              active-class="exchangeBalances__tab--active"
+              class="exchange-balances__tab my-3"
+              active-class="exchange-balances__tab--active"
               :to="`/accounts-balances/exchange-balances/${exchange}`"
             >
               <v-img
@@ -31,12 +31,12 @@ E<template>
                 width="48"
                 :title="exchange"
                 :src="require(`@/assets/images/${exchange}.png`)"
-                class="exchangeBalances__tab__icon"
+                class="exchange-balances__tab__icon"
               />
-              <div class="exchangeBalances__tab__title d-block mt-2">
+              <div class="exchange-balances__tab__title d-block mt-2">
                 {{ exchange }}
               </div>
-              <div class="exchangeBalances__tab__amount d-block">
+              <div class="exchange-balances__tab__amount d-block">
                 <amount-display
                   show-currency="symbol"
                   fiat-currency="USD"
@@ -102,7 +102,7 @@ export default class ExchangeBalances extends Vue {
 </script>
 
 <style scoped lang="scss">
-.exchangeBalances {
+.exchange-balances {
   &__tab {
     display: flex;
     flex-direction: column;
@@ -115,6 +115,7 @@ export default class ExchangeBalances extends Vue {
     &:hover {
       filter: grayscale(0);
     }
+
     &--active {
       filter: grayscale(0);
       border-radius: 8px;

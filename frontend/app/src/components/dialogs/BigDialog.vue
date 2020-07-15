@@ -81,17 +81,17 @@ export default class BigDialog extends Vue {
 <style scoped lang="scss">
 .big-dialog {
   height: calc(100vh - 80px);
-}
 
-.big-dialog {
   &__body {
     padding: 0 16px;
   }
+
   &__content {
     height: calc(100% - 85px);
     overflow-y: scroll;
   }
 }
+/* stylelint-disable-next-line */
 ::-webkit {
   &-scrollbar {
     width: 14px;
@@ -105,9 +105,11 @@ export default class BigDialog extends Vue {
       background-color: rgba(0, 0, 0, 0.15);
       box-shadow: inset -1px -1px 0px rgba(0, 0, 0, 0.05),
         inset 1px 1px 0px rgba(0, 0, 0, 0.05);
+
       &:hover {
         background-color: rgba(0, 0, 0, 0.3);
       }
+
       &:active {
         background-color: rgba(0, 0, 0, 0.5);
       }
