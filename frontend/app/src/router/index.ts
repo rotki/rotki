@@ -93,14 +93,26 @@ export default new Router({
       component: () => import('../views/AccountsBalances.vue')
     },
     {
-      path: '/defi/lending',
-      name: 'defi-lending',
-      component: () => import('../views/defi/DecentralizedLending.vue')
-    },
-    {
-      path: '/defi/borrowing',
-      name: 'defi-borrowing',
-      component: () => import('../views/defi/DecentralizedBorrowing.vue')
+      path: '/defi',
+      name: 'defi',
+      component: () => import('../views/defi/DecentralizedFinance.vue'),
+      children: [
+        {
+          path: '/defi/overview',
+          name: 'defi-overview',
+          component: () => import('../views/defi/DecentralizedOverview.vue')
+        },
+        {
+          path: '/defi/lending/',
+          name: 'defi-lending',
+          component: () => import('../views/defi/DecentralizedLending.vue')
+        },
+        {
+          path: '/defi/borrowing',
+          name: 'defi-borrowing',
+          component: () => import('../views/defi/DecentralizedBorrowing.vue')
+        }
+      ]
     }
   ]
 });

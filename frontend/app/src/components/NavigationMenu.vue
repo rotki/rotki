@@ -96,27 +96,11 @@ export default class NavigationMenu extends Vue {
       ]
     },
     {
-      type: 'group',
+      type: 'item',
       text: 'DeFi',
-      route: '',
+      route: '/defi/overview',
       icon: 'fa-line-chart',
-      class: 'defi',
-      items: [
-        {
-          type: 'item',
-          text: 'Lending',
-          route: '/defi/lending',
-          class: 'defi-lending',
-          icon: 'fa-long-arrow-left'
-        },
-        {
-          type: 'item',
-          text: 'Borrowing',
-          route: '/defi/borrowing',
-          class: 'defi-borrowing',
-          icon: 'fa-long-arrow-right'
-        }
-      ]
+      class: 'defi'
     },
     {
       type: 'item',

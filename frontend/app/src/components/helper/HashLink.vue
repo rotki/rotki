@@ -1,6 +1,8 @@
 <template>
   <div>
-    <span>{{ text | truncateAddress }}</span>
+    <span :class="privacyMode ? 'blur-content' : ''">
+      {{ text | truncateAddress }}
+    </span>
     <v-btn
       x-small
       icon
@@ -30,8 +32,13 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { mapState } from 'vuex';
 
-@Component({})
+@Component({
+  computed: {
+    ...mapState('session', ['privacyMode'])
+  }
+})
 export default class HashLink extends Vue {
   @Prop({ required: true, type: String })
   text!: string;
@@ -41,6 +48,8 @@ export default class HashLink extends Vue {
     default: 'https://etherscan.io/address/'
   })
   baseUrl!: string;
+
+  privacyMode!: boolean;
 
   copyText(text: string) {
     navigator.clipboard.writeText(text);
@@ -53,4 +62,8 @@ export default class HashLink extends Vue {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.blur-content {
+  filter: blur(0.3em);
+}
+</style>

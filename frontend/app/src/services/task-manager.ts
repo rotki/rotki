@@ -9,10 +9,8 @@ import {
   convertTradeHistoryOverview,
   TradeHistory
 } from '@/model/trade-history-types';
-import { ApiDSRBalances, ApiDSRHistory } from '@/services/defi/types';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';
-import { convertDSRBalances, convertDSRHistory } from '@/store/defi/converters';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
 import { ApiAssetBalances, Severity } from '@/typing/types';
@@ -107,40 +105,6 @@ export class TaskManager {
     store.commit('reports/set', payload);
   }
 
-  private static dsrBalance(
-    data: ActionResult<ApiDSRBalances>,
-    _meta: TaskMeta
-  ) {
-    const { message, result } = data;
-    if (message) {
-      notify(
-        `There was an issue while fetching DSR Balances: ${message}`,
-        'DSR Balances',
-        Severity.ERROR
-      );
-
-      return;
-    }
-    store.commit('defi/dsrBalances', convertDSRBalances(result));
-  }
-
-  private static dsrHistory(
-    data: ActionResult<ApiDSRHistory>,
-    _meta: TaskMeta
-  ) {
-    const { message, result } = data;
-    if (message) {
-      notify(
-        `There was an issue while fetching DSR History: ${message}`,
-        'DSR History',
-        Severity.ERROR
-      );
-
-      return;
-    }
-    store.commit('defi/dsrHistory', convertDSRHistory(result));
-  }
-
   monitor() {
     const state = store.state;
     const taskState = state.tasks!;
@@ -224,9 +188,7 @@ export class TaskManager {
     [TaskType.QUERY_BLOCKCHAIN_BALANCES]: this.onQueryBlockchainBalances,
     [TaskType.TRADE_HISTORY]: this.onTradeHistory,
     [TaskType.ADD_ACCOUNT]: this.onAccountOperation,
-    [TaskType.REMOVE_ACCOUNT]: this.onAccountOperation,
-    [TaskType.DSR_BALANCE]: TaskManager.dsrBalance,
-    [TaskType.DSR_HISTORY]: TaskManager.dsrHistory
+    [TaskType.REMOVE_ACCOUNT]: this.onAccountOperation
   };
 
   registerHandler<R, M extends TaskMeta>(

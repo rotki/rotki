@@ -1,9 +1,10 @@
 import { Module } from 'vuex';
+import { DefiState } from '@/store/defi/types';
 import { RotkehlchenState } from '@/store/store';
 import { actions } from './actions';
 import { getters } from './getters';
 import { mutations } from './mutations';
-import { state, DefiState } from './state';
+import { state } from './state';
 
 const namespaced: boolean = true;
 

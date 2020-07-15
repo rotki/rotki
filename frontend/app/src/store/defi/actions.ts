@@ -4,6 +4,8 @@ import { TaskType } from '@/model/task-type';
 import {
   ApiAaveBalances,
   ApiAaveHistory,
+  ApiDSRBalances,
+  ApiDSRHistory,
   ApiMakerDAOVault,
   ApiMakerDAOVaultDetails
 } from '@/services/defi/types';
@@ -11,42 +13,89 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   convertAaveBalances,
   convertAaveHistory,
+  convertDSRBalances,
+  convertDSRHistory,
   convertMakerDAOVaults,
   convertVaultDetails
 } from '@/store/defi/converters';
-import { DefiState } from '@/store/defi/state';
+import { Status } from '@/store/defi/status';
+import { DefiState } from '@/store/defi/types';
+import { notify } from '@/store/notifications/utils';
 import { Message, RotkehlchenState } from '@/store/store';
+import { Severity } from '@/typing/types';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
-  async fetchDSRBalances({ commit }) {
-    const { task_id } = await api.defi.dsrBalance();
-    const task = createTask(task_id, TaskType.DSR_BALANCE, {
-      description: `Fetching DSR Balances`,
-      ignoreResult: false
-    });
-    commit('tasks/add', task, { root: true });
+  async fetchDSRBalances({
+    commit,
+    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+  }) {
+    const taskType = TaskType.DSR_BALANCE;
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+
+    try {
+      const { task_id } = await api.defi.dsrBalance();
+      const task = createTask(task_id, taskType, {
+        description: `Fetching DSR Balances`,
+        ignoreResult: false
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<ApiDSRBalances, TaskMeta>(
+        taskType
+      );
+      commit('dsrBalances', convertDSRBalances(result));
+    } catch (e) {
+      notify(
+        `There was an issue while fetching DSR Balances: ${e.message}`,
+        'DSR Balances',
+        Severity.ERROR
+      );
+    }
   },
 
-  async fetchDSRHistory({ commit }) {
-    const { task_id } = await api.defi.dsrHistory();
-    const task = createTask(task_id, TaskType.DSR_HISTORY, {
-      description: `Fetching DSR History`,
-      ignoreResult: false
-    });
-    commit('tasks/add', task, { root: true });
+  async fetchDSRHistory({
+    commit,
+    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+  }) {
+    const taskType = TaskType.DSR_HISTORY;
+
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+
+    try {
+      const { task_id } = await api.defi.dsrHistory();
+      const task = createTask(task_id, taskType, {
+        description: `Fetching DSR History`,
+        ignoreResult: false
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<ApiDSRHistory, TaskMeta>(
+        taskType
+      );
+      commit('dsrHistory', convertDSRHistory(result));
+    } catch (e) {
+      notify(
+        `There was an issue while fetching DSR History: ${e.message}`,
+        'DSR History',
+        Severity.ERROR
+      );
+    }
   },
 
   async fetchMakerDAOVaults({
     commit,
     rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
   }) {
-    if (isTaskRunning(TaskType.MAKEDAO_VAULTS)) {
+    const taskType = TaskType.MAKEDAO_VAULTS;
+    if (isTaskRunning(taskType)) {
       return;
     }
 
     try {
       const { task_id } = await api.defi.makerDAOVaults();
-      const task = createTask(task_id, TaskType.MAKEDAO_VAULTS, {
+      const task = createTask(task_id, taskType, {
         description: `Fetching MakerDAO Vaults`,
         ignoreResult: false
       });
@@ -56,7 +105,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { result: makerDAOVaults } = await taskCompletion<
         ApiMakerDAOVault[],
         TaskMeta
-      >(TaskType.MAKEDAO_VAULTS);
+      >(taskType);
       commit('makerDAOVaults', convertMakerDAOVaults(makerDAOVaults));
     } catch (e) {
       commit(
@@ -174,5 +223,71 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         { root: true }
       );
     }
+  },
+
+  async fetchAllDefi({ commit, dispatch, state }, refreshing: boolean = false) {
+    if (
+      state.status === Status.LOADING ||
+      (state.status === Status.LOADED && !refreshing)
+    ) {
+      return;
+    }
+
+    commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
+
+    await Promise.all([
+      dispatch('fetchDSRBalances'),
+      dispatch('fetchAaveBalances'),
+      dispatch('fetchMakerDAOVaults')
+    ]);
+
+    commit('status', Status.LOADED);
+  },
+
+  async fetchLending({ commit, dispatch, state }, refreshing: boolean = false) {
+    if (
+      state.status === Status.LOADING ||
+      (state.status === Status.LOADED && !refreshing)
+    ) {
+      return;
+    }
+
+    commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
+
+    await Promise.all([
+      dispatch('fetchDSRBalances'),
+      dispatch('fetchAaveBalances')
+    ]);
+
+    commit('status', Status.LOADED);
+  },
+
+  async fetchLendingHistory(
+    { commit, dispatch, state, rootState: { session } },
+    refreshing: boolean = false
+  ) {
+    if (
+      state.lendingHistoryStatus === Status.LOADING ||
+      (state.lendingHistoryStatus === Status.LOADED && !refreshing)
+    ) {
+      return;
+    }
+
+    if (!session?.premium) {
+      return;
+    }
+
+    commit(
+      'lendingHistoryStatus',
+      refreshing ? Status.REFRESHING : Status.LOADING
+    );
+
+    await Promise.all([
+      dispatch('fetchDSRHistory'),
+      dispatch('fetchMakerDAOVaultDetails'),
+      dispatch('fetchAaveHistory')
+    ]);
+
+    commit('lendingHistoryStatus', Status.LOADED);
   }
 };

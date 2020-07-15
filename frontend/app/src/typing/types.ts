@@ -1,11 +1,6 @@
-import { default as BigNumber } from 'bignumber.js';
-import {
-  ApiAssetBalance,
-  AssetBalances,
-  Balance
-} from '@/model/blockchain-balances';
+import { ApiAssetBalance, AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
-import { DSRMovementType } from '@/services/defi/types';
+import { SupportedDefiProtocols } from '@/services/defi/types';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
@@ -152,23 +147,7 @@ export type AccountDataMap = { [address: string]: AccountData };
 export interface Account {
   readonly chain: Blockchain;
   readonly address: string;
-}
-
-export interface DSRBalance {
-  readonly address: string;
-  readonly balance: Balance;
-}
-
-export interface AccountDSRMovement {
-  readonly address: string;
-  readonly movementType: DSRMovementType;
-  readonly gainSoFar: BigNumber;
-  readonly gainSoFarUsdValue: BigNumber;
-  readonly amount: BigNumber;
-  readonly amountUsdValue: BigNumber;
-  readonly blockNumber: number;
-  readonly timestamp: number;
-  readonly txHash: string;
+  readonly protocols: SupportedDefiProtocols[];
 }
 
 export interface GeneralAccount extends AccountData {

@@ -1,8 +1,8 @@
 <template>
   <v-container>
-    <v-row>
+    <v-row no-gutters>
       <v-col>
-        <h1>Decentralized Borrowing</h1>
+        <h2>Borrowing</h2>
       </v-col>
     </v-row>
     <v-row>

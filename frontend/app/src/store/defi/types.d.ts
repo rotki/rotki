@@ -1,11 +1,25 @@
 import { default as BigNumber } from 'bignumber.js';
-import { ApiBalance, Balance } from '@/model/blockchain-balances';
+import { Balance } from '@/model/blockchain-balances';
 import {
   AaveEventType,
   CollateralAssetType,
   DSRMovementType,
-  MakerDAOVaultEventType
+  MakerDAOVaultEventType,
+  SupportedDefiProtocols
 } from '@/services/defi/types';
+import { Status } from '@/store/defi/status';
+
+export interface DefiState {
+  status: Status;
+  lendingHistoryStatus: Status;
+  borrowingHistoryStatus: Status;
+  dsrHistory: DSRHistory;
+  dsrBalances: DSRBalances;
+  makerDAOVaults: MakerDAOVault[];
+  makerDAOVaultDetails: MakerDAOVaultDetails[];
+  aaveBalances: AaveBalances;
+  aaveHistory: AaveHistory;
+}
 
 export interface DSRBalances {
   readonly currentDSR: BigNumber;
@@ -29,10 +43,8 @@ export interface DSRHistory {
 
 export interface DSRMovement {
   readonly movementType: DSRMovementType;
-  readonly gainSoFar: BigNumber;
-  readonly gainSoFarUsdValue: BigNumber;
-  readonly amount: BigNumber;
-  readonly amountUsdValue: BigNumber;
+  readonly gainSoFar: Balance;
+  readonly balance: Balance;
   readonly blockNumber: number;
   readonly timestamp: number;
   readonly txHash: string;
@@ -77,19 +89,25 @@ export interface MakerDAOVaultSummary {
   readonly totalDebt: BigNumber;
 }
 
-export interface AaveAsset {
-  readonly apy?: string;
-  readonly stableApy?: string;
-  readonly variableApy?: string;
+export interface DefiAsset {
   readonly balance: Balance;
 }
 
+export interface AaveBorrowingAsset extends DefiAsset {
+  readonly stableApy: string;
+  readonly variableApy: string;
+}
+
+export interface AaveLendingAsset extends DefiAsset {
+  readonly apy: string;
+}
+
 export interface AaveBorrowing {
-  readonly [asset: string]: AaveAsset;
+  readonly [asset: string]: AaveBorrowingAsset;
 }
 
 export interface AaveLending {
-  readonly [asset: string]: AaveAsset;
+  readonly [asset: string]: AaveLendingAsset;
 }
 
 interface AaveBalance {
@@ -121,4 +139,33 @@ export interface AaveAccountHistory {
 
 export interface AaveHistory {
   readonly [address: string]: AaveAccountHistory;
+}
+
+export interface DefiBalance extends DefiAsset {
+  readonly address: string;
+  readonly asset: string;
+  readonly protocol: SupportedDefiProtocols;
+  readonly effectiveInterestRate: string;
+}
+
+interface MakerDAOLendingHistoryExtras {
+  gainSoFar: Balance;
+}
+
+export interface LendingHistoryExtras {
+  readonly aave: {};
+  readonly makerdao: MakerDAOLendingHistoryExtras;
+}
+
+export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
+  id: number;
+  eventType: AaveEventType | DSRMovementType;
+  protocol: T;
+  address: string;
+  asset: string;
+  value: Balance;
+  extras: LendingHistoryExtras[T];
+  blockNumber: number;
+  timestamp: number;
+  txHash: string;
 }

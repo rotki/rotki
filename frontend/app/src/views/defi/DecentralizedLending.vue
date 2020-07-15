@@ -1,16 +1,5 @@
 <template>
-  <v-container>
-    <v-row>
-      <v-col>
-        <h1>Decentralized Lending</h1>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <lending></lending>
-      </v-col>
-    </v-row>
-  </v-container>
+  <lending></lending>
 </template>
 
 <script lang="ts">
