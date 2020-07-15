@@ -5,26 +5,20 @@
     <v-slide-x-transition>
       <router-view />
     </v-slide-x-transition>
-    <!-- <blockchain-balances></blockchain-balances>
-    <fiat-balances></fiat-balances>
-    <manual-balances></manual-balances> -->
+    <!-- <fiat-balances></fiat-balances> -->
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-// import BlockchainBalances from '@/components/accounts/BlockchainBalances.vue';
 // import FiatBalances from '@/components/accounts/FiatBalances.vue';
-// import ManualBalances from '@/components/accounts/ManualBalances.vue';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 
 @Component({
   components: {
-    // ManualBalances,
     BasePageHeader,
     // FiatBalances,
-    // BlockchainBalances,
     TabNavigation
   }
 })

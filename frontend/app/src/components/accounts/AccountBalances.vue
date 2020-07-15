@@ -254,7 +254,7 @@ export default class AccountBalances extends Vue {
   }
 
   get extendedBalances() {
-    return this.visibleBalances.map( balance => {
+    return this.visibleBalances.map(balance => {
       const accountLabel = this.accountLabel(this.blockchain, balance.account);
 
       const accountIdentifier = accountLabel ? accountLabel : balance.account;
