@@ -1,5 +1,10 @@
 <template>
-  <v-row class="account-asset-balances" align="center" justify="center">
+  <v-row
+    no-gutters
+    class="account-asset-balances"
+    align="center"
+    justify="center"
+  >
     <v-col cols="12">
       <v-data-table
         :items="assets"
@@ -62,8 +67,8 @@ export default class AccountAssetBalances extends Vue {
 
   headers = [
     { text: 'Asset', value: 'asset' },
-    { text: 'Amount', value: 'amount' },
-    { text: 'USD Value', value: 'usdValue' }
+    { text: 'Amount', value: 'amount', align: 'end' },
+    { text: 'USD Value', value: 'usdValue', align: 'end' }
   ];
 
   get assets(): AssetBalances[] {

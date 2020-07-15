@@ -77,7 +77,11 @@
           </div>
           <div v-if="Object.keys(manualBalanceByLocation).length < 1">
             <v-card-actions>
-              <v-btn text color="primary" to="/accounts-balances">
+              <v-btn
+                text
+                color="primary"
+                to="/accounts-balances/manual-balances"
+              >
                 Add a manual balance
               </v-btn>
             </v-card-actions>

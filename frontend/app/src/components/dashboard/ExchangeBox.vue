@@ -1,7 +1,7 @@
 <template>
   <v-list-item
     :id="`${name}_box`"
-    :to="`/exchange-balances/${name}`"
+    :to="`/accounts-balances/exchange-balances/${name}`"
     :ripple="false"
     class="exchange-box__item"
   >
