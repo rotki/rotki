@@ -2,7 +2,16 @@
   <v-card class="manual-balances mt-8">
     <v-card-title>Manually Tracked Balances</v-card-title>
     <v-card-text>
-      <v-btn absolute fab top right dark color="primary" @click="newBalance()">
+      <v-btn
+        absolute
+        fab
+        top
+        right
+        dark
+        color="primary"
+        class="manual-balances__addBalance"
+        @click="newBalance()"
+      >
         <v-icon>
           fa fa-plus
         </v-icon>
