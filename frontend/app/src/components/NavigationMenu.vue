@@ -67,7 +67,7 @@ export default class NavigationMenu extends Vue {
     {
       type: 'item',
       text: 'Accounts & Balances',
-      route: '/accounts-balances',
+      route: '/accounts-balances/blockchain-balances',
       class: 'accounts-balances',
       icon: 'fa-briefcase'
     },

@@ -40,23 +40,6 @@
         </v-list-item>
       </template>
     </v-select>
-    <v-btn
-      class="manual-balances-form__save"
-      depressed
-      color="primary"
-      :disabled="!valid || pending"
-      @click="save"
-    >
-      Save
-    </v-btn>
-    <v-btn
-      v-if="!!edit"
-      depressed
-      class="manual-balances-form__cancel"
-      @click="clear"
-    >
-      Cancel
-    </v-btn>
   </v-form>
 </template>
 
@@ -137,7 +120,7 @@ export default class ManualBalancesForm extends Vue {
     this.errorMessages.pop();
   }
 
-  async save() {
+  async save(): Promise<boolean> {
     this.pending = true;
     const action =
       this.edit === null ? 'addManualBalance' : 'editManualBalance';
@@ -152,7 +135,9 @@ export default class ManualBalancesForm extends Vue {
     if (success) {
       this.clear();
       this.reset();
+      return true;
     }
+    return false;
   }
 }
 </script>

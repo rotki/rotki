@@ -31,26 +31,6 @@
           indeterminate
         ></v-progress-linear>
       </div>
-      <div>
-        <v-btn
-          class="blockchain-balances__buttons__add"
-          depressed
-          color="primary"
-          type="submit"
-          :disabled="!address || accountOperation || loading"
-          @click="addAccount"
-        >
-          {{ !!edit ? 'Save' : 'Add' }}
-        </v-btn>
-        <v-btn
-          v-if="!!edit"
-          class="blockchain-balances__buttons__cancel"
-          depressed
-          @click="editComplete"
-        >
-          Cancel
-        </v-btn>
-      </div>
     </v-col>
   </v-row>
 </template>
@@ -141,7 +121,7 @@ export default class AccountForm extends Vue {
     );
   }
 
-  async addAccount() {
+  async addAccount(): Promise<boolean> {
     this.pending = true;
     try {
       const payload: BlockchainAccountPayload = {
@@ -162,15 +142,17 @@ export default class AccountForm extends Vue {
         this.clearErrors();
         this.errorMessages.push(...apiErrorMessage['address']);
         this.pending = false;
-        return;
+        return false;
       }
       this.$store.commit('setMessage', {
         description: `Error while adding account: ${e}`,
         title: 'Adding Account',
         success: false
       } as Message);
+      return false;
     }
     this.pending = false;
+    return true;
   }
 
   private clearErrors() {

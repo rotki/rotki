@@ -3,7 +3,7 @@
     v-if="amount !== zero"
     :id="`${name}_box`"
     :ripple="false"
-    to="/accounts-balances"
+    to="/accounts-balances/blockchain-balances"
     class="blockchain-balance-box__item"
   >
     <v-list-item-avatar tile class="blockchain-balance-box__icon">
