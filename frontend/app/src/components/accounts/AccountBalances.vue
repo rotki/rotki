@@ -335,6 +335,7 @@ export default class AccountBalances extends Vue {
     margin-bottom: 2px;
   }
 }
+
 .blur-content {
   filter: blur(0.75em);
 }

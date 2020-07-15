@@ -93,6 +93,8 @@ export default class TagFilter extends Vue {
   &__clear {
     margin-top: -4px;
   }
+
+  /* stylelint-disable-next-line */
   ::v-deep .v-select__slot {
     min-height: 40px;
   }
