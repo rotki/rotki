@@ -52,7 +52,7 @@ E<template>
             :balances="exchangeBalances(exchange)"
           ></asset-balances>
           <div v-else>
-            Select an exchange to view assets.
+            Select an exchange to view asset details.
           </div>
         </v-col>
       </v-row>
