@@ -78,11 +78,6 @@ export default new Router({
       ]
     },
     {
-      path: '/exchange-balances/:exchange',
-      name: 'exchange-balances',
-      component: () => import('../views/ExchangeBalances.vue')
-    },
-    {
       path: '/import',
       name: 'import',
       component: () => import('../views/ImportData.vue')
@@ -90,7 +85,28 @@ export default new Router({
     {
       path: '/accounts-balances',
       name: 'accounts-balances',
-      component: () => import('../views/AccountsBalances.vue')
+      component: () => import('../views/AccountsBalances.vue'),
+      children: [
+        {
+          path: 'blockchain-balances',
+          component: () =>
+            import('../components/accounts/BlockchainBalances.vue')
+        },
+        {
+          path: 'exchange-balances/',
+          component: () => import('../components/accounts/ExchangeBalances.vue')
+        },
+        {
+          path: 'exchange-balances/:exchange',
+          component: () =>
+            import('../components/accounts/ExchangeBalances.vue'),
+          props: true
+        },
+        {
+          path: 'manual-balances',
+          component: () => import('../components/accounts/ManualBalances.vue')
+        }
+      ]
     },
     {
       path: '/defi/lending',

@@ -5,7 +5,7 @@
     :items="tags"
     class="tag-filter"
     small-chips
-    label="Filter"
+    label="Filter by tag(s)"
     prepend-inner-icon="fa-search"
     item-text="name"
     :menu-props="{ closeOnClick: true, closeOnContentClick: true }"
@@ -92,6 +92,9 @@ export default class TagFilter extends Vue {
 .tag-filter {
   &__clear {
     margin-top: -4px;
+  }
+  ::v-deep .v-select__slot {
+    min-height: 40px;
   }
 }
 </style>

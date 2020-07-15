@@ -64,7 +64,7 @@
               <v-icon
                 small
                 class="mr-2 manual-balances-list__actions__edit"
-                @click="edited = item"
+                @click="editBalance(item)"
               >
                 fa-edit
               </v-icon>
@@ -109,27 +109,6 @@
       @cancel="labelToDelete = ''"
       @confirm="deleteLabel()"
     ></confirm-dialog>
-    <v-dialog
-      max-width="600"
-      persistent
-      :value="!!edited"
-      @input="edited = null"
-    >
-      <v-card class="manual-balances-list__edit-form">
-        <v-card-title>
-          Edit Manual Balance
-        </v-card-title>
-        <v-card-subtitle>
-          Modify tags and amount of the balance
-        </v-card-subtitle>
-        <v-card-text>
-          <manual-balances-form
-            :edit="edited"
-            @clear="edited = null"
-          ></manual-balances-form>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
@@ -194,9 +173,20 @@ export default class ManualBalancesList extends Vue {
   exchangeRate!: (currency: string) => number;
 
   get visibleBalances(): ManualBalance[] {
-    return this.manualBalances.filter(balances => {
-      return this.onlyTags.every(tag => balances.tags.includes(tag));
+    if (this.onlyTags.length === 0) {
+      return this.manualBalances;
+    }
+
+    return this.manualBalances.filter(balance => {
+      if (balance.tags) {
+        return this.onlyTags.every(tag => balance.tags.includes(tag));
+      }
     });
+  }
+
+  editBalance(balance: ManualBalance) {
+    this.$emit('editBalance', balance);
+    return balance;
   }
 
   async deleteLabel() {

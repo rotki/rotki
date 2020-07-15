@@ -35,7 +35,7 @@
     </v-row>
     <v-data-table
       :headers="headers"
-      :items="visibleBalances"
+      :items="extendedBalances"
       :loading="accountOperation || isLoading"
       loading-text="Please wait while Rotki queries the blockchain..."
       single-expand
@@ -50,26 +50,27 @@
       <template v-else #header.usdValue>
         {{ currency.ticker_symbol }} value
       </template>
-      <template #item.account="{ item }">
+      <template #item.identifier="{ item }">
         <v-row>
           <v-col cols="12" class="account-balances__account">
-            <span
-              v-if="!accountLabel(blockchain, item.account)"
-              class="account-balances__account__address"
-            >
-              {{ item.account }}
-            </span>
-            <v-tooltip v-else top>
+            <v-tooltip top>
               <template #activator="{ on }">
                 <span class="account-balances__account__address" v-on="on">
-                  {{ accountLabel(blockchain, item.account) }}
+                  <v-chip label outlined>
+                    <span v-if="item.identifier != item.account" class="pr-1">
+                      {{ item.identifier }} |
+                    </span>
+                    <span :class="privacyMode ? 'blur-content' : ''">
+                      {{ item.account | truncateAddress }}
+                    </span>
+                  </v-chip>
                 </span>
               </template>
               <span> {{ item.account }} </span>
             </v-tooltip>
-            <span v-if="accountTags(blockchain, item.account)">
+            <span v-if="item.tags">
               <tag-icon
-                v-for="tag in accountTags(blockchain, item.account)"
+                v-for="tag in item.tags"
                 :key="tag"
                 class="account-balances__tag"
                 :tag="tags[tag]"
@@ -93,7 +94,7 @@
             small
             class="mr-2"
             :disabled="accountOperation"
-            @click="editedAccount = item.account"
+            @click="editAccount(item.account)"
           >
             fa-edit
           </v-icon>
@@ -112,14 +113,14 @@
           <td>Total</td>
           <td class="text-end">
             <amount-display
-              :value="visibleBalances.map(val => val.amount) | balanceSum"
+              :value="extendedBalances.map(val => val.amount) | balanceSum"
             >
             </amount-display>
           </td>
           <td class="text-end">
             <amount-display
               fiat-currency="USD"
-              :value="visibleBalances.map(val => val.usdValue) | balanceSum"
+              :value="extendedBalances.map(val => val.usdValue) | balanceSum"
             >
             </amount-display>
           </td>
@@ -134,10 +135,12 @@
       </template>
       <template #item.expand="{ item }">
         <span v-if="expandable && hasTokens(item.account)">
-          <v-icon v-if="expanded.includes(item)" @click="expanded = []">
-            fa fa-angle-up
-          </v-icon>
-          <v-icon v-else @click="expanded = [item]">fa fa-angle-down</v-icon>
+          <v-btn icon>
+            <v-icon v-if="expanded.includes(item)" @click="expanded = []">
+              fa fa-angle-up
+            </v-icon>
+            <v-icon v-else @click="expanded = [item]">fa fa-angle-down</v-icon>
+          </v-btn>
         </span>
       </template>
     </v-data-table>
@@ -148,27 +151,7 @@
       @cancel="toDeleteAccount = ''"
       @confirm="deleteAccount()"
     ></confirm-dialog>
-    <v-dialog
-      max-width="600"
-      persistent
-      :value="!!editedAccount"
-      @input="editedAccount = ''"
-    >
-      <v-card>
-        <v-card-title>
-          Edit Account
-        </v-card-title>
-        <v-card-subtitle>
-          Modify labels and tags for the account
-        </v-card-subtitle>
-        <v-card-text>
-          <account-form
-            :edit="edited"
-            @edit-complete="editedAccount = ''"
-          ></account-form>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    {{ privacyMode }}
   </div>
 </template>
 
@@ -205,7 +188,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
   computed: {
     ...mapTaskGetters(['isTaskRunning']),
     ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapState(['tags']),
+    ...mapState(['privacyMode', 'tags']),
     ...mapBalancesGetters([
       'exchangeRate',
       'hasTokens',
@@ -225,17 +208,12 @@ export default class AccountBalances extends Vue {
   editedAccount = '';
   onlyTags: string[] = [];
   expanded = [];
+  privacyMode!: boolean;
 
   isTaskRunning!: (type: TaskType) => boolean;
   accountTags!: (blockchain: Blockchain, address: string) => string[];
   accountLabel!: (blockchain: Blockchain, address: string) => string;
   tags!: Tags;
-
-  get edited(): Account | null {
-    return this.editedAccount
-      ? { address: this.editedAccount, chain: this.blockchain }
-      : null;
-  }
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
@@ -254,11 +232,11 @@ export default class AccountBalances extends Vue {
   pending = false;
 
   headers = [
-    { text: 'Account', value: 'account' },
+    { text: 'Account', value: 'identifier' },
     { text: this.blockchain, value: 'amount', align: 'end' },
     { text: 'USD Value', value: 'usdValue', align: 'end' },
     { text: 'Actions', value: 'actions', sortable: false, width: '50' },
-    { text: '', value: 'expand', align: 'end' }
+    { text: '', value: 'expand', align: 'end', sortable: false }
   ];
 
   get visibleBalances(): AccountBalance[] {
@@ -275,12 +253,30 @@ export default class AccountBalances extends Vue {
     });
   }
 
+  get extendedBalances() {
+    return this.visibleBalances.map( balance => {
+      const accountLabel = this.accountLabel(this.blockchain, balance.account);
+
+      const accountIdentifier = accountLabel ? accountLabel : balance.account;
+
+      const accountTags = this.accountTags(this.blockchain, balance.account);
+
+      return { identifier: accountIdentifier, tags: accountTags, ...balance };
+    });
+  }
+
   get accountOperation(): boolean {
     return (
       this.isTaskRunning(TaskType.ADD_ACCOUNT) ||
       this.isTaskRunning(TaskType.REMOVE_ACCOUNT) ||
       this.pending
     );
+  }
+
+  editAccount(account: Account) {
+    const accountToEdit = { address: account, chain: this.blockchain };
+    this.$emit('editAccount', accountToEdit);
+    return accountToEdit;
   }
 
   async deleteAccount() {
@@ -338,5 +334,8 @@ export default class AccountBalances extends Vue {
     margin-right: 8px;
     margin-bottom: 2px;
   }
+}
+.blur-content {
+  filter: blur(0.75em);
 }
 </style>
