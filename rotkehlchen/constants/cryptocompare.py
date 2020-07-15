@@ -47,8 +47,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     # In Rotkehlchen KNC is KyberNetwork and KNC-2 is KingN coin. In cryptocompare
     # KNGN is KingN coin
     'KNC-2': 'KNGN',
-    # Liquidity network is LQD in Rotkehlchen but LQDN in Cryptocompare
+    # Liquidity network is LQD in Rotki but LQDN in Cryptocompare
     'LQD': 'LQDN',
+    # LUNA Terra is LUNA-2 in Rotki but LUNA in Cryptocompare
+    'LUNA-2': 'LUNA',
     # Monetaverde is as MNV in cryptocompare while it should be MCN
     # https://www.cryptocompare.com/coins/mnv/overview
     'MCN': 'MNV',
@@ -553,9 +555,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Locus Chain (https://etherscan.io/address/0xC64500DD7B0f1794807e67802F8Abbf5F8Ffb054)
     # is not in cryptocompare but is in paprika
     'LOCUS',
-    # LUNA Terra (https://coinmarketcap.com/currencies/terra/)
+    # LUNA Coin (https://coinmarketcap.com/currencies/luna-coin/markets/)
     # is not in cryptocompare but is in paprika
-    'LUNA-2',
+    'LUNA',
     # Midas Protocol (https://coinmarketcap.com/currencies/midasprotocol/)
     # is not in cryptocompare but is in paprika
     'MAS',
