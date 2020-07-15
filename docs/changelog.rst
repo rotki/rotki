@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `1155` Fix the cryptocompate price queries of LUNA Terra
 * :bug: `1151` Fix for bittrex users so that if bittrex returns dates without a millisecond component Rotki can still parse them properly.
 * :feature: `1105` Rotki now uses a standard compliant directory per OS to store user data. If the directory does not exist it is created and at the same time the old directory is migrated by copying it to the new one. The new directories per OS are:
   - Linux: ``~/.local/share/rotki/data``
