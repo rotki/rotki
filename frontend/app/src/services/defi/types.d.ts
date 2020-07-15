@@ -19,6 +19,7 @@ export type MakerDAOVaultEventType =
   | 'liquidation';
 export type AaveEventType = 'deposit' | 'interest' | 'withdrawal';
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
+export type SupportedDefiProtocols = 'aave' | 'makerdao';
 
 export interface ApiDSRMovement {
   readonly movement_type: DSRMovementType;

@@ -4,7 +4,7 @@
       Please wait while your vaults are getting loaded...
     </template>
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <v-row>
       <v-col cols="12">
         <h2>Collateralized Loans</h2>
@@ -14,31 +14,27 @@
       <v-col cols="12">
         <stat-card-wide :cols="2">
           <template #first-col>
-            <dl>
-              <dt class="title font-weight-regular">
+            <stat-card-column>
+              <template #title>
                 Total collateral locked
-              </dt>
-              <dd class="primary--text text-h5 font-weight-bold">
-                <amount-display
-                  :value="makerDAOVaultSummary.totalCollateralUsd"
-                  show-currency="symbol"
-                  fiat-currency="USD"
-                ></amount-display>
-              </dd>
-            </dl>
+              </template>
+              <amount-display
+                :value="makerDAOVaultSummary.totalCollateralUsd"
+                show-currency="symbol"
+                fiat-currency="USD"
+              ></amount-display>
+            </stat-card-column>
           </template>
           <template #second-col>
-            <dl>
-              <dt class="title font-weight-regular">
+            <stat-card-column>
+              <template #title>
                 Total outstanding debt
-              </dt>
-              <dd class="primary--text text-h5 font-weight-bold">
-                <amount-display
-                  :value="makerDAOVaultSummary.totalDebt"
-                  asset="DAI"
-                ></amount-display>
-              </dd>
-            </dl>
+              </template>
+              <amount-display
+                :value="makerDAOVaultSummary.totalDebt"
+                asset="DAI"
+              ></amount-display>
+            </stat-card-column>
           </template>
         </stat-card-wide>
       </v-col>
@@ -63,15 +59,16 @@
       </v-col>
     </v-row>
     <loan-info :vault="selectedVault" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
-import LoanInfo from '@/components/defi/LoanInfo.vue';
+import { mapGetters } from 'vuex';
+import LoanInfo from '@/components/defi/maker/LoanInfo.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
+import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import {
@@ -84,10 +81,8 @@ import {
   computed: {
     ...mapGetters('defi', ['makerDAOVaults', 'makerDAOVaultSummary'])
   },
-  methods: {
-    ...mapActions('defi', ['fetchMakerDAOVaults', 'fetchMakerDAOVaultDetails'])
-  },
   components: {
+    StatCardColumn,
     AmountDisplay,
     StatCard,
     StatCardWide,
@@ -100,21 +95,12 @@ export default class Borrowing extends Vue {
   selection: number = -1;
   makerDAOVaults!: MakerDAOVaultModel[];
   makerDAOVaultSummary!: MakerDAOVaultSummary;
-  fetchMakerDAOVaults!: () => Promise<void>;
-  fetchMakerDAOVaultDetails!: () => Promise<void>;
 
   get selectedVault(): MakerDAOVault | MakerDAOVaultModel | null {
     return (
       this.makerDAOVaults.find(vault => vault.identifier === this.selection) ??
       null
     );
-  }
-
-  async mounted() {
-    this.loading = true;
-    await this.fetchMakerDAOVaults();
-    this.loading = false;
-    await this.fetchMakerDAOVaultDetails();
   }
 }
 </script>

@@ -1,8 +1,10 @@
 import { MutationTree } from 'vuex';
-import { defaultState, DefiState } from '@/store/defi/state';
+import { defaultState } from '@/store/defi/state';
+import { Status } from '@/store/defi/status';
 import {
   AaveBalances,
   AaveHistory,
+  DefiState,
   DSRBalances,
   DSRHistory,
   MakerDAOVault,
@@ -30,6 +32,15 @@ export const mutations: MutationTree<DefiState> = {
   },
   aaveHistory(state: DefiState, aaveHistory: AaveHistory) {
     state.aaveHistory = aaveHistory;
+  },
+  status(state: DefiState, status: Status) {
+    state.status = status;
+  },
+  lendingHistoryStatus(state: DefiState, status: Status) {
+    state.lendingHistoryStatus = status;
+  },
+  borrowingHistoryStatus(state: DefiState, status: Status) {
+    state.borrowingHistoryStatus = status;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

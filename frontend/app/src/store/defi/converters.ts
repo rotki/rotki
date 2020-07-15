@@ -12,7 +12,8 @@ import {
   ApiMakerDAOVaultEvent
 } from '@/services/defi/types';
 import {
-  AaveAsset,
+  AaveBorrowingAsset,
+  AaveLendingAsset,
   AaveBalances,
   AaveBorrowing,
   AaveHistory,
@@ -74,10 +75,14 @@ export function convertDSRHistory(history: ApiDSRHistory): DSRHistory {
           tx_hash
         }) => ({
           movementType: movement_type,
-          gainSoFar: bigNumberify(gain_so_far),
-          gainSoFarUsdValue: bigNumberify(gain_so_far_usd_value),
-          amount: bigNumberify(amount),
-          amountUsdValue: bigNumberify(amount_usd_value),
+          gainSoFar: {
+            amount: bigNumberify(gain_so_far),
+            usdValue: bigNumberify(gain_so_far_usd_value)
+          },
+          balance: {
+            amount: bigNumberify(amount),
+            usdValue: bigNumberify(amount_usd_value)
+          },
           blockNumber: block_number,
           timestamp,
           txHash: tx_hash
@@ -138,18 +143,25 @@ function convertBalance({ amount, usd_value }: ApiBalance): Balance {
   };
 }
 
-function convertAaveAsset({
+function convertAaveAsset<T extends AaveLendingAsset | AaveBorrowingAsset>({
   apy,
   stable_apy,
   variable_apy,
-  balance
-}: ApiAaveAsset): AaveAsset {
+  balance: apiBalance
+}: ApiAaveAsset): T {
+  const balance = convertBalance(apiBalance);
+  if (apy) {
+    return {
+      apy,
+      balance
+    } as T;
+  }
+
   return {
-    apy: apy,
     stableApy: stable_apy,
     variableApy: variable_apy,
-    balance: convertBalance(balance)
-  };
+    balance
+  } as T;
 }
 
 export function convertAaveBalances(

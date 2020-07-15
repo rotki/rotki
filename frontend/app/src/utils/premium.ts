@@ -75,6 +75,13 @@ export const VaultEventsList = (): Promise<VueConstructor> => {
   );
 };
 
+export const LendingHistory = (): Promise<VueConstructor> => {
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async resolve =>
+    resolve((await loadLibrary()).LendingHistory)
+  );
+};
+
 declare global {
   interface Window {
     Vue: any;

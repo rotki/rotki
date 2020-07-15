@@ -233,7 +233,7 @@ export default class AccountBalances extends Vue {
 
   get edited(): Account | null {
     return this.editedAccount
-      ? { address: this.editedAccount, chain: this.blockchain }
+      ? { address: this.editedAccount, chain: this.blockchain, protocols: [] }
       : null;
   }
 
