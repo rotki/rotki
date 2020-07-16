@@ -956,7 +956,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if ts_now() - self.defi_balances_last_query_ts < DEFI_BALANCES_REQUERY_SECONDS:
             return self.defi_balances
 
-        # now also query defi balances
+        # query zerion for defi balances
         zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
         self.defi_balances = {}
         for account in self.accounts.eth:

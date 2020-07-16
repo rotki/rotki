@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
@@ -141,10 +141,25 @@ class Aave(EthereumModule):
 
     def get_balances(
             self,
-            defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
+            given_defi_balances: Union[
+                Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
+                Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
+            ],
     ) -> Dict[ChecksumEthAddress, AaveBalances]:
+        """Retrieves the aave balances
+
+        Receives the defi balances from zerion as an argument. They can either be directly given
+        as the defi balances mapping or as a callable that will retrieve the
+        balances mapping when executed.
+        """
         aave_balances = {}
         reserve_cache: Dict[str, Tuple[Any, ...]] = {}
+
+        if isinstance(given_defi_balances, dict):
+            defi_balances = given_defi_balances
+        else:
+            defi_balances = given_defi_balances()
+
         for account, balance_entries in defi_balances.items():
             lending_map = {}
             borrowing_map = {}

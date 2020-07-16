@@ -1406,10 +1406,26 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def _eth_module_query(self, module: str, method: str, **kwargs: Any) -> Dict[str, Any]:
+    def _eth_module_query(
+            self,
+            module: str,
+            method: str,
+            query_specific_balances_before: Optional[List[str]],
+            **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """A function abstracting away calls to ethereum modules
+
+        Can optionally specify if eth balances should be queried before the
+        actual intended eth module query.
+        """
         result = None
         msg = ''
         status_code = HTTPStatus.OK
+
+        if query_specific_balances_before and 'defi' in query_specific_balances_before:
+            # Make sure ethereum balances are queried (this is protected by lock and by time cache)
+            # so most of the times it should have already ran
+            self.rotkehlchen.chain_manager.query_balances(blockchain=SupportedBlockchain.ETHEREUM)
 
         module = getattr(self.rotkehlchen.chain_manager, module)
         if not module:
@@ -1432,6 +1448,7 @@ class RestAPI():
             async_query: bool,
             module: str,
             method: str,
+            query_specific_balances_before: Optional[List[str]],
             **kwargs: Any,
     ) -> Response:
         if async_query:
@@ -1439,10 +1456,16 @@ class RestAPI():
                 command='_eth_module_query',
                 module=module,
                 method=method,
+                query_specific_balances_before=query_specific_balances_before,
                 **kwargs,
             )
 
-        response = self._eth_module_query(module=module, method=method, **kwargs)
+        response = self._eth_module_query(
+            module=module,
+            method=method,
+            query_specific_balances_before=query_specific_balances_before,
+            **kwargs,
+        )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
@@ -1452,6 +1475,7 @@ class RestAPI():
             async_query=async_query,
             module='makerdao_dsr',
             method='get_current_dsr',
+            query_specific_balances_before=None,
         )
 
     @require_premium_user(active_check=False)
@@ -1460,6 +1484,7 @@ class RestAPI():
             async_query=async_query,
             module='makerdao_dsr',
             method='get_historical_dsr',
+            query_specific_balances_before=None,
         )
 
     @require_loggedin_user()
@@ -1468,6 +1493,7 @@ class RestAPI():
             async_query=async_query,
             module='makerdao_vaults',
             method='get_vaults',
+            query_specific_balances_before=None,
         )
 
     @require_premium_user(active_check=False)
@@ -1475,19 +1501,23 @@ class RestAPI():
         return self._api_query_for_eth_module(
             async_query=async_query,
             module='makerdao_vaults',
-            method='get_vault_details')
+            method='get_vault_details',
+            query_specific_balances_before=None,
+        )
 
     @require_loggedin_user()
     def get_aave_balances(self, async_query: bool) -> Response:
-        # Make sure ethereum balances are queried (this is protected by lock and by time cache)
-        # so most of the times it should have already ran
-        self.rotkehlchen.chain_manager.query_balances(blockchain=SupportedBlockchain.ETHEREUM)
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
             async_query=async_query,
             module='aave',
             method='get_balances',
-            defi_balances=self.rotkehlchen.chain_manager.defi_balances,
+            # We need to query defi balances before since defi_balances must be populated
+            query_specific_balances_before=['defi'],
+            # Giving the defi balances as a lambda function here so that they
+            # are retrieved only after we are sure the defi balances have been
+            # queried.
+            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
         )
 
     @require_premium_user(active_check=False)
@@ -1496,6 +1526,7 @@ class RestAPI():
             async_query=async_query,
             module='aave',
             method='get_history',
+            query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.accounts.eth,
         )
 
