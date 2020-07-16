@@ -16,7 +16,74 @@ E<template>
         </v-icon>
       </v-btn>
       <v-row>
-        <v-col cols="2">
+        <v-col cols="12" class="hidden-md-and-up">
+          <v-select
+            v-model="selectedExchange"
+            filled
+            :items="connectedExchanges"
+            hide-details
+            label="Select Exchange"
+            @change="openExchangeDetails"
+          >
+            <template #selection="{ item }">
+              <div class="exchange-balances__select__image ml-2 mr-6">
+                <v-img
+                  contain
+                  height="42"
+                  width="42"
+                  :title="exchange"
+                  :src="require(`@/assets/images/${item}.png`)"
+                  class="exchange-balances__select__icon"
+                />
+              </div>
+              <div
+                class="exchange-balances__select__item d-flex flex-column my-3"
+              >
+                <span class="exchange-balances__select__item__title text-h6">
+                  {{ item.charAt(0).toUpperCase() + item.slice(1) }}
+                </span>
+                <span
+                  class="exchange-balances__select__item__amount secondary--text text--lighten-5"
+                >
+                  <amount-display
+                    show-currency="symbol"
+                    fiat-currency="USD"
+                    :value="exchangeBalance(item)"
+                  ></amount-display>
+                </span>
+              </div>
+            </template>
+            <template #item="{ item }">
+              <div class="exchange-balances__select__image ml-2 mr-6">
+                <v-img
+                  contain
+                  height="42"
+                  width="42"
+                  :title="exchange"
+                  :src="require(`@/assets/images/${item}.png`)"
+                  class="exchange-balances__select__icon"
+                />
+              </div>
+              <div
+                class="exchange-balances__select__item d-flex flex-column my-3"
+              >
+                <span class="exchange-balances__select__item__title text-h6">
+                  {{ item.charAt(0).toUpperCase() + item.slice(1) }}
+                </span>
+                <span
+                  class="exchange-balances__select__item__amount secondary--text text--lighten-5"
+                >
+                  <amount-display
+                    show-currency="symbol"
+                    fiat-currency="USD"
+                    :value="exchangeBalance(item)"
+                  ></amount-display>
+                </span>
+              </div>
+            </template>
+          </v-select>
+        </v-col>
+        <v-col cols="2" class="hidden-sm-and-down">
           <v-tabs fixed-tabs vertical hide-slider optional>
             <v-tab
               v-for="(exchange, i) in connectedExchanges"
@@ -24,6 +91,7 @@ E<template>
               class="exchange-balances__tab my-3"
               active-class="exchange-balances__tab--active"
               :to="`/accounts-balances/exchange-balances/${exchange}`"
+              @click="selectedExchange = exchange"
             >
               <v-img
                 contain
@@ -46,7 +114,7 @@ E<template>
             </v-tab>
           </v-tabs>
         </v-col>
-        <v-col cols="10">
+        <v-col>
           <asset-balances
             v-if="exchange"
             :balances="exchangeBalances(exchange)"
@@ -85,6 +153,7 @@ const { mapState, mapGetters } = createNamespacedHelpers('balances');
 export default class ExchangeBalances extends Vue {
   @Prop({ required: false, default: '' })
   exchange!: string;
+  selectedExchange: string = '';
 
   connectedExchanges!: string[];
   exchanges!: ExchangeInfo;
@@ -97,6 +166,12 @@ export default class ExchangeBalances extends Vue {
     );
 
     return total;
+  }
+
+  openExchangeDetails() {
+    this.$router.push({
+      path: `/accounts-balances/exchange-balances/${this.selectedExchange}`
+    });
   }
 }
 </script>
