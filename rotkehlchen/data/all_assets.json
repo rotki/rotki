@@ -10470,6 +10470,14 @@
         "symbol": "aMKR",
         "type": "ethereum token"
     },
+    "aREN": {
+        "ethereum_address": "0x69948cC03f478B95283F7dbf1CE764d0fc7EC54C",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing REN",
+        "started": 1594923128,
+        "symbol": "aREN",
+        "type": "ethereum token"
+    },
     "aREP": {
         "ethereum_address": "0x71010A9D003445aC60C4e6A7017c1E89A477B438",
         "ethereum_token_decimals": 18,
