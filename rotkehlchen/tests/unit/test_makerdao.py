@@ -37,7 +37,10 @@ def use_etherscan() -> bool:
 
 
 @pytest.fixture
-def makerdao_test_data(ethereum_accounts) -> VaultTestData:
+def makerdao_test_data(
+        ethereum_accounts,
+        inquirer,  # pylint: disable=unused-argument
+) -> VaultTestData:
     user_address = ethereum_accounts[1]
     vault0 = MakerDAOVault(
         identifier=1,
@@ -121,7 +124,11 @@ def test_get_vaults(makerdao_vaults, makerdao_test_data):
     'ETH': FVal('200'),
     'DAI': FVal('1.01'),
 }])
-def test_get_vault_normalized_balance(inquirer):  # pylint: disable=unused-argument
+def test_get_vault_normalized_balance(
+        inquirer,  # pylint: disable=unused-argument
+        mocked_current_prices,
+):
+    debt_value = FVal('2000')
     vault = MakerDAOVault(
         identifier=1,
         collateral_type='ETH-A',
@@ -129,7 +136,8 @@ def test_get_vault_normalized_balance(inquirer):  # pylint: disable=unused-argum
         owner=make_ethereum_address(),
         collateral_amount=FVal('100'),
         collateral_usd_value=FVal('20000'),
-        debt_value=FVal('2000'),
+        debt_value=debt_value,
+        debt_usd_value=debt_value * mocked_current_prices['DAI'],
         collateralization_ratio='990%',
         liquidation_ratio=FVal(1.5),
         liquidation_price=FVal('50'),  # not calculated to be correct
