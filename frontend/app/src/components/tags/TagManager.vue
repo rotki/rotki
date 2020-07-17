@@ -1,5 +1,5 @@
 <template>
-  <v-card light>
+  <v-card light class="tag-manager">
     <v-card-title>
       Tag Manager
       <v-spacer v-if="dialog"></v-spacer>
@@ -137,18 +137,23 @@ export default class TagManager extends Vue {
 }
 </script>
 
-<style scoped>
-::-webkit-scrollbar {
-    width: 12px;
+<style scoped lang="scss">
+@import '@/scss/scroll';
+
+::v-deep {
+  .v-dialog {
+    &__content {
+      .v-dialog {
+        &--active {
+          @extend .themed-scrollbar;
+        }
+      }
+    }
+  }
 }
- 
-::-webkit-scrollbar-track {
-    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
-    border-radius: 10px;
-}
- 
-::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+
+.tag-manager {
+  overflow: auto;
+  height: 100%;
 }
 </style>

@@ -161,6 +161,8 @@ export default class App extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '@/scss/scroll';
+
 .v-navigation-drawer {
   &--fixed {
     z-index: 100 !important;
@@ -246,27 +248,9 @@ export default class App extends Vue {
       border-bottom: var(--v-rotki-light-grey-darken1) solid thin;
     }
   }
-}
-::-webkit {
-  &-scrollbar {
-    width: 14px;
-    height: 18px;
 
-    &-thumb {
-      height: 6px;
-      border: 4px solid rgba(0, 0, 0, 0);
-      background-clip: padding-box;
-      border-radius: 7px;
-      background-color: rgba(0, 0, 0, 0.15);
-      box-shadow: inset -1px -1px 0px rgba(0, 0, 0, 0.05),
-        inset 1px 1px 0px rgba(0, 0, 0, 0.05);
-      &:hover {
-        background-color: rgba(0, 0, 0, 0.3);
-      }
-      &:active {
-        background-color: rgba(0, 0, 0, 0.5);
-      }
-    }
+  .v-navigation-drawer {
+    @extend .themed-scrollbar;
   }
 }
 </style>
