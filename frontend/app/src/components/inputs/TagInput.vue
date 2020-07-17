@@ -53,7 +53,12 @@
         </v-btn>
       </template>
     </v-autocomplete>
-    <v-dialog :value="!!manageTags" max-width="800" @input="manageTags = false">
+    <v-dialog
+      :value="!!manageTags"
+      max-width="800"
+      class="tag-input__tag-manager"
+      @input="manageTags = false"
+    >
       <tag-manager
         v-if="!!manageTags"
         dialog
@@ -107,6 +112,14 @@ export default class TagInput extends Vue {
 </script>
 
 <style scoped lang="scss">
+::v-deep {
+  .v-dialog {
+    &--active {
+      height: 100%;
+    }
+  }
+}
+
 .tag-input {
   &__tag {
     &__description {
