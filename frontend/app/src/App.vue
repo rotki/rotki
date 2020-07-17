@@ -172,6 +172,8 @@ export default class App extends Vue {
     padding-top: 60px;
     z-index: 300 !important;
   }
+
+  @extend .themed-scrollbar;
 }
 
 .app {
@@ -247,10 +249,6 @@ export default class App extends Vue {
       content: '';
       border-bottom: var(--v-rotki-light-grey-darken1) solid thin;
     }
-  }
-
-  .v-navigation-drawer {
-    @extend .themed-scrollbar;
   }
 }
 </style>
