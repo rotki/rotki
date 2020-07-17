@@ -126,6 +126,8 @@ class MakerDAOVault(NamedTuple):
     collateral_usd_value: FVal
     # amount of DAI drawn
     debt_value: FVal
+    # usd value of the DAI debt
+    debt_usd_value: FVal
     # The current collateralization_ratio of the Vault. None if nothing is locked in.
     collateralization_ratio: Optional[str]
     # The ratio at which the vault is open for liquidation. (e.g. 1.5 for 150%)
@@ -279,6 +281,8 @@ class MakerDAOVaults(MakerDAOCommon):
             liquidation_price = None
         else:
             liquidation_price = (debt_value * liquidation_ratio) / collateral_amount
+
+        dai_usd_price = Inquirer().find_usd_price(A_DAI)
         return MakerDAOVault(
             identifier=identifier,
             owner=owner,
@@ -286,6 +290,7 @@ class MakerDAOVaults(MakerDAOCommon):
             collateral_asset=asset,
             collateral_amount=collateral_amount,
             debt_value=debt_value,
+            debt_usd_value=dai_usd_price * debt_value,
             liquidation_ratio=liquidation_ratio,
             collateralization_ratio=collateralization_ratio,
             collateral_usd_value=collateral_usd_value,
