@@ -10414,6 +10414,14 @@
         "symbol": "aDAI",
         "type": "ethereum token"
     },
+    "aENJ": {
+        "ethereum_address": "0x712DB54daA836B53Ef1EcBb9c6ba3b9Efb073F40",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing ENJ",
+        "started": 1594921488,
+        "symbol": "aENJ",
+        "type": "ethereum token"
+    },
     "aETH": {
         "ethereum_address": "0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04",
         "ethereum_token_decimals": 18,
