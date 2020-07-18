@@ -9,7 +9,7 @@
     ></confirm-dialog>
     <v-menu transition="slide-y-transition" bottom offset-y>
       <template #activator="{ on }">
-        <v-badge color="primary" right overlap>
+        <v-badge :value="count" color="primary" right overlap>
           <template #badge>
             <span>{{ count }}</span>
           </template>
