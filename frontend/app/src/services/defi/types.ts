@@ -19,7 +19,9 @@ export type MakerDAOVaultEventType =
   | 'liquidation';
 export type AaveEventType = 'deposit' | 'interest' | 'withdrawal';
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
-export type SupportedDefiProtocols = 'aave' | 'makerdao';
+
+export const DEFI_PROTOCOLS = ['aave', 'makerdao'] as const;
+export type SupportedDefiProtocols = typeof DEFI_PROTOCOLS[number];
 
 export interface ApiDSRMovement {
   readonly movement_type: DSRMovementType;
@@ -47,6 +49,7 @@ export interface ApiMakerDAOVault {
   readonly collateral_asset: CollateralAssetType;
   readonly collateral_amount: string;
   readonly debt_value: string;
+  readonly debt_usd_value: string;
   readonly collateralization_ratio: string | null;
   readonly liquidation_ratio: string;
   readonly liquidation_price: string;
@@ -72,18 +75,24 @@ export interface ApiMakerDAOVaultEvent {
 }
 
 export interface ApiAaveAsset {
-  readonly apy?: string;
-  readonly stable_apy?: string;
-  readonly variable_apy?: string;
   readonly balance: ApiBalance;
 }
 
+export interface ApiAaveBorrowingAsset extends ApiAaveAsset {
+  readonly stable_apr: string;
+  readonly variable_apr: string;
+}
+
+export interface ApiAaveLendingAsset extends ApiAaveAsset {
+  readonly apy: string;
+}
+
 export interface ApiAaveBorrowing {
-  readonly [asset: string]: ApiAaveAsset;
+  readonly [asset: string]: ApiAaveBorrowingAsset;
 }
 
 export interface ApiAaveLending {
-  readonly [asset: string]: ApiAaveAsset;
+  readonly [asset: string]: ApiAaveLendingAsset;
 }
 
 interface ApiAaveBalance {

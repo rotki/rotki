@@ -23,6 +23,7 @@
             <v-img
               width="55px"
               contain
+              position="left"
               max-height="24px"
               :src="data.item.icon"
             />
@@ -33,6 +34,7 @@
             <v-img
               width="55px"
               contain
+              position="left"
               max-height="24px"
               :src="data.item.icon"
             />

@@ -50,25 +50,24 @@ export interface DSRMovement {
   readonly txHash: string;
 }
 
-export interface MakerDAOVault {
-  readonly identifier: number;
+export interface Collateral<T extends CollateralAssetType | string>
+  extends Balance {
+  readonly asset: T;
+}
+
+export interface MakerDAOVault extends CollateralizedLoan<CollateralAssetType> {
   readonly collateralType: string;
-  readonly collateralAsset: CollateralAssetType;
-  readonly collateralAmount: BigNumber;
-  readonly debtValue: BigNumber;
   readonly collateralizationRatio?: string;
   readonly stabilityFee: string;
   readonly liquidationRatio: string;
   readonly liquidationPrice: BigNumber;
-  readonly collateralUsdValue: BigNumber;
 }
 
 export interface MakerDAOVaultDetails {
-  readonly identifier: number;
+  readonly identifier: string;
   readonly creationTs: number;
   readonly totalInterestOwed: BigNumber;
-  readonly totalLiquidatedAmount: BigNumber;
-  readonly totalLiquidatedUsd: BigNumber;
+  readonly totalLiquidated: Balance;
   readonly events: MakerDAOVaultEvent[];
 }
 
@@ -84,7 +83,7 @@ export type MakerDAOVaultModel =
   | MakerDAOVault
   | (MakerDAOVault & MakerDAOVaultDetails);
 
-export interface MakerDAOVaultSummary {
+export interface LoanSummary {
   readonly totalCollateralUsd: BigNumber;
   readonly totalDebt: BigNumber;
 }
@@ -93,9 +92,24 @@ export interface DefiAsset {
   readonly balance: Balance;
 }
 
-export interface AaveBorrowingAsset extends DefiAsset {
-  readonly stableApy: string;
-  readonly variableApy: string;
+export interface AaveBorrowingRates {
+  readonly stableApr: string;
+  readonly variableApr: string;
+}
+
+export interface AaveBorrowingAsset extends DefiAsset, AaveBorrowingRates {}
+
+export interface CollateralizedLoan<T extends CollateralAssetType | string>
+  extends DefiLoan {
+  readonly owner: string;
+  readonly collateral: Collateral<T>;
+  readonly debt: Balance;
+}
+
+export interface AaveLoan
+  extends AaveBorrowingRates,
+    CollateralizedLoan<string> {
+  readonly owner: string;
 }
 
 export interface AaveLendingAsset extends DefiAsset {
@@ -168,4 +182,18 @@ export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
   blockNumber: number;
   timestamp: number;
   txHash: string;
+}
+
+export interface DefiLoan {
+  readonly identifier: string;
+  readonly protocol: SupportedDefiProtocols;
+  readonly asset?: string;
+  readonly owner?: string;
+}
+
+export interface DefiProtocolSummary {
+  readonly protocol: string;
+  readonly totalCollateralUsd: BigNumber;
+  readonly totalDebtUsd: BigNumber;
+  readonly totalLendingDepositUsd: BigNumber;
 }

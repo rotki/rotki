@@ -7,7 +7,11 @@
   <div v-else>
     <v-row>
       <v-col cols="12">
-        <h2>Collateralized Loans</h2>
+        <refresh-header
+          title="Collateralized Loans"
+          :loading="refreshing"
+          @refresh="refresh()"
+        />
       </v-col>
     </v-row>
     <v-row>
@@ -19,7 +23,7 @@
                 Total collateral locked
               </template>
               <amount-display
-                :value="makerDAOVaultSummary.totalCollateralUsd"
+                :value="loanSummary(selectedProtocols).totalCollateralUsd"
                 show-currency="symbol"
                 fiat-currency="USD"
               ></amount-display>
@@ -31,8 +35,9 @@
                 Total outstanding debt
               </template>
               <amount-display
-                :value="makerDAOVaultSummary.totalDebt"
-                asset="DAI"
+                :value="loanSummary(selectedProtocols).totalDebt"
+                show-currency="symbol"
+                fiat-currency="USD"
               ></amount-display>
             </stat-card-column>
           </template>
@@ -40,48 +45,91 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="12">
+      <v-col cols="6">
         <v-card>
-          <div class="mx-4 py-4">
+          <div class="mx-4 pt-2">
             <v-autocomplete
               v-model="selection"
               class="borrowing__vault-selection"
               label="Select Loan"
+              chips
               item-key="identifier"
-              :items="makerDAOVaults"
+              :items="loans(selectedProtocols)"
               item-text="identifier"
               hide-details
               clearable
               :open-on-clear="false"
-            ></v-autocomplete>
+            >
+              <template #selection="{item}">
+                <v-img
+                  aspect-ratio="1"
+                  contain
+                  position="left"
+                  max-width="48px"
+                  max-height="24px"
+                  :src="require(`@/assets/images/defi/${item.protocol}.svg`)"
+                />
+                <span class="ml-3">{{ item.identifier }}</span>
+              </template>
+              <template #item="{item}">
+                <v-img
+                  aspect-ratio="1"
+                  contain
+                  position="left"
+                  max-width="48px"
+                  max-height="24px"
+                  :src="require(`@/assets/images/defi/${item.protocol}.svg`)"
+                />
+                <span class="ml-3">{{ item.identifier }}</span>
+              </template>
+            </v-autocomplete>
           </div>
+          <v-card-text>
+            Please select a loan to see information
+          </v-card-text>
         </v-card>
       </v-col>
+      <v-col cols="6">
+        <defi-protocol-selector @selection-changed="selectionChanged($event)" />
+      </v-col>
     </v-row>
-    <loan-info :vault="selectedVault" />
+    <loan-info :loan="loan(selection)" />
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
-import LoanInfo from '@/components/defi/maker/LoanInfo.vue';
+import { mapActions, mapGetters, mapState } from 'vuex';
+import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
+import DefiProtocolSelector, {
+  Protocol
+} from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import RefreshHeader from '@/components/helper/RefreshHeader.vue';
+import { SupportedDefiProtocols } from '@/services/defi/types';
+import { Status } from '@/store/defi/status';
 import {
-  MakerDAOVault,
-  MakerDAOVaultModel,
-  MakerDAOVaultSummary
+  AaveLoan,
+  DefiLoan,
+  LoanSummary,
+  MakerDAOVaultModel
 } from '@/store/defi/types';
 
 @Component({
   computed: {
-    ...mapGetters('defi', ['makerDAOVaults', 'makerDAOVaultSummary'])
+    ...mapGetters('defi', ['loan', 'loans', 'loanSummary']),
+    ...mapState('defi', ['borrowingHistoryStatus', 'status'])
+  },
+  methods: {
+    ...mapActions('defi', ['fetchBorrowingHistory', 'fetchBorrowing'])
   },
   components: {
+    DefiProtocolSelector,
+    RefreshHeader,
     StatCardColumn,
     AmountDisplay,
     StatCard,
@@ -91,16 +139,43 @@ import {
   }
 })
 export default class Borrowing extends Vue {
-  loading: boolean = false;
-  selection: number = -1;
-  makerDAOVaults!: MakerDAOVaultModel[];
-  makerDAOVaultSummary!: MakerDAOVaultSummary;
+  selection?: string = '';
+  loan!: (identifier?: string) => MakerDAOVaultModel | AaveLoan | null;
+  loans!: (protocol: SupportedDefiProtocols[]) => DefiLoan[];
+  loanSummary!: (protocol: SupportedDefiProtocols[]) => LoanSummary;
+  fetchBorrowing!: (refreshing: boolean) => Promise<void>;
+  fetchBorrowingHistory!: (refreshing: boolean) => Promise<void>;
+  status!: Status;
+  borrowingHistoryStatus!: Status;
+  protocols: Protocol[] = [];
 
-  get selectedVault(): MakerDAOVault | MakerDAOVaultModel | null {
+  selectionChanged(protocols: Protocol[]) {
+    this.protocols = protocols;
+    this.selection = '';
+  }
+
+  get selectedProtocols(): SupportedDefiProtocols[] {
+    return this.protocols.map(value => value.identifier);
+  }
+
+  get refreshing(): boolean {
     return (
-      this.makerDAOVaults.find(vault => vault.identifier === this.selection) ??
-      null
+      this.status !== Status.LOADED ||
+      this.borrowingHistoryStatus !== Status.LOADED
     );
+  }
+
+  get loading(): boolean {
+    return this.status !== Status.LOADED && this.status !== Status.REFRESHING;
+  }
+
+  async created() {
+    await this.fetchBorrowingHistory(false);
+  }
+
+  async refresh() {
+    await this.fetchBorrowing(true);
+    await this.fetchBorrowingHistory(true);
   }
 }
 </script>

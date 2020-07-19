@@ -1,13 +1,19 @@
 import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { GetterTree } from 'vuex';
+import { truncateAddress } from '@/filters';
+import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
 import {
   DefiBalance,
   DefiLendingHistory,
+  DefiLoan,
   DefiState,
   MakerDAOVaultModel,
-  MakerDAOVaultSummary
+  LoanSummary,
+  AaveLoan,
+  DefiProtocolSummary
 } from '@/store/defi/types';
+import { RotkehlchenState } from '@/store/store';
 import { Account } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 
@@ -28,9 +34,10 @@ export interface DefiGetters {
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => BigNumber;
-  makerDAOVaults: MakerDAOVaultModel[];
-  makerDAOVaultSummary: MakerDAOVaultSummary;
+  loan: (identifier: string) => MakerDAOVaultModel | AaveLoan | null;
   defiAccounts: (protocols: SupportedDefiProtocols[]) => Account[];
+  loans: (protocols: SupportedDefiProtocols[]) => DefiLoan[];
+  loanSummary: (protocol: SupportedDefiProtocols[]) => LoanSummary;
   effectiveInterestRate: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -43,6 +50,7 @@ export interface DefiGetters {
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => DefiLendingHistory<SupportedDefiProtocols>[];
+  defiOverview: DefiProtocolSummary[];
 }
 
 type GettersDefinition = {
@@ -52,7 +60,8 @@ type GettersDefinition = {
   ) => DefiGetters[P];
 };
 
-export const getters: GettersDefinition = {
+export const getters: GetterTree<DefiState, RotkehlchenState> &
+  GettersDefinition = {
   totalUsdEarned: ({ dsrHistory, aaveHistory }: DefiState) => (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -134,30 +143,145 @@ export const getters: GettersDefinition = {
     return accounts;
   },
 
-  makerDAOVaults: ({
-    makerDAOVaults,
-    makerDAOVaultDetails
-  }: DefiState): MakerDAOVaultModel[] => {
-    const vaults: MakerDAOVaultModel[] = [];
-    for (let i = 0; i < makerDAOVaults.length; i++) {
-      const vault = makerDAOVaults[i];
-      const details = makerDAOVaultDetails.find(
-        details => details.identifier === vault.identifier
+  loans: ({ aaveBalances, makerDAOVaults }: DefiState) => (
+    protocols: SupportedDefiProtocols[]
+  ): DefiLoan[] => {
+    const loans: DefiLoan[] = [];
+    const showAll = protocols.length === 0;
+
+    if (showAll || protocols.includes('makerdao')) {
+      loans.push(
+        ...makerDAOVaults.map(
+          value =>
+            ({
+              identifier: `${value.identifier}`,
+              protocol: 'makerdao'
+            } as DefiLoan)
+        )
       );
-      vaults.push(details ? { ...vault, ...details } : vault);
     }
-    return vaults;
+
+    if (showAll || protocols.includes('aave')) {
+      for (const address of Object.keys(aaveBalances)) {
+        const { borrowing } = aaveBalances[address];
+        const assets = Object.keys(borrowing);
+        if (assets.length === 0) {
+          continue;
+        }
+
+        for (const asset of assets) {
+          loans.push({
+            identifier: `${asset} - ${truncateAddress(address, 6)}`,
+            protocol: 'aave',
+            owner: address,
+            asset
+          });
+        }
+      }
+    }
+
+    return sortBy(loans, 'identifier');
   },
 
-  makerDAOVaultSummary: ({
-    makerDAOVaults
-  }: DefiState): MakerDAOVaultSummary => {
-    const totalCollateralUsd = makerDAOVaults
-      .map(vault => vault.collateralUsdValue)
-      .reduce((sum, collateralUsdValue) => sum.plus(collateralUsdValue), Zero);
-    const totalDebt = makerDAOVaults
-      .map(vault => vault.debtValue)
-      .reduce((sum, debt) => sum.plus(debt), Zero);
+  loan: (
+    { makerDAOVaults, makerDAOVaultDetails, aaveBalances }: DefiState,
+    { loans }
+  ) => (identifier?: string): MakerDAOVaultModel | AaveLoan | null => {
+    const id = identifier?.toLocaleLowerCase();
+    const loan = loans([]).find(
+      loan => loan.identifier.toLocaleLowerCase() === id
+    );
+
+    if (!loan) {
+      return null;
+    }
+
+    if (loan.protocol === 'makerdao') {
+      const vault = makerDAOVaults.find(
+        vault => vault.identifier.toString().toLocaleLowerCase() === id
+      );
+
+      if (!vault) {
+        return null;
+      }
+
+      const details = makerDAOVaultDetails.find(
+        details => details.identifier.toString().toLocaleLowerCase() === id
+      );
+
+      return details ? { ...vault, ...details, asset: 'DAI' } : vault;
+    }
+
+    if (loan.protocol === 'aave') {
+      const owner = loan.owner ?? '';
+      const asset = loan.asset ?? '';
+      const { borrowing, lending } = aaveBalances[owner];
+      const selectedLoan = borrowing[asset];
+      const collateralUsd = Object.values(lending)
+        .map(({ balance }) => balance.usdValue)
+        .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
+
+      return {
+        asset,
+        owner,
+        protocol: loan.protocol,
+        identifier: loan.identifier,
+        stableApr: selectedLoan.stableApr,
+        variableApr: selectedLoan.variableApr,
+        debt: {
+          amount: selectedLoan.balance.amount,
+          usdValue: selectedLoan.balance.usdValue
+        },
+        collateral: {
+          asset: '',
+          amount: Zero,
+          usdValue: collateralUsd
+        }
+      } as AaveLoan;
+    }
+    return null;
+  },
+
+  loanSummary: ({ makerDAOVaults, aaveBalances }: DefiState) => (
+    protocols: SupportedDefiProtocols[]
+  ): LoanSummary => {
+    let totalCollateralUsd = Zero;
+    let totalDebt = Zero;
+
+    const showAll = protocols.length === 0;
+    if (showAll || protocols.includes('makerdao')) {
+      totalCollateralUsd = makerDAOVaults
+        .map(({ collateral: { usdValue } }) => usdValue)
+        .reduce((sum, collateralUsdValue) => sum.plus(collateralUsdValue), Zero)
+        .plus(totalCollateralUsd);
+
+      totalDebt = makerDAOVaults
+        .map(({ debt: { usdValue } }) => usdValue)
+        .reduce((sum, debt) => sum.plus(debt), Zero)
+        .plus(totalDebt);
+    }
+
+    if (showAll || protocols.includes('aave')) {
+      for (const address of Object.keys(aaveBalances)) {
+        const { borrowing, lending } = aaveBalances[address];
+        totalCollateralUsd = Object.values(lending)
+          .map(({ balance: { usdValue } }) => usdValue)
+          .reduce(
+            (sum, collateralUsdValue) => sum.plus(collateralUsdValue),
+            Zero
+          )
+          .plus(totalCollateralUsd);
+
+        totalDebt = Object.values(borrowing)
+          .map(({ balance: { usdValue } }) => usdValue)
+          .reduce(
+            (sum, collateralUsdValue) => sum.plus(collateralUsdValue),
+            Zero
+          )
+          .plus(totalDebt);
+      }
+    }
+
     return { totalCollateralUsd, totalDebt };
   },
 
@@ -306,5 +430,18 @@ export const getters: GettersDefinition = {
       }
     }
     return sortBy(defiLendingHistory, 'timestamp').reverse();
+  },
+
+  defiOverview: (_, { loanSummary, totalLendingDeposit }) => {
+    return DEFI_PROTOCOLS.map(protocol => {
+      const filter = [protocol];
+      const { totalCollateralUsd, totalDebt } = loanSummary(filter);
+      return {
+        protocol,
+        totalCollateralUsd,
+        totalDebtUsd: totalDebt,
+        totalLendingDepositUsd: totalLendingDeposit(filter, [])
+      };
+    });
   }
 };
