@@ -18,6 +18,9 @@ export const mutations: MutationTree<SessionState> = {
     state.newAccount = newAccount;
     state.username = username;
   },
+  completeLogin(state: SessionState, complete: boolean) {
+    state.loginComplete = complete;
+  },
   generalSettings(state: SessionState, settings: GeneralSettings) {
     state.generalSettings = Object.assign(state.generalSettings, settings);
   },

@@ -1,7 +1,8 @@
 <template>
   <v-card class="stat-card">
     <v-card-title>
-      {{ title }}
+      <v-img v-if="icon" contain max-height="32px" :src="icon" />
+      <span v-if="title"></span>
       <v-spacer v-if="locked"></v-spacer>
       <premium-lock v-if="locked"></premium-lock>
     </v-card-title>
@@ -28,6 +29,8 @@ export default class StatCard extends Vue {
   locked!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   loading!: boolean;
+  @Prop({ required: false, type: String })
+  icon!: string;
 }
 </script>
 

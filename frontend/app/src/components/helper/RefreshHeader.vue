@@ -1,5 +1,5 @@
 <template>
-  <h2 class="d-flex justify-space-between">
+  <h2 class="d-flex justify-space-between align-center">
     {{ title }}
 
     <v-btn text fab depressed :disabled="loading" @click="refresh()">

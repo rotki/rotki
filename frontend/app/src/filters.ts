@@ -92,6 +92,10 @@ export function splitOnCapital(value: string) {
   );
 }
 
+export function optional(value?: string): string {
+  return value ?? '-';
+}
+
 Vue.filter('percentage', percentage);
 Vue.filter('precision', precision);
 Vue.filter('formatDate', formatDate);
@@ -103,3 +107,4 @@ Vue.filter('balanceSum', balanceSum);
 Vue.filter('truncateAddress', truncateAddress);
 Vue.filter('aggregateTotal', aggregateTotal);
 Vue.filter('splitOnCapital', splitOnCapital);
+Vue.filter('optional', optional);

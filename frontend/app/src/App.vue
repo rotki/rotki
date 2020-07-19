@@ -62,7 +62,7 @@
       <account-management
         v-if="startupError.length === 0 && !loginIn"
         :logged="logged"
-        @login-complete="loginComplete = true"
+        @login-complete="completeLogin(true)"
       ></account-management>
     </v-fade-transition>
   </v-app>
@@ -70,7 +70,7 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters, mapMutations, mapState } from 'vuex';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -103,8 +103,11 @@ import { Message } from '@/store/store';
   },
   computed: {
     ...mapState(['message']),
-    ...mapState('session', ['logged', 'username']),
+    ...mapState('session', ['logged', 'username', 'loginComplete']),
     ...mapGetters(['version'])
+  },
+  methods: {
+    ...mapMutations('session', ['completeLogin'])
   }
 })
 export default class App extends Vue {
@@ -112,7 +115,8 @@ export default class App extends Vue {
   message!: Message;
   version!: string;
 
-  loginComplete: boolean = false;
+  loginComplete!: boolean;
+  completeLogin!: (complete: boolean) => void;
 
   get loginIn(): boolean {
     return this.logged && this.loginComplete;
@@ -121,7 +125,7 @@ export default class App extends Vue {
   @Watch('logged')
   onLoggedChange() {
     if (!this.logged) {
-      this.loginComplete = false;
+      this.completeLogin(false);
     } else {
       this.$router.push({ name: 'dashboard' });
     }

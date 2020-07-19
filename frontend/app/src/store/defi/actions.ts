@@ -267,13 +267,10 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refreshing: boolean = false
   ) {
     if (
+      !session?.premium ||
       state.lendingHistoryStatus === Status.LOADING ||
       (state.lendingHistoryStatus === Status.LOADED && !refreshing)
     ) {
-      return;
-    }
-
-    if (!session?.premium) {
       return;
     }
 
@@ -284,10 +281,50 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     await Promise.all([
       dispatch('fetchDSRHistory'),
-      dispatch('fetchMakerDAOVaultDetails'),
       dispatch('fetchAaveHistory')
     ]);
 
     commit('lendingHistoryStatus', Status.LOADED);
+  },
+
+  async fetchBorrowing(
+    { commit, dispatch, state, rootState: { session } },
+    refreshing: boolean = false
+  ) {
+    if (
+      !session?.premium ||
+      state.status === Status.LOADING ||
+      (state.status === Status.LOADED && !refreshing)
+    ) {
+      return;
+    }
+
+    commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
+
+    await dispatch('fetchMakerDAOVaults');
+
+    commit('status', Status.LOADED);
+  },
+
+  async fetchBorrowingHistory(
+    { commit, dispatch, state, rootState: { session } },
+    refreshing: boolean = false
+  ) {
+    if (
+      !session?.premium ||
+      state.borrowingHistoryStatus === Status.LOADING ||
+      (state.borrowingHistoryStatus === Status.LOADED && !refreshing)
+    ) {
+      return;
+    }
+
+    commit(
+      'borrowingHistoryStatus',
+      refreshing ? Status.REFRESHING : Status.LOADING
+    );
+
+    await dispatch('fetchMakerDAOVaultDetails');
+
+    commit('borrowingHistoryStatus', Status.LOADED);
   }
 };

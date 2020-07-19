@@ -1,10 +1,11 @@
 import { default as BigNumber } from 'bignumber.js';
 import { ApiBalance, Balance } from '@/model/blockchain-balances';
 import {
-  ApiAaveAsset,
   ApiAaveBalances,
+  ApiAaveBorrowingAsset,
   ApiAaveHistory,
   ApiAaveHistoryEvents,
+  ApiAaveLendingAsset,
   ApiDSRBalances,
   ApiDSRHistory,
   ApiMakerDAOVault,
@@ -97,16 +98,22 @@ export function convertMakerDAOVaults(
   vaults: ApiMakerDAOVault[]
 ): MakerDAOVault[] {
   return vaults.map(vault => ({
-    identifier: vault.identifier,
+    identifier: vault.identifier.toString(),
     collateralType: vault.collateral_type,
+    protocol: 'makerdao',
     owner: vault.owner,
-    collateralAsset: vault.collateral_asset,
-    collateralAmount: bigNumberify(vault.collateral_amount),
-    debtValue: bigNumberify(vault.debt_value),
+    collateral: {
+      asset: vault.collateral_asset,
+      amount: bigNumberify(vault.collateral_amount),
+      usdValue: bigNumberify(vault.collateral_usd_value)
+    },
+    debt: {
+      amount: bigNumberify(vault.debt_value),
+      usdValue: bigNumberify(vault.debt_usd_value)
+    },
     liquidationRatio: vault.liquidation_ratio,
     liquidationPrice: bigNumberify(vault.liquidation_price),
     collateralizationRatio: vault.collateralization_ratio ?? undefined,
-    collateralUsdValue: bigNumberify(vault.collateral_usd_value),
     stabilityFee: vault.stability_fee
   }));
 }
@@ -127,11 +134,13 @@ export function convertVaultDetails(
   apiVaultDetails: ApiMakerDAOVaultDetails[]
 ): MakerDAOVaultDetails[] {
   return apiVaultDetails.map(details => ({
-    identifier: details.identifier,
+    identifier: details.identifier.toString(),
     creationTs: details.creation_ts,
     totalInterestOwed: bigNumberify(details.total_interest_owed),
-    totalLiquidatedAmount: bigNumberify(details.total_liquidated_amount),
-    totalLiquidatedUsd: bigNumberify(details.total_liquidated_usd),
+    totalLiquidated: {
+      amount: bigNumberify(details.total_liquidated_amount),
+      usdValue: bigNumberify(details.total_liquidated_usd)
+    },
     events: convertVaultEvents(details.events)
   }));
 }
@@ -143,26 +152,23 @@ function convertBalance({ amount, usd_value }: ApiBalance): Balance {
   };
 }
 
-function convertAaveAsset<T extends AaveLendingAsset | AaveBorrowingAsset>({
-  apy,
-  stable_apy,
-  variable_apy,
-  balance: apiBalance
-}: ApiAaveAsset): T {
-  const balance = convertBalance(apiBalance);
-  if (apy) {
-    return {
-      apy,
-      balance
-    } as T;
-  }
+const convertAaveBorrowingAsset = ({
+  balance,
+  stable_apr,
+  variable_apr
+}: ApiAaveBorrowingAsset): AaveBorrowingAsset => ({
+  stableApr: stable_apr,
+  variableApr: variable_apr,
+  balance: convertBalance(balance)
+});
 
-  return {
-    stableApy: stable_apy,
-    variableApy: variable_apy,
-    balance
-  } as T;
-}
+const convertAaveLendingAsset = ({
+  balance,
+  apy
+}: ApiAaveLendingAsset): AaveLendingAsset => ({
+  apy: apy,
+  balance: convertBalance(balance)
+});
 
 export function convertAaveBalances(
   apiBalances: ApiAaveBalances
@@ -172,11 +178,12 @@ export function convertAaveBalances(
     const convertedBorrowing: Writeable<AaveBorrowing> = {};
     const convertedLending: Writeable<AaveLending> = {};
     const { borrowing, lending } = apiBalances[address];
+
     for (const asset of Object.keys(borrowing)) {
-      convertedBorrowing[asset] = convertAaveAsset(borrowing[asset]);
+      convertedBorrowing[asset] = convertAaveBorrowingAsset(borrowing[asset]);
     }
     for (const asset of Object.keys(lending)) {
-      convertedLending[asset] = convertAaveAsset(lending[asset]);
+      convertedLending[asset] = convertAaveLendingAsset(lending[asset]);
     }
     aaveBalances[address] = {
       lending: convertedLending,
