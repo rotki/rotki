@@ -11,8 +11,8 @@
       <v-card-title class="text-h5 big-dialog__title pt-6">
         {{ title }}
       </v-card-title>
-      <v-card-subtitle v-if="subTitle">
-        {{ subTitle }}
+      <v-card-subtitle v-if="subtitle">
+        {{ subtitle }}
       </v-card-subtitle>
       <div class="big-dialog__content">
         <v-row align="center" class="mx-0 big-dialog__body">
@@ -54,7 +54,7 @@ export default class BigDialog extends Vue {
   @Prop({ required: true })
   title!: string;
   @Prop({ required: false })
-  subTitle!: string;
+  subtitle!: string;
   @Prop({ type: Boolean, required: true })
   display!: boolean;
   @Prop({ type: String, required: false, default: 'Confirm' })

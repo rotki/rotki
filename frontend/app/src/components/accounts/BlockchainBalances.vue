@@ -10,7 +10,7 @@
       <big-dialog
         :display="openDialog"
         :title="dialogTitle"
-        :sub-title="dialogSubTitle"
+        :subtitle="dialogSubtitle"
         primary-action="Save"
         @confirm="save()"
         @cancel="clearDialog()"
@@ -71,19 +71,19 @@ export default class BlockchainBalances extends Vue {
 
   accountToEdit: Account | null = null;
   dialogTitle: string = '';
-  dialogSubTitle: string = '';
+  dialogSubtitle: string = '';
   openDialog: boolean = false;
 
   newAccount() {
     this.accountToEdit = null;
     this.dialogTitle = 'Add Blockchain Account';
-    this.dialogSubTitle = '';
+    this.dialogSubtitle = '';
     this.openDialog = true;
   }
   edit(account: Account) {
     this.accountToEdit = account;
     this.dialogTitle = 'Edit Blockchain Account';
-    this.dialogSubTitle = 'Modify account details';
+    this.dialogSubtitle = 'Modify account details';
     this.openDialog = true;
   }
 
