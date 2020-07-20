@@ -2675,7 +2675,7 @@ Getting all DeFi balances
       {
           "result": {
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": [{
-                  "protocol": "Curve",
+                  "protocol": {"name": "Curve", "icon": "http://link"},
                   "balance_type": "Asset",
                   "base_balance": {
                       "token_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
@@ -2720,7 +2720,7 @@ Getting all DeFi balances
                       }
                   }]
               }, {
-                  "protocol": "Compound",
+                  "protocol": {"name": "Compound", "icon": "http://link"},
                   "balance_type": "Asset",
                   "base_balance": {
                       "token_address": "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
@@ -2741,7 +2741,7 @@ Getting all DeFi balances
                       }
                   }]
               }, {
-                  "protocol": "Compound",
+                  "protocol": {"name": "Compound", "icon": "http://link"},
                   "balance_type": "Asset",
                   "base_balance": {
                       "token_address": "0xc00e94Cb662C3520282E6f5717214004A7f26888",
@@ -2755,7 +2755,7 @@ Getting all DeFi balances
                   "underlying_balances": []
               }],
               "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": [{
-                  "protocol": "Aave",
+                  "protocol": {"name": "Aave", "icon": "http://link"},
                   "balance_type": "Asset",
                   "base_balance": {
                       "token_address": "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
@@ -2781,7 +2781,7 @@ Getting all DeFi balances
       }
 
    :resjson object result: A mapping from account to list of DeFi balances.
-   :resjsonarr string protocol: The name of the protocol. Since these names come from Zerion check `here <https://github.com/zeriontech/defi-sdk#supported-protocols>`__ for supported names.
+   :resjsonarr object protocol: The name and icon link of the protocol. Since these names come from Zerion check `here <https://github.com/zeriontech/defi-sdk#supported-protocols>`__ for supported names.
    :resjsonarr string balance_type: One of ``"Asset"`` or ``"Debt"`` denoting that one if deposited asset in DeFi and the other a debt or liability.
    :resjsonarr string base_balance: A single DefiBalance entry. It's comprised of a token address, name, symbol and a balance. This is the actually deposited asset in the protocol. Can also be a synthetic in case of synthetic protocols or lending pools.
    :resjsonarr string underlying_balances: A list of underlying DefiBalances supporting the base balance. Can also be an empty list. The format of each balance is thesame as that of base_balance. For lending this is going to be the normal token. For example for aDAI this is DAI. For cBAT this is BAT etc. For pools this list contains all tokens that are contained in the pool.

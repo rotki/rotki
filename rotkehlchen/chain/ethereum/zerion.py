@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Tuple
 
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
@@ -38,8 +38,8 @@ class DefiProtocol(NamedTuple):
     icon_link: str
     version: int
 
-    def serialize(self) -> str:
-        return self.name
+    def serialize(self) -> Dict[str, str]:
+        return {'name': self.name, 'icon': self.icon_link}
 
 
 class DefiBalance(NamedTuple):
