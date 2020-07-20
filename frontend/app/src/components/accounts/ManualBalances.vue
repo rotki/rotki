@@ -30,7 +30,9 @@
             :edit="balanceToEdit"
           ></manual-balances-form>
         </big-dialog>
-        <manual-balances-list @editBalance="edit($event)"></manual-balances-list>
+        <manual-balances-list
+          @editBalance="edit($event)"
+        ></manual-balances-list>
       </v-card-text>
     </v-card>
     <fiat-balances></fiat-balances>

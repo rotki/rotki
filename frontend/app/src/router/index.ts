@@ -88,6 +88,10 @@ export default new Router({
       component: () => import('../views/AccountsBalances.vue'),
       children: [
         {
+          path: '',
+          redirect: 'blockchain-balances'
+        },
+        {
           path: 'blockchain-balances',
           component: () =>
             import('../components/accounts/BlockchainBalances.vue')
