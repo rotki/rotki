@@ -20,7 +20,7 @@
         <big-dialog
           :display="openDialog"
           :title="dialogTitle"
-          :sub-title="dialogSubTitle"
+          :subtitle="dialogSubtitle"
           primary-action="Save"
           @confirm="save()"
           @cancel="openDialog = false"
@@ -58,18 +58,18 @@ import { ManualBalance } from '@/services/types-model';
 export default class ManualBalances extends Vue {
   balanceToEdit: ManualBalance | null = null;
   dialogTitle: string = '';
-  dialogSubTitle: string = '';
+  dialogSubtitle: string = '';
   openDialog: boolean = false;
 
   newBalance() {
     this.dialogTitle = 'Add Manual Balance';
-    this.dialogSubTitle = '';
+    this.dialogSubtitle = '';
     this.openDialog = true;
   }
   edit(balance: ManualBalance) {
     this.balanceToEdit = balance;
     this.dialogTitle = 'Edit Manual Balance';
-    this.dialogSubTitle = 'Modify balance amount, location, and tags';
+    this.dialogSubtitle = 'Modify balance amount, location, and tags';
     this.openDialog = true;
   }
 

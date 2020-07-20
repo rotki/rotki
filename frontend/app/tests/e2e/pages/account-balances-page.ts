@@ -65,6 +65,8 @@ export class AccountBalancesPage {
       .find('.manual-balances-list__amount')
       .should('contain', bigNumberify(balance.amount).toFormat(2));
 
+    cy.get('.manual-balances-list thead').scrollIntoView();
+
     if (bigNumberify(balance.amount).decimalPlaces() > 2) {
       cy.get('@row')
         .find('.manual-balances-list__amount')
@@ -172,6 +174,7 @@ export class AccountBalancesPage {
 
   showsCurrency(currency: string) {
     cy.get('.manual-balances-list')
+      .scrollIntoView()
       .contains(`${currency} Value`)
       .should('be.visible');
   }
