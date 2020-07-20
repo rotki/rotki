@@ -4493,7 +4493,7 @@
         "type": "ethereum token"
     },
     "HEX": {
-        "ethereum_address": "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39",
+        "ethereum_address": "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
         "ethereum_token_decimals": 8,
         "name": "HEX",
         "started": 1575331200,
