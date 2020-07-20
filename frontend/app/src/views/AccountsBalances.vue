@@ -5,20 +5,17 @@
     <v-slide-x-transition>
       <router-view />
     </v-slide-x-transition>
-    <!-- <fiat-balances></fiat-balances> -->
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-// import FiatBalances from '@/components/accounts/FiatBalances.vue';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 
 @Component({
   components: {
     BasePageHeader,
-    // FiatBalances,
     TabNavigation
   }
 })
