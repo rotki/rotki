@@ -37,8 +37,8 @@ def aave(
 def test_get_lending_profit_for_address(aave, price_historian):  # pylint: disable=unused-argument
     history = aave.get_history_for_address(
         user_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        to_block=10386830,  # test was written at this block
         atokens_list=[EthereumToken('aDAI')],
-        given_to_block=10386830,  # test was written at this block
     )
 
     assert history.events == expected_aave_test_events[:10]

@@ -42,6 +42,7 @@ expected_aave_test_events = [
         block_number=9963767,
         timestamp=Timestamp(1588114293),
         tx_hash='0x8b72307967c4f7a486c1cb1b6ebca5e549de06e02930ece0399e2096f1a132c5',
+        log_index=0,
     ), AaveEvent(
         event_type='deposit',
         asset=A_DAI,
@@ -52,6 +53,7 @@ expected_aave_test_events = [
         block_number=9987395,
         timestamp=Timestamp(1588430911),
         tx_hash='0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60',
+        log_index=0,
     ), AaveEvent(
         event_type='interest',
         asset=A_ADAI,
@@ -62,6 +64,7 @@ expected_aave_test_events = [
         block_number=9987395,
         timestamp=Timestamp(1588430911),
         tx_hash='0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60',
+        log_index=0,
     ), AaveEvent(
         event_type='deposit',
         asset=A_DAI,
@@ -72,6 +75,7 @@ expected_aave_test_events = [
         block_number=9989872,
         timestamp=Timestamp(1588463542),
         tx_hash='0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c',
+        log_index=0,
     ), AaveEvent(
         event_type='interest',
         asset=A_ADAI,
@@ -82,6 +86,7 @@ expected_aave_test_events = [
         block_number=9989872,
         timestamp=Timestamp(1588463542),
         tx_hash='0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c',
+        log_index=0,
     ), AaveEvent(
         event_type='deposit',
         asset=A_DAI,
@@ -92,6 +97,7 @@ expected_aave_test_events = [
         block_number=10041636,
         timestamp=Timestamp(1589155650),
         tx_hash='0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc',
+        log_index=0,
     ), AaveEvent(
         event_type='interest',
         asset=A_ADAI,
@@ -102,6 +108,7 @@ expected_aave_test_events = [
         block_number=10041636,
         timestamp=Timestamp(1589155650),
         tx_hash='0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc',
+        log_index=0,
     ), AaveEvent(
         event_type='interest',
         asset=A_ADAI,
@@ -112,6 +119,7 @@ expected_aave_test_events = [
         block_number=10160566,
         timestamp=Timestamp(1590753905),
         tx_hash='0x07ac09cc06c7cd74c7312f3a82c9f77d69ba7a89a4a3b7ded33db07e32c3607c',
+        log_index=0,
     ), AaveEvent(
         event_type='deposit',
         asset=A_DAI,
@@ -122,6 +130,7 @@ expected_aave_test_events = [
         block_number=10266740,
         timestamp=Timestamp(1592175763),
         tx_hash='0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
+        log_index=0,
     ), AaveEvent(
         event_type='interest',
         asset=A_ADAI,
@@ -132,6 +141,7 @@ expected_aave_test_events = [
         block_number=10266740,
         timestamp=Timestamp(1592175763),
         tx_hash='0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
+        log_index=0,
     ), AaveEvent(
         event_type='deposit',
         asset=A_DAI,
@@ -142,6 +152,7 @@ expected_aave_test_events = [
         block_number=10440633,
         timestamp=Timestamp(1594502373),
         tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
+        log_index=0,
     ), AaveEvent(
         event_type='interest',
         asset=A_ADAI,
@@ -152,5 +163,6 @@ expected_aave_test_events = [
         block_number=10440633,
         timestamp=Timestamp(1594502373),
         tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
+        log_index=0,
     ),
 ]

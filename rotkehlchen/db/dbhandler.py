@@ -12,8 +12,10 @@ from eth_utils import is_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.settings import (
@@ -643,8 +645,55 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def add_aave_events(self, address: ChecksumAddress, events: List[AaveEvent]) -> None:
+        cursor = self.conn.cursor()
+        cursor.executemany(
+            'INSERT INTO '
+            'aave_events(address, event_type, asset, amount, usd_value, block_number, timestamp, tx_hash, log_index)'  # noqa: E501
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [(
+                address,
+                e.event_type,
+                e.asset.identifier,
+                str(e.value.amount),
+                str(e.value.usd_value),
+                str(e.block_number),
+                str(e.timestamp),
+                e.tx_hash,
+                e.log_index)
+             for e in events],
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_aave_events(self, address: ChecksumAddress, atoken: EthereumToken) -> List[AaveEvent]:
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT event_type, amount, usd_value, block_number, timestamp, tx_hash, log_index '
+            'from aave_events WHERE address=? AND asset=?',
+            (address, atoken.identifier),
+        )
+        events = []
+        for result in query:
+            events.append(AaveEvent(
+                event_type=result[0],
+                asset=atoken,
+                value=Balance(amount=FVal(result[1]), usd_value=FVal(result[2])),
+                block_number=int(result[3]),
+                timestamp=Timestamp(int(result[4])),
+                tx_hash=result[5],
+                log_index=result[6],
+            ))
+        return events
+
     def get_used_query_range(self, name: str) -> Optional[Tuple[Timestamp, Timestamp]]:
-        """Get the last start/end timestamp range that has been queried for name"""
+        """Get the last start/end timestamp range that has been queried for name
+
+        Currently possible names are:
+        - {exchange_name}_trades
+        - {exchange_name}_margins
+        - {exchange_name}_asset_movements
+        """
         cursor = self.conn.cursor()
         query = cursor.execute(
             f'SELECT start_ts, end_ts from used_query_ranges WHERE name="{name}";',
@@ -654,6 +703,13 @@ class DBHandler:
             return None
 
         return Timestamp(int(query[0][0])), Timestamp(int(query[0][1]))
+
+    def get_used_query_block_range(self, name: str) -> Optional[Tuple[int, int]]:
+        """Get the last from_block/to_block range that has been queried for name
+
+        - aave_events_{address}
+        """
+        return self.get_used_query_range(name)
 
     def delete_used_query_range_for_exchange(self, exchange_name: str) -> None:
         """Delete the query ranges for the given exchange name"""
@@ -673,6 +729,9 @@ class DBHandler:
         )
         self.conn.commit()
         self.update_last_write()
+
+    def update_used_block_query_range(self, name: str, from_block: int, to_block: int) -> None:
+        self.update_used_query_range(name, from_block, to_block)  # type: ignore
 
     def get_last_balance_save_time(self) -> Timestamp:
         cursor = self.conn.cursor()

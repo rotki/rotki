@@ -73,6 +73,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             Balance,
             AaveLendingBalance,
             AaveBorrowingBalance,
+            AaveEvent,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (
@@ -85,7 +86,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             VaultEvent,
             MakerDAOVaultDetails,
             AaveBalances,
-            AaveEvent,
             AaveHistory,
             DefiBalance,
             DefiProtocolBalances,

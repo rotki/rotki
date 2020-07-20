@@ -219,6 +219,21 @@ CREATE TABLE IF NOT EXISTS user_credentials (
 );
 """
 
+DB_CREATE_AAVE_EVENTS = """
+CREATE TABLE IF NOT EXISTS aave_events (
+    address VARCHAR[42] NOT NULL,
+    event_type VARCHAR[10] NOT NULL,
+    asset VARCHAR[12] NOT NULL,
+    amount TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
+    block_number INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    tx_hash VARCHAR[66] NOT NULL,
+    log_index INTEGER NOT NULL,
+    PRIMARY KEY (event_type, tx_hash, log_index)
+);
+"""
+
 DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS external_service_credentials (
     name VARCHAR[30] NOT NULL PRIMARY KEY,
@@ -360,7 +375,7 @@ CREATE TABLE IF NOT EXISTS settings (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -383,4 +398,5 @@ PRAGMA foreign_keys=on;
     DB_CREATE_SETTINGS,
     DB_CREATE_TAGS_TABLE,
     DB_CREATE_TAG_MAPPINGS,
+    DB_CREATE_AAVE_EVENTS,
 )
