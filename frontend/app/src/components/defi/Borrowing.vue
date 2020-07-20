@@ -90,7 +90,7 @@
         </v-card>
       </v-col>
       <v-col cols="6">
-        <defi-protocol-selector @selection-changed="selectionChanged($event)" />
+        <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>
     <loan-info :loan="loan(selection)" />
@@ -105,12 +105,10 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
-import DefiProtocolSelector, {
-  Protocol
-} from '@/components/helper/DefiProtocolSelector.vue';
+import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
 import { Status } from '@/store/defi/status';
 import {
   AaveLoan,
@@ -147,15 +145,10 @@ export default class Borrowing extends Vue {
   fetchBorrowingHistory!: (refreshing: boolean) => Promise<void>;
   status!: Status;
   borrowingHistoryStatus!: Status;
-  protocols: Protocol[] = [];
-
-  selectionChanged(protocols: Protocol[]) {
-    this.protocols = protocols;
-    this.selection = '';
-  }
+  protocol: SupportedDefiProtocols | null = null;
 
   get selectedProtocols(): SupportedDefiProtocols[] {
-    return this.protocols.map(value => value.identifier);
+    return this.protocol ? [this.protocol] : [];
   }
 
   get refreshing(): boolean {
@@ -170,6 +163,13 @@ export default class Borrowing extends Vue {
   }
 
   async created() {
+    const queryElement = this.$route.query['protocol'];
+    const protocolIndex = DEFI_PROTOCOLS.findIndex(
+      protocol => protocol === queryElement
+    );
+    if (protocolIndex >= 0) {
+      this.protocol = DEFI_PROTOCOLS[protocolIndex];
+    }
     await this.fetchBorrowingHistory(false);
   }
 

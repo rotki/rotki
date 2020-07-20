@@ -4,6 +4,7 @@ import { TaskType } from '@/model/task-type';
 import {
   ApiAaveBalances,
   ApiAaveHistory,
+  ApiAllDefiProtocols,
   ApiDSRBalances,
   ApiDSRHistory,
   ApiMakerDAOVault,
@@ -13,6 +14,7 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   convertAaveBalances,
   convertAaveHistory,
+  convertAllDefiProtocols,
   convertDSRBalances,
   convertDSRHistory,
   convertMakerDAOVaults,
@@ -225,6 +227,41 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
   },
 
+  async fetchDefiBalances({
+    commit,
+    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+  }) {
+    const taskType = TaskType.DEFI_BALANCES;
+
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+
+    try {
+      const { task_id } = await api.defi.fetchAllDefi();
+      const task = createTask(task_id, taskType, {
+        description: `Fetching Defi Balances`,
+        ignoreResult: false
+      });
+
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<ApiAllDefiProtocols, TaskMeta>(
+        taskType
+      );
+
+      commit('allDefiProtocols', convertAllDefiProtocols(result));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Fetching Defi Balances',
+          description: `${e.message}`
+        } as Message,
+        { root: true }
+      );
+    }
+  },
+
   async fetchAllDefi({ commit, dispatch, state }, refreshing: boolean = false) {
     if (
       state.status === Status.LOADING ||
@@ -236,6 +273,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
 
     await Promise.all([
+      dispatch('fetchDefiBalances'),
       dispatch('fetchDSRBalances'),
       dispatch('fetchAaveBalances'),
       dispatch('fetchMakerDAOVaults')

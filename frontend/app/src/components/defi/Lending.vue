@@ -77,7 +77,7 @@
         ></blockchain-account-selector>
       </v-col>
       <v-col cols="6">
-        <defi-protocol-selector @selection-changed="protocols = $event" />
+        <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>
     <v-row>
@@ -117,13 +117,11 @@ import StatCard from '@/components/display/StatCard.vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import DefiProtocolSelector, {
-  Protocol
-} from '@/components/helper/DefiProtocolSelector.vue';
+import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
 import { Status } from '@/store/defi/status';
 import { DefiBalance, DefiLendingHistory } from '@/store/defi/types';
 import { Account, GeneralAccount } from '@/typing/types';
@@ -178,7 +176,7 @@ export default class Lending extends Vue {
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => string;
-  protocols: Protocol[] = [];
+  protocol: SupportedDefiProtocols | null = null;
   fetchLendingHistory!: (refresh: boolean) => Promise<void>;
   fetchLending!: (refresh: boolean) => Promise<void>;
   lendingHistoryStatus!: Status;
@@ -198,6 +196,13 @@ export default class Lending extends Vue {
   }
 
   async created() {
+    const queryElement = this.$route.query['protocol'];
+    const protocolIndex = DEFI_PROTOCOLS.findIndex(
+      protocol => protocol === queryElement
+    );
+    if (protocolIndex >= 0) {
+      this.protocol = DEFI_PROTOCOLS[protocolIndex];
+    }
     await this.fetchLendingHistory(false);
   }
 
@@ -206,7 +211,7 @@ export default class Lending extends Vue {
   }
 
   get selectedProtocols(): SupportedDefiProtocols[] {
-    return this.protocols.map(value => value.identifier);
+    return this.protocol ? [this.protocol] : [];
   }
 
   get initialLoading(): boolean {

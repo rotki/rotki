@@ -19,6 +19,7 @@ export type MakerDAOVaultEventType =
   | 'liquidation';
 export type AaveEventType = 'deposit' | 'interest' | 'withdrawal';
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
+export type DefiBalanceType = 'Asset' | 'Debt';
 
 export const DEFI_PROTOCOLS = ['aave', 'makerdao'] as const;
 export type SupportedDefiProtocols = typeof DEFI_PROTOCOLS[number];
@@ -124,4 +125,27 @@ export interface ApiAaveAccountHistory {
 
 export interface ApiAaveHistory {
   readonly [address: string]: ApiAaveAccountHistory;
+}
+
+export interface ApiDefiProtocolInfo {
+  readonly name: string;
+  readonly icon: string;
+}
+
+export interface ApiDefiAsset {
+  readonly token_address: string;
+  readonly token_name: string;
+  readonly token_symbol: string;
+  readonly balance: ApiBalance;
+}
+
+export interface ApiDefiProtocolData {
+  readonly protocol: ApiDefiProtocolInfo;
+  readonly balance_type: DefiBalanceType;
+  readonly base_balance: ApiDefiAsset;
+  readonly underlying_balances: ApiDefiAsset[];
+}
+
+export interface ApiAllDefiProtocols {
+  readonly [asset: string]: ApiDefiProtocolData[];
 }

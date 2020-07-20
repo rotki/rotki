@@ -10,5 +10,6 @@ export enum TaskType {
   MAKEDAO_VAULTS = 'makerdao_vaults',
   MAKERDAO_VAULT_DETAILS = 'makerdao_vault_details',
   AAVE_BALANCES = 'aave_balances',
-  AAVE_HISTORY = 'aave_history'
+  AAVE_HISTORY = 'aave_history',
+  DEFI_BALANCES = 'defi_balances'
 }
