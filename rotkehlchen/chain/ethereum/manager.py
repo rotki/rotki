@@ -185,6 +185,12 @@ class EthereumManager():
                 self.ethrpc_endpoint = endpoint
             return result, message
 
+    def get_latest_block_number(self) -> int:
+        if self.web3 is None:
+            return self.etherscan.get_latest_block_number()
+
+        return self.web3.eth.blockNumber
+
     def query_eth_highest_block(self) -> BlockNumber:
         """ Attempts to query an external service for the block height
 

@@ -1,10 +1,10 @@
+import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
-
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.makerdao.common import RAY
+from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances
 from rotkehlchen.constants.ethereum import (
     AAVE_ETH_RESERVE_ADDRESS,
@@ -17,11 +17,16 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_blocknumber
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.serialization.deserialize import (
+    deserialize_blocknumber,
+    deserialize_int_from_hex_or_int,
+)
+from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+
+log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -48,19 +53,6 @@ ATOKEN_TO_DEPLOYED_BLOCK = {
 ATOKENS_LIST = [EthereumToken(x) for x in ATOKEN_TO_DEPLOYED_BLOCK]
 
 A_LEND = EthereumToken('LEND')
-
-
-class AaveEvent(NamedTuple):
-    """An event related to an Aave aToken
-
-    Can be a deposit, withdrawal or interest payment
-    """
-    event_type: Literal['deposit', 'withdrawal', 'interest']
-    asset: Asset
-    value: Balance
-    block_number: int
-    timestamp: Timestamp
-    tx_hash: str
 
 
 class AaveLendingBalance(NamedTuple):
@@ -209,9 +201,15 @@ class Aave(EthereumModule):
             addresses: List[ChecksumEthAddress],
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         result = {}
+        latest_block = self.ethereum.get_latest_block_number()
         for address in addresses:
-            history_results = self.get_history_for_address(user_address=address)
-            if len(history_results) == 0:
+            last_query = self.database.get_used_query_range(f'aave_events_{address}')
+            history_results = self.get_history_for_address(
+                user_address=address,
+                to_block=latest_block,
+                given_from_block=last_query[1] + 1 if last_query is not None else None,
+            )
+            if len(history_results.events) == 0:
                 continue
             result[address] = history_results
 
@@ -220,46 +218,59 @@ class Aave(EthereumModule):
     def get_history_for_address(
             self,
             user_address: ChecksumEthAddress,
-            given_from_block: Optional[int] = None,
-            given_to_block: Optional[int] = None,
+            to_block: int,
             atokens_list: Optional[List[EthereumToken]] = None,
+            given_from_block: Optional[int] = None,
     ) -> AaveHistory:
         # Get all deposit events for the address
         from_block = AAVE_LENDING_POOL.deployed_block if given_from_block is None else given_from_block  # noqa: E501
-        to_block: Union[int, Literal['latest']] = 'latest' if given_to_block is None else given_to_block  # noqa: E501
         argument_filters = {
             '_user': user_address,
         }
-        deposit_events = self.ethereum.get_logs(
-            contract_address=AAVE_LENDING_POOL.address,
-            abi=AAVE_LENDING_POOL.abi,
-            event_name='Deposit',
-            argument_filters=argument_filters,
-            from_block=from_block,
-            to_block=to_block,
-        )
-        withdraw_events = self.ethereum.get_logs(
-            contract_address=AAVE_LENDING_POOL.address,
-            abi=AAVE_LENDING_POOL.abi,
-            event_name='RedeemUnderlying',
-            argument_filters=argument_filters,
-            from_block=from_block,
-            to_block=to_block,
-        )
+        query_events = True
+        if given_from_block is not None and to_block - given_from_block < 250:  # noqa: E501
+            query_events = False  # Save time by not querying events if last query is recent
+
+        deposit_events = []
+        withdraw_events = []
+        if query_events:
+            deposit_events.extend(self.ethereum.get_logs(
+                contract_address=AAVE_LENDING_POOL.address,
+                abi=AAVE_LENDING_POOL.abi,
+                event_name='Deposit',
+                argument_filters=argument_filters,
+                from_block=from_block,
+                to_block=to_block,
+            ))
+            withdraw_events.extend(self.ethereum.get_logs(
+                contract_address=AAVE_LENDING_POOL.address,
+                abi=AAVE_LENDING_POOL.abi,
+                event_name='RedeemUnderlying',
+                argument_filters=argument_filters,
+                from_block=from_block,
+                to_block=to_block,
+            ))
 
         # now for each atoken get all mint events and pass then to profit calculation
         tokens = atokens_list if atokens_list is not None else ATOKENS_LIST
         total_address_events = []
         total_earned_map = {}
         for token in tokens:
-            events = self.get_events_for_atoken_and_address(
-                user_address=user_address,
-                atoken=token,
-                deposit_events=deposit_events,
-                withdraw_events=withdraw_events,
-                given_from_block=given_from_block,
-                given_to_block=given_to_block,
-            )
+            events = []
+            if given_from_block:
+                events.extend(self.database.get_aave_events(user_address, token))
+
+            new_events = []
+            if query_events:
+                new_events = self.get_events_for_atoken_and_address(
+                    user_address=user_address,
+                    atoken=token,
+                    deposit_events=deposit_events,
+                    withdraw_events=withdraw_events,
+                    from_block=from_block,
+                    to_block=to_block,
+                )
+                events.extend(new_events)
             total_balance = Balance()
             for x in events:
                 if x.event_type == 'interest':
@@ -294,6 +305,14 @@ class Aave(EthereumModule):
             total_earned_map[token] = total_balance
             total_address_events.extend(events)
 
+            # now update the DB with the recently queried events
+            self.database.add_aave_events(user_address, new_events)
+            self.database.update_used_block_query_range(
+                name=f'aave_events_{user_address}',
+                from_block=AAVE_LENDING_POOL.deployed_block,
+                to_block=to_block,
+            )
+
         total_address_events.sort(key=lambda event: event.timestamp)
         return AaveHistory(events=total_address_events, total_earned=total_earned_map)
 
@@ -303,11 +322,9 @@ class Aave(EthereumModule):
             atoken: EthereumToken,
             deposit_events: List[Dict[str, Any]],
             withdraw_events: List[Dict[str, Any]],
-            given_from_block: Optional[int] = None,
-            given_to_block: Optional[int] = None,
+            from_block: int,
+            to_block: int,
     ) -> List[AaveEvent]:
-        from_block = ATOKEN_TO_DEPLOYED_BLOCK[atoken.identifier] if given_from_block is None else given_from_block  # noqa: E501
-        to_block: Union[int, Literal['latest']] = 'latest' if given_to_block is None else given_to_block  # noqa: E501
         argument_filters = {
             'from': ZERO_ADDRESS,
             'to': user_address,
@@ -321,16 +338,21 @@ class Aave(EthereumModule):
             to_block=to_block,
         )
         mint_data = set()
+        mint_data_to_log_index = {}
         for event in mint_events:
             amount = hex_or_bytes_to_int(event['data'])
             if amount == 0:
                 continue  # first mint can be for 0. Ignore
-            mint_data.add((
+            entry = (
                 deserialize_blocknumber(event['blockNumber']),
                 amount,
                 self.ethereum.get_event_timestamp(event),
                 event['transactionHash'],
-            ))
+            )
+            mint_data.add(entry)
+            mint_data_to_log_index[entry] = deserialize_int_from_hex_or_int(
+                event['logIndex'], 'aave log index',
+            )
 
         reserve_asset = Asset(atoken.identifier[1:])
         reserve_address, decimals = _get_reserve_address_decimals(reserve_asset.identifier)
@@ -342,9 +364,12 @@ class Aave(EthereumModule):
                 block_number = deserialize_blocknumber(event['blockNumber'])
                 timestamp = self.ethereum.get_event_timestamp(event)
                 tx_hash = event['transactionHash']
+                log_index = deserialize_int_from_hex_or_int(event['logIndex'], 'aave log index')
                 # If there is a corresponding deposit event remove the minting event data
-                if (block_number, deposit, timestamp, tx_hash) in mint_data:
-                    mint_data.remove((block_number, deposit, timestamp, tx_hash))
+                entry = (block_number, deposit, timestamp, tx_hash)
+                if entry in mint_data:
+                    mint_data.remove(entry)
+                    del mint_data_to_log_index[entry]
 
                 usd_price = query_usd_price_zero_if_error(
                     asset=reserve_asset,
@@ -363,6 +388,7 @@ class Aave(EthereumModule):
                     block_number=block_number,
                     timestamp=timestamp,
                     tx_hash=tx_hash,
+                    log_index=log_index,
                 ))
 
         for data in mint_data:
@@ -383,6 +409,7 @@ class Aave(EthereumModule):
                 block_number=data[0],
                 timestamp=data[2],
                 tx_hash=data[3],
+                log_index=mint_data_to_log_index[data],
             ))
 
         for event in withdraw_events:
@@ -409,6 +436,7 @@ class Aave(EthereumModule):
                     block_number=block_number,
                     timestamp=timestamp,
                     tx_hash=tx_hash,
+                    log_index=deserialize_int_from_hex_or_int(event['logIndex'], 'aave log index'),
                 ))
 
         return aave_events

@@ -481,6 +481,31 @@ def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
     return ChecksumEthAddress(HexAddress(HexStr(symbol)))
 
 
+def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> int:
+    """Takes a symbol which can either be an int or a hex string and
+    turns it into an integer
+
+    May Raise:
+    - DeserializationError if the given data are in an unexpected format.
+    """
+    if isinstance(symbol, int):
+        result = symbol
+    elif isinstance(symbol, str):
+        try:
+            result = int(symbol, 16)
+        except ValueError:
+            raise DeserializationError(
+                f'Could not turn string "{symbol}" into an integer {location}',
+            )
+    else:
+        raise DeserializationError(
+            f'Unexpected type {type(symbol)} given to '
+            f'deserialize_int_from_hex_or_int() for {location}',
+        )
+
+    return result
+
+
 def deserialize_blocknumber(symbol: Union[str, int]) -> int:
     """Takes a block number value which can either be an int or a hex string and
     turns it into an integer block number value
@@ -488,18 +513,4 @@ def deserialize_blocknumber(symbol: Union[str, int]) -> int:
     May Raise:
     - DeserializationError if the given data are in an unexpected format.
     """
-    if isinstance(symbol, int):
-        block_number = symbol
-    elif isinstance(symbol, str):
-        try:
-            block_number = int(symbol, 16)
-        except ValueError:
-            raise DeserializationError(
-                f'Could not turn string "{symbol}" into an integer block number',
-            )
-    else:
-        raise DeserializationError(
-            f'Unexpected type {type(symbol)} given to deserialize_blocknumber()',
-        )
-
-    return block_number
+    return deserialize_int_from_hex_or_int(symbol, 'block_number')
