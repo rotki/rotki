@@ -55,7 +55,7 @@ This section contains information about how to customize the application through
 Changing the Profit Currency
 =============================
 
-Rotki calculates everything, including your profit/loss for your tax report into a given FIAT currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
+Rotki calculates everything, including your profit/loss for your tax report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
 
 .. image:: images/profit_currency.gif
    :alt: Changing the profit currency
@@ -130,7 +130,7 @@ The default settings are at the moment set for the German tax jurisdiction. For 
 Crypto to crypto trades
 ------------------------
 
-Specify whether crypto to crypto trades are taxable and should be taken into account. If yes then each crypto to crypto trade also creates a "virtual" trade that sells or buys the crypto asset for FIAT and then sells or buys the FIAT for the other crypto asset.
+Specify whether crypto to crypto trades are taxable and should be taken into account. If yes then each crypto to crypto trade also creates a "virtual" trade that sells or buys the crypto asset for fiat and then sells or buys the fiat for the other crypto asset.
 
 Ethereum gas costs
 ---------------------
@@ -206,15 +206,18 @@ Rotki can import any trade CSV data exported from cointracking.info. But in gene
 Tracking accounts and balances
 **********************************
 
-To track blockchain accounts&balances and also FIAT balances you need to visit the "Accounts/balances" section from the left sidebar.
+To manage Accounts & Balances (Blockchain Balances, Exchange Balances, and Manual Balances including fiat) you need to visit the "Accounts & Balances" section from the left sidebar.
 
+.. image:: images/sc_accounts_balances.png
+   :alt: Accounts & Balances page
+   :align: center
 
 Adding Fiat Balances
 =====================
 
-Rotki is an asset analytics application. Thus you can track all your assets in one place including the FIAT balances you have.
+Rotki is an asset analytics application. Thus you can track all your assets in one place including the fiat balances you have.
 
-To add or modify the amount of an owned FIAT currency scroll down to the "Fiat Balances" section and choose the currency from the dropdown menu. Input the modified balance in the text box and press the Modify button.
+To add or modify the amount of an owned fiat currency, navigate to the "Manual Balances" sub-page, scroll down to the "Fiat Balances" section and choose the currency from the dropdown menu. Input the modified balance in the text box and press the Modify button.
 
 .. image:: images/sc_fiat_balances.png
    :alt: Manually adding fiat balances
@@ -224,12 +227,12 @@ To add or modify the amount of an owned FIAT currency scroll down to the "Fiat B
    This functionality is now deprecated in favour of the manually tracked balances (see below).
 
 
-Adding manually tracked balances
+Adding Manual Balances
 ==================================
 
 With Rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
 
-To add or modify a manually tracked balance scroll down to the "Manually Tracked Balances" section. There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
+To add or modify a manually tracked balance navigate to the "Manual Balances" sub-page and click the large "+" icon. There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
 
 .. image:: images/sc_manually_tracked_balances.png
    :alt: The manually tracked balances
@@ -241,15 +244,15 @@ Adding and Removing Blockchain Accounts
 
 Rotki allows to track balances of blockchain accounts.
 
-To track an account scroll down to the "Blockchain Balances" section and choose the blockchain from the dropdown menu. For now only Bitcoin and Ethereum chains are supported. Then type or paste the address in the "Account" textbox and press the "Add" Button.
+To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin and Ethereum chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
 
-.. image:: images/sc_blockchain_balances.png
+.. image:: images/add_blockchain_balance.gif
    :alt: Add a blockchain account
    :align: center
 
-To stop tracking a particular account scroll down to the accounts tables and simply right click on the account you want to stop tracking and select "Delete" from the context menu.
+To stop tracking a particular account scroll down to the accounts tables and click the "Delete" icon (trashcan) under Actions.
 
-If an ethereum account also owns tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
+If an ethereum account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
 Adding and Removing Ethereum Tokens
 =========================================

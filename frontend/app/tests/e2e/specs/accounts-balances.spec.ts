@@ -43,7 +43,7 @@ describe('Accounts', () => {
     });
 
     it('add first entry', () => {
-      cy.get('.manual-balances__addBalance').click();
+      cy.get('.manual-balances__add-balance').click();
       tagManager.addTag(
         '.manual-balances-form',
         'public',
@@ -62,12 +62,12 @@ describe('Accounts', () => {
     });
 
     it('add second & third entires', () => {
-      cy.get('.manual-balances__addBalance').click();
+      cy.get('.manual-balances__add-balance').click();
       page.addBalance(manualBalances[1]);
       page.visibleEntries(2);
       page.isVisible(1, manualBalances[1]);
 
-      cy.get('.manual-balances__addBalance').click();
+      cy.get('.manual-balances__add-balance').click();
       page.addBalance(manualBalances[2]);
       page.visibleEntries(3);
       page.isVisible(2, manualBalances[2]);

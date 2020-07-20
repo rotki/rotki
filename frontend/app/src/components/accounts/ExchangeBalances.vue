@@ -199,7 +199,7 @@ export default class ExchangeBalances extends Vue {
   .v-tabs-bar {
     &__content {
       background-color: var(--v-rotki-light-grey-darken1);
-      border-radius: 10px 0 0 10px;
+      border-radius: 8px 0 0 8px;
       height: 100%;
     }
   }
@@ -216,15 +216,15 @@ export default class ExchangeBalances extends Vue {
 .exchange-balances {
   &__content {
     border: 1px solid var(--v-rotki-light-grey-darken2);
-    border-radius: 15px;
+    border-radius: 8px;
 
     &__select {
-      border-radius: 15px 15px 0 0;
+      border-radius: 8px 8px 0 0;
     }
   }
 
   &__tabs {
-    border-radius: 10px 0 0 10px;
+    border-radius: 8px 0 0 8px;
     height: 100%;
   }
 
@@ -242,28 +242,28 @@ export default class ExchangeBalances extends Vue {
     &:hover {
       filter: grayscale(0);
       background-color: var(--v-rotki-light-grey-base);
-      border-radius: 10px 0 0 10px;
+      border-radius: 8px 0 0 8px;
     }
 
     &:focus {
       filter: grayscale(0);
-      border-radius: 10px 0 0 10px;
+      border-radius: 8px 0 0 8px;
     }
 
     &--active {
       filter: grayscale(0);
-      border-radius: 10px 0 0 10px;
+      border-radius: 8px 0 0 8px;
       background-color: white;
       color: var(--v-secondary-base);
 
       &:hover {
-        border-radius: 10px 0 0 10px;
+        border-radius: 8px 0 0 8px;
         background-color: white;
         opacity: 1 !important;
       }
 
       &:focus {
-        border-radius: 10px 0 0 10px;
+        border-radius: 8px 0 0 8px;
         opacity: 1 !important;
       }
     }
