@@ -6,6 +6,8 @@ import {
   ApiAaveHistory,
   ApiAaveHistoryEvents,
   ApiAaveLendingAsset,
+  ApiAllDefiProtocols,
+  ApiDefiAsset,
   ApiDSRBalances,
   ApiDSRHistory,
   ApiMakerDAOVault,
@@ -13,14 +15,16 @@ import {
   ApiMakerDAOVaultEvent
 } from '@/services/defi/types';
 import {
-  AaveBorrowingAsset,
-  AaveLendingAsset,
   AaveBalances,
   AaveBorrowing,
+  AaveBorrowingAsset,
   AaveHistory,
   AaveHistoryEvents,
   AaveHistoryTotalEarned,
   AaveLending,
+  AaveLendingAsset,
+  AllDefiProtocols,
+  DefiAsset,
   DSRBalances,
   DSRHistory,
   DSRMovement,
@@ -223,4 +227,29 @@ export function convertAaveHistory(apiHistory: ApiAaveHistory): AaveHistory {
   }
 
   return aaveHistory;
+}
+
+function convertDefiAsset(apiAsset: ApiDefiAsset): DefiAsset {
+  return {
+    balance: convertBalance(apiAsset.balance),
+    tokenAddress: apiAsset.token_address,
+    tokenName: apiAsset.token_name,
+    tokenSymbol: apiAsset.token_symbol
+  };
+}
+
+export function convertAllDefiProtocols(
+  allProtocols: ApiAllDefiProtocols
+): AllDefiProtocols {
+  const data: Writeable<AllDefiProtocols> = {};
+  for (const address of Object.keys(allProtocols)) {
+    data[address] = allProtocols[address].map(value => ({
+      protocol: { ...value.protocol },
+      balanceType: value.balance_type,
+      baseBalance: convertDefiAsset(value.base_balance),
+      underlyingBalances: value.underlying_balances.map(convertDefiAsset)
+    }));
+  }
+
+  return data;
 }

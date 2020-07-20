@@ -4,6 +4,7 @@ import { Status } from '@/store/defi/status';
 import {
   AaveBalances,
   AaveHistory,
+  AllDefiProtocols,
   DefiState,
   DSRBalances,
   DSRHistory,
@@ -41,6 +42,9 @@ export const mutations: MutationTree<DefiState> = {
   },
   borrowingHistoryStatus(state: DefiState, status: Status) {
     state.borrowingHistoryStatus = status;
+  },
+  allDefiProtocols(state: DefiState, allProtocols: AllDefiProtocols) {
+    state.allProtocols = allProtocols;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

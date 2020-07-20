@@ -10,12 +10,13 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col v-for="summary in defiOverview" :key="summary.protocol">
-        <overview
-          :title="summary.protocol"
-          :loading="loading"
-          :summary="summary"
-        />
+      <v-col
+        v-for="summary in defiOverview"
+        :key="summary.protocol.name"
+        lg="6"
+        xl="3"
+      >
+        <overview :loading="loading" :summary="summary" />
       </v-col>
     </v-row>
   </div>

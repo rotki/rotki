@@ -3,6 +3,7 @@ import { Balance } from '@/model/blockchain-balances';
 import {
   AaveEventType,
   CollateralAssetType,
+  DefiBalanceType,
   DSRMovementType,
   MakerDAOVaultEventType,
   SupportedDefiProtocols
@@ -19,6 +20,7 @@ export interface DefiState {
   makerDAOVaultDetails: MakerDAOVaultDetails[];
   aaveBalances: AaveBalances;
   aaveHistory: AaveHistory;
+  allProtocols: AllDefiProtocols;
 }
 
 export interface DSRBalances {
@@ -88,7 +90,7 @@ export interface LoanSummary {
   readonly totalDebt: BigNumber;
 }
 
-export interface DefiAsset {
+export interface BaseDefiAsset {
   readonly balance: Balance;
 }
 
@@ -97,7 +99,7 @@ export interface AaveBorrowingRates {
   readonly variableApr: string;
 }
 
-export interface AaveBorrowingAsset extends DefiAsset, AaveBorrowingRates {}
+export interface AaveBorrowingAsset extends BaseDefiAsset, AaveBorrowingRates {}
 
 export interface CollateralizedLoan<T extends CollateralAssetType | string>
   extends DefiLoan {
@@ -112,7 +114,7 @@ export interface AaveLoan
   readonly owner: string;
 }
 
-export interface AaveLendingAsset extends DefiAsset {
+export interface AaveLendingAsset extends BaseDefiAsset {
   readonly apy: string;
 }
 
@@ -155,7 +157,7 @@ export interface AaveHistory {
   readonly [address: string]: AaveAccountHistory;
 }
 
-export interface DefiBalance extends DefiAsset {
+export interface DefiBalance extends BaseDefiAsset {
   readonly address: string;
   readonly asset: string;
   readonly protocol: SupportedDefiProtocols;
@@ -191,9 +193,40 @@ export interface DefiLoan {
   readonly owner?: string;
 }
 
+export interface DefiProtocolInfo {
+  readonly name: string;
+  readonly icon: string;
+}
+
+export interface TokenInfo {
+  readonly tokenName: string;
+  readonly tokenSymbol: string;
+}
+
 export interface DefiProtocolSummary {
-  readonly protocol: string;
+  readonly protocol: DefiProtocolInfo;
+  readonly balanceUsd?: BigNumber;
+  readonly tokenInfo?: TokenInfo;
+  readonly lendingUrl?: string;
+  readonly borrowingUrl?: string;
   readonly totalCollateralUsd: BigNumber;
   readonly totalDebtUsd: BigNumber;
   readonly totalLendingDepositUsd: BigNumber;
+}
+
+export interface DefiAsset extends BaseDefiAsset {
+  readonly tokenAddress: string;
+  readonly tokenName: string;
+  readonly tokenSymbol: string;
+}
+
+export interface DefiProtocolData {
+  readonly protocol: DefiProtocolInfo;
+  readonly balanceType: DefiBalanceType;
+  readonly baseBalance: DefiAsset;
+  readonly underlyingBalances: DefiAsset[];
+}
+
+export interface AllDefiProtocols {
+  readonly [asset: string]: DefiProtocolData[];
 }

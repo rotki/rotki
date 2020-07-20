@@ -2,18 +2,19 @@ import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
 import { GetterTree } from 'vuex';
 import { truncateAddress } from '@/filters';
-import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
+import { SupportedDefiProtocols } from '@/services/defi/types';
 import {
+  AaveLoan,
   DefiBalance,
   DefiLendingHistory,
   DefiLoan,
+  DefiProtocolSummary,
   DefiState,
-  MakerDAOVaultModel,
   LoanSummary,
-  AaveLoan,
-  DefiProtocolSummary
+  MakerDAOVaultModel
 } from '@/store/defi/types';
 import { RotkehlchenState } from '@/store/store';
+import { Writeable } from '@/types';
 import { Account } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 
@@ -432,16 +433,67 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     return sortBy(defiLendingHistory, 'timestamp').reverse();
   },
 
-  defiOverview: (_, { loanSummary, totalLendingDeposit }) => {
-    return DEFI_PROTOCOLS.map(protocol => {
-      const filter = [protocol];
-      const { totalCollateralUsd, totalDebt } = loanSummary(filter);
-      return {
-        protocol,
-        totalCollateralUsd,
-        totalDebtUsd: totalDebt,
-        totalLendingDepositUsd: totalLendingDeposit(filter, [])
-      };
-    });
+  defiOverview: ({ allProtocols }, { loanSummary, totalLendingDeposit }) => {
+    const summary: { [protocol: string]: Writeable<DefiProtocolSummary> } = {};
+
+    for (const address of Object.keys(allProtocols)) {
+      const protocols = allProtocols[address];
+      for (let i = 0; i < protocols.length; i++) {
+        const entry = protocols[i];
+        const protocol = entry.protocol.name;
+
+        if (protocol === 'Aave') {
+          const filter: SupportedDefiProtocols[] = ['aave'];
+          const { totalCollateralUsd, totalDebt } = loanSummary(filter);
+          summary[protocol] = {
+            protocol: {
+              name: protocol,
+              icon: entry.protocol.icon
+            },
+            borrowingUrl: '/defi/borrowing?protocol=aave',
+            lendingUrl: '/defi/lending?protocol=aave',
+            totalCollateralUsd,
+            totalDebtUsd: totalDebt,
+            totalLendingDepositUsd: totalLendingDeposit(filter, [])
+          };
+          continue;
+        }
+
+        if (!summary[protocol]) {
+          summary[protocol] = {
+            protocol: { ...entry.protocol },
+            tokenInfo: {
+              tokenName: entry.baseBalance.tokenName,
+              tokenSymbol: entry.baseBalance.tokenSymbol
+            },
+            totalCollateralUsd: Zero,
+            totalDebtUsd: Zero,
+            totalLendingDepositUsd: Zero
+          };
+        }
+
+        const { balance } = entry.baseBalance;
+        if (entry.balanceType === 'Asset') {
+          const previousBalance = summary[protocol].balanceUsd ?? Zero;
+          summary[protocol].balanceUsd = previousBalance.plus(balance.usdValue);
+        }
+      }
+    }
+
+    const filter: SupportedDefiProtocols[] = ['makerdao'];
+    const { totalCollateralUsd, totalDebt } = loanSummary(filter);
+    summary['makerdao'] = {
+      protocol: {
+        name: 'makerdao',
+        icon: ''
+      },
+      borrowingUrl: '/defi/borrowing?protocol=makerdao',
+      lendingUrl: '/defi/lending?protocol=makerdao',
+      totalCollateralUsd,
+      totalDebtUsd: totalDebt,
+      totalLendingDepositUsd: totalLendingDeposit(filter, [])
+    };
+
+    return sortBy(Object.values(summary), 'protocol.name');
   }
 };

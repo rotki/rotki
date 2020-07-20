@@ -90,4 +90,15 @@ export class DefiApi {
       })
       .then(handleResponse);
   }
+
+  async fetchAllDefi(): Promise<AsyncQuery> {
+    return this.axios
+      .get<ActionResult<AsyncQuery>>('/blockchains/ETH/defi', {
+        validateStatus: fetchWithExternalService,
+        params: {
+          async_query: true
+        }
+      })
+      .then(handleResponse);
+  }
 }

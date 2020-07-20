@@ -2,11 +2,9 @@
   <v-card>
     <div class="mx-4 pt-2">
       <v-autocomplete
-        v-model="selectedProtocols"
+        :value="value"
         :search-input.sync="search"
-        :multiple="multiple"
         :items="supportedProtocols"
-        return-object
         hide-details
         hide-selected
         hide-no-data
@@ -15,8 +13,9 @@
         :open-on-clear="false"
         label="Filter protocol(s)"
         item-text="name"
-        item-value="name"
+        item-value="identifier"
         class="defi-protocol-selector"
+        @input="input"
       >
         <template #selection="data">
           <span>
@@ -43,9 +42,9 @@
       </v-autocomplete>
     </div>
     <v-card-text>
-      Showing results across
-      {{ selectedProtocols.length > 0 ? selectedAccountsArray.length : 'all' }}
-      protocols.
+      {{
+        value ? 'Showing results for selected protocol' : 'Showing all results'
+      }}
     </v-card-text>
   </v-card>
 </template>
@@ -60,11 +59,11 @@ export interface Protocol {
   identifier: SupportedDefiProtocols;
 }
 
-type SelectedAccountsParams = Protocol[] | Protocol | null;
-
 @Component({})
 export default class DefiProtocolSelector extends Vue {
-  protocolSelection: Protocol[] = [];
+  @Prop({ required: true })
+  value!: SupportedDefiProtocols | null;
+
   supportedProtocols: Protocol[] = [
     {
       identifier: 'aave',
@@ -78,45 +77,10 @@ export default class DefiProtocolSelector extends Vue {
     }
   ];
 
-  @Prop({ required: false, type: Boolean, default: false })
-  multiple!: boolean;
   search: string = '';
 
-  private unselectAll() {
-    for (let i = 0; i < this.protocolSelection.length; i++) {
-      this.protocolSelection.pop();
-    }
-  }
-
-  set selectedProtocols(value: SelectedAccountsParams) {
-    if (!value) {
-      this.unselectAll();
-    } else if (Array.isArray(value)) {
-      this.protocolSelection.push(...value);
-    } else {
-      if (!this.multiple) {
-        this.unselectAll();
-      }
-      this.protocolSelection.push(value);
-    }
-    this.selectionChanged(this.protocolSelection);
-    if (this.search) {
-      this.search = '';
-    }
-  }
-
-  get selectedProtocols(): SelectedAccountsParams {
-    if (this.protocolSelection.length === 0) {
-      return [];
-    } else if (this.protocolSelection.length === 1) {
-      const [first] = this.protocolSelection;
-      return first;
-    }
-    return this.protocolSelection;
-  }
-
   @Emit()
-  selectionChanged(_selectedProtocols: Protocol[]) {}
+  input(_selectedProtocols: SupportedDefiProtocols | null) {}
 }
 </script>
 

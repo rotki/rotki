@@ -1,14 +1,22 @@
 <template>
   <v-card class="stat-card">
     <v-card-title>
-      <v-img v-if="icon" contain max-height="32px" :src="icon" />
-      <span v-if="title"></span>
-      <v-spacer v-if="locked"></v-spacer>
-      <premium-lock v-if="locked"></premium-lock>
+      <v-img
+        v-if="protocolIcon"
+        contain
+        alt="Protocol Logo"
+        max-height="32px"
+        :src="protocolIcon"
+      />
+      <span v-if="title">
+        {{ title }}
+      </span>
+      <v-spacer v-if="locked" />
+      <premium-lock v-if="locked" />
     </v-card-title>
     <v-card-text class="flex">
       <span v-if="!locked && loading">
-        <v-progress-linear indeterminate color="primary"></v-progress-linear>
+        <v-progress-linear indeterminate color="primary" />
       </span>
       <slot v-else-if="!locked"></slot>
     </v-card-text>
@@ -30,7 +38,7 @@ export default class StatCard extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   loading!: boolean;
   @Prop({ required: false, type: String })
-  icon!: string;
+  protocolIcon!: string;
 }
 </script>
 

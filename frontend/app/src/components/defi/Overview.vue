@@ -1,7 +1,17 @@
 <template>
-  <stat-card :icon="icon">
-    <h3 class="pb-2">
+  <stat-card v-if="!summary.balanceUsd" :protocol-icon="icon" class="overview">
+    <h3 class="pb-2 d-flex flex-row justify-space-between">
       Borrowing
+      <v-btn
+        v-if="summary.borrowingUrl"
+        color="primary"
+        x-small
+        icon
+        width="20px"
+        :to="summary.borrowingUrl"
+      >
+        <v-icon>fa-external-link-square</v-icon>
+      </v-btn>
     </h3>
     <info-row
       title="Total collateral"
@@ -16,12 +26,35 @@
       :value="summary.totalDebtUsd"
     />
     <v-divider class="my-4"></v-divider>
-    <h3 class="pb-2">Lending</h3>
+    <h3 class="pb-2 d-flex flex-row justify-space-between">
+      Lending
+      <v-btn
+        v-if="summary.lendingUrl"
+        x-small
+        icon
+        width="20px"
+        :to="summary.lendingUrl"
+        color="primary"
+      >
+        <v-icon>fa-external-link-square</v-icon>
+      </v-btn>
+    </h3>
     <info-row
       title="Total deposit"
       :loading="loading"
       fiat
       :value="summary.totalLendingDepositUsd"
+    />
+  </stat-card>
+  <stat-card v-else :protocol-icon="icon" class="overview">
+    <h3 class="pb-2">
+      {{ summary.tokenInfo.tokenName }}
+    </h3>
+    <info-row
+      title="Balance"
+      :loading="loading"
+      fiat
+      :value="summary.balanceUsd"
     />
   </stat-card>
 </template>
@@ -42,9 +75,18 @@ export default class Overview extends Vue {
   summary!: DefiProtocolSummary;
 
   get icon(): string {
-    return require(`@/assets/images/defi/${this.summary.protocol}.svg`);
+    const protocol = this.summary.protocol;
+    if (protocol.icon) {
+      return `https://${protocol.icon}`;
+    }
+    return require(`@/assets/images/defi/${protocol.name}.svg`);
   }
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.overview {
+  min-height: 250px;
+  min-width: 300px;
+}
+</style>
