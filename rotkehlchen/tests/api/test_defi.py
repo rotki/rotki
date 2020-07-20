@@ -23,6 +23,8 @@ def test_query_defi_balances(rotkehlchen_api_server, ethereum_accounts):  # pyli
     if len(result['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']) != 0:
         first_entry = result['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'][0]
         assert first_entry['protocol'] is not None
+        assert first_entry['protocol']['name'] is not None
+        assert first_entry['protocol']['icon'] is not None
         assert first_entry['balance_type'] in ('Asset', 'Debt')
         assert first_entry['base_balance'] is not None
         assert first_entry['underlying_balances'] is not None
