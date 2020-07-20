@@ -1,4 +1,4 @@
-E<template>
+<template>
   <v-card class="exchange-balances mt-8">
     <v-card-title>Exchange Balances</v-card-title>
     <v-card-text>
@@ -15,7 +15,7 @@ E<template>
           fa fa-plus
         </v-icon>
       </v-btn>
-      <v-row>
+      <v-row no-gutters class="exchange-balances__content">
         <v-col cols="12" class="hidden-md-and-up">
           <v-select
             v-model="selectedExchange"
@@ -23,6 +23,7 @@ E<template>
             :items="connectedExchanges"
             hide-details
             label="Select Exchange"
+            class="exchange-balances__content__select"
             @change="openExchangeDetails"
           >
             <template #selection="{ item }">
@@ -84,11 +85,17 @@ E<template>
           </v-select>
         </v-col>
         <v-col cols="2" class="hidden-sm-and-down">
-          <v-tabs fixed-tabs vertical hide-slider optional>
+          <v-tabs
+            fixed-tabs
+            vertical
+            hide-slider
+            optional
+            class="exchange-balances__tabs"
+          >
             <v-tab
               v-for="(exchange, i) in connectedExchanges"
               :key="i"
-              class="exchange-balances__tab my-3"
+              class="exchange-balances__tab ml-3 my-3 py-3"
               active-class="exchange-balances__tab--active"
               :to="`/accounts-balances/exchange-balances/${exchange}`"
               @click="selectedExchange = exchange"
@@ -119,7 +126,7 @@ E<template>
             v-if="exchange"
             :balances="exchangeBalances(exchange)"
           ></asset-balances>
-          <div v-else>
+          <div v-else class="pa-4">
             Select an exchange to view asset details.
           </div>
         </v-col>
@@ -130,7 +137,7 @@ E<template>
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { Component, Vue, Prop, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
@@ -159,6 +166,17 @@ export default class ExchangeBalances extends Vue {
   exchanges!: ExchangeInfo;
   exchangeBalances!: (exchange: string) => AssetBalance[];
 
+  mounted() {
+    this.selectedExchange = this.selectedExchange = this.$route.params.exchange;
+  }
+
+  @Watch('$route')
+  onRouteChange() {
+    // this is necessary to keep the "pre-selected exchange" in sync during the use of history
+    // backward/forward events when staying within the same "route" (since the mounted() event doesn't fire)
+    this.selectedExchange = this.$route.params.exchange;
+  }
+
   exchangeBalance(exchange: string): BigNumber {
     const total: BigNumber = this.exchangeBalances(exchange).reduce(
       (sum, asset: AssetBalance) => sum.plus(asset.usdValue),
@@ -177,25 +195,77 @@ export default class ExchangeBalances extends Vue {
 </script>
 
 <style scoped lang="scss">
+::v-deep {
+  .v-tabs-bar {
+    &__content {
+      background-color: var(--v-rotki-light-grey-darken1);
+      border-radius: 10px 0 0 10px;
+      height: 100%;
+    }
+  }
+
+  .v-tab {
+    &__active {
+      &::before {
+        opacity: 1 !important;
+      }
+    }
+  }
+}
+
 .exchange-balances {
+  &__content {
+    border: 1px solid var(--v-rotki-light-grey-darken2);
+    border-radius: 15px;
+
+    &__select {
+      border-radius: 15px 15px 0 0;
+    }
+  }
+
+  &__tabs {
+    border-radius: 10px 0 0 10px;
+    height: 100%;
+  }
+
   &__tab {
     display: flex;
     flex-direction: column;
-    height: 100px !important;
+    min-height: 125px !important;
+    max-height: 125px !important;
     padding-top: 15px;
     padding-bottom: 15px;
     filter: grayscale(100%);
     color: var(--v-rotki-grey-base);
+    background-color: transparent;
 
     &:hover {
       filter: grayscale(0);
+      background-color: var(--v-rotki-light-grey-base);
+      border-radius: 10px 0 0 10px;
+    }
+
+    &:focus {
+      filter: grayscale(0);
+      border-radius: 10px 0 0 10px;
     }
 
     &--active {
       filter: grayscale(0);
-      border-radius: 8px;
-      background-color: var(--v-rotki-light-grey-darken1);
+      border-radius: 10px 0 0 10px;
+      background-color: white;
       color: var(--v-secondary-base);
+
+      &:hover {
+        border-radius: 10px 0 0 10px;
+        background-color: white;
+        opacity: 1 !important;
+      }
+
+      &:focus {
+        border-radius: 10px 0 0 10px;
+        opacity: 1 !important;
+      }
     }
   }
 }
