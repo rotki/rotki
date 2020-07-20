@@ -2,9 +2,6 @@
   <v-container class="accounts-balances">
     <base-page-header text="Accounts & Balances"></base-page-header>
     <tab-navigation :tab-contents="accountsBalancesTabs"></tab-navigation>
-    <v-slide-x-transition>
-      <router-view />
-    </v-slide-x-transition>
   </v-container>
 </template>
 
@@ -20,18 +17,18 @@ import TabNavigation from '@/components/helper/TabNavigation.vue';
   }
 })
 export default class AccountsBalances extends Vue {
-  accountsBalancesTabs = [
+  readonly accountsBalancesTabs = [
     {
       name: 'Blockchain Balances',
-      routerTo: '/accounts-balances/blockchain-balances'
+      routeTo: '/accounts-balances/blockchain-balances'
     },
     {
       name: 'Exchange Balances',
-      routerTo: '/accounts-balances/exchange-balances/'
+      routeTo: '/accounts-balances/exchange-balances/'
     },
     {
       name: 'Manual Balances',
-      routerTo: '/accounts-balances/manual-balances'
+      routeTo: '/accounts-balances/manual-balances'
     }
   ];
 }

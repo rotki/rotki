@@ -186,7 +186,6 @@ export default class ManualBalancesList extends Vue {
 
   editBalance(balance: ManualBalance) {
     this.$emit('editBalance', balance);
-    return balance;
   }
 
   async deleteLabel() {

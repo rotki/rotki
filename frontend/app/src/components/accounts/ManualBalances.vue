@@ -1,5 +1,5 @@
 <template>
-  <fragment>
+  <div>
     <v-card class="manual-balances mt-8">
       <v-card-title>Manually Tracked Balances</v-card-title>
       <v-card-text>
@@ -10,7 +10,7 @@
           right
           dark
           color="primary"
-          class="manual-balances__addBalance"
+          class="manual-balances__add-balance"
           @click="newBalance()"
         >
           <v-icon>
@@ -36,7 +36,7 @@
       </v-card-text>
     </v-card>
     <fiat-balances></fiat-balances>
-  </fragment>
+  </div>
 </template>
 
 <script lang="ts">
