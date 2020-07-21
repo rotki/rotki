@@ -2,6 +2,7 @@ import Chart from 'chart.js';
 import moment from 'moment';
 import Vue, { VueConstructor } from 'vue';
 import Vuex from 'vuex';
+import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import { api } from '@/services/rotkehlchen-api';
 
 export const setupPremium = () => {
@@ -54,32 +55,32 @@ async function loadLibrary() {
   return library;
 }
 
-export const PremiumStatistics = (): Promise<VueConstructor> => {
+function load(name: string): Promise<VueConstructor> {
   // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async resolve =>
-    resolve((await loadLibrary()).PremiumStatistics)
-  );
+  return new Promise(async resolve => {
+    const library = await loadLibrary();
+    if (library[name]) {
+      resolve(library[name]);
+    } else {
+      resolve(PremiumLoadingFailed);
+    }
+  });
+}
+
+export const PremiumStatistics = (): Promise<VueConstructor> => {
+  return load('PremiumStatistics');
 };
 
 export const DsrMovementHistory = (): Promise<VueConstructor> => {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async resolve =>
-    resolve((await loadLibrary()).DsrMovementHistory)
-  );
+  return load('DsrMovementHistory');
 };
 
 export const VaultEventsList = (): Promise<VueConstructor> => {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async resolve =>
-    resolve((await loadLibrary()).VaultEventsList)
-  );
+  return load('VaultEventsList');
 };
 
 export const LendingHistory = (): Promise<VueConstructor> => {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async resolve =>
-    resolve((await loadLibrary()).LendingHistory)
-  );
+  return load('LendingHistory');
 };
 
 declare global {
