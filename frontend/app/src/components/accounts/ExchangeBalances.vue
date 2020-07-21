@@ -138,7 +138,9 @@
       <v-row v-else>
         <v-col>
           You do not have any connected exchanges.
-          <router-link to="/settings/api-keys/exchanges">Click here</router-link>
+          <router-link to="/settings/api-keys/exchanges">
+            Click here
+          </router-link>
           to set up an Exchange Connection.
         </v-col>
       </v-row>
