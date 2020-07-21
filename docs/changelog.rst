@@ -52,6 +52,7 @@ Changelog
   - `Binance leveraged token ETHDOWN (ETHDOWN) <https://www.cryptocompare.com/coins/btcdown/overview>`__
   - `Binance leveraged token LINKUP (LINKUP) <https://www.cryptocompare.com/coins/linkup/overview>`__
   - `Binance leveraged token LINKDOWN (LINKDOWN) <https://www.cryptocompare.com/coins/linkdown/overview>`__
+  - `Binance IDR Stable Coin (Binance IDR Stable Coin) <https://www.cryptocompare.com/coins/bidr/overview>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint

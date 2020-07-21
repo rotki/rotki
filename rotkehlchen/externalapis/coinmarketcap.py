@@ -42,6 +42,8 @@ KNOWN_TO_MISS_FROM_CMC = (
     'AIR',
     'APH-2',
     'ARCH',
+    # Missing from CMC, is in cryptocompare: https://www.cryptocompare.com/coins/bidr
+    'BIDR',
     # Missing from API but is in website: https://coinmarketcap.com/currencies/bitcoindark/
     'BTCD',
     # Missing from API but is in website: https://coinmarketcap.com/currencies/cachecoin/

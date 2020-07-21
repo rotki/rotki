@@ -22,6 +22,7 @@ MANUALLY_CHECKED_TYPES = {
     'BITCAR': 'ethereum token',
     'BNBBEAR': 'ethereum token',
     'BNBBULL': 'ethereum token',
+    'BIDR': 'binance token',
     'BMT': 'ethereum token',
     'BOU': 'ethereum token',
     'BTCE': 'ethereum token',
