@@ -15,6 +15,7 @@ MANUALLY_CHECKED_NAMES = {
     'LINKUP': 'Binance leveraged token LINKUP',
     'AMIS': 'Amis',
     'AVA-2': 'Avalon',
+    'BIDR': 'Binance IDR Stable Coin',
     'BITCAR': 'BitCar',
     'BMT': 'BMChain',
     'BOU': 'Boulle',

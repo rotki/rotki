@@ -21,7 +21,8 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'ALGO',
     'DAO',
     'KFEE',
-    'BTXCRD'
+    'BTXCRD',
+    'BIDR',
     '1CR',
     'ACH',
     'AERO',

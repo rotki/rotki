@@ -1015,6 +1015,12 @@
         "symbol": "BHPC",
         "type": "ethereum token"
     },
+    "BIDR": {
+        "name": "Binance IDR Stable Coin",
+        "started": 1593475200,
+        "symbol": "BIDR",
+        "type": "binance token"
+    },
     "BITB": {
         "name": "Bean Cash",
         "started": 1423785600,
