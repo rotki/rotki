@@ -6,8 +6,8 @@
           <v-card-title>Rotki Premium</v-card-title>
           <v-card-text>
             <p>
-              Rotki Premium is an optional subscription service to gain access to
-              analytics, graphs, and unlock many additional features. For more
+              Rotki Premium is an optional subscription service to gain access
+              to to analytics, graphs, and unlock many additional features. For
               information on what is available visit the
               <base-external-link
                 text="Rotki Premium"
@@ -28,7 +28,9 @@
             <v-text-field
               v-model="apiSecret"
               class="premium-settings__fields__api-secret"
-              :append-icon="edit ? (showSecret ? 'fa-eye' : 'fa-eye-slash') : ''"
+              :append-icon="
+                edit ? (showSecret ? 'fa-eye' : 'fa-eye-slash') : ''
+              "
               :disabled="premium && !edit"
               prepend-icon="fa-user-secret"
               :type="showSecret ? 'text' : 'password'"
