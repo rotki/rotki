@@ -686,6 +686,14 @@ class DBHandler:
             ))
         return events
 
+    def delete_aave_data(self) -> None:
+        """Delete all historical aave event data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM aave_events;')
+        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
+        self.conn.commit()
+        self.update_last_write()
+
     def get_used_query_range(self, name: str) -> Optional[Tuple[Timestamp, Timestamp]]:
         """Get the last start/end timestamp range that has been queried for name
 

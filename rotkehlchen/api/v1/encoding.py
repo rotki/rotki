@@ -1016,6 +1016,12 @@ class AsyncQueryArgumentSchema(Schema):
     async_query = fields.Boolean(missing=False)
 
 
+class AsyncQueryResetDBSchema(AsyncQueryArgumentSchema):
+    """A schema for getters that have 2 arguments.
+    One to enable async querying and another to force reset DB data by querying everytying again"""
+    reset_db_data = fields.Boolean(missing=False)
+
+
 class WatcherSchema(Schema):
     type = fields.String(required=True)
     args = fields.Dict(required=True)

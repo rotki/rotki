@@ -3236,6 +3236,7 @@ Getting Aave historical data
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool reset_db_data: Boolean denoting whether all aave event data saved in the DB are going to be deleted and rewritten after this query. False by default.
 
    **Example Response**:
 

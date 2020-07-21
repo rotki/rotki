@@ -14,6 +14,7 @@ from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AsyncQueryArgumentSchema,
+    AsyncQueryResetDBSchema,
     AsyncTasksQuerySchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
@@ -806,11 +807,11 @@ class AaveBalancesResource(BaseResource):
 
 class AaveHistoryResource(BaseResource):
 
-    get_schema = AsyncQueryArgumentSchema()
+    get_schema = AsyncQueryResetDBSchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_aave_history(async_query)
+    def get(self, async_query: bool, reset_db_data: bool) -> Response:
+        return self.rest_api.get_aave_history(async_query, reset_db_data)
 
 
 class WatchersResource(BaseResource):
