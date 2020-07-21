@@ -6,7 +6,9 @@
       <refresh-button
         :loading="loading"
         :refresh="refresh"
-        :tooltip="`Refreshes the ${title.toLocaleLowerCase()} data`"
+        :tooltip="
+          $t('helpers.refresh_header.tooltip', { title: lowercaseTitle })
+        "
       />
       <slot />
     </span>
@@ -26,6 +28,10 @@ export default class RefreshHeader extends Vue {
 
   @Prop({ required: true, type: Boolean })
   loading!: boolean;
+
+  get lowercaseTitle(): string {
+    return this.title.toLocaleLowerCase();
+  }
 
   @Emit()
   refresh() {}

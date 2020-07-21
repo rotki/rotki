@@ -1,39 +1,48 @@
 <template>
-  <stat-card v-if="!summary.balanceUsd" :protocol-icon="icon" class="overview">
-    <h3 class="pb-2">
-      {{ summary.protocol.name }}
-    </h3>
-    <h4 class="pb-2 d-flex flex-row justify-space-between">
-      Borrowing
+  <stat-card
+    v-if="!summary.balanceUsd"
+    :title="summary.protocol.name"
+    :protocol-icon="icon"
+    bordered
+    class="overview"
+  >
+    {{ iconExists }}
+    <span
+      class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
+    >
+      {{ $t('overview.stat_card.headers.borrowing') }}
       <v-btn
         v-if="summary.borrowingUrl"
-        color="primary"
-        x-small
-        icon
-        width="20px"
         :to="summary.borrowingUrl"
+        icon
+        small
+        color="primary"
       >
-        <v-icon>fa-external-link-square</v-icon>
+        <v-icon small color="primary">mdi-launch</v-icon>
       </v-btn>
-    </h4>
+    </span>
     <info-row
       title="Total collateral"
       fiat
       :value="summary.totalCollateralUsd"
     />
-    <info-row title="Total debt" fiat :value="summary.totalDebtUsd" />
+    <info-row
+      title="Total debt"
+      :loading="loading"
+      fiat
+      :value="summary.totalDebtUsd"
+    />
     <v-divider class="my-4" />
     <h4 class="pb-2 d-flex flex-row justify-space-between">
-      Lending
+      {{ $t('overview.stat_card.headers.lending') }}
       <v-btn
         v-if="summary.lendingUrl"
-        x-small
-        icon
-        width="20px"
         :to="summary.lendingUrl"
+        icon
+        small
         color="primary"
       >
-        <v-icon>fa-external-link-square</v-icon>
+        <v-icon small color="primary">mdi-launch</v-icon>
       </v-btn>
     </h4>
     <info-row
@@ -42,53 +51,54 @@
       :value="summary.totalLendingDepositUsd"
     />
   </stat-card>
-  <stat-card v-else :protocol-icon="icon" class="overview">
-    <h3 class="pb-2">
-      {{ summary.protocol.name }}
-    </h3>
-    <info-row title="Balance" fiat :value="summary.balanceUsd" />
+  <stat-card
+    v-else
+    bordered
+    :title="summary.protocol.name"
+    :protocol-icon="icon"
+    class="overview"
+  >
+    <span class="text-subtitle-1 font-weig$tht-bold pb-2">
+      {{ summary.tokenInfo.tokenName }}
+    </span>
+    <info-row
+      title="Balance"
+      :loading="loading"
+      fiat
+      :value="summary.balanceUsd"
+    />
     <v-divider class="my-4" />
-    <h4 class="pb-2 d-flex flex-row justify-space-between">
-      Details
-      <v-dialog v-model="details" scrollable max-width="450px">
-        <template #activator="{ on, attrs }">
-          <v-btn
-            x-small
-            icon
+    <v-dialog v-model="details" scrollable max-width="450px">
+      <template #activator="{ on, attrs }">
+        <v-btn small v-bind="attrs" block text class="justify-end" v-on="on">
+          {{ $t('overview.stat_card.buttons.details') }}
+          <v-icon color="primary" right>mdi-launch</v-icon>
+        </v-btn>
+      </template>
+      <v-card>
+        <v-card-title class="mb-2">
+          <v-img
+            aspect-ratio="1"
+            :src="icon"
             max-width="32px"
-            color="primary"
-            v-bind="attrs"
-            v-on="on"
-          >
-            <v-icon>fa-external-link-square</v-icon>
-          </v-btn>
-        </template>
-        <v-card>
-          <v-card-title>
-            <v-img
-              aspect-ratio="1"
-              :src="icon"
-              max-width="32px"
-              max-height="32px"
-              class="mb-2"
-              contain
-            />
-            <span class="ml-2">
-              {{ summary.protocol.name }}
-            </span>
-          </v-card-title>
-          <v-card-subtitle>
-            Protocol asset details
-          </v-card-subtitle>
-          <v-card-text class="overview__details">
-            <div v-for="(asset, index) in assets" :key="index">
-              <defi-asset :asset="asset" />
-              <v-divider />
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-dialog>
-    </h4>
+            max-height="32px"
+            contain
+          />
+          <span class="ml-2">
+            {{ summary.protocol.name }}
+          </span>
+        </v-card-title>
+        <v-card-subtitle>
+          {{ $t('overview.details_dialog.subtitle') }}
+        </v-card-subtitle>
+        <v-card-text class="overview__details">
+          <div v-for="(asset, index) in assets" :key="index">
+            <defi-asset :asset="asset" />
+            <v-divider />
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </stat-card>
 </template>
 
@@ -120,8 +130,18 @@ export default class Overview extends Vue {
   }
 
   get icon(): string {
+    // until we can check whether a file exists locally, let's make a whitelist of protocols where we prefer our own icon
+    const protocolWhitelist: string[] = ['aave', 'makerdao', 'compound'];
+
+    const isWhitelisted: boolean =
+      protocolWhitelist.findIndex(
+        protocol => protocol == this.summary.protocol.name.toLowerCase()
+      ) > -1
+        ? true
+        : false;
+
     const protocol = this.summary.protocol;
-    if (protocol.icon) {
+    if (protocol.icon && !isWhitelisted) {
       return `https://${protocol.icon}`;
     }
     return require(`@/assets/images/defi/${protocol.name.toLocaleLowerCase()}.svg`);
