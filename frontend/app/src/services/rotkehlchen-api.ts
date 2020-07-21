@@ -644,28 +644,6 @@ export class RotkehlchenApi {
     });
   }
 
-  setPremiumSync(enabled: boolean): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<DBSettings>>(
-          '/settings',
-          {
-            premium_should_sync: enabled
-          },
-          { validateStatus: this.validate_status_put_settings }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result.premium_should_sync);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
-  }
-
   getFiatExchangeRates(currencies: string[]): Promise<FiatExchangeRates> {
     return new Promise<FiatExchangeRates>((resolve, reject) => {
       this.axios

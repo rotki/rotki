@@ -206,7 +206,7 @@ export default class PremiumSettings extends Vue {
     const { commit } = this.$store;
     const shouldSync = this.sync;
     this.$api
-      .setPremiumSync(shouldSync)
+      .setSettings({ premium_should_sync: shouldSync })
       .then(() => {
         commit('session/premiumSync', shouldSync);
       })
