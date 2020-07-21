@@ -185,6 +185,7 @@ class AssetType(Enum):
     EXCHANGE_SPECIFIC = 19
     VECHAIN_TOKEN = 20
     BINANCE_TOKEN = 21
+    EOS_TOKEN = 22
 
 
 class AssetData(NamedTuple):

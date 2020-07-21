@@ -27,6 +27,7 @@ asset_type_mapping = {
     'exchange specific': AssetType.EXCHANGE_SPECIFIC,
     'vechain token': AssetType.VECHAIN_TOKEN,
     'binance token': AssetType.BINANCE_TOKEN,
+    'eos token': AssetType.EOS_TOKEN,
 }
 
 

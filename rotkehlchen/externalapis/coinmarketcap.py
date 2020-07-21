@@ -793,7 +793,10 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin
     'HMC': 2484,
     'HMC-2': 1832,
-    # For Rotkehlchen KNT is Kora Network Token and KNT-2 is Knekted
+    # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin
+    # For Rotkehlchen IQ is Everipedia and IQ-2 is IQ.cash
+    'IQ': 2930,
+    'IQ-2': 3273,
     'KNT': 3086,
     'KNT-2': 3383,
     # For Rotkehlchen LUNA is Luna Coin and LUNA-2 is Terra Luna
