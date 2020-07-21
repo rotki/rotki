@@ -384,6 +384,9 @@ WORLD_TO_PAPRIKA_ID = {
     'HMC-2': 'hmc-harmonycoin',
     # For Rotkehlchen IPL is InsurePal (for some reason has 2 entires in paprika)
     'IPL': 'ipl-vouchforme',
+    # For Rotkehlchen IQ is Everipedia and IQ-2 is IQ.cash
+    'IQ': 'iq-everipedia',
+    'IQ-2': 'iq-iqcash',
     # For Rotkehlchen KNT is Kora Network Token and KNT-2 is Knekted
     'KNT': 'knt-kora-network-token',
     'KNT-2': 'knt-knekted',

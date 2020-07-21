@@ -4938,6 +4938,18 @@
         "symbol": "IPSX",
         "type": "ethereum token"
     },
+    "IQ": {
+        "name": "Everipedia",
+        "started": 1531512255,
+        "symbol": "IQ",
+        "type": "eos token"
+    },
+    "IQ-2": {
+        "name": "IQ.cash",
+        "started": 1536789557,
+        "symbol": "IQ",
+        "type": "own chain"
+    },
     "IQN": {
         "ethereum_address": "0x0DB8D8b76BC361bAcbB72E2C491E06085A97Ab31",
         "ethereum_token_decimals": 18,

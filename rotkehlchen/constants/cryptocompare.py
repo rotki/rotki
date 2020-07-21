@@ -214,6 +214,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'HMC-2': 'HMC*',
     # For Rotkehlchen INV is Invacio but it's INVC in cryptocompare
     'INV': 'INVC',
+    # For Rotkehlchen IQ-2 is IQ.Cash but it's IQC in cryptocompare
+    'IQ-2': 'IQC',
     # For Rotkehlchen JOY is Joy but it's JOY* in cryptocompare
     'JOY': 'JOY*',
     # For Rotkehlchen LNC is Blocklancer  and LNC-2 is Linker Coin, but for

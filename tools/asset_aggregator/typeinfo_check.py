@@ -62,6 +62,7 @@ MANUALLY_CHECKED_TYPES = {
     'HKG': 'ethereum token',
     'HNS': 'own chain',
     'ITM': 'ethereum token',
+    'IQ': 'eos token',
     'JOY': 'ethereum token',
     'JST': 'tron token',
     'KUE': 'ethereum token',
