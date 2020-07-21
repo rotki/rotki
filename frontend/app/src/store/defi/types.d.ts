@@ -12,6 +12,7 @@ import { Status } from '@/store/defi/status';
 
 export interface DefiState {
   status: Status;
+  defiStatus: Status;
   lendingHistoryStatus: Status;
   borrowingHistoryStatus: Status;
   dsrHistory: DSRHistory;

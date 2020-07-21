@@ -37,6 +37,9 @@ export const mutations: MutationTree<DefiState> = {
   status(state: DefiState, status: Status) {
     state.status = status;
   },
+  defiStatus(state: DefiState, status: Status) {
+    state.defiStatus = status;
+  },
   lendingHistoryStatus(state: DefiState, status: Status) {
     state.lendingHistoryStatus = status;
   },

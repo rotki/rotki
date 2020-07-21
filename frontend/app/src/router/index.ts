@@ -84,11 +84,11 @@ export default new Router({
     },
     {
       path: '/accounts-balances',
-      name: 'accounts-balances',
       component: () => import('../views/AccountsBalances.vue'),
       children: [
         {
           path: '',
+          name: 'accounts-balances',
           redirect: 'blockchain-balances'
         },
         {

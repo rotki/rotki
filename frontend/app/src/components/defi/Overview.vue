@@ -15,16 +15,10 @@
     </h3>
     <info-row
       title="Total collateral"
-      :loading="loading"
       fiat
       :value="summary.totalCollateralUsd"
     />
-    <info-row
-      title="Total debt"
-      :loading="loading"
-      fiat
-      :value="summary.totalDebtUsd"
-    />
+    <info-row title="Total debt" fiat :value="summary.totalDebtUsd" />
     <v-divider class="my-4"></v-divider>
     <h3 class="pb-2 d-flex flex-row justify-space-between">
       Lending
@@ -41,7 +35,6 @@
     </h3>
     <info-row
       title="Total deposit"
-      :loading="loading"
       fiat
       :value="summary.totalLendingDepositUsd"
     />
@@ -50,12 +43,7 @@
     <h3 class="pb-2">
       {{ summary.tokenInfo.tokenName }}
     </h3>
-    <info-row
-      title="Balance"
-      :loading="loading"
-      fiat
-      :value="summary.balanceUsd"
-    />
+    <info-row title="Balance" fiat :value="summary.balanceUsd" />
     <v-divider class="my-4" />
     <h4 class="pb-2 d-flex flex-row justify-space-between">
       Details
@@ -114,8 +102,6 @@ import { DefiProtocolSummary } from '@/store/defi/types';
   components: { DefiAsset, CryptoIcon, AmountDisplay, StatCard, InfoRow }
 })
 export default class Overview extends Vue {
-  @Prop({ required: true, type: Boolean })
-  loading!: boolean;
   @Prop({ required: true })
   summary!: DefiProtocolSummary;
 

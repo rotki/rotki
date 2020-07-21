@@ -3,12 +3,17 @@
     <v-row>
       <v-col>
         <refresh-header
-          :loading="loading"
+          :loading="refreshing"
           title="Defi Overview"
           @refresh="refresh()"
         />
       </v-col>
     </v-row>
+    <progress-screen v-if="loading">
+      <template #message>
+        Please wait while your defi balances are getting loaded...
+      </template>
+    </progress-screen>
     <v-row>
       <v-col
         v-for="summary in defiOverview"
@@ -16,7 +21,7 @@
         lg="6"
         xl="3"
       >
-        <overview :loading="loading" :summary="summary" />
+        <overview :summary="summary" />
       </v-col>
     </v-row>
   </div>
@@ -29,14 +34,22 @@ import InfoRow from '@/components/defi/display/InfoRow.vue';
 import Overview from '@/components/defi/Overview.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { Status } from '@/store/defi/status';
 import { DefiProtocolSummary } from '@/store/defi/types';
 
 @Component({
-  components: { Overview, RefreshHeader, InfoRow, StatCard, AmountDisplay },
+  components: {
+    ProgressScreen,
+    Overview,
+    RefreshHeader,
+    InfoRow,
+    StatCard,
+    AmountDisplay
+  },
   computed: {
-    ...mapState('defi', ['status']),
+    ...mapState('defi', ['status', 'defiStatus']),
     ...mapGetters('defi', ['defiOverview'])
   },
   methods: {
@@ -45,11 +58,18 @@ import { DefiProtocolSummary } from '@/store/defi/types';
 })
 export default class DecentralizedOverview extends Vue {
   status!: Status;
+  defiStatus!: Status;
   fetchAllDefi!: (refresh: boolean) => Promise<void>;
   defiOverview!: DefiProtocolSummary[];
 
-  get loading(): boolean {
+  get refreshing(): boolean {
     return this.status !== Status.LOADED;
+  }
+
+  get loading(): boolean {
+    return (
+      this.defiStatus !== Status.LOADED && this.defiStatus !== Status.REFRESHING
+    );
   }
 
   async refresh() {

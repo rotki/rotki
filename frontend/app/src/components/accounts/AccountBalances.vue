@@ -57,7 +57,7 @@
               <template #activator="{ on }">
                 <span class="account-balances__account__address" v-on="on">
                   <v-chip label outlined>
-                    <span v-if="item.identifier != item.account" class="pr-1">
+                    <span v-if="item.identifier !== item.account" class="pr-1">
                       {{ item.identifier }} |
                     </span>
                     <span :class="privacyMode ? 'blur-content' : ''">
@@ -151,7 +151,6 @@
       @cancel="toDeleteAccount = ''"
       @confirm="deleteAccount()"
     ></confirm-dialog>
-    {{ privacyMode }}
   </div>
 </template>
 

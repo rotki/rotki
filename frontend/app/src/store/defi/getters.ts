@@ -3,6 +3,7 @@ import sortBy from 'lodash/sortBy';
 import { GetterTree } from 'vuex';
 import { truncateAddress } from '@/filters';
 import { SupportedDefiProtocols } from '@/services/defi/types';
+import { Status } from '@/store/defi/status';
 import {
   AaveLoan,
   DefiBalance,
@@ -433,7 +434,10 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     return sortBy(defiLendingHistory, 'timestamp').reverse();
   },
 
-  defiOverview: ({ allProtocols }, { loanSummary, totalLendingDeposit }) => {
+  defiOverview: (
+    { allProtocols, status },
+    { loanSummary, totalLendingDeposit }
+  ) => {
     const summary: { [protocol: string]: Writeable<DefiProtocolSummary> } = {};
 
     for (const address of Object.keys(allProtocols)) {
@@ -443,6 +447,9 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         const protocol = entry.protocol.name;
 
         if (protocol === 'Aave') {
+          if (status !== Status.LOADED && status !== Status.REFRESHING) {
+            continue;
+          }
           const filter: SupportedDefiProtocols[] = ['aave'];
           const { totalCollateralUsd, totalDebt } = loanSummary(filter);
           summary[protocol] = {
@@ -483,20 +490,22 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
 
-    const filter: SupportedDefiProtocols[] = ['makerdao'];
-    const { totalCollateralUsd, totalDebt } = loanSummary(filter);
-    summary['makerdao'] = {
-      protocol: {
-        name: 'makerdao',
-        icon: ''
-      },
-      assets: [],
-      borrowingUrl: '/defi/borrowing?protocol=makerdao',
-      lendingUrl: '/defi/lending?protocol=makerdao',
-      totalCollateralUsd,
-      totalDebtUsd: totalDebt,
-      totalLendingDepositUsd: totalLendingDeposit(filter, [])
-    };
+    if (status === Status.LOADED || status === Status.REFRESHING) {
+      const filter: SupportedDefiProtocols[] = ['makerdao'];
+      const { totalCollateralUsd, totalDebt } = loanSummary(filter);
+      summary['makerdao'] = {
+        protocol: {
+          name: 'makerdao',
+          icon: ''
+        },
+        assets: [],
+        borrowingUrl: '/defi/borrowing?protocol=makerdao',
+        lendingUrl: '/defi/lending?protocol=makerdao',
+        totalCollateralUsd,
+        totalDebtUsd: totalDebt,
+        totalLendingDepositUsd: totalLendingDeposit(filter, [])
+      };
+    }
 
     return sortBy(Object.values(summary), 'protocol.name');
   }
