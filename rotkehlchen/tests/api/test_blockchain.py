@@ -492,7 +492,7 @@ def _add_blockchain_accounts_test_start(
 
         if async_query:
             task_id = assert_ok_async_response(response)
-            json_data = wait_for_async_task(api_server, task_id, timeout=20)
+            json_data = wait_for_async_task(api_server, task_id, timeout=40)
         else:
             assert_proper_response(response)
             json_data = response.json()
