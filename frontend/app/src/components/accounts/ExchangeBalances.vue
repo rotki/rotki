@@ -15,7 +15,11 @@
           fa fa-plus
         </v-icon>
       </v-btn>
-      <v-row no-gutters class="exchange-balances__content">
+      <v-row
+        v-if="connectedExchanges.length > 0"
+        no-gutters
+        class="exchange-balances__content"
+      >
         <v-col cols="12" class="hidden-md-and-up">
           <v-select
             v-model="selectedExchange"
@@ -129,6 +133,13 @@
           <div v-else class="pa-4">
             Select an exchange to view asset details.
           </div>
+        </v-col>
+      </v-row>
+      <v-row v-else>
+        <v-col>
+          You do not have any connected exchanges.
+          <router-link to="/settings/api-keys/exchanges">Click here</router-link>
+          to set up an Exchange Connection.
         </v-col>
       </v-row>
     </v-card-text>

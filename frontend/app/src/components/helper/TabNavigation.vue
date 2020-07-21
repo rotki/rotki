@@ -5,7 +5,7 @@
     height="36px"
     hide-slider
     active-class="tab-navigation__tabs__tab--active"
-    class="tab-navigation__tabs py-6"
+    class="tab-navigation__tabs py-6 mb-10"
   >
     <v-tab
       v-for="tab in tabContents"
@@ -16,7 +16,12 @@
     >
       {{ tab.name }}
     </v-tab>
-    <v-tab-item v-for="tab of tabContents" :key="tab.id" :value="tab.routeTo">
+    <v-tab-item
+      v-for="tab of tabContents"
+      :key="tab.id"
+      :value="tab.routeTo"
+      class="tab-navigation__tabs__tab-item"
+    >
       <router-view v-if="tab.routeTo === selectedTab"></router-view>
     </v-tab-item>
   </v-tabs>
@@ -54,12 +59,15 @@ export default class TabNavigation extends Vue {
     ::v-deep {
       .v-tabs-bar {
         background-color: var(--v-rotki-light-grey-base) !important;
-        margin-bottom: 40px;
       }
 
       .v-tabs-items {
         background-color: transparent !important;
       }
+    }
+
+    &__tab-item {
+      margin-top: 60px;
     }
 
     &__tab {
