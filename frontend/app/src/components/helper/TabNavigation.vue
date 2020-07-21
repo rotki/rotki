@@ -1,28 +1,30 @@
 <template>
   <v-tabs
-      v-model="selectedTab"
-      fixed-tabs
-      height="36px"
-      hide-slider
-      active-class="tab-navigation__tabs__tab--active"
-      class="tab-navigation__tabs py-6"
+    v-model="selectedTab"
+    fixed-tabs
+    height="36px"
+    hide-slider
+    active-class="tab-navigation__tabs__tab--active"
+    class="tab-navigation__tabs py-6"
   >
     <v-tab
-        v-for="tab in tabContents"
-        :key="tab.name"
-        :to="tab.routeTo"
-        class="tab-navigation__tabs__tab"
-        :class="tab.routeTo.toLowerCase().replace('/', '').replace(/\//g, '__')"
+      v-for="tab in tabContents"
+      :key="tab.name"
+      :to="tab.routeTo"
+      class="tab-navigation__tabs__tab"
+      :class="tab.routeTo.toLowerCase().replace('/', '').replace(/\//g, '__')"
     >
       {{ tab.name }}
     </v-tab>
     <v-tab-item
-        v-for="tab of tabContents"
-        :key="tab.id"
-        :value="tab.routeTo"
-        class="tab-navigation__tabs__tab-item"
+      v-for="tab of tabContents"
+      :key="tab.id"
+      :value="tab.routeTo"
+      class="tab-navigation__tabs__tab-item"
     >
-      <router-view v-if="tab.routeTo === selectedTab"></router-view>
+      <router-view
+        v-if="tab.routeTo === $route.path && tab.routeTo === selectedTab"
+      ></router-view>
     </v-tab-item>
   </v-tabs>
 </template>
