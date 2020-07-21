@@ -25,6 +25,11 @@
       "button_create": "Create"
     }
   },
+  "helpers": {
+    "refresh_header": {
+      "tooltip": "Refresh the {title} data"
+    }
+  },
   "login": {
     "title": "Sign In",
     "label_username": "Username",
@@ -129,6 +134,20 @@
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "transactions": "Ethereum Transactions"
+    }
+  },
+  "overview": {
+    "stat_card": {
+      "headers": {
+        "borrowing": "Borrowing",
+        "lending": "Lending"
+      },
+      "buttons": {
+        "details": "Details"
+      }
+    },
+    "details_dialog": {
+      "subtitle": "Protocol asset details"
     }
   },
   "upgrade_row": {
