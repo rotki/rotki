@@ -48,6 +48,14 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('cUSDT'): Asset('USDT'),
     Asset('cWBTC'): Asset('WBTC'),
     Asset('cZRX'): Asset('ZRX'),
+    Asset('ADADOWN'): Asset('USDT'),
+    Asset('ADAUP'): Asset('USDT'),
+    Asset('BTCDOWN'): Asset('USDT'),
+    Asset('BTCUP'): Asset('USDT'),
+    Asset('ETHDOWN'): Asset('USDT'),
+    Asset('ETHUP'): Asset('USDT'),
+    Asset('LINKDOWN'): Asset('USDT'),
+    Asset('LINKUP'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

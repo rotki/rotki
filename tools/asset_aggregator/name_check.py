@@ -5,6 +5,14 @@ from asset_aggregator.utils import choose_multiple
 
 # For assets we support but no API has names for. We manually input the names then.
 MANUALLY_CHECKED_NAMES = {
+    'ADADOWN': 'Binance leveraged token ADADOWN',
+    'ADAUP': 'Binance leveraged token ADAUP',
+    'BTCDOWN': 'Binance leveraged token BTCDOWN',
+    'BTCUP': 'Binance leveraged token BTCUP',
+    'ETHDOWN': 'Binance leveraged token ETHDOWN',
+    'ETHUP': 'Binance leveraged token ETHUP',
+    'LINKDOWN': 'Binance leveraged token LINKDOWN',
+    'LINKUP': 'Binance leveraged token LINKUP',
     'AMIS': 'Amis',
     'AVA-2': 'Avalon',
     'BITCAR': 'BitCar',
