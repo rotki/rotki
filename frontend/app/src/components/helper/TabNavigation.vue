@@ -5,7 +5,7 @@
     height="36px"
     hide-slider
     active-class="tab-navigation__tabs__tab--active"
-    class="tab-navigation__tabs py-6 mb-10"
+    class="tab-navigation__tabs py-6"
   >
     <v-tab
       v-for="tab in tabContents"
@@ -67,7 +67,7 @@ export default class TabNavigation extends Vue {
     }
 
     &__tab-item {
-      margin-top: 60px;
+      margin-top: 50px;
     }
 
     &__tab {
