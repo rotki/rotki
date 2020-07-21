@@ -1521,13 +1521,14 @@ class RestAPI():
         )
 
     @require_premium_user(active_check=False)
-    def get_aave_history(self, async_query: bool) -> Response:
+    def get_aave_history(self, async_query: bool, reset_db_data: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
             module='aave',
             method='get_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.accounts.eth,
+            reset_db_data=reset_db_data,
         )
 
     def _watcher_query(

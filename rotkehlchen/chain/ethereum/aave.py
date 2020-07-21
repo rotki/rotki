@@ -199,9 +199,14 @@ class Aave(EthereumModule):
     def get_history(
             self,
             addresses: List[ChecksumEthAddress],
+            reset_db_data: bool,
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         result = {}
         latest_block = self.ethereum.get_latest_block_number()
+
+        if reset_db_data is True:
+            self.database.delete_aave_data()
+
         for address in addresses:
             last_query = self.database.get_used_query_range(f'aave_events_{address}')
             history_results = self.get_history_for_address(
