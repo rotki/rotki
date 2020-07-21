@@ -450,6 +450,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
               name: protocol,
               icon: entry.protocol.icon
             },
+            assets: [],
             borrowingUrl: '/defi/borrowing?protocol=aave',
             lendingUrl: '/defi/lending?protocol=aave',
             totalCollateralUsd,
@@ -466,6 +467,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
               tokenName: entry.baseBalance.tokenName,
               tokenSymbol: entry.baseBalance.tokenSymbol
             },
+            assets: [],
             totalCollateralUsd: Zero,
             totalDebtUsd: Zero,
             totalLendingDepositUsd: Zero
@@ -476,6 +478,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         if (entry.balanceType === 'Asset') {
           const previousBalance = summary[protocol].balanceUsd ?? Zero;
           summary[protocol].balanceUsd = previousBalance.plus(balance.usdValue);
+          summary[protocol].assets.push(entry.baseBalance);
         }
       }
     }
@@ -487,6 +490,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         name: 'makerdao',
         icon: ''
       },
+      assets: [],
       borrowingUrl: '/defi/borrowing?protocol=makerdao',
       lendingUrl: '/defi/lending?protocol=makerdao',
       totalCollateralUsd,

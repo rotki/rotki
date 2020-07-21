@@ -206,6 +206,7 @@ export interface TokenInfo {
 export interface DefiProtocolSummary {
   readonly protocol: DefiProtocolInfo;
   readonly balanceUsd?: BigNumber;
+  readonly assets: DefiAsset[];
   readonly tokenInfo?: TokenInfo;
   readonly lendingUrl?: string;
   readonly borrowingUrl?: string;
