@@ -28,7 +28,7 @@
         prepend-icon="fa-key"
         :type="showKey ? 'text' : 'password'"
         :rules="apiKeyRules"
-        label="Rotkehlchen API Key"
+        label="Rotki API Key"
         @input="apiKeyChanged"
         @click:append="showKey = !showKey"
       ></v-text-field>
@@ -39,7 +39,7 @@
         :append-icon="showSecret ? 'fa-eye' : 'fa-eye-slash'"
         prepend-icon="fa-user-secret"
         :type="showSecret ? 'text' : 'password'"
-        label="Rotkehlchen API Secret"
+        label="Rotki API Secret"
         :rules="apiSecretRules"
         @input="apiSecretChanged"
         @click:append="showSecret = !showSecret"

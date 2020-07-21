@@ -39,7 +39,7 @@
             ></v-text-field>
             <div v-if="premium" class="premium-settings__premium-active">
               <v-icon color="success">fa-check-circle</v-icon>
-              <div>Rotkehlchen Premium is active</div>
+              <div>Rotki Premium is active</div>
             </div>
           </v-card-text>
           <v-card-actions>
@@ -76,7 +76,7 @@
               v-if="premium && !edit"
               v-model="sync"
               class="premium-settings__sync"
-              label="Allow data sync with Rotkehlchen Server"
+              label="Allow data sync with Rotki Server"
               @change="onSyncChange()"
             ></v-switch>
           </v-card-actions>
