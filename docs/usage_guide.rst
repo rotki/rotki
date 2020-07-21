@@ -212,6 +212,8 @@ To manage Accounts & Balances (Blockchain Balances, Exchange Balances, and Manua
    :alt: Accounts & Balances page
    :align: center
 
+
+
 Adding Fiat Balances
 =====================
 
@@ -270,6 +272,16 @@ In order to add a token to the tracked tokens start typing its name and the auto
 In order to stop tracking a token simply click the [X] next to the token's name from the list of owned tokens.
 
 All account balances will be updated after addition or removal of tokens.
+
+Checking Exchange Balances
+===========================
+
+You can check all of the asset balances that you have in each connected exchange in the "Exchange Balances" sub-page. Clicking the large "+" icon takes you to the API Keys page where you can manage your exchange connections ( see `Adding an exchange`_).
+
+.. image:: images/sc_exchange_balances.png
+   :alt: Exchange Balance
+   :align: center
+
 
 Adding/Editing Labels and tags
 ==============================

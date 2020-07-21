@@ -19,7 +19,7 @@
           </div>
           <div v-if="exchanges.length < 1">
             <v-card-actions>
-              <v-btn text color="primary" to="/settings/api-keys">
+              <v-btn text color="primary" to="/settings/api-keys/exchanges">
                 Add an exchange
               </v-btn>
             </v-card-actions>

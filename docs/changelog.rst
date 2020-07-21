@@ -3,6 +3,8 @@ Changelog
 =========
 
 * :feature: `1160` The Accounts & Balances page layout has been updated to increase usability. It is now split across three sub-pages: Blockchain Balances, Exchange Balances, Manual Balances (includes Fiat Balances). Exchange Balances is a new page where you will be able to see all of your asset balances for each connected exchange (previously this was only accessible from the Dashboard by clicking on an exchange). 
+* :bug: `1140` The Accounts column in "Blockhain Balances" is now correctly sorted by label (if it exists) or the account address.
+* :bug: `1154` Tag filtering in "Manual Balances" within Accounts & Balances now works correctly if any balances do not have any tags assigned.
 * :bug: `1155` Fix the cryptocompate price queries of LUNA Terra
 * :bug: `1151` Fix for bittrex users so that if bittrex returns dates without a millisecond component Rotki can still parse them properly.
 * :feature: `1105` Rotki now uses a standard compliant directory per OS to store user data. If the directory does not exist it is created and at the same time the old directory is migrated by copying it to the new one. The new directories per OS are:
