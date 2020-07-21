@@ -271,13 +271,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
-
-    await Promise.all([
-      dispatch('fetchDefiBalances'),
-      dispatch('fetchDSRBalances'),
-      dispatch('fetchAaveBalances'),
-      dispatch('fetchMakerDAOVaults')
-    ]);
+    commit('defiStatus', refreshing ? Status.REFRESHING : Status.LOADING);
+    await dispatch('fetchDefiBalances');
+    commit('defiStatus', Status.LOADED);
+    await dispatch('fetchAaveBalances');
+    await dispatch('fetchDSRBalances');
+    await dispatch('fetchMakerDAOVaults');
 
     commit('status', Status.LOADED);
   },

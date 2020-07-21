@@ -4,6 +4,7 @@ import { Zero } from '@/utils/bignumbers';
 
 export const defaultState = (): DefiState => ({
   status: Status.NONE,
+  defiStatus: Status.NONE,
   lendingHistoryStatus: Status.NONE,
   borrowingHistoryStatus: Status.NONE,
   dsrHistory: {},
