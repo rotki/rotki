@@ -116,6 +116,7 @@ export interface SettingsPayload {
   include_crypto2crypto: boolean;
   taxfree_after_period: number;
   kraken_account_type: string;
+  premium_should_sync: boolean;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';
