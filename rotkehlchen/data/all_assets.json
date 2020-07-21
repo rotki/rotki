@@ -134,6 +134,18 @@
         "symbol": "ADA",
         "type": "own chain"
     },
+    "ADADOWN": {
+        "name": "Binance leveraged token ADADOWN",
+        "started": 1594771200,
+        "symbol": "ADADOWN",
+        "type": "own chain"
+    },
+    "ADAUP": {
+        "name": "Binance leveraged token ADAUP",
+        "started": 1594771200,
+        "symbol": "ADAUP",
+        "type": "own chain"
+    },
     "ADB": {
         "ethereum_address": "0x2baac9330Cf9aC479D819195794d79AD0c7616e3",
         "ethereum_token_decimals": 18,
@@ -1417,6 +1429,12 @@
         "symbol": "BTCD",
         "type": "own chain"
     },
+    "BTCDOWN": {
+        "name": "Binance leveraged token BTCDOWN",
+        "started": 1595367054,
+        "symbol": "BTCDOWN",
+        "type": "own chain"
+    },
     "BTCE": {
         "ethereum_address": "0x0886949c1b8C412860c4264Ceb8083d1365e86CF",
         "ethereum_token_decimals": 8,
@@ -1453,6 +1471,12 @@
         "name": "Bitcoin Scrypt",
         "started": 1378598400,
         "symbol": "BTCS",
+        "type": "own chain"
+    },
+    "BTCUP": {
+        "name": "Binance leveraged token BTCUP",
+        "started": 1595367054,
+        "symbol": "BTCUP",
         "type": "own chain"
     },
     "BTG": {
@@ -3453,6 +3477,12 @@
         "symbol": "ETHD",
         "type": "ethereum token"
     },
+    "ETHDOWN": {
+        "name": "Binance leveraged token ETHDOWN",
+        "started": 1594771200,
+        "symbol": "ETHDOWN",
+        "type": "own chain"
+    },
     "ETHOS": {
         "ethereum_address": "0x5Af2Be193a6ABCa9c8817001F45744777Db30756",
         "ethereum_token_decimals": 8,
@@ -3460,6 +3490,12 @@
         "started": 1498608000,
         "symbol": "ETHOS",
         "type": "ethereum token"
+    },
+    "ETHUP": {
+        "name": "Binance leveraged token ETHUP",
+        "started": 1594771200,
+        "symbol": "ETHUP",
+        "type": "own chain"
     },
     "ETK": {
         "ethereum_address": "0x3c4a3ffd813a107febd57B2f01BC344264D90FdE",
@@ -5336,6 +5372,18 @@
         "started": 1505520000,
         "symbol": "LINK",
         "type": "ethereum token"
+    },
+    "LINKDOWN": {
+        "name": "Binance leveraged token LINKDOWN",
+        "started": 1594771200,
+        "symbol": "LINKDOWN",
+        "type": "own chain"
+    },
+    "LINKUP": {
+        "name": "Binance leveraged token LINKUP",
+        "started": 1594771200,
+        "symbol": "LINKUP",
+        "type": "own chain"
     },
     "LIVE": {
         "active": false,

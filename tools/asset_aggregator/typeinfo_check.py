@@ -2,6 +2,14 @@ import sys
 from typing import Any, Dict
 
 MANUALLY_CHECKED_TYPES = {
+    'ADADOWN': 'own chain',
+    'ADAUP': 'own chain',
+    'BTCDOWN': 'own chain',
+    'BTCUP': 'own chain',
+    'ETHDOWN': 'own chain',
+    'ETHUP': 'own chain',
+    'LINKDOWN': 'own chain',
+    'LINKUP': 'own chain',
     'AMIS': 'ethereum token',
     'AOA': 'ethereum token',
     'AVA-2': 'ethereum token',

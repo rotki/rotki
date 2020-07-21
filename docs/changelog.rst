@@ -44,6 +44,14 @@ Changelog
   - `ALQO (ALQO) <https://coinmarketcap.com/currencies/alqo/>`__
   - `Solana (SOL) <https://coinmarketcap.com/currencies/solana/>`__
   - `Harmony (ONE) <https://coinmarketcap.com/currencies/harmony/>`__
+  - `Binance leveraged token ADAUP (ADAUP) <https://www.cryptocompare.com/coins/adaup/overview>`__
+  - `Binance leveraged token ADADOWN (ADADOWN) <https://www.cryptocompare.com/coins/adadown/overview>`__
+  - `Binance leveraged token BTCUP (BTCUP) <https://www.cryptocompare.com/coins/btcup/overview>`__
+  - `Binance leveraged token BTCDOWN (BTCDOWN) <https://www.cryptocompare.com/coins/btcdown/overview>`__
+  - `Binance leveraged token ETHUP (ETHUP) <https://www.cryptocompare.com/coins/ethup/overview>`__
+  - `Binance leveraged token ETHDOWN (ETHDOWN) <https://www.cryptocompare.com/coins/btcdown/overview>`__
+  - `Binance leveraged token LINKUP (LINKUP) <https://www.cryptocompare.com/coins/linkup/overview>`__
+  - `Binance leveraged token LINKDOWN (LINKDOWN) <https://www.cryptocompare.com/coins/linkdown/overview>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
