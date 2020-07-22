@@ -5766,6 +5766,12 @@
         "symbol": "MDT",
         "type": "ethereum token"
     },
+    "ME": {
+        "name": "All.me",
+        "started": 1514332800,
+        "symbol": "ME",
+        "type": "own chain"
+    },
     "MEC": {
         "name": "Megacoin",
         "started": 1369785600,

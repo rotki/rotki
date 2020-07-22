@@ -481,6 +481,9 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Musiconomi (https://coinmarketcap.com/currencies/musiconomi/)
     # is not in coinmarketcap but is in cryptocompare
     'MCI',
+    # All.me (https://www.cryptocompare.com/coins/me/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'ME',
     # Meshbox (https://coinlib.io/coin/MESH/MeshBox)
     # is not in coinmarketcap but is in paprika
     'MESH',

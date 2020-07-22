@@ -79,6 +79,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'LTBC',
     'LTCX',
     'MCN',
+    'ME',
     'MMC',
     'MMNXT',
     'MMXIV',
