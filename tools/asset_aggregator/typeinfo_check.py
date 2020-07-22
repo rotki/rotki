@@ -72,6 +72,7 @@ MANUALLY_CHECKED_TYPES = {
     'LCT-2': 'ethereum token',
     'LGR': 'ethereum token',
     'LOON': 'ethereum token',
+    'LUCY': 'own chain',
     'ME': 'own chain',
     'MILC': 'ethereum token',
     'MNT': 'ethereum token',

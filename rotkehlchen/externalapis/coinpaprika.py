@@ -79,6 +79,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'LOON',
     'LTBC',
     'LTCX',
+    'LUCY',
     'MCN',
     'ME',
     'MMC',

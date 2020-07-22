@@ -65,6 +65,7 @@ Changelog
   - `Kadena (KDA) <https://coinmarketcap.com/currencies/kadena/>`__
   - `All.me (ME) <https://www.cryptocompare.com/coins/me/overview>`__
   - `Dawn protocol (DAWN) <https://coinmarketcap.com/currencies/dawn-protocol/>`__
+  - `Lucy (LUCY) <https://coinmarketcap.com/currencies/lucy/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
