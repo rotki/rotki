@@ -88,6 +88,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'SPA',
     'SQL',
     'SSD',
+    'STMX',
     'SWARM',  # Swarmcoin  https://coinmarketcap.com/currencies/swarm/
     'SYNC',
     'TRXBEAR',  # The 3x TRX short
