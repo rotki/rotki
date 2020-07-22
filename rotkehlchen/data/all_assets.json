@@ -7105,7 +7105,15 @@
         "ethereum_address": "0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD",
         "ethereum_token_decimals": 18,
         "name": "pNetwork Token",
-        "started": 1592352000,
+        "started": 1592411070,
+        "symbol": "PNT",
+        "type": "ethereum token"
+    },
+    "PNT-2": {
+        "ethereum_address": "0x53066cdDBc0099eb6c96785d9b3DF2AAeEDE5DA3",
+        "ethereum_token_decimals": 18,
+        "name": "Penta Network Token",
+        "started": 1519533409,
         "symbol": "PNT",
         "type": "ethereum token"
     },
