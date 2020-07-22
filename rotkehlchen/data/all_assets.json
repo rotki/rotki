@@ -1678,6 +1678,14 @@
         "symbol": "BZNT",
         "type": "ethereum token"
     },
+    "BZRX": {
+        "ethereum_address": "0x56d811088235F11C8920698a204A5010a788f4b3",
+        "ethereum_token_decimals": 18,
+        "name": "bZx Protocol",
+        "started": 1594509320,
+        "symbol": "BZRX",
+        "type": "ethereum token"
+    },
     "C2": {
         "name": "Coin2.1",
         "started": 1399334400,
