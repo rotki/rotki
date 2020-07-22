@@ -293,6 +293,9 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # ClearingHouse. No data found except from here:
     # https://coinmarketcap.com/currencies/clearinghouse/
     'XCH',
+    # Filecoin IOU. No data found for this except from in poloniex.
+    # As of 22/07/2020
+    'XFIL',
     # HonorCoin. No data found except from here:
     # https://bitcointalk.org/index.php?topic=639043.0
     'XHC',

@@ -10007,6 +10007,12 @@
         "symbol": "WRC",
         "type": "ethereum token"
     },
+    "WRX": {
+        "name": "WazirX",
+        "started": 1581023053,
+        "symbol": "WRX",
+        "type": "binance token"
+    },
     "WTC": {
         "ethereum_address": "0xb7cB1C96dB6B22b0D3d9536E0108d062BD488F74",
         "ethereum_token_decimals": 18,
