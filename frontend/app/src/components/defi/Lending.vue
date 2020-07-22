@@ -14,11 +14,12 @@
         >
           <confirmable-reset
             :loading="allLoading"
-            tooltip="Refreshes the data ignoring cached Aave historical entries"
+            tooltip="Refreshes the data overwriting cached Aave historical entries"
             @reset="reset()"
           >
-            This action will ignore any cached entries in Aave history and will
-            fetch everything again. Do you want to continue?
+            This action will overwrite any Aave history cached entries in the DB
+            and will fetch everything again. Depending on the number of accounts
+            it may take a long time. Are you sure you want to continue?
           </confirmable-reset>
         </refresh-header>
       </v-col>
