@@ -1491,6 +1491,14 @@
         "symbol": "BTCUP",
         "type": "own chain"
     },
+    "BTE": {
+        "ethereum_address": "0xfD62247943F94C3910A4922af2C62C2D3fAC2a8f",
+        "ethereum_token_decimals": 18,
+        "name": "BTEcoin",
+        "started": 1563370112,
+        "symbol": "BTE",
+        "type": "ethereum token"
+    },
     "BTG": {
         "name": "Bitcoin Gold",
         "started": 1508716800,

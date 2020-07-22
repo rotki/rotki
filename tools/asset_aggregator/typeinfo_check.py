@@ -27,6 +27,7 @@ MANUALLY_CHECKED_TYPES = {
     'BMT': 'ethereum token',
     'BOU': 'ethereum token',
     'BTCE': 'ethereum token',
+    'BTE': 'ethereum token',
     'BTH': 'ethereum token',
     'BTR-2': 'ethereum token',
     'CET-2': 'ethereum token',

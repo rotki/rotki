@@ -229,6 +229,9 @@ KNOWN_TO_MISS_FROM_CMC = (
     'RCN-2',
     # Blazecoin. Missing from API is https://coinmarketcap.com/currencies/blazecoin/
     'BLZ-2',
+    # BTE. Missing from coinmarketcap but is in cryptocompare:
+    # https://www.cryptocompare.com/coins/bte/overview
+    'BTE',
     # Bitgem. Missing from API is https://coinmarketcap.com/currencies/bitgem/
     'BTG-2',
     # Harvest Masternode coin. Missing from API but is in

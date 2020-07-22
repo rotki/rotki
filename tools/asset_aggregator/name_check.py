@@ -20,6 +20,7 @@ MANUALLY_CHECKED_NAMES = {
     'BMT': 'BMChain',
     'BOU': 'Boulle',
     'BTCE': 'EthereumBitcoin',
+    'BTE': 'BTEcoin',
     'BTH': 'Bytether',
     'BTR-2': 'Bither',
     'CET-2': 'DICE Money',
