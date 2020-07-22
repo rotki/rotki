@@ -2,9 +2,12 @@
   <h2 class="d-flex justify-space-between align-center">
     {{ title }}
 
-    <v-btn text fab depressed :disabled="loading" @click="refresh()">
-      <v-icon color="primary">fa-refresh</v-icon>
-    </v-btn>
+    <span>
+      <v-btn text fab depressed :disabled="loading" @click="refresh()">
+        <v-icon color="primary">fa-refresh</v-icon>
+      </v-btn>
+      <slot></slot>
+    </span>
   </h2>
 </template>
 

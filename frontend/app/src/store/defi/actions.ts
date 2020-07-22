@@ -191,18 +191,21 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
   },
 
-  async fetchAaveHistory({
-    commit,
-    rootState: { session },
-    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-  }) {
+  async fetchAaveHistory(
+    {
+      commit,
+      rootState: { session },
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+    },
+    reset?: boolean
+  ) {
     const taskType = TaskType.AAVE_HISTORY;
     if (!session?.premium || isTaskRunning(taskType)) {
       return;
     }
 
     try {
-      const { task_id } = await api.defi.fetchAaveHistory();
+      const { task_id } = await api.defi.fetchAaveHistory(reset);
       const task = createTask(task_id, taskType, {
         description: `Fetching Aave history`,
         ignoreResult: false
@@ -301,24 +304,24 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
   async fetchLendingHistory(
     { commit, dispatch, state, rootState: { session } },
-    refreshing: boolean = false
+    payload?: { refresh?: boolean; reset?: boolean }
   ) {
     if (
       !session?.premium ||
       state.lendingHistoryStatus === Status.LOADING ||
-      (state.lendingHistoryStatus === Status.LOADED && !refreshing)
+      (state.lendingHistoryStatus === Status.LOADED && !payload?.refresh)
     ) {
       return;
     }
 
     commit(
       'lendingHistoryStatus',
-      refreshing ? Status.REFRESHING : Status.LOADING
+      payload?.refresh ? Status.REFRESHING : Status.LOADING
     );
 
     await Promise.all([
       dispatch('fetchDSRHistory'),
-      dispatch('fetchAaveHistory')
+      dispatch('fetchAaveHistory', payload?.reset)
     ]);
 
     commit('lendingHistoryStatus', Status.LOADED);
