@@ -75,6 +75,7 @@ Changelog
   - `bZx protocol (BZRX) <https://coinmarketcap.com/currencies/bzx-protocol/>`__
   - `Meta (MTA) <https://coinmarketcap.com/currencies/meta/>`__
   - `WazirX token (WRX) <https://coinmarketcap.com/currencies/wazirx/>`__
+  - `xDAI STAKE (STAKE) <https://coinmarketcap.com/currencies/xdai/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
