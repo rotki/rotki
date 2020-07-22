@@ -5610,6 +5610,12 @@
         "symbol": "LUC",
         "type": "ethereum token"
     },
+    "LUCY": {
+        "name": "LUCY",
+        "started": 1584393554,
+        "symbol": "LUCY",
+        "type": "own chain"
+    },
     "LUN": {
         "ethereum_address": "0xfa05A73FfE78ef8f1a739473e462c54bae6567D9",
         "ethereum_token_decimals": 18,
