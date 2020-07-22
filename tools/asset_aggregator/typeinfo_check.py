@@ -14,6 +14,7 @@ MANUALLY_CHECKED_TYPES = {
     'AOA': 'ethereum token',
     'AR': 'own chain',
     'AVA-2': 'ethereum token',
+    'BAL': 'ethereum token',
     'BCHBEAR': 'ethereum token',
     'BCHBULL': 'ethereum token',
     'BEAR': 'ethereum token',
