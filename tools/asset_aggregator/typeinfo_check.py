@@ -83,6 +83,7 @@ MANUALLY_CHECKED_TYPES = {
     'MNTP': 'ethereum token',
     'MRP': 'ethereum token',
     'MRV': 'ethereum token',
+    'MTA': 'ethereum token',
     'NAC': 'ethereum token',
     'OAK': 'ethereum token',
     'OCC-2': 'ethereum token',

@@ -45,6 +45,7 @@ WORLD_TO_POLONIEX = {
     # CCN is CustomContractNetwork in Rotkehlchen but does not exist in Cryptocompare
     # Putting it as conversion to make sure we don't accidentally ask for wrong price
     'CCN': '',
+    'cUSDT': 'CUSDT',
     # Faircoin is known as FAIR outside of Poloniex. Seems to be the same as the
     # now delisted Poloniex's FAC if you look at the bitcointalk announcement
     # https://bitcointalk.org/index.php?topic=702675.0
