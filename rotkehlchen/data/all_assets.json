@@ -2584,6 +2584,14 @@
         "symbol": "DAV",
         "type": "ethereum token"
     },
+    "DAWN": {
+        "ethereum_address": "0x580c8520dEDA0a441522AEAe0f9F7A5f29629aFa",
+        "ethereum_token_decimals": 18,
+        "name": "Dawn Protocol",
+        "started": 1588282127,
+        "symbol": "DAWN",
+        "type": "ethereum token"
+    },
     "DAX": {
         "ethereum_address": "0x0B4BdC478791897274652DC15eF5C135cae61E60",
         "ethereum_token_decimals": 18,
