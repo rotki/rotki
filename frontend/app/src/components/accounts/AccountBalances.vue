@@ -157,12 +157,10 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import AccountForm from '@/components/accounts/AccountForm.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
-import AssetBalances from '@/components/settings/AssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
@@ -177,11 +175,9 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 @Component({
   components: {
     AmountDisplay,
-    AccountForm,
     TagFilter,
     TagIcon,
     AccountAssetBalances,
-    AssetBalances,
     ConfirmDialog
   },
   computed: {

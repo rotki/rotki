@@ -91,15 +91,13 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import CryptoIcon from '@/components/CryptoIcon.vue';
 import DefiAsset from '@/components/defi/DefiAsset.vue';
 import InfoRow from '@/components/defi/display/InfoRow.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import { DefiProtocolSummary } from '@/store/defi/types';
 
 @Component({
-  components: { DefiAsset, CryptoIcon, AmountDisplay, StatCard, InfoRow }
+  components: { DefiAsset, StatCard, InfoRow }
 })
 export default class Overview extends Vue {
   @Prop({ required: true })

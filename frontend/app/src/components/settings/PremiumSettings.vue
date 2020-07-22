@@ -100,7 +100,6 @@ import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Message } from '@/store/store';
 
 const { mapState } = createNamespacedHelpers('session');
@@ -108,7 +107,6 @@ const { mapState } = createNamespacedHelpers('session');
 @Component({
   components: {
     ConfirmDialog,
-    MessageDialog,
     BaseExternalLink
   },
   computed: mapState(['premium', 'premiumSync', 'username'])

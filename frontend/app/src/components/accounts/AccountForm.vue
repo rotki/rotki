@@ -38,7 +38,6 @@
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import TagInput from '@/components/inputs/TagInput.vue';
-import TagManager from '@/components/tags/TagManager.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
@@ -48,7 +47,7 @@ import { Account, Blockchain, SupportedBlockchains } from '@/typing/types';
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters } = createNamespacedHelpers('balances');
 @Component({
-  components: { TagManager, TagInput },
+  components: { TagInput },
   computed: {
     ...mapTaskGetters(['isTaskRunning']),
     ...mapGetters(['accountTags', 'accountLabel'])

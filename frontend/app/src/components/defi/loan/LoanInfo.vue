@@ -34,17 +34,12 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
 import LoanCollateral from '@/components/defi/loan/LoanCollateral.vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LoanLiquidation from '@/components/defi/loan/LoanLiquidation.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-import StatCard from '@/components/display/StatCard.vue';
-import HashLink from '@/components/helper/HashLink.vue';
-import PremiumLock from '@/components/helper/PremiumLock.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import { VaultEventsList } from '@/utils/premium';
 
@@ -54,12 +49,7 @@ import { VaultEventsList } from '@/utils/premium';
     LoanDebt,
     LoanHeader,
     LoanLiquidation,
-    BaseExternalLink,
     PremiumCard,
-    PremiumLock,
-    HashLink,
-    AmountDisplay,
-    StatCard,
     VaultEventsList
   },
   computed: {

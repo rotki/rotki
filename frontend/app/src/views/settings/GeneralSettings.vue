@@ -162,8 +162,6 @@
 <script lang="ts">
 import { Component, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { convertToGeneralSettings, findCurrency } from '@/data/converters';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
@@ -174,7 +172,7 @@ import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { MessageDialog, RevealableInput },
+  components: {},
   computed: {
     ...mapState(['generalSettings']),
     ...mapGetters(['currency'])

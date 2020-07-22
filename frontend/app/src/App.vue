@@ -73,7 +73,6 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapMutations, mapState } from 'vuex';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
@@ -96,7 +95,6 @@ import { Message } from '@/store/store';
     BalanceSavedIndicator,
     NodeStatusIndicator,
     MessageDialog,
-    ConfirmDialog,
     CurrencyDropDown,
     NavigationMenu,
     UserDropdown

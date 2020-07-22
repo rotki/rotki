@@ -32,7 +32,6 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import Generate from '@/components/taxreport/Generate.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
@@ -51,7 +50,6 @@ const { mapGetters: mapSessionGetters } = createNamespacedHelpers('session');
     ProgressScreen,
     TaxReportEvents,
     TaxReportOverview,
-    MessageDialog,
     Generate
   },
   computed: {

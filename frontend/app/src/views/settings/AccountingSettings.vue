@@ -120,10 +120,8 @@
 <script lang="ts">
 import { Component } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { Message } from '@/store/store';
-
 import { AccountingSettings } from '@/typing/types';
 import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 
@@ -131,7 +129,6 @@ const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
-    MessageDialog,
     AssetSelect
   },
   computed: mapState(['accountingSettings'])

@@ -11,22 +11,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import BlockchainBalances from '@/components/accounts/BlockchainBalances.vue';
-import FiatBalances from '@/components/accounts/FiatBalances.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
-import ExchangeSettings from '@/components/settings/api-keys/ExchangeSettings.vue';
-import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
-import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 
 @Component({
   components: {
-    BlockchainBalances,
-    FiatBalances,
-    ExchangeSettings,
-    ExternalServices,
-    PremiumSettings,
     TabNavigation
   }
 })

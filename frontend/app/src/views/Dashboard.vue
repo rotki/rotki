@@ -183,10 +183,8 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
-import CryptoIcon from '@/components/CryptoIcon.vue';
 import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceCardList.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
-import InformationBox from '@/components/dashboard/InformationBox.vue';
 import ManualBalanceCardList from '@/components/dashboard/ManualBalanceCardList.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import SummaryCard from '@/components/dashboard/SummaryCard.vue';
@@ -223,10 +221,8 @@ interface BlockchainBalances {
     AssetDetails,
     SummaryCard,
     ExchangeBox,
-    InformationBox,
     ManualBalanceCardList,
-    BlockchainBalanceCardList,
-    CryptoIcon
+    BlockchainBalanceCardList
   },
   computed: {
     ...mapTaskGetters(['isTaskRunning']),
