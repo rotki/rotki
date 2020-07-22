@@ -9345,11 +9345,6 @@
         "symbol": "TX",
         "type": "own chain"
     },
-    "UAH": {
-        "name": "Ukrainian Hryvnia",
-        "symbol": "UAH",
-        "type": "fiat"
-    },
     "UBQ": {
         "name": "Ubiq",
         "started": 1410125962,
