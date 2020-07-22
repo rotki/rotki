@@ -56,6 +56,7 @@ Changelog
   - `Everipedia (IQ) <https://coinmarketcap.com/currencies/everipedia/>`__
   - `IQ.Cash (IQ) <https://coinmarketcap.com/currencies/iqcash/>`__
   - `pNetwork Token (PNT) <https://coinmarketcap.com/currencies/pnetwork/>`__
+  - `Penta Network Token (PNT) <https://coinmarketcap.com/currencies/penta/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
