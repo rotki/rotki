@@ -71,6 +71,7 @@ Changelog
   - `King DAG (KDAG) <https://coinmarketcap.com/currencies/king-dag/>`__
   - `The Force Protocol (FOR) <https://coinmarketcap.com/currencies/the-force-protocol/>`__
   - `Balancer (BAL) <https://coinmarketcap.com/currencies/balancer/>`__
+  - `Bitchery (BCHC) <https://coinmarketcap.com/currencies/bitcherry/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
