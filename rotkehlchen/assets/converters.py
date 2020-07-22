@@ -325,6 +325,8 @@ UNSUPPORTED_POLONIEX_ASSETS = (
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
+    # 4ART, As of 22/07/2020 no data found outside of Bittrex
+    '4ART',
     # APIX, As of 19/12/2019 no data found outside of Bittrex
     # https://medium.com/apisplatform/apix-trading-open-on-bittrex-global-61653fa346fa
     'APIX',

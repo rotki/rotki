@@ -5095,6 +5095,12 @@
         "symbol": "KAVA",
         "type": "own chain"
     },
+    "KDA": {
+        "name": "Kadena",
+        "started": 1590931743,
+        "symbol": "KDA",
+        "type": "own chain"
+    },
     "KDC": {
         "active": false,
         "ended": 1539129600,
