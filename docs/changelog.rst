@@ -73,6 +73,7 @@ Changelog
   - `Balancer (BAL) <https://coinmarketcap.com/currencies/balancer/>`__
   - `Bitchery (BCHC) <https://coinmarketcap.com/currencies/bitcherry/>`__
   - `bZx protocol (BZRX) <https://coinmarketcap.com/currencies/bzx-protocol/>`__
+  - `Meta (MTA) <https://coinmarketcap.com/currencies/meta/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint

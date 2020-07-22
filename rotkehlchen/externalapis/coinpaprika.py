@@ -88,6 +88,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'MMC',
     'MMNXT',
     'MMXIV',
+    'MTA',
     'NAUT',
     'NRS',
     'NXTI',
