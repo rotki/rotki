@@ -420,7 +420,7 @@ class CSVExporter():
 
         paid_asset: Union[EmptyStr, Asset]
         received_asset: Union[EmptyStr, Asset]
-        if event.event_type == DefiEventType.DSR_LOAN_GAIN:
+        if event.event_type in (DefiEventType.DSR_LOAN_GAIN, DefiEventType.AAVE_LOAN_INTEREST):
             paid_in_profit_currency = ZERO
             paid_in_asset = ZERO
             paid_asset = S_EMPTYSTR

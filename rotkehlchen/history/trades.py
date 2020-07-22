@@ -1,14 +1,17 @@
 import logging
+from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_DAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import EthereumTransaction, Location, Timestamp
@@ -186,6 +189,37 @@ class TradesHistorian():
                         asset=A_USD,
                         amount=detail.total_liquidated_usd + detail.total_interest_owed,
                     ))
+
+        # include aave lending events
+        aave = self.chain_manager.aave
+        if aave is not None and has_premium:
+            mapping = aave.get_history(
+                addresses=self.chain_manager.accounts.eth,
+                reset_db_data=False,
+            )
+
+            now = ts_now()
+            for _, aave_history in mapping.items():
+                total_amount_per_token: Dict[Asset, FVal] = defaultdict(FVal)
+                for event in aave_history.events:
+                    if event.event_type == 'interest':
+                        defi_events.append(DefiEvent(
+                            timestamp=event.timestamp,
+                            event_type=DefiEventType.AAVE_LOAN_INTEREST,
+                            asset=event.asset,
+                            amount=event.value.amount,
+                        ))
+                        total_amount_per_token[event.asset] += event.value.amount
+
+                for token, balance in aave_history.total_earned.items():
+                    # Αdd an extra event per token per address for the remaining not paid amount
+                    if token in total_amount_per_token:
+                        defi_events.append(DefiEvent(
+                            timestamp=now,
+                            event_type=DefiEventType.AAVE_LOAN_INTEREST,
+                            asset=event.asset,
+                            amount=balance.amount - total_amount_per_token[token],
+                        ))
 
         history.sort(key=lambda trade: action_get_timestamp(trade))
         return (

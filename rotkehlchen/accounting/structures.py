@@ -14,6 +14,7 @@ class DefiEventType(Enum):
     MAKERDAO_VAULT_DEPOSIT = 1
     MAKERDAO_VAULT_WITHDRAWAL = 2
     MAKERDAO_VAULT_LOSS = 3
+    AAVE_LOAN_INTEREST = 4
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_LOAN_GAIN:
@@ -24,6 +25,8 @@ class DefiEventType(Enum):
             return "Makerdao vault withdrawal"
         elif self == DefiEventType.MAKERDAO_VAULT_LOSS:
             return "Makerdao vault loss"
+        elif self == DefiEventType.AAVE_LOAN_INTEREST:
+            return "Aave loan interest"
 
         raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
 

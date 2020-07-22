@@ -261,6 +261,10 @@ class Aave(EthereumModule):
         total_address_events = []
         total_earned_map = {}
         for token in tokens:
+            log.debug(
+                f'Querying aave events for {user_address} and token '
+                f'{token.identifier} with query_events={query_events}',
+            )
             events = []
             if given_from_block:
                 events.extend(self.database.get_aave_events(user_address, token))
@@ -312,11 +316,14 @@ class Aave(EthereumModule):
 
             # now update the DB with the recently queried events
             self.database.add_aave_events(user_address, new_events)
-            self.database.update_used_block_query_range(
-                name=f'aave_events_{user_address}',
-                from_block=AAVE_LENDING_POOL.deployed_block,
-                to_block=to_block,
-            )
+
+        # After all events have been queried then also update the query range.
+        # Even if no events are found for an address we need to remember the range
+        self.database.update_used_block_query_range(
+            name=f'aave_events_{user_address}',
+            from_block=AAVE_LENDING_POOL.deployed_block,
+            to_block=to_block,
+        )
 
         total_address_events.sort(key=lambda event: event.timestamp)
         return AaveHistory(events=total_address_events, total_earned=total_earned_map)
