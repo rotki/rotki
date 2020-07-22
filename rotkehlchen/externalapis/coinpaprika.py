@@ -373,6 +373,9 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen FORK is ForkCoin and FORK-2 is GastroAdvisor. For
     # coinpaprika only ForkCoin exists as FORK.
     'FORK': 'fork-forkcoin',
+    # For Rotkehlchen FOR is Force protocol. In paprika also force network
+    # exists but we don't yet support it
+    'FOR': 'for-force-protocol',
     # For Rotkehlchen FT is Fabric Token and FT-2 is FCoin
     'FT': 'ft-fabric-token',
     'FT-2': 'ft-fcoin-token',

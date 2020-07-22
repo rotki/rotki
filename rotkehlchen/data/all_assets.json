@@ -3892,6 +3892,14 @@
         "symbol": "FOOD",
         "type": "ethereum token"
     },
+    "FOR": {
+        "ethereum_address": "0x1FCdcE58959f536621d76f5b7FfB955baa5A672F",
+        "ethereum_token_decimals": 18,
+        "name": "The Force Protocol",
+        "started": 1534849129,
+        "symbol": "FOR",
+        "type": "ethereum token"
+    },
     "FORK": {
         "active": true,
         "name": "Forkcoin",
