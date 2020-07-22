@@ -1870,6 +1870,12 @@
         "symbol": "CEEK",
         "type": "ethereum token"
     },
+    "CELO": {
+        "name": "Celo",
+        "started": 1590115455,
+        "symbol": "CELO",
+        "type": "own chain"
+    },
     "CELR": {
         "ethereum_address": "0x4F9254C83EB525f9FCf346490bbb3ed28a81C667",
         "ethereum_token_decimals": 18,

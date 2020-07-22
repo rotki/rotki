@@ -31,6 +31,7 @@ MANUALLY_CHECKED_TYPES = {
     'BTR-2': 'ethereum token',
     'CET-2': 'ethereum token',
     'CFTY': 'ethereum token',
+    'CELO': 'own chain',
     'CGLD': 'own chain',
     'CNTM': 'ethereum token',
     'CTSI': 'ethereum token',
