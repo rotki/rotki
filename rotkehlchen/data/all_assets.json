@@ -897,6 +897,14 @@
         "symbol": "BCHBULL",
         "type": "ethereum token"
     },
+    "BCHC": {
+        "ethereum_address": "0x2ab05B915C30093679165bcdba9C26D8Cd8BeE99",
+        "ethereum_token_decimals": 18,
+        "name": "BitCherry",
+        "started": 1555983997,
+        "symbol": "BCHC",
+        "type": "ethereum token"
+    },
     "BCN": {
         "name": "Bytecoin",
         "started": 1341360000,
