@@ -2,6 +2,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+import gevent
+
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
@@ -310,8 +312,7 @@ class Accountant():
                 (
                     should_continue,
                     prev_time,
-                    count,
-                ) = self.process_action(action, end_ts, prev_time, count, db_settings)
+                ) = self.process_action(action, end_ts, prev_time, db_settings)
             except PriceQueryUnknownFromAsset as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
@@ -355,6 +356,13 @@ class Accountant():
             if not should_continue:
                 break
 
+            if count % 500 == 0:
+                # This loop can take a very long time depending on the amount of actions
+                # to process. We need to yield to other greenlets or else calls to the
+                # API may time out
+                gevent.sleep(0.5)
+            count += 1
+
         self.events.calculate_asset_details()
         Inquirer().save_historical_forex_data()
 
@@ -391,9 +399,8 @@ class Accountant():
             action: TaxableAction,
             end_ts: Timestamp,
             prev_time: Timestamp,
-            count: int,
             db_settings: DBSettings,
-    ) -> Tuple[bool, Timestamp, int]:
+    ) -> Tuple[bool, Timestamp]:
         """Processes each individual action and returns whether we should continue
         looping through the rest of the actions or not
 
@@ -414,7 +421,7 @@ class Accountant():
         prev_time = timestamp
 
         if timestamp > end_ts:
-            return False, prev_time, count
+            return False, prev_time
 
         self.currently_processing_timestamp = timestamp
 
@@ -427,19 +434,19 @@ class Accountant():
                 f'At history processing found trade with unknown asset {e.asset_name}. '
                 f'Ignoring the trade.',
             )
-            return True, prev_time, count
+            return True, prev_time
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
                 f'At history processing found trade with unsupported asset {e.asset_name}. '
                 f'Ignoring the trade.',
             )
-            return True, prev_time, count
+            return True, prev_time
         except DeserializationError:
             self.msg_aggregator.add_error(
                 'At history processing found trade with non string asset type. '
                 'Ignoring the trade.',
             )
-            return True, prev_time, count
+            return True, prev_time
 
         if asset1 in ignored_assets or asset2 in ignored_assets:
             log.debug(
@@ -449,7 +456,7 @@ class Accountant():
                 asset2=asset2,
             )
 
-            return True, prev_time, count
+            return True, prev_time
 
         if action_type == 'loan':
             action = cast(Loan, action)
@@ -461,23 +468,23 @@ class Accountant():
                 open_time=action.open_time,
                 close_time=timestamp,
             )
-            return True, prev_time, count
+            return True, prev_time
         elif action_type == 'asset_movement':
             action = cast(AssetMovement, action)
             self.add_asset_movement_to_events(action)
-            return True, prev_time, count
+            return True, prev_time
         elif action_type == 'margin_position':
             action = cast(MarginPosition, action)
             self.events.add_margin_position(margin=action)
-            return True, prev_time, count
+            return True, prev_time
         elif action_type == 'ethereum_transaction':
             action = cast(EthereumTransaction, action)
             self.account_for_gas_costs(action, db_settings.include_gas_costs)
-            return True, prev_time, count
+            return True, prev_time
         elif action_type == 'defi_event':
             action = cast(DefiEvent, action)
             self.events.add_defi_event(action)
-            return True, prev_time, count
+            return True, prev_time
 
         # if we get here it's a trade
         trade = cast(Trade, action)
@@ -530,7 +537,7 @@ class Accountant():
             # Should never happen
             raise AssertionError(f'Unknown trade type "{trade.trade_type}" encountered')
 
-        return True, prev_time, count
+        return True, prev_time
 
     def get_calculated_asset_amount(self, asset: Asset) -> Optional[FVal]:
         """Get the amount of asset accounting has calculated we should have after
