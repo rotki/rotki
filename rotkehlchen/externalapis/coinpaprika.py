@@ -135,6 +135,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'HKG',
     'JOY',
     'ITM',
+    'KDAG',
     'KUE',
     'LGR',
     'MILC',

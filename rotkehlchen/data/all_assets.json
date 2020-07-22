@@ -5117,6 +5117,14 @@
         "symbol": "KDA",
         "type": "own chain"
     },
+    "KDAG": {
+        "ethereum_address": "0x95E40E065AFB3059dcabe4aaf404c1F92756603a",
+        "ethereum_token_decimals": 18,
+        "name": "King DAG",
+        "started": 1579267018,
+        "symbol": "KDAG",
+        "type": "ethereum token"
+    },
     "KDC": {
         "active": false,
         "ended": 1539129600,
