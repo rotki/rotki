@@ -715,6 +715,14 @@
         "symbol": "B2BX",
         "type": "ethereum token"
     },
+    "BAL": {
+        "ethereum_address": "0xba100000625a3754423978a60c9317c58a424e3D",
+        "ethereum_token_decimals": 18,
+        "name": "Balancer",
+        "started": 1592616779,
+        "symbol": "BAL",
+        "type": "ethereum token"
+    },
     "BANCA": {
         "ethereum_address": "0x998b3B82bC9dBA173990Be7afb772788B5aCB8Bd",
         "ethereum_token_decimals": 18,
