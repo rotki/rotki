@@ -849,7 +849,7 @@ class TaxableEvents():
         )
         rate = self.get_rate_in_profit_currency(event.asset, event.timestamp)
         profit_loss = event.amount * rate
-        if event.event_type == DefiEventType.DSR_LOAN_GAIN:
+        if event.event_type in (DefiEventType.DSR_LOAN_GAIN, DefiEventType.AAVE_LOAN_INTEREST):
             self.defi_profit_loss += profit_loss
         elif event.event_type == DefiEventType.MAKERDAO_VAULT_LOSS:
             self.defi_profit_loss -= profit_loss
