@@ -11,7 +11,16 @@
           :loading="allLoading"
           title="Lending"
           @refresh="refresh()"
-        />
+        >
+          <confirmable-reset
+            :loading="allLoading"
+            tooltip="Refreshes the data ignoring cached Aave historical entries"
+            @reset="reset()"
+          >
+            This action will ignore any cached entries in Aave history and will
+            fetch everything again. Do you want to continue?
+          </confirmable-reset>
+        </refresh-header>
       </v-col>
     </v-row>
     <v-row>
@@ -117,6 +126,7 @@ import StatCard from '@/components/display/StatCard.vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -129,6 +139,7 @@ import { LendingHistory } from '@/utils/premium';
 
 @Component({
   components: {
+    ConfirmableReset,
     RefreshHeader,
     LendingAssetTable,
     DefiProtocolSelector,
@@ -177,7 +188,10 @@ export default class Lending extends Vue {
     addresses: string[]
   ) => string;
   protocol: SupportedDefiProtocols | null = null;
-  fetchLendingHistory!: (refresh: boolean) => Promise<void>;
+  fetchLendingHistory!: (payload?: {
+    refresh?: boolean;
+    reset?: boolean;
+  }) => Promise<void>;
   fetchLending!: (refresh: boolean) => Promise<void>;
   lendingHistoryStatus!: Status;
   status!: Status;
@@ -192,7 +206,17 @@ export default class Lending extends Vue {
 
   async refresh() {
     await this.fetchLending(true);
-    await this.fetchLendingHistory(true);
+    await this.fetchLendingHistory({
+      refresh: true
+    });
+  }
+
+  async reset() {
+    await this.fetchLending(true);
+    await this.fetchLendingHistory({
+      refresh: true,
+      reset: true
+    });
   }
 
   async created() {
@@ -203,7 +227,7 @@ export default class Lending extends Vue {
     if (protocolIndex >= 0) {
       this.protocol = DEFI_PROTOCOLS[protocolIndex];
     }
-    await this.fetchLendingHistory(false);
+    await this.fetchLendingHistory();
   }
 
   get selectedAddresses(): string[] {

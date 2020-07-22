@@ -80,12 +80,13 @@ export class DefiApi {
       .then(handleResponse);
   }
 
-  async fetchAaveHistory(): Promise<AsyncQuery> {
+  async fetchAaveHistory(reset?: boolean): Promise<AsyncQuery> {
     return this.axios
       .get<ActionResult<AsyncQuery>>('/blockchains/ETH/modules/aave/history', {
         validateStatus: fetchWithExternalService,
         params: {
-          async_query: true
+          async_query: true,
+          reset_db_data: reset
         }
       })
       .then(handleResponse);
