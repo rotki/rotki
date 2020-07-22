@@ -12,6 +12,7 @@ MANUALLY_CHECKED_TYPES = {
     'LINKUP': 'own chain',
     'AMIS': 'ethereum token',
     'AOA': 'ethereum token',
+    'AR': 'own chain',
     'AVA-2': 'ethereum token',
     'BCHBEAR': 'ethereum token',
     'BCHBULL': 'ethereum token',

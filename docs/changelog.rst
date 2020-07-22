@@ -59,6 +59,7 @@ Changelog
   - `pNetwork Token (PNT) <https://coinmarketcap.com/currencies/pnetwork/>`__
   - `Penta Network Token (PNT) <https://coinmarketcap.com/currencies/penta/>`__
   - `StormX (STMX) <https://coinmarketcap.com/currencies/stormx/>`__
+  - `Arweave (AR) <https://coinmarketcap.com/currencies/arweave/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
