@@ -77,6 +77,7 @@ Changelog
   - `WazirX token (WRX) <https://coinmarketcap.com/currencies/wazirx/>`__
   - `xDAI STAKE (STAKE) <https://coinmarketcap.com/currencies/xdai/>`__
   - `yearn.finance (YFI) <https://coinmarketcap.com/currencies/yearn-finance/>`__
+  - `MimbleWimbleCoin (MWC) <https://coinmarketcap.com/currencies/mimblewimblecoin/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint

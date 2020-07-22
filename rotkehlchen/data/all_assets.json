@@ -6254,6 +6254,12 @@
         "symbol": "MWAT",
         "type": "ethereum token"
     },
+    "MWC": {
+        "name": "MimbleWimbleCoin",
+        "started": 1574121600,
+        "symbol": "MWC",
+        "type": "own chain"
+    },
     "MYST": {
         "ethereum_address": "0xa645264C5603E96c3b0B078cdab68733794B0A71",
         "ethereum_token_decimals": 8,
@@ -8591,14 +8597,6 @@
         "symbol": "SSP",
         "type": "ethereum token"
     },
-    "STAKE": {
-        "ethereum_address": "0x0Ae055097C6d159879521C384F1D2123D1f195e6",
-        "ethereum_token_decimals": 18,
-        "name": "xDAI STAKE",
-        "started": 1586959457,
-        "symbol": "STAKE",
-        "type": "ethereum token"
-    },
     "STAC": {
         "ethereum_address": "0x9a005c9a89BD72a4Bd27721E7a09A3c11D2b03C4",
         "ethereum_token_decimals": 18,
@@ -8613,6 +8611,14 @@
         "name": "STACS",
         "started": 1542383860,
         "symbol": "STACS",
+        "type": "ethereum token"
+    },
+    "STAKE": {
+        "ethereum_address": "0x0Ae055097C6d159879521C384F1D2123D1f195e6",
+        "ethereum_token_decimals": 18,
+        "name": "xDAI STAKE",
+        "started": 1586959457,
+        "symbol": "STAKE",
         "type": "ethereum token"
     },
     "STAR": {
