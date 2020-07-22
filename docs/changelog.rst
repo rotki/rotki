@@ -76,6 +76,7 @@ Changelog
   - `Meta (MTA) <https://coinmarketcap.com/currencies/meta/>`__
   - `WazirX token (WRX) <https://coinmarketcap.com/currencies/wazirx/>`__
   - `xDAI STAKE (STAKE) <https://coinmarketcap.com/currencies/xdai/>`__
+  - `yearn.finance (YFI) <https://coinmarketcap.com/currencies/yearn-finance/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint

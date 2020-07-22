@@ -57,6 +57,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('LINKDOWN'): Asset('USDT'),
     Asset('LINKUP'): Asset('USDT'),
     Asset('STAKE'): Asset('USDT'),
+    Asset('YFI'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 
