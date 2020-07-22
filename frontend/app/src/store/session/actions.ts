@@ -101,7 +101,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const {
         last_balance_save,
         eth_node_connection,
-        history_process_current_ts
+        history_process_current_ts,
+        history_process_start_ts
       } = result;
 
       commit('updateAccountingSetting', {
@@ -109,10 +110,15 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       });
       commit('nodeConnection', eth_node_connection);
 
-      if (history_process_current_ts > 0) {
-        commit('reports/historyProcess', history_process_current_ts, {
-          root: true
-        });
+        if (history_process_current_ts > 0) {
+            console.log("Commiting history_process_current_ts: " + history_process_current_ts + " history_process_start_ts: " + history_process_start_ts);
+        commit(
+          'reports/historyProcess',
+          { history_process_start_ts, history_process_current_ts },
+          {
+            root: true
+          }
+        );
       }
     } catch (e) {
       notify(`Error at periodic client query: ${e}`, 'Periodic client query');
