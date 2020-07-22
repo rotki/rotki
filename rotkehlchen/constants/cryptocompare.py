@@ -281,6 +281,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'TCH-2': 'TCH',
     # For Rotkehlchen TEAM is TokenStars Team but cryptocompare has it as TEAMT
     'TEAM': 'TEAMT',
+    # For Rotkehlchen VLX is Velas but it's VELAS in cryptocompare
+    'VLX': 'VELAS',
     # For Rotkehlchen VSF is Verisafe but it's CPLO in cryptocompare (the old name)
     'VSF': 'CPLO',
     # For Rotkehlchen WEB is Webcoin and WEB-2 Webchain, but in cryptocompare
