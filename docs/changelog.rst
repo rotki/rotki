@@ -63,6 +63,7 @@ Changelog
   - `Celo (CELO) <https://coinmarketcap.com/currencies/celo/>`__
   - `Velas (VLX) <https://coinmarketcap.com/currencies/velas/>`__
   - `Kadena (KDA) <https://coinmarketcap.com/currencies/kadena/>`__
+  - `All.me (ME) <https://www.cryptocompare.com/coins/me/overview>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
