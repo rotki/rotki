@@ -3,9 +3,22 @@
     {{ title }}
 
     <span>
-      <v-btn text fab depressed :disabled="loading" @click="refresh()">
-        <v-icon color="primary">fa-refresh</v-icon>
-      </v-btn>
+      <v-tooltip top>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            text
+            fab
+            depressed
+            :disabled="loading"
+            v-bind="attrs"
+            @click="refresh()"
+            v-on="on"
+          >
+            <v-icon color="primary">fa-refresh</v-icon>
+          </v-btn>
+        </template>
+        <span>Refreshes the {{ title.toLocaleLowerCase() }} data</span>
+      </v-tooltip>
       <slot></slot>
     </span>
   </h2>
