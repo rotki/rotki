@@ -30,10 +30,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
-import InfoRow from '@/components/defi/display/InfoRow.vue';
 import Overview from '@/components/defi/Overview.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import StatCard from '@/components/display/StatCard.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { Status } from '@/store/defi/status';
@@ -43,10 +40,7 @@ import { DefiProtocolSummary } from '@/store/defi/types';
   components: {
     ProgressScreen,
     Overview,
-    RefreshHeader,
-    InfoRow,
-    StatCard,
-    AmountDisplay
+    RefreshHeader
   },
   computed: {
     ...mapState('defi', ['status', 'defiStatus']),

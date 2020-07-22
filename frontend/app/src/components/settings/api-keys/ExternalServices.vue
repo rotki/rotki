@@ -77,14 +77,13 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { ExternalServiceKeys } from '@/model/action-result';
 import { Message } from '@/store/store';
 import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 
 @Component({
-  components: { ServiceKey, ConfirmDialog, RevealableInput }
+  components: { ServiceKey, ConfirmDialog }
 })
 export default class ExternalServices extends Vue {
   etherscanKey: string = '';

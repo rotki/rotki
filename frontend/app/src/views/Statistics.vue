@@ -29,13 +29,12 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { PremiumStatistics } from '@/utils/premium';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { MessageDialog, PremiumStatistics, BaseExternalLink },
+  components: { PremiumStatistics, BaseExternalLink },
   computed: {
     ...mapState(['premium']),
     ...mapGetters(['floatingPrecision'])

@@ -105,7 +105,6 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import { exchanges } from '@/data/defaults';
 import { Message } from '@/store/store';
@@ -114,7 +113,7 @@ const { mapState } = createNamespacedHelpers('balances');
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { ConfirmDialog, MessageDialog, ExchangeBadge, BaseExternalLink },
+  components: { ConfirmDialog, ExchangeBadge, BaseExternalLink },
   computed: {
     ...mapState(['connectedExchanges']),
     ...mapGetters(['krakenAccountType'])

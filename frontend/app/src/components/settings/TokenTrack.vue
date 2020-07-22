@@ -56,7 +56,6 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import CryptoIcon from '@/components/CryptoIcon.vue';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { BlockchainAccount } from '@/model/blockchain_account_result';
 import { EthToken } from '@/model/eth_token';
 import { notify } from '@/store/notifications/utils';
@@ -66,8 +65,7 @@ import { convertBalances, convertEthBalances } from '@/utils/conversion';
 
 @Component({
   components: {
-    CryptoIcon,
-    MessageDialog
+    CryptoIcon
   }
 })
 export default class TokenTrack extends Vue {

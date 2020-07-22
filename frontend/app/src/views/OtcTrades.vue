@@ -106,7 +106,6 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import OtcForm from '@/components/OtcForm.vue';
 import { StoredTrade, TradePayload } from '@/model/stored-trade';
@@ -115,7 +114,7 @@ import { assert } from '@/utils/assertions';
 
 const { mapGetters } = createNamespacedHelpers('session');
 @Component({
-  components: { ConfirmDialog, MessageDialog, OtcForm, AmountDisplay },
+  components: { ConfirmDialog, OtcForm, AmountDisplay },
   computed: mapGetters(['dateDisplayFormat'])
 })
 export default class OtcTrades extends Vue {

@@ -102,7 +102,6 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import StatCard from '@/components/display/StatCard.vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
@@ -130,7 +129,6 @@ import {
     RefreshHeader,
     StatCardColumn,
     AmountDisplay,
-    StatCard,
     StatCardWide,
     LoanInfo,
     ProgressScreen

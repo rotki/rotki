@@ -1,4 +1,7 @@
 const path = require('path');
+const rulesDirPlugin = require('eslint-plugin-rulesdir');
+
+rulesDirPlugin.RULES_DIR = 'eslint/rules';
 
 module.exports = {
   root: true,
@@ -7,7 +10,7 @@ module.exports = {
     node: true
   },
 
-  plugins: ['vuetify'],
+  plugins: ['vuetify', 'rulesdir'],
 
   extends: [
     'plugin:vue/recommended',
@@ -86,7 +89,8 @@ module.exports = {
       {
         allowBinding: false
       }
-    ]
+    ],
+    'rulesdir/no-unused-components': 'error'
   },
 
   parserOptions: {

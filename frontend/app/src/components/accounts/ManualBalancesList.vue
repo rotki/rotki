@@ -115,8 +115,6 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import ManualBalancesForm from '@/components/accounts/ManualBalancesForm.vue';
-import CryptoIcon from '@/components/CryptoIcon.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -138,11 +136,9 @@ const {
 @Component({
   components: {
     AmountDisplay,
-    ManualBalancesForm,
     AssetDetails,
     ConfirmDialog,
     TagIcon,
-    CryptoIcon,
     TagFilter
   },
   computed: {
