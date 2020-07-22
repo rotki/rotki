@@ -16,6 +16,7 @@ Changelog
 * :bug: `1110` DSR Dai balance will now not be recounted with every force refresh querying of blockchain balances
 * :feature: `-` Support TUSD, KNC, ZRX and the special USDC-B collateral types for makerdao vaults.
 * :feature: `-` Support Australian Dollar (AUD) as fiat currency
+* :feature: `-` Support Ukrainian Hryvnia (UAH) as fiat currency
 * :feature: `-` Count Kraken `off-chain staked assets <https://support.kraken.com/hc/en-us/articles/360039879471-What-is-Asset-S-and-Asset-M->`__ as normal Kraken balance.
 
 * :feature:`-` Added support for the following tokens

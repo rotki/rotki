@@ -11,5 +11,6 @@ export const currencies: Currency[] = [
   new Currency('Australian Dollar', 'AUD', '$'),
   new Currency('Russian Ruble', 'RUB', '₽'),
   new Currency('South African Rand', 'ZAR', 'R'),
-  new Currency('Turkish Lira', 'TRY', '₺')
+  new Currency('Turkish Lira', 'TRY', '₺'),
+  new Currency('Ukrainian Hryvnia', 'UAH', '₴')
 ];

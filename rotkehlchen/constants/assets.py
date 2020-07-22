@@ -12,6 +12,7 @@ A_CHF = Asset('CHF')
 A_TRY = Asset('TRY')
 A_ZAR = Asset('ZAR')
 A_AUD = Asset('AUD')
+A_UAH = Asset('UAH')
 FIAT_CURRENCIES = (
     A_USD,
     A_EUR,
@@ -25,6 +26,7 @@ FIAT_CURRENCIES = (
     A_TRY,
     A_ZAR,
     A_AUD,
+    A_UAH,
 )
 
 S_BTC = 'BTC'
