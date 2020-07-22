@@ -128,6 +128,7 @@ MANUALLY_CHECKED_TYPES = {
     'VIN': 'ethereum token',
     'WMK': 'ethereum token',
     'WLK': 'ethereum token',
+    'WRX': 'binance token',
     'YOYOW': 'ethereum token',
     'ZEUS': 'ethereum token',
     'ZIX': 'ethereum token',
