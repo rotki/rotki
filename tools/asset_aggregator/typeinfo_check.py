@@ -38,6 +38,7 @@ MANUALLY_CHECKED_TYPES = {
     'CO2': 'ethereum token',
     'CRGO': 'ethereum token',
     'CCRB': 'ethereum token',
+    'DAWN': 'ethereum token',
     'DEPO': 'ethereum token',
     'DEP': 'ethereum token',
     'DIP': 'ethereum token',
