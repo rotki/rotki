@@ -9634,6 +9634,12 @@
         "symbol": "VLD",
         "type": "ethereum token"
     },
+    "VLX": {
+        "name": "Velas",
+        "started": 1570070048,
+        "symbol": "VLX",
+        "type": "own chain"
+    },
     "VOISE": {
         "ethereum_address": "0x83eEA00D838f92dEC4D1475697B9f4D3537b56E3",
         "ethereum_token_decimals": 8,
