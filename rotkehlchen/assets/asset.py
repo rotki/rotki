@@ -70,6 +70,9 @@ WORLD_TO_KRAKEN = {
     'ALGO': 'ALGO',
     'AUD': 'ZAUD',
     'BAT': 'BAT',
+    'COMP': 'COMP',
+    'KAVA': 'KAVA',
+    'KNC': 'KNC',
     'LINK': 'LINK',
     'BSV': 'BSV',
     'ETC': 'XETC',
@@ -114,6 +117,7 @@ WORLD_TO_KRAKEN = {
     'LSK': 'LSK',
     'TRX': 'TRX',
     'OXT': 'OXT',
+    'STORJ': 'STORJ',
 }
 
 WORLD_TO_BINANCE = {
