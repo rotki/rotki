@@ -254,6 +254,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     # PLA is Playchip and Plair is PLAI
     'PLA': 'PLAI',
     'PLA-2': 'PLA',
+    # For Rotki PNT-2 is Penta but in cryptocompare it's PENTA
+    'PNT-2': 'PENTA',
     # For Rotkehlchen RDN is Raiden Network but it's RDNN in cryptocompare
     'RDN': 'RDNN',
     # For Rotkehlchen SKB is SakuraBloom but it's SKRB in cryptocompare

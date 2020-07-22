@@ -212,6 +212,9 @@ WORLD_TO_PAPRIKA_ID = {
     # In paprika there is data only for PRcoin
     'PRC-2': 'prc-prcoin',
     'PRC': None,
+    # For Rotkehlchen PNT is pNetwork and PNT-2 Penta
+    'PNT': 'pnt-pnetwork',
+    'PNT-2': 'pnt-penta',
     # For Rotkehlchen SILK is SilkCoin. In Paprika the only SILK is Silkchain
     # which we don't support
     'SILK': None,

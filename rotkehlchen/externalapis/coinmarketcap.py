@@ -817,6 +817,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen PLA is Plair and PLA-2 is Playchip
     'PLA': 3711,
     'PLA-2': 3731,
+    # For Rotkehlchen PNT is pNetwork and PNT-2 Penta
+    'PNT': 5794,
+    'PNT-2': 2691,
     # For Rotkehlcen SOL is Sola token and SOL-2 is Solana
     'SOL': 3333,
     'SOL-2': 5426,

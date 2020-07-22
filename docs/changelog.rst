@@ -55,6 +55,7 @@ Changelog
   - `Binance IDR Stable Coin (Binance IDR Stable Coin) <https://www.cryptocompare.com/coins/bidr/overview>`__
   - `Everipedia (IQ) <https://coinmarketcap.com/currencies/everipedia/>`__
   - `IQ.Cash (IQ) <https://coinmarketcap.com/currencies/iqcash/>`__
+  - `pNetwork Token (PNT) <https://coinmarketcap.com/currencies/pnetwork/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint

@@ -7101,6 +7101,14 @@
         "symbol": "PNK",
         "type": "ethereum token"
     },
+    "PNT": {
+        "ethereum_address": "0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD",
+        "ethereum_token_decimals": 18,
+        "name": "pNetwork Token",
+        "started": 1592352000,
+        "symbol": "PNT",
+        "type": "ethereum token"
+    },
     "POA": {
         "name": "POA Network",
         "started": 1500508800,
