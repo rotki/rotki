@@ -42,6 +42,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'BSVBEAR',
     'BSVBULL',
     'BKRW',  # https://www.cryptocompare.com/coins/bkrw/overview
+    'BZRX',
     'CAIX',
     'CGA',
     'CELO',

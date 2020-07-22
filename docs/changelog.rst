@@ -72,6 +72,7 @@ Changelog
   - `The Force Protocol (FOR) <https://coinmarketcap.com/currencies/the-force-protocol/>`__
   - `Balancer (BAL) <https://coinmarketcap.com/currencies/balancer/>`__
   - `Bitchery (BCHC) <https://coinmarketcap.com/currencies/bitcherry/>`__
+  - `bZx protocol (BZRX) <https://coinmarketcap.com/currencies/bzx-protocol/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
