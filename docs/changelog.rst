@@ -66,6 +66,7 @@ Changelog
   - `All.me (ME) <https://www.cryptocompare.com/coins/me/overview>`__
   - `Dawn protocol (DAWN) <https://coinmarketcap.com/currencies/dawn-protocol/>`__
   - `Lucy (LUCY) <https://coinmarketcap.com/currencies/lucy/>`__
+  - `BTEcoin (BTE) <https://www.coingecko.com/en/coins/btecoin>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint
