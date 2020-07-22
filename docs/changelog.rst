@@ -68,6 +68,7 @@ Changelog
   - `Lucy (LUCY) <https://coinmarketcap.com/currencies/lucy/>`__
   - `BTEcoin (BTE) <https://www.coingecko.com/en/coins/btecoin>`__
   - `King DAG (KDAG) <https://coinmarketcap.com/currencies/king-dag/>`__
+  - `The Force Protocol (FOR) <https://coinmarketcap.com/currencies/the-force-protocol/>`__
 
 * :release:`1.5.0 <2020-06-10>`
 * :bug: `986` Allows the unsetting of the RPC endpoint

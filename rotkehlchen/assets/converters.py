@@ -394,6 +394,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Vanywhere. As of 19/03/2020 no data found outside of Bittrex for this token.
     # https://global.bittrex.com/Market/Index?MarketName=BTC-VANY
     'VANY',
+    # Ecochain. As of 22/07/2020 no data found outside of Bittrex for this token.
+    # All ECOC data refer to a different coin called EcoCoin
+    'ECOC',
 )
 
 
