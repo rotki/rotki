@@ -27,6 +27,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'ACH',
     'AERO',
     'AM',
+    'AR',
     'AIR-2',
     'APH-2',
     'ARCH',

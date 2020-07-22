@@ -466,6 +466,12 @@
         "symbol": "APX",
         "type": "Ubiq token"
     },
+    "AR": {
+        "name": "Arweave",
+        "started": 1590545046,
+        "symbol": "AR",
+        "type": "own chain"
+    },
     "ARB": {
         "ethereum_address": "0xaFBeC4D65BC7b116d85107FD05d912491029Bf46",
         "ethereum_token_decimals": 18,
