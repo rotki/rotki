@@ -468,5 +468,19 @@ The above arguments are:
 - **loglevel**: Set the loglevel for the application. Valid values are: ``'debug', 'info', 'warn', 'error', 'critical'``.
 - **logfromothermodules**: If this argument appears then logging will also include log entries from other dependent libraries and not only rotki. Default is ``false``.
 - **logfile**: The name for the logfile. Default is: ``rotkehlchen.log``.
-- **data-dir**: The path to the directory where all rotki data will be saved. Default is ``/home/$USER/.rotkehlchen``.
+- **data-dir**: The path to the directory where all rotki data will be saved. Default depends on the user's OS. Check next section
 - **sleep-secs**: This is the amount of seconds that the main loop of rotki sleeps for. Default is 20.
+
+
+Rotki data directory
+***********************
+
+Rotki saves user data by default in a different directory per OS. For each OS data is stored in the respective standards compliants equivalent directory.
+
+- **Linux**: ``~/.local/share/rotki/data/``
+- **OSX**: ``~/Library/Application Support/rotki/data``
+- **Windows**: ``%LOCALAPPDATA%/rotki/data``
+
+Before v1.6.0 Rotki was saving data in ``$USER/.rotkehlchen``. From v1.6.0 that directory got migrated to the OS equivalent standard directory and it should be safe for the users to delete the old directory as long as the new directory contains the migrated DB.
+
+A very good idea about the rotki data directory would be to be making frequent backups of it as it contains all of the data of all of your rotki accounts and cache data for historical price queries.
