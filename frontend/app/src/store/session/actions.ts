@@ -110,11 +110,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       });
       commit('nodeConnection', eth_node_connection);
 
-        if (history_process_current_ts > 0) {
-            console.log("Commiting history_process_current_ts: " + history_process_current_ts + " history_process_start_ts: " + history_process_start_ts);
+      if (history_process_current_ts > 0) {
         commit(
           'reports/historyProcess',
-          { history_process_start_ts, history_process_current_ts },
+          {
+            start: history_process_start_ts,
+            current: history_process_current_ts
+          },
           {
             root: true
           }
