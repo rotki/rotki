@@ -204,7 +204,7 @@ class EthereumManager():
         eth_resp: Optional[Dict[str, str]]
         try:
             eth_resp = request_get_dict(url)
-        except (RemoteError, UnableToDecryptRemoteData, requests.ReadTimeout):
+        except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.ReadTimeout):
             eth_resp = None
 
         block_number: Optional[int]
