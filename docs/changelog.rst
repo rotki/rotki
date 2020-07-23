@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.6.0 <2020-07-23>`
 * :bug: `1072` Tax report progress report percentage should now work properly and negative numbers should no longer appear.
 * :feature: `921` A new DeFi overview component is added. There the user can get an overview of all their balances across all DeFi protocols. For protocols that are supported further the user can click and be taken to the protocol specific page to see more details and historical accounting for that protocol.
 * :feature: `1160` The Accounts & Balances page layout has been updated to increase usability. It is now split across three sub-pages: Blockchain Balances, Exchange Balances, Manual Balances (includes Fiat Balances). Exchange Balances is a new page where you will be able to see all of your asset balances for each connected exchange (previously this was only accessible from the Dashboard by clicking on an exchange). 
