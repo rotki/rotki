@@ -163,20 +163,20 @@ def retry_calls(
         try:
             result = function(**kwargs)
 
-            if handle_429:
-                if result.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries != 0:
-                    if tries == 0:
-                        raise RemoteError(
-                            f"{location} query for {method_name} failed after {times} tries",
-                        )
-
-                    log.debug(
-                        f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
-                        f'{backoff_in_seconds} seconds',
+            if handle_429 and result.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+                if tries == 0:
+                    raise RemoteError(
+                        f"{location} query for {method_name} failed after {times} tries",
                     )
-                    gevent.sleep(backoff_in_seconds)
-                    tries -= 1
-                    continue
+
+                log.debug(
+                    f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
+                    f'{backoff_in_seconds} seconds',
+                )
+                gevent.sleep(backoff_in_seconds)
+                tries -= 1
+                continue
+
             return result
 
         except (requests.exceptions.ConnectionError) as e:
