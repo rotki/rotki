@@ -434,7 +434,6 @@ class MakerDAODSR(MakerDAOCommon):
             method_name='chi',
         )
         normalized_balance = normalized_balance * chi
-        amount_in_dsr = amount_in_dsr
         gain = normalized_balance - amount_in_dsr
         try:
             current_dai_price = Inquirer().find_usd_price(A_DAI)
@@ -448,7 +447,7 @@ class MakerDAODSR(MakerDAOCommon):
         if len(movements) != 0:
             last_usd_value = movements[-1].gain_so_far_usd_value
             last_dai_gain = movements[-1].gain_so_far
-        unaccounted_gain = _dsrdai_to_dai(gain - last_dai_gain)
+            unaccounted_gain = _dsrdai_to_dai(gain - last_dai_gain)
         gain_so_far_usd_value = unaccounted_gain * current_dai_price + last_usd_value
 
         return DSRAccountReport(

@@ -45,7 +45,6 @@ def default_data_directory() -> Path:
     elif platform.system() == 'Windows':
         appdata = get_win32_appdata()
         datadir = appdata / 'rotki' / 'data'
-        pass
     elif platform.system() == 'Darwin':
         datadir = Path(os.path.expanduser('~/Library/Application Support/rotki/data'))
     else:
