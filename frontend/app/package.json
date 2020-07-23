@@ -1,8 +1,8 @@
 {
   "name": "rotki",
-  "version": "1.5.0",
-  "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets",
-  "author": "Lefteris Karapetsas",
+  "version": "1.6.0",
+  "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that respects your privacy",
+  "author": "The Rotki Team",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
