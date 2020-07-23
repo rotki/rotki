@@ -5,14 +5,6 @@ import { RotkehlchenState } from '@/store/store';
 export const getters: GetterTree<TaxReportState, RotkehlchenState> = {
   progress: (state: TaxReportState) => {
     const { historyStart, historyEnd, historyProcess } = state;
-    console.log(
-      'historyStart: ' +
-        historyStart +
-        ' historyProcess: ' +
-        historyProcess +
-        ' historyEnd: ' +
-        historyEnd
-    );
     const percentage =
       (historyProcess - historyStart) * (1 / (historyEnd - historyStart));
     return (percentage * 100).toFixed(2);
