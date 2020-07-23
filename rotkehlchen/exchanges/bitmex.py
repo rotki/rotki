@@ -331,7 +331,7 @@ class Bitmex(ExchangeInterface):
                 )
                 log.error(
                     f'Unexpected data encountered during deserialization of bitmex '
-                    f'asset_movement {movement}. Error was: {str(e)}',
+                    f'asset_movement {movement}. Error was: {msg}',
                 )
                 continue
         return movements

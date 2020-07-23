@@ -951,7 +951,6 @@ class Coinmarketcap():
                     if file_data['time'] < now and now - file_data['time'] > 2629800:
                         log.info('Coinmarketcap coinlist cache is now invalidated')
                         invalidate_cache = True
-                        data = file_data['data']
                 except JSONDecodeError:
                     invalidate_cache = True
 

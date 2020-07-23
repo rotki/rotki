@@ -191,7 +191,6 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             except NotImplementedError:
                 msg = 'query_online_trade_history should only not be implemented by bitmex'
                 assert self.name == 'bitmex', msg
-                pass
 
         # make sure to add them to the DB
         if new_trades != []:
