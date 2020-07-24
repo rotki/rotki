@@ -1,6 +1,8 @@
 import pytest
+from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.typing import AssetType
 
@@ -53,3 +55,17 @@ def test_ethereum_tokens():
 
     with pytest.raises(DeserializationError):
         EthereumToken('BTC')
+
+
+def test_tokens_address_is_checksummed():
+    """Test that all ethereum saved token asset addresses are checksummed"""
+    for _, asset_data in AssetResolver().assets.items():
+        asset_type = asset_type_mapping[asset_data['type']]
+        if asset_type not in (AssetType.ETH_TOKEN_AND_MORE, AssetType.ETH_TOKEN):
+            continue
+
+        msg = (
+            f'Ethereum token\'s {asset_data["name"]} ethereum address '
+            f'is not checksummed {asset_data["ethereum_address"]}'
+        )
+        assert is_checksum_address(asset_data['ethereum_address']), msg
