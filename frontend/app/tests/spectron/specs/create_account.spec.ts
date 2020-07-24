@@ -1,38 +1,39 @@
 import { Application, SpectronClient } from 'spectron';
+import * as spectron from 'spectron';
+import { testWithSpectron } from 'vue-cli-plugin-electron-builder/index';
 import { Guid } from '../../common/guid';
 import {
   captureOnFailure,
   createAccount,
   GLOBAL_TIMEOUT,
-  initSpectron,
   logout
 } from './utils/common';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 
 describe('on first usage', () => {
-  let application: Application;
-  let stop: () => Promise<Application>;
+  let app: Application;
+  let stopServe: () => Promise<Application>;
   let client: SpectronClient;
 
   const username: string = Guid.newGuid().toString();
   const password: string = process.env.PASSWORD as string;
 
   beforeAll(async () => {
-    ({ application, stop } = await initSpectron());
-    ({ client } = application);
+    ({ app, stopServe } = await testWithSpectron(spectron));
+    ({ client } = app);
   });
 
   afterEach(async () => {
-    await captureOnFailure(application);
+    await captureOnFailure(app);
   });
 
   afterAll(async () => {
-    await stop();
+    await stopServe();
   });
 
   test('create a new account', async () => {
-    await createAccount(application, username, password);
+    await createAccount(app, username, password);
   });
 
   test('logout', async () => {

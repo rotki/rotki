@@ -1,6 +1,4 @@
-import { spawn } from 'child_process';
 import * as fs from 'fs';
-import * as electron from 'electron';
 import { Application, SpectronClient } from 'spectron';
 
 const retry = require('promise-retry');
@@ -8,94 +6,9 @@ const retry = require('promise-retry');
 export const GLOBAL_TIMEOUT = 120_000;
 export const METHOD_TIMEOUT = 40_000;
 
+const opts = { timeout: METHOD_TIMEOUT };
+
 type AsyncBlock = () => Promise<void>;
-
-type TestEnvironment = {
-  application: Application;
-  stop: () => Promise<Application>;
-  url: string;
-  log: string;
-};
-
-export async function initSpectron(): Promise<TestEnvironment> {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
-    let log = '';
-    let outputDir = '';
-
-    const child = spawn(
-      require.resolve('@vue/cli-service/bin/vue-cli-service'),
-      ['electron:serve', '--headless', '--mode', 'test'],
-      {
-        env: {
-          ...process.env,
-          NODE_ENV: 'production'
-        }
-      }
-    );
-
-    child.on('error', err => {
-      reject(err);
-    });
-
-    if (!child.stdout) {
-      reject(new Error('Undefined stdout'));
-      return;
-    }
-
-    child.stdout.on('data', async data => {
-      data = data.toString();
-      log += data;
-
-      const urlMatch = data.match(
-        /\$WEBPACK_DEV_SERVER_URL=https?:\/\/[^/]+\//
-      );
-
-      const outputDirMatch = data.match(/\$outputDir=\b.*\b/);
-
-      if (outputDirMatch) {
-        // Record output dir
-        outputDir = outputDirMatch[0].split('=')[1];
-      }
-
-      if (urlMatch) {
-        const url: string = urlMatch[0].split('=')[1];
-
-        const application = new Application({
-          path: (electron as any).default,
-          args: [`${outputDir}`],
-          chromeDriverArgs: ['--disable-extensions'],
-          env: {
-            ELECTRON_ENABLE_LOGGING: true,
-            ELECTRON_ENABLE_STACK_DUMPING: true,
-            NODE_ENV: 'production',
-            IS_TEST: true,
-            SPECTRON: true
-          },
-          startTimeout: METHOD_TIMEOUT,
-          connectionRetryTimeout: GLOBAL_TIMEOUT,
-          waitTimeout: METHOD_TIMEOUT,
-          chromeDriverLogPath: '../chromedriverlog.txt'
-        });
-
-        await application.start();
-        await application.client.waitUntilWindowLoaded(METHOD_TIMEOUT);
-
-        const stop = () => {
-          child.stdin!!.write('close');
-          child.kill();
-
-          if (application) {
-            return application.stop();
-          }
-          return Promise.resolve(application);
-        };
-
-        resolve({ log, url, application, stop });
-      }
-    });
-  });
-}
 
 export async function wait(ms: number) {
   if (ms === undefined) ms = 1000;
@@ -111,50 +24,59 @@ export async function createAccount(
   password: string
 ) {
   const { client } = app;
-  await client.waitForVisible('.login__fields__username', METHOD_TIMEOUT);
+  const { $ } = client;
+  const uname = await $('.login__fields__username');
+  await uname.waitForDisplayed(opts);
 
-  await client.click('.login__button__new-account');
-  await client.waitForExist('.create-account', METHOD_TIMEOUT);
+  (await $('.login__button__new-account')).click();
+
+  await (await $('.create-account')).waitForExist(opts);
   await wait(1000);
 
-  await client.click('.create-account__fields__username');
-  await client.addValue('.create-account__fields__username input', username);
+  (await $('.create-account__fields__username')).click();
+
+  (await $('.create-account__fields__username input')).addValue(username);
 
   await wait(200);
-  await client.click('.create-account__fields__password');
-  await client.addValue('.create-account__fields__password input', password);
+  (await $('.create-account__fields__password')).click();
+  (await $('.create-account__fields__password input')).addValue(password);
   await wait(200);
-  await client.click('.create-account__fields__password-repeat');
-  await client.addValue(
-    '.create-account__fields__password-repeat input',
+  (await $('.create-account__fields__password-repeat')).click();
+  (await $('.create-account__fields__password-repeat input')).addValue(
     password
   );
 
-  await client.click('.create-account__buttons__confirm');
+  (await $('.create-account__buttons__confirm')).click();
+
   await client.waitUntilTextExists('div', `Upgrade to Premium`, METHOD_TIMEOUT);
-  await client.click('.message-overlay__buttons__cancel');
+  (await $('.message-overlay__buttons__cancel')).click();
 }
 
 export async function selectFromUserMenu(
   client: SpectronClient,
   elementId: string
 ) {
-  await client.waitForVisible('.user-dropdown', METHOD_TIMEOUT);
-  await client.click('.user-dropdown');
-  await client.waitForVisible(elementId, METHOD_TIMEOUT);
-  await client.click(elementId);
-  await client.waitForVisible('.user-dropdown', METHOD_TIMEOUT, false);
+  const { $ } = client;
+  const dropdown = await $('.user-dropdown');
+  await dropdown.waitForDisplayed(opts);
+  await dropdown.click();
+  const element = await $(elementId);
+  await element.waitForDisplayed(opts);
+  await element.click();
+  await dropdown.waitForDisplayed({ ...opts, reverse: true });
   await client.pause(500);
 }
 
 export async function logout(client: SpectronClient) {
+  const { $ } = client;
   await selectFromUserMenu(client, '.user-dropdown__logout');
 
-  await client.waitForVisible('.confirm-dialog__body', METHOD_TIMEOUT);
+  (await $('.confirm-dialog__body')).waitForDisplayed(opts);
+  const confirm = await $('.confirm-dialog__buttons__confirm');
   await retry(async () => {
-    await client.click('.confirm-dialog__buttons__confirm');
+    await confirm.click();
   });
-  await client.waitForVisible('.login__fields__username', METHOD_TIMEOUT);
+  (await $('.login__fields__username')).waitForDisplayed(opts);
 }
 
 export async function login(
@@ -162,19 +84,19 @@ export async function login(
   username: string,
   password: string
 ) {
-  await client.waitUntil(
-    async () =>
-      await client.element('.login__fields__username input').isEnabled()
-  );
-  await client.addValue('.login__fields__username input', username);
-  await client.addValue('.login__fields__password input', password);
+  const { $ } = client;
 
-  await retry(async () => {
-    client.click('.login__button__sign-in');
+  await client.waitUntil(async () => {
+    const unameField = await $('.login__fields__username input');
+    return await unameField.isEnabled();
   });
+  (await $('.login__fields__username input')).addValue(username);
+  (await $('.login__fields__password input')).addValue(password);
+
+  await retry(async () => await (await $('.login__button__sign-in')).click());
 
   await client.waitUntilTextExists('div', `Upgrade to Premium`, METHOD_TIMEOUT);
-  await client.click('.message-overlay__buttons__cancel');
+  (await $('.message-overlay__buttons__cancel')).click();
 }
 
 export function takeScreenshot(app: Application, title: string): Promise<void> {
@@ -239,19 +161,18 @@ export async function clearValue(
 }
 
 export async function navigateTo(client: SpectronClient, selector: string) {
-  if (!(await client.isExisting('.v-navigation-drawer--open'))) {
-    await client.click('.v-app-bar__nav-icon');
-    await client.waitForVisible('.v-navigation-drawer--open', METHOD_TIMEOUT);
+  const { $ } = client;
+
+  async function interactWithDrawer(reverse?: boolean) {
+    let openDrawer = await $('.v-navigation-drawer--open');
+    if (!(await openDrawer.isExisting())) {
+      await (await $('.v-app-bar__nav-icon')).click();
+      openDrawer = await $('.v-navigation-drawer--open');
+      openDrawer.waitForDisplayed({ ...opts, reverse });
+    }
   }
 
-  await client.element(selector).click();
-
-  if (await client.isExisting('.v-navigation-drawer--open')) {
-    await client.click('.v-app-bar__nav-icon');
-    await client.waitForVisible(
-      '.v-navigation-drawer--open',
-      METHOD_TIMEOUT,
-      false
-    );
-  }
+  await interactWithDrawer();
+  await (await $(selector)).click();
+  await interactWithDrawer(true);
 }
