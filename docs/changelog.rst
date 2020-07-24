@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `1203` The selected tab in Accounts & Balances is now readable again.
 * :bug: `1172` Fix the ethereum addresses for ``CHAI`` and ``cUSDT`` token.
 
 * :release:`1.6.0 <2020-07-23>`
