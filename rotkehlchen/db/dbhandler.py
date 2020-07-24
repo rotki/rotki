@@ -18,6 +18,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.datatyping import BalancesData
+from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
@@ -27,7 +28,6 @@ from rotkehlchen.db.settings import (
 )
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
-    DB_SCRIPT_CREATE_TABLES,
     AssetBalance,
     BlockchainAccounts,
     DBStartupAction,
