@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug: `1172` Fix the ethereum addresses for ``CHAI`` and ``cUSDT`` token.
+
 * :release:`1.6.0 <2020-07-23>`
 * :bug: `1072` Tax report progress report percentage should now work properly and negative numbers should no longer appear.
 * :feature: `921` A new DeFi overview component is added. There the user can get an overview of all their balances across all DeFi protocols. For protocols that are supported further the user can click and be taken to the protocol specific page to see more details and historical accounting for that protocol.
