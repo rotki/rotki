@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :release:`1.6.1 <2020-07-25>`
+* :bug: `-` The Linux Rotki Appimage binary works properly again for Ubuntu <= 18.04. Rotki v1.6.0 was not able to run in those Ubuntu versions.
 * :bug: `1203` The selected tab in Accounts & Balances is now readable again.
 * :bug: `1172` Fix the ethereum addresses for ``CHAI`` and ``cUSDT`` token.
 
