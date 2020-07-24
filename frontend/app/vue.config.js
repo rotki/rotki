@@ -9,7 +9,7 @@ module.exports = {
   css: {
     loaderOptions: {
       scss: {
-        prependData: `@import "~@/main.scss";`
+        additionalData: `@import "~@/main.scss";`
       }
     }
   },
