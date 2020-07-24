@@ -88,7 +88,7 @@ export default class TabNavigation extends Vue {
       }
 
       &--active {
-        color: white;
+        color: white !important;
         background-color: var(--v-primary-base) !important;
       }
 
