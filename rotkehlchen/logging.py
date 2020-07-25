@@ -1,11 +1,15 @@
+import argparse
 import logging
 import random
+import re
 import string
 import time
 from typing import Any, Dict, MutableMapping, Tuple
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import EthAddress
+
+PYWSGI_RE = re.compile(r'\[(.*)\] ')
 
 ANONYMIZABLE_BIGINT_VALUES = ('tx_value', 'gas_price', 'gas', 'gas_used')
 ANONYMIZABLE_BIG_VALUES = (
@@ -131,3 +135,74 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
 
         msg = msg + ','.join(' {}={}'.format(a[0], a[1]) for a in new_kwargs.items())
         return msg, {}
+
+
+class PywsgiFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Filter out the additional timestamp put in by pywsgi
+
+        This is really a hack to fix https://github.com/rotki/rotki/issues/1192
+
+        It seems that the way they do the logging in pywsgi they create the log
+        entry completely on their own. So the %message part of the entry contains
+        everything and is hence not properly customizale via normal python logging.
+
+        Other options apart from using this filter would be:
+        - Ignore it and just have the timestamp two times in the logs
+        - Completely disable pywsgi logging and perhaps move it all to the
+        rest api.
+        """
+        record.msg = PYWSGI_RE.sub('', record.msg)
+        return True
+
+
+def configure_logging(args: argparse.Namespace) -> None:
+    logfilename = None
+    if args.logtarget == 'file':
+        logfilename = args.logfile
+
+    loglevel = args.loglevel.upper()
+    formatters = {
+        'default': {
+            'format': '[%(asctime)s] %(name)s: %(message)s',
+            'datefmt': '%d/%m/%Y %H:%M:%S %Z',
+        },
+    }
+    handlers = {
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': logfilename,
+            'mode': 'w',
+            'level': 'DEBUG',
+            'formatter': 'default',
+        },
+    }
+    filters = {
+        'pywsgi': {
+            '()': PywsgiFilter,
+        },
+    }
+    loggers = {
+        '': {  # root logger
+            'level': loglevel,
+            'handlers': ['file'],
+        },
+        'rotkehlchen.api.server.pywsgi': {
+            'level': loglevel,
+            'handlers': ['file'],
+            'filters': ['pywsgi'],
+            'propagate': False,
+        },
+    }
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': False,
+        'filters': filters,
+        'formatters': formatters,
+        'handlers': handlers,
+        'loggers': loggers,
+    })
+
+    if not args.logfromothermodules:
+        logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+        logging.getLogger('urllib3.connectionpool').setLevel(logging.CRITICAL)
