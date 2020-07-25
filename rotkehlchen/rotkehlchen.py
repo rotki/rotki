@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
-import logging
+import logging.config
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -59,6 +60,9 @@ log = RotkehlchenLogsAdapter(logger)
 MAIN_LOOP_SECS_DELAY = 15
 
 
+PYWSGI_RE = re.compile(r'\[(.*)\] ')
+
+
 class Rotkehlchen():
     def __init__(self, args: argparse.Namespace) -> None:
         """Initialize the Rotkehlchen object
@@ -79,26 +83,64 @@ class Rotkehlchen():
         if args.logtarget == 'file':
             logfilename = args.logfile
 
-        if args.loglevel == 'debug':
-            loglevel = logging.DEBUG
-        elif args.loglevel == 'info':
-            loglevel = logging.INFO
-        elif args.loglevel == 'warn':
-            loglevel = logging.WARN
-        elif args.loglevel == 'error':
-            loglevel = logging.ERROR
-        elif args.loglevel == 'critical':
-            loglevel = logging.CRITICAL
-        else:
-            raise AssertionError('Should never get here. Illegal log value')
+        class PywsgiFilter(logging.Filter):
+            def filter(self, record: logging.LogRecord) -> bool:
+                """Filter out the additional timestamp put in by pywsgi
 
-        logging.basicConfig(
-            filename=logfilename,
-            filemode='w',
-            level=loglevel,
-            format='%(asctime)s -- %(levelname)s:%(name)s:%(message)s',
-            datefmt='%d/%m/%Y %H:%M:%S %Z',
-        )
+                This is really a hack to fix https://github.com/rotki/rotki/issues/1192
+
+                It seems that the way they do the logging in pywsgi they create the log
+                entry completely on their own. So the %message part of the entry contains
+                everything and is hence not properly customizale via normal python logging.
+
+                Other options apart from using this filter would be:
+                - Ignore it and just have the timestamp two times in the logs
+                - Completely disable pywsgi logging and perhaps move it all to the
+                rest api.
+                """
+                record.msg = PYWSGI_RE.sub('', record.msg)
+                return True
+
+        loglevel = args.loglevel.upper()
+        formatters = {
+            'default': {
+                'format': '[%(asctime)s] %(name)s: %(message)s',
+                'datefmt': '%d/%m/%Y %H:%M:%S %Z',
+            },
+        }
+        handlers = {
+            'file': {
+                'class': 'logging.FileHandler',
+                'filename': logfilename,
+                'mode': 'w',
+                'level': 'DEBUG',
+                'formatter': 'default',
+            },
+        }
+        filters = {
+            'pywsgi': {
+                '()': PywsgiFilter,
+            },
+        }
+        loggers = {
+            '': {  # root logger
+                'level': loglevel,
+                'handlers': ['file'],
+            },
+            'rotkehlchen.api.server.pywsgi': {
+                'level': loglevel,
+                'handlers': ['file'],
+                'filters': ['pywsgi'],
+            },
+        }
+        logging.config.dictConfig({
+            'version': 1,
+            'disable_existing_loggers': False,
+            'filters': filters,
+            'formatters': formatters,
+            'handlers': handlers,
+            'loggers': loggers,
+        })
 
         if not args.logfromothermodules:
             logging.getLogger('urllib3').setLevel(logging.CRITICAL)
