@@ -969,6 +969,7 @@ class RestAPI():
         return api_response(
             _wrap_in_ok_result(assets),
             status_code=HTTPStatus.OK,
+            log_result=False,
         )
 
     @require_loggedin_user()
@@ -1097,7 +1098,8 @@ class RestAPI():
         return api_response(
             _wrap_in_ok_result(result_dict),
             status_code=HTTPStatus.OK,
-            log_result=False)
+            log_result=False,
+        )
 
     def _add_owned_eth_tokens(
             self,
