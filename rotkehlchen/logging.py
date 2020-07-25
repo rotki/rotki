@@ -157,10 +157,6 @@ class PywsgiFilter(logging.Filter):
 
 
 def configure_logging(args: argparse.Namespace) -> None:
-    logfilename = None
-    if args.logtarget == 'file':
-        logfilename = args.logfile
-
     loglevel = args.loglevel.upper()
     formatters = {
         'default': {
@@ -169,14 +165,25 @@ def configure_logging(args: argparse.Namespace) -> None:
         },
     }
     handlers = {
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': logfilename,
-            'mode': 'w',
-            'level': 'DEBUG',
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': loglevel,
             'formatter': 'default',
         },
     }
+
+    if args.logtarget == 'file':
+        selected_handlers = ['file']
+        handlers['file'] = {
+            'class': 'logging.FileHandler',
+            'filename': args.logfile,
+            'mode': 'w',
+            'level': loglevel,
+            'formatter': 'default',
+        }
+    else:
+        selected_handlers = ['console']
+
     filters = {
         'pywsgi': {
             '()': PywsgiFilter,
@@ -185,11 +192,11 @@ def configure_logging(args: argparse.Namespace) -> None:
     loggers = {
         '': {  # root logger
             'level': loglevel,
-            'handlers': ['file'],
+            'handlers': selected_handlers,
         },
         'rotkehlchen.api.server.pywsgi': {
             'level': loglevel,
-            'handlers': ['file'],
+            'handlers': selected_handlers,
             'filters': ['pywsgi'],
             'propagate': False,
         },
