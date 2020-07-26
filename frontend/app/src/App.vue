@@ -155,7 +155,7 @@ export default class App extends Vue {
     await this.$store.dispatch('connect');
     await this.$store.dispatch('version');
     this.$interop.onError((backendOutput: string) => {
-      this.startupError = `The Python backend crashed. Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:\n\n ${backendOutput}`;
+      this.startupError = `There is a problem with the backend. Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:\n\n ${backendOutput}`;
     });
   }
 }

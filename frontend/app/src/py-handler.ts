@@ -108,13 +108,16 @@ export default class PyHandler {
         this.logBackendOutput(value)
       );
     }
+
+    const handler = this;
     childProcess.on('error', (err: Error) => {
       this.logToFile(
         `Encountered an error while trying to start the python sub-process\n\n${err}`
       );
+      // Notify the main window every 2 seconds until it acks the notification
+      handler.setFailureNotification(window, err);
     });
 
-    const handler = this;
     childProcess.on('exit', (code: number, signal: any) => {
       this.logToFile(
         `The Python sub-process exited with signal: ${signal} (Code: ${code})`
@@ -175,7 +178,7 @@ export default class PyHandler {
 
   private setFailureNotification(
     window: Electron.BrowserWindow | null,
-    backendOutuput: string
+    backendOutuput: string | Error
   ) {
     this.rpcFailureNotifier = setInterval(function () {
       window?.webContents.send('failed', backendOutuput);
