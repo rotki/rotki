@@ -577,7 +577,7 @@ Getting or modifying settings
       {
           "settings": {
               "ui_floating_precision": 4,
-              "include_gas_costs": false,
+              "include_gas_costs": false
           }
       }
 
@@ -3270,7 +3270,7 @@ Getting Aave historical data
                       "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
                   }, {
                       "event_type": "withdrawal",
-		      "asset": "DAI,
+		      "asset": "DAI",
                       "value": {
 		          "amount": "150",
 			  "usd_value": "150.87"
@@ -3280,7 +3280,7 @@ Getting Aave historical data
                       "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756"
                   }, {
                       "event_type": "deposit",
-		      "asset": "ZRX,
+		      "asset": "ZRX",
                       "value": {
 		          "amount": "150",
 			  "usd_value": "60.995"
@@ -3303,7 +3303,7 @@ Getting Aave historical data
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "events": [{
                       "event_type": "deposit",
-		      "asset": "BAT,
+		      "asset": "BAT",
                       "value": {
 		          "amount": "500",
 			  "usd_value": "124.1"
@@ -3317,7 +3317,7 @@ Getting Aave historical data
 		          "amount": "0.9482",
 			  "usd_value": "0.2312"
 		      }
-		  },
+		  }
               }
           },
           "message": ""

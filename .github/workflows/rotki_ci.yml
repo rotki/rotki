@@ -54,6 +54,25 @@ jobs:
       - name: Upload coverage
         working-directory: ./frontend/app
         run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_unit
+  docs:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.7]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements_docs.txt
+          pip install -e .
+          git rev-parse HEAD
+      - name: Build html docs
+        run: cd docs && make html
   lint-backend:
     strategy:
       matrix:

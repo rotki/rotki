@@ -9,6 +9,7 @@ python:
 
 stages:
   - name: lint
+  - name: docs
   - name: test
     if: NOT commit_message =~ /\[no ci tests\]/ AND tag IS NOT present
   - name: ui-test
@@ -88,6 +89,14 @@ cache:
 
 jobs:
   include:
+    - stage: docs
+      sudo: false
+      install:
+        - pip install -r requirements_docs.txt
+        - pip install -e .
+      script:
+        - git rev-parse HEAD
+        - cd docs && make html
     - stage: lint
       sudo: false
       install:
