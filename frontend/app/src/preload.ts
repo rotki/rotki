@@ -16,9 +16,9 @@ contextBridge.exposeInMainWorld('interop', {
   openDirectory: (title: string) => ipcAction('OPEN_DIRECTORY', title),
   premiumUserLoggedIn: (premiumUser: boolean) =>
     ipcRenderer.send('PREMIUM_USER_LOGGED_IN', premiumUser),
-  listenForErrors: (callback: () => void) => {
-    ipcRenderer.on('failed', () => {
-      callback();
+  listenForErrors: (callback: (backendOutput: string) => void) => {
+    ipcRenderer.on('failed', (event, args) => {
+      callback(args);
       ipcRenderer.send('ack', 1);
     });
   }

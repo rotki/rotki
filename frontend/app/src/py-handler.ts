@@ -26,7 +26,7 @@ export default class PyHandler {
   private readonly logsPath: string;
   private readonly ELECTRON_LOG_PATH: string;
   private _corsURL?: string;
-  private backend_output: string = '';
+  private backendOutput: string = '';
 
   get port(): number {
     assert(this._port != null);
@@ -51,7 +51,7 @@ export default class PyHandler {
 
   private logBackendOutput(msg: string | Error) {
     this.logToFile(msg);
-    this.backend_output += msg;
+    this.backendOutput += msg;
   }
 
   setCorsURL(url: string) {
@@ -121,7 +121,7 @@ export default class PyHandler {
       );
       if (code !== 0) {
         // Notify the main window every 2 seconds until it acks the notification
-        handler.setFailureNotification(window);
+        handler.setFailureNotification(window, this.backendOutput);
       }
     });
 
@@ -173,9 +173,12 @@ export default class PyHandler {
     return this._port;
   }
 
-  private setFailureNotification(window: Electron.BrowserWindow | null) {
+  private setFailureNotification(
+    window: Electron.BrowserWindow | null,
+    backendOutuput: string
+  ) {
     this.rpcFailureNotifier = setInterval(function () {
-      window?.webContents.send('failed', 'failed');
+      window?.webContents.send('failed', backendOutuput);
     }, 2000);
   }
 

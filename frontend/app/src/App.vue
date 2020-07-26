@@ -154,9 +154,8 @@ export default class App extends Vue {
   async created(): Promise<void> {
     await this.$store.dispatch('connect');
     await this.$store.dispatch('version');
-    this.$interop.onError(() => {
-      this.startupError =
-        'The Python backend crashed. Check rotkehlchen.log or open an issue in Github.';
+    this.$interop.onError((backendOutput: string) => {
+      this.startupError = `The Python backend crashed. Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:\n\n ${backendOutput}`;
     });
   }
 }

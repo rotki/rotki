@@ -17,7 +17,7 @@ export class ElectronInterop {
     window.interop?.openUrl(this.baseUrl);
   }
 
-  onError(callback: () => void) {
+  onError(callback: (backendOutput: string) => void) {
     window.interop?.listenForErrors(callback);
   }
 
