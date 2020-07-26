@@ -1,9 +1,21 @@
 import { ChildProcess, execFile, spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
 import { assert } from '@/utils/assertions';
+
+async function streamToString(given_stream: stream.Readable): Promise<string> {
+  const chunks: Buffer[] = [];
+  return new Promise((resolve, reject) => {
+    given_stream.on('data', chunk => chunks.push(chunk));
+    given_stream.on('error', reject);
+    given_stream.on('end', () =>
+      resolve(Buffer.concat(chunks).toString('utf8'))
+    );
+  });
+}
 
 export default class PyHandler {
   private static PY_DIST_FOLDER = 'rotkehlchen_py_dist';
@@ -14,6 +26,7 @@ export default class PyHandler {
   private readonly logsPath: string;
   private readonly ELECTRON_LOG_PATH: string;
   private _corsURL?: string;
+  private backendOutput: string = '';
 
   get port(): number {
     assert(this._port != null);
@@ -34,6 +47,11 @@ export default class PyHandler {
     const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
     console.log(message);
     fs.appendFileSync(this.ELECTRON_LOG_PATH, `${message}\n`);
+  }
+
+  private logBackendOutput(msg: string | Error) {
+    this.logToFile(msg);
+    this.backendOutput += msg;
   }
 
   setCorsURL(url: string) {
@@ -80,20 +98,33 @@ export default class PyHandler {
     if (!childProcess) {
       return;
     }
+    if (childProcess.stdout) {
+      streamToString(childProcess.stdout).then(value =>
+        this.logBackendOutput(value)
+      );
+    }
+    if (childProcess.stderr) {
+      streamToString(childProcess.stderr).then(value =>
+        this.logBackendOutput(value)
+      );
+    }
+
+    const handler = this;
     childProcess.on('error', (err: Error) => {
       this.logToFile(
         `Encountered an error while trying to start the python sub-process\n\n${err}`
       );
+      // Notify the main window every 2 seconds until it acks the notification
+      handler.setFailureNotification(window, err);
     });
 
-    const handler = this;
     childProcess.on('exit', (code: number, signal: any) => {
       this.logToFile(
         `The Python sub-process exited with signal: ${signal} (Code: ${code})`
       );
       if (code !== 0) {
         // Notify the main window every 2 seconds until it acks the notification
-        handler.setFailureNotification(window);
+        handler.setFailureNotification(window, this.backendOutput);
       }
     });
 
@@ -145,9 +176,12 @@ export default class PyHandler {
     return this._port;
   }
 
-  private setFailureNotification(window: Electron.BrowserWindow | null) {
+  private setFailureNotification(
+    window: Electron.BrowserWindow | null,
+    backendOutuput: string | Error
+  ) {
     this.rpcFailureNotifier = setInterval(function () {
-      window?.webContents.send('failed', 'failed');
+      window?.webContents.send('failed', backendOutuput);
     }, 2000);
   }
 
