@@ -88,6 +88,13 @@ cache:
 
 jobs:
   include:
+    - stage: docs
+      sudo: false
+      install:
+        - pip install -r requirements_docs.txt
+        - pip install -e .
+      script:
+        - cd docs && make html
     - stage: lint
       sudo: false
       install:
