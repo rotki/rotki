@@ -3,8 +3,11 @@ from enum import Enum
 from typing import Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
 
 from eth_utils.typing import ChecksumAddress
+from typing_extensions import Literal
 
 from rotkehlchen.fval import FVal
+
+ModuleName = Literal['makerdao_dsr', 'makerdao_vaults', 'aave']
 
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
