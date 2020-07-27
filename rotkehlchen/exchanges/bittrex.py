@@ -355,7 +355,7 @@ class Bittrex(ExchangeInterface):
             options['count'] = count
 
         raw_data = self.api_query('getorderhistory', options)
-        log.debug('binance order history result', results_num=len(raw_data))
+        log.debug('bittrex order history result', results_num=len(raw_data))
 
         trades = []
         for raw_trade in raw_data:
