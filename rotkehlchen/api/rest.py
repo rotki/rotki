@@ -1563,7 +1563,7 @@ class RestAPI():
             module='aave',
             method='get_history',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.accounts.eth,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('aave'),
             reset_db_data=reset_db_data,
         )
 
