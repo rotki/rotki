@@ -48,7 +48,7 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
-    ChecksumAddress,
+    ChecksumEthAddress,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -1373,7 +1373,7 @@ class RestAPI():
     def add_queried_address_per_module(
             self,
             module: ModuleName,
-            address: ChecksumAddress,
+            address: ChecksumEthAddress,
     ) -> Response:
         try:
             QueriedAddresses(self.rotkehlchen.data.db).add_queried_address_for_module(module, address)  # noqa: E501
@@ -1386,7 +1386,7 @@ class RestAPI():
     def remove_queried_address_per_module(
             self,
             module: ModuleName,
-            address: ChecksumAddress,
+            address: ChecksumEthAddress,
     ) -> Response:
         try:
             QueriedAddresses(self.rotkehlchen.data.db).remove_queried_address_for_module(module, address)  # noqa: E501

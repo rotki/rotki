@@ -51,8 +51,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
-AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave']
 DEFI_BALANCES_REQUERY_SECONDS = 600
 
 

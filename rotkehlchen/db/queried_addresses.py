@@ -2,10 +2,9 @@ from typing import Dict, List, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.chain.manager import AVAILABLE_MODULES
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import InputError
-from rotkehlchen.typing import ChecksumAddress, ModuleName
+from rotkehlchen.typing import AVAILABLE_MODULES, ChecksumAddress, ModuleName
 
 
 class QueriedAddresses():
@@ -55,13 +54,11 @@ class QueriedAddresses():
         """Get a List of addresses to query for module or None if none is set"""
         cursor = self.db.conn.cursor()
         query = cursor.execute(
-            'SELECT address FROM multisettings WHERE name=?;',
+            'SELECT value FROM multisettings WHERE name=?;',
             (f'queried_address_{module}',),
         )
-        if len(query) == 0:
-            return None
-
-        return [entry[0] for entry in query]
+        result = [entry[0] for entry in query]
+        return None if len(result) == 0 else result
 
     def get_queried_addresses_per_module(self) -> Dict[ModuleName, List[ChecksumAddress]]:
         """Get a mapping of modules to addresses to query for that module"""
