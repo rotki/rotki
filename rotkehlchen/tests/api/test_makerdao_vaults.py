@@ -506,7 +506,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         debt_value=ZERO,
         debt_usd_value=ZERO,
         collateralization_ratio=None,
-        liquidation_ratio=FVal(1.2),
+        liquidation_ratio=FVal(1.1),
         liquidation_price=None,
         stability_fee=FVal(0.04),
     )
@@ -736,7 +736,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
         debt_value=ZERO,
         debt_usd_value=ZERO,
         collateralization_ratio=None,
-        liquidation_ratio=FVal(1.2),
+        liquidation_ratio=FVal(1.1),
         liquidation_price=None,
     )
     expected_vaults = [vault_7538.serialize()]
