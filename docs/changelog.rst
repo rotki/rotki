@@ -2,7 +2,14 @@
 Changelog
 =========
 
+<<<<<<< HEAD
 * :feature: `1187` There is now a setting per protocol with which users can specify which addresses should be queried for each protocol. If none are specified, then all addresses are queried. This should allow users to save a lot of time when querying historical and current balances for some protocols.
+=======
+* :feature:`-` Added support for the following tokens
+
+  - `UMA (UMA) <https://coinmarketcap.com/currencies/uma/>`__
+
+>>>>>>> Add support for UMA token
 
 * :release:`1.6.1 <2020-07-25>`
 * :bug: `1202` The Linux Rotki Appimage binary works properly again for Ubuntu <= 18.04. Rotki v1.6.0 was not able to run in those Ubuntu versions.
