@@ -235,6 +235,7 @@ export default class AccountManagement extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '@/scss/scroll';
 @keyframes scrollLarge {
   0% {
     transform: rotate(-13deg) translateY(0);
@@ -257,9 +258,14 @@ export default class AccountManagement extends Vue {
 
 .account-management {
   &__card {
+    max-height: 90vh;
+    overflow: auto;
+
     &__title {
       background-color: var(--v-primary-base);
     }
+
+    @extend .themed-scrollbar;
   }
 
   &__loading {
@@ -313,6 +319,12 @@ export default class AccountManagement extends Vue {
       font-size: 14px !important;
       background: #e0e0e0 !important;
     }
+  }
+}
+
+::v-deep {
+  .v-dialog {
+    overflow-y: hidden;
   }
 }
 </style>
