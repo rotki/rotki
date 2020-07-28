@@ -13,7 +13,6 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import is_valid_btc_address
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.manager import AVAILABLE_MODULES
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import DeserializationError, UnknownAsset
@@ -31,6 +30,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_trade_type,
 )
 from rotkehlchen.typing import (
+    AVAILABLE_MODULES,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -368,6 +368,36 @@ class EthereumTokenAssetField(AssetField):
             raise ValidationError(str(e))
 
         return token
+
+
+class EthereumAddressField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: ChecksumEthAddress,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> ChecksumEthAddress:
+        # Make sure that given value is an ethereum address
+        try:
+            address = to_checksum_address(value)
+        except (ValueError, TypeError):
+            raise ValidationError(
+                f'Given value {value} is not an ethereum address',
+                field_name='address',
+            )
+
+        return address
 
 
 class TradeTypeField(fields.Field):
@@ -997,6 +1027,14 @@ class BlockchainAccountsDeleteSchema(Schema):
 
 class IgnoredAssetsSchema(Schema):
     assets = fields.List(AssetField(), required=True)
+
+
+class QueriedAddressesSchema(Schema):
+    module = fields.String(
+        required=True,
+        validate=webargs.validate.OneOf(choices=AVAILABLE_MODULES),
+    )
+    address = EthereumAddressField(required=True)
 
 
 class DataImportSchema(Schema):

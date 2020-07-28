@@ -21,6 +21,7 @@ from rotkehlchen.balances.manual import (
     edit_manually_tracked_balances,
     get_manually_tracked_balances,
 )
+from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
@@ -47,12 +48,14 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
+    ChecksumEthAddress,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
+    ModuleName,
     Price,
     SupportedBlockchain,
     Timestamp,
@@ -1361,6 +1364,37 @@ class RestAPI():
         result_dict = _wrap_in_result(process_result_list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
+    def get_queried_addresses_per_module(self) -> Response:
+        result = QueriedAddresses(self.rotkehlchen.data.db).get_queried_addresses_per_module()
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def add_queried_address_per_module(
+            self,
+            module: ModuleName,
+            address: ChecksumEthAddress,
+    ) -> Response:
+        try:
+            QueriedAddresses(self.rotkehlchen.data.db).add_queried_address_for_module(module, address)  # noqa: E501
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return self.get_queried_addresses_per_module()
+
+    @require_loggedin_user()
+    def remove_queried_address_per_module(
+            self,
+            module: ModuleName,
+            address: ChecksumEthAddress,
+    ) -> Response:
+        try:
+            QueriedAddresses(self.rotkehlchen.data.db).remove_queried_address_for_module(module, address)  # noqa: E501
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return self.get_queried_addresses_per_module()
+
     @staticmethod
     def version_check() -> Response:
         result = _wrap_in_ok_result(check_if_version_up_to_date())
@@ -1529,7 +1563,7 @@ class RestAPI():
             module='aave',
             method='get_history',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.accounts.eth,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('aave'),
             reset_db_data=reset_db_data,
         )
 

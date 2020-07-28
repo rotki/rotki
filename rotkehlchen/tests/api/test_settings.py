@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Dict, List
 from unittest.mock import patch
 
 import pytest
@@ -11,9 +12,12 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
+    assert_proper_response_with_result,
     assert_simple_ok_response,
 )
+from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockWeb3
+from rotkehlchen.typing import ChecksumEthAddress, ModuleName
 
 
 def test_qerying_settings(rotkehlchen_api_server, username):
@@ -482,3 +486,98 @@ def test_set_settings_errors(rotkehlchen_api_server):
         contained_in_msg='"active_modules": ["foo is not a valid module"]',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+def assert_queried_addresses_match(
+        result: Dict[ModuleName, List[ChecksumEthAddress]],
+        expected: Dict[ModuleName, List[ChecksumEthAddress]],
+) -> None:
+    assert len(result) == len(expected)
+    for key, value in expected.items():
+        assert key in result, f'Was expecting module {key} but did not find it'
+        assert set(value) == set(result[key])
+
+
+def test_queried_addresses_per_protocol(rotkehlchen_api_server):
+    # First add some queried addresses per protocol
+    address1 = make_ethereum_address()
+    data = {'module': 'aave', 'address': address1}
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {'aave': [address1]}
+
+    address2 = make_ethereum_address()
+    data = {'module': 'makerdao_vaults', 'address': address2}
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert_queried_addresses_match(result, {
+        'aave': [address1],
+        'makerdao_vaults': [address2],
+    })
+
+    # add same address to another module/protocol
+    data = {'module': 'aave', 'address': address2}
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert_queried_addresses_match(result, {
+        'aave': [address1, address2],
+        'makerdao_vaults': [address2],
+    })
+
+    # try to add an address that already exists for a module/protocol and assert we get an error
+    data = {'module': 'aave', 'address': address1}
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'{address1} is already in the queried addresses for aave',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # add an address and then remove it
+    address3 = make_ethereum_address()
+    data = {'module': 'makerdao_dsr', 'address': address3}
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert_queried_addresses_match(result, {
+        'aave': [address1, address2],
+        'makerdao_vaults': [address2],
+        'makerdao_dsr': [address3],
+    })
+
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert_queried_addresses_match(result, {
+        'aave': [address1, address2],
+        'makerdao_vaults': [address2],
+    })
+
+    # try to remove a non-existing address and module combination and assert we get an error
+    data = {'module': 'makerdao_vaults', 'address': address1}
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'{address1} is not in the queried addresses for makerdao_vaults',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # test that getting the queried addresses per module works
+    response = requests.get(api_url_for(rotkehlchen_api_server, "queriedaddressesresource"))
+    result = assert_proper_response_with_result(response)
+    assert_queried_addresses_match(result, {
+        'aave': [address1, address2],
+        'makerdao_vaults': [address2],
+    })

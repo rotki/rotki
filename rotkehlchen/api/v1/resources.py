@@ -38,6 +38,7 @@ from rotkehlchen.api.v1.encoding import (
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     NewUserSchema,
+    QueriedAddressesSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
     TagDeleteSchema,
@@ -63,12 +64,14 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
+    ChecksumEthAddress,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
+    ModuleName,
     Price,
     SupportedBlockchain,
     Timestamp,
@@ -728,6 +731,22 @@ class IgnoredAssetsResource(BaseResource):
     @use_kwargs(modify_schema, location='json')  # type: ignore
     def delete(self, assets: List[Asset]) -> Response:
         return self.rest_api.remove_ignored_assets(assets=assets)
+
+
+class QueriedAddressesResource(BaseResource):
+
+    modify_schema = QueriedAddressesSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_queried_addresses_per_module()
+
+    @use_kwargs(modify_schema, location='json')  # type: ignore
+    def put(self, module: ModuleName, address: ChecksumEthAddress) -> Response:
+        return self.rest_api.add_queried_address_per_module(module=module, address=address)
+
+    @use_kwargs(modify_schema, location='json')  # type: ignore
+    def delete(self, module: ModuleName, address: ChecksumEthAddress) -> Response:
+        return self.rest_api.remove_queried_address_per_module(module=module, address=address)
 
 
 class VersionResource(BaseResource):

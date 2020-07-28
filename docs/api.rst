@@ -3338,6 +3338,124 @@ Getting Aave historical data
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+Get addresses to query per protocol
+==================================
+
+.. http:get:: /api/(version)/queried_addresses/
+
+   Doing a GET on this endpoint will return a mapping of which addresses are set for querying for each protocol. If a protocol is not returned or has no addresses then
+   all addresses are queried
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/queried_addresses HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B", "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+	      "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+	  },
+          "message": ""
+      }
+
+   :resjson list result: A mapping of modules/protocols for which an entry exists to the list of addresses to query.
+   :statuscode 200: The addresses have been queried succesfully
+   :statuscode 409: No user is logged in.
+   :statuscode 500: Internal Rotki error
+
+
+Add address to query per protocol
+==================================
+
+.. http:put:: /api/(version)/queried_addresses/
+
+   Doing a PUT on this endpoint will add a new address for querying by a protocol/module. Returns all the queried addresses per module after the addition.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/queried_addresses HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "module": "aave",
+          "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B", "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+	      "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+	  },
+          "message": ""
+      }
+
+   :resjson list result: A mapping of modules/protocols for which an entry exists to the list of addresses to query.
+   :statuscode 200: The address has been added succesfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is logged in. The address already exists in the addresses to query for that protocol.
+   :statuscode 500: Internal Rotki error
+
+Remove an address to query per protocol
+==================================
+
+.. http:delete:: /api/(version)/queried_addresses/
+
+   Doing a DELETE on this endpoint will remove an address for querying by a protocol/module. Returns all the queried addresses per module after the deletion.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/queried_addresses HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "module": "aave",
+          "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"],
+	      "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+	  },
+          "message": ""
+      }
+
+   :resjson list result: A mapping of modules/protocols for which an entry exists to the list of addresses to query.
+   :statuscode 200: The address has been removed succesfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is logged in. The address is not in the addresses to query for that protocol.
+   :statuscode 500: Internal Rotki error
+
 Adding blockchain accounts
 ===========================
 

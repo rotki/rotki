@@ -15,6 +15,8 @@ from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances, Zerion
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_REP
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.alethio import Alethio
@@ -28,6 +30,7 @@ from rotkehlchen.typing import (
     BTCAddress,
     ChecksumEthAddress,
     ListOfBlockchainAddresses,
+    ModuleName,
     Price,
     SupportedBlockchain,
     Timestamp,
@@ -48,8 +51,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
-AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave']
 DEFI_BALANCES_REQUERY_SECONDS = 600
 
 
@@ -148,6 +149,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
         super().__init__()
         self.ethereum = ethereum_manager
         self.alethio = alethio
+        assert self.alethio.db is not None, 'Alethio should have an instantiated DB'
+        self.database: DBHandler = alethio.db  # type: ignore
         self.msg_aggregator = msg_aggregator
         self.owned_eth_tokens = owned_eth_tokens
         self.accounts = blockchain_accounts
@@ -163,26 +166,23 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if eth_modules:
             for given_module in eth_modules:
                 if given_module == 'makerdao_dsr':
-                    assert self.alethio.db, 'Alethio should have an instantiated DB'
                     self.eth_modules['makerdao_dsr'] = MakerDAODSR(
                         ethereum_manager=ethereum_manager,
-                        database=self.alethio.db,
+                        database=self.database,
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
                 elif given_module == 'makerdao_vaults':
-                    assert self.alethio.db, 'Alethio should have an instantiated DB'
                     self.eth_modules['makerdao_vaults'] = MakerDAOVaults(
                         ethereum_manager=ethereum_manager,
-                        database=self.alethio.db,
+                        database=self.database,
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
                 elif given_module == 'aave':
-                    assert self.alethio.db, 'Alethio should have an instantiated DB'
                     self.eth_modules['aave'] = Aave(
                         ethereum_manager=ethereum_manager,
-                        database=self.alethio.db,
+                        database=self.database,
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
@@ -234,6 +234,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
             return None
 
         return module  # type: ignore
+
+    def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEthAddress]:
+        """Returns the addresses to query for the given module/protocol"""
+        result = QueriedAddresses(self.database).get_queried_addresses_for_module(module)
+        return result if result is not None else self.accounts.eth
 
     @property
     def eth_tokens(self) -> List[EthereumToken]:
