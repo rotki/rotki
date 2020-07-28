@@ -9418,7 +9418,7 @@
         "ethereum_address": "0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828",
         "ethereum_token_decimals": 18,
         "name": "UMA Voting Token v1",
-        "started": 1590364800,
+        "started": 1578581061,
         "symbol": "UMA",
         "type": "ethereum token"
     },    
