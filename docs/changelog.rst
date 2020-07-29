@@ -6,6 +6,7 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `UMA (UMA) <https://coinmarketcap.com/currencies/uma/>`__
+  - `Ocean Protocol (OCEAN) <https://coinmarketcap.com/currencies/ocean-protocol/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`
