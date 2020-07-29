@@ -50,12 +50,10 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
     let result = false;
     let error = '';
     try {
-      // const updatedTrade: Trade;
       const originalTrade = convertTrade(trade);
       const editedTrade = await api.editExternalTrade(trade);
       const updatedTrade = convertTrade(editedTrade);
       const mutationParams = { originalTrade, updatedTrade };
-      // updatedTrade = convertTrade(updatedTrade);
       commit('updateTrade', mutationParams);
       result = true;
     } catch (e) {
@@ -78,23 +76,4 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
     }
     return result;
   }
-
-  // async editExternalTrade({ commit }, balance: ApiTrade) {
-  //   let result = false;
-  //   try {
-  //     const manualBalances = await api.editExternalTrade([balance]);
-  //     commit('manualBalances', convertManualBalances(manualBalances));
-  //     result = true;
-  //   } catch (e) {
-  //     commit(
-  //       'setMessage',
-  //       {
-  //         title: 'Adding Manual Balance',
-  //         description: `${e.message}`
-  //       } as Message,
-  //       { root: true }
-  //     );
-  //   }
-  //   return result;
-  // },
 };

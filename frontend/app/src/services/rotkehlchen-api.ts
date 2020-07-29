@@ -595,58 +595,6 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  // addExternalTrade(trade: Trade): Promise<StoredTrade[]> {
-  //   return new Promise<StoredTrade[]>((resolve, reject) => {
-  //     this.axios
-  //       .put<ActionResult<StoredTrade[]>>(
-  //         '/trades',
-  //         {
-  //           ...trade
-  //         },
-  //         {
-  //           validateStatus: function (status) {
-  //             return status == 200 || status == 400 || status == 409;
-  //           }
-  //         }
-  //       )
-  //       .then(response => {
-  //         const { result, message } = response.data;
-  //         if (result) {
-  //           resolve(result);
-  //         } else {
-  //           reject(new Error(message));
-  //         }
-  //       })
-  //       .catch(error => reject(error));
-  //   });
-  // }
-
-  // editExternalTrade(trade: StoredTrade): Promise<StoredTrade[]> {
-  //   return new Promise<StoredTrade[]>((resolve, reject) => {
-  //     this.axios
-  //       .patch<ActionResult<StoredTrade[]>>(
-  //         '/trades',
-  //         {
-  //           ...trade
-  //         },
-  //         {
-  //           validateStatus: function (status) {
-  //             return status == 200 || status == 400 || status == 409;
-  //           }
-  //         }
-  //       )
-  //       .then(response => {
-  //         const { result, message } = response.data;
-  //         if (result) {
-  //           resolve(result);
-  //         } else {
-  //           reject(new Error(message));
-  //         }
-  //       })
-  //       .catch(error => reject(error));
-  //   });
-  // }
-
   consumeMessages(): Promise<Messages> {
     return this.axios
       .get<ActionResult<Messages>>('/messages/')
