@@ -13,7 +13,6 @@ import { Messages } from '@/model/messages';
 import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result';
 import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
-import { StoredTrade, Trade } from '@/model/stored-trade';
 import { VersionCheck } from '@/model/version-check';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { DefiApi } from '@/services/defi/defi-api';
@@ -22,7 +21,8 @@ import {
   ApiManualBalance,
   ApiManualBalances,
   SupportedAssets,
-  TaskNotFoundError
+  TaskNotFoundError,
+  ApiTrade
 } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
@@ -141,22 +141,44 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  deleteExternalTrade(id: string): Promise<boolean> {
+  async allTrades(): Promise<ApiTrade[]> {
     return this.axios
-      .delete<ActionResult<boolean>>('/trades', {
-        data: {
-          trade_id: id
-        },
-        validateStatus: validStatus
+      .get<ActionResult<ApiTrade[]>>('/trades', {
+        validateStatus: validWithSessionStatus
       })
       .then(handleResponse);
   }
 
-  queryExternalTrades(): Promise<StoredTrade[]> {
+  async externalTrades(): Promise<ApiTrade[]> {
     return this.axios
-      .get<ActionResult<StoredTrade[]>>('/trades', {
-        params: { location: 'external' },
-        validateStatus: validStatus
+      .get<ActionResult<ApiTrade[]>>('/trades', {
+        data: { location: 'external' },
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
+  }
+
+  async addExternalTrade(trade: Omit<ApiTrade, 'trade_id'>): Promise<ApiTrade> {
+    return this.axios
+      .put<ActionResult<ApiTrade>>('/trades', trade, {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
+  }
+
+  async editExternalTrade(trade: ApiTrade): Promise<ApiTrade> {
+    return this.axios
+      .patch<ActionResult<ApiTrade>>('/trades', trade, {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
+  }
+
+  async deleteExternalTrade(tradeId: string): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/trades', {
+        data: { trade_id: tradeId },
+        validateStatus: validWithSessionStatus
       })
       .then(handleResponse);
   }
@@ -573,33 +595,57 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  addExternalTrade(trade: Trade): Promise<StoredTrade[]> {
-    return this.axios
-      .put<ActionResult<StoredTrade[]>>(
-        '/trades',
-        {
-          ...trade
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
-  }
+  // addExternalTrade(trade: Trade): Promise<StoredTrade[]> {
+  //   return new Promise<StoredTrade[]>((resolve, reject) => {
+  //     this.axios
+  //       .put<ActionResult<StoredTrade[]>>(
+  //         '/trades',
+  //         {
+  //           ...trade
+  //         },
+  //         {
+  //           validateStatus: function (status) {
+  //             return status == 200 || status == 400 || status == 409;
+  //           }
+  //         }
+  //       )
+  //       .then(response => {
+  //         const { result, message } = response.data;
+  //         if (result) {
+  //           resolve(result);
+  //         } else {
+  //           reject(new Error(message));
+  //         }
+  //       })
+  //       .catch(error => reject(error));
+  //   });
+  // }
 
-  editExternalTrade(trade: StoredTrade): Promise<StoredTrade[]> {
-    return this.axios
-      .patch<ActionResult<StoredTrade[]>>(
-        '/trades',
-        {
-          ...trade
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
-  }
+  // editExternalTrade(trade: StoredTrade): Promise<StoredTrade[]> {
+  //   return new Promise<StoredTrade[]>((resolve, reject) => {
+  //     this.axios
+  //       .patch<ActionResult<StoredTrade[]>>(
+  //         '/trades',
+  //         {
+  //           ...trade
+  //         },
+  //         {
+  //           validateStatus: function (status) {
+  //             return status == 200 || status == 400 || status == 409;
+  //           }
+  //         }
+  //       )
+  //       .then(response => {
+  //         const { result, message } = response.data;
+  //         if (result) {
+  //           resolve(result);
+  //         } else {
+  //           reject(new Error(message));
+  //         }
+  //       })
+  //       .catch(error => reject(error));
+  //   });
+  // }
 
   consumeMessages(): Promise<Messages> {
     return this.axios

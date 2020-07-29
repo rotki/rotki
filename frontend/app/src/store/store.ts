@@ -15,6 +15,7 @@ import { settings } from '@/store/settings';
 import { SettingsState } from '@/store/settings/types';
 import { tasks } from '@/store/tasks';
 import { TaskState } from '@/store/tasks/state';
+import { trades } from '@/store/trades';
 
 Vue.use(Vuex);
 
@@ -100,6 +101,7 @@ const store: StoreOptions<RotkehlchenState> = {
     balances,
     defi,
     tasks,
+    trades,
     session,
     reports,
     settings

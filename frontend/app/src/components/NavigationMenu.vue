@@ -80,20 +80,11 @@ export default class NavigationMenu extends Vue {
     },
     { type: 'item', text: 'Import Data', route: '/import', icon: 'fa-upload' },
     {
-      type: 'group',
+      type: 'item',
       text: 'Trades',
-      route: '',
-      icon: 'fa-exchange',
+      route: '/trades',
       class: 'trades',
-      items: [
-        {
-          type: 'item',
-          text: 'OTC Trades',
-          route: '/otc-trades',
-          class: 'otc-trades',
-          icon: 'fa-exchange'
-        }
-      ]
+      icon: 'fa-exchange'
     },
     {
       type: 'item',

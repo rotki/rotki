@@ -1,4 +1,4 @@
-import { Location } from '@/services/types-common';
+import { Location, TradeType } from '@/services/types-common';
 
 export interface ApiSupportedAsset {
   readonly active?: boolean;
@@ -11,6 +11,20 @@ export interface ApiSupportedAsset {
 
 export interface SupportedAssets {
   readonly [key: string]: ApiSupportedAsset;
+}
+
+export interface ApiTrade {
+  readonly trade_id?: string;
+  readonly timestamp: number;
+  readonly location: string;
+  readonly pair: string;
+  readonly trade_type: TradeType;
+  readonly amount: string;
+  readonly rate: string;
+  readonly fee: string;
+  readonly fee_currency: string;
+  readonly link: string;
+  readonly notes: string;
 }
 
 export interface ApiManualBalance {
