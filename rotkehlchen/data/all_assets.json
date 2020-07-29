@@ -6703,6 +6703,14 @@
         "symbol": "OCC",
         "type": "ethereum token"
     },
+    "OCEAN": {
+        "ethereum_address": "0x985dd3D42De1e256d09e1c10F112bCCB8015AD41",
+        "ethereum_token_decimals": 18,
+        "name": "OceanToken",
+        "started": 1556037118,
+        "symbol": "OCEAN",
+        "type": "ethereum token"
+    },
     "OCN": {
         "ethereum_address": "0x4092678e4E78230F46A1534C0fbc8fA39780892B",
         "ethereum_token_decimals": 18,
