@@ -128,21 +128,6 @@ def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
     return deserialize_timestamp_from_date(date, '%Y-%m-%d %H:%M:%S', 'poloniex')
 
 
-def deserialize_timestamp_from_bittrex_date(date: Optional[str]) -> Timestamp:
-    """Deserializes a timestamp from a bittrex api query result date entry
-
-    Bittrex trades follow the given format and unfortunately
-    fromisoformat does not recognize all permutations of trailing numbers
-    after the.
-
-    Can throw DeserializationError if the data is not as expected
-    """
-    # Some dates have milliseconds, some not. Add 0 milliseconds for this to work
-    if date is not None and '.' not in date:
-        date += '.0'
-    return deserialize_timestamp_from_date(date, '%Y-%m-%dT%H:%M:%S.%f', 'bittrex')
-
-
 def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
     """Deserializes a timestamp from a kraken api query result entry
     Kraken has timestamps in floating point strings. Example: '1561161486.3056'.

@@ -59,7 +59,7 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     Required tricks for fromisoformat:
     https://stackoverflow.com/questions/127803/how-do-i-parse-an-iso-8601-formatted-date/49784038#49784038
     """
-    # Required due to prolems with fomrisoformat recognizing the ZULU mark
+    # Required due to problems with fromisoformat recognizing the ZULU mark
     datestr = datestr.replace("Z", "+00:00")
     # The following function does not always properly handle fractions of a second
     # so let's just remove it and round to the nearest second since we only deal
@@ -80,9 +80,13 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     return Timestamp(ts + 1) if add_a_second else ts
 
 
-def timestamp_to_iso8601(ts: Timestamp) -> str:
-    """Turns a timestamp to an iso8601 compliant string time"""
-    return datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).isoformat()
+def timestamp_to_iso8601(ts: Timestamp, utc_as_z: bool = False) -> str:
+    """Turns a timestamp to an iso8601 compliant string time
+
+    If `utc_as_z` is True then timezone will be shown with a Z instead of the standard
+    +00:00. Z is useful for proper URL encoding."""
+    res = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).isoformat()
+    return res if utc_as_z is False else res.replace('+00:00', 'Z')
 
 
 def satoshis_to_btc(satoshis: FVal) -> FVal:
