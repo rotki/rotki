@@ -185,17 +185,16 @@ class Bittrex(ExchangeInterface):
         """
         Queries Bittrex api v3 for given endpoint, method and options
         """
-        if not options:
-            options = {}
+        given_options = options.copy() if options else {}
         backoff = self.initial_backoff
 
         request_url = self.uri + endpoint
-        if options is not None:
+        if given_options:
             # iso8601 dates need special handling in bittrex since they can't parse them urlencoded
             # https://github.com/Bittrex/bittrex.github.io/issues/72#issuecomment-498335240
-            start_date = options.pop('startDate', None)
-            end_date = options.pop('endDate', None)
-            request_url += '?' + urlencode(options)
+            start_date = given_options.pop('startDate', None)
+            end_date = given_options.pop('endDate', None)
+            request_url += '?' + urlencode(given_options)
             if start_date is not None:
                 request_url += f'&startDate={start_date}'
             if end_date is not None:
@@ -204,7 +203,7 @@ class Bittrex(ExchangeInterface):
         while True:
             response = self._single_api_query(
                 request_url=request_url,
-                options=options,
+                options=given_options,
                 method=method,
                 public_endpoint=endpoint in BITTREX_V3_PUBLIC_ENDPOINTS,
             )
@@ -370,7 +369,6 @@ class Bittrex(ExchangeInterface):
             end_ts: Timestamp,
             market: Optional[TradePair] = None,
     ) -> List[Trade]:
-
         options: Dict[str, Union[str, int]] = {
             'pageSize': 200,  # max page size according to their docs
             'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
@@ -487,8 +485,11 @@ class Bittrex(ExchangeInterface):
             'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
             'endDate': timestamp_to_iso8601(end_ts, utc_as_z=True),
         }
-        raw_data = self._paginated_api_query(endpoint='deposits/closed', options=options)
-        raw_data.extend(self._paginated_api_query(endpoint='withdrawals/closed', options=options))
+
+        raw_data = self._paginated_api_query(endpoint='deposits/closed', options=options.copy())
+        raw_data.extend(
+            self._paginated_api_query(endpoint='withdrawals/closed', options=options.copy()),
+        )
         log.debug('bittrex deposit/withdrawal history result', results_num=len(raw_data))
 
         movements = []
