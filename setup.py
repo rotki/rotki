@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import platform
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 
 # Utility function to read the README file.
@@ -20,6 +21,10 @@ install_requirements = list(set(
     for requirement in open('requirements.txt')
     if not requirement.lstrip().startswith('#')
 ))
+
+
+if platform.system() == 'Windows':
+    install_requirements.append('python-certifi-win32==1.2')
 
 version = '1.6.1'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
