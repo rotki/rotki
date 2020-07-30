@@ -308,85 +308,56 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             )
         return MockResponse(200, payload)
 
-    def mock_bittrex_api_queries(url):
+    def mock_bittrex_api_queries(url, method, json):  # pylint: disable=unused-argument
         if remote_errors:
             payload = invalid_payload
-        elif 'getorderhistory' in url:
+        elif 'orders/closed' in url:
             payload = """
-{
-  "success": true,
-  "message": "''",
-  "result": [{
-      "OrderUuid": "fd97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "Exchange": "BTC-LTC",
-      "TimeStamp": "2017-05-01T15:00:00.00",
-      "OrderType": "LIMIT_BUY",
-      "Limit": 1e-8,
-      "Quantity": 667.03644955,
-      "QuantityRemaining": 0,
-      "Commission": 0.00004921,
-      "Price": 0.01968424,
-      "PricePerUnit": 0.0000295,
-      "IsConditional": false,
-      "ImmediateOrCancel": false
+[{
+      "id": "fd97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "marketSymbol": "BTC-LTC",
+      "closedAt": "2017-05-01T15:00:00.00Z",
+      "direction": "BUY",
+      "quantity": 667.03644955,
+      "limit": 0.0000295,
+      "commission": 0.00004921
     }, {
-      "OrderUuid": "ad97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "Exchange": "ETH-LTC",
-      "TimeStamp": "2017-05-02T15:00:00.00",
-      "OrderType": "LIMIT_SELL",
-      "Limit": 1e-8,
-      "Quantity": 667.03644955,
-      "QuantityRemaining": 0,
-      "Commission": 0.00004921,
-      "Price": 0.01968424,
-      "PricePerUnit": 0.0000295,
-      "IsConditional": false,
-      "ImmediateOrCancel": false
+      "id": "ad97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "marketSymbol": "ETH-LTC",
+      "closedAt": "2017-05-02T15:00:00.00Z",
+      "direction": "SELL",
+      "quantity": 667.03644955,
+      "commission": 0.00004921,
+      "limit": 0.0000295
     }, {
-      "OrderUuid": "ed97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "Exchange": "PTON-ETH",
-      "TimeStamp": "2017-05-02T15:00:00.00",
-      "OrderType": "LIMIT_SELL",
-      "Limit": 1e-8,
-      "Quantity": 667.03644955,
-      "QuantityRemaining": 0,
-      "Commission": 0.00004921,
-      "Price": 0.01968424,
-      "PricePerUnit": 0.0000295,
-      "IsConditional": false,
-      "ImmediateOrCancel": false
+      "id": "ed97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "marketSymbol": "PTON-ETH",
+      "closedAt": "2017-05-02T15:00:00.00Z",
+      "direction": "SELL",
+      "quantity": 667.03644955,
+      "commission": 0.00004921,
+      "limit": 0.0000295
     }, {
-      "OrderUuid": "1d97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "Exchange": "ETH-IDONTEXIST",
-      "TimeStamp": "2017-05-02T15:00:00.00",
-      "OrderType": "LIMIT_SELL",
-      "Limit": 1e-8,
-      "Quantity": 667.03644955,
-      "QuantityRemaining": 0,
-      "Commission": 0.00004921,
-      "Price": 0.01968424,
-      "PricePerUnit": 0.0000295,
-      "IsConditional": false,
-      "ImmediateOrCancel": false
+      "id": "1d97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "marketSymbol": "ETH-IDONTEXIST",
+      "closedAt": "2017-05-02T15:00:00.00Z",
+      "direction": "SELL",
+      "quantity": 667.03644955,
+      "commission": 0.00004921,
+      "limit": 0.0000295
     }, {
-      "OrderUuid": "2d97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "Exchange": "%$#%$#%#$%",
-      "TimeStamp": "2017-05-02T15:00:00.00",
-      "OrderType": "LIMIT_BUY",
-      "Limit": 1e-8,
-      "Quantity": 667.03644955,
-      "QuantityRemaining": 0,
-      "Commission": 0.00004921,
-      "Price": 0.01968424,
-      "PricePerUnit": 0.0000295,
-      "IsConditional": false,
-      "ImmediateOrCancel": false
+      "id": "2d97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "marketSymbol": "%$#%$#%#$%",
+      "closedAt": "2017-05-02T15:00:00.00Z",
+      "direction": "BUY",
+      "quantity": 667.03644955,
+      "commission": 0.00004921,
+      "limit": 0.0000295
 }]
-}
 """
-        elif 'getdeposithistory' in url or 'getwithdrawalhistory' in url:
+        elif 'deposits/closed' in url or 'withdrawals/closed' in url:
             # For now no deposits or withdrawals for bittrex in the big history test
-            payload = '{"success": true, "message": "''", "result": []}'
+            payload = '[]'
         else:
             raise RuntimeError(f'Bittrex test mock got unexpected/unmocked url {url}')
 
@@ -491,7 +462,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
     if bittrex:
         bittrex_patch = patch.object(
             bittrex.session,
-            'get',
+            'request',
             side_effect=mock_bittrex_api_queries,
         )
 

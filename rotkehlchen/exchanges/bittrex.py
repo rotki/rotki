@@ -1,10 +1,13 @@
 import hashlib
 import hmac
+import json
 import logging
+from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
+import gevent
 import requests
 from typing_extensions import Literal
 
@@ -32,7 +35,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_price,
-    deserialize_timestamp_from_bittrex_date,
+    deserialize_timestamp_from_date,
     deserialize_trade_type,
     get_pair_position_str,
     pair_get_assets,
@@ -40,7 +43,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     AssetMovementCategory,
     Fee,
     Location,
@@ -49,8 +51,8 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now_in_ms
+from rotkehlchen.utils.serialization import rlk_jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -59,32 +61,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
-BITTREX_MARKET_METHODS = {
-    'getopenorders',
-    'cancel',
-    'sellmarket',
-    'selllimit',
-    'buymarket',
-    'buylimit',
-}
-BITTREX_ACCOUNT_METHODS = {
-    'getbalances',
-    'getbalance',
-    'getdepositaddress',
-    'withdraw',
-    'getorderhistory',
-    'getdeposithistory',
-    'getwithdrawalhistory',
-}
-
-BittrexListReturnMethod = Literal[
-    'getcurrencies',
-    'getorderhistory',
-    'getbalances',
-    'getdeposithistory',
-    'getwithdrawalhistory',
-]
+BITTREX_V3_PUBLIC_ENDPOINTS = ('currencies',)
 
 
 def bittrex_pair_to_world(given_pair: str) -> TradePair:
@@ -131,16 +108,12 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
     """
-    amount = AssetAmount(
-        deserialize_asset_amount(bittrex_trade['Quantity']) -
-        deserialize_asset_amount(bittrex_trade['QuantityRemaining']),
-    )
-    timestamp = deserialize_timestamp_from_bittrex_date(bittrex_trade['TimeStamp'])
-    rate = deserialize_price(bittrex_trade['PricePerUnit'])
-    order_type = deserialize_trade_type(bittrex_trade['OrderType'])
-    bittrex_price = deserialize_price(bittrex_trade['Price'])
-    fee = deserialize_fee(bittrex_trade['Commission'])
-    pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
+    amount = deserialize_asset_amount(bittrex_trade['quantity'])
+    timestamp = deserialize_timestamp_from_date(bittrex_trade['closedAt'], 'iso8601', 'bittrex')
+    rate = deserialize_price(bittrex_trade['limit'])
+    order_type = deserialize_trade_type(bittrex_trade['direction'])
+    fee = deserialize_fee(bittrex_trade['commission'])
+    pair = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
     quote_currency = get_pair_position_asset(pair, 'second')
 
     log.debug(
@@ -149,9 +122,8 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         amount=amount,
         rate=rate,
         order_type=order_type,
-        price=bittrex_price,
         fee=fee,
-        bittrex_pair=bittrex_trade['Exchange'],
+        bittrex_pair=bittrex_trade['marketSymbol'],
         pair=pair,
     )
 
@@ -164,7 +136,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         rate=rate,
         fee=fee,
         fee_currency=quote_currency,
-        link=str(bittrex_trade['OrderUuid']),
+        link=str(bittrex_trade['id']),
     )
 
 
@@ -175,116 +147,140 @@ class Bittrex(ExchangeInterface):
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
+            initial_backoff: int = 4,
+            backoff_limit: int = 180,
     ):
         super(Bittrex, self).__init__('bittrex', api_key, secret, database)
-        self.apiversion = 'v1.1'
-        self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
+        self.uri = 'https://api.bittrex.com/v3/'
         self.msg_aggregator = msg_aggregator
+        self.session.headers.update({
+            'Api-Key': self.api_key,
+            'Content-Type': 'Application/JSON',
+        })
+        self.initial_backoff = initial_backoff
+        self.backoff_limit = backoff_limit
 
     def first_connection(self) -> None:
         self.first_connection_made = True
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
-            self.api_query('getbalance', {'currency': 'BTC'})
+            self.api_query('balances')
         except RemoteError as e:
             error = str(e)
-            if error == 'APIKEY_INVALID':
+            if 'APIKEY_INVALID' in error:
                 return False, 'Provided API Key is invalid'
-            elif error == 'INVALID_SIGNATURE':
+            elif 'INVALID_SIGNATURE' in error:
                 return False, 'Provided API Secret is invalid'
             else:
                 raise
         return True, ''
 
-    @overload
-    def api_query(  # pylint: disable=unused-argument, no-self-use
-            self,
-            method: BittrexListReturnMethod,
-            options: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
-        ...
-
-    @overload  # noqa: F811
-    def api_query(  # noqa: F811  # pylint: disable=unused-argument, no-self-use
-            self,
-            method: Literal['getbalance'],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        ...
-
-    @overload  # noqa: F811
-    def api_query(   # noqa: F811  # pylint: disable=unused-argument, no-self-use
-            self,
-            method: str,
-            options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
-        ...
-
     def api_query(  # noqa: F811
             self,
-            method: str,
+            endpoint: str,
+            method: Literal['get', 'put', 'delete'] = 'get',
             options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
         """
-        Queries Bittrex with given method and options
+        Queries Bittrex api v3 for given endpoint, method and options
         """
-        if not options:
-            options = {}
-        nonce = str(ts_now_in_ms())
-        method_type = 'public'
+        given_options = options.copy() if options else {}
+        backoff = self.initial_backoff
 
-        if method in BITTREX_MARKET_METHODS:
-            method_type = 'market'
-        elif method in BITTREX_ACCOUNT_METHODS:
-            method_type = 'account'
+        request_url = self.uri + endpoint
+        if given_options:
+            # iso8601 dates need special handling in bittrex since they can't parse them urlencoded
+            # https://github.com/Bittrex/bittrex.github.io/issues/72#issuecomment-498335240
+            start_date = given_options.pop('startDate', None)
+            end_date = given_options.pop('endDate', None)
+            request_url += '?' + urlencode(given_options)
+            if start_date is not None:
+                request_url += f'&startDate={start_date}'
+            if end_date is not None:
+                request_url += f'&endDate={end_date}'
 
-        request_url = self.uri + method_type + '/' + method + '?'
+        while True:
+            response = self._single_api_query(
+                request_url=request_url,
+                options=given_options,
+                method=method,
+                public_endpoint=endpoint in BITTREX_V3_PUBLIC_ENDPOINTS,
+            )
+            should_backoff = (
+                response.status_code == HTTPStatus.TOO_MANY_REQUESTS and
+                backoff < self.backoff_limit
+            )
+            if should_backoff:
+                log.debug('Got 429 from Bittrex. Backing off', seconds=backoff)
+                gevent.sleep(backoff)
+                backoff = backoff * 2
+                continue
 
-        if method_type != 'public':
-            request_url += 'apikey=' + self.api_key + "&nonce=" + nonce + '&'
+            # else we got a result
+            break
 
-        request_url += urlencode(options)
-        signature = hmac.new(
-            self.secret,
-            request_url.encode(),
-            hashlib.sha512,
-        ).hexdigest()
-        self.session.headers.update({'apisign': signature})
-        log.debug('Bittrex API query', request_url=request_url)
-        try:
-            response = self.session.get(request_url)
-        except requests.exceptions.ConnectionError as e:
-            raise RemoteError(f'Bittrex API request failed due to {str(e)}')
-
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'Bittrex query responded with error status code: {response.status_code}'
                 f' and text: {response.text}',
             )
 
         try:
-            json_ret = rlk_jsonloads_dict(response.text)
+            result = rlk_jsonloads_list(response.text)
         except JSONDecodeError:
             raise RemoteError(f'Bittrex returned invalid JSON response: {response.text}')
 
-        if json_ret['success'] is not True:
-            raise RemoteError(json_ret['message'])
-
-        result = json_ret['result']
-        assert isinstance(result, dict) or isinstance(result, list)
         return result
+
+    def _single_api_query(
+            self,
+            request_url: str,
+            options: Dict[str, Any],
+            method: Literal['get', 'put', 'delete'],
+            public_endpoint: bool = False,
+    ) -> requests.Response:
+        payload = '' if method == 'get' else json.dumps(options)
+        if not public_endpoint:
+            api_content_hash = hashlib.sha512(payload.encode()).hexdigest()
+            api_timestamp = str(ts_now_in_ms())
+            presign_str = api_timestamp + request_url + method.upper() + api_content_hash
+            signature = hmac.new(
+                self.secret,
+                presign_str.encode(),
+                hashlib.sha512,
+            ).hexdigest()
+            self.session.headers.update({
+                'Api-Key': self.api_key,
+                'Api-Timestamp': api_timestamp,
+                'Api-Content-Hash': api_content_hash,
+                'Api-Signature': signature,
+            })
+        else:
+            self.session.headers.pop('Api-Key')
+
+        log.debug('Bittrex v3 API query', request_url=request_url)
+        try:
+            response = self.session.request(
+                method=method,
+                url=request_url,
+                json=options if method != 'get' else None,
+            )
+        except requests.exceptions.ConnectionError as e:
+            raise RemoteError(f'Bittrex API request failed due to {str(e)}')
+
+        return response
 
     def get_currencies(self) -> List[Dict[str, Any]]:
         """Gets a list of all currencies supported by Bittrex"""
-        result = self.api_query('getcurrencies')
+        result = self.api_query('currencies')
         return result
 
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:
-            resp = self.api_query('getbalances')
+            resp = self.api_query('balances')
         except RemoteError as e:
             msg = (
                 'Bittrex API request failed. Could not reach bittrex due '
@@ -296,7 +292,7 @@ class Bittrex(ExchangeInterface):
         returned_balances = {}
         for entry in resp:
             try:
-                asset = asset_from_bittrex(entry['Currency'])
+                asset = asset_from_bittrex(entry['currencySymbol'])
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unsupported bittrex asset {e.asset_name}. '
@@ -326,7 +322,7 @@ class Bittrex(ExchangeInterface):
                 continue
 
             balance = {}
-            balance['amount'] = FVal(entry['Balance'])
+            balance['amount'] = FVal(entry['total'])
             balance['usd_value'] = FVal(balance['amount']) * usd_price
             returned_balances[asset] = balance
 
@@ -340,21 +336,48 @@ class Bittrex(ExchangeInterface):
 
         return returned_balances, ''
 
+    def _paginated_api_query(
+            self,
+            endpoint: str,
+            method: Literal['get', 'put', 'delete'] = 'get',
+            options: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Handle pagination for bittrex v3 api queries
+
+        Docs: https://bittrex.github.io/api/v3#topic-REST-API-Overview
+        """
+        if not options:
+            options = {}
+
+        all_data = []
+        while True:
+            query_data = self.api_query(endpoint=endpoint, method=method, options=options)
+            if len(query_data) == 0:  # no more data
+                break
+
+            all_data.extend(query_data)
+            if len(query_data) != options['pageSize']:  # less data than page size
+                break
+
+            options['nextPageToken'] = query_data[-1]['id']
+
+        return all_data
+
     def query_online_trade_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
             market: Optional[TradePair] = None,
-            count: Optional[int] = None,
     ) -> List[Trade]:
-
-        options: Dict[str, Union[str, int]] = {}
+        options: Dict[str, Union[str, int]] = {
+            'pageSize': 200,  # max page size according to their docs
+            'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
+            'endDate': timestamp_to_iso8601(end_ts, utc_as_z=True),
+        }
         if market is not None:
-            options['market'] = world_pair_to_bittrex(market)
-        if count is not None:
-            options['count'] = count
+            options['marketSymbol'] = world_pair_to_bittrex(market)
 
-        raw_data = self.api_query('getorderhistory', options)
+        raw_data = self._paginated_api_query(endpoint='orders/closed', options=options)
         log.debug('bittrex order history result', results_num=len(raw_data))
 
         trades = []
@@ -394,9 +417,6 @@ class Bittrex(ExchangeInterface):
                 )
                 continue
 
-            if trade.timestamp < start_ts or trade.timestamp > end_ts:
-                continue
-
             trades.append(trade)
 
         return trades
@@ -407,26 +427,28 @@ class Bittrex(ExchangeInterface):
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if 'TxCost' in raw_data:
-                category = AssetMovementCategory.WITHDRAWAL
-                date_key = 'Opened'
-                fee = deserialize_fee(raw_data['TxCost'])
-            else:
+            if 'source' in raw_data:
                 category = AssetMovementCategory.DEPOSIT
-                date_key = 'LastUpdated'
                 fee = Fee(ZERO)
+            else:
+                category = AssetMovementCategory.WITHDRAWAL
+                fee = deserialize_fee(raw_data['txCost'])
 
-            timestamp = deserialize_timestamp_from_bittrex_date(raw_data[date_key])
-            asset = asset_from_bittrex(raw_data['Currency'])
+            timestamp = deserialize_timestamp_from_date(
+                raw_data['completedAt'],
+                'iso8601',
+                'bittrex',
+            )
+            asset = asset_from_bittrex(raw_data['currencySymbol'])
             return AssetMovement(
                 location=Location.BITTREX,
                 category=category,
                 timestamp=timestamp,
                 asset=asset,
-                amount=deserialize_asset_amount(raw_data['Amount']),
+                amount=deserialize_asset_amount(raw_data['quantity']),
                 fee_asset=asset,
                 fee=fee,
-                link=str(raw_data['TxId']),
+                link=str(raw_data['txId']),
             )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
@@ -458,8 +480,16 @@ class Bittrex(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        raw_data = self.api_query('getdeposithistory')
-        raw_data.extend(self.api_query('getwithdrawalhistory'))
+        options: Dict[str, Union[str, int]] = {
+            'pageSize': 200,  # max page size according to their docs
+            'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
+            'endDate': timestamp_to_iso8601(end_ts, utc_as_z=True),
+        }
+
+        raw_data = self._paginated_api_query(endpoint='deposits/closed', options=options.copy())
+        raw_data.extend(
+            self._paginated_api_query(endpoint='withdrawals/closed', options=options.copy()),
+        )
         log.debug('bittrex deposit/withdrawal history result', results_num=len(raw_data))
 
         movements = []

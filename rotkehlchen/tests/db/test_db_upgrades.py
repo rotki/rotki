@@ -808,6 +808,29 @@ def test_upgrade_db_10_to_11(user_data_dir):
     assert db.get_version() == 11
 
 
+def test_upgrade_db_11_to_12(user_data_dir):
+    """Test upgrading the DB from version 11 to version 12.
+
+    Deleting all bittrex data from the DB"""
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v11_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=12,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+
+    # Make sure that only one trade is left
+    cursor = db.conn.cursor()
+    results = cursor.execute('SELECT * FROM trades;')
+    assert len(results.fetchall()) == 1
+    # Same thing for used query ranges
+    results = cursor.execute('SELECT * FROM used_query_ranges;')
+    assert len(results.fetchall()) == 1
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 12
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
