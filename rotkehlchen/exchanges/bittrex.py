@@ -168,9 +168,9 @@ class Bittrex(ExchangeInterface):
             self.api_query('balances')
         except RemoteError as e:
             error = str(e)
-            if error == 'APIKEY_INVALID':
+            if 'APIKEY_INVALID' in error:
                 return False, 'Provided API Key is invalid'
-            elif error == 'INVALID_SIGNATURE':
+            elif 'INVALID_SIGNATURE' in error:
                 return False, 'Provided API Secret is invalid'
             else:
                 raise
