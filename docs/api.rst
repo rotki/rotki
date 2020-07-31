@@ -2882,48 +2882,69 @@ Getting ethereum MakerDAO DSR historical report
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                   "movements": [{
                       "movement_type": "deposit",
-                      "gain_so_far": "0",
-                      "gain_so_far_usd_value": "0",
-                      "amount": "350",
-                      "amount_usd_value": "351.21",
+                      "gain_so_far": {
+		          "amount": "0",
+		          "usd_value": "0"
+		      },
+                      "amount": {
+                          "amount": "350",
+                          "usd_value": "351.21"
+		      },
                       "block_number": 9128160,
                       "timestamp": 1582706553,
                       "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289"
                   }, {
                       "movement_type": "deposit",
-                      "gain_so_far": "0.875232",
-                      "gain_so_far_usd_value": "0.885292",
-                      "amount": "50",
-                      "amount_usd_value": "50.87",
+                      "gain_so_far": {
+		          "amount": "0.875232",
+                          "usd_value": "0.885292"
+		      },
+                      "amount": {
+                          "amount": "50",
+                          "amount_usd_value": "50.87"
+		      },
                       "block_number": 9129165,
                       "timestamp": 1582806553,
                       "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
                   }, {
                       "movement_type": "withdrawal",
-                      "gain_so_far": "1.12875932",
-                      "gain_so_far_usd_value": "1.34813",
-                      "amount": "350",
-                      "amount_usd_value": "353.12",
+                      "gain_so_far": {
+		          "amount": "1.12875932",
+                          "usd_value": "1.34813"
+		      },
+                      "amount": {
+                          "amount": "350",
+                          "usd_value": "353.12"
+		      },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
                       "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756"
                   }, {
                   }],
-                  "gain_so_far": "1.14875932"
+                  "gain_so_far": {
+		      "amount": "1.14875932",
+		      "usd_value": "1.2323"
+		  }
               },
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "movements": [{
                       "movement_type": "deposit",
-                      "gain_so_far": "0",
-                      "gain_so_far_usd_value": "0",
-                      "amount": "550",
-                      "amount_usd_value": "553.43",
+                      "gain_so_far": {
+		          "amount": "0",
+                          "usd_value": "0"
+		      },
+                      "amount": {
+                          "amount": "550",
+                          "usd_value": "553.43"
+		      },
                       "block_number": 9128174,
                       "timestamp": 1583706553,
                       "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
                   }],
-                  "gain_so_far": "0.953423"
-                  "gain_so_far_usd_value": "0.998421"
+                  "gain_so_far": {
+                      "amount": "0.953423",
+                      "usd_value": "0.998421"
+		  }
               }
           },
           "message": ""
@@ -2931,13 +2952,10 @@ Getting ethereum MakerDAO DSR historical report
 
    :resjson object result: A mapping of accounts to the DSR history report of each account. If an account is not in the mapping Rotki does not see anything locked in DSR for it.
    :resjson object movements: A list of deposits/withdrawals to/from the DSR for each account.
-   :resjson string gain_so_far: The total gain so far in DAI from the DSR for this account.
-   :resjson string gain_so_far_usd_value: The total gain so far in USD from the DSR for this account. The USD value is approximate. It's essentially the known USD values at all movements and for whatever DAI remains the current DAI price is taken into account.
+   :resjson string gain_so_far: The total gain so far in DAI from the DSR for this account. The amount is the DAI amount and the USD value is the added usd value of all the usd values of each movement again plus the usd value of the remaining taking into account current usd price
    :resjsonarr string movement_type: The type of movement involving the DSR. Can be either "deposit" or "withdrawal".
-   :resjsonarr string gain_so_far: The amount of DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal.
-   :resjsonarr string gain_so_far_usd_value: The usd value equivalnt of the DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal. The rate is the DAI/USD rate at the movement's timestamp.
-   :resjsonarr string amount: The amount of DAI deposited or withdrawn from the DSR.
-   :resjsonarr string amount_usd_value: The USD euivalent value of the amount of DAI deposited or withdrawn from the DSR. The rate is the DAI/USD rate at the movement's timestamp.
+   :resjsonarr string gain_so_far: The amount of DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal along with the usd value equivalent of the DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal. The rate is the DAI/USD rate at the movement's timestamp.
+   :resjsonarr string amount: The amount of DAI deposited or withdrawn from the DSR along with the USD equivalent value of the amount of DAI deposited or withdrawn from the DSR. The rate is the DAI/USD rate at the movement's timestamp.
    :resjsonarr int block_number: The block number at which the deposit or withdrawal occured.
    :resjsonarr int tx_hash: The transaction hash of the DSR movement
 
