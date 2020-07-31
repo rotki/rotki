@@ -43,7 +43,7 @@ def create_api_server(rotki: Rotkehlchen, port_number: int) -> APIServer:
 
 
 def api_url_for(api_server: APIServer, endpoint: str, **kwargs) -> str:
-    with api_server.flask_app.app_context():  # type: ignore
+    with api_server.flask_app.app_context():
         return url_for(f"v1_resources.{endpoint}", **kwargs)
 
 

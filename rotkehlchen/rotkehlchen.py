@@ -78,7 +78,7 @@ class Rotkehlchen():
         # Can also be None after unlock if premium credentials did not
         # authenticate or premium server temporarily offline
         self.premium: Optional[Premium] = None
-        self.user_is_logged_in = False
+        self.user_is_logged_in: bool = False
         configure_logging(args)
 
         self.sleep_secs = args.sleep_secs

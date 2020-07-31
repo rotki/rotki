@@ -472,7 +472,7 @@ def test_user_logout(rotkehlchen_api_server, username):
     assert rotki.user_is_logged_in is False
 
     # Now try to log out of the same user again
-    response = requests.patch(
+    response = requests.patch(  # type: ignore
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -521,7 +521,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert_proper_response(response)
     check_proper_unlock_result(response.json())
     assert rotki.user_is_logged_in is True
-    users_data = check_user_status(rotkehlchen_api_server)
+    users_data = check_user_status(rotkehlchen_api_server)  # type: ignore
     assert len(users_data) == 2
     assert users_data[username] == 'loggedin'
     assert users_data['another_user'] == 'loggedout'
@@ -751,7 +751,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     assert rotki.user_is_logged_in is False
 
     # Now let's try to login with an invalid password
-    data = {'action': 'login', 'password': 'wrong-password', 'sync_approval': 'unknown'}
+    data = {'action': 'login', 'password': 'wrong-password', 'sync_approval': 'unknown'}  # type: ignore  # noqa: E501
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
