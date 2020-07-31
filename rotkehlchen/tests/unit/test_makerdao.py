@@ -130,10 +130,8 @@ def test_get_vault_normalized_balance(
         collateral_type='ETH-A',
         collateral_asset=A_ETH,
         owner=make_ethereum_address(),
-        collateral_amount=FVal('100'),
-        collateral_usd_value=FVal('20000'),
-        debt_value=debt_value,
-        debt_usd_value=debt_value * mocked_current_prices['DAI'],
+        collateral=Balance(FVal('100'), FVal('20000')),
+        debt=Balance(debt_value, debt_value * mocked_current_prices['DAI']),
         collateralization_ratio='990%',
         liquidation_ratio=FVal(1.5),
         liquidation_price=FVal('50'),  # not calculated to be correct

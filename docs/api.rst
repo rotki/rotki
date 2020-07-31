@@ -2886,7 +2886,7 @@ Getting ethereum MakerDAO DSR historical report
 		          "amount": "0",
 		          "usd_value": "0"
 		      },
-                      "amount": {
+                      "value": {
                           "amount": "350",
                           "usd_value": "351.21"
 		      },
@@ -2899,7 +2899,7 @@ Getting ethereum MakerDAO DSR historical report
 		          "amount": "0.875232",
                           "usd_value": "0.885292"
 		      },
-                      "amount": {
+                      "value": {
                           "amount": "50",
                           "usd_value": "50.87"
 		      },
@@ -2912,7 +2912,7 @@ Getting ethereum MakerDAO DSR historical report
 		          "amount": "1.12875932",
                           "usd_value": "1.34813"
 		      },
-                      "amount": {
+                      "value": {
                           "amount": "350",
                           "usd_value": "353.12"
 		      },
@@ -2933,7 +2933,7 @@ Getting ethereum MakerDAO DSR historical report
 		          "amount": "0",
                           "usd_value": "0"
 		      },
-                      "amount": {
+                      "value": {
                           "amount": "550",
                           "usd_value": "553.43"
 		      },
@@ -2955,7 +2955,7 @@ Getting ethereum MakerDAO DSR historical report
    :resjson string gain_so_far: The total gain so far in DAI from the DSR for this account. The amount is the DAI amount and the USD value is the added usd value of all the usd values of each movement again plus the usd value of the remaining taking into account current usd price
    :resjsonarr string movement_type: The type of movement involving the DSR. Can be either "deposit" or "withdrawal".
    :resjsonarr string gain_so_far: The amount of DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal along with the usd value equivalent of the DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal. The rate is the DAI/USD rate at the movement's timestamp.
-   :resjsonarr string amount: The amount of DAI deposited or withdrawn from the DSR along with the USD equivalent value of the amount of DAI deposited or withdrawn from the DSR. The rate is the DAI/USD rate at the movement's timestamp.
+   :resjsonarr string value: The amount of DAI deposited or withdrawn from the DSR along with the USD equivalent value of the amount of DAI deposited or withdrawn from the DSR. The rate is the DAI/USD rate at the movement's timestamp.
    :resjsonarr int block_number: The block number at which the deposit or withdrawal occured.
    :resjsonarr int tx_hash: The transaction hash of the DSR movement
 
@@ -3365,7 +3365,7 @@ Getting Aave historical data
    :resjson object result: A mapping of accounts to the Aave history report of each account. If an account is not in the mapping Rotki does not see anything ever deposited in Aave for it.
    :resjson object events: A list of deposits/withdrawals/interest payments to/from Aave for each account.
    :resjson object total_earned: A mapping of asset identifier to total earned (amount + usd_value mapping) for each asset. The total earned is essentially the sum of all interest payments plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
-   :resjsonarr string event_type: The type of Aave event involving the DSR. Can be "deposit", "withdrawal" or "interest".
+   :resjsonarr string event_type: The type of Aave event. Can be "deposit", "withdrawal" or "interest".
    :resjsonarr string asset: The asset that this event is about. This can only be an underlying asset of an aToken.
    :resjsonarr string value: The value of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
    :resjsonarr int timestamp: The unix timestamp at which the event occured.
