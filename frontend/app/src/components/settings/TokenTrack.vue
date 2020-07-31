@@ -12,7 +12,7 @@
         label="Owned Tokens"
         item-text="symbol"
         :filter="filter"
-        :menu-props="{ closeOnClick: true, closeOnContentClick: true }"
+        :menu-props="{ closeOnContentClick: true }"
         item-value="symbol"
         multiple
         @input="add($event)"

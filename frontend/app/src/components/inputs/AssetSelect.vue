@@ -12,7 +12,7 @@
     :error-messages="errorMessages"
     item-value="key"
     :item-text="assetText"
-    :menu-props="{ closeOnClick: true, closeOnContentClick: true }"
+    :menu-props="{ closeOnContentClick: true }"
     @input="input"
   >
     <template #selection="{ item }">
