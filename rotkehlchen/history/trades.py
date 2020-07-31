@@ -187,7 +187,7 @@ class TradesHistorian():
                         timestamp=last_event_ts,
                         event_type=DefiEventType.MAKERDAO_VAULT_LOSS,
                         asset=A_USD,
-                        amount=detail.total_liquidated_usd + detail.total_interest_owed,
+                        amount=detail.total_liquidated.usd_value + detail.total_interest_owed,
                     ))
 
         # include aave lending events

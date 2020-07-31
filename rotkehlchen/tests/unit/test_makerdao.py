@@ -48,13 +48,11 @@ def makerdao_test_data(
         urn=make_ethereum_address(),
         collateral_type='ETH-A',
         collateral_asset=A_ETH,
-        collateral_amount=FVal('3.1'),
-        debt_value=FVal('635.1'),
-        debt_usd_value=FVal('952.65'),
+        collateral=Balance(FVal('3.1'), FVal('850.1')),
+        debt=Balance(FVal('635.1'), FVal('952.65')),
         collateralization_ratio='133.85%',
         liquidation_ratio=FVal('1.5'),
         liquidation_price=FVal('307.3064516129032258064516129'),
-        collateral_usd_value=FVal('850.1'),
         stability_fee=ZERO,
     )
     vault1 = MakerDAOVault(
@@ -63,13 +61,11 @@ def makerdao_test_data(
         urn=make_ethereum_address(),
         collateral_type='BAT-A',
         collateral_asset=A_BAT,
-        collateral_amount=FVal('255.1'),
-        debt_value=FVal('15.4'),
-        debt_usd_value=FVal('23.1'),
+        collateral=Balance(FVal('255.1'), FVal('0.09055272442179537436299490395')),
+        debt=Balance(FVal('15.4'), FVal('23.1')),
         collateralization_ratio='0.59%',
         liquidation_ratio=FVal('1.5'),
         liquidation_price=FVal('0.09055272442179537436299490396'),
-        collateral_usd_value=FVal('0.09055272442179537436299490395'),
         stability_fee=FVal('0.0075'),
     )
     expected_vaults = [vault0, vault1]

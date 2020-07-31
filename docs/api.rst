@@ -2901,7 +2901,7 @@ Getting ethereum MakerDAO DSR historical report
 		      },
                       "amount": {
                           "amount": "50",
-                          "amount_usd_value": "50.87"
+                          "usd_value": "50.87"
 		      },
                       "block_number": 9129165,
                       "timestamp": 1582806553,
@@ -2999,26 +2999,34 @@ Getting MakerDAO vaults basic data
               "collateral_type": "ETH-A",
               "owner": "0xA76a9560ffFD9fC603F7d6A30c37D79665207876",
               "collateral_asset": "ETH",
-              "collateral_amount": "5.232",
-              "debt_value": "650",
-              "debt_usd_value": "653.42",
+              "collateral": {
+                  "amount": "5.232",
+                  "usd_value": "950.13"
+	      },
+              "debt": {
+                  "amount": "650",
+                  "usd_value": "653.42"
+	      },
               "collateralization_ratio": "234.21%",
               "liquidation_ratio": "150%",
               "liquidation_price": "125.1",
-              "collateral_usd_value": "950.13",
               "stability_fee": "0.00%",
           }, {
               "identifier": 55,
               "collateral_type": "USDC-A",
               "owner": "0xB26a9561ffFD9fC603F7d6A30c37D79665207876",
               "collateral_asset": "USDC",
-              "collateral_amount": "150",
-              "debt_value": "50",
-              "debt_usd_value": "53.2",
+              "collateral": {
+                  "amount": "150",
+                  "usd_value": "150"
+	      },
+              "debt": {
+                  "amount": "50",
+                  "usd_value": "53.2"
+	      },
               "collateralization_ratio": "250.551%",
               "liquidation_ratio": "150%",
               "liquidation_price": "0.45",
-              "collateral_usd_value": "150",
               "stability_fee": "0.75%",
           }]
           "message": ""
@@ -3029,12 +3037,11 @@ Getting MakerDAO vaults basic data
    :resjsonarr string collateral_type: The collateral_type of the vault. e.g. ETH-A. Various collateral types can be seen here: https://catflip.co/
    :resjsonarr string owner: The address of the owner of the vault.
    :resjsonarr string collateral_asset: The asset deposited in the vault as collateral. As of this writing supported assets are ``["ETH", "BAT", "USDC", "WBTC"]``
-   :resjsonarr string collateral_amount: The amount of collateral currently deposited in the vault
-   :resjsonarr string debt_value: The amount of DAI owed to the vault. So generated DAI plus the stability fee interest.
+   :resjsonarr string collateral: The amount of collateral currently deposited in the vault along with the current value in USD of all the collateral in the vault according to the MakerDAO price feed.
+   :resjsonarr string debt: The amount of DAI owed to the vault. So generated DAI plus the stability fee interest. Along with its current usd value.
    :resjsonarr string collateralization_ratio: A string denoting the percentage of collateralization of the vault.
    :resjsonarr string liquidation_ratio: This is the current minimum collateralization ratio. Less than this and the vault is going to get liquidated.
    :resjsonarr string liquidation_price: The USD price that the asset deposited in the vault as collateral at which the vault is going to get liquidated.
-   :resjsonarr string collateral_usd_value: The current value in USD of all the collateral in the vault according to the MakerDAO price feed.
    :resjsonarr string stability_fee: The current annual interest rate you have to pay for borrowing collateral from this vault type.
    :statuscode 200: Vaults succesfuly queried
    :statuscode 409: User is not logged in. Or makerdao module is not activated.
@@ -3080,18 +3087,24 @@ Getting MakerDAO vault details
               "identifier": 1,
               "creation_ts": 1589067898,
               "total_interest_owed": "0.02341",
-              "total_liquidated_amount": "0",
-              "total_liquidated_usd": "0",
+              "total_liquidated": {
+                  "amount": "0",
+                  "usd_value": "0"
+	      },
               "events": [{
                   "event_type": "deposit",
-                  "amount": "5.551",
-                  "amount_usd_value": "120.32",
+                  "value": {
+                      "amount": "5.551",
+                      "usd_value": "120.32"
+		  },
                   "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "generate",
-                  "amount": "325",
-                  "amount_usd_value": "12003.32",
+                  "value": {
+                      "amount": "325",
+                      "usd_value": "12003.32"
+		  },
                   "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }]
@@ -3099,30 +3112,40 @@ Getting MakerDAO vault details
               "identifier": 56,
               "creation_ts": 1589067897,
               "total_interest_owed": "-751.32",
-              "total_liquidated_amount": "1050.21",
-              "total_liquidated_usd": "2501.234",
+              "total_liquidated": {
+                  "amount": "1050.21",
+                  "usd_value": "2501.234"
+	      },
               "events": [{
                   "event_type": "deposit",
-                  "amount": "1050.21",
-                  "amount_usd_value": "10500.21",
+                  "value": {
+                      "amount": "1050.21",
+                      "usd_value": "10500.21"
+		  },
                   "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "generate",
-                  "amount": "721.32",
-                  "amount_usd_value": "7213.2",
+                  "value": {
+                      "amount": "721.32",
+                      "usd_value": "7213.2"
+		  },
                   "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "liquidation",
-                  "amount": "500",
-                  "amount_usd_value": "5000",
+                  "value": {
+                      "amount": "500",
+                      "usd_value": "5000"
+		  },
                   "timestamp": 1589068000,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
                   "event_type": "liquidation",
-                  "amount": "550.21",
-                  "amount_usd_value": "5502.1",
+                  "value": {
+                      "amount": "550.21",
+                      "usd_value": "5502.1"
+		  },
                   "timestamp": 1589068001,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }]
@@ -3133,12 +3156,10 @@ Getting MakerDAO vault details
    :resjson object result: A list of all vault details detected.
    :resjsonarr int creation_ts: The timestamp of the vault's creation.
    :resjsonarr string total_interest_owed: Total amount of DAI lost to the vault as interest rate. This can be negative, if the vault has been liquidated. In that case the negative number is the DAI that is out in the wild and does not need to be returned after liquidation.
-   :resjsonarr string total_liquidated_amount: The total amount of the collateral asset that has been lost to liquidation. Will be ``0`` if no liquidations happened.
-   :resjsonarr string total_liquidated_usd: The total usd value of collateral that got liquidated. This is essentially all liquidation events amounts multiplied by the USD price of collateral at the time.
+   :resjsonarr string total_liquidated: The total amount/usd_value of the collateral asset that has been lost to liquidation. Will be ``0`` if no liquidations happened.
    :resjson object events: A list of all events that occured for this vault
    :resjsonarr string event_type: The type of the event. Valid types are: ``["deposit", "withdraw", "generate", "payback", "liquidation"]``
-   :resjsonarr string amount: The amount associated with the event. So collateral deposited/withdrawn, debt generated/paid back, amount of collateral lost in liquidation.
-   :resjsonarr string amount_usd_value: The usd value of the amount associated with the event at the time the event occured.
+   :resjsonarr string value: The amount/usd_value associated with the event. So collateral deposited/withdrawn, debt generated/paid back, amount of collateral lost in liquidation.
    :resjsonarr int timestamp: The unix timestamp of the event
    :resjsonarr string tx_hash: The transaction hash associated with the event.
 
