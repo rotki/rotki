@@ -107,8 +107,7 @@ class VaultEventType(Enum):
 
 class VaultEvent(NamedTuple):
     event_type: VaultEventType
-    amount: FVal
-    amount_usd_value: FVal
+    value: Balance
     timestamp: Timestamp
     tx_hash: str
 
@@ -120,14 +119,10 @@ class MakerDAOVault(NamedTuple):
     collateral_type: str
     owner: ChecksumEthAddress
     collateral_asset: Asset
-    # The amount of collateral tokens locked
-    collateral_amount: FVal
-    # The USD value of collateral locked, given the current price according to the price feed
-    collateral_usd_value: FVal
-    # amount of DAI drawn
-    debt_value: FVal
-    # usd value of the DAI debt
-    debt_usd_value: FVal
+    # The amount/usd_value of collateral tokens locked
+    collateral: Balance
+    # amount/usd value of DAI drawn
+    debt: Balance
     # The current collateralization_ratio of the Vault. None if nothing is locked in.
     collateralization_ratio: Optional[str]
     # The ratio at which the vault is open for liquidation. (e.g. 1.5 for 150%)
@@ -159,20 +154,15 @@ class MakerDAOVaultDetails(NamedTuple):
     # Will be negative if vault has been liquidated. If it's negative then this
     # is the amount of DAI you managed to keep after liquidation.
     total_interest_owed: FVal
-    # The total amount of collateral that got liquidated
-    total_liquidated_amount: FVal
-    # The total usd value of collateral that got liquidated. This is essentially
-    # all liquidation events amounts multiplied by the USD price of collateral at the time.
-    total_liquidated_usd: FVal
+    # The total amount/usd_value of collateral that got liquidated
+    total_liquidated: Balance
     events: List[VaultEvent]
 
 
 def get_vault_normalized_balance(vault: MakerDAOVault) -> Balance:
     """Get the balance in the vault's collateral asset after deducting the generated debt"""
     collateral_usd_price = Inquirer().find_usd_price(vault.collateral_asset)
-    dai_usd_price = Inquirer().find_usd_price(A_DAI)
-    debt_usd_value = dai_usd_price * vault.debt_value
-    normalized_usd_value = vault.collateral_usd_value - debt_usd_value
+    normalized_usd_value = vault.collateral.usd_value - vault.debt.usd_value
 
     return Balance(
         amount=normalized_usd_value / collateral_usd_price,
@@ -288,12 +278,10 @@ class MakerDAOVaults(MakerDAOCommon):
             owner=owner,
             collateral_type=collateral_type,
             collateral_asset=asset,
-            collateral_amount=collateral_amount,
-            debt_value=debt_value,
-            debt_usd_value=dai_usd_price * debt_value,
+            collateral=Balance(collateral_amount, collateral_usd_value),
+            debt=Balance(debt_value, dai_usd_price * debt_value),
             liquidation_ratio=liquidation_ratio,
             collateralization_ratio=collateralization_ratio,
-            collateral_usd_value=collateral_usd_value,
             liquidation_price=liquidation_price,
             urn=urn,
             stability_fee=self.get_stability_fee(ilk),
@@ -409,8 +397,7 @@ class MakerDAOVaults(MakerDAOCommon):
             )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.DEPOSIT_COLLATERAL,
-                amount=amount,
-                amount_usd_value=amount * usd_price,
+                value=Balance(amount, amount * usd_price),
                 timestamp=timestamp,
                 tx_hash=tx_hash,
             ))
@@ -445,8 +432,7 @@ class MakerDAOVaults(MakerDAOCommon):
             )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.WITHDRAW_COLLATERAL,
-                amount=amount,
-                amount_usd_value=amount * usd_price,
+                value=Balance(amount, amount * usd_price),
                 timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
@@ -484,8 +470,7 @@ class MakerDAOVaults(MakerDAOCommon):
             )
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.GENERATE_DEBT,
-                amount=amount,
-                amount_usd_value=amount * usd_price,
+                value=Balance(amount, amount * usd_price),
                 timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
@@ -525,8 +510,7 @@ class MakerDAOVaults(MakerDAOCommon):
 
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.PAYBACK_DEBT,
-                amount=amount,
-                amount_usd_value=amount * usd_price,
+                value=Balance(amount, amount * usd_price),
                 timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
@@ -563,13 +547,12 @@ class MakerDAOVaults(MakerDAOCommon):
             sum_liquidation_usd += amount_usd_value
             vault_events.append(VaultEvent(
                 event_type=VaultEventType.LIQUIDATION,
-                amount=amount,
-                amount_usd_value=amount_usd_value,
+                value=Balance(amount, amount_usd_value),
                 timestamp=timestamp,
                 tx_hash=event['transactionHash'],
             ))
 
-        total_interest_owed = vault.debt_value - _normalize_amount(
+        total_interest_owed = vault.debt.amount - _normalize_amount(
             asset_symbol='DAI',
             amount=total_dai_wei,
         )
@@ -580,8 +563,7 @@ class MakerDAOVaults(MakerDAOCommon):
             identifier=vault.identifier,
             total_interest_owed=total_interest_owed,
             creation_ts=creation_ts,
-            total_liquidated_amount=sum_liquidation_amount,
-            total_liquidated_usd=sum_liquidation_usd,
+            total_liquidated=Balance(sum_liquidation_amount, sum_liquidation_usd),
             events=vault_events,
         )
 
