@@ -75,17 +75,23 @@ class DSRAccountReport(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         serialized_report = {
-            'gain_so_far': str(_dsrdai_to_dai(self.gain_so_far)),
-            'gain_so_far_usd_value': str(self.gain_so_far_usd_value),
+            'gain_so_far': {
+                'amount': str(_dsrdai_to_dai(self.gain_so_far)),
+                'usd_value': str(self.gain_so_far_usd_value),
+            },
             'movements': [],
         }
         for movement in self.movements:
             serialized_movement = {
                 'movement_type': movement.movement_type,
-                'gain_so_far': str(_dsrdai_to_dai(movement.gain_so_far)),
-                'gain_so_far_usd_value': str(movement.gain_so_far_usd_value),
-                'amount': str(_dsrdai_to_dai(movement.amount)),
-                'amount_usd_value': str(movement.amount_usd_value),
+                'gain_so_far': {
+                    'amount': str(_dsrdai_to_dai(movement.gain_so_far)),
+                    'usd_value': str(movement.gain_so_far_usd_value),
+                },
+                'amount': {
+                    'amount': str(_dsrdai_to_dai(movement.amount)),
+                    'usd_value': str(movement.amount_usd_value),
+                },
                 'block_number': movement.block_number,
                 'timestamp': movement.timestamp,
                 'tx_hash': movement.tx_hash,
