@@ -61,8 +61,7 @@ export function convertDSRHistory(history: ApiDSRHistory): DSRHistory {
   } = {};
   for (const account of Object.keys(history)) {
     const {
-      gain_so_far: accountGain,
-      gain_so_far_usd_value: accountGainUsdValue,
+      gain_so_far: { amount: accountGain, usd_value: accountGainUsdValue },
       movements
     } = history[account];
     data[account] = {
@@ -70,23 +69,21 @@ export function convertDSRHistory(history: ApiDSRHistory): DSRHistory {
       gainSoFarUsdValue: bigNumberify(accountGainUsdValue),
       movements: movements.map(
         ({
-          amount,
-          amount_usd_value,
+          value,
           block_number,
           gain_so_far: gain_so_far,
-          gain_so_far_usd_value: gain_so_far_usd_value,
           movement_type,
           timestamp,
           tx_hash
         }) => ({
           movementType: movement_type,
           gainSoFar: {
-            amount: bigNumberify(gain_so_far),
-            usdValue: bigNumberify(gain_so_far_usd_value)
+            amount: bigNumberify(gain_so_far.amount),
+            usdValue: bigNumberify(gain_so_far.usd_value)
           },
           balance: {
-            amount: bigNumberify(amount),
-            usdValue: bigNumberify(amount_usd_value)
+            amount: bigNumberify(value.amount),
+            usdValue: bigNumberify(value.usd_value)
           },
           blockNumber: block_number,
           timestamp,
@@ -108,12 +105,12 @@ export function convertMakerDAOVaults(
     owner: vault.owner,
     collateral: {
       asset: vault.collateral_asset,
-      amount: bigNumberify(vault.collateral_amount),
-      usdValue: bigNumberify(vault.collateral_usd_value)
+      amount: bigNumberify(vault.collateral.amount),
+      usdValue: bigNumberify(vault.collateral.usd_value)
     },
     debt: {
-      amount: bigNumberify(vault.debt_value),
-      usdValue: bigNumberify(vault.debt_usd_value)
+      amount: bigNumberify(vault.debt.amount),
+      usdValue: bigNumberify(vault.debt.usd_value)
     },
     liquidationRatio: vault.liquidation_ratio,
     liquidationPrice: bigNumberify(vault.liquidation_price),
@@ -127,8 +124,8 @@ function convertVaultEvents(
 ): MakerDAOVaultEvent[] {
   return apiVaultEvents.map(event => ({
     eventType: event.event_type,
-    amount: bigNumberify(event.amount),
-    amountUsdValue: bigNumberify(event.amount_usd_value),
+    amount: bigNumberify(event.value.amount),
+    amountUsdValue: bigNumberify(event.value.usd_value),
     timestamp: event.timestamp,
     txHash: event.tx_hash
   }));
@@ -142,8 +139,8 @@ export function convertVaultDetails(
     creationTs: details.creation_ts,
     totalInterestOwed: bigNumberify(details.total_interest_owed),
     totalLiquidated: {
-      amount: bigNumberify(details.total_liquidated_amount),
-      usdValue: bigNumberify(details.total_liquidated_usd)
+      amount: bigNumberify(details.total_liquidated.amount),
+      usdValue: bigNumberify(details.total_liquidated.usd_value)
     },
     events: convertVaultEvents(details.events)
   }));

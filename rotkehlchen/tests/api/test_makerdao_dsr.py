@@ -331,7 +331,7 @@ def setup_tests_for_dsr(
                 },
                 'value': {
                     'amount': _dsrdai_to_dai(account1_deposit1),
-                'usd_value': _dsrdai_to_dai(account1_deposit1),
+                    'usd_value': _dsrdai_to_dai(account1_deposit1),
                 },
                 'block_number': params.account1_join1_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account1_join1_blocknumber),

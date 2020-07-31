@@ -26,10 +26,14 @@ export type SupportedDefiProtocols = typeof DEFI_PROTOCOLS[number];
 
 export interface ApiDSRMovement {
   readonly movement_type: DSRMovementType;
-  readonly gain_so_far: string;
-  readonly gain_so_far_usd_value: string;
-  readonly amount: string;
-  readonly amount_usd_value: string;
+  readonly gain_so_far: {
+    amount: string;
+    usd_value: string;
+  };
+  readonly value: {
+    amount: string;
+    usd_value: string;
+  };
   readonly block_number: number;
   readonly timestamp: number;
   readonly tx_hash: string;
@@ -37,8 +41,10 @@ export interface ApiDSRMovement {
 
 export interface ApiDSRHistory {
   readonly [address: string]: {
-    gain_so_far: string;
-    gain_so_far_usd_value: string;
+    gain_so_far: {
+      amount: string;
+      usd_value: string;
+    };
     movements: ApiDSRMovement[];
   };
 }
@@ -48,13 +54,17 @@ export interface ApiMakerDAOVault {
   readonly collateral_type: string;
   readonly owner: string;
   readonly collateral_asset: CollateralAssetType;
-  readonly collateral_amount: string;
-  readonly debt_value: string;
-  readonly debt_usd_value: string;
+  readonly collateral: {
+    amount: string;
+    usd_value: string;
+  };
+  readonly debt: {
+    amount: string;
+    usd_value: string;
+  };
   readonly collateralization_ratio: string | null;
   readonly liquidation_ratio: string;
   readonly liquidation_price: string;
-  readonly collateral_usd_value: string;
   readonly stability_fee: string;
 }
 
@@ -62,15 +72,19 @@ export interface ApiMakerDAOVaultDetails {
   readonly identifier: number;
   readonly creation_ts: number;
   readonly total_interest_owed: string;
-  readonly total_liquidated_amount: string;
-  readonly total_liquidated_usd: string;
+  readonly total_liquidated: {
+    amount: string;
+    usd_value: string;
+  };
   readonly events: ApiMakerDAOVaultEvent[];
 }
 
 export interface ApiMakerDAOVaultEvent {
   readonly event_type: MakerDAOVaultEventType;
-  readonly amount: string;
-  readonly amount_usd_value: string;
+  readonly value: {
+    amount: string;
+    usd_value: string;
+  };
   readonly timestamp: number;
   readonly tx_hash: string;
 }
