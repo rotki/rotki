@@ -67,9 +67,9 @@ def mock_vat_urns(
 ) -> Tuple[FVal, FVal]:
     for vault in self.test_data.vaults:
         if vault.urn == urn:
-            result_a = vault.collateral_amount * WAD
+            result_a = vault.collateral.amount * WAD
             rate = 100
-            result_b = ((vault.debt_value * RAY) / rate) * WAD
+            result_b = ((vault.debt.amount * RAY) / rate) * WAD
             return result_a, result_b
 
     raise AssertionError(f'Could not find a mock for vat urns for urn {urn}')

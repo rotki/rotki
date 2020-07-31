@@ -135,8 +135,14 @@ class MakerDAOVault(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         # But make sure to turn liquidation ratio and stability fee to a percentage
+        result['collateral_asset'] = self.collateral_asset.identifier
         result['liquidation_ratio'] = self.liquidation_ratio.to_percentage(2)
         result['stability_fee'] = self.stability_fee.to_percentage(2)
+        result['collateral'] = self.collateral.serialize()
+        result['debt'] = self.debt.serialize()
+        result['liquidation_price'] = (
+            str(self.liquidation_price) if self.liquidation_price else None
+        )
         # And don't send unneeded data
         del result['urn']
         return result

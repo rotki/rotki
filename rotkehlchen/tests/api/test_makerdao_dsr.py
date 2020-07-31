@@ -515,11 +515,20 @@ def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestS
                     for mov_key, mov_val in movement.items():
                         if mov_key == 'movement_type':
                             assert mov_val == result[account]['movements'][idx][mov_key]
+                        elif mov_key in ('gain_so_far', 'value'):
+                            assert FVal(mov_val['amount']).is_close(FVal(
+                                result[account]['movements'][idx][mov_key]['amount'],
+                            ), max_diff='1e-8')
+                            assert FVal(mov_val['usd_value']).is_close(FVal(
+                                result[account]['movements'][idx][mov_key]['usd_value'],
+                            ), max_diff='1e-8')
                         else:
                             assert FVal(mov_val).is_close(FVal(
                                 result[account]['movements'][idx][mov_key],
                             ), max_diff='1e-8')
-
+            elif key == 'gain_so_far':
+                assert FVal(result[account][key]['amount']).is_close(FVal(val['amount']))
+                assert FVal(result[account][key]['usd_value']).is_close(FVal(val['usd_value']))
             else:
                 assert FVal(result[account][key]).is_close(FVal(val))
 
@@ -655,8 +664,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     json_data = response.json()
     assert json_data['message'] == ''
     result = json_data['result'][ethereum_accounts[0]]
-    assert FVal(result['gain_so_far']) == ZERO
-    assert FVal(result['gain_so_far_usd_value']) == ZERO
+    assert result['gain_so_far'] == {'amount': '0', 'usd_value': '0'}
     movements = result['movements']
     expected_movements = [{
         'movement_type': 'deposit',
