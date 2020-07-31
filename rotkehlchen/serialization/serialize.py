@@ -64,7 +64,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, DefiProtocol):
+    elif isinstance(entry, (DefiProtocol, MakerDAOVault)):
         return entry.serialize()
     elif isinstance(entry, (
             Trade,
