@@ -88,7 +88,7 @@ class DSRAccountReport(NamedTuple):
                     'amount': str(_dsrdai_to_dai(movement.gain_so_far)),
                     'usd_value': str(movement.gain_so_far_usd_value),
                 },
-                'amount': {
+                'value': {
                     'amount': str(_dsrdai_to_dai(movement.amount)),
                     'usd_value': str(movement.amount_usd_value),
                 },

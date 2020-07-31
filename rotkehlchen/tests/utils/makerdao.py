@@ -84,7 +84,7 @@ def mock_vat_ilks(self, ilk) -> Tuple[int, int, FVal]:
         )
         if vault_ilk == ilk:
             rate = 100
-            price = vault.collateral_usd_value / vault.collateral_amount
+            price = vault.collateral.usd_value / vault.collateral.amount
             spot = (price / vault.liquidation_ratio) * RAY
             whatever = 1
             return whatever, rate, spot

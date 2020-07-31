@@ -319,61 +319,81 @@ def setup_tests_for_dsr(
     )
     dsr_history_response = {
         account1: {
-            'gain_so_far': _dsrdai_to_dai(account1_gain_so_far),
-            'gain_so_far_usd_value': _dsrdai_to_dai(account1_gain_so_far),
+            'gain_so_far': {
+                'amount': _dsrdai_to_dai(account1_gain_so_far),
+                'usd_value': _dsrdai_to_dai(account1_gain_so_far),
+            },
             'movements': [{
                 'movement_type': 'deposit',
-                'gain_so_far': '0.0',
-                'gain_so_far_usd_value': '0.0',
-                'amount': _dsrdai_to_dai(account1_deposit1),
-                'amount_usd_value': _dsrdai_to_dai(account1_deposit1),
+                'gain_so_far': {
+                    'amount': '0.0',
+                    'usd_value': '0.0',
+                },
+                'value': {
+                    'amount': _dsrdai_to_dai(account1_deposit1),
+                'usd_value': _dsrdai_to_dai(account1_deposit1),
+                },
                 'block_number': params.account1_join1_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account1_join1_blocknumber),
             }, {
                 'movement_type': 'deposit',
-                'gain_so_far': _dsrdai_to_dai(
-                    params.account1_join1_normalized_balance * params.account1_join2_chi -
-                    account1_deposit1,
-                ),
-                'gain_so_far_usd_value': _dsrdai_to_dai(
-                    params.account1_join1_normalized_balance * params.account1_join2_chi -
-                    account1_deposit1,
-                ),
-                'amount': _dsrdai_to_dai(account1_deposit2),
-                'amount_usd_value': _dsrdai_to_dai(account1_deposit2),
+                'gain_so_far': {
+                    'amount': _dsrdai_to_dai(
+                        params.account1_join1_normalized_balance * params.account1_join2_chi -
+                        account1_deposit1,
+                    ),
+                    'usd_value': _dsrdai_to_dai(
+                        params.account1_join1_normalized_balance * params.account1_join2_chi -
+                        account1_deposit1,
+                    ),
+                },
+                'value': {
+                    'amount': _dsrdai_to_dai(account1_deposit2),
+                    'usd_value': _dsrdai_to_dai(account1_deposit2),
+                },
                 'block_number': params.account1_join2_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account1_join2_blocknumber),
             }, {
                 'movement_type': 'withdrawal',
-                'gain_so_far': _dsrdai_to_dai(
-                    (
-                        params.account1_join1_normalized_balance +
-                        params.account1_join2_normalized_balance
-                    ) * params.account1_exit1_chi -
-                    (account1_deposit1 + account1_deposit2),
-                ),
-                'gain_so_far_usd_value': _dsrdai_to_dai(
-                    (
-                        params.account1_join1_normalized_balance +
-                        params.account1_join2_normalized_balance
-                    ) * params.account1_exit1_chi -
-                    (account1_deposit1 + account1_deposit2),
-                ),
-                'amount': _dsrdai_to_dai(account1_withdrawal1),
-                'amount_usd_value': _dsrdai_to_dai(account1_withdrawal1),
+                'gain_so_far': {
+                    'amount': _dsrdai_to_dai(
+                        (
+                            params.account1_join1_normalized_balance +
+                            params.account1_join2_normalized_balance
+                        ) * params.account1_exit1_chi -
+                        (account1_deposit1 + account1_deposit2),
+                    ),
+                    'usd_value': _dsrdai_to_dai(
+                        (
+                            params.account1_join1_normalized_balance +
+                            params.account1_join2_normalized_balance
+                        ) * params.account1_exit1_chi -
+                        (account1_deposit1 + account1_deposit2),
+                    ),
+                },
+                'value': {
+                    'amount': _dsrdai_to_dai(account1_withdrawal1),
+                    'usd_value': _dsrdai_to_dai(account1_withdrawal1),
+                },
                 'block_number': params.account1_exit1_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account1_exit1_blocknumber),
             }],
         },
         account2: {
-            'gain_so_far': _dsrdai_to_dai(account2_gain_so_far),
-            'gain_so_far_usd_value': _dsrdai_to_dai(account2_gain_so_far),
+            'gain_so_far': {
+                'amount': _dsrdai_to_dai(account2_gain_so_far),
+                'usd_value': _dsrdai_to_dai(account2_gain_so_far),
+            },
             'movements': [{
                 'movement_type': 'deposit',
-                'gain_so_far': '0.0',
-                'gain_so_far_usd_value': '0.0',
-                'amount': _dsrdai_to_dai(account2_deposit1),
-                'amount_usd_value': _dsrdai_to_dai(account2_deposit1),
+                'gain_so_far': {
+                    'amount': '0.0',
+                    'usd_value': '0.0',
+                },
+                'value': {
+                    'amount': _dsrdai_to_dai(account2_deposit1),
+                    'usd_value': _dsrdai_to_dai(account2_deposit1),
+                },
                 'block_number': params.account2_join1_blocknumber,
                 'timestamp': blocknumber_to_timestamp(params.account2_join1_blocknumber),
             }],
@@ -640,28 +660,40 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     movements = result['movements']
     expected_movements = [{
         'movement_type': 'deposit',
-        'gain_so_far': ZERO,
-        'gain_so_far_usd_value': ZERO,
-        'amount': FVal('79'),
-        'amount_usd_value': FVal('79'),
+        'gain_so_far': {
+            'amount': ZERO,
+            'usd_value': ZERO,
+        },
+        'value': {
+            'amount': FVal('79'),
+            'usd_value': FVal('79'),
+        },
         'block_number': 9953028,
         'timestamp': 1587970286,
         'tx_hash': '0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289',
     }, {
         'movement_type': 'withdrawal',
-        'gain_so_far': ZERO,
-        'gain_so_far_usd_value': ZERO,
-        'amount': FVal('79'),
-        'amount_usd_value': FVal('79'),
+        'gain_so_far': {
+            'amount': ZERO,
+            'usd_value': ZERO,
+        },
+        'value': {
+            'amount': FVal('79'),
+            'usd_value': FVal('79'),
+        },
         'block_number': 9968906,
         'timestamp': 1588182567,
         'tx_hash': '0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443',
     }, {
         'movement_type': 'withdrawal',
-        'gain_so_far': ZERO,
-        'gain_so_far_usd_value': ZERO,
-        'amount': ZERO,
-        'amount_usd_value': ZERO,
+        'gain_so_far': {
+            'amount': ZERO,
+            'usd_value': ZERO,
+        },
+        'value': {
+            'amount': ZERO,
+            'usd_value': ZERO,
+        },
         'block_number': 9968906,
         'timestamp': 1588182567,
         'tx_hash': '0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756',
