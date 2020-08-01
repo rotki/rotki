@@ -1,4 +1,5 @@
 import os
+import platform
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Union
 
@@ -9,6 +10,11 @@ from flask import url_for
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.rotkehlchen import Rotkehlchen
+
+if platform.system() == 'Darwin':
+    ASYNC_TASK_WAIT_TIMEOUT = 60
+else:
+    ASYNC_TASK_WAIT_TIMEOUT = 30
 
 
 def _wait_for_listening_port(
@@ -110,7 +116,11 @@ def assert_ok_async_response(response: requests.Response) -> int:
     return int(data['result']['task_id'])
 
 
-def wait_for_async_task(server: APIServer, task_id: int, timeout=30) -> Dict[str, Any]:
+def wait_for_async_task(
+        server: APIServer,
+        task_id: int,
+        timeout=ASYNC_TASK_WAIT_TIMEOUT,
+) -> Dict[str, Any]:
     """Waits until an async task is ready and when it is returns the response's outcome
 
     If the task's outcome is not ready within timeout seconds then the test fails"""

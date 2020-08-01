@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.makerdao.vaults import MakerDAOVault
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
+    ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
@@ -217,7 +218,11 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
         "makerdaovaultsresource",
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
-    outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=70)
+    outcome = wait_for_async_task(
+        rotkehlchen_api_server,
+        task_id,
+        timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
+    )
     assert outcome['message'] == ''
     vaults = outcome['result']
     _check_vaults_values(vaults, ethereum_accounts[0])
@@ -227,7 +232,11 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
         "makerdaovaultdetailsresource",
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
-    outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=70)
+    outcome = wait_for_async_task(
+        rotkehlchen_api_server,
+        task_id,
+        timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
+    )
     assert outcome['message'] == ''
     details = outcome['result']
     _check_vault_details_values(
