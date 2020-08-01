@@ -10,6 +10,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.api import (
+    ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
@@ -492,7 +493,11 @@ def _add_blockchain_accounts_test_start(
 
         if async_query:
             task_id = assert_ok_async_response(response)
-            json_data = wait_for_async_task(api_server, task_id, timeout=60)
+            json_data = wait_for_async_task(
+                api_server,
+                task_id,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
+            )
         else:
             assert_proper_response(response)
             json_data = response.json()
