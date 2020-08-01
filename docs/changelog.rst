@@ -9,6 +9,8 @@ Changelog
 
   - `UMA (UMA) <https://coinmarketcap.com/currencies/uma/>`__
   - `Ocean Protocol (OCEAN) <https://coinmarketcap.com/currencies/ocean-protocol/>`__
+  - `Kusama (KSM) <https://coinmarketcap.com/currencies/kusama/>`__
+  - `Pirl (PIRL) <https://coinmarketcap.com/currencies/pirl/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

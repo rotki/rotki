@@ -5281,6 +5281,12 @@
         "symbol": "KRW",
         "type": "fiat"
     },
+    "KSM": {
+        "name": "Kusama",
+        "started": 1576142353,
+        "symbol": "KSM",
+        "type": "own chain"
+    },
     "KUE": {
         "ethereum_address": "0xdf1338FbAfe7aF1789151627B886781ba556eF9a",
         "ethereum_token_decimals": 18,
@@ -7100,6 +7106,12 @@
         "started": 1502201105,
         "symbol": "PIPL",
         "type": "ethereum token"
+    },
+    "PIRL": {
+        "name": "Pirl",
+        "started": 1503619200,
+        "symbol": "PIRL",
+        "type": "own chain"
     },
     "PIVX": {
         "name": "PIVX",
@@ -9429,7 +9441,7 @@
         "started": 1578581061,
         "symbol": "UMA",
         "type": "ethereum token"
-    },    
+    },
     "UNITY": {
         "active": false,
         "name": "SuperNET",
