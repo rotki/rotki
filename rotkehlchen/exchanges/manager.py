@@ -108,6 +108,7 @@ class ExchangeManager():
             exchange_credentials: Dict[str, ApiCredentials],
             database: 'DBHandler',
     ) -> None:
+        log.debug('Initializing exchanges')
         # initialize exchanges for which we have keys and are not already initialized
         for name, credentials in exchange_credentials.items():
             if name not in self.connected_exchanges:

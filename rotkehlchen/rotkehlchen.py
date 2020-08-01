@@ -224,6 +224,7 @@ class Rotkehlchen():
             chain_manager=self.chain_manager,
         )
         self.user_is_logged_in = True
+        log.debug('User unlocking complete')
 
     def logout(self) -> None:
         if not self.user_is_logged_in:

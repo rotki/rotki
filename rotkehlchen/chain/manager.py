@@ -146,6 +146,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             premium: Optional[Premium],
             eth_modules: Optional[List[str]] = None,
     ):
+        log.debug('Initializing ChainManager')
         super().__init__()
         self.ethereum = ethereum_manager
         self.alethio = alethio
