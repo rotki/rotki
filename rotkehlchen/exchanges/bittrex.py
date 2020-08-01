@@ -312,6 +312,10 @@ class Bittrex(ExchangeInterface):
                 )
                 continue
 
+            if entry['currencySymbol'] == 'BTXCRD':
+                # skip BTXCRD balance, since it's bittrex internal and we can't query usd price
+                continue
+
             try:
                 usd_price = Inquirer().find_usd_price(asset=asset)
             except RemoteError as e:
