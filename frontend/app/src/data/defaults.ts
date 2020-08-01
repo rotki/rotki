@@ -1,5 +1,6 @@
 export class Defaults {
-  static DEFAULT_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z';
+  static DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z';
+  static DEFAULT_AMOUNT_DISPLAY_FORMAT = '%T,%U.%D %C';
   static FLOATING_PRECISION = 2;
   static RPC_ENDPOINT = 'http://localhost:8545';
   static BALANCE_SAVE_FREQUENCY = 24;

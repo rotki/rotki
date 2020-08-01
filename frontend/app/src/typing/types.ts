@@ -11,6 +11,7 @@ export interface GeneralSettings {
   readonly ethRpcEndpoint: string;
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
+  readonly amountDisplayFormat: string;
   readonly selectedCurrency: Currency;
   readonly krakenAccountType: string;
   readonly activeModules: SupportedModules[];
@@ -114,6 +115,7 @@ export interface SettingsPayload {
   eth_rpc_endpoint: string;
   ui_floating_precision: number;
   date_display_format: string;
+  amount_display_format: string;
   include_gas_costs: boolean;
   include_crypto2crypto: boolean;
   taxfree_after_period: number;

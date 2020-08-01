@@ -37,6 +37,10 @@ export const getters: GetterTree<SessionState, RotkehlchenState> &
     return state.generalSettings.dateDisplayFormat;
   },
 
+  amountDisplayFormat: (state: SessionState) => {
+    return state.generalSettings.amountDisplayFormat;
+  },
+
   lastBalanceSave: (state: SessionState) => {
     return state.accountingSettings.lastBalanceSave;
   },

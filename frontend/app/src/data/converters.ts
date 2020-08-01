@@ -20,6 +20,7 @@ export const convertToGeneralSettings = (
   historicDataStart: settings.historical_data_start,
   selectedCurrency: findCurrency(settings.main_currency),
   dateDisplayFormat: settings.date_display_format,
+  amountDisplayFormat: settings.amount_display_format,
   balanceSaveFrequency: settings.balance_save_frequency,
   ethRpcEndpoint: settings.eth_rpc_endpoint,
   anonymizedLogs: settings.anonymized_logs,

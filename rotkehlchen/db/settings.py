@@ -21,6 +21,7 @@ DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
+DEFAULT_AMOUNT_DISPLAY_FORMAT = '%T,%U.%D %C'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 DEFAULT_ACTIVE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave']
@@ -42,6 +43,7 @@ class DBSettings(NamedTuple):
     eth_rpc_endpoint: str = 'http://localhost:8545'
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
+    amount_display_format: str = DEFAULT_AMOUNT_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
     kraken_account_type: KrakenAccountType = DEFAULT_KRAKEN_ACCOUNT_TYPE
@@ -61,6 +63,7 @@ class ModifiableDBSettings(NamedTuple):
     eth_rpc_endpoint: Optional[str] = None
     main_currency: Optional[Asset] = None
     date_display_format: Optional[str] = None
+    amount_display_format: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
     kraken_account_type: Optional[KrakenAccountType] = None
     active_modules: Optional[List[str]] = None
@@ -146,6 +149,8 @@ def db_settings_from_dict(
         elif key == 'include_gas_costs':
             specified_args[key] = read_boolean(value)
         elif key == 'date_display_format':
+            specified_args[key] = str(value)
+        elif key == 'amount_display_format':
             specified_args[key] = str(value)
         elif key == 'premium_should_sync':
             specified_args[key] = read_boolean(value)

@@ -55,6 +55,12 @@ export class GeneralSettingsPage {
     cy.get('.general-settings__fields__date-display-format input').blur();
   }
 
+  setAmountDisplayFormat(value: string) {
+    cy.get('.general-settings__fields__amount-display-format input').clear();
+    cy.get('.general-settings__fields__amount-display-format').type(value);
+    cy.get('.general-settings__fields__amount-display-format input').blur();
+  }
+
   toggleScrambleData() {
     cy.get('.general-settings__fields__scramble-data').click();
   }
@@ -126,6 +132,7 @@ export class GeneralSettingsPage {
     anonymousUsageStatistics: boolean;
     floatingPrecision: string;
     dateDisplayFormat: string;
+    amountDisplayFormat: string;
     currency: string;
     balanceSaveFrequency: string;
     historicDataStart: string;
@@ -155,6 +162,10 @@ export class GeneralSettingsPage {
     cy.get('.general-settings__fields__date-display-format input').should(
       'have.value',
       settings.dateDisplayFormat
+    );
+    cy.get('.general-settings__fields__amount-display-format input').should(
+      'have.value',
+      settings.amountDisplayFormat
     );
     this.verifyRPCEndpoint(settings.rpcEndpoint);
   }

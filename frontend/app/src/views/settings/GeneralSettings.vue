@@ -138,6 +138,18 @@
               :error-messages="settingsMessages['dateDisplayFormat'].error"
               @change="onDateDisplayFormatChange($event)"
             ></v-text-field>
+
+            <v-text-field
+              v-model="amountDisplayFormat"
+              class="general-settings__fields__amount-display-format"
+              label="Amount display format (%T = thousands; %U = units; %D = decimals; %C = currency)"
+              type="text"
+              :success-messages="
+                settingsMessages['amountDisplayFormat'].success
+              "
+              :error-messages="settingsMessages['amountDisplayFormat'].error"
+              @change="onAmountDisplayFormatChange($event)"
+            ></v-text-field>
           </v-card-text>
         </v-card>
         <v-card class="mt-5">
@@ -189,6 +201,7 @@ export default class General extends Settings {
   rpcEndpoint: string = 'http://localhost:8545';
   balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
+  amountDisplayFormat: string = '';
   selectedCurrency: Currency = currencies[0];
   scrambleData: boolean = false;
 
@@ -200,6 +213,7 @@ export default class General extends Settings {
     rpcEndpoint: { success: '', error: '' },
     balanceSaveFrequency: { success: '', error: '' },
     dateDisplayFormat: { success: '', error: '' },
+    amountDisplayFormat: { success: '', error: '' },
     selectedCurrency: { success: '', error: '' },
     scrambleData: { success: '', error: '' }
   };
@@ -414,6 +428,31 @@ export default class General extends Settings {
       });
   }
 
+  onAmountDisplayFormatChange(amountFormat: string) {
+    const { commit } = this.$store;
+
+    this.$api
+      .setSettings({ amount_display_format: amountFormat })
+      .then(settings => {
+        commit('session/generalSettings', {
+          ...this.generalSettings,
+          amountDisplayFormat: settings.amount_display_format
+        });
+        this.validateSettingChange(
+          'amountDisplayFormat',
+          'success',
+          `amount display set to ${amountFormat}`
+        );
+      })
+      .catch(reason => {
+        this.validateSettingChange(
+          'amountDisplayFormat',
+          'error',
+          `Error setting amount display format ${reason.message}`
+        );
+      });
+  }
+
   onRpcEndpointChange(endpoint: string) {
     const { commit } = this.$store;
     const previousValue = this.generalSettings.ethRpcEndpoint;
@@ -481,6 +520,7 @@ export default class General extends Settings {
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
+    this.amountDisplayFormat = settings.amountDisplayFormat;
     this.date = this.parseDate(settings.historicDataStart) || '';
     this.scrambleData = this.$store.state.session.scrambleData;
   }
@@ -531,6 +571,10 @@ export default class General extends Settings {
       date_display_format: setOnlyIfDifferent(
         this.dateDisplayFormat,
         this.generalSettings.dateDisplayFormat
+      ),
+      amount_display_format: setOnlyIfDifferent(
+        this.amountDisplayFormat,
+        this.generalSettings.amountDisplayFormat
       )
     };
     this.$api
