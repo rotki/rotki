@@ -7107,6 +7107,12 @@
         "symbol": "PIPL",
         "type": "ethereum token"
     },
+    "PIRL": {
+        "name": "Pirl",
+        "started": 1503619200,
+        "symbol": "PIRL",
+        "type": "own chain"
+    },
     "PIVX": {
         "name": "PIVX",
         "started": 1448409600,
