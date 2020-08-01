@@ -1,5 +1,4 @@
 import logging
-import os
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
@@ -29,7 +28,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str, request_get_dict
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -112,12 +110,6 @@ class EthereumManager():
             return False, f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
         if self.web3.isConnected():
-            dir_path = os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
-            )
-            with open(os.path.join(dir_path, 'data', 'token_abi.json'), 'r') as f:
-                self.token_abi = rlk_jsonloads(f.read())
-
             # Also make sure we are actually connected to the Ethereum mainnet
             synchronized = True
             msg = ''
