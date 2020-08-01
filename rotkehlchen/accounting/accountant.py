@@ -54,6 +54,7 @@ class Accountant():
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
     ) -> None:
+        log.debug('Initializing Accountant')
         self.db = db
         profit_currency = db.get_main_currency()
         self.msg_aggregator = msg_aggregator

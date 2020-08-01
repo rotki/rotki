@@ -70,6 +70,7 @@ class EthereumManager():
             attempt_connect: bool = True,
             eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
     ) -> None:
+        log.debug(f'Initializing Ethereum Manager with {ethrpc_endpoint}')
         self.web3: Optional[Web3] = None
         self.rpc_endpoint = ethrpc_endpoint
         self.etherscan = etherscan

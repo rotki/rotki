@@ -166,7 +166,11 @@ class Rotkehlchen():
             # has unauthenticable/invalid premium credentials remaining in his DB
 
         settings = self.get_settings()
-        maybe_submit_usage_analytics(settings.submit_usage_analytics)
+        self.greenlet_manager.spawn_and_track(
+            task_name='submit_usage_analytics',
+            method=maybe_submit_usage_analytics,
+            should_submit=settings.submit_usage_analytics,
+        )
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
         alethio = Alethio(
             database=self.data.db,
@@ -224,6 +228,7 @@ class Rotkehlchen():
             chain_manager=self.chain_manager,
         )
         self.user_is_logged_in = True
+        log.debug('User unlocking complete')
 
     def logout(self) -> None:
         if not self.user_is_logged_in:
