@@ -8,7 +8,7 @@
       small-chips
       label="Tags"
       item-text="name"
-      :menu-props="{ closeOnClick: true, closeOnContentClick: true }"
+      :menu-props="{ closeOnContentClick: true }"
       item-value="name"
       multiple
       @input="input"
