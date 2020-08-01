@@ -72,6 +72,7 @@ MANUALLY_CHECKED_TYPES = {
     'JOY': 'ethereum token',
     'JST': 'tron token',
     'KDAG': 'ethereum token',
+    'KSM': 'own chain',
     'KUE': 'ethereum token',
     'LCT-2': 'ethereum token',
     'LGR': 'ethereum token',

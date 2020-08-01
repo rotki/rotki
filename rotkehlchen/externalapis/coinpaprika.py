@@ -79,6 +79,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'HZ',
     'JST',
     'KEY-3',  # KeyCoin
+    'KSM',
     'LOON',
     'LTBC',
     'LTCX',

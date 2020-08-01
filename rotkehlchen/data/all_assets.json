@@ -5281,6 +5281,12 @@
         "symbol": "KRW",
         "type": "fiat"
     },
+    "KSM": {
+        "name": "Kusama",
+        "started": 1576142353,
+        "symbol": "KSM",
+        "type": "own chain"
+    },
     "KUE": {
         "ethereum_address": "0xdf1338FbAfe7aF1789151627B886781ba556eF9a",
         "ethereum_token_decimals": 18,
@@ -9429,7 +9435,7 @@
         "started": 1578581061,
         "symbol": "UMA",
         "type": "ethereum token"
-    },    
+    },
     "UNITY": {
         "active": false,
         "name": "SuperNET",
