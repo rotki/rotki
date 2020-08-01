@@ -85,7 +85,8 @@ a = Entrypoint(
     hookspath=['tools/pyinstaller_hooks'],
     hiddenimports=hiddenimports,
     datas=[
-        ('rotkehlchen/data/token_abi.json', 'rotkehlchen/data'),
+        ('rotkehlchen/data/eth_abi.json', 'rotkehlchen/data'),
+        ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.json', 'rotkehlchen/data'),
     ],
     excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'packaging'],

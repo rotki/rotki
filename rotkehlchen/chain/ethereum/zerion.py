@@ -7,7 +7,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.constants.ethereum import ZERION_ADAPTER_ABI
+from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.inquirer import Inquirer
@@ -84,7 +84,7 @@ class Zerion():
         """
         result = self.ethereum.call_contract(
             contract_address=self.contract_address,
-            abi=ZERION_ADAPTER_ABI,
+            abi=EthereumConstants.abi('ZERION_ADAPTER'),
             method_name='getBalances',
             arguments=[account],
         )
