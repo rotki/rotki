@@ -224,6 +224,7 @@ class Accountant():
 
         if not loan_settlement:
             self.events.add_sell_and_corresponding_buy(
+                location=trade.location,
                 selling_asset=selling_asset,
                 selling_amount=trade.amount,
                 receiving_asset=receiving_asset,
@@ -236,6 +237,7 @@ class Accountant():
             )
         else:
             self.events.add_sell(
+                location=trade.location,
                 selling_asset=selling_asset,
                 selling_amount=trade.amount,
                 receiving_asset=None,
@@ -462,6 +464,7 @@ class Accountant():
         if action_type == 'loan':
             action = cast(Loan, action)
             self.events.add_loan_gain(
+                location=action.location,
                 gained_asset=action.currency,
                 lent_amount=action.amount_lent,
                 gained_amount=action.earned,
@@ -494,6 +497,7 @@ class Accountant():
         # costs in cost_currency
         if trade.trade_type == TradeType.BUY:
             self.events.add_buy_and_corresponding_sell(
+                location=trade.location,
                 bought_asset=trade.base_asset,
                 bought_amount=trade.amount,
                 paid_with_asset=trade.quote_asset,
@@ -523,6 +527,7 @@ class Accountant():
             # (amount*rate) of the original buy
             selling_amount = trade.rate * trade.amount
             self.events.add_sell(
+                location=trade.location,
                 selling_asset=selling_asset,
                 selling_amount=selling_amount,
                 receiving_asset=None,

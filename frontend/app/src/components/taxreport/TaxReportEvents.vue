@@ -78,6 +78,7 @@ export default class TaxReportEvents extends Vue {
 
   headers = [
     { text: 'Type', value: 'type' },
+    { text: 'Location', value: 'location' },
     { text: 'Paid in USD', value: 'paidInProfitCurrency' },
     { text: 'Paid Asset', value: 'paidAsset' },
     { text: 'Paid in Asset', value: 'paidInAsset' },
