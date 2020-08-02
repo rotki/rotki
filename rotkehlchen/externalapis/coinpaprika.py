@@ -96,6 +96,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'NXTI',
     'PLT',
     'POLY-2',  # Polybit
+    'RING',
     'RZR',
     'SPA',
     'SQL',

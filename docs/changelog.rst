@@ -20,6 +20,7 @@ Changelog
   - `Darico Ecosystem Coin (DEC) <https://coinmarketcap.com/currencies/darcio-ecosystem-coin/>`__
   - `Decentr (DEC) <https://coinmarketcap.com/currencies/decentr/>`__
   - `Plutus DeFi (PLT) <https://coinmarketcap.com/currencies/plutusdefi/>`__
+  - `Darwinia Network (RING) <https://coinmarketcap.com/currencies/darwinia-network/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

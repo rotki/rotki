@@ -7848,6 +7848,14 @@
         "symbol": "RIC",
         "type": "own chain"
     },
+    "RING": {
+        "ethereum_address": "0x9469D013805bFfB7D3DEBe5E7839237e535ec483",
+        "ethereum_token_decimals": 18,
+        "name": "Darwinia Network",
+        "started": 1535966001,
+        "symbol": "RING",
+        "type": "ethereum token"
+    },
     "RIPT": {
         "ethereum_address": "0xdd007278B667F6bef52fD0a4c23604aA1f96039a",
         "ethereum_token_decimals": 8,

@@ -105,6 +105,7 @@ MANUALLY_CHECKED_TYPES = {
     'REA': 'ethereum token',
     'REDC': 'ethereum token',
     'RIPT': 'ethereum token',
+    'RING': 'ethereum token',
     'RNDR': 'ethereum token',
     'RUNE': 'own chain',
     'SKR': 'ethereum token',
