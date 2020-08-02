@@ -314,7 +314,8 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 14
+            assert len(row) == 15
+            assert row['location'] in ('kraken', 'bittrex', 'binance', 'poloniex')
             assert row['type'] in ('buy', 'sell')
             assert Asset(row['asset']).identifier is not None
             assert FVal(row[f'fee_in_{profit_currency.identifier}']) >= ZERO
@@ -341,7 +342,8 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 6
+            assert len(row) == 7
+            assert row['location'] == 'poloniex'
             assert create_timestamp(row['open_time'], '%d/%m/%Y %H:%M:%S') > 0
             assert create_timestamp(row['close_time'], '%d/%m/%Y %H:%M:%S') > 0
             assert Asset(row['gained_asset']).identifier is not None
@@ -384,7 +386,8 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 5
+            assert len(row) == 6
+            assert row['location'] == 'bitmex'
             assert row['name'] is not None
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
             assert Asset(row['gain_loss_asset']).identifier is not None
@@ -414,7 +417,15 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 12
+            assert len(row) == 13
+            assert row['location'] in (
+                'kraken',
+                'bittrex',
+                'binance',
+                'poloniex',
+                'blockchain',
+                'bitmex',
+            )
             assert row['type'] in (
                 'buy',
                 'sell',
