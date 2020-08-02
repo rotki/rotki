@@ -696,6 +696,9 @@ WORLD_TO_CMC_ID = {
     'BTM-2': 1866,
     # 3x Long Bitcoin
     'BULL': 5157,
+    # DEC is Darico Ecosystem Coin and DEC-2 is Decenter
+    'DEC': 3376,
+    'DEC-2': 5835,
     # FairCoin
     'FAIR': 224,
     # FairGame

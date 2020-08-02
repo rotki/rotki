@@ -2702,6 +2702,14 @@
         "symbol": "DEB",
         "type": "ethereum token"
     },
+    "DEC": {
+        "ethereum_address": "0x89c6c856a6db3e46107163D0cDa7A7FF211BD655",
+        "ethereum_token_decimals": 18,
+        "name": "Darico Ecosystem Coin",
+        "started": 1527686144,
+        "symbol": "DEC",
+        "type": "ethereum token"
+    },
     "DELTA": {
         "ethereum_address": "0xDE1E0AE6101b46520cF66fDC0B1059c5cC3d106c",
         "ethereum_token_decimals": 8,
