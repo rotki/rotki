@@ -8843,6 +8843,14 @@
         "symbol": "SVD",
         "type": "ethereum token"
     },
+    "SWAP": {
+        "ethereum_address": "0xCC4304A31d09258b0029eA7FE63d032f52e44EFe",
+        "ethereum_token_decimals": 18,
+        "name": "TrustSwap",
+        "started": 1594294602,
+        "symbol": "SWAP",
+        "type": "ethereum token"
+    },
     "SWARM": {
         "active": false,
         "ended": 1473984000,

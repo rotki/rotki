@@ -21,6 +21,7 @@ Changelog
   - `Decentr (DEC) <https://coinmarketcap.com/currencies/decentr/>`__
   - `Plutus DeFi (PLT) <https://coinmarketcap.com/currencies/plutusdefi/>`__
   - `Darwinia Network (RING) <https://coinmarketcap.com/currencies/darwinia-network/>`__
+  - `TrustSwap (SWAP) <https://coinmarketcap.com/currencies/trustswap/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

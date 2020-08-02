@@ -118,6 +118,7 @@ MANUALLY_CHECKED_TYPES = {
     'SSH': 'ethereum token',
     'STP': 'ethereum token',
     'SUTER': 'ethereum token',
+    'SWAP': 'ethereum token',
     'TAN': 'ethereum token',
     'TBT': 'ethereum token',
     'TCH-2': 'ethereum token',
