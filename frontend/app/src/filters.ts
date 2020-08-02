@@ -1,5 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import Vue from 'vue';
+import { displayAmountFormatter } from '@/data/amount_formatter';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
@@ -20,8 +21,15 @@ export function formatDate(value: number, format: string): string {
   return displayDateFormatter.format(new Date(value * 1000), format);
 }
 
-export function formatPrice(value: BigNumber, precision: number) {
-  return value.isNaN() ? '-' : value.toFormat(precision);
+export function formatPrice(
+  value: BigNumber,
+  format: string,
+  precision: number,
+  currency: string
+) {
+  return value.isNaN()
+    ? '-'
+    : displayAmountFormatter.format(value, format, precision, currency);
 }
 
 export function capitalize(string: string): string {
