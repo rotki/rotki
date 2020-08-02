@@ -14,6 +14,7 @@ export interface ApiEventEntry {
   readonly taxable_received_in_profit_currency: string;
   readonly time: number;
   readonly type: string;
+  readonly location: string;
 }
 
 export interface ApiTradeHistoryOverview {
@@ -48,6 +49,7 @@ export interface TradeHistoryOverview {
 }
 
 export interface EventEntry {
+  readonly location: string;
   readonly type: string;
   readonly paidInProfitCurrency: BigNumber;
   readonly paidAsset: string;
@@ -95,6 +97,7 @@ export const convertTradeHistoryOverview = (
 });
 
 export const convertEventEntry = (event: ApiEventEntry): EventEntry => ({
+  location: event.location,
   type: event.type,
   paidInProfitCurrency: bigNumberify(event.paid_in_profit_currency),
   paidAsset: event.paid_asset,

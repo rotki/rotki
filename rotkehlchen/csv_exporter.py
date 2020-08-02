@@ -80,6 +80,7 @@ class CSVExporter():
     def add_to_allevents(
             self,
             event_type: EventType,
+            location: Location,
             paid_in_profit_currency: FVal,
             paid_asset: Union[Asset, EmptyStr],
             paid_in_asset: FVal,
@@ -118,6 +119,7 @@ class CSVExporter():
         )
         entry = {
             'type': event_type,
+            'location': str(location),
             'paid_in_profit_currency': paid_in_profit_currency,
             'paid_asset': exported_paid_asset,
             'paid_in_asset': paid_in_asset,
@@ -147,6 +149,7 @@ class CSVExporter():
 
     def add_buy(
             self,
+            location: Location,
             bought_asset: Asset,
             rate: FVal,
             fee_cost: Fee,
@@ -163,6 +166,7 @@ class CSVExporter():
         exchange_rate_key = f'exchanged_asset_{self.profit_currency.identifier}_exchange_rate'
         self.trades_csv.append({
             'type': 'buy',
+            'location': str(location),
             'asset': bought_asset.identifier,
             'price_in_{}'.format(self.profit_currency.identifier): rate,
             'fee_in_{}'.format(self.profit_currency.identifier): fee_cost,
@@ -179,6 +183,7 @@ class CSVExporter():
         })
         self.add_to_allevents(
             event_type=EV_BUY,
+            location=location,
             paid_in_profit_currency=cost,
             paid_asset=self.profit_currency,
             paid_in_asset=cost,
@@ -191,6 +196,7 @@ class CSVExporter():
 
     def add_sell(
             self,
+            location: Location,
             selling_asset: Asset,
             rate_in_profit_currency: FVal,
             total_fee_in_profit_currency: Fee,
@@ -223,6 +229,7 @@ class CSVExporter():
         taxable_profit_formula = '=IF(G{}=0,0,K{}-J{})'.format(row, row, row)
         self.trades_csv.append({
             'type': 'sell',
+            'location': str(location),
             'asset': selling_asset.identifier,
             f'price_in_{self.profit_currency.identifier}': rate_in_profit_currency,
             f'fee_in_{self.profit_currency.identifier}': total_fee_in_profit_currency,
@@ -240,6 +247,7 @@ class CSVExporter():
         paid_in_profit_currency = ZERO
         self.add_to_allevents(
             event_type=EV_SELL,
+            location=location,
             paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=selling_asset,
             paid_in_asset=selling_amount,
@@ -254,6 +262,7 @@ class CSVExporter():
 
     def add_loan_settlement(
             self,
+            location: Location,
             asset: Asset,
             amount: FVal,
             rate_in_profit_currency: FVal,
@@ -267,6 +276,7 @@ class CSVExporter():
         loss_formula = '=B{}*C{}+D{}'.format(row, row, row)
         self.loan_settlements_csv.append({
             'asset': asset.identifier,
+            'location': str(location),
             'amount': amount,
             f'price_in_{self.profit_currency.identifier}': rate_in_profit_currency,
             f'fee_in_{self.profit_currency.identifier}': total_fee_in_profit_currency,
@@ -276,6 +286,7 @@ class CSVExporter():
         paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         self.add_to_allevents(
             event_type=EV_LOAN_SETTLE,
+            location=location,
             paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=asset,
             paid_in_asset=amount,
@@ -287,6 +298,7 @@ class CSVExporter():
 
     def add_loan_profit(
             self,
+            location: Location,
             gained_asset: Asset,
             gained_amount: FVal,
             gain_in_profit_currency: FVal,
@@ -298,6 +310,7 @@ class CSVExporter():
             return
 
         self.loan_profits_csv.append({
+            'location': str(location),
             'open_time': timestamp_to_date(open_time, formatstr='%d/%m/%Y %H:%M:%S'),
             'close_time': timestamp_to_date(close_time, formatstr='%d/%m/%Y %H:%M:%S'),
             'gained_asset': gained_asset.identifier,
@@ -306,6 +319,7 @@ class CSVExporter():
             f'profit_in_{self.profit_currency.identifier}': gain_in_profit_currency,
         })
         self.add_to_allevents(
+            location=location,
             event_type=EV_INTEREST_PAYMENT,
             paid_in_profit_currency=FVal(0),
             paid_asset=S_EMPTYSTR,
@@ -318,6 +332,7 @@ class CSVExporter():
 
     def add_margin_position(
             self,
+            location: Location,
             margin_notes: str,
             gain_loss_asset: Asset,
             gain_loss_amount: FVal,
@@ -332,6 +347,7 @@ class CSVExporter():
 
         self.margin_positions_csv.append({
             'name': margin_notes,
+            'location': str(location),
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'gain_loss_asset': gain_loss_asset.identifier,
             'gain_loss_amount': gain_loss_amount,
@@ -339,6 +355,7 @@ class CSVExporter():
         })
         self.add_to_allevents(
             event_type=EV_MARGIN_CLOSE,
+            location=location,
             paid_in_profit_currency=FVal(0),
             paid_asset=S_EMPTYSTR,
             paid_in_asset=FVal(0),
@@ -370,6 +387,7 @@ class CSVExporter():
         })
         self.add_to_allevents(
             event_type=EV_ASSET_MOVE,
+            location=exchange,
             paid_in_profit_currency=fee * rate,
             paid_asset=asset,
             paid_in_asset=fee,
@@ -396,6 +414,7 @@ class CSVExporter():
             f'cost_in_{self.profit_currency.identifier}': eth_burned_as_gas * rate,
         })
         self.add_to_allevents(
+            location=Location.BLOCKCHAIN,
             event_type=EV_TX_GAS_COST,
             paid_in_profit_currency=eth_burned_as_gas * rate,
             paid_asset=A_ETH,
@@ -439,6 +458,7 @@ class CSVExporter():
 
         self.add_to_allevents(
             event_type=EV_DEFI,
+            location=Location.BLOCKCHAIN,
             paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=paid_asset,
             paid_in_asset=paid_in_asset,

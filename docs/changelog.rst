@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature: `1213` Taxable actions table in the tax report and in the CSV exports now include a location.
 * :bug: `1247` Fix glitchy autocomplete component usage which caused select menus to not open properly if the "dropdown arrows" were clicked. This has fixed the following select menus throughout the app: Asset Select, Tag Input and Tag Filter, Owned Tokens.
 * :bug: `1234` Bittrex history can now be properly queried again. Rotki uses bittrex v3 API from now and on.
 * :feature: `1187` There is now a setting per protocol with which users can specify which addresses should be queried for each protocol. If none are specified, then all addresses are queried. This should allow users to save a lot of time when querying historical and current balances for some protocols.

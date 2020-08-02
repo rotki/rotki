@@ -11,7 +11,7 @@ from rotkehlchen.exchanges.data_structures import BuyEvent, Events, MarginPositi
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee, Timestamp
+from rotkehlchen.typing import Fee, Location, Timestamp
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
@@ -143,6 +143,7 @@ class TaxableEvents():
 
     def handle_prefork_asset_buys(
             self,
+            location: Location,
             bought_asset: Asset,
             bought_amount: FVal,
             paid_with_asset: Asset,
@@ -154,26 +155,28 @@ class TaxableEvents():
         # TODO: Should fee also be taken into account here?
         if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
             self.add_buy(
-                A_ETC,
-                bought_amount,
-                paid_with_asset,
-                trade_rate,
-                fee_in_profit_currency,
-                fee_currency,
-                timestamp,
+                location=location,
+                bought_asset=A_ETC,
+                bought_amount=bought_amount,
+                paid_with_asset=paid_with_asset,
+                trade_rate=trade_rate,
+                fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=fee_currency,
+                timestamp=timestamp,
                 is_virtual=True,
             )
 
         if bought_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
             # Acquiring BTC before the BCH fork provides equal amount of BCH
             self.add_buy(
-                A_BCH,
-                bought_amount,
-                paid_with_asset,
-                trade_rate,
-                fee_in_profit_currency,
-                fee_currency,
-                timestamp,
+                location=location,
+                bought_asset=A_BCH,
+                bought_amount=bought_amount,
+                paid_with_asset=paid_with_asset,
+                trade_rate=trade_rate,
+                fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=fee_currency,
+                timestamp=timestamp,
                 is_virtual=True,
             )
 
@@ -200,6 +203,7 @@ class TaxableEvents():
 
     def add_buy_and_corresponding_sell(
             self,
+            location: Location,
             bought_asset: Asset,
             bought_amount: FVal,
             paid_with_asset: Asset,
@@ -219,6 +223,7 @@ class TaxableEvents():
         or with reading the response returned by the server
         """
         self.add_buy(
+            location=location,
             bought_asset=bought_asset,
             bought_amount=bought_amount,
             paid_with_asset=paid_with_asset,
@@ -271,6 +276,7 @@ class TaxableEvents():
             gain_in_profit_currency = with_sold_asset_gain
 
         self.add_sell(
+            location=location,
             selling_asset=paid_with_asset,
             selling_amount=sold_amount,
             receiving_asset=receiving_asset,
@@ -285,6 +291,7 @@ class TaxableEvents():
 
     def add_buy(
             self,
+            location: Location,
             bought_asset: Asset,
             bought_amount: FVal,
             paid_with_asset: Asset,
@@ -308,6 +315,7 @@ class TaxableEvents():
         buy_rate = paid_with_asset_rate * trade_rate
 
         self.handle_prefork_asset_buys(
+            location=location,
             bought_asset=bought_asset,
             bought_amount=bought_amount,
             paid_with_asset=paid_with_asset,
@@ -334,6 +342,7 @@ class TaxableEvents():
         log.debug(
             'Buy Event',
             sensitive_log=True,
+            location=str(location),
             bought_amount=bought_amount,
             bought_asset=bought_asset,
             paid_with_asset=paid_with_asset,
@@ -345,6 +354,7 @@ class TaxableEvents():
 
         if timestamp >= self.query_start_ts:
             self.csv_exporter.add_buy(
+                location=location,
                 bought_asset=bought_asset,
                 rate=buy_rate,
                 fee_cost=fee_in_profit_currency,
@@ -358,6 +368,7 @@ class TaxableEvents():
 
     def add_sell_and_corresponding_buy(
             self,
+            location: Location,
             selling_asset: Asset,
             selling_amount: FVal,
             receiving_asset: Asset,
@@ -394,15 +405,16 @@ class TaxableEvents():
         or with reading the response returned by the server
         """
         self.add_sell(
-            selling_asset,
-            selling_amount,
-            receiving_asset,
-            receiving_amount,
-            gain_in_profit_currency,
-            total_fee_in_profit_currency,
-            trade_rate,
-            rate_in_profit_currency,
-            timestamp,
+            location=location,
+            selling_asset=selling_asset,
+            selling_amount=selling_amount,
+            receiving_asset=receiving_asset,
+            receiving_amount=receiving_amount,
+            gain_in_profit_currency=gain_in_profit_currency,
+            total_fee_in_profit_currency=total_fee_in_profit_currency,
+            trade_rate=trade_rate,
+            rate_in_profit_currency=rate_in_profit_currency,
+            timestamp=timestamp,
             is_virtual=False,
         )
 
@@ -414,6 +426,7 @@ class TaxableEvents():
         )
         # else then you are also buying some other asset through your sell
         self.add_buy(
+            location=location,
             bought_asset=receiving_asset,
             bought_amount=receiving_amount,
             paid_with_asset=selling_asset,
@@ -426,6 +439,7 @@ class TaxableEvents():
 
     def add_sell(
             self,
+            location: Location,
             selling_asset: Asset,
             selling_amount: FVal,
             receiving_asset: Optional[Asset],
@@ -560,6 +574,7 @@ class TaxableEvents():
 
             if loan_settlement:
                 self.csv_exporter.add_loan_settlement(
+                    location=location,
                     asset=selling_asset,
                     amount=selling_amount,
                     rate_in_profit_currency=rate_in_profit_currency,
@@ -569,6 +584,7 @@ class TaxableEvents():
             else:
                 assert receiving_asset, 'Here receiving asset should have a value'
                 self.csv_exporter.add_sell(
+                    location=location,
                     selling_asset=selling_asset,
                     rate_in_profit_currency=rate_in_profit_currency,
                     total_fee_in_profit_currency=total_fee_in_profit_currency,
@@ -713,6 +729,7 @@ class TaxableEvents():
 
     def add_loan_gain(
             self,
+            location: Location,
             gained_asset: Asset,
             gained_amount: FVal,
             fee_in_asset: Fee,
@@ -751,6 +768,7 @@ class TaxableEvents():
             log.debug(
                 'Accounting for loan profit',
                 sensitive_log=True,
+                location=location,
                 gained_asset=gained_asset,
                 gained_amount=gained_amount,
                 gain_in_profit_currency=gain_in_profit_currency,
@@ -761,6 +779,7 @@ class TaxableEvents():
 
             self.loan_profit += gain_in_profit_currency
             self.csv_exporter.add_loan_profit(
+                location=location,
                 gained_asset=gained_asset,
                 gained_amount=gained_amount,
                 gain_in_profit_currency=gain_in_profit_currency,
@@ -834,6 +853,7 @@ class TaxableEvents():
             )
 
             self.csv_exporter.add_margin_position(
+                location=margin.location,
                 margin_notes=margin.notes,
                 gain_loss_asset=margin.pl_currency,
                 gain_loss_amount=margin.profit_loss,
