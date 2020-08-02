@@ -43,6 +43,7 @@ MANUALLY_CHECKED_TYPES = {
     'CCRB': 'ethereum token',
     'DAWN': 'ethereum token',
     'DEPO': 'ethereum token',
+    'DEC-2': 'ethereum token',
     'DEP': 'ethereum token',
     'DIP': 'ethereum token',
     'DPP': 'ethereum token',

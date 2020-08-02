@@ -18,6 +18,7 @@ Changelog
   - `THORChain (RUNE) <https://coinmarketcap.com/currencies/thorchain/>`__
   - `Suterusu (SUTER) <https://coinmarketcap.com/currencies/suterusu/>`__
   - `Darico Ecosystem Coin (DEC) <https://coinmarketcap.com/currencies/darcio-ecosystem-coin/>`__
+  - `Decentr (DEC) <https://coinmarketcap.com/currencies/decentr/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

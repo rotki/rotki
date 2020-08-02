@@ -29,6 +29,8 @@ WORLD_TO_POLONIEX = {
     'AIR-2': 'AIR',
     # APH-2 is Aphrodite coin for us and APH is Aphelion. Poloniex has only aphrodite
     'APH-2': 'APH',
+    # Decentr is DEC-2 for us but DEC in Poloniex
+    'DEC-2': 'DEC',
     # Poloniex listed BTCtalkcoin as BCC as it was its original ticker but the
     # ticker later changes and it is now known to the world  as TALK
     'TALK': 'BCC',

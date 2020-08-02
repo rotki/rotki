@@ -2710,6 +2710,14 @@
         "symbol": "DEC",
         "type": "ethereum token"
     },
+    "DEC-2": {
+        "ethereum_address": "0x30f271C9E86D2B7d00a6376Cd96A1cFBD5F0b9b3",
+        "ethereum_token_decimals": 18,
+        "name": "Decentr",
+        "started": 1593644131,
+        "symbol": "DEC",
+        "type": "ethereum token"
+    },
     "DELTA": {
         "ethereum_address": "0xDE1E0AE6101b46520cF66fDC0B1059c5cC3d106c",
         "ethereum_token_decimals": 8,

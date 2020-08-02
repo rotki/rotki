@@ -54,6 +54,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'COMM',
     'CTSI',
     'DAWN',
+    'DEC-2',
     'DEP',
     'DIEM',
     'DRKC',
