@@ -16,6 +16,7 @@ Changelog
   - `Synth sUSD (sUSD) <https://coinmarketcap.com/currencies/susd/>`__
   - `FIO Protocol (FIO) <https://coinmarketcap.com/currencies/fio-protocol/>`__
   - `THORChain (RUNE) <https://coinmarketcap.com/currencies/thorchain/>`__
+  - `Suterusu (SUTER) <https://coinmarketcap.com/currencies/suterusu/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

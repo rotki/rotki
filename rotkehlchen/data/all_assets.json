@@ -8795,6 +8795,14 @@
         "symbol": "SUSD",
         "type": "ethereum token"
     },
+    "SUTER": {
+        "ethereum_address": "0xBA8c0244FBDEB10f19f6738750dAeEDF7a5081eb",
+        "ethereum_token_decimals": 18,
+        "name": "Suterusu",
+        "started": 1570227735,
+        "symbol": "SUTER",
+        "type": "ethereum token"
+    },
     "SVD": {
         "ethereum_address": "0xbdEB4b83251Fb146687fa19D1C660F99411eefe3",
         "ethereum_token_decimals": 18,
