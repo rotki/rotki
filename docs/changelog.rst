@@ -15,6 +15,7 @@ Changelog
   - `Pirl (PIRL) <https://coinmarketcap.com/currencies/pirl/>`__
   - `Synth sUSD (sUSD) <https://coinmarketcap.com/currencies/susd/>`__
   - `FIO Protocol (FIO) <https://coinmarketcap.com/currencies/fio-protocol/>`__
+  - `THORChain (RUNE) <https://coinmarketcap.com/currencies/thorchain/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

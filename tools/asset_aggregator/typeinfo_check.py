@@ -104,6 +104,7 @@ MANUALLY_CHECKED_TYPES = {
     'REDC': 'ethereum token',
     'RIPT': 'ethereum token',
     'RNDR': 'ethereum token',
+    'RUNE': 'own chain',
     'SKR': 'ethereum token',
     'SKYM': 'ethereum token',
     'SOL-2': 'own chain',

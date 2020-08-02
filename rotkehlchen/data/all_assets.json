@@ -7969,6 +7969,12 @@
         "symbol": "RUFF",
         "type": "ethereum token"
     },
+    "RUNE": {
+        "name": "THORChain",
+        "started": 1563914649,
+        "symbol": "RUNE",
+        "type": "own chain"
+    },
     "RVN": {
         "name": "Ravencoin",
         "started": 1514937600,
