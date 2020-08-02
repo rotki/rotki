@@ -14,6 +14,7 @@ Changelog
   - `Kusama (KSM) <https://coinmarketcap.com/currencies/kusama/>`__
   - `Pirl (PIRL) <https://coinmarketcap.com/currencies/pirl/>`__
   - `Synth sUSD (sUSD) <https://coinmarketcap.com/currencies/susd/>`__
+  - `FIO Protocol (FIO) <https://coinmarketcap.com/currencies/fio-protocol/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

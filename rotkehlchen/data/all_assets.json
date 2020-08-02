@@ -3775,6 +3775,12 @@
         "symbol": "FIH",
         "type": "ethereum token"
     },
+    "FIO": {
+        "name": "FIO Protocol",
+        "started": 1585094400,
+        "symbol": "FIO",
+        "type": "own chain"
+    },
     "FKX": {
         "ethereum_address": "0x009e864923b49263c7F10D19B7f8Ab7a9A5AAd33",
         "ethereum_token_decimals": 18,
