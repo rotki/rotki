@@ -19,6 +19,7 @@ Changelog
   - `Suterusu (SUTER) <https://coinmarketcap.com/currencies/suterusu/>`__
   - `Darico Ecosystem Coin (DEC) <https://coinmarketcap.com/currencies/darcio-ecosystem-coin/>`__
   - `Decentr (DEC) <https://coinmarketcap.com/currencies/decentr/>`__
+  - `Plutus DeFi (PLT) <https://coinmarketcap.com/currencies/plutusdefi/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

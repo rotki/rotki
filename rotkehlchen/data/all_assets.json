@@ -7211,6 +7211,14 @@
         "symbol": "PLR",
         "type": "ethereum token"
     },
+    "PLT": {
+        "ethereum_address": "0x9fBFed658919A896B5Dc7b00456Ce22D780f9B65",
+        "ethereum_token_decimals": 18,
+        "name": "PlutusDeFi",
+        "started": 1595686189,
+        "symbol": "PLT",
+        "type": "ethereum token"
+    },
     "PLU": {
         "ethereum_address": "0xD8912C10681D8B21Fd3742244f44658dBA12264E",
         "ethereum_token_decimals": 18,
