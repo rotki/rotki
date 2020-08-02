@@ -10859,5 +10859,13 @@
         "started": 1557192054,
         "symbol": "cZRX",
         "type": "ethereum token"
+    },
+    "sUSD": {
+        "ethereum_address": "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51",
+        "ethereum_token_decimals": 18,
+        "name": "Synth sUSD",
+        "started": 1569466541,
+        "symbol": "sUSD",
+        "type": "ethereum token"
     }
 }

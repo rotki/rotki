@@ -13,6 +13,7 @@ Changelog
   - `Ocean Protocol (OCEAN) <https://coinmarketcap.com/currencies/ocean-protocol/>`__
   - `Kusama (KSM) <https://coinmarketcap.com/currencies/kusama/>`__
   - `Pirl (PIRL) <https://coinmarketcap.com/currencies/pirl/>`__
+  - `Synth sUSD (sUSD) <https://coinmarketcap.com/currencies/susd/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`
