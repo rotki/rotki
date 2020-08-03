@@ -6,13 +6,6 @@ module.exports = {
     progress: false
   },
   productionSourceMap: false,
-  css: {
-    loaderOptions: {
-      scss: {
-        additionalData: `@import "~@/main.scss";`
-      }
-    }
-  },
   configureWebpack: config => {
     if (
       process.env.NODE_ENV === 'development' ||

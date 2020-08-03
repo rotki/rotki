@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import App from '@/App.vue';
 import '@/filters';
+import '@/main.scss';
 import { Api } from '@/plugins/api';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'font-awesome/css/font-awesome.css';
