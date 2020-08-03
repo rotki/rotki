@@ -1,6 +1,9 @@
 import { AxiosInstance } from 'axios';
 import { ActionResult, AsyncQuery } from '@/model/action-result';
-import { fetchWithExternalService, handleResponse } from '@/services/utils';
+import {
+  validWithSessionAndExternalService,
+  handleResponse
+} from '@/services/utils';
 
 export class DefiApi {
   private readonly axios: AxiosInstance;
@@ -46,7 +49,7 @@ export class DefiApi {
       .get<ActionResult<AsyncQuery>>(
         'blockchains/ETH/modules/makerdao/vaults',
         {
-          validateStatus: fetchWithExternalService,
+          validateStatus: validWithSessionAndExternalService,
           params: {
             async_query: true
           }
@@ -60,7 +63,7 @@ export class DefiApi {
       .get<ActionResult<AsyncQuery>>(
         '/blockchains/ETH/modules/makerdao/vaultdetails',
         {
-          validateStatus: fetchWithExternalService,
+          validateStatus: validWithSessionAndExternalService,
           params: {
             async_query: true
           }
@@ -72,7 +75,7 @@ export class DefiApi {
   async fetchAaveBalances(): Promise<AsyncQuery> {
     return this.axios
       .get<ActionResult<AsyncQuery>>('/blockchains/ETH/modules/aave/balances', {
-        validateStatus: fetchWithExternalService,
+        validateStatus: validWithSessionAndExternalService,
         params: {
           async_query: true
         }
@@ -83,7 +86,7 @@ export class DefiApi {
   async fetchAaveHistory(reset?: boolean): Promise<AsyncQuery> {
     return this.axios
       .get<ActionResult<AsyncQuery>>('/blockchains/ETH/modules/aave/history', {
-        validateStatus: fetchWithExternalService,
+        validateStatus: validWithSessionAndExternalService,
         params: {
           async_query: true,
           reset_db_data: reset
@@ -95,7 +98,7 @@ export class DefiApi {
   async fetchAllDefi(): Promise<AsyncQuery> {
     return this.axios
       .get<ActionResult<AsyncQuery>>('/blockchains/ETH/defi', {
-        validateStatus: fetchWithExternalService,
+        validateStatus: validWithSessionAndExternalService,
         params: {
           async_query: true
         }

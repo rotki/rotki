@@ -26,14 +26,14 @@ import {
   TaskNotFoundError
 } from '@/services/types-api';
 import {
-  fetchWithExternalService,
-  handleResponse,
   validWithSessionAndExternalService,
+  handleResponse,
+  validWithParamsSessionAndExternalService,
   validStatus,
-  validSessionStatus,
+  validAccountOperationStatus,
   validWithoutSessionStatus,
   validWithSessionStatus,
-  validSessionModifyStatus,
+  validAuthorizedStatus,
   validTaskStatus
 } from '@/services/utils';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
@@ -83,7 +83,7 @@ export class RotkehlchenApi {
         {
           action: 'logout'
         },
-        { validateStatus: validSessionStatus }
+        { validateStatus: validAccountOperationStatus }
       )
       .then(handleResponse);
   }
@@ -108,7 +108,7 @@ export class RotkehlchenApi {
           premium_api_key: apiKey,
           premium_api_secret: apiSecret
         },
-        { validateStatus: validSessionStatus }
+        { validateStatus: validAuthorizedStatus }
       )
       .then(handleResponse);
   }
@@ -116,7 +116,7 @@ export class RotkehlchenApi {
   deletePremiumCredentials(username: string): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>(`/users/${username}/premium`, {
-        validateStatus: validSessionModifyStatus
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -135,7 +135,7 @@ export class RotkehlchenApi {
           new_password: newPassword
         },
         {
-          validateStatus: validSessionModifyStatus
+          validateStatus: validAuthorizedStatus
         }
       )
       .then(handleResponse);
@@ -147,7 +147,7 @@ export class RotkehlchenApi {
         data: {
           eth_tokens: tokens
         },
-        validateStatus: validWithSessionAndExternalService
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -160,7 +160,7 @@ export class RotkehlchenApi {
           eth_tokens: tokens
         },
         {
-          validateStatus: validWithSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -264,7 +264,7 @@ export class RotkehlchenApi {
           async_query: true,
           ignore_cache: ignoreCache ? true : undefined
         },
-        validateStatus: validWithSessionAndExternalService
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -443,7 +443,7 @@ export class RotkehlchenApi {
           password,
           sync_approval: syncApproval
         },
-        { validateStatus: validSessionStatus }
+        { validateStatus: validAccountOperationStatus }
       )
       .then(response => {
         if (response.status === 300) {
@@ -498,7 +498,7 @@ export class RotkehlchenApi {
           async_query: true,
           accounts: [account]
         },
-        validateStatus: validWithSessionAndExternalService
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -519,7 +519,7 @@ export class RotkehlchenApi {
           ]
         },
         {
-          validateStatus: validWithSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -542,7 +542,7 @@ export class RotkehlchenApi {
           ]
         },
         {
-          validateStatus: validWithSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse)
@@ -772,7 +772,7 @@ export class RotkehlchenApi {
   async supportedAssets(): Promise<SupportedAssets> {
     return this.axios
       .get<ActionResult<SupportedAssets>>('assets/all', {
-        validateStatus: fetchWithExternalService
+        validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -780,7 +780,7 @@ export class RotkehlchenApi {
   async manualBalances(): Promise<ApiManualBalances> {
     return this.axios
       .get<ActionResult<ApiManualBalances>>('balances/manual', {
-        validateStatus: fetchWithExternalService
+        validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -795,7 +795,7 @@ export class RotkehlchenApi {
           balances
         },
         {
-          validateStatus: validWithSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -811,7 +811,7 @@ export class RotkehlchenApi {
           balances
         },
         {
-          validateStatus: validWithSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -821,7 +821,7 @@ export class RotkehlchenApi {
     return this.axios
       .delete<ActionResult<ApiManualBalances>>('balances/manual', {
         data: { labels },
-        validateStatus: validWithSessionAndExternalService
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }

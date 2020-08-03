@@ -2,9 +2,9 @@ import { AxiosInstance } from 'axios';
 import { ActionResult } from '@/model/action-result';
 import { Watcher, WatcherTypes } from '@/services/session/types';
 import {
-  fetchWithExternalService,
+  validWithSessionAndExternalService,
   handleResponse,
-  validWithSessionAndExternalService
+  validWithParamsSessionAndExternalService
 } from '@/services/utils';
 
 export class SessionApi {
@@ -17,7 +17,7 @@ export class SessionApi {
   async watchers<T extends WatcherTypes>(): Promise<Watcher<T>[]> {
     return this.axios
       .get<ActionResult<Watcher<T>[]>>('/watchers', {
-        validateStatus: fetchWithExternalService
+        validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -30,7 +30,7 @@ export class SessionApi {
         '/watchers',
         { watchers },
         {
-          validateStatus: validWithSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -44,7 +44,7 @@ export class SessionApi {
         '/watchers',
         { watchers },
         {
-          validateStatus: validWithSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -56,7 +56,7 @@ export class SessionApi {
     return this.axios
       .delete<ActionResult<Watcher<T>[]>>('/watchers', {
         data: { watchers: identifiers },
-        validateStatus: validWithSessionAndExternalService
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
