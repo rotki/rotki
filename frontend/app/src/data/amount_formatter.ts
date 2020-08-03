@@ -14,7 +14,8 @@ export class AmountFormatter {
      * Get separators
      */
     const numberParts = [...format.matchAll(this.numberPartsRegex)][0];
-    if (!numberParts) throw new Error('Missing format arguments: %T, %U or %D');
+    if (!numberParts)
+      throw new Error('Missing format placeholders: %T, %U or %D');
     const thousandsSeparator = numberParts[1].substring(2);
     const decimalSeparator = numberParts[2].substring(2);
 

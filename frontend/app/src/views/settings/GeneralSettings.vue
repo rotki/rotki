@@ -144,6 +144,7 @@
               class="general-settings__fields__amount-display-format"
               label="Amount display format (%T = thousands; %U = units; %D = decimals; %C = currency)"
               type="text"
+              :messages="getAmountDisplayHint()"
               :success-messages="
                 settingsMessages['amountDisplayFormat'].success
               "
@@ -179,6 +180,7 @@ import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { Message } from '@/store/store';
 import { GeneralSettings, SettingsUpdate } from '@/typing/types';
+import { bigNumberify } from '@/utils/bignumbers';
 import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
@@ -228,6 +230,24 @@ export default class General extends Settings {
       this.historicDataStart = date;
       this.onHistoricDataStartChange(this.historicDataStart);
     }
+  }
+
+  isValidAmountDisplayFormat(format?: string) {
+    return format && /.*%T.*%U.*%D.*/.test(format);
+  }
+
+  getAmountDisplayHint() {
+    return (
+      'Resulting: ' +
+      (this.isValidAmountDisplayFormat(this.amountDisplayFormat)
+        ? this.$options.filters?.formatPrice(
+            bigNumberify(123456.789),
+            this.amountDisplayFormat,
+            parseInt(this.floatingPrecision, 10),
+            this.selectedCurrency.unicode_symbol
+          )
+        : 'invalid')
+    );
   }
 
   onScrambleDataChange(enabled: boolean) {
@@ -430,6 +450,14 @@ export default class General extends Settings {
 
   onAmountDisplayFormatChange(amountFormat: string) {
     const { commit } = this.$store;
+    if (!this.isValidAmountDisplayFormat(amountFormat)) {
+      this.validateSettingChange(
+        'amountDisplayFormat',
+        'error',
+        `Error setting amount display format: Missing %T, %U or %D placeholders`
+      );
+      return;
+    }
 
     this.$api
       .setSettings({ amount_display_format: amountFormat })

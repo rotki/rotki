@@ -690,7 +690,14 @@ class ModifiableSettingsSchema(Schema):
     main_currency = FiatAssetField(missing=None)
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
-    amount_display_format = fields.String(missing=None)
+    amount_display_format = fields.String(
+        strict=True,
+        validate=webargs.validate.Regexp(
+            regex=r".*%T.*%U.*%D.*",
+            error='Missing format placeholders: %T, %U or %D',
+        ),
+        missing=None,
+    )
     kraken_account_type = KrakenAccountTypeField(missing=None)
     active_modules = fields.List(fields.String(), missing=None)
     frontend_settings = fields.String(missing=None)
