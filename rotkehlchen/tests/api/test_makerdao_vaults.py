@@ -185,7 +185,7 @@ def _check_vault_details_values(details, total_interest_owed_list: List[Optional
         details,
         # Checking only the first 7 events
         length_list_keymap={'events': 7},
-        ignore_keys=['total_interest_owed'],
+        ignore_keys=['total_interest_owed', 'stability_fee'],
     )
     for idx, entry in enumerate(total_interest_owed_list):
         if entry is not None:
@@ -350,7 +350,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     }
     vault_8015_with_owner = VAULT_8015.copy()
     vault_8015_with_owner['owner'] = ethereum_accounts[0]
-    assert_serialized_dicts_equal(vault_6021, vaults[0])
+    assert_serialized_dicts_equal(vault_6021, vaults[0], ignore_keys=['stability_fee'])
     assert_serialized_dicts_equal(
         vault_8015_with_owner,
         vaults[1],
@@ -430,7 +430,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     }
     details = assert_proper_response_with_result(response)
     assert len(details) == 2
-    assert_serialized_dicts_equal(vault_6021_details, details[0])
+    assert_serialized_dicts_equal(vault_6021_details, details[0], ignore_keys=['stability_fee'])
     assert_serialized_dicts_equal(
         VAULT_8015_DETAILS,
         details[1],
@@ -475,7 +475,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         stability_fee=FVal(0.02),
     )
     expected_vaults = [vault_8913.serialize()]
-    assert_serialized_lists_equal(expected_vaults, vaults)
+    assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=['stability_fee'])
     # And also make sure that the internal mapping will only query details of 8913
     rotki.chain_manager.makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_8913]}
 
@@ -567,7 +567,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         stability_fee=FVal(0.04),
     )
     expected_vaults = [vault_7588.serialize()]
-    assert_serialized_lists_equal(expected_vaults, vaults)
+    assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=['stability_fee'])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultdetailsresource",
@@ -686,7 +686,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         'stability_fee': '0.00%',
     }
     assert len(vaults) == 2
-    assert_serialized_dicts_equal(vaults[0], vault_8543)
+    assert_serialized_dicts_equal(vaults[0], vault_8543, ignore_keys=['stability_fee'])
     assert_serialized_dicts_equal(vaults[1], vault_8632, ignore_keys=VAULT_IGNORE_KEYS)
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -794,11 +794,16 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
     }
     details = assert_proper_response_with_result(response)
     assert len(details) == 2
-    assert_serialized_dicts_equal(details[0], vault_8543_details)
+    assert_serialized_dicts_equal(details[0], vault_8543_details, ignore_keys=['stability_fee'])
     assert_serialized_dicts_equal(
         details[1],
         vault_8632_details,
-        ignore_keys=['total_interest_owed', 'total_liquidated_amount', 'total_liquidated_usd'],
+        ignore_keys=[
+            'total_interest_owed',
+            'total_liquidated_amount',
+            'total_liquidated_usd',
+            'stability_fee',
+        ],
         # Checking only the first 5 events, since that's how many we had when the test was written
         length_list_keymap={'events': 5},
     )
