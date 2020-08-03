@@ -28,10 +28,17 @@ import {
 import {
   fetchWithExternalService,
   handleResponse,
-  modifyWithExternalService
+  validWithSessionAndExternalService,
+  validStatus,
+  validSessionStatus,
+  validWithoutSessionStatus,
+  validWithSessionStatus,
+  validSessionModifyStatus,
+  validTaskStatus
 } from '@/services/utils';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
+  AccountData,
   AccountSession,
   ApiAssetBalances,
   Blockchain,
@@ -41,11 +48,10 @@ import {
   SettingsUpdate,
   SyncApproval,
   SyncConflictError,
-  TaskResult,
-  UnlockPayload,
-  Tags,
   Tag,
-  AccountData
+  Tags,
+  TaskResult,
+  UnlockPayload
 } from '@/typing/types';
 import { convertAccountData } from '@/utils/conversion';
 
@@ -64,77 +70,30 @@ export class RotkehlchenApi {
   }
 
   checkIfLogged(username: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<AccountSession>>(`/users`) // no need to validate status. Defaults are okay.
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result[username] === 'loggedin');
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => {
-          reject(error);
-        });
-    });
-  }
-
-  private validate_status_patch_username(status: number) {
-    return (
-      status == 200 ||
-      status == 300 ||
-      status == 400 ||
-      status == 401 ||
-      status == 409
-    );
+    return this.axios
+      .get<ActionResult<AccountSession>>(`/users`)
+      .then(handleResponse)
+      .then(result => result[username] === 'loggedin');
   }
 
   logout(username: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .patch<ActionResult<boolean>>(
-          `/users/${username}`,
-          {
-            action: 'logout'
-          },
-          { validateStatus: this.validate_status_patch_username }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(true);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => {
-          reject(error);
-        });
-    });
+    return this.axios
+      .patch<ActionResult<boolean>>(
+        `/users/${username}`,
+        {
+          action: 'logout'
+        },
+        { validateStatus: validSessionStatus }
+      )
+      .then(handleResponse);
   }
 
   queryPeriodicData(): Promise<PeriodicClientQueryResult> {
-    return new Promise<PeriodicClientQueryResult>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<PeriodicClientQueryResult>>('/periodic/', {
-          validateStatus: function (status) {
-            return status == 200 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => {
-          reject(error);
-        });
-    });
+    return this.axios
+      .get<ActionResult<PeriodicClientQueryResult>>('/periodic/', {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
   }
 
   setPremiumCredentials(
@@ -142,42 +101,22 @@ export class RotkehlchenApi {
     apiKey: string,
     apiSecret: string
   ): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .patch<ActionResult<boolean>>(
-          `/users/${username}`,
-          {
-            premium_api_key: apiKey,
-            premium_api_secret: apiSecret
-          },
-          { validateStatus: this.validate_status_patch_username }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => {
-          reject(error);
-        });
-    });
+    return this.axios
+      .patch<ActionResult<boolean>>(
+        `/users/${username}`,
+        {
+          premium_api_key: apiKey,
+          premium_api_secret: apiSecret
+        },
+        { validateStatus: validSessionStatus }
+      )
+      .then(handleResponse);
   }
 
   deletePremiumCredentials(username: string): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>(`/users/${username}/premium`, {
-        validateStatus: function (status) {
-          return (
-            status == 200 ||
-            status == 400 ||
-            status == 401 ||
-            status == 409 ||
-            status == 502
-          );
-        }
+        validateStatus: validSessionModifyStatus
       })
       .then(handleResponse);
   }
@@ -196,135 +135,63 @@ export class RotkehlchenApi {
           new_password: newPassword
         },
         {
-          validateStatus: function (status) {
-            return (
-              status == 200 ||
-              status == 400 ||
-              status == 401 ||
-              status == 409 ||
-              status == 502
-            );
-          }
+          validateStatus: validSessionModifyStatus
         }
       )
       .then(handleResponse);
   }
 
   removeOwnedEthTokens(tokens: string[]): Promise<BlockchainAccount> {
-    return new Promise<BlockchainAccount>((resolve, reject) => {
-      this.axios
-        .delete<ActionResult<BlockchainAccount>>('/blockchains/ETH/tokens', {
-          data: {
-            eth_tokens: tokens
-          },
-          validateStatus: function (status) {
-            return (
-              status == 200 || status == 400 || status == 409 || status == 502
-            );
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .delete<ActionResult<BlockchainAccount>>('/blockchains/ETH/tokens', {
+        data: {
+          eth_tokens: tokens
+        },
+        validateStatus: validWithSessionAndExternalService
+      })
+      .then(handleResponse);
   }
 
   addOwnedEthTokens(tokens: string[]): Promise<BlockchainAccount> {
-    return new Promise<BlockchainAccount>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<BlockchainAccount>>(
-          '/blockchains/ETH/tokens',
-          {
-            eth_tokens: tokens
-          },
-          {
-            validateStatus: function (status) {
-              return (
-                status == 200 || status == 400 || status == 409 || status == 502
-              );
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .put<ActionResult<BlockchainAccount>>(
+        '/blockchains/ETH/tokens',
+        {
+          eth_tokens: tokens
+        },
+        {
+          validateStatus: validWithSessionAndExternalService
+        }
+      )
+      .then(handleResponse);
   }
 
   deleteExternalTrade(id: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .delete<ActionResult<boolean>>('/trades', {
-          data: {
-            trade_id: id
-          },
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .delete<ActionResult<boolean>>('/trades', {
+        data: {
+          trade_id: id
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   queryExternalTrades(): Promise<StoredTrade[]> {
-    return new Promise<StoredTrade[]>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<StoredTrade[]>>('/trades', {
-          params: { location: 'external' },
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<StoredTrade[]>>('/trades', {
+        params: { location: 'external' },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   ignoredAssets(): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<string[]>>('/assets/ignored', {
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<string[]>>('/assets/ignored', {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   async ping(): Promise<AsyncQuery> {
@@ -334,25 +201,10 @@ export class RotkehlchenApi {
   }
 
   checkVersion(): Promise<VersionCheck> {
-    return new Promise<VersionCheck>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<VersionCheck>>('/version') // no validate status here since defaults work
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<VersionCheck>>('/version')
+      .then(handleResponse);
   }
-
-  private validate_status_put_settings(status: number) {
-    return status == 200 || status == 400 || status == 409;
-  }
-
   setSettings(settings: SettingsUpdate): Promise<DBSettings> {
     return this.axios
       .put<ActionResult<DBSettings>>(
@@ -360,7 +212,9 @@ export class RotkehlchenApi {
         {
           settings: settings
         },
-        { validateStatus: this.validate_status_put_settings }
+        {
+          validateStatus: validStatus
+        }
       )
       .then(handleResponse);
   }
@@ -375,9 +229,7 @@ export class RotkehlchenApi {
           async_query: true,
           ignore_cache: ignoreCache ? true : undefined
         },
-        validateStatus: function (status) {
-          return status == 200 || status == 400 || status == 409;
-        }
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -386,87 +238,49 @@ export class RotkehlchenApi {
     ignoreCache: boolean = false,
     saveData: boolean = false
   ): Promise<AsyncQuery> {
-    return new Promise<AsyncQuery>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<AsyncQuery>>('/balances/', {
-          params: {
-            async_query: true,
-            ignore_cache: ignoreCache ? true : undefined,
-            save_data: saveData ? true : undefined
-          },
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<AsyncQuery>>('/balances/', {
+        params: {
+          async_query: true,
+          ignore_cache: ignoreCache ? true : undefined,
+          save_data: saveData ? true : undefined
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   queryBlockchainBalancesAsync(
     ignoreCache: boolean = false,
     blockchain?: Blockchain
   ): Promise<AsyncQuery> {
-    return new Promise<AsyncQuery>((resolve, reject) => {
-      let url = '/balances/blockchains';
-      if (blockchain) {
-        url += `/${blockchain}`;
-      }
-      this.axios
-        .get<ActionResult<AsyncQuery>>(url, {
-          params: {
-            async_query: true,
-            ignore_cache: ignoreCache ? true : undefined
-          },
-          validateStatus: function (status) {
-            return (
-              status == 200 || status == 400 || status == 409 || status == 502
-            );
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    let url = '/balances/blockchains';
+    if (blockchain) {
+      url += `/${blockchain}`;
+    }
+    return this.axios
+      .get<ActionResult<AsyncQuery>>(url, {
+        params: {
+          async_query: true,
+          ignore_cache: ignoreCache ? true : undefined
+        },
+        validateStatus: validWithSessionAndExternalService
+      })
+      .then(handleResponse);
   }
 
   queryFiatBalances(): Promise<ApiAssetBalances> {
-    return new Promise<ApiAssetBalances>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<ApiAssetBalances>>('/balances/fiat', {
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<ApiAssetBalances>>('/balances/fiat', {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   queryTaskResult<T>(id: number): Promise<ActionResult<T>> {
     return this.axios
       .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`, {
-        validateStatus: status => [200, 400, 404, 409].indexOf(status) >= 0
+        validateStatus: validTaskStatus
       })
       .then(response => {
         if (response.status === 404) {
@@ -484,43 +298,19 @@ export class RotkehlchenApi {
   }
 
   queryNetvalueData(): Promise<NetvalueDataResult> {
-    return new Promise<NetvalueDataResult>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<NetvalueDataResult>>('/statistics/netvalue', {
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<NetvalueDataResult>>('/statistics/netvalue', {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   queryOwnedAssets(): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<string[]>>('/assets', {
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<string[]>>('/assets', {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   queryTimedBalancesData(
@@ -528,143 +318,68 @@ export class RotkehlchenApi {
     start_ts: number,
     end_ts: number
   ): Promise<SingleAssetBalance[]> {
-    return new Promise<SingleAssetBalance[]>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<SingleAssetBalance[]>>(
-          `/statistics/balance/${asset}`,
-          {
-            params: {
-              from_timestamp: start_ts,
-              to_timestamp: end_ts
-            },
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
-  }
-
-  private validate_status_get_statistics_val_distribution(status: number) {
-    return status == 200 || status == 400 || status == 409;
+    return this.axios
+      .get<ActionResult<SingleAssetBalance[]>>(`/statistics/balance/${asset}`, {
+        params: {
+          from_timestamp: start_ts,
+          to_timestamp: end_ts
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   queryLatestLocationValueDistribution(): Promise<LocationData[]> {
-    return new Promise<LocationData[]>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<LocationData[]>>('/statistics/value_distribution', {
-          params: { distribution_by: 'location' },
-          validateStatus: this.validate_status_get_statistics_val_distribution
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<LocationData[]>>('/statistics/value_distribution', {
+        params: { distribution_by: 'location' },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   queryLatestAssetValueDistribution(): Promise<DBAssetBalance[]> {
-    return new Promise<DBAssetBalance[]>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<DBAssetBalance[]>>('/statistics/value_distribution', {
-          params: { distribution_by: 'asset' },
-          validateStatus: this.validate_status_get_statistics_val_distribution
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<DBAssetBalance[]>>('/statistics/value_distribution', {
+        params: { distribution_by: 'asset' },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   queryStatisticsRenderer(): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<string>>('/statistics/renderer', {
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<string>>('/statistics/renderer', {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   processTradeHistoryAsync(
     start_ts: number,
     end_ts: number
   ): Promise<AsyncQuery> {
-    return new Promise<AsyncQuery>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<AsyncQuery>>('/history', {
-          params: {
-            async_query: true,
-            from_timestamp: start_ts,
-            to_timestamp: end_ts
-          },
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<AsyncQuery>>('/history', {
+        params: {
+          async_query: true,
+          from_timestamp: start_ts,
+          to_timestamp: end_ts
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   getFiatExchangeRates(currencies: string[]): Promise<FiatExchangeRates> {
-    return new Promise<FiatExchangeRates>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<FiatExchangeRates>>('/fiat_exchange_rates', {
-          params: {
-            currencies: currencies.join(',')
-          },
-          validateStatus: function (status) {
-            return status == 200 || status == 400;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<FiatExchangeRates>>('/fiat_exchange_rates', {
+        params: {
+          currencies: currencies.join(',')
+        },
+        validateStatus: validWithoutSessionStatus
+      })
+      .then(handleResponse);
   }
 
   unlockUser(payload: UnlockPayload): Promise<AccountState> {
@@ -698,33 +413,21 @@ export class RotkehlchenApi {
     apiSecret?: string,
     initialSettings?: SettingsUpdate
   ): Promise<AccountState> {
-    return new Promise<AccountState>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<AccountState>>(
-          '/users',
-          {
-            name,
-            password,
-            premium_api_key: apiKey,
-            premium_api_secret: apiSecret,
-            initial_settings: initialSettings
-          },
-          {
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .put<ActionResult<AccountState>>(
+        '/users',
+        {
+          name,
+          password,
+          premium_api_key: apiKey,
+          premium_api_secret: apiSecret,
+          initial_settings: initialSettings
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
   }
 
   login(
@@ -732,99 +435,57 @@ export class RotkehlchenApi {
     password: string,
     syncApproval: SyncApproval = 'unknown'
   ): Promise<AccountState> {
-    return new Promise<AccountState>((resolve, reject) => {
-      this.axios
-        .patch<ActionResult<AccountState>>(
-          `/users/${name}`,
-          {
-            action: 'login',
-            password,
-            sync_approval: syncApproval
-          },
-          { validateStatus: this.validate_status_patch_username }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else if (response.status === 300) {
-            reject(new SyncConflictError(message));
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .patch<ActionResult<AccountState>>(
+        `/users/${name}`,
+        {
+          action: 'login',
+          password,
+          sync_approval: syncApproval
+        },
+        { validateStatus: validSessionStatus }
+      )
+      .then(response => {
+        if (response.status === 300) {
+          throw new SyncConflictError(response.data.message);
+        }
+        return response;
+      })
+      .then(handleResponse);
   }
 
   removeExchange(name: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .delete<ActionResult<boolean>>('/exchanges', {
-          data: {
-            name
-          },
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .delete<ActionResult<boolean>>('/exchanges', {
+        data: {
+          name
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   getEthTokens(): Promise<EthTokens> {
-    return new Promise<EthTokens>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<EthTokens>>('/blockchains/ETH/tokens', {
-          validateStatus: function (status) {
-            return status == 200 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<EthTokens>>('/blockchains/ETH/tokens', {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
   }
 
   importDataFrom(source: string, filepath: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<boolean>>(
-          '/import',
-          {
-            source,
-            filepath
-          },
-          {
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .put<ActionResult<boolean>>(
+        '/import',
+        {
+          source,
+          filepath
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
   }
 
   removeBlockchainAccount(
@@ -837,11 +498,7 @@ export class RotkehlchenApi {
           async_query: true,
           accounts: [account]
         },
-        validateStatus: function (status) {
-          return (
-            status == 200 || status == 400 || status == 409 || status == 502
-          );
-        }
+        validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -862,8 +519,7 @@ export class RotkehlchenApi {
           ]
         },
         {
-          validateStatus: status =>
-            status == 200 || status == 400 || status == 409 || status == 502
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -886,8 +542,7 @@ export class RotkehlchenApi {
           ]
         },
         {
-          validateStatus: status =>
-            status == 200 || status == 400 || status == 409 || status == 502
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse)
@@ -895,31 +550,19 @@ export class RotkehlchenApi {
   }
 
   setFiatBalance(currency: string, balance: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .patch<ActionResult<boolean>>(
-          '/balances/fiat',
-          {
-            balances: {
-              [currency]: balance
-            }
-          },
-          {
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
+    return this.axios
+      .patch<ActionResult<boolean>>(
+        '/balances/fiat',
+        {
+          balances: {
+            [currency]: balance
           }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
   }
 
   setupExchange(
@@ -928,55 +571,31 @@ export class RotkehlchenApi {
     api_secret: string,
     passphrase: string | null
   ): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<boolean>>(
-          '/exchanges',
-          {
-            name,
-            api_key,
-            api_secret,
-            passphrase
-          },
-          {
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .put<ActionResult<boolean>>(
+        '/exchanges',
+        {
+          name,
+          api_key,
+          api_secret,
+          passphrase
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
   }
 
   exportHistoryCSV(directory: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<boolean>>('/history/export/', {
-          params: {
-            directory_path: directory
-          },
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<boolean>>('/history/export/', {
+        params: {
+          directory_path: directory
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   modifyAsset(add: boolean, asset: string): Promise<string[]> {
@@ -987,241 +606,121 @@ export class RotkehlchenApi {
   }
 
   addIgnoredAsset(asset: string): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<string[]>>(
-          '/assets/ignored',
-          {
-            assets: [asset]
-          },
-          {
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .put<ActionResult<string[]>>(
+        '/assets/ignored',
+        {
+          assets: [asset]
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
   }
 
   removeIgnoredAsset(asset: string): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-      this.axios
-        .delete<ActionResult<string[]>>('/assets/ignored', {
-          data: {
-            assets: [asset]
-          },
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .delete<ActionResult<string[]>>('/assets/ignored', {
+        data: {
+          assets: [asset]
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   addExternalTrade(trade: Trade): Promise<StoredTrade[]> {
-    return new Promise<StoredTrade[]>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<StoredTrade[]>>(
-          '/trades',
-          {
-            ...trade
-          },
-          {
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .put<ActionResult<StoredTrade[]>>(
+        '/trades',
+        {
+          ...trade
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
   }
 
   editExternalTrade(trade: StoredTrade): Promise<StoredTrade[]> {
-    return new Promise<StoredTrade[]>((resolve, reject) => {
-      this.axios
-        .patch<ActionResult<StoredTrade[]>>(
-          '/trades',
-          {
-            ...trade
-          },
-          {
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .patch<ActionResult<StoredTrade[]>>(
+        '/trades',
+        {
+          ...trade
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
   }
 
   consumeMessages(): Promise<Messages> {
-    return new Promise<any>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<Messages>>('/messages/') // no need to validate status. Defaults are okay.
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<Messages>>('/messages/')
+      .then(handleResponse);
   }
 
   async getSettings(): Promise<DBSettings> {
-    return new Promise<DBSettings>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<DBSettings>>('/settings', {
-          validateStatus: function (status) {
-            return status == 200 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<DBSettings>>('/settings', {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
   }
 
   async getExchanges(): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<string[]>>('/exchanges', {
-          validateStatus: function (status) {
-            return status == 200 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<string[]>>('/exchanges', {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
   }
 
   queryExternalServices(): Promise<ExternalServiceKeys> {
-    return new Promise<ExternalServiceKeys>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<ExternalServiceKeys>>('/external_services/', {
-          validateStatus: function (status) {
-            return status == 200 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<ExternalServiceKeys>>('/external_services/', {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
   }
 
   async setExternalServices(
     keys: ExternalServiceKey[]
   ): Promise<ExternalServiceKeys> {
-    return new Promise<ExternalServiceKeys>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<ExternalServiceKeys>>(
-          '/external_services/',
-          {
-            services: keys
-          },
-          {
-            validateStatus: function (status) {
-              return status == 200 || status == 400 || status == 409;
-            }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .put<ActionResult<ExternalServiceKeys>>(
+        '/external_services/',
+        {
+          services: keys
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
   }
 
   async deleteExternalServices(
     serviceToDelete: ExternalServiceName
   ): Promise<ExternalServiceKeys> {
-    return new Promise<ExternalServiceKeys>((resolve, reject) => {
-      this.axios
-        .delete<ActionResult<ExternalServiceKeys>>('/external_services/', {
-          data: {
-            services: [serviceToDelete]
-          },
-          validateStatus: function (status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .delete<ActionResult<ExternalServiceKeys>>('/external_services/', {
+        data: {
+          services: [serviceToDelete]
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   async getTags(): Promise<Tags> {
     return this.axios
       .get<ActionResult<Tags>>('/tags', {
-        validateStatus: function (status: number) {
-          return status === 200 || status === 409;
-        }
+        validateStatus: validWithSessionStatus
       })
       .then(handleResponse);
   }
@@ -1232,9 +731,7 @@ export class RotkehlchenApi {
         '/tags',
         { ...tag },
         {
-          validateStatus: function (status: number) {
-            return status === 200 || status === 400 || status === 409;
-          }
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);
@@ -1246,9 +743,7 @@ export class RotkehlchenApi {
         '/tags',
         { ...tag },
         {
-          validateStatus: function (status: number) {
-            return status === 200 || status === 400 || status === 409;
-          }
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);
@@ -1260,9 +755,7 @@ export class RotkehlchenApi {
         data: {
           name: tagName
         },
-        validateStatus: function (status: number) {
-          return status === 200 || status === 400 || status === 409;
-        }
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -1270,9 +763,7 @@ export class RotkehlchenApi {
   async accounts(blockchain: Blockchain): Promise<AccountData[]> {
     return this.axios
       .get<ActionResult<ApiAccountData[]>>(`/blockchains/${blockchain}`, {
-        validateStatus: function (status: number) {
-          return status === 200 || status === 409;
-        }
+        validateStatus: validWithSessionStatus
       })
       .then(handleResponse)
       .then(accounts => accounts.map(convertAccountData));
@@ -1304,7 +795,7 @@ export class RotkehlchenApi {
           balances
         },
         {
-          validateStatus: modifyWithExternalService
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -1320,7 +811,7 @@ export class RotkehlchenApi {
           balances
         },
         {
-          validateStatus: modifyWithExternalService
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -1330,7 +821,7 @@ export class RotkehlchenApi {
     return this.axios
       .delete<ActionResult<ApiManualBalances>>('balances/manual', {
         data: { labels },
-        validateStatus: modifyWithExternalService
+        validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
   }

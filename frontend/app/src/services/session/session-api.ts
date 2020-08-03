@@ -4,7 +4,7 @@ import { Watcher, WatcherTypes } from '@/services/session/types';
 import {
   fetchWithExternalService,
   handleResponse,
-  modifyWithExternalService
+  validWithSessionAndExternalService
 } from '@/services/utils';
 
 export class SessionApi {
@@ -30,7 +30,7 @@ export class SessionApi {
         '/watchers',
         { watchers },
         {
-          validateStatus: modifyWithExternalService
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -44,7 +44,7 @@ export class SessionApi {
         '/watchers',
         { watchers },
         {
-          validateStatus: modifyWithExternalService
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -56,7 +56,7 @@ export class SessionApi {
     return this.axios
       .delete<ActionResult<Watcher<T>[]>>('/watchers', {
         data: { watchers: identifiers },
-        validateStatus: modifyWithExternalService
+        validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
   }
