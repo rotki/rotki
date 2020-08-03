@@ -2702,6 +2702,22 @@
         "symbol": "DEB",
         "type": "ethereum token"
     },
+    "DEC": {
+        "ethereum_address": "0x89c6c856a6db3e46107163D0cDa7A7FF211BD655",
+        "ethereum_token_decimals": 18,
+        "name": "Darico Ecosystem Coin",
+        "started": 1527686144,
+        "symbol": "DEC",
+        "type": "ethereum token"
+    },
+    "DEC-2": {
+        "ethereum_address": "0x30f271C9E86D2B7d00a6376Cd96A1cFBD5F0b9b3",
+        "ethereum_token_decimals": 18,
+        "name": "Decentr",
+        "started": 1593644131,
+        "symbol": "DEC",
+        "type": "ethereum token"
+    },
     "DELTA": {
         "ethereum_address": "0xDE1E0AE6101b46520cF66fDC0B1059c5cC3d106c",
         "ethereum_token_decimals": 8,
@@ -3774,6 +3790,12 @@
         "started": 1543227347,
         "symbol": "FIH",
         "type": "ethereum token"
+    },
+    "FIO": {
+        "name": "FIO Protocol",
+        "started": 1585094400,
+        "symbol": "FIO",
+        "type": "own chain"
     },
     "FKX": {
         "ethereum_address": "0x009e864923b49263c7F10D19B7f8Ab7a9A5AAd33",
@@ -7189,6 +7211,14 @@
         "symbol": "PLR",
         "type": "ethereum token"
     },
+    "PLT": {
+        "ethereum_address": "0x9fBFed658919A896B5Dc7b00456Ce22D780f9B65",
+        "ethereum_token_decimals": 18,
+        "name": "PlutusDeFi",
+        "started": 1595686189,
+        "symbol": "PLT",
+        "type": "ethereum token"
+    },
     "PLU": {
         "ethereum_address": "0xD8912C10681D8B21Fd3742244f44658dBA12264E",
         "ethereum_token_decimals": 18,
@@ -7818,6 +7848,14 @@
         "symbol": "RIC",
         "type": "own chain"
     },
+    "RING": {
+        "ethereum_address": "0x9469D013805bFfB7D3DEBe5E7839237e535ec483",
+        "ethereum_token_decimals": 18,
+        "name": "Darwinia Network",
+        "started": 1535966001,
+        "symbol": "RING",
+        "type": "ethereum token"
+    },
     "RIPT": {
         "ethereum_address": "0xdd007278B667F6bef52fD0a4c23604aA1f96039a",
         "ethereum_token_decimals": 8,
@@ -7962,6 +8000,12 @@
         "started": 1515648513,
         "symbol": "RUFF",
         "type": "ethereum token"
+    },
+    "RUNE": {
+        "name": "THORChain",
+        "started": 1563914649,
+        "symbol": "RUNE",
+        "type": "own chain"
     },
     "RVN": {
         "name": "Ravencoin",
@@ -8783,12 +8827,28 @@
         "symbol": "SUSD",
         "type": "ethereum token"
     },
+    "SUTER": {
+        "ethereum_address": "0xBA8c0244FBDEB10f19f6738750dAeEDF7a5081eb",
+        "ethereum_token_decimals": 18,
+        "name": "Suterusu",
+        "started": 1570227735,
+        "symbol": "SUTER",
+        "type": "ethereum token"
+    },
     "SVD": {
         "ethereum_address": "0xbdEB4b83251Fb146687fa19D1C660F99411eefe3",
         "ethereum_token_decimals": 18,
         "name": "savedroid",
         "started": 1513123200,
         "symbol": "SVD",
+        "type": "ethereum token"
+    },
+    "SWAP": {
+        "ethereum_address": "0xCC4304A31d09258b0029eA7FE63d032f52e44EFe",
+        "ethereum_token_decimals": 18,
+        "name": "TrustSwap",
+        "started": 1594294602,
+        "symbol": "SWAP",
         "type": "ethereum token"
     },
     "SWARM": {
@@ -10858,6 +10918,14 @@
         "name": "Compound 0x",
         "started": 1557192054,
         "symbol": "cZRX",
+        "type": "ethereum token"
+    },
+    "sUSD": {
+        "ethereum_address": "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51",
+        "ethereum_token_decimals": 18,
+        "name": "Synth sUSD",
+        "started": 1569466541,
+        "symbol": "sUSD",
         "type": "ethereum token"
     }
 }

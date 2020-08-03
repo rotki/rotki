@@ -13,6 +13,15 @@ Changelog
   - `Ocean Protocol (OCEAN) <https://coinmarketcap.com/currencies/ocean-protocol/>`__
   - `Kusama (KSM) <https://coinmarketcap.com/currencies/kusama/>`__
   - `Pirl (PIRL) <https://coinmarketcap.com/currencies/pirl/>`__
+  - `Synth sUSD (sUSD) <https://coinmarketcap.com/currencies/susd/>`__
+  - `FIO Protocol (FIO) <https://coinmarketcap.com/currencies/fio-protocol/>`__
+  - `THORChain (RUNE) <https://coinmarketcap.com/currencies/thorchain/>`__
+  - `Suterusu (SUTER) <https://coinmarketcap.com/currencies/suterusu/>`__
+  - `Darico Ecosystem Coin (DEC) <https://coinmarketcap.com/currencies/darcio-ecosystem-coin/>`__
+  - `Decentr (DEC) <https://coinmarketcap.com/currencies/decentr/>`__
+  - `Plutus DeFi (PLT) <https://coinmarketcap.com/currencies/plutusdefi/>`__
+  - `Darwinia Network (RING) <https://coinmarketcap.com/currencies/darwinia-network/>`__
+  - `TrustSwap (SWAP) <https://coinmarketcap.com/currencies/trustswap/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

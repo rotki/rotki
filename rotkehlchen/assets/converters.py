@@ -168,6 +168,8 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # Juggalocoin. No data found except from here:
     # https://bitcointalk.org/index.php?topic=555896.0
     'JUG',
+    # KTON - Darwinia commitment token. No data found
+    'KTON',
     # Limecoin. No data found except from here:
     # https://coinmarketcap.com/currencies/limecoin/
     'LC',

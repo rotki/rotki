@@ -78,6 +78,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen RCN is Ripio Credit Network and RCN-2 is Rcoin
     # Rcoin is RCOIN in cryptocompare
     'RCN-2': 'RCOIN',
+    # DEC-2 is Decentr in Rotkehlchen and DECENTR in cryptocompare
+    'DEC-2': 'DECENTR',
     # EDR is Endor Protocol in Rotkehlchen and EPT in cryptocompare
     'EDR': 'EPT',
     # EDR-2 is E-Dinar coin in Rotkehlchen and EDR in cryptocompare
