@@ -3,10 +3,7 @@ import { ApiBalance } from '@/model/blockchain-balances';
 export interface ApiDSRBalances {
   readonly current_dsr: string;
   readonly balances: {
-    readonly [account: string]: {
-      amount: string;
-      usd_value: string;
-    };
+    readonly [account: string]: ApiBalance;
   };
 }
 
@@ -26,14 +23,8 @@ export type SupportedDefiProtocols = typeof DEFI_PROTOCOLS[number];
 
 export interface ApiDSRMovement {
   readonly movement_type: DSRMovementType;
-  readonly gain_so_far: {
-    amount: string;
-    usd_value: string;
-  };
-  readonly value: {
-    amount: string;
-    usd_value: string;
-  };
+  readonly gain_so_far: ApiBalance;
+  readonly value: ApiBalance;
   readonly block_number: number;
   readonly timestamp: number;
   readonly tx_hash: string;
@@ -41,10 +32,7 @@ export interface ApiDSRMovement {
 
 export interface ApiDSRHistory {
   readonly [address: string]: {
-    gain_so_far: {
-      amount: string;
-      usd_value: string;
-    };
+    gain_so_far: ApiBalance;
     movements: ApiDSRMovement[];
   };
 }
@@ -54,14 +42,8 @@ export interface ApiMakerDAOVault {
   readonly collateral_type: string;
   readonly owner: string;
   readonly collateral_asset: CollateralAssetType;
-  readonly collateral: {
-    amount: string;
-    usd_value: string;
-  };
-  readonly debt: {
-    amount: string;
-    usd_value: string;
-  };
+  readonly collateral: ApiBalance;
+  readonly debt: ApiBalance;
   readonly collateralization_ratio: string | null;
   readonly liquidation_ratio: string;
   readonly liquidation_price: string;
@@ -72,19 +54,13 @@ export interface ApiMakerDAOVaultDetails {
   readonly identifier: number;
   readonly creation_ts: number;
   readonly total_interest_owed: string;
-  readonly total_liquidated: {
-    amount: string;
-    usd_value: string;
-  };
+  readonly total_liquidated: ApiBalance;
   readonly events: ApiMakerDAOVaultEvent[];
 }
 
 export interface ApiMakerDAOVaultEvent {
   readonly event_type: MakerDAOVaultEventType;
-  readonly value: {
-    amount: string;
-    usd_value: string;
-  };
+  readonly value: ApiBalance;
   readonly timestamp: number;
   readonly tx_hash: string;
 }
