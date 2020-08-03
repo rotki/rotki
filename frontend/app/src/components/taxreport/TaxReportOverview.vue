@@ -18,7 +18,11 @@
                   {{
                     item
                       | calculatePrice(exchangeRate(currency.ticker_symbol))
-                      | formatPrice(floatingPrecision)
+                      | formatPrice(
+                        amountDisplayFormat,
+                        floatingPrecision,
+                        currency.unicode_symbol
+                      )
                   }}
                 </td>
               </tr>
@@ -42,7 +46,7 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 @Component({
   computed: {
     ...mapReportsState(['overview']),
-    ...mapGetters(['floatingPrecision', 'currency']),
+    ...mapGetters(['floatingPrecision', 'currency', 'amountDisplayFormat']),
     ...mapBalanceGetters(['exchangeRate'])
   }
 })
@@ -50,6 +54,7 @@ export default class TaxReportOverview extends Vue {
   overview!: TaxReportOverview;
   currency!: Currency;
   floatingPrecision!: number;
+  amountDisplayFormat!: string;
   exchangeRate!: (currency: string) => number;
 }
 </script>

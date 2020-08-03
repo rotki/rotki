@@ -18,27 +18,63 @@
               Taxable Received in {{ currency }}
             </template>
             <template #item.paidInProfitCurrency="{ item }">
-              {{ item.paidInProfitCurrency | formatPrice(floatingPrecision) }}
+              {{
+                item.paidInProfitCurrency
+                  | formatPrice(
+                    amountDisplayFormat,
+                    floatingPrecision,
+                    currency.unicode_symbol
+                  )
+              }}
             </template>
             <template #item.paidInAsset="{ item }">
-              {{ item.paidInAsset | formatPrice(floatingPrecision) }}
+              {{
+                item.paidInAsset
+                  | formatPrice(
+                    amountDisplayFormat,
+                    floatingPrecision,
+                    currency.unicode_symbol
+                  )
+              }}
             </template>
             <template #item.taxableAmount="{ item }">
-              {{ item.taxableAmount | formatPrice(floatingPrecision) }}
+              {{
+                item.taxableAmount
+                  | formatPrice(
+                    amountDisplayFormat,
+                    floatingPrecision,
+                    currency.unicode_symbol
+                  )
+              }}
             </template>
             <template #item.taxableBoughtCostInProfitCurrency="{ item }">
               {{
                 item.taxableBoughtCostInProfitCurrency
-                  | formatPrice(floatingPrecision)
+                  | formatPrice(
+                    amountDisplayFormat,
+                    floatingPrecision,
+                    currency.unicode_symbol
+                  )
               }}
             </template>
             <template #item.receivedInAsset="{ item }">
-              {{ item.receivedInAsset | formatPrice(floatingPrecision) }}
+              {{
+                item.receivedInAsset
+                  | formatPrice(
+                    amountDisplayFormat,
+                    floatingPrecision,
+                    currency.unicode_symbol
+                  )
+              }}
             </template>
             <template #item.taxableReceivedInProfitCurrency="{ item }">
               {{
                 item.taxableReceivedInProfitCurrency
-                  | formatPrice(floatingPrecision)
+                  | formatPrice(
+                    amountDisplayFormat,
+                    floatingPrecision,
+                    currency.unicode_symbol
+                  )
               }}
             </template>
             <template #item.isVirtual="{ item }">
@@ -65,7 +101,11 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 @Component({
   computed: {
     ...mapState(['currency', 'events']),
-    ...mapGetters(['floatingPrecision', 'dateDisplayFormat']),
+    ...mapGetters([
+      'floatingPrecision',
+      'dateDisplayFormat',
+      'amountDisplayFormat'
+    ]),
     ...mapBalanceGetters(['exchangeRate'])
   }
 })
@@ -73,6 +113,7 @@ export default class TaxReportEvents extends Vue {
   events!: EventEntry[];
   currency!: string;
   floatingPrecision!: number;
+  amountDisplayFormat!: string;
   exchangeRate!: (currency: string) => number;
   dateDisplayFormat!: string;
 

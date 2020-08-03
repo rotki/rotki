@@ -10,7 +10,7 @@ describe('AmountFormatter', () => {
     ).toEqual('127,32 $');
     expect(
       converter.format(bigNumberify(127.32789477847), '%T %U,%D %C', 2, '$')
-    ).toEqual('127,33 $');
+    ).toEqual('127,32 $');
   });
 
   it('should handle decimal separator correctly', () => {
@@ -39,6 +39,9 @@ describe('AmountFormatter', () => {
 
   it('should allow currency to be omitted', () => {
     expect(converter.format(bigNumberify(127.32), '%T %U,%D', 2, '$')).toEqual(
+      '127,32'
+    );
+    expect(converter.format(bigNumberify(127.32), '%T %U,%D%C', 2)).toEqual(
       '127,32'
     );
   });

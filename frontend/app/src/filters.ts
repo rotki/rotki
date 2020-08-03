@@ -36,10 +36,6 @@ export function capitalize(string: string): string {
   return string[0].toUpperCase() + string.slice(1);
 }
 
-export function roundDown(value: BigNumber, precision: number) {
-  return value.isNaN() ? '-' : value.toFormat(precision, BigNumber.ROUND_DOWN);
-}
-
 /**
  * Truncates blockchain hashes (addresses / txs) retaining `truncLength+2` characters
  * from the beginning and `truncLength` characters from the end of the string.
@@ -109,7 +105,6 @@ Vue.filter('precision', precision);
 Vue.filter('formatDate', formatDate);
 Vue.filter('formatPrice', formatPrice);
 Vue.filter('capitalize', capitalize);
-Vue.filter('roundDown', roundDown);
 Vue.filter('calculatePrice', calculatePrice);
 Vue.filter('balanceSum', balanceSum);
 Vue.filter('truncateAddress', truncateAddress);

@@ -13,17 +13,17 @@
         {{
           renderValue
             | calculatePrice(exchangeRate(currency.ticker_symbol))
-            | roundDown(floatingPrecision)
+            | formatPrice(amountDisplayFormat, floatingPrecision)
         }}
       </span>
       <span
         v-else-if="fiatCurrency === currency.ticker_symbol"
         class="amount-display__value"
       >
-        {{ renderValue | roundDown(floatingPrecision) }}
+        {{ renderValue | formatPrice(amountDisplayFormat, floatingPrecision) }}
       </span>
       <span v-else class="amount-display__value">
-        {{ renderValue | formatPrice(floatingPrecision) }}
+        {{ renderValue | formatPrice(amountDisplayFormat, floatingPrecision) }}
       </span>
       <v-tooltip v-if="!fiatCurrency" top>
         <template #activator="{ on }">
@@ -85,7 +85,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   computed: {
-    ...mapGetters(['floatingPrecision', 'currency']),
+    ...mapGetters(['floatingPrecision', 'currency', 'amountDisplayFormat']),
     ...mapState(['privacyMode', 'scrambleData']),
     ...mapBalancesGetters(['exchangeRate'])
   }
@@ -113,6 +113,7 @@ export default class AmountDisplay extends Vue {
   privacyMode!: boolean;
   scrambleData!: boolean;
   floatingPrecision!: number;
+  amountDisplayFormat!: string;
 
   get renderValue() {
     const multiplier = [10, 100, 1000];
