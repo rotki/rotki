@@ -1104,67 +1104,6 @@ class RestAPI():
             log_result=False,
         )
 
-    def _add_owned_eth_tokens(
-            self,
-            tokens: List[EthereumToken],
-    ) -> Dict[str, Any]:
-        result = None
-        msg = ''
-        status_code = HTTPStatus.OK
-        try:
-            balances_update = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
-        except EthSyncError as e:
-            msg = str(e)
-            status_code = HTTPStatus.CONFLICT
-        except InputError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_REQUEST
-        except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
-        else:
-            result = balances_update.serialize()
-
-        return {'result': result, 'message': msg, 'status_code': status_code}
-
-    @require_loggedin_user()
-    def add_owned_eth_tokens(self, tokens: List[EthereumToken], async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_add_owned_eth_tokens', tokens=tokens)
-
-        response = self._add_owned_eth_tokens(tokens=tokens)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
-
-    def _remove_owned_eth_tokens(
-            self,
-            tokens: List[EthereumToken],
-    ) -> Dict[str, Any]:
-        result = None
-        msg = ''
-        status_code = HTTPStatus.OK
-        try:
-            balances_update = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
-        except EthSyncError as e:
-            msg = str(e)
-            status_code = HTTPStatus.CONFLICT
-        except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
-        else:
-            result = balances_update.serialize()
-
-        return {'result': result, 'message': msg, 'status_code': status_code}
-
-    @require_loggedin_user()
-    def remove_owned_eth_tokens(self, tokens: List[EthereumToken], async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_remove_owned_eth_tokens', tokens=tokens)
-
-        response = self._remove_owned_eth_tokens(tokens=tokens)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
-
     @require_loggedin_user()
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
         data = self.rotkehlchen.data.db.get_blockchain_account_data(blockchain)

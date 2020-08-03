@@ -23,7 +23,6 @@ from rotkehlchen.api.v1.encoding import (
     BlockchainBalanceQuerySchema,
     DataImportSchema,
     EditSettingsSchema,
-    EthTokensSchema,
     ExchangeBalanceQuerySchema,
     ExchangesResourceAddSchema,
     ExchangesResourceRemoveSchema,
@@ -620,26 +619,8 @@ class PeriodicDataResource(BaseResource):
 
 class EthereumTokensResource(BaseResource):
 
-    modify_schema = EthTokensSchema()
-
     def get(self) -> Response:
         return self.rest_api.get_eth_tokens()
-
-    @use_kwargs(modify_schema, location='json')  # type: ignore
-    def put(
-            self,
-            eth_tokens: List[EthereumToken],
-            async_query: bool,
-    ) -> Response:
-        return self.rest_api.add_owned_eth_tokens(tokens=eth_tokens, async_query=async_query)
-
-    @use_kwargs(modify_schema, location='json')  # type: ignore
-    def delete(
-            self,
-            eth_tokens: List[EthereumToken],
-            async_query: bool,
-    ) -> Response:
-        return self.rest_api.remove_owned_eth_tokens(tokens=eth_tokens, async_query=async_query)
 
 
 class BlockchainsAccountsResource(BaseResource):

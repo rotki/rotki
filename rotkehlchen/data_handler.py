@@ -126,9 +126,6 @@ class DataHandler():
         """Save the balances data at the given timestamp"""
         self.db.write_balances_data(data=data, timestamp=timestamp)
 
-    def write_owned_eth_tokens(self, tokens: List[EthereumToken]) -> None:
-        self.db.write_owned_tokens(tokens)
-
     def add_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
         """Adds ignored assets to the DB.
 

@@ -773,45 +773,6 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def write_owned_tokens(self, tokens: List[EthereumToken]) -> None:
-        """Execute addition of multiple tokens in the DB
-
-        tokens should be a list of token symbols"""
-        cursor = self.conn.cursor()
-        # Delete previous list and write the new one
-        cursor.execute(
-            'DELETE FROM multisettings WHERE name="eth_token";',
-        )
-        cursor.executemany(
-            'INSERT INTO multisettings(name,value) VALUES (?, ?)',
-            [('eth_token', t.identifier) for t in tokens],
-        )
-        self.conn.commit()
-        self.update_last_write()
-
-    def get_owned_tokens(self) -> List[EthereumToken]:
-        cursor = self.conn.cursor()
-        query = cursor.execute(
-            'SELECT value FROM multisettings WHERE name="eth_token";',
-        )
-        result = []
-        for q in query:
-            try:
-                result.append(EthereumToken(q[0]))
-            except UnknownAsset:
-                self.msg_aggregator.add_warning(
-                    f'Unknown/unsupported asset {q[0]} found in the database. '
-                    f'If you believe this should be supported open an issue in github',
-                )
-                continue
-            except DeserializationError:
-                self.msg_aggregator.add_error(
-                    f'Non-string type asset: {type(q[0])} found in the database. Ignoring it.',
-                )
-                continue
-
-        return result
-
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,

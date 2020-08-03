@@ -876,11 +876,6 @@ class HistoryExportingSchema(Schema):
     directory_path = DirectoryField(required=True)
 
 
-class EthTokensSchema(Schema):
-    eth_tokens = fields.List(EthereumTokenAssetField(), required=True)
-    async_query = fields.Boolean(missing=False)
-
-
 class BlockchainAccountDataSchema(Schema):
     address = fields.String(required=True)
     label = fields.String(missing=None)

@@ -73,6 +73,7 @@ def test_add_remove_account_assure_all_balances_not_always_queried(blockchain):
     assert mock.call_count == 0, 'blockchain.query_balances() should not have been called'
 
     with patch.object(blockchain, 'query_balances') as mock:
+        # TODO: This function no longer exists. How should the test be changed?
         blockchain.track_new_tokens(new_tokens=[A_GNO])
 
     assert mock.call_count == 0, 'blockchain.query_balances() should not have been called'

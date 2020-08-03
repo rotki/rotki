@@ -202,7 +202,6 @@ class Rotkehlchen():
         )
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
-            owned_eth_tokens=self.data.db.get_owned_tokens(),
             ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
@@ -404,41 +403,6 @@ class Rotkehlchen():
         )
         self.data.db.remove_blockchain_accounts(blockchain, accounts)
         return balances_update
-
-    def add_owned_eth_tokens(
-            self,
-            tokens: List[EthereumToken],
-    ) -> BlockchainBalancesUpdate:
-        """Adds tokens to the blockchain state and updates balance of all accounts
-
-        May raise:
-        - InputError if some of the tokens already exist
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - EthSyncError if querying the token balances through a provided ethereum
-          client and the chain is not synced
-        """
-        new_data = self.chain_manager.track_new_tokens(tokens)
-        self.data.write_owned_eth_tokens(self.chain_manager.owned_eth_tokens)
-        return new_data
-
-    def remove_owned_eth_tokens(
-            self,
-            tokens: List[EthereumToken],
-    ) -> BlockchainBalancesUpdate:
-        """
-        Removes tokens from the state and stops their balance from being tracked
-        for each account
-
-        May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - EthSyncError if querying the token balances through a provided ethereum
-          client and the chain is not synced
-        """
-        new_data = self.chain_manager.remove_eth_tokens(tokens)
-        self.data.write_owned_eth_tokens(self.chain_manager.owned_eth_tokens)
-        return new_data
 
     def process_history(
             self,

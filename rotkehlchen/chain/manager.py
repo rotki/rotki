@@ -137,7 +137,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
     def __init__(
             self,
             blockchain_accounts: BlockchainAccounts,
-            owned_eth_tokens: List[EthereumToken],
             ethereum_manager: 'EthereumManager',
             msg_aggregator: MessagesAggregator,
             database: DBHandler,
@@ -394,70 +393,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
         )
 
         return result
-
-    def track_new_tokens(self, new_tokens: List[EthereumToken]) -> BlockchainBalancesUpdate:
-        """
-        Adds new_tokens to the state and tracks their balance for each account.
-
-        May raise:
-        - InputError if some of the tokens already exist
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - EthSyncError if querying the token balances through a provided ethereum
-          client and the chain is not synced
-        """
-
-        intersection = set(new_tokens).intersection(set(self.owned_eth_tokens))
-        if intersection != set():
-            raise InputError('Some of the new provided tokens to track already exist')
-
-        self.owned_eth_tokens.extend(new_tokens)
-        if self.balances.eth == {}:
-            # if balances have not been yet queried then we should do the entire
-            # balance query first in order to create the eth_balances mappings
-            self.query_ethereum_balances()
-        else:
-            # simply update all accounts with any changes adding the token may have
-            self.query_ethereum_tokens(
-                tokens=new_tokens,
-            )
-        return self.get_balances_update()
-
-    def remove_eth_tokens(self, tokens: List[EthereumToken]) -> BlockchainBalancesUpdate:
-        """
-        Removes tokens from the state and stops their balance from being tracked
-        for each account
-
-        May raise:
-        - RemoteError if an external service such as Etherscan or cryptocompare
-        is queried and there is a problem with its query.
-        - EthSyncError if querying the token balances through a provided ethereum
-        client and the chain is not synced
-        """
-        if self.balances.eth == {}:
-            # if balances have not been yet queried then we should do the entire
-            # balance query first in order to create the eth_balances mappings
-            self.query_ethereum_balances()
-
-        for token in tokens:
-            usd_price = Inquirer().find_usd_price(token)
-            for account, account_data in self.balances.eth.items():
-                if token not in account_data.asset_balances:
-                    continue
-
-                amount = account_data.asset_balances[token].amount
-                deleting_usd_value = amount * usd_price
-                del self.balances.eth[account].asset_balances[token]
-                self.balances.eth[account].decrease_total_usd_value(deleting_usd_value)
-
-            # Remove the token from the totals iff existing. May not exist
-            # if the token price is 0 but is still tracked.
-            # See https://github.com/rotki/rotki/issues/467
-            # for more details
-            self.totals.pop(token, None)
-            self.owned_eth_tokens.remove(token)
-
-        return self.get_balances_update()
 
     def modify_btc_account(
             self,
