@@ -66,7 +66,6 @@ export const mutations: MutationTree<BalanceState> = {
     state.manualBalances = manualBalances;
   },
   reset(state: BalanceState) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    state = Object.assign(state, defaultState());
+    Object.assign(state, defaultState());
   }
 };

@@ -247,10 +247,10 @@ app.on('ready', async () => {
   ipcMain.on('OPEN_URL', (event, args) => {
     if (
       !(
-        args.indexOf('https://rotki.com') > -1 ||
-        args.indexOf('https://rotki.readthedocs.io/') > -1 ||
-        args.indexOf('https://github.com/rotki/rotki/') > -1 ||
-        args.indexOf('https://etherscan.io/') > -1
+        args.startsWith('https://rotki.com') ||
+        args.startsWith('https://rotki.readthedocs.io/') ||
+        args.startsWith('https://github.com/rotki/rotki/') ||
+        args.startsWith('https://etherscan.io/')
       )
     ) {
       console.error(`Error: Requested to open untrusted URL: ${args} `);
