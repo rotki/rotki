@@ -10,7 +10,6 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import (
-    mock_alethio_balances_query,
     mock_bitcoin_balances_query,
     mock_etherscan_balances_query,
 )
@@ -33,20 +32,17 @@ class BalancesTestSetup(NamedTuple):
     poloniex_patch: _patch
     binance_patch: _patch
     etherscan_patch: _patch
-    alethio_patch: _patch
     bitcoin_patch: _patch
 
     def enter_all_patches(self, stack: ExitStack):
         stack.enter_context(self.poloniex_patch)
         stack.enter_context(self.binance_patch)
         stack.enter_context(self.etherscan_patch)
-        stack.enter_context(self.alethio_patch)
         stack.enter_context(self.bitcoin_patch)
         return stack
 
     def enter_blockchain_patches(self, stack: ExitStack):
         stack.enter_context(self.etherscan_patch)
-        stack.enter_context(self.alethio_patch)
         stack.enter_context(self.bitcoin_patch)
         return stack
 
@@ -58,16 +54,12 @@ def setup_balances(
         eth_balances: Optional[List[str]] = None,
         token_balances: Optional[Dict[EthereumToken, List[str]]] = None,
         btc_balances: Optional[List[str]] = None,
-        use_alethio: bool = False,
         manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
 ) -> BalancesTestSetup:
     """Setup the blockchain, exchange and fiat balances for some tests
 
     When eth_balances, token_balances and btc_balances are not provided some
     default values are provided.
-
-    If use_alethio is not True the alethio queries are properly tested. If not
-    then an error is returned with each query so the tests revert to etherscan
     """
     if ethereum_accounts is None:
         ethereum_accounts = []
@@ -140,11 +132,6 @@ def setup_balances(
         etherscan=rotki.etherscan,
         original_requests_get=requests.get,
     )
-    alethio_patch = mock_alethio_balances_query(
-        eth_map=eth_map,
-        alethio=rotki.chain_manager.alethio,
-        use_alethio=use_alethio,
-    )
     bitcoin_patch = mock_bitcoin_balances_query(
         btc_map=btc_map,
         original_requests_get=requests.get,
@@ -167,7 +154,6 @@ def setup_balances(
         poloniex_patch=poloniex_patch,
         binance_patch=binance_patch,
         etherscan_patch=etherscan_patch,
-        alethio_patch=alethio_patch,
         bitcoin_patch=bitcoin_patch,
     )
 

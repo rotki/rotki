@@ -263,7 +263,6 @@ def test_query_all_balances_ignore_cache(
         stack.enter_context(setup.poloniex_patch)
         stack.enter_context(setup.binance_patch)
         stack.enter_context(setup.etherscan_patch)
-        stack.enter_context(setup.alethio_patch)
         stack.enter_context(setup.bitcoin_patch)
         function_call_counters = []
         function_call_counters.append(stack.enter_context(eth_query_patch))
@@ -457,7 +456,7 @@ def test_multiple_balance_queries_not_concurrent(
     b = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
 
     # Test all balances request by requesting to not save the data
-    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.alethio_patch, setup.bitcoin_patch, e as eth, b as bn:  # noqa: E501
+    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch, e as eth, b as bn:  # noqa: E501
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,

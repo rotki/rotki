@@ -17,7 +17,6 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
-from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -449,53 +448,6 @@ def mock_etherscan_balances_query(
         return MockResponse(200, response)
 
     return patch.object(etherscan.session, 'get', wraps=mock_requests_get)
-
-
-def mock_alethio_balances_query(
-        eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
-        alethio: Alethio,
-        use_alethio: bool,
-):
-    def mock_requests_get(url, *_args, **_kwargs):
-        if not use_alethio:
-            response = '{"message": "fail so that test switches to etherscan"}'
-            return MockResponse(400, response)
-
-        if 'tokenBalances' in url:
-            addr = url[33:75]
-            assert addr in eth_map, f'Queried alethio for {addr} which is not in the eth_map'
-            response = '{"meta":{"page":{"hasNext": false}},"data":['
-            for symbol, balance in eth_map[addr].items():
-                if symbol == 'ETH':
-                    continue
-
-                token = symbol
-                if FVal(balance) == ZERO:
-                    continue
-
-                if 'TokenBalance' in response:
-                    # if it's not the first response
-                    response += ','
-                response += f"""{{
-                    "type":"TokenBalance","id":"foo",
-                        "attributes":{{"balance":"{balance}"}},
-                        "relationships":{{
-                            "account":{{
-                                "data":{{"type":"Account","id":"foo"}},
-                                "links":{{"related":"https://api.aleth.io/v1/token-balances/0x9531c059098e3d194ff87febb587ab07b30b13066b175474e89094c44da98b954eedeac495271d0f/account"}}
-                            }},
-                            "token":{{"data":{{"type":"Token","id":"{token.ethereum_address}"}}}}
-                        }}
-                    }}"""
-
-            response += ']}'
-
-        else:
-            raise AssertionError(f'Unimplemented alethio mock for url: {url}')
-
-        return MockResponse(200, response)
-
-    return patch.object(alethio.session, 'get', wraps=mock_requests_get)
 
 
 def mock_bitcoin_balances_query(

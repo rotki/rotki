@@ -11,7 +11,6 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
@@ -99,15 +98,6 @@ def all_eth_tokens() -> List[EthTokenInfo]:
 @pytest.fixture
 def etherscan(database, messages_aggregator):
     return Etherscan(database=database, msg_aggregator=messages_aggregator)
-
-
-@pytest.fixture
-def alethio(database, messages_aggregator, all_eth_tokens):
-    return Alethio(
-        database=database,
-        msg_aggregator=messages_aggregator,
-        all_eth_tokens=all_eth_tokens,
-    )
 
 
 @pytest.fixture
@@ -230,9 +220,9 @@ def blockchain(
         greenlet_manager,
         owned_eth_tokens,
         ethereum_modules,
-        alethio,
         start_with_valid_premium,
         rotki_premium_credentials,
+        database,
 ):
     premium = None
     if start_with_valid_premium:
@@ -242,7 +232,7 @@ def blockchain(
         owned_eth_tokens=owned_eth_tokens,
         ethereum_manager=ethereum_manager,
         msg_aggregator=messages_aggregator,
-        alethio=alethio,
+        database=database,
         greenlet_manager=greenlet_manager,
         premium=premium,
         eth_modules=ethereum_modules,
