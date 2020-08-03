@@ -30,7 +30,6 @@ from rotkehlchen.errors import (
     SystemPermissionError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
-from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -172,11 +171,6 @@ class Rotkehlchen():
             should_submit=settings.submit_usage_analytics,
         )
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
-        alethio = Alethio(
-            database=self.data.db,
-            msg_aggregator=self.msg_aggregator,
-            all_eth_tokens=self.all_eth_tokens,
-        )
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         # Initialize the price historian singleton
@@ -211,7 +205,7 @@ class Rotkehlchen():
             owned_eth_tokens=self.data.db.get_owned_tokens(),
             ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
-            alethio=alethio,
+            database=self.data.db,
             greenlet_manager=self.greenlet_manager,
             premium=self.premium,
             eth_modules=settings.active_modules,
