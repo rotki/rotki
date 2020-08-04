@@ -81,9 +81,6 @@ def setup_balances(
             eth_balances = []
     if token_balances is not None:
         msg = 'token balances length does not match number of owned eth tokens'
-        # We use >= here since the test may add more tokens to the owned eth tokens
-        # at later points after setup
-        assert len(token_balances) >= len(rotki.chain_manager.owned_eth_tokens), msg
         for _, balances in token_balances.items():
             msg = (
                 'The token balances should be a list with each '

@@ -14,7 +14,8 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.constants.ethereum import ETH_SCAN
+from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.constants.ethereum import ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -377,6 +378,28 @@ def mock_etherscan_balances_query(
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
 
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ZERION_ADAPTER_ADDRESS}' in url:  # noqa: E501
+            web3 = Web3()
+            contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ZERION_ABI)
+            if 'data=0xc84aae17' in url:  # getBalances
+                data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
+
+                fn_abi = contract._find_matching_fn_abi(
+                    fn_identifier='getBalances',
+                    args=['address'],
+                )
+                input_types = get_abi_input_types(fn_abi)
+                output_types = get_abi_output_types(fn_abi)
+                decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
+                # TODO: This here always returns empty response. If/when we want to
+                # mock it for etherscan, this is where we do it
+                args = []
+                result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
+                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+            else:
+                raise AssertionError(f'Unexpected etherscan call during tests: {url}')
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN.address}' in url:
             web3 = Web3()
             contract = web3.eth.contract(address=ETH_SCAN.address, abi=ETH_SCAN.abi)
@@ -398,7 +421,7 @@ def mock_etherscan_balances_query(
                     args.append(int(eth_map[account_address]['ETH']))
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
-            elif 'data=0x06187b4f' in url:  # Multi token balance query
+            elif 'data=0x06187b4f' in url:  # Multi token multiaddress balance query
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
@@ -427,6 +450,37 @@ def mock_etherscan_balances_query(
                             break
                         x.append(value_to_add)
                     args.append(x)
+
+                result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
+                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+
+            elif 'data=0xe5da1b68' in url:  # Multi token balance query
+                data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
+                # not really the given args, but we just want the fn abi
+                args = ['str', list(eth_map.keys())]
+                fn_abi = contract._find_matching_fn_abi(
+                    fn_identifier='tokensBalance',
+                    args=args,
+                )
+                input_types = get_abi_input_types(fn_abi)
+                output_types = get_abi_output_types(fn_abi)
+                decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
+                args = []
+                account_address = to_checksum_address(decoded_input[0])
+                x = []
+                for token_address in decoded_input[1]:
+                    token_address = to_checksum_address(token_address)
+                    value_to_add = 0
+                    for given_asset, value in eth_map[account_address].items():
+                        if not isinstance(given_asset, EthereumToken):
+                            continue
+                        if token_address != given_asset.ethereum_address:
+                            continue
+                        value_to_add = int(value)
+                        break
+                    args.append(value_to_add)
 
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
