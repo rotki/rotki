@@ -7,7 +7,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.constants.ethereum import ZERION_ABI, EthereumConstants
+from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.inquirer import Inquirer
@@ -85,7 +85,7 @@ class Zerion():
             self,
             ethereum_manager: 'EthereumManager',
             msg_aggregator: MessagesAggregator,
-            contract_address: Optional[ChecksumEthAddress] = None
+            contract_address: Optional[ChecksumEthAddress] = None,
     ) -> None:
         self.ethereum = ethereum_manager
         self.msg_aggregator = msg_aggregator

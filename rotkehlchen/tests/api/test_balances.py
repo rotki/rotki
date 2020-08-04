@@ -124,7 +124,6 @@ def assert_all_balances(
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_all_balances(
         rotkehlchen_api_server_with_exchanges,
@@ -194,7 +193,6 @@ def test_query_all_balances(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_all_balances_async(
         rotkehlchen_api_server_with_exchanges,
@@ -229,7 +227,6 @@ def test_query_all_balances_async(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_all_balances_ignore_cache(
         rotkehlchen_api_server_with_exchanges,
@@ -364,7 +361,6 @@ def test_query_all_balances_ignore_cache(
 )]])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_all_balances_with_manually_tracked_balances(
         rotkehlchen_api_server_with_exchanges,
@@ -432,7 +428,6 @@ def test_query_all_balances_errors(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_multiple_balance_queries_not_concurrent(
         rotkehlchen_api_server_with_exchanges,

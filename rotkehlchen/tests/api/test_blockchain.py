@@ -74,7 +74,6 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 def test_query_blockchain_balances(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -174,7 +173,6 @@ def test_query_blockchain_balances(
     UNIT_BTC_ADDRESS2,
     'bc1qhkje0xfvhmgk6mvanxwy09n45df03tj3h3jtnf',
 ]])
-@pytest.mark.parametrize('owned_eth_tokens', [[]])
 def test_query_bitcoin_blockchain_bech32_balances(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -215,7 +213,6 @@ def test_query_bitcoin_blockchain_bech32_balances(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('mocked_current_prices', [{
     'RDN': FVal('0.1135'),
     'ETH': FVal('212.92'),
@@ -296,7 +293,6 @@ def test_query_blockchain_balances_async(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 def test_query_blockchain_balances_ignore_cache(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -481,7 +477,6 @@ def _add_blockchain_accounts_test_start(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
 def test_add_blockchain_accounts(
         rotkehlchen_api_server,
@@ -552,14 +547,19 @@ def test_add_blockchain_accounts(
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_no_etherscan_is_detected(rotkehlchen_api_server):
     """Make sure that interacting with ethereum without an etherscan key is given a warning"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    response = requests.put(api_url_for(
-        rotkehlchen_api_server,
-        "blockchainsaccountsresource",
-        blockchain='ETH',
-    ), json={'accounts': [{'address': make_ethereum_address()}]})
+    new_address = make_ethereum_address()
+    setup = setup_balances(rotki, ethereum_accounts=[new_address], btc_accounts=None)
+
+    with setup.etherscan_patch:
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json={'accounts': [{'address': new_address}]})
     assert_proper_response(response)
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
@@ -568,7 +568,6 @@ def test_no_etherscan_is_detected(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 def test_add_blockchain_accounts_async(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -662,16 +661,30 @@ def test_addding_non_checksummed_eth_account_works(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_addding_editing_ens_account_works(rotkehlchen_api_server):
-    """Test that adding an ENS eth account can be handled properly"""
+    """Test that adding an ENS eth account can be handled properly
+
+    This test mocks all etherscan queries apart from the ENS ones
+    """
+    resolved_account = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=[resolved_account],
+        btc_accounts=None,
+        eth_balances=['10000'],
+        token_balances=None,
+    )
     # Add an account and see it resolves
     request_data = {'accounts': [{'address': 'rotki.eth'}]}
-    response = requests.put(api_url_for(
-        rotkehlchen_api_server,
-        "blockchainsaccountsresource",
-        blockchain='ETH',
-    ), json=request_data)
+    with setup.etherscan_patch:
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json=request_data)
+
     result = assert_proper_response_with_result(response)
-    assert '0x9531C059098e3d194fF87FebB587aB07B30B1306' in result['per_account']['ETH']
+    assert resolved_account in result['per_account']['ETH']
 
     # Add an unresolvable account and see it errors
     request_data = {'accounts': [{'address': 'ishouldnotexistforrealz.eth'}]}
@@ -715,13 +728,25 @@ def test_addding_editing_ens_account_works(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_deleting_ens_account_works(rotkehlchen_api_server):
-    """Test that deleting an ENS eth account can be handled properly"""
+    """Test that deleting an ENS eth account can be handled properly
+
+    This test mocks all etherscan queries apart from the ENS ones
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=None,
+        btc_accounts=None,
+        eth_balances=None,
+        token_balances=None,
+    )
     request_data = {'accounts': ['rotki.eth']}
-    response = requests.delete(api_url_for(
-        rotkehlchen_api_server,
-        "blockchainsaccountsresource",
-        blockchain='ETH',
-    ), json=request_data)
+    with setup.etherscan_patch:
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json=request_data)
     result = assert_proper_response_with_result(response)
     assert result['per_account'] == {}
 
@@ -933,7 +958,6 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlchen_api_server):
     """Test that adding account with labels and tags works correctly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1358,7 +1382,7 @@ def _remove_blockchain_accounts_test_start(
     all_eth_balances = ['1000000', '2000000', '3000000', '4000000']
     token_balances = {A_RDN: ['0', '0', '450000000', '0']}
     eth_balances_after_removal = ['2000000', '4000000']
-    token_balances_after_removal = {A_RDN: ['0', '0']}
+    token_balances_after_removal = {}
     if query_balances_before_first_modification:
         # Also test by having balances queried before removing an account
         setup = setup_balances(
@@ -1436,7 +1460,6 @@ def _remove_blockchain_accounts_test_start(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
 def test_remove_blockchain_accounts(
         rotkehlchen_api_server,
@@ -1514,7 +1537,6 @@ def test_remove_blockchain_accounts(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 def test_remove_blockchain_accounts_async(
         rotkehlchen_api_server,
         ethereum_accounts,

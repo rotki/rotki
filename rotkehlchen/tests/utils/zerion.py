@@ -12,7 +12,7 @@ def create_zerion_patch():
     return patch(target, side_effect=mock_query_zerion_address)
 
 
-def mock_query_zerion_address(ethereum, msg_aggregator) -> ChecksumEthAddress:
+def mock_query_zerion_address(ethereum, msg_aggregator) -> ChecksumEthAddress:  # pylint: disable=unused-argument  # noqa: E501
     return ZERION_ADAPTER_ADDRESS
 
 

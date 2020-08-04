@@ -201,7 +201,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             method=self._initialize_zerion,
         )
 
-    def _initialize_zerion(self):
+    def _initialize_zerion(self) -> None:
         self.zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
 
     def get_zerion(self) -> Zerion:
@@ -219,7 +219,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 if self.zerion is None:
                     gevent.sleep(0.5)
                 else:
-                    return self.zerion
+                    return self.zerion  # type: ignore
 
     def __del__(self) -> None:
         del self.ethereum
