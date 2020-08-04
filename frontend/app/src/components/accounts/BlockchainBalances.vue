@@ -17,8 +17,6 @@
       >
         <account-form ref="dialogChild" :edit="accountToEdit"></account-form>
       </big-dialog>
-      <token-track></token-track>
-      <v-divider></v-divider>
       <asset-balances title="Blockchain Balances per Asset" :balances="totals">
       </asset-balances>
       <v-divider></v-divider>
@@ -46,7 +44,6 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
-import TokenTrack from '@/components/settings/TokenTrack.vue';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { Account } from '@/typing/types';
 
@@ -57,8 +54,7 @@ const { mapGetters } = createNamespacedHelpers('balances');
     AccountForm,
     AccountBalances,
     AssetBalances,
-    BigDialog,
-    TokenTrack
+    BigDialog
   },
   computed: {
     ...mapGetters(['ethAccounts', 'btcAccounts', 'totals'])
