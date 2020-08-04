@@ -23,7 +23,7 @@ from rotkehlchen.tests.utils.blockchain import (
     assert_eth_balances_result,
     compare_account_data,
 )
-from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
+from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,

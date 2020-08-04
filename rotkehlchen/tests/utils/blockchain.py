@@ -315,11 +315,8 @@ def assert_eth_balances_result(
         totals = result['totals']
 
     # Check our owned eth tokens here since the test may have changed their number
-    expected_totals_num = 1 + len(rotki.chain_manager.owned_eth_tokens)
-    if also_btc:
-        assert len(totals) == expected_totals_num + 1
-    else:
-        assert len(totals) == expected_totals_num
+    owned_assets = set(rotki.chain_manager.totals.keys())
+    assert len(totals) == len(owned_assets)
 
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
     assert FVal(totals['ETH']['amount']) == expected_total_eth
@@ -330,11 +327,6 @@ def assert_eth_balances_result(
 
     for token, balances in token_balances.items():
         symbol = token.identifier
-        if token not in rotki.chain_manager.owned_eth_tokens:
-            # If the token got removed from the owned tokens in the test make sure
-            # it's not in the totals anymore
-            assert symbol not in totals
-            continue
 
         expected_total_token = sum(from_wei(FVal(balance)) for balance in balances)
         assert FVal(totals[symbol]['amount']) == expected_total_token

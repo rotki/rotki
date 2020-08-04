@@ -103,10 +103,11 @@ ListOfBlockchainAddresses = Union[List[BTCAddress], List[ChecksumEthAddress]]
 
 
 class EthTokenInfo(NamedTuple):
+    identifier: str
     address: ChecksumEthAddress
     symbol: str
     name: str
-    decimal: int
+    decimals: int
 
 
 T_EmptyStr = str

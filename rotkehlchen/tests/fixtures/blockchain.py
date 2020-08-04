@@ -5,7 +5,6 @@ from typing import List, Optional
 import pytest
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import ChainManager
@@ -92,7 +91,7 @@ def eth_p2p_port(port_generator):
 
 @pytest.fixture
 def all_eth_tokens() -> List[EthTokenInfo]:
-    return AssetResolver().get_all_eth_tokens()
+    return AssetResolver().get_all_eth_token_info()
 
 
 @pytest.fixture
@@ -201,11 +200,6 @@ def blockchain_backend(
 
 
 @pytest.fixture
-def owned_eth_tokens() -> List[EthereumToken]:
-    return []
-
-
-@pytest.fixture
 def ethereum_modules() -> List[str]:
     return []
 
@@ -218,7 +212,6 @@ def blockchain(
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
         greenlet_manager,
-        owned_eth_tokens,
         ethereum_modules,
         start_with_valid_premium,
         rotki_premium_credentials,
@@ -229,7 +222,6 @@ def blockchain(
         premium = Premium(rotki_premium_credentials)
     return ChainManager(
         blockchain_accounts=blockchain_accounts,
-        owned_eth_tokens=owned_eth_tokens,
         ethereum_manager=ethereum_manager,
         msg_aggregator=messages_aggregator,
         database=database,

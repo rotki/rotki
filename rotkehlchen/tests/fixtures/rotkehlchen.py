@@ -72,7 +72,6 @@ def initialize_mock_rotkehlchen_instance(
         rotki_premium_credentials,
         username,
         blockchain_accounts,
-        owned_eth_tokens,
         include_etherscan_key,
         include_cryptocompare_key,
         should_mock_price_queries,
@@ -107,7 +106,6 @@ def initialize_mock_rotkehlchen_instance(
 
     # After unlocking when all objects are created we need to also include
     # customized fixtures that may have been set by the tests
-    rotki.chain_manager.owned_eth_tokens = owned_eth_tokens
     rotki.chain_manager.accounts = blockchain_accounts
     add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets)
     maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
@@ -146,7 +144,6 @@ def rotkehlchen_api_server(
         rotki_premium_credentials,
         username,
         blockchain_accounts,
-        owned_eth_tokens,
         include_etherscan_key,
         include_cryptocompare_key,
         should_mock_price_queries,
@@ -170,7 +167,6 @@ def rotkehlchen_api_server(
         rotki_premium_credentials=rotki_premium_credentials,
         username=username,
         blockchain_accounts=blockchain_accounts,
-        owned_eth_tokens=owned_eth_tokens,
         include_etherscan_key=include_etherscan_key,
         include_cryptocompare_key=include_cryptocompare_key,
         should_mock_price_queries=should_mock_price_queries,
@@ -194,7 +190,6 @@ def rotkehlchen_instance(
         rotki_premium_credentials,
         username,
         blockchain_accounts,
-        owned_eth_tokens,
         include_etherscan_key,
         include_cryptocompare_key,
         should_mock_price_queries,
@@ -216,7 +211,6 @@ def rotkehlchen_instance(
         rotki_premium_credentials=rotki_premium_credentials,
         username=username,
         blockchain_accounts=blockchain_accounts,
-        owned_eth_tokens=owned_eth_tokens,
         include_etherscan_key=include_etherscan_key,
         include_cryptocompare_key=include_cryptocompare_key,
         should_mock_price_queries=should_mock_price_queries,

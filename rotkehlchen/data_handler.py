@@ -8,7 +8,7 @@ import zlib
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData
