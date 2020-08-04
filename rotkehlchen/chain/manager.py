@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
+import gevent
 import requests
 from web3.exceptions import BadFunctionCallOutput
 
@@ -192,6 +193,33 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 task_name=f'startup of {name}',
                 method=module.on_startup,
             )
+
+        # Since Zerion initialization needs a few ENS calls we do it asynchronously
+        self.zerion: Optional[Zerion] = None
+        self.greenlet_manager.spawn_and_track(
+            task_name='Initialize Zerion object',
+            method=self._initialize_zerion,
+        )
+
+    def _initialize_zerion(self):
+        self.zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
+
+    def get_zerion(self) -> Zerion:
+        """Returns the initialized zerion. If it's not ready it waits for 5 seconds
+        and then times out. This should really never happen
+
+        May raise:
+        - gevent.Timeout if no result is returned within 5 seconds
+        """
+        if self.zerion is not None:
+            return self.zerion
+
+        with gevent.Timeout(5):
+            while True:
+                if self.zerion is None:
+                    gevent.sleep(0.5)
+                else:
+                    return self.zerion
 
     def __del__(self) -> None:
         del self.ethereum
@@ -602,6 +630,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
+            zerion = self.get_zerion()
             for account in accounts:
                 address = deserialize_ethereum_address(account)
                 try:
@@ -621,7 +650,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     )
 
                 # Also modify defi balances
-                zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
                 if append_or_remove == 'append':
                     balances = zerion.all_balances_for_account(address)
                     if len(balances) != 0:
@@ -777,8 +805,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
             return self.defi_balances
 
         # query zerion for defi balances
-        zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
         self.defi_balances = {}
+        zerion = self.get_zerion()
         for account in self.accounts.eth:
             balances = zerion.all_balances_for_account(account)
             if len(balances) != 0:

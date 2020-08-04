@@ -20,6 +20,7 @@ from rotkehlchen.tests.utils.database import (
 )
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
+from rotkehlchen.tests.utils.zerion import create_zerion_patch, wait_until_zerion_is_initialized
 
 
 @pytest.fixture
@@ -91,8 +92,9 @@ def initialize_mock_rotkehlchen_instance(
         settings = DBSettings(active_modules=ethereum_modules)
         return settings
     settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
+    zerion_patch = create_zerion_patch()
 
-    with settings_patch:
+    with settings_patch, zerion_patch:
         rotki.unlock_user(
             user=username,
             password=db_password,
@@ -100,6 +102,8 @@ def initialize_mock_rotkehlchen_instance(
             sync_approval='no',
             premium_credentials=None,
         )
+        wait_until_zerion_is_initialized(rotki.chain_manager)
+
     if start_with_valid_premium:
         rotki.premium = Premium(rotki_premium_credentials)
         rotki.premium_sync_manager.premium = rotki.premium
