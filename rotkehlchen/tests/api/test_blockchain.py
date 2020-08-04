@@ -94,7 +94,8 @@ def test_query_blockchain_balances(
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
     # First query only ETH and token balances
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "named_blockchain_balances_resource",
@@ -232,7 +233,8 @@ def test_query_blockchain_balances_async(
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
     # First query only ETH and token balances
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "named_blockchain_balances_resource",
@@ -313,7 +315,10 @@ def test_query_blockchain_balances_ignore_cache(
         wraps=rotki.chain_manager.query_ethereum_tokens,
     )
 
-    with setup.etherscan_patch, setup.bitcoin_patch, eth_query as eth_mock, tokens_query as tokens_mock:  # noqa: E501
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        eth_mock = stack.enter_context(eth_query)
+        tokens_mock = stack.enter_context(tokens_query)
         # Query ETH and token balances once
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
@@ -420,7 +425,8 @@ def _add_blockchain_accounts_test_start(
     data = {'accounts': [{'address': x} for x in new_eth_accounts]}
     if async_query:
         data['async_query'] = True
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             api_server,
             "blockchainsaccountsresource",
@@ -554,7 +560,8 @@ def test_no_etherscan_is_detected(rotkehlchen_api_server):
     new_address = make_ethereum_address()
     setup = setup_balances(rotki, ethereum_accounts=[new_address], btc_accounts=None)
 
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -650,7 +657,8 @@ def test_addding_non_checksummed_eth_account_works(rotkehlchen_api_server):
         token_balances=None,
     )
     request_data = {'accounts': [{'address': account}]}
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -676,7 +684,8 @@ def test_addding_editing_ens_account_works(rotkehlchen_api_server):
     )
     # Add an account and see it resolves
     request_data = {'accounts': [{'address': 'rotki.eth'}]}
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -741,7 +750,8 @@ def test_deleting_ens_account_works(rotkehlchen_api_server):
         token_balances=None,
     )
     request_data = {'accounts': ['rotki.eth']}
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -1026,7 +1036,8 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
         'tags': ['public', 'hardware'],
     }]
     # Make sure that even adding accounts with label and tags, balance query works fine
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -1407,7 +1418,8 @@ def _remove_blockchain_accounts_test_start(
     )
 
     # The application has started with 4 ethereum accounts. Remove two and see that balances match
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.delete(api_url_for(
             api_server,
             "blockchainsaccountsresource",
@@ -1653,7 +1665,8 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
         token_balances=None,
     )
     unknown_account = make_ethereum_address()
-    with setup.etherscan_patch:
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",

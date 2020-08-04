@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from typing import Any, Dict, List, NamedTuple, Optional, Union
-from unittest.mock import _patch
+from unittest.mock import _patch, patch
 
 import requests
 
@@ -32,18 +32,23 @@ class BalancesTestSetup(NamedTuple):
     poloniex_patch: _patch
     binance_patch: _patch
     etherscan_patch: _patch
+    ethtokens_max_chunks_patch: _patch
     bitcoin_patch: _patch
 
     def enter_all_patches(self, stack: ExitStack):
         stack.enter_context(self.poloniex_patch)
         stack.enter_context(self.binance_patch)
-        stack.enter_context(self.etherscan_patch)
-        stack.enter_context(self.bitcoin_patch)
+        self.enter_blockchain_patches(stack)
         return stack
 
     def enter_blockchain_patches(self, stack: ExitStack):
-        stack.enter_context(self.etherscan_patch)
+        self.enter_ethereum_patches(stack)
         stack.enter_context(self.bitcoin_patch)
+        return stack
+
+    def enter_ethereum_patches(self, stack: ExitStack):
+        stack.enter_context(self.etherscan_patch)
+        stack.enter_context(self.ethtokens_max_chunks_patch)
         return stack
 
 
@@ -129,6 +134,12 @@ def setup_balances(
         etherscan=rotki.etherscan,
         original_requests_get=requests.get,
     )
+    # For ethtoken detection we can have bigger chunk length during tests since it's mocked anyway
+    ethtokens_max_chunks_patch = patch(
+        'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',
+        new=800,
+    )
+
     bitcoin_patch = mock_bitcoin_balances_query(
         btc_map=btc_map,
         original_requests_get=requests.get,
@@ -151,6 +162,7 @@ def setup_balances(
         poloniex_patch=poloniex_patch,
         binance_patch=binance_patch,
         etherscan_patch=etherscan_patch,
+        ethtokens_max_chunks_patch=ethtokens_max_chunks_patch,
         bitcoin_patch=bitcoin_patch,
     )
 

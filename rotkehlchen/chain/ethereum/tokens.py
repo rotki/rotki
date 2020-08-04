@@ -24,6 +24,8 @@ TokensReturn = Tuple[
     Dict[EthereumToken, Price],
 ]
 
+ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH = 120
+
 
 class EthTokens():
 
@@ -36,7 +38,7 @@ class EthTokens():
         all_tokens = AssetResolver().get_all_eth_token_info()
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
-        chunks = list(get_chunks(all_tokens, n=120))
+        chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))
 
         result = {}
         for address in addresses:
