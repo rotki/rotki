@@ -13,7 +13,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
@@ -1091,18 +1091,6 @@ class RestAPI():
         data = self.rotkehlchen.query_periodic_data()
         result = process_result(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
-
-    @require_loggedin_user()
-    def get_eth_tokens(self) -> Response:
-        result_dict = process_result({
-            'all_eth_tokens': self.rotkehlchen.all_eth_tokens,
-            'owned_eth_tokens': self.rotkehlchen.chain_manager.eth_tokens,
-        })
-        return api_response(
-            _wrap_in_ok_result(result_dict),
-            status_code=HTTPStatus.OK,
-            log_result=False,
-        )
 
     @require_loggedin_user()
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:

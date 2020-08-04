@@ -55,7 +55,7 @@ from rotkehlchen.api.v1.encoding import (
     WatchersEditSchema,
 )
 from rotkehlchen.api.v1.parser import resource_parser
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.typing import (
@@ -615,12 +615,6 @@ class PeriodicDataResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.query_periodic_data()
-
-
-class EthereumTokensResource(BaseResource):
-
-    def get(self) -> Response:
-        return self.rest_api.get_eth_tokens()
 
 
 class BlockchainsAccountsResource(BaseResource):

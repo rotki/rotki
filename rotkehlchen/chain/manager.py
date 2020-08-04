@@ -236,10 +236,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
         result = QueriedAddresses(self.database).get_queried_addresses_for_module(module)
         return result if result is not None else self.accounts.eth
 
-    @property
-    def eth_tokens(self) -> List[EthereumToken]:
-        return self.owned_eth_tokens
-
     def get_balances_update(self) -> BlockchainBalancesUpdate:
         return BlockchainBalancesUpdate(per_account=self.balances, totals=self.totals)
 
