@@ -124,7 +124,6 @@ def assert_all_balances(
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_all_balances(
         rotkehlchen_api_server_with_exchanges,
@@ -194,7 +193,6 @@ def test_query_all_balances(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_all_balances_async(
         rotkehlchen_api_server_with_exchanges,
@@ -229,7 +227,6 @@ def test_query_all_balances_async(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_all_balances_ignore_cache(
         rotkehlchen_api_server_with_exchanges,
@@ -263,7 +260,6 @@ def test_query_all_balances_ignore_cache(
         stack.enter_context(setup.poloniex_patch)
         stack.enter_context(setup.binance_patch)
         stack.enter_context(setup.etherscan_patch)
-        stack.enter_context(setup.alethio_patch)
         stack.enter_context(setup.bitcoin_patch)
         function_call_counters = []
         function_call_counters.append(stack.enter_context(eth_query_patch))
@@ -365,7 +361,6 @@ def test_query_all_balances_ignore_cache(
 )]])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_all_balances_with_manually_tracked_balances(
         rotkehlchen_api_server_with_exchanges,
@@ -433,7 +428,6 @@ def test_query_all_balances_errors(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_multiple_balance_queries_not_concurrent(
         rotkehlchen_api_server_with_exchanges,
@@ -448,16 +442,19 @@ def test_multiple_balance_queries_not_concurrent(
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
-    e = patch.object(
+    multieth_balance_patch = patch.object(
         rotki.chain_manager.ethereum,
         'get_multieth_balance',
         wraps=rotki.chain_manager.ethereum.get_multieth_balance,
     )
     binance = rotki.exchange_manager.connected_exchanges['binance']
-    b = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
+    binance_querydict_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
 
     # Test all balances request by requesting to not save the data
-    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.alethio_patch, setup.bitcoin_patch, e as eth, b as bn:  # noqa: E501
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
+        eth = stack.enter_context(multieth_balance_patch)
+        bn = stack.enter_context(binance_querydict_patch)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,

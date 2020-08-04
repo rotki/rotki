@@ -5,17 +5,16 @@ from typing import List, Optional
 import pytest
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
+from rotkehlchen.tests.utils.zerion import create_zerion_patch, wait_until_zerion_is_initialized
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
 
 
@@ -93,21 +92,12 @@ def eth_p2p_port(port_generator):
 
 @pytest.fixture
 def all_eth_tokens() -> List[EthTokenInfo]:
-    return AssetResolver().get_all_eth_tokens()
+    return AssetResolver().get_all_eth_token_info()
 
 
 @pytest.fixture
 def etherscan(database, messages_aggregator):
     return Etherscan(database=database, msg_aggregator=messages_aggregator)
-
-
-@pytest.fixture
-def alethio(database, messages_aggregator, all_eth_tokens):
-    return Alethio(
-        database=database,
-        msg_aggregator=messages_aggregator,
-        all_eth_tokens=all_eth_tokens,
-    )
 
 
 @pytest.fixture
@@ -211,11 +201,6 @@ def blockchain_backend(
 
 
 @pytest.fixture
-def owned_eth_tokens() -> List[EthereumToken]:
-    return []
-
-
-@pytest.fixture
 def ethereum_modules() -> List[str]:
     return []
 
@@ -228,22 +213,25 @@ def blockchain(
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
         greenlet_manager,
-        owned_eth_tokens,
         ethereum_modules,
-        alethio,
         start_with_valid_premium,
         rotki_premium_credentials,
+        database,
 ):
     premium = None
     if start_with_valid_premium:
         premium = Premium(rotki_premium_credentials)
-    return ChainManager(
-        blockchain_accounts=blockchain_accounts,
-        owned_eth_tokens=owned_eth_tokens,
-        ethereum_manager=ethereum_manager,
-        msg_aggregator=messages_aggregator,
-        alethio=alethio,
-        greenlet_manager=greenlet_manager,
-        premium=premium,
-        eth_modules=ethereum_modules,
-    )
+
+    with create_zerion_patch():
+        chain_manager = ChainManager(
+            blockchain_accounts=blockchain_accounts,
+            ethereum_manager=ethereum_manager,
+            msg_aggregator=messages_aggregator,
+            database=database,
+            greenlet_manager=greenlet_manager,
+            premium=premium,
+            eth_modules=ethereum_modules,
+        )
+        wait_until_zerion_is_initialized(chain_manager)
+
+    return chain_manager

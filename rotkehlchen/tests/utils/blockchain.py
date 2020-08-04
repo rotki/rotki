@@ -14,10 +14,10 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.constants.ethereum import ETH_SCAN
+from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.constants.ethereum import ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
-from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -316,11 +316,8 @@ def assert_eth_balances_result(
         totals = result['totals']
 
     # Check our owned eth tokens here since the test may have changed their number
-    expected_totals_num = 1 + len(rotki.chain_manager.owned_eth_tokens)
-    if also_btc:
-        assert len(totals) == expected_totals_num + 1
-    else:
-        assert len(totals) == expected_totals_num
+    owned_assets = set(rotki.chain_manager.totals.keys())
+    assert len(totals) == len(owned_assets)
 
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
     assert FVal(totals['ETH']['amount']) == expected_total_eth
@@ -331,11 +328,6 @@ def assert_eth_balances_result(
 
     for token, balances in token_balances.items():
         symbol = token.identifier
-        if token not in rotki.chain_manager.owned_eth_tokens:
-            # If the token got removed from the owned tokens in the test make sure
-            # it's not in the totals anymore
-            assert symbol not in totals
-            continue
 
         expected_total_token = sum(from_wei(FVal(balance)) for balance in balances)
         assert FVal(totals[symbol]['amount']) == expected_total_token
@@ -386,6 +378,28 @@ def mock_etherscan_balances_query(
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
 
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ZERION_ADAPTER_ADDRESS}' in url:  # noqa: E501
+            web3 = Web3()
+            contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ZERION_ABI)
+            if 'data=0xc84aae17' in url:  # getBalances
+                data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
+
+                fn_abi = contract._find_matching_fn_abi(
+                    fn_identifier='getBalances',
+                    args=['address'],
+                )
+                input_types = get_abi_input_types(fn_abi)
+                output_types = get_abi_output_types(fn_abi)
+                decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
+                # TODO: This here always returns empty response. If/when we want to
+                # mock it for etherscan, this is where we do it
+                args = []
+                result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
+                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+            else:
+                raise AssertionError(f'Unexpected etherscan call during tests: {url}')
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN.address}' in url:
             web3 = Web3()
             contract = web3.eth.contract(address=ETH_SCAN.address, abi=ETH_SCAN.abi)
@@ -407,7 +421,7 @@ def mock_etherscan_balances_query(
                     args.append(int(eth_map[account_address]['ETH']))
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
-            elif 'data=0x06187b4f' in url:  # Multi token balance query
+            elif 'data=0x06187b4f' in url:  # Multi token multiaddress balance query
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
@@ -440,6 +454,37 @@ def mock_etherscan_balances_query(
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
 
+            elif 'data=0xe5da1b68' in url:  # Multi token balance query
+                data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
+                # not really the given args, but we just want the fn abi
+                args = ['str', list(eth_map.keys())]
+                fn_abi = contract._find_matching_fn_abi(
+                    fn_identifier='tokensBalance',
+                    args=args,
+                )
+                input_types = get_abi_input_types(fn_abi)
+                output_types = get_abi_output_types(fn_abi)
+                decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
+                args = []
+                account_address = to_checksum_address(decoded_input[0])
+                x = []
+                for token_address in decoded_input[1]:
+                    token_address = to_checksum_address(token_address)
+                    value_to_add = 0
+                    for given_asset, value in eth_map[account_address].items():
+                        if not isinstance(given_asset, EthereumToken):
+                            continue
+                        if token_address != given_asset.ethereum_address:
+                            continue
+                        value_to_add = int(value)
+                        break
+                    args.append(value_to_add)
+
+                result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
+                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
 
@@ -449,53 +494,6 @@ def mock_etherscan_balances_query(
         return MockResponse(200, response)
 
     return patch.object(etherscan.session, 'get', wraps=mock_requests_get)
-
-
-def mock_alethio_balances_query(
-        eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
-        alethio: Alethio,
-        use_alethio: bool,
-):
-    def mock_requests_get(url, *_args, **_kwargs):
-        if not use_alethio:
-            response = '{"message": "fail so that test switches to etherscan"}'
-            return MockResponse(400, response)
-
-        if 'tokenBalances' in url:
-            addr = url[33:75]
-            assert addr in eth_map, f'Queried alethio for {addr} which is not in the eth_map'
-            response = '{"meta":{"page":{"hasNext": false}},"data":['
-            for symbol, balance in eth_map[addr].items():
-                if symbol == 'ETH':
-                    continue
-
-                token = symbol
-                if FVal(balance) == ZERO:
-                    continue
-
-                if 'TokenBalance' in response:
-                    # if it's not the first response
-                    response += ','
-                response += f"""{{
-                    "type":"TokenBalance","id":"foo",
-                        "attributes":{{"balance":"{balance}"}},
-                        "relationships":{{
-                            "account":{{
-                                "data":{{"type":"Account","id":"foo"}},
-                                "links":{{"related":"https://api.aleth.io/v1/token-balances/0x9531c059098e3d194ff87febb587ab07b30b13066b175474e89094c44da98b954eedeac495271d0f/account"}}
-                            }},
-                            "token":{{"data":{{"type":"Token","id":"{token.ethereum_address}"}}}}
-                        }}
-                    }}"""
-
-            response += ']}'
-
-        else:
-            raise AssertionError(f'Unimplemented alethio mock for url: {url}')
-
-        return MockResponse(200, response)
-
-    return patch.object(alethio.session, 'get', wraps=mock_requests_get)
 
 
 def mock_bitcoin_balances_query(

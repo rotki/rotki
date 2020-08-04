@@ -8,7 +8,7 @@ import sys
 import time
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, Iterator, List, TypeVar, Union
 
 import gevent
 import requests
@@ -388,3 +388,12 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
     """
     hexstr = hex_or_bytes_to_str(value)
     return ChecksumEthAddress(to_checksum_address('0x' + hexstr[26:]))
+
+
+T = TypeVar('T')
+
+
+def get_chunks(lst: List[T], n: int) -> Iterator[List[T]]:
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]

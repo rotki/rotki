@@ -12,8 +12,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
@@ -30,7 +29,6 @@ from rotkehlchen.errors import (
     SystemPermissionError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
-from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -95,7 +93,6 @@ class Rotkehlchen():
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
-        self.all_eth_tokens = AssetResolver().get_all_eth_tokens()
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         # Initialize the Inquirer singleton
@@ -172,11 +169,6 @@ class Rotkehlchen():
             should_submit=settings.submit_usage_analytics,
         )
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
-        alethio = Alethio(
-            database=self.data.db,
-            msg_aggregator=self.msg_aggregator,
-            all_eth_tokens=self.all_eth_tokens,
-        )
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         # Initialize the price historian singleton
@@ -208,10 +200,9 @@ class Rotkehlchen():
         )
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
-            owned_eth_tokens=self.data.db.get_owned_tokens(),
             ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
-            alethio=alethio,
+            database=self.data.db,
             greenlet_manager=self.greenlet_manager,
             premium=self.premium,
             eth_modules=settings.active_modules,
@@ -410,41 +401,6 @@ class Rotkehlchen():
         )
         self.data.db.remove_blockchain_accounts(blockchain, accounts)
         return balances_update
-
-    def add_owned_eth_tokens(
-            self,
-            tokens: List[EthereumToken],
-    ) -> BlockchainBalancesUpdate:
-        """Adds tokens to the blockchain state and updates balance of all accounts
-
-        May raise:
-        - InputError if some of the tokens already exist
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - EthSyncError if querying the token balances through a provided ethereum
-          client and the chain is not synced
-        """
-        new_data = self.chain_manager.track_new_tokens(tokens)
-        self.data.write_owned_eth_tokens(self.chain_manager.owned_eth_tokens)
-        return new_data
-
-    def remove_owned_eth_tokens(
-            self,
-            tokens: List[EthereumToken],
-    ) -> BlockchainBalancesUpdate:
-        """
-        Removes tokens from the state and stops their balance from being tracked
-        for each account
-
-        May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - EthSyncError if querying the token balances through a provided ethereum
-          client and the chain is not synced
-        """
-        new_data = self.chain_manager.remove_eth_tokens(tokens)
-        self.data.write_owned_eth_tokens(self.chain_manager.owned_eth_tokens)
-        return new_data
 
     def process_history(
             self,

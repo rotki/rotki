@@ -112,3 +112,4 @@ ETH_SCAN = EthereumConstants().contract('ETH_SCAN')
 AAVE_LENDING_POOL = EthereumConstants().contract('AAVE_LENDING_POOL')
 
 ATOKEN_ABI = EthereumConstants.abi('ATOKEN')
+ZERION_ABI = EthereumConstants.abi('ZERION_ADAPTER')

@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_CNY, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES
 from rotkehlchen.constants.misc import ZERO
@@ -36,7 +36,6 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
     A_DOGE,
-    A_GNO,
     A_RDN,
     A_XMR,
     DEFAULT_TESTS_MAIN_CURRENCY,
@@ -179,11 +178,6 @@ def test_writting_fetching_data(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-
-    tokens = [A_GNO, A_RDN]
-    data.write_owned_eth_tokens(tokens)
-    result = data.db.get_owned_tokens()
-    assert set(tokens) == set(result)
 
     data.db.add_blockchain_accounts(
         SupportedBlockchain.BITCOIN,
@@ -618,26 +612,6 @@ def test_get_latest_asset_value_distribution(data_dir, username):
     assert FVal(assets[1].usd_value) > FVal(assets[2].usd_value)
     assert assets[3] == balances[2]
     assert FVal(assets[2].usd_value) > FVal(assets[3].usd_value)
-
-
-def test_get_owned_tokens(data_dir, username):
-    """Test the get_owned_tokens with also an unknown token in the DB"""
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-    cursor = data.db.conn.cursor()
-    tokens = ['RDN', 'GNO', 'DASDSADSAD']
-    cursor.executemany(
-        'INSERT INTO multisettings(name, value) VALUES(?, ?)',
-        [('eth_token', t) for t in tokens],
-    )
-    data.db.conn.commit()
-
-    tokens = data.db.get_owned_tokens()
-    assert tokens == [EthereumToken('GNO'), EthereumToken('RDN')]
-    warnings = data.db.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'Unknown/unsupported asset DASDSADSAD' in warnings[0]
 
 
 def test_get_netvalue_data(data_dir, username):

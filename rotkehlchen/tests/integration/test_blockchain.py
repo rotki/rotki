@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.typing import SupportedBlockchain
 
 
@@ -68,18 +67,3 @@ def test_add_remove_account_assure_all_balances_not_always_queried(blockchain):
             blockchain=SupportedBlockchain.ETHEREUM,
             accounts=[addr2],
         )
-
-    assert addr2 in blockchain.accounts.eth
-    assert mock.call_count == 0, 'blockchain.query_balances() should not have been called'
-
-    with patch.object(blockchain, 'query_balances') as mock:
-        blockchain.track_new_tokens(new_tokens=[A_GNO])
-
-    assert mock.call_count == 0, 'blockchain.query_balances() should not have been called'
-    assert A_GNO in blockchain.owned_eth_tokens
-
-    with patch.object(blockchain, 'query_balances') as mock:
-        blockchain.remove_eth_tokens(tokens=[A_GNO])
-
-    assert A_GNO not in blockchain.owned_eth_tokens
-    assert mock.call_count == 0, 'blockchain.query_balances() should not have been called'

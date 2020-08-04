@@ -7,9 +7,7 @@ import {
   DBSettings,
   ExternalServiceKeys
 } from '@/model/action-result';
-import { BlockchainAccount } from '@/model/blockchain_account_result';
 import { DBAssetBalance } from '@/model/db-asset-balance';
-import { EthTokens } from '@/model/eth_token';
 import { LocationData } from '@/model/location-data';
 import { Messages } from '@/model/messages';
 import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result';
@@ -136,31 +134,6 @@ export class RotkehlchenApi {
         },
         {
           validateStatus: validAuthorizedStatus
-        }
-      )
-      .then(handleResponse);
-  }
-
-  removeOwnedEthTokens(tokens: string[]): Promise<BlockchainAccount> {
-    return this.axios
-      .delete<ActionResult<BlockchainAccount>>('/blockchains/ETH/tokens', {
-        data: {
-          eth_tokens: tokens
-        },
-        validateStatus: validWithParamsSessionAndExternalService
-      })
-      .then(handleResponse);
-  }
-
-  addOwnedEthTokens(tokens: string[]): Promise<BlockchainAccount> {
-    return this.axios
-      .put<ActionResult<BlockchainAccount>>(
-        '/blockchains/ETH/tokens',
-        {
-          eth_tokens: tokens
-        },
-        {
-          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -461,14 +434,6 @@ export class RotkehlchenApi {
           name
         },
         validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
-  getEthTokens(): Promise<EthTokens> {
-    return this.axios
-      .get<ActionResult<EthTokens>>('/blockchains/ETH/tokens', {
-        validateStatus: validWithSessionStatus
       })
       .then(handleResponse);
   }

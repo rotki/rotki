@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple
 
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
@@ -7,7 +7,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.constants.ethereum import EthereumConstants
+from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.inquirer import Inquirer
@@ -56,6 +56,28 @@ class DefiProtocolBalances(NamedTuple):
     underlying_balances: List[DefiBalance]
 
 
+# last known zerion adapter address
+ZERION_ADAPTER_ADDRESS = deserialize_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
+
+
+def query_zerion_address(
+        ethereum: 'EthereumManager',
+        msg_aggregator: MessagesAggregator,
+) -> ChecksumEthAddress:
+    """Queries the zerion contract address. If query fails, then last known
+    address is used"""
+    result = ethereum.ens_lookup('api.zerion.eth')
+    if result is None:
+        msg_aggregator.add_error(
+            'Could not query api.zerion.eth address. Using last known address',
+        )
+        contract_address = ZERION_ADAPTER_ADDRESS
+    else:
+        contract_address = result
+
+    return contract_address
+
+
 class Zerion():
     """Adapter for the Zerion DeFi SDK https://github.com/zeriontech/defi-sdk"""
 
@@ -63,19 +85,17 @@ class Zerion():
             self,
             ethereum_manager: 'EthereumManager',
             msg_aggregator: MessagesAggregator,
+            contract_address: Optional[ChecksumEthAddress] = None,
     ) -> None:
         self.ethereum = ethereum_manager
         self.msg_aggregator = msg_aggregator
-        result = self.ethereum.ens_lookup('api.zerion.eth')
-        if result is None:
-            self.msg_aggregator.add_error(
-                'Could not query api.zerion.eth address. Using last known address',
-            )
-            self.contract_address = deserialize_ethereum_address(
-                '0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672',
-            )
-        else:
-            self.contract_address = result
+
+        if contract_address:
+            self.contract_address = contract_address
+            return
+
+        # else
+        self.contract_address = query_zerion_address(ethereum_manager, msg_aggregator)
 
     def all_balances_for_account(self, account: ChecksumEthAddress) -> List[DefiProtocolBalances]:
         """Calls the contract's getBalances() to get all protocol balances for account
@@ -84,7 +104,7 @@ class Zerion():
         """
         result = self.ethereum.call_contract(
             contract_address=self.contract_address,
-            abi=EthereumConstants.abi('ZERION_ADAPTER'),
+            abi=ZERION_ABI,
             method_name='getBalances',
             arguments=[account],
         )

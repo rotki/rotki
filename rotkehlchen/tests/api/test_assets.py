@@ -7,14 +7,12 @@ import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
-from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_query_owned_assets(
         rotkehlchen_api_server_with_exchanges,

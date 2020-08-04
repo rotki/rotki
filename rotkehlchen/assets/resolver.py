@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, EthTokenInfo
 
@@ -34,6 +34,7 @@ asset_type_mapping = {
 class AssetResolver():
     __instance = None
     assets: Dict[str, Dict[str, Any]] = {}
+    eth_token_info: Optional[List[EthTokenInfo]] = None
 
     def __new__(cls) -> 'AssetResolver':
         if AssetResolver.__instance is not None:
@@ -75,19 +76,23 @@ class AssetResolver():
         return result
 
     @staticmethod
-    def get_all_eth_tokens() -> List[EthTokenInfo]:
+    def get_all_eth_token_info() -> List[EthTokenInfo]:
+        if AssetResolver().eth_token_info is not None:
+            return AssetResolver().eth_token_info  # type: ignore
         all_tokens = []
 
-        for _, asset_data in AssetResolver().assets.items():
+        for identifier, asset_data in AssetResolver().assets.items():
             asset_type = asset_type_mapping[asset_data['type']]
             if asset_type not in (AssetType.ETH_TOKEN_AND_MORE, AssetType.ETH_TOKEN):
                 continue
 
             all_tokens.append(EthTokenInfo(
+                identifier=identifier,
                 address=ChecksumEthAddress(asset_data['ethereum_address']),
                 symbol=asset_data['symbol'],
                 name=asset_data['name'],
-                decimal=int(asset_data['ethereum_token_decimals']),
+                decimals=int(asset_data['ethereum_token_decimals']),
             ))
 
+        AssetResolver().eth_token_info = all_tokens
         return all_tokens

@@ -23,7 +23,6 @@ from rotkehlchen.api.v1.encoding import (
     BlockchainBalanceQuerySchema,
     DataImportSchema,
     EditSettingsSchema,
-    EthTokensSchema,
     ExchangeBalanceQuerySchema,
     ExchangesResourceAddSchema,
     ExchangesResourceRemoveSchema,
@@ -56,7 +55,7 @@ from rotkehlchen.api.v1.encoding import (
     WatchersEditSchema,
 )
 from rotkehlchen.api.v1.parser import resource_parser
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.typing import (
@@ -616,30 +615,6 @@ class PeriodicDataResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.query_periodic_data()
-
-
-class EthereumTokensResource(BaseResource):
-
-    modify_schema = EthTokensSchema()
-
-    def get(self) -> Response:
-        return self.rest_api.get_eth_tokens()
-
-    @use_kwargs(modify_schema, location='json')  # type: ignore
-    def put(
-            self,
-            eth_tokens: List[EthereumToken],
-            async_query: bool,
-    ) -> Response:
-        return self.rest_api.add_owned_eth_tokens(tokens=eth_tokens, async_query=async_query)
-
-    @use_kwargs(modify_schema, location='json')  # type: ignore
-    def delete(
-            self,
-            eth_tokens: List[EthereumToken],
-            async_query: bool,
-    ) -> Response:
-        return self.rest_api.remove_owned_eth_tokens(tokens=eth_tokens, async_query=async_query)
 
 
 class BlockchainsAccountsResource(BaseResource):

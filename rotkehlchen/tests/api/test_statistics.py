@@ -18,7 +18,6 @@ from rotkehlchen.utils.misc import ts_now
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_query_statistics_netvalue(
@@ -68,7 +67,6 @@ def test_query_statistics_netvalue(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_query_statistics_asset_balance(
@@ -223,7 +221,6 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server, api_port)
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_query_statistics_value_distribution(
