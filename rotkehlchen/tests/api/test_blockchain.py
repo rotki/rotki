@@ -736,7 +736,7 @@ def test_addding_editing_ens_account_works(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_deleting_ens_account_works(rotkehlchen_api_server):
+def test_deleting_ens_account_works(rotkehlchen_api_server, ethereum_accounts):
     """Test that deleting an ENS eth account can be handled properly
 
     This test mocks all etherscan queries apart from the ENS ones
@@ -744,7 +744,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
         rotki,
-        ethereum_accounts=None,
+        ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         eth_balances=None,
         token_balances=None,
