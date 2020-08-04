@@ -2422,58 +2422,6 @@ Querying periodic data
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error.
 
-Getting information about ETH tokens
-====================================
-
-.. http:get:: /api/(version)/blockchains/ETH/tokens
-
-   Doing a GET on the eth tokens endpoint will return a list of all known ETH tokens and a list of the currently owned ETH tokens.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/ETH/tokens HTTP/1.1
-      Host: localhost:5042
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "all_eth_tokens": [{
-                  "address": "0x6810e776880C02933D47DB1b9fc05908e5386b96",
-                  "symbol": "GNO",
-                  "name": "Gnosis token",
-                  "decimal": 18
-              }, {
-                  "address": "0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6",
-                  "symbol": "RDN",
-                  "name": "Raiden Network Token",
-                  "decimal": 18
-              }],
-              "owned_eth_tokens": ["RDN", "DAI"]
-          },
-          "message": ""
-      }
-
-   :resjson list[object] all_eth_tokens: A list of token information for all tokens that Rotki knows about. Each entry contains the checksummed address of the token, the symbol, the name and the decimals.
-   :resjson list[string] owned_eth_tokens: A list of the symbols of all the tokens the user tracks/owns.
-
-   Each token in ``"all_eth_tokens"`` contains the following keys:
-
-   :resjsonarr string address: The address of the token's contract.
-   :resjsonarr string symbol: The symbol of the ethereum token.
-   :resjsonarr string name: The name of the token
-   :resjsonarr integer decimals: The number of decimals the token uses.
-
-   :statuscode 200: Tokens succesfully queried.
-   :statuscode 409: User is not logged in.
-   :statuscode 500: Internal Rotki error
 
 Getting blockchain account data
 ===============================
