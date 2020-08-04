@@ -1,9 +1,10 @@
 import { Module } from 'vuex';
+import { SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/store';
 import { actions } from './actions';
 import { getters } from './getters';
 import { mutations } from './mutations';
-import { SessionState, state } from './state';
+import { state } from './state';
 
 const namespaced: boolean = true;
 

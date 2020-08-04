@@ -1,8 +1,34 @@
 import { GetterTree } from 'vuex';
-import { SessionState } from '@/store/session/state';
+import { Currency } from '@/model/currency';
+import {
+  SupportedModules,
+  Watcher,
+  WatcherType
+} from '@/services/session/types';
+import { SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/store';
+import { Tag } from '@/typing/types';
 
-export const getters: GetterTree<SessionState, RotkehlchenState> = {
+export interface SessionGetters {
+  floatingPrecision: number;
+  dateDisplayFormat: string;
+  lastBalanceSave: number;
+  currency: Currency;
+  tags: Tag[];
+  krakenAccountType: string;
+  loanWatchers: Watcher<WatcherType>[];
+  activeModules: SupportedModules[];
+}
+
+type GettersDefinition = {
+  [P in keyof SessionGetters]: (
+    state: SessionState,
+    getters: SessionGetters
+  ) => SessionGetters[P];
+};
+
+export const getters: GetterTree<SessionState, RotkehlchenState> &
+  GettersDefinition = {
   floatingPrecision: (state: SessionState) => {
     return state.generalSettings.floatingPrecision;
   },
@@ -33,5 +59,9 @@ export const getters: GetterTree<SessionState, RotkehlchenState> = {
     return watchers.filter(
       watcher => loanWatcherTypes.indexOf(watcher.type) > -1
     );
+  },
+
+  activeModules: ({ generalSettings }) => {
+    return generalSettings.activeModules;
   }
 };

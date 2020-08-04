@@ -10,7 +10,7 @@ import { NotificationState } from '@/store/notifications/state';
 import { reports } from '@/store/reports';
 import { TaxReportState } from '@/store/reports/state';
 import { session } from '@/store/session';
-import { SessionState } from '@/store/session/state';
+import { SessionState } from '@/store/session/types';
 import { tasks } from '@/store/tasks';
 import { TaskState } from '@/store/tasks/state';
 

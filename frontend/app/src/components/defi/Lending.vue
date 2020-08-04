@@ -82,7 +82,7 @@
     <v-row>
       <v-col cols="6">
         <blockchain-account-selector
-          :addresses="defiAccounts(selectedProtocols)"
+          :usable-accounts="defiAccounts(selectedProtocols)"
           @selected-accounts-change="filteredAccounts = $event"
         ></blockchain-account-selector>
       </v-col>

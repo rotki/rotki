@@ -1,3 +1,5 @@
+import { SupportedModules } from '@/services/session/types';
+
 export interface ActionResult<T> {
   readonly result: T;
   readonly message: string;
@@ -28,6 +30,7 @@ export interface DBSettings {
   readonly anonymized_logs: boolean;
   readonly date_display_format: string;
   readonly kraken_account_type: string;
+  readonly active_modules: SupportedModules[];
 }
 
 export interface AsyncQuery {

@@ -6,10 +6,15 @@ import {
 import { DBSettings } from '@/model/action-result';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
-import { Watcher, WatcherTypes } from '@/services/session/types';
+import {
+  QueriedAddressPayload,
+  Watcher,
+  WatcherTypes
+} from '@/services/session/types';
 import { notify } from '@/store/notifications/utils';
-import { SessionState } from '@/store/session/state';
+import { SessionState } from '@/store/session/types';
 import { Message, RotkehlchenState } from '@/store/store';
+import { showError } from '@/store/utils';
 import {
   SettingsUpdate,
   Severity,
@@ -210,14 +215,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         { root: true }
       );
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Error setting kraken account type',
-          description: e.message || ''
-        } as Message,
-        { root: true }
-      );
+      showError(commit, e.message, 'Error setting kraken account type');
     }
   },
 
@@ -226,15 +224,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const settings = await api.setSettings(update);
       commit('generalSettings', convertToGeneralSettings(settings));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Error',
-          description: `Setting the main currency was not successful: ${e.message}`,
-          success: false
-        } as Message,
-        { root: true }
-      );
+      showError(commit, `Updating settings was not successful: ${e.message}`);
     }
   },
 
@@ -270,5 +260,35 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     const updatedWatchers = await api.session.editWatcher(watchers);
     commit('watchers', updatedWatchers);
     return updatedWatchers;
+  },
+
+  async fetchQueriedAddresses({ commit }) {
+    try {
+      const queriedAddresses = await api.session.queriedAddresses();
+      commit('queriedAddresses', queriedAddresses);
+    } catch (e) {
+      showError(
+        commit,
+        `Failure to fetch the queriable addresses: ${e.message}`
+      );
+    }
+  },
+
+  async addQueriedAddress({ commit }, payload: QueriedAddressPayload) {
+    try {
+      const queriedAddresses = await api.session.addQueriedAddress(payload);
+      commit('queriedAddresses', queriedAddresses);
+    } catch (e) {
+      showError(commit, `Failure to add a queriable address: ${e.message}`);
+    }
+  },
+
+  async deleteQueriedAddress({ commit }, payload: QueriedAddressPayload) {
+    try {
+      const queriedAddresses = await api.session.deleteQueriedAddress(payload);
+      commit('queriedAddresses', queriedAddresses);
+    } catch (e) {
+      showError(commit, `Failure to delete a queriable address: ${e.message}`);
+    }
   }
 };

@@ -1,6 +1,7 @@
 import { ApiAssetBalance, AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { SupportedDefiProtocols } from '@/services/defi/types';
+import { SupportedModules } from '@/services/session/types';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
@@ -12,6 +13,7 @@ export interface GeneralSettings {
   readonly dateDisplayFormat: string;
   readonly selectedCurrency: Currency;
   readonly krakenAccountType: string;
+  readonly activeModules: SupportedModules[];
 }
 
 export interface AccountingSettings {
@@ -117,6 +119,7 @@ export interface SettingsPayload {
   taxfree_after_period: number;
   kraken_account_type: string;
   premium_should_sync: boolean;
+  active_modules: SupportedModules[];
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';
