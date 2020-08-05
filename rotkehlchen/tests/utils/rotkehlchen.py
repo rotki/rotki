@@ -9,10 +9,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.blockchain import (
-    mock_bitcoin_balances_query,
-    mock_etherscan_balances_query,
-)
+from rotkehlchen.tests.utils.blockchain import mock_bitcoin_balances_query, mock_etherscan_query
 from rotkehlchen.tests.utils.constants import A_RDN, A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     patch_binance_balances_query,
@@ -60,6 +57,7 @@ def setup_balances(
         token_balances: Optional[Dict[EthereumToken, List[str]]] = None,
         btc_balances: Optional[List[str]] = None,
         manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
+        original_queries: Optional[List[str]] = None,
 ) -> BalancesTestSetup:
     """Setup the blockchain, exchange and fiat balances for some tests
 
@@ -129,9 +127,10 @@ def setup_balances(
     binance_patch = patch_binance_balances_query(binance) if binance else None
     poloniex = rotki.exchange_manager.connected_exchanges.get('poloniex', None)
     poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None
-    etherscan_patch = mock_etherscan_balances_query(
+    etherscan_patch = mock_etherscan_query(
         eth_map=eth_map,
         etherscan=rotki.etherscan,
+        original_queries=original_queries,
         original_requests_get=requests.get,
     )
     # For ethtoken detection we can have bigger chunk length during tests since it's mocked anyway

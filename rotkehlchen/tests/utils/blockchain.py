@@ -4,7 +4,7 @@ import os
 import shutil
 import subprocess
 from binascii import hexlify
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 from unittest.mock import patch
 
 import gevent
@@ -338,9 +338,10 @@ def assert_eth_balances_result(
             assert FVal(totals[symbol]['usd_value']) > ZERO
 
 
-def mock_etherscan_balances_query(
+def mock_etherscan_query(
         eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
         etherscan: Etherscan,
+        original_queries: Optional[List[str]],
         original_requests_get,
 ):
     def mock_requests_get(url, *args, **kwargs):
@@ -379,6 +380,9 @@ def mock_etherscan_balances_query(
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
 
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ZERION_ADAPTER_ADDRESS}' in url:  # noqa: E501
+            if 'zerion' in original_queries:
+                return original_requests_get(url, *args, **kwargs)
+
             web3 = Web3()
             contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ZERION_ABI)
             if 'data=0xc84aae17' in url:  # getBalances
@@ -401,6 +405,9 @@ def mock_etherscan_balances_query(
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN.address}' in url:
+            if 'ethscan' in original_queries:
+                return original_requests_get(url, *args, **kwargs)
+
             web3 = Web3()
             contract = web3.eth.contract(address=ETH_SCAN.address, abi=ETH_SCAN.abi)
             if 'data=0xdbdbb51b' in url:  # Eth balance query

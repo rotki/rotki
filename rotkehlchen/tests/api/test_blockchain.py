@@ -241,8 +241,8 @@ def test_query_blockchain_balances_async(
             blockchain='ETH',
         ), json={'async_query': True})
         task_id = assert_ok_async_response(response)
-
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+
     assert_eth_balances_result(
         rotki=rotki,
         json_data=outcome,
