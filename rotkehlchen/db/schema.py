@@ -131,6 +131,14 @@ CREATE TABLE IF NOT EXISTS blockchain_accounts (
 );
 """
 
+DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS = """
+CREATE TABLE IF NOT EXISTS ethereum_accounts_details (
+    account VARCHAR[42] NOT NULL PRIMARY KEY,
+    tokens_list NOT NULL TEXT,
+    time NOT NULL INTEGER,
+);
+"""
+
 DB_CREATE_MANUALLY_TRACKED_BALANCES = """
 CREATE TABLE IF NOT EXISTS manually_tracked_balances (
     asset VARCHAR[24] NOT NULL,
@@ -248,7 +256,7 @@ CREATE TABLE IF NOT EXISTS settings (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -260,6 +268,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_USER_CREDENTIALS,
     DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS,
     DB_CREATE_BLOCKCHAIN_ACCOUNTS,
+    DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS,
     DB_CREATE_MULTISETTINGS,
     DB_CREATE_MANUALLY_TRACKED_BALANCES,
     DB_CREATE_CURRENT_BALANCES,

@@ -23,7 +23,7 @@ def test_detect_tokens_for_addresses(ethtokens, inquirer):  # pylint: disable=un
     """
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     addr2 = '0xD3A962916a19146D658de0ab62ee237ed3115873'
-    result, token_usd_prices = ethtokens.detect_tokens_for_addresses([addr1, addr2])
+    result, token_usd_prices = ethtokens.query_tokens_for_addresses([addr1, addr2])
 
     assert len(result[addr1]) >= 2
     balance = result[addr1]['aDAI']
