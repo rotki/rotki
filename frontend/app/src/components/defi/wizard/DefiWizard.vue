@@ -34,7 +34,7 @@
           <v-card-text>
             <v-row>
               <v-col>
-                <defi-module-selector v-model="activeModules" />
+                <defi-module-selector v-model="selectedModules" />
               </v-col>
             </v-row>
           </v-card-text>
@@ -65,7 +65,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapMutations } from 'vuex';
+import { mapActions, mapGetters, mapMutations } from 'vuex';
 import DefiAddressSelector from '@/components/defi/wizard/DefiAddressSelector.vue';
 import DefiModuleSelector from '@/components/defi/wizard/DefiModuleSelector.vue';
 import { SupportedModules } from '@/services/session/types';
@@ -73,6 +73,9 @@ import { SettingsUpdate } from '@/typing/types';
 
 @Component({
   components: { DefiAddressSelector, DefiModuleSelector },
+  computed: {
+    ...mapGetters('session', ['activeModules'])
+  },
   methods: {
     ...mapActions('session', ['updateSettings']),
     ...mapMutations('session', ['defiSetup'])
@@ -81,14 +84,19 @@ import { SettingsUpdate } from '@/typing/types';
 export default class DefiWizard extends Vue {
   updateSettings!: (update: SettingsUpdate) => Promise<void>;
   defiSetup!: (done: boolean) => void;
+  activeModules!: SupportedModules[];
 
   loading: boolean = false;
   step: number = 1;
-  activeModules: SupportedModules[] = [];
+  selectedModules: SupportedModules[] = [];
+
+  mounted() {
+    this.selectedModules = this.activeModules;
+  }
 
   async modulesSelected() {
     this.loading = true;
-    await this.updateSettings({ active_modules: this.activeModules });
+    await this.updateSettings({ active_modules: this.selectedModules });
     this.loading = false;
     this.step = 3;
   }

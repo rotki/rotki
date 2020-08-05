@@ -28,7 +28,14 @@
     <v-stepper-items>
       <v-stepper-content v-for="n in steps" :key="`${n}-content`" :step="n">
         <v-card class="mb-12" flat height="110px">
-          <defi-queriable-address :module="modules[n - 1].identifier" />
+          <defi-queriable-address
+            :module="modules[n - 1].identifier"
+            :selected-addresses="
+              queriedAddresses[modules[n - 1].identifier]
+                ? queriedAddresses[modules[n - 1].identifier]
+                : []
+            "
+          />
         </v-card>
 
         <v-btn v-if="step > 1" text @click="previousStep(n)">Back</v-btn>
@@ -46,21 +53,31 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import { DEFI_MODULES } from '@/components/defi/wizard/consts';
 import DefiQueriableAddress from '@/components/defi/wizard/DefiQueriableAddress.vue';
 import { Module } from '@/components/defi/wizard/types';
-import { SupportedModules } from '@/services/session/types';
+import { QueriedAddresses, SupportedModules } from '@/services/session/types';
 
 @Component({
   components: { DefiQueriableAddress },
   computed: {
-    ...mapGetters('session', ['activeModules'])
+    ...mapGetters('session', ['activeModules']),
+    ...mapState('session', ['queriedAddresses'])
+  },
+  methods: {
+    ...mapActions('session', ['fetchQueriedAddresses'])
   }
 })
 export default class DefiAddressSelector extends Vue {
   step: number = 1;
   activeModules!: SupportedModules[];
+  queriedAddresses!: QueriedAddresses;
+  fetchQueriedAddresses!: () => Promise<void>;
+
+  async mounted() {
+    await this.fetchQueriedAddresses();
+  }
 
   get modules(): Module[] {
     if (this.activeModules.length === 0) {

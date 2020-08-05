@@ -24,7 +24,7 @@
         <template #selection="data">
           <v-chip
             v-if="multiple"
-            :key="data.item.chain + data.item.label"
+            :key="data.item.chain + data.item.address"
             v-bind="data.attrs"
             :input-value="data.selected"
             :click="data.select"
@@ -122,8 +122,10 @@ export default class BlockchainAccountSelector extends Vue {
   filter(item: GeneralAccount, queryText: string) {
     const text = item.label.toLocaleLowerCase();
     const query = queryText.toLocaleLowerCase();
+    const address = item.address.toLocaleLowerCase();
 
     const labelMatches = text.indexOf(query) > -1;
+    const addressMatches = address.indexOf(query) > -1;
 
     const tagMatches =
       item.tags
@@ -131,7 +133,7 @@ export default class BlockchainAccountSelector extends Vue {
         .join(' ')
         .indexOf(query) > -1;
 
-    return labelMatches || tagMatches;
+    return labelMatches || tagMatches || addressMatches;
   }
 }
 </script>

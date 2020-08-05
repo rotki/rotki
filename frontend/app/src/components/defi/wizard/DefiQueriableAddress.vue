@@ -11,10 +11,9 @@
 
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapState } from 'vuex';
+import { mapActions } from 'vuex';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import {
-  QueriedAddresses,
   QueriedAddressPayload,
   SupportedModules
 } from '@/services/session/types';
@@ -22,30 +21,27 @@ import {
 @Component({
   components: { BlockchainAccountSelector },
   methods: {
-    ...mapState('session', ['queriedAddresses']),
     ...mapActions('session', ['deleteQueriedAddress', 'addQueriedAddress'])
   }
 })
 export default class DefiQueriableAddress extends Vue {
   @Prop({ required: true })
   module!: SupportedModules;
+  @Prop({ required: true })
+  selectedAddresses!: string[];
+
   loading: boolean = false;
   addresses: string[] = [];
   addQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
   deleteQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
 
-  queriedAddresses!: QueriedAddresses;
-
   async created() {
-    await this.onAddressesChange();
+    this.onAddressesChange();
   }
 
-  @Watch('queriedAddresses')
+  @Watch('selectedAddresses')
   onAddressesChange() {
-    const addresses = this.queriedAddresses[this.module];
-    if (addresses) {
-      this.addresses = addresses;
-    }
+    this.addresses = this.selectedAddresses;
   }
 
   async added(addresses: string[]) {
@@ -58,15 +54,19 @@ export default class DefiQueriableAddress extends Vue {
     );
 
     if (added.length > 0) {
-      await this.addQueriedAddress({
-        address: added[0],
-        module: this.module
-      });
+      for (const address of added) {
+        await this.addQueriedAddress({
+          address,
+          module: this.module
+        });
+      }
     } else if (removed.length > 0) {
-      await this.deleteQueriedAddress({
-        address: removed[0],
-        module: this.module
-      });
+      for (const address of removed) {
+        await this.deleteQueriedAddress({
+          address,
+          module: this.module
+        });
+      }
     }
 
     this.addresses = addresses;
