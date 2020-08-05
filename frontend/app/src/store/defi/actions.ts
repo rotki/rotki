@@ -265,39 +265,62 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
   },
 
-  async fetchAllDefi({ commit, dispatch, state }, refreshing: boolean = false) {
+  async fetchAllDefi(
+    { commit, dispatch, state, rootState: { session } },
+    refreshing: boolean = false
+  ) {
     if (
       state.status === Status.LOADING ||
       (state.status === Status.LOADED && !refreshing)
     ) {
       return;
     }
+
+    const { activeModules } = session!.generalSettings;
+    const noActiveModules = activeModules.length === 0;
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
     commit('defiStatus', refreshing ? Status.REFRESHING : Status.LOADING);
     await dispatch('fetchDefiBalances');
     commit('defiStatus', Status.LOADED);
-    await dispatch('fetchAaveBalances');
-    await dispatch('fetchDSRBalances');
-    await dispatch('fetchMakerDAOVaults');
+
+    if (noActiveModules || activeModules.includes('aave')) {
+      await dispatch('fetchAaveBalances');
+    }
+
+    if (noActiveModules || activeModules.includes('makerdao_dsr')) {
+      await dispatch('fetchDSRBalances');
+    }
+
+    if (noActiveModules || activeModules.includes('makerdao_vaults')) {
+      await dispatch('fetchMakerDAOVaults');
+    }
 
     commit('status', Status.LOADED);
   },
 
-  async fetchLending({ commit, dispatch, state }, refreshing: boolean = false) {
+  async fetchLending(
+    { commit, dispatch, state, rootState: { session } },
+    refreshing: boolean = false
+  ) {
     if (
       state.status === Status.LOADING ||
       (state.status === Status.LOADED && !refreshing)
     ) {
       return;
     }
+    const { activeModules } = session!.generalSettings;
+    const noActiveModules = activeModules.length === 0;
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
 
-    await Promise.all([
-      dispatch('fetchDSRBalances'),
-      dispatch('fetchAaveBalances')
-    ]);
+    if (noActiveModules || activeModules.includes('makerdao_dsr')) {
+      await dispatch('fetchDSRBalances');
+    }
+
+    if (noActiveModules || activeModules.includes('aave')) {
+      await dispatch('fetchAaveBalances');
+    }
 
     commit('status', Status.LOADED);
   },
@@ -314,15 +337,21 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
 
+    const { activeModules } = session!.generalSettings;
+    const noActiveModules = activeModules.length === 0;
+
     commit(
       'lendingHistoryStatus',
       payload?.refresh ? Status.REFRESHING : Status.LOADING
     );
 
-    await Promise.all([
-      dispatch('fetchDSRHistory'),
-      dispatch('fetchAaveHistory', payload?.reset)
-    ]);
+    if (noActiveModules || activeModules.includes('makerdao_dsr')) {
+      await dispatch('fetchDSRHistory');
+    }
+
+    if (noActiveModules || activeModules.includes('aave')) {
+      await dispatch('fetchAaveHistory', payload?.reset);
+    }
 
     commit('lendingHistoryStatus', Status.LOADED);
   },
@@ -332,16 +361,20 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refreshing: boolean = false
   ) {
     if (
-      !session?.premium ||
       state.status === Status.LOADING ||
       (state.status === Status.LOADED && !refreshing)
     ) {
       return;
     }
 
+    const { activeModules } = session!.generalSettings;
+    const noActiveModules = activeModules.length === 0;
+
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
 
-    await dispatch('fetchMakerDAOVaults');
+    if (noActiveModules || activeModules.includes('makerdao_vaults')) {
+      await dispatch('fetchMakerDAOVaults');
+    }
 
     commit('status', Status.LOADED);
   },
@@ -358,12 +391,17 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
 
+    const { activeModules } = session!.generalSettings;
+    const noActiveModules = activeModules.length === 0;
+
     commit(
       'borrowingHistoryStatus',
       refreshing ? Status.REFRESHING : Status.LOADING
     );
 
-    await dispatch('fetchMakerDAOVaultDetails');
+    if (noActiveModules || activeModules.includes('makerdao_vaults')) {
+      await dispatch('fetchMakerDAOVaultDetails');
+    }
 
     commit('borrowingHistoryStatus', Status.LOADED);
   }
