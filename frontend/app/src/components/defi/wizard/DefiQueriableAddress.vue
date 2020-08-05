@@ -1,6 +1,6 @@
 <template>
   <blockchain-account-selector
-    :value="addresses"
+    :value="selectedAccounts"
     flat
     label="Select address(es)"
     multiple
@@ -11,15 +11,19 @@
 
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import {
   QueriedAddressPayload,
   SupportedModules
 } from '@/services/session/types';
+import { Account, GeneralAccount } from '@/typing/types';
 
 @Component({
   components: { BlockchainAccountSelector },
+  computed: {
+    ...mapGetters('balances', ['accounts'])
+  },
   methods: {
     ...mapActions('session', ['deleteQueriedAddress', 'addQueriedAddress'])
   }
@@ -31,9 +35,10 @@ export default class DefiQueriableAddress extends Vue {
   selectedAddresses!: string[];
 
   loading: boolean = false;
-  addresses: string[] = [];
+  selectedAccounts: Account[] = [];
   addQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
   deleteQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
+  accounts!: GeneralAccount[];
 
   async created() {
     this.onAddressesChange();
@@ -41,15 +46,17 @@ export default class DefiQueriableAddress extends Vue {
 
   @Watch('selectedAddresses')
   onAddressesChange() {
-    this.addresses = this.selectedAddresses;
+    this.selectedAccounts = this.accounts.filter(account =>
+      this.selectedAddresses.includes(account.address)
+    );
   }
 
-  async added(addresses: string[]) {
+  async added(accounts: GeneralAccount[]) {
     this.loading = true;
-    const added = addresses.filter(
-      address => !this.addresses.includes(address)
-    );
-    const removed = this.addresses.filter(
+    const addresses = accounts.map(({ address }) => address);
+    const allAddresses = this.selectedAccounts.map(({ address }) => address);
+    const added = addresses.filter(address => !allAddresses.includes(address));
+    const removed = allAddresses.filter(
       address => !addresses.includes(address)
     );
 
@@ -69,7 +76,9 @@ export default class DefiQueriableAddress extends Vue {
       }
     }
 
-    this.addresses = addresses;
+    this.selectedAccounts = this.accounts.filter(account =>
+      addresses.includes(account.address)
+    );
     this.loading = false;
   }
 }

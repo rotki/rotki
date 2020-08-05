@@ -12,6 +12,7 @@
         hide-details
         hide-selected
         hide-no-data
+        return-object
         chips
         clearable
         :open-on-clear="false"
@@ -92,17 +93,17 @@ export default class BlockchainAccountSelector extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   multiple!: boolean;
   @Prop({ required: true })
-  value!: string[] | string | null;
+  value!: GeneralAccount[] | GeneralAccount | null;
 
   accounts!: GeneralAccount[];
   tags!: Tags;
   search: string = '';
 
   get hintText(): string {
-    if (typeof this.value === 'string') {
-      return '1';
-    } else if (Array.isArray(this.value)) {
+    if (Array.isArray(this.value)) {
       return `${this.value.length}`;
+    } else if (this.value) {
+      return '1';
     }
     return 'all';
   }

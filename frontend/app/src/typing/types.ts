@@ -151,12 +151,13 @@ export type AccountDataMap = { [address: string]: AccountData };
 export interface Account {
   readonly chain: Blockchain;
   readonly address: string;
+}
+
+export interface DefiAccount extends Account {
   readonly protocols: SupportedDefiProtocols[];
 }
 
-export interface GeneralAccount extends AccountData {
-  chain: Blockchain;
-}
+export interface GeneralAccount extends AccountData, Account {}
 
 export type Properties<TObj, TResult> = {
   [K in keyof TObj]: TObj[K] extends TResult ? K : never;
