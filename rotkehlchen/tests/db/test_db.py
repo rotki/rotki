@@ -175,7 +175,7 @@ def test_export_import_db(data_dir, username):
     assert int(fiat_balances[A_EUR]) == 10
 
 
-def test_writting_fetching_data(data_dir, username):
+def test_writing_fetching_data(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -262,6 +262,7 @@ def test_writting_fetching_data(data_dir, username):
         'last_write_ts': 0,
         'kraken_account_type': DEFAULT_KRAKEN_ACCOUNT_TYPE,
         'active_modules': DEFAULT_ACTIVE_MODULES,
+        'frontend_settings': '',
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
@@ -320,6 +321,8 @@ def test_settings_entry_types(database):
     assert res.submit_usage_analytics is False
     assert isinstance(res.active_modules, list)
     assert res.active_modules == DEFAULT_ACTIVE_MODULES
+    assert isinstance(res.frontend_settings, str)
+    assert res.frontend_settings == ''
 
 
 def test_balance_save_frequency_check(data_dir, username):

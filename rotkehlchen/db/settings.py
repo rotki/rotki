@@ -46,6 +46,7 @@ class DBSettings(NamedTuple):
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
     kraken_account_type: KrakenAccountType = DEFAULT_KRAKEN_ACCOUNT_TYPE
     active_modules: List[str] = DEFAULT_ACTIVE_MODULES
+    frontend_settings: str = ''
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -63,6 +64,7 @@ class ModifiableDBSettings(NamedTuple):
     submit_usage_analytics: Optional[bool] = None
     kraken_account_type: Optional[KrakenAccountType] = None
     active_modules: Optional[List[str]] = None
+    frontend_settings: Optional[str] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -159,6 +161,8 @@ def db_settings_from_dict(
             specified_args[key] = KrakenAccountType.deserialize(value)
         elif key == 'active_modules':
             specified_args[key] = json.loads(value)
+        elif key == 'frontend_settings':
+            specified_args[key] = str(value)
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

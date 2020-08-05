@@ -120,6 +120,7 @@ export interface SettingsPayload {
   kraken_account_type: string;
   premium_should_sync: boolean;
   active_modules: SupportedModules[];
+  frontend_settings: string;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';

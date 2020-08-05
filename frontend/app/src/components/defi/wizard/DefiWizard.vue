@@ -75,18 +75,18 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapMutations } from 'vuex';
+import { mapActions } from 'vuex';
 import DefiAddressSelector from '@/components/defi/wizard/DefiAddressSelector.vue';
 import DefiModuleSelector from '@/components/defi/wizard/DefiModuleSelector.vue';
 
 @Component({
   components: { DefiAddressSelector, DefiModuleSelector },
   methods: {
-    ...mapMutations('session', ['defiSetup'])
+    ...mapActions('session', ['defiSetupDone'])
   }
 })
 export default class DefiWizard extends Vue {
-  defiSetup!: (done: boolean) => void;
+  defiSetupDone!: (done: boolean) => void;
 
   step: number = 1;
 
@@ -95,7 +95,7 @@ export default class DefiWizard extends Vue {
   }
 
   done() {
-    this.defiSetup(true);
+    this.defiSetupDone(true);
   }
 }
 </script>

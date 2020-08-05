@@ -31,6 +31,7 @@ export interface DBSettings {
   readonly date_display_format: string;
   readonly kraken_account_type: string;
   readonly active_modules: SupportedModules[];
+  readonly frontend_settings: string;
 }
 
 export interface AsyncQuery {

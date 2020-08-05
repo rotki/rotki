@@ -12,7 +12,8 @@ import {
   WatcherTypes
 } from '@/services/session/types';
 import { notify } from '@/store/notifications/utils';
-import { SessionState } from '@/store/session/types';
+import { FrontendSettings, SessionState } from '@/store/session/types';
+import { loadFrontendSettings } from '@/store/session/utils';
 import { Message, RotkehlchenState } from '@/store/store';
 import { showError } from '@/store/utils';
 import {
@@ -47,6 +48,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       } else {
         commit('syncConflict', '');
         ({ settings, exchanges } = await api.unlockUser(payload));
+      }
+
+      if (settings.frontend_settings) {
+        loadFrontendSettings(commit, settings.frontend_settings);
       }
 
       await dispatch('balances/fetchSupportedAssets', null, {
@@ -289,6 +294,19 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('queriedAddresses', queriedAddresses);
     } catch (e) {
       showError(commit, `Failure to delete a queriable address: ${e.message}`);
+    }
+  },
+
+  async defiSetupDone({ commit }, done: boolean) {
+    try {
+      await api.setSettings({
+        frontend_settings: JSON.stringify({
+          defiSetupDone: done
+        } as FrontendSettings)
+      });
+      commit('defiSetup', done);
+    } catch (e) {
+      commit('defiSetup', !done);
     }
   }
 };

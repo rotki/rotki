@@ -23,3 +23,7 @@ export interface SessionState {
   defiSetupDone: boolean;
   queriedAddresses: QueriedAddresses;
 }
+
+export interface FrontendSettings {
+  defiSetupDone?: boolean;
+}
