@@ -1,3 +1,5 @@
+"""These tests do not need the ethereum mocks since they never query token balances"""
+
 from http import HTTPStatus
 from typing import List, Optional
 

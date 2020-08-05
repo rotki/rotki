@@ -1390,8 +1390,8 @@ class RestAPI():
             # so most of the times it should have already ran
             self.rotkehlchen.chain_manager.query_balances(blockchain=SupportedBlockchain.ETHEREUM)
 
-        module = getattr(self.rotkehlchen.chain_manager, module)
-        if not module:
+        module_obj = getattr(self.rotkehlchen.chain_manager, module)
+        if module_obj is None:
             return {
                 'result': None,
                 'status_code': HTTPStatus.CONFLICT,
@@ -1399,7 +1399,7 @@ class RestAPI():
             }
 
         try:
-            result = getattr(module, method)(**kwargs)
+            result = getattr(module_obj, method)(**kwargs)
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
