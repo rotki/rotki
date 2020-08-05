@@ -344,6 +344,8 @@ def mock_etherscan_query(
         original_queries: Optional[List[str]],
         original_requests_get,
 ):
+    original_queries = [] if original_queries is None else original_queries
+
     def mock_requests_get(url, *args, **kwargs):
         if 'etherscan.io/api?module=account&action=balance&address' in url:
             addr = url[67:109]
