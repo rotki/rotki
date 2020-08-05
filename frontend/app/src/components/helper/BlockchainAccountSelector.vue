@@ -60,9 +60,7 @@
       </v-autocomplete>
     </div>
     <v-card-text v-if="hint">
-      Showing results across
-      {{ value.length > 0 ? value.length : 'all' }}
-      accounts.
+      Showing results across {{ hintText }} accounts.
     </v-card-text>
   </v-card>
 </template>
@@ -94,13 +92,20 @@ export default class BlockchainAccountSelector extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   multiple!: boolean;
   @Prop({ required: true })
-  value!: string[];
+  value!: string[] | string | null;
 
   accounts!: GeneralAccount[];
   tags!: Tags;
-
-  selectedAccountsArray: GeneralAccount[] = [];
   search: string = '';
+
+  get hintText(): string {
+    if (typeof this.value === 'string') {
+      return '1';
+    } else if (Array.isArray(this.value)) {
+      return `${this.value.length}`;
+    }
+    return 'all';
+  }
 
   @Emit()
   input(_value: string) {}
