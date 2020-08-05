@@ -43,18 +43,13 @@
           <v-card-text>
             <v-row>
               <v-col>
-                <defi-module-selector v-model="selectedModules" />
+                <defi-module-selector />
               </v-col>
             </v-row>
           </v-card-text>
         </v-card>
-        <v-btn text :disabled="loading" @click="step = 1">Back</v-btn>
-        <v-btn
-          color="primary"
-          :disabled="loading"
-          :loading="loading"
-          @click="modulesSelected()"
-        >
+        <v-btn text @click="step = 1">Back</v-btn>
+        <v-btn color="primary" @click="modulesSelected()">
           Continue
         </v-btn>
       </v-stepper-content>
@@ -80,39 +75,22 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapMutations } from 'vuex';
+import { mapMutations } from 'vuex';
 import DefiAddressSelector from '@/components/defi/wizard/DefiAddressSelector.vue';
 import DefiModuleSelector from '@/components/defi/wizard/DefiModuleSelector.vue';
-import { SupportedModules } from '@/services/session/types';
-import { SettingsUpdate } from '@/typing/types';
 
 @Component({
   components: { DefiAddressSelector, DefiModuleSelector },
-  computed: {
-    ...mapGetters('session', ['activeModules'])
-  },
   methods: {
-    ...mapActions('session', ['updateSettings']),
     ...mapMutations('session', ['defiSetup'])
   }
 })
 export default class DefiWizard extends Vue {
-  updateSettings!: (update: SettingsUpdate) => Promise<void>;
   defiSetup!: (done: boolean) => void;
-  activeModules!: SupportedModules[];
 
-  loading: boolean = false;
   step: number = 1;
-  selectedModules: SupportedModules[] = [];
-
-  mounted() {
-    this.selectedModules = this.activeModules;
-  }
 
   async modulesSelected() {
-    this.loading = true;
-    await this.updateSettings({ active_modules: this.selectedModules });
-    this.loading = false;
     this.step = 3;
   }
 

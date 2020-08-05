@@ -1,6 +1,6 @@
 <template>
   <v-autocomplete
-    :value="value"
+    :value="selectedModules"
     :search-input.sync="search"
     :items="supportedModules"
     hide-details
@@ -9,12 +9,14 @@
     clearables
     multiple
     chips
+    :disabled="loading"
+    :loading="loading"
     :open-on-clear="false"
     label="Select modules(s)"
     item-text="name"
     item-value="identifier"
     class="defi-module-selector"
-    @input="input"
+    @input="update"
   >
     <template #selection="data">
       <v-chip close pill @click:close="unselect(data.item.identifier)">
@@ -40,29 +42,46 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Emit, Prop } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
+import { mapActions, mapGetters } from 'vuex';
 import { DEFI_MODULES } from '@/components/defi/wizard/consts';
 import { SupportedModules } from '@/services/session/types';
+import { SettingsUpdate } from '@/typing/types';
 
-@Component({})
+@Component({
+  computed: {
+    ...mapGetters('session', ['activeModules'])
+  },
+  methods: {
+    ...mapActions('session', ['updateSettings'])
+  }
+})
 export default class DefiProtocolSelector extends Vue {
-  @Prop({ required: true })
-  value!: SupportedModules[];
-
+  updateSettings!: (update: SettingsUpdate) => Promise<void>;
+  activeModules!: SupportedModules[];
   readonly supportedModules = DEFI_MODULES;
-
+  selectedModules: SupportedModules[] = [];
   search: string = '';
+  loading: boolean = false;
+
+  mounted() {
+    this.selectedModules = this.activeModules;
+  }
 
   unselect(identifier: SupportedModules) {
-    const selectionIndex = this.value.indexOf(identifier);
+    const selectionIndex = this.selectedModules.indexOf(identifier);
     if (selectionIndex < 0) {
       return;
     }
-    this.value.splice(selectionIndex, 1);
+    this.selectedModules.splice(selectionIndex, 1);
   }
 
-  @Emit()
-  input(_activeModules: string[]) {}
+  async update(activeModules: SupportedModules[]) {
+    this.loading = true;
+    await this.updateSettings({ active_modules: activeModules });
+    this.selectedModules = activeModules;
+    this.loading = false;
+  }
 }
 </script>
 
