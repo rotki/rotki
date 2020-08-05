@@ -15,8 +15,8 @@
               max-height="24px"
               :src="modules[n - 1].icon"
             />
-            <span v-if="modules[n - 1].displayName">
-              {{ modules[n - 1].displayName }}
+            <span v-if="modules[n - 1].name">
+              {{ modules[n - 1].name }}
             </span>
           </span>
         </v-stepper-step>
