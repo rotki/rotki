@@ -3,7 +3,7 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import gevent
 import requests
@@ -379,44 +379,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 usd_value=balance * btc_usd_price,
             )
         self.totals[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
-
-    @overload
-    @staticmethod
-    def _query_token_balances(
-            token_asset: EthereumToken,
-            query_callback: Callable[[EthereumToken, ChecksumEthAddress], FVal],
-            argument: ChecksumEthAddress,
-    ) -> FVal:
-        ...
-
-    @overload  # noqa: F811
-    @staticmethod
-    def _query_token_balances(
-            token_asset: EthereumToken,
-            query_callback: Callable[
-                [EthereumToken, List[ChecksumEthAddress]],
-                Dict[ChecksumEthAddress, FVal],
-            ],
-            argument: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, FVal]:
-        ...
-
-    @staticmethod  # noqa: F811
-    def _query_token_balances(
-            token_asset: EthereumToken,
-            query_callback: Callable,
-            argument: Union[List[ChecksumEthAddress], ChecksumEthAddress],
-    ) -> Union[FVal, Dict[ChecksumEthAddress, FVal]]:
-        """Query tokens by checking the eth_tokens mapping and using the respective query callback.
-
-        The callback is either self.ethereum.get_multiaccount_token_balance or
-        self.ethereum.get_token_balance"""
-        result = query_callback(
-            token_asset,
-            argument,
-        )
-
-        return result
 
     def modify_btc_account(
             self,

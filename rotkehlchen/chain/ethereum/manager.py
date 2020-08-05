@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
@@ -18,8 +17,6 @@ from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -245,94 +242,6 @@ class EthereumManager():
         for idx, account in enumerate(accounts):
             balances[account] = from_wei(result[idx])
         return balances
-
-    def get_multitoken_multiaccount_balance(
-            self,
-            tokens: List[EthereumToken],
-            accounts: List[ChecksumEthAddress],
-    ) -> Dict[EthereumToken, Dict[ChecksumEthAddress, FVal]]:
-        """Queries a list of accounts for balances of multiple tokens
-
-        Return a dictionary with keys being tokens and value a dictionary of
-        account to balances
-
-        May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - BadFunctionCallOutput if a local node is used and the contract for the
-          token has no code. That means the chain is not synced
-        """
-        log.debug(
-            'Querying ethereum chain for multi token multi account balances',
-            eth_addresses=accounts,
-            tokens=tokens,
-        )
-        balances: Dict[EthereumToken, Dict[ChecksumEthAddress, FVal]] = defaultdict(dict)
-        result = self.call_contract(
-            contract_address=ETH_SCAN.address,
-            abi=ETH_SCAN.abi,
-            method_name='tokensBalances',
-            arguments=[accounts, [x.ethereum_address for x in tokens]],
-        )
-        for acc_idx, account in enumerate(accounts):
-            for tk_idx, token in enumerate(tokens):
-                token_amount = result[acc_idx][tk_idx]
-                if token_amount != 0:
-                    balances[token][account] = token_normalized_value(token_amount, token.decimals)
-        return balances
-
-    def get_multiaccount_token_balance(
-            self,
-            token: EthereumToken,
-            accounts: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, FVal]:
-        """Queries a list of accounts for balances of a single token
-
-        Return a dictionary with keys being accounts and value balances of token
-        Balance value is normalized through the token decimals.
-
-        May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - BadFunctionCallOutput if a local node is used and the contract for the
-          token has no code. That means the chain is not synced
-        """
-        log.debug(
-            'Querying ethereum chain for single token multi account balances',
-            eth_addresses=accounts,
-            token_address=token.ethereum_address,
-            token_symbol=token.decimals,
-        )
-        balances = {}
-        result = self.call_contract(
-            contract_address=ETH_SCAN.address,
-            abi=ETH_SCAN.abi,
-            method_name='tokensBalances',
-            arguments=[accounts, [token.ethereum_address]],
-        )
-        for idx, account in enumerate(accounts):
-            # 0 is since we only provide 1 token here
-            token_amount = result[idx][0]
-            if token_amount != 0:
-                balances[account] = token_normalized_value(token_amount, token.decimals)
-        return balances
-
-    def get_token_balance(
-            self,
-            token: EthereumToken,
-            account: ChecksumEthAddress,
-    ) -> FVal:
-        """Returns the balance of account in token.
-        Balance value is normalized through the token decimals.
-
-        May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-        there is a problem with its query.
-        - BadFunctionCallOutput if a local node is used and the contract for the
-        token has no code. That means the chain is not synced
-        """
-        res = self.get_multiaccount_token_balance(token=token, accounts=[account])
-        return res.get(account, FVal(0))
 
     def get_block_by_number(self, num: int) -> Dict[str, Any]:
         """Returns the block object corresponding to the given block number
