@@ -14,7 +14,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
-from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import A_USD
@@ -197,6 +197,7 @@ class Rotkehlchen():
             ethrpc_endpoint=eth_rpc_endpoint,
             etherscan=self.etherscan,
             msg_aggregator=self.msg_aggregator,
+            greenlet_manager=self.greenlet_manager,
         )
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
@@ -625,7 +626,7 @@ class Rotkehlchen():
 
         if self.user_is_logged_in:
             result['last_balance_save'] = self.data.db.get_last_balance_save_time()
-            result['eth_node_connection'] = self.chain_manager.ethereum.web3 is not None
+            result['eth_node_connection'] = self.chain_manager.ethereum.web3_mapping.get(NodeName.OWN, None) is not None  # noqa : E501
             result['history_process_start_ts'] = self.accountant.started_processing_timestamp
             result['history_process_current_ts'] = self.accountant.currently_processing_timestamp
         return result

@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
@@ -21,6 +22,7 @@ from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -56,40 +58,64 @@ def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
     return True, message
 
 
+class NodeName(Enum):
+    OWN = 0
+    MYCRYPTO = 1
+
+
 class EthereumManager():
     def __init__(
             self,
             ethrpc_endpoint: str,
             etherscan: Etherscan,
             msg_aggregator: MessagesAggregator,
+            greenlet_manager: GreenletManager,
             attempt_connect: bool = True,
             eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
     ) -> None:
         log.debug(f'Initializing Ethereum Manager with {ethrpc_endpoint}')
-        self.web3: Optional[Web3] = None
-        self.rpc_endpoint = ethrpc_endpoint
+        self.greenlet_manager = greenlet_manager
+        self.web3_mapping: Dict[NodeName, Web3] = {}
+        self.own_rpc_endpoint = ethrpc_endpoint
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
         if attempt_connect:
-            self.attempt_connect(ethrpc_endpoint)
-
-    def __del__(self) -> None:
-        if self.web3:
-            del self.web3
+            self.greenlet_manager.spawn_and_track(
+                task_name='Attempt connection to own ethereum node',
+                method=self.attempt_connect,
+                name=NodeName.OWN,
+                ethrpc_endpoint=self.own_rpc_endpoint,
+                mainnet_check=True,
+            )
+            self.greenlet_manager.spawn_and_track(
+                task_name='Attempt connection to mycrypto ethereum node',
+                method=self.attempt_connect,
+                name=NodeName.MYCRYPTO,
+                ethrpc_endpoint='https://api.mycryptoapi.com/eth',
+                mainnet_check=True,
+            )
 
     def attempt_connect(
             self,
+            name: NodeName,
             ethrpc_endpoint: str,
             mainnet_check: bool = True,
     ) -> Tuple[bool, str]:
-        message = ''
-        if self.rpc_endpoint == ethrpc_endpoint and self.web3 is not None:
-            # We are already connected
-            return True, 'Already connected to an ethereum node'
+        """Attempt to connect to a particular node type
 
-        if self.web3:
-            del self.web3
+        For our own node if the given rpc endpoint is not the same as the saved one
+        the connection is re-attempted to the new one
+        """
+        message = ''
+        node_connected = self.web3_mapping.get(name, None) is not None
+        own_node_already_connected = (
+            name == NodeName.OWN and
+            self.own_rpc_endpoint == ethrpc_endpoint and
+            node_connected
+        )
+        if own_node_already_connected or (node_connected and name != NodeName.OWN):
+            return True, 'Already connected to an ethereum node'
 
         try:
             parsed_eth_rpc_endpoint = urlparse(ethrpc_endpoint)
@@ -100,35 +126,34 @@ class EthereumManager():
                 request_kwargs={'timeout': self.eth_rpc_timeout},
             )
             ens = ENS(provider)
-            self.web3 = Web3(provider, ens=ens)
-            self.web3.middleware_onion.inject(http_retry_request_middleware, layer=0)
+            web3 = Web3(provider, ens=ens)
+            web3.middleware_onion.inject(http_retry_request_middleware, layer=0)
         except requests.exceptions.ConnectionError:
-            log.warning('Could not connect to an ethereum node. Will use etherscan only')
-            self.web3 = None
-            return False, f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
+            message = f'Failed to connect to ethereum node {name} at endpoint {ethrpc_endpoint}'
+            log.warning(message)
+            return False, message
 
-        if self.web3.isConnected():
+        if web3.isConnected():
             # Also make sure we are actually connected to the Ethereum mainnet
             synchronized = True
             msg = ''
             if mainnet_check:
-                network_id = int(self.web3.net.version)
+                network_id = int(web3.net.version)
                 if network_id != 1:
                     message = (
-                        f'Connected to ethereum node at endpoint {ethrpc_endpoint} but '
+                        f'Connected to ethereum node {name} at endpoint {ethrpc_endpoint} but '
                         f'it is not on the ethereum mainnet. The chain id '
                         f'the node is in is {network_id}.'
                     )
                     log.warning(message)
-                    self.web3 = None
                     return False, message
 
-                if not isinstance(self.web3.eth.syncing, bool):  # pylint: disable=no-member
-                    current_block = self.web3.eth.syncing.currentBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
-                    latest_block = self.web3.eth.syncing.highestBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
+                if not isinstance(web3.eth.syncing, bool):  # pylint: disable=no-member
+                    current_block = web3.eth.syncing.currentBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
+                    latest_block = web3.eth.syncing.highestBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
                     synchronized, msg = _is_synchronized(current_block, latest_block)
                 else:
-                    current_block = self.web3.eth.blockNumber  # pylint: disable=no-member
+                    current_block = web3.eth.blockNumber  # pylint: disable=no-member
                     try:
                         latest_block = self.query_eth_highest_block()
                     except RemoteError:
@@ -140,46 +165,45 @@ class EthereumManager():
 
             if not synchronized:
                 self.msg_aggregator.add_warning(
-                    'You are using an ethereum node but we could not verify that it is '
-                    'synchronized in the ethereum mainnet. Balances and other queries '
+                    f'We could not verify that ethereum node {name} is '
+                    'synchronized with the ethereum mainnet. Balances and other queries '
                     'may be incorrect.',
                 )
 
-            log.info(f'Connected to ethereum node at {ethrpc_endpoint}')
+            log.info(f'Connected ethereum node {name} at {ethrpc_endpoint}')
+            self.web3_mapping[name] = web3
             return True, ''
         else:
-            log.warning('Could not connect to an ethereum node. Will use etherscan only')
-            self.web3 = None
-            message = f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
+            message = f'Failed to connect to ethereum node {name} at endpoint {ethrpc_endpoint}'
+            log.warning(message)
 
         # If we get here we did not connnect
         return False, message
 
     def set_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
-        """ Attempts to set the RPC endpoint for the ethereum client.
+        """ Attempts to set the RPC endpoint for the user's own ethereum node
 
            Returns a tuple (result, message)
                - result: Boolean for success or failure of changing the rpc endpoint
                - message: A message containing information on what happened. Can
                           be populated both in case of success or failure"""
         if endpoint == '':
-            if self.web3:
-                del self.web3
-                self.web3 = None
-            self.ethrpc_endpoint = ''
+            self.web3_mapping.pop(NodeName.OWN, None)
+            self.own_rpc_endpoint = ''
             return True, ''
         else:
-            result, message = self.attempt_connect(endpoint)
+            result, message = self.attempt_connect(name=NodeName.OWN, ethrpc_endpoint=endpoint)
             if result:
-                log.info('Setting ETH RPC endpoint', endpoint=endpoint)
-                self.ethrpc_endpoint = endpoint
+                log.info('Setting own node ETH RPC endpoint', endpoint=endpoint)
+                self.own_rpc_endpoint = endpoint
             return result, message
 
     def get_latest_block_number(self) -> int:
-        if self.web3 is None:
+        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
+        if own_node_web3 is None:
             return self.etherscan.get_latest_block_number()
 
-        return self.web3.eth.blockNumber
+        return own_node_web3.eth.blockNumber
 
     def query_eth_highest_block(self) -> BlockNumber:
         """ Attempts to query an external service for the block height
@@ -250,10 +274,11 @@ class EthereumManager():
         - RemoteError if an external service such as Etherscan is queried and
         there is a problem with its query.
         """
-        if self.web3 is None:
+        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
+        if own_node_web3 is None:
             return self.etherscan.get_block_by_number(num)
 
-        block_data: MutableAttributeDict = MutableAttributeDict(self.web3.eth.getBlock(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
+        block_data: MutableAttributeDict = MutableAttributeDict(own_node_web3.eth.getBlock(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
         block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
         return block_data  # type: ignore
 
@@ -264,10 +289,11 @@ class EthereumManager():
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        if self.web3 is None:
+        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
+        if own_node_web3 is None:
             return self.etherscan.get_code(account)
 
-        return hex_or_bytes_to_str(self.web3.eth.getCode(account))
+        return hex_or_bytes_to_str(own_node_web3.eth.getCode(account))
 
     def ens_lookup(self, name: str) -> Optional[ChecksumEthAddress]:
         """Performs an ENS lookup and returns address if found else None
@@ -276,8 +302,9 @@ class EthereumManager():
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        if self.web3 is not None:
-            return self.web3.ens.resolve(name)
+        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
+        if own_node_web3 is not None:
+            return own_node_web3.ens.resolve(name)
 
         # else we gotta manually query contracts via etherscan
         normal_name = normalize_name(name)
@@ -351,7 +378,8 @@ class EthereumManager():
         reaching it or with the returned result
         - ValueError if web3 is used and there is a VM execution error
         """
-        if self.web3 is None:
+        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
+        if own_node_web3 is None:
             return self._call_contract_etherscan(
                 contract_address=contract_address,
                 abi=abi,
@@ -359,7 +387,7 @@ class EthereumManager():
                 arguments=arguments,
             )
 
-        contract = self.web3.eth.contract(address=contract_address, abi=abi)
+        contract = own_node_web3.eth.contract(address=contract_address, abi=abi)
         try:
             method = getattr(contract.caller, method_name)
             result = method(*arguments if arguments else [])
@@ -398,8 +426,9 @@ class EthereumManager():
             filter_args['topics'] = filter_args['topics'][1:]
         events: List[Dict[str, Any]] = []
         start_block = from_block
-        if self.web3 is not None:
-            until_block = self.web3.eth.blockNumber if to_block == 'latest' else to_block
+        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
+        if own_node_web3 is not None:
+            until_block = own_node_web3.eth.blockNumber if to_block == 'latest' else to_block
             while start_block <= until_block:
                 filter_args['fromBlock'] = start_block
                 end_block = min(start_block + 250000, until_block)
@@ -414,7 +443,7 @@ class EthereumManager():
                 )
                 # WTF: for some reason the first time we get in here the loop resets
                 # to the start without querying eth_getLogs and ends up with double logging
-                new_events_web3 = self.web3.eth.getLogs(filter_args)
+                new_events_web3 = own_node_web3.eth.getLogs(filter_args)
                 start_block = end_block + 1
                 events.extend(new_events_web3)  # type: ignore
         else:
