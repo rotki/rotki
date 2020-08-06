@@ -72,7 +72,7 @@ TABLES_AT_INIT = [
     'external_service_credentials',
     'user_credentials',
     'blockchain_accounts',
-    'ethereum_accounts_details'
+    'ethereum_accounts_details',
     'multisettings',
     'current_balances',
     'trades',
