@@ -134,8 +134,8 @@ CREATE TABLE IF NOT EXISTS blockchain_accounts (
 DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS = """
 CREATE TABLE IF NOT EXISTS ethereum_accounts_details (
     account VARCHAR[42] NOT NULL PRIMARY KEY,
-    tokens_list NOT NULL TEXT,
-    time NOT NULL INTEGER,
+    tokens_list TEXT NOT NULL,
+    time INTEGER NOT NULL
 );
 """
 

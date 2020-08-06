@@ -476,6 +476,7 @@ class Rotkehlchen():
         try:
             blockchain_result = self.chain_manager.query_balances(
                 blockchain=None,
+                force_token_detection=ignore_cache,
                 ignore_cache=ignore_cache,
             )
             balances['blockchain'] = {

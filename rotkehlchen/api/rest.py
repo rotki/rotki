@@ -547,6 +547,7 @@ class RestAPI():
         try:
             balances = self.rotkehlchen.chain_manager.query_balances(
                 blockchain=blockchain,
+                force_token_detection=ignore_cache,
                 ignore_cache=ignore_cache,
             )
         except EthSyncError as e:

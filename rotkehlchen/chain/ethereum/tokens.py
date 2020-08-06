@@ -53,7 +53,18 @@ class EthTokens():
 
         return balances
 
-    def query_tokens_for_addresses(self, addresses: List[ChecksumEthAddress]) -> TokensReturn:
+    def query_tokens_for_addresses(
+            self,
+            addresses: List[ChecksumEthAddress],
+            force_detection: bool,
+    ) -> TokensReturn:
+        """Queries/detects token balances for a list of addresses
+
+        If an address's tokens were recently autodetected they are not detected again but the
+        balances are simply queried. Unless force_detection is True.
+
+        Returns the token balances of each address and the usd prices of the tokens
+        """
         all_tokens = AssetResolver().get_all_eth_token_info()
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
@@ -64,14 +75,14 @@ class EthTokens():
 
         for address in addresses:
             saved_list = self.db.get_tokens_for_address_if_time(address=address, current_time=now)
-            if saved_list is None:
+            if force_detection or saved_list is None:
                 balances = self.detect_tokens_for_address(
                     address=address,
                     token_usd_price=token_usd_price,
                     chunks=chunks,
                 )
             else:
-                balances = {}
+                balances = defaultdict(FVal)
                 self._get_tokens_balance_and_price(
                     address=address,
                     tokens=[x.token_info() for x in saved_list],

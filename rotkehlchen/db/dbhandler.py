@@ -892,9 +892,10 @@ class DBHandler:
             (address,),
         )
         result = query.fetchall()
+        if len(result) == 0:
+            return None  # no saved entry
         if current_time - result[0][1] > 86400:
-            # The saved entry is outdated
-            return None
+            return None  # saved entry is outdated
 
         try:
             json_ret = json.loads(result[0][0])
@@ -913,7 +914,7 @@ class DBHandler:
             )
             return None
 
-        return json_ret
+        return [EthereumToken(x) for x in json_ret]
 
     def save_tokens_for_address(
             self,
@@ -926,7 +927,7 @@ class DBHandler:
         cursor.execute(
             'INSERT OR REPLACE INTO ethereum_accounts_details '
             '(account, tokens_list, time) VALUES (?, ?, ?)',
-            (address, json.dumps(x.identifier for x in tokens), now),
+            (address, json.dumps([x.identifier for x in tokens]), now),
         )
         self.conn.commit()
         self.update_last_write()
