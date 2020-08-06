@@ -18,6 +18,7 @@ from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.ethereum import ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
+from rotkehlchen.errors import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -338,6 +339,21 @@ def assert_eth_balances_result(
             assert FVal(totals[symbol]['usd_value']) > ZERO
 
 
+def _get_token(value: Any) -> Optional[EthereumToken]:
+    """Interprets the given value as token if possible"""
+    if isinstance(value, str):
+        try:
+            token = EthereumToken(value)
+        except DeserializationError:
+            # not a token
+            return None
+        return token
+    elif isinstance(value, EthereumToken):
+        return value
+
+    return None
+
+
 def mock_etherscan_query(
         eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
         etherscan: Etherscan,
@@ -451,7 +467,9 @@ def mock_etherscan_query(
                         token_address = to_checksum_address(token_address)
                         value_to_add = 0
                         for given_asset, value in eth_map[account_address].items():
-                            if not isinstance(given_asset, EthereumToken):
+                            given_asset = _get_token(given_asset)
+                            if given_asset is None:
+                                # not a token
                                 continue
                             if token_address != given_asset.ethereum_address:
                                 continue
@@ -483,8 +501,11 @@ def mock_etherscan_query(
                     token_address = to_checksum_address(token_address)
                     value_to_add = 0
                     for given_asset, value in eth_map[account_address].items():
-                        if not isinstance(given_asset, EthereumToken):
+                        given_asset = _get_token(given_asset)
+                        if given_asset is None:
+                            # not a token
                             continue
+
                         if token_address != given_asset.ethereum_address:
                             continue
                         value_to_add = int(value)

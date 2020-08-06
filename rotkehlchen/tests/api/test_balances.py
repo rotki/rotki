@@ -259,7 +259,7 @@ def test_query_all_balances_ignore_cache(
     with ExitStack() as stack:
         stack.enter_context(setup.poloniex_patch)
         stack.enter_context(setup.binance_patch)
-        stack.enter_context(setup.etherscan_patch)
+        etherscan_mock = stack.enter_context(setup.etherscan_patch)
         stack.enter_context(setup.bitcoin_patch)
         function_call_counters = []
         function_call_counters.append(stack.enter_context(eth_query_patch))
@@ -284,6 +284,7 @@ def test_query_all_balances_ignore_cache(
             setup=setup,
         )
         assert all(fn.call_count == 1 for fn in function_call_counters)
+        full_query_etherscan_count = etherscan_mock.call_count
 
         # Query all balances second time and assert cache was used
         response = requests.get(
@@ -302,6 +303,8 @@ def test_query_all_balances_ignore_cache(
         )
         msg = 'call count should stay the same since cache should have been used'
         assert all(fn.call_count == 1 for fn in function_call_counters), msg
+        msg = 'etherscan call_count should have remained the same due to no token detection '
+        assert etherscan_mock.call_count == full_query_etherscan_count, msg
 
         # Now query all balances but request cache ignoring
         response = requests.get(
@@ -320,6 +323,9 @@ def test_query_all_balances_ignore_cache(
         )
         msg = 'call count should increase since cache should have been ignored'
         assert all(fn.call_count == 2 for fn in function_call_counters), msg
+        msg = 'etherscan call count should have doubled after forced token detection'
+        expected_count = full_query_etherscan_count * 2 - len(ethereum_accounts)
+        assert etherscan_mock.call_count == expected_count, msg
 
 
 @pytest.mark.parametrize('tags', [[{
