@@ -4,14 +4,14 @@
     <v-card-text>
       <h3>Active Defi modules</h3>
       <p class="text--secondary">
-        Only data for the selected modules will be fetched. If no modules are
-        selected data for all the modules will by fetched.
+        Only data for the selected modules will be queried. If no modules are
+        selected, querying for the supported modules will be disabled.
       </p>
       <defi-module-selector />
       <h3 class="mt-6">Selected accounts</h3>
       <p class="text--secondary">
-        Only data for the selected accounts will be fetched. If no accounts are
-        selected all data will be fetched.
+        If no accounts are selected for a protocol, data for all accounts will
+        be queried for that protocol.
       </p>
       <defi-address-selector />
     </v-card-text>
