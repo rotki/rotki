@@ -19,7 +19,12 @@
     @input="update"
   >
     <template #selection="data">
-      <v-chip close pill @click:close="unselect(data.item.identifier)">
+      <v-chip
+        :id="`defi-module-${data.item.identifier}`"
+        close
+        pill
+        @click:close="unselect(data.item.identifier)"
+      >
         <span class="d-flex flex-row align-center">
           <v-img width="55px" contain max-height="24px" :src="data.item.icon" />
           <span> {{ data.item.name }}</span>
