@@ -103,14 +103,25 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     """Turn a bittrex trade returned from bittrex trade history to our common trade
     history format
 
+    As we saw in https://github.com/rotki/rotki/issues/1281 it's quite possible
+    that some keys don't exist in a trade. The required fields are here:
+    https://bittrex.github.io/api/v3#definition-Order
+
     Throws:
         - UnknownAsset/UnsupportedAsset due to bittrex_pair_to_world()
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
     """
-    amount = deserialize_asset_amount(bittrex_trade['quantity'])
-    timestamp = deserialize_timestamp_from_date(bittrex_trade['closedAt'], 'iso8601', 'bittrex')
-    rate = deserialize_price(bittrex_trade['limit'])
+    amount = deserialize_asset_amount(bittrex_trade['fillQuantity'])
+    timestamp = deserialize_timestamp_from_date(
+        date=bittrex_trade.get('closedAt', 'createdAt'),
+        formatstr='iso8601',
+        location='bittrex',
+    )
+    if 'limit' in bittrex_trade:
+        rate = deserialize_price(bittrex_trade['limit'])
+    else:
+        rate = bittrex_trade['proceeds'] / bittrex_trade['fillQuantity']
     order_type = deserialize_trade_type(bittrex_trade['direction'])
     fee = deserialize_fee(bittrex_trade['commission'])
     pair = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
