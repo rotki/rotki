@@ -5,13 +5,20 @@ import { Writeable } from '@/types';
 
 export function loadFrontendSettings(commit: Commit, value: string) {
   try {
-    const defaultSettings: Writeable<SettingsState> = defaultState();
+    let requiresUpdate = false;
+    const loadedSettings: Writeable<SettingsState> = defaultState();
     const settings = JSON.parse(value);
-    for (const [key, value] of Object.entries(defaultSettings)) {
+
+    for (const [key, value] of Object.entries(loadedSettings)) {
       if (typeof settings[key] === typeof value) {
         // @ts-ignore
-        defaultSettings[key] = settings[key];
+        loadedSettings[key] = settings[key];
+        requiresUpdate = true;
       }
+    }
+
+    if (requiresUpdate) {
+      commit('settings/restore', loadedSettings, { root: true });
     }
 
     // eslint-disable-next-line no-empty

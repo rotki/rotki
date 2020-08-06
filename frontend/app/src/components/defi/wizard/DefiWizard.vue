@@ -26,8 +26,16 @@
             </p>
           </v-card-text>
         </v-card>
-        <v-btn text @click="done">Use Default</v-btn>
-        <v-btn color="primary" @click="step = 2">Continue</v-btn>
+        <v-btn text class="defi-wizard__use-default" @click="done">
+          Use Default
+        </v-btn>
+        <v-btn
+          color="primary"
+          class="defi-wizard__select-modules"
+          @click="step = 2"
+        >
+          Continue
+        </v-btn>
       </v-stepper-content>
       <v-stepper-step :complete="step > 2" step="2">
         Select Modules
@@ -50,7 +58,11 @@
           </v-card-text>
         </v-card>
         <v-btn text @click="step = 1">Back</v-btn>
-        <v-btn color="primary" @click="modulesSelected()">
+        <v-btn
+          color="primary"
+          class="defi-wizard__select-accounts"
+          @click="step = 3"
+        >
           Continue
         </v-btn>
       </v-stepper-content>
@@ -68,7 +80,9 @@
           <defi-address-selector />
         </v-card>
         <v-btn text @click="step = 2">Back</v-btn>
-        <v-btn color="primary" @click="done()">Complete</v-btn>
+        <v-btn color="primary" class="defi-wizard__done" @click="done()">
+          Complete
+        </v-btn>
       </v-stepper-content>
     </v-stepper>
   </v-card>
@@ -92,11 +106,6 @@ export default class DefiWizard extends Vue {
   updateSetting!: (payload: FrontendSettingsPayload) => void;
 
   step: number = 1;
-
-  async modulesSelected() {
-    this.step = 3;
-  }
-
   done() {
     this.updateSetting({ [DEFI_SETUP_DONE]: true });
   }

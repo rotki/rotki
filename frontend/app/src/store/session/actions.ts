@@ -146,15 +146,9 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('balances/reset', {}, { root: true });
       commit('defi/reset', {}, { root: true });
       commit('tasks/reset', {}, { root: true });
+      commit('settings/reset', {}, { root: true });
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Logout failed',
-          description: e.message || ''
-        } as Message,
-        { root: true }
-      );
+      showError(commit, e.message, 'Logout failed');
     }
   },
 

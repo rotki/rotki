@@ -56,7 +56,7 @@ import { SettingsUpdate } from '@/typing/types';
     ...mapActions('session', ['updateSettings'])
   }
 })
-export default class DefiProtocolSelector extends Vue {
+export default class DefiModuleSelector extends Vue {
   updateSettings!: (update: SettingsUpdate) => Promise<void>;
   activeModules!: SupportedModules[];
   readonly supportedModules = DEFI_MODULES;

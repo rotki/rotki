@@ -11,6 +11,7 @@ describe('NodeStatusIndicator.vue', () => {
   let wrapper: Wrapper<NodeStatusIndicator>;
 
   beforeEach(() => {
+    document.body.setAttribute('data-app', 'true');
     vuetify = new Vuetify();
     wrapper = mount(NodeStatusIndicator, {
       store,

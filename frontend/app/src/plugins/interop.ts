@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import _Vue from 'vue';
 import { ElectronInterop, interop } from '@/electron-interop';
 

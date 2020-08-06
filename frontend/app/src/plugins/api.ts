@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import _Vue from 'vue';
 import { api, RotkehlchenApi } from '@/services/rotkehlchen-api';
 
