@@ -318,7 +318,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
       "marketSymbol": "BTC-LTC",
       "closedAt": "2017-05-01T15:00:00.00Z",
       "direction": "BUY",
-      "quantity": 667.03644955,
+      "type": "LIMIT",
+      "fillQuantity": 667.03644955,
       "limit": 0.0000295,
       "commission": 0.00004921
     }, {
@@ -326,7 +327,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
       "marketSymbol": "ETH-LTC",
       "closedAt": "2017-05-02T15:00:00.00Z",
       "direction": "SELL",
-      "quantity": 667.03644955,
+      "type": "LIMIT",
+      "fillQuantity": 667.03644955,
       "commission": 0.00004921,
       "limit": 0.0000295
     }, {
@@ -334,7 +336,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
       "marketSymbol": "PTON-ETH",
       "closedAt": "2017-05-02T15:00:00.00Z",
       "direction": "SELL",
-      "quantity": 667.03644955,
+      "type": "LIMIT",
+      "fillQuantity": 667.03644955,
       "commission": 0.00004921,
       "limit": 0.0000295
     }, {
@@ -342,7 +345,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
       "marketSymbol": "ETH-IDONTEXIST",
       "closedAt": "2017-05-02T15:00:00.00Z",
       "direction": "SELL",
-      "quantity": 667.03644955,
+      "type": "LIMIT",
+      "fillQuantity": 667.03644955,
       "commission": 0.00004921,
       "limit": 0.0000295
     }, {
@@ -350,7 +354,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
       "marketSymbol": "%$#%$#%#$%",
       "closedAt": "2017-05-02T15:00:00.00Z",
       "direction": "BUY",
-      "quantity": 667.03644955,
+      "type": "LIMIT",
+      "fillQuantity": 667.03644955,
       "commission": 0.00004921,
       "limit": 0.0000295
 }]

@@ -92,18 +92,31 @@ def test_bittrex_query_balances_unknown_asset(bittrex):
     assert 'unsupported bittrex asset PTON' in warnings[1]
 
 
-BITTREX_ORDER_HISTORY_RESPONSE = """
-[
+BITTREX_LIMIT_TRADE = """
     {
       "id": "fd97d393-e9b9-4dd1-9dbf-f288fc72a185",
       "marketSymbol": "BTC-LTC",
       "direction": "BUY",
       "type": "LIMIT",
-      "quantity": 667.03644955,
+      "fillQuantity": 667.03644955,
       "limit": 0.0000295,
+      "proceeds": 0.0196775752617,
       "commission": 0.00004921,
       "closedAt": "2014-02-13T00:00:00.00Z"
-    }]"""
+    }"""
+
+BITTREX_MARKET_TRADE = """
+    {
+      "id": "ad97d393-19b9-6dd1-9dbf-f288fc72a185",
+      "marketSymbol": "BTC-ETH",
+      "direction": "SELL",
+      "type": "MARKET",
+      "fillQuantity": 2,
+      "proceeds": 10,
+      "commission": 0.00001,
+      "closedAt": "2014-02-13T00:00:00.00Z"
+    }"""
+BITTREX_ORDER_HISTORY_RESPONSE = f'[{BITTREX_LIMIT_TRADE}, {BITTREX_MARKET_TRADE}]'
 
 
 def test_bittrex_query_trade_history(bittrex):
@@ -116,7 +129,7 @@ def test_bittrex_query_trade_history(bittrex):
     with patch.object(bittrex.session, 'request', side_effect=mock_order_history):
         trades = bittrex.query_trade_history(start_ts=0, end_ts=1564301134)
 
-    expected_trade = Trade(
+    expected_trades = [Trade(
         timestamp=1392249600,
         location=Location.BITTREX,
         pair='LTC_BTC',
@@ -126,10 +139,18 @@ def test_bittrex_query_trade_history(bittrex):
         fee=FVal('0.00004921'),
         fee_currency=A_BTC,
         link='fd97d393-e9b9-4dd1-9dbf-f288fc72a185',
-    )
-
-    assert len(trades) == 1
-    assert trades[0] == expected_trade
+    ), Trade(
+        timestamp=1392249600,
+        location=Location.BITTREX,
+        pair='ETH_BTC',
+        trade_type=TradeType.SELL,
+        amount=FVal('2'),
+        rate=FVal('5'),
+        fee=FVal('0.00001'),
+        fee_currency=A_BTC,
+        link='ad97d393-19b9-6dd1-9dbf-f288fc72a185',
+    )]
+    assert expected_trades == trades
 
 
 def test_bittrex_query_trade_history_unexpected_data(bittrex):
@@ -167,45 +188,46 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
         if error_str_test:
             assert error_str_test in errors[0]
 
-    input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
-        '"quantity": 667.03644955',
-        '"quantity": "fdfdsf"',
+    history = f'[{BITTREX_LIMIT_TRADE}]'
+    input_str = history.replace(
+        '"fillQuantity": 667.03644955',
+        '"fillQuantity": "fdfdsf"',
     )
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
 
-    input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
+    input_str = history.replace(
         '"closedAt": "2014-02-13T00:00:00.00Z"',
         '"closedAt": null',
     )
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
 
-    input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
+    input_str = history.replace(
         '"limit": 0.0000295',
         '"limit": "sdad"',
     )
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
 
-    input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
+    input_str = history.replace(
         '"direction": "BUY"',
         '"direction": "dsadsd"',
     )
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
 
-    input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
+    input_str = history.replace(
         '"commission": 0.00004921',
         '"commission": "dasdsad"',
     )
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
 
     # Check that for non-string pairs we give a graceful error
-    input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
+    input_str = history.replace(
         '"marketSymbol": "BTC-LTC"',
         '"marketSymbol": 4324234',
     )
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
 
     # Check that for unsupported assets in the pair are caught
-    input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
+    input_str = history.replace(
         '"marketSymbol": "BTC-LTC"',
         '"marketSymbol": "BTC-PTON"',
     )
@@ -217,7 +239,7 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
     )
 
     # Check that unprocessable pair is caught
-    input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
+    input_str = history.replace(
         '"marketSymbol": "BTC-LTC"',
         '"marketSymbol": "SSSS"',
     )
@@ -233,6 +255,7 @@ BITTREX_DEPOSIT_HISTORY_RESPONSE = """
 [
     {
       "id": 1,
+      "status": "COMPLETED",
       "quantity": 2.12345678,
       "currencySymbol": "BTC",
       "confirmations": 2,
@@ -241,7 +264,8 @@ BITTREX_DEPOSIT_HISTORY_RESPONSE = """
       "cryptoAddress": "15VyEAT4uf7ycrNWZVb1eGMzrs21BH95Va",
       "source": "foo"
     }, {
-      "Id": 2,
+      "id": 2,
+      "status": "COMPLETED",
       "quantity": 50.81,
       "currencySymbol": "ETH",
       "confirmations": 5,
@@ -257,6 +281,7 @@ BITTREX_WITHDRAWAL_HISTORY_RESPONSE = """
 [
     {
       "id": "b52c7a5c-90c6-4c6e-835c-e16df12708b1",
+      "status": "COMPLETED",
       "currencySymbol": "BTC",
       "quantity": 17,
       "cryptoAddress": "1DeaaFBdbB5nrHj87x3NHS4onvw1GPNyAu",
@@ -265,6 +290,7 @@ BITTREX_WITHDRAWAL_HISTORY_RESPONSE = """
       "txId": "b4a575c2a71c7e56d02ab8e26bb1ef0a2f6cf2094f6ca2116476a569c1e84f6e"
     }, {
       "id": "b52c7a5c-90c6-4c6e-835c-e16df12708b1",
+      "status": "COMPLETED",
       "currencySymbol": "ETH",
       "quantity": 55,
       "cryptoAddress": "0x717E2De923A6377Fbd7e3c937491f71ad370e9A8",
@@ -465,6 +491,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
     empty_response = '[]'
     input_withdrawals = """[{
       "id": "b52c7a5c-90c6-4c6e-835c-e16df12708b1",
+      "status": "COMPLETED",
       "currencySymbol": "BTC",
       "quantity": 17,
       "cryptoAddress": "1DeaaFBdbB5nrHj87x3NHS4onvw1GPNyAu",
@@ -479,6 +506,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
 
     input_deposits = """[{
       "id": 1,
+      "status": "COMPLETED",
       "quantity": 17,
       "currencySymbol": "BTC",
       "confirmations": 2,
