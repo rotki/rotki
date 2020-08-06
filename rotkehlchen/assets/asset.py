@@ -5,7 +5,7 @@ from typing import Any, Optional
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo, Timestamp
 
 WORLD_TO_BITTREX = {
     # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
@@ -261,4 +261,12 @@ class HasEthereumToken(Asset):
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class EthereumToken(HasEthereumToken):
-    pass
+
+    def token_info(self) -> EthTokenInfo:
+        return EthTokenInfo(
+            identifier=self.identifier,
+            address=self.ethereum_address,
+            symbol=self.symbol,
+            name=self.name,
+            decimals=self.decimals,
+        )

@@ -3,7 +3,7 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import gevent
 import requests
@@ -272,10 +272,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
     def query_balances(
             self,  # pylint: disable=unused-argument
             blockchain: Optional[SupportedBlockchain] = None,
+            force_token_detection: bool = False,
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> BlockchainBalancesUpdate:
         """Queries either all, or specific blockchain balances
+
+        If force detection is true, then the ethereum token detection is forced.
 
         May raise:
         - RemoteError if an external service such as Etherscan or blockchain.info
@@ -287,7 +290,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
 
         if should_query_eth:
-            self.query_ethereum_balances()
+            self.query_ethereum_balances(force_token_detection=force_token_detection)
         if should_query_btc:
             self.query_btc_balances()
 
@@ -379,44 +382,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 usd_value=balance * btc_usd_price,
             )
         self.totals[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
-
-    @overload
-    @staticmethod
-    def _query_token_balances(
-            token_asset: EthereumToken,
-            query_callback: Callable[[EthereumToken, ChecksumEthAddress], FVal],
-            argument: ChecksumEthAddress,
-    ) -> FVal:
-        ...
-
-    @overload  # noqa: F811
-    @staticmethod
-    def _query_token_balances(
-            token_asset: EthereumToken,
-            query_callback: Callable[
-                [EthereumToken, List[ChecksumEthAddress]],
-                Dict[ChecksumEthAddress, FVal],
-            ],
-            argument: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, FVal]:
-        ...
-
-    @staticmethod  # noqa: F811
-    def _query_token_balances(
-            token_asset: EthereumToken,
-            query_callback: Callable,
-            argument: Union[List[ChecksumEthAddress], ChecksumEthAddress],
-    ) -> Union[FVal, Dict[ChecksumEthAddress, FVal]]:
-        """Query tokens by checking the eth_tokens mapping and using the respective query callback.
-
-        The callback is either self.ethereum.get_multiaccount_token_balance or
-        self.ethereum.get_token_balance"""
-        result = query_callback(
-            token_asset,
-            argument,
-        )
-
-        return result
 
     def modify_btc_account(
             self,
@@ -676,6 +641,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self,
             action: AccountAction,
             given_accounts: Optional[List[ChecksumEthAddress]] = None,
+            force_detection: bool = False,
     ) -> None:
         """Queries ethereum token balance via either etherscan or ethereum node
 
@@ -695,7 +661,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         ethtokens = EthTokens(database=self.database, ethereum=self.ethereum)
         try:
-            balance_result, token_usd_price = ethtokens.query_tokens_for_addresses(accounts)
+            balance_result, token_usd_price = ethtokens.query_tokens_for_addresses(
+                addresses=accounts,
+                force_detection=force_detection,
+            )
         except BadFunctionCallOutput as e:
             log.error(
                 'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
@@ -758,7 +727,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         usd_value=new_usd_value,
                     )
 
-    def query_ethereum_tokens(self) -> None:
+    def query_ethereum_tokens(self, force_detection: bool) -> None:
         """Queries the ethereum token balances and populates the state
 
         May raise:
@@ -771,7 +740,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # tokens just zero out its balance
         for token in [x for x, _ in self.totals.items() if isinstance(x, EthereumToken)]:
             del self.totals[token]
-        self._query_ethereum_tokens(action=AccountAction.QUERY)
+        self._query_ethereum_tokens(action=AccountAction.QUERY, force_detection=force_detection)
 
         # If we have anything in DSR also count it towards total blockchain balances
         eth_balances = self.balances.eth
@@ -815,7 +784,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.defi_balances_last_query_ts = ts_now()
         return self.defi_balances
 
-    def query_ethereum_balances(self) -> None:
+    def query_ethereum_balances(self, force_token_detection: bool) -> None:
         """Queries all the ethereum balances and populates the state
 
         May raise:
@@ -843,7 +812,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.totals[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
 
         self.query_defi_balances()
-        self.query_ethereum_tokens()
+        self.query_ethereum_tokens(force_token_detection)
         vaults_module = self.makerdao_vaults
         if vaults_module is not None:
             normalized_balances = vaults_module.get_normalized_balances()

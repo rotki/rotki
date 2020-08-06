@@ -14,7 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthTokenInfo, Price
-from rotkehlchen.utils.misc import get_chunks
+from rotkehlchen.utils.misc import get_chunks, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -33,36 +33,86 @@ class EthTokens():
         self.db = database
         self.ethereum = ethereum
 
-    def detect_tokens_for_addresses(self, addresses: List[ChecksumEthAddress]) -> TokensReturn:
-        token_usd_price = {}
+    def detect_tokens_for_address(
+            self,
+            address: ChecksumEthAddress,
+            token_usd_price: Dict[EthereumToken, Price],
+            chunks: List[List[EthTokenInfo]],
+    ) -> Dict[EthereumToken, FVal]:
+        balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
+        for chunk in chunks:
+            self._get_tokens_balance_and_price(
+                address=address,
+                tokens=chunk,
+                balances=balances,
+                token_usd_price=token_usd_price,
+            )
+
+        # now that detection happened we also have to save it in the DB for the address
+        self.db.save_tokens_for_address(address, list(balances.keys()))
+
+        return balances
+
+    def query_tokens_for_addresses(
+            self,
+            addresses: List[ChecksumEthAddress],
+            force_detection: bool,
+    ) -> TokensReturn:
+        """Queries/detects token balances for a list of addresses
+
+        If an address's tokens were recently autodetected they are not detected again but the
+        balances are simply queried. Unless force_detection is True.
+
+        Returns the token balances of each address and the usd prices of the tokens
+        """
         all_tokens = AssetResolver().get_all_eth_token_info()
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
         chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))
-
+        now = ts_now()
+        token_usd_price: Dict[EthereumToken, Price] = {}
         result = {}
+
         for address in addresses:
-            balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
-            for chunk in chunks:
-                ret = self._get_multitoken_account_balance(tokens=chunk, account=address)
-                for token_identifier, value in ret.items():
-                    token = EthereumToken(token_identifier)
-                    balances[token] += value
-                    if token in token_usd_price:
-                        continue
-                    # else get the price
-                    try:
-                        usd_price = Inquirer().find_usd_price(token)
-                    except RemoteError:
-                        usd_price = Price(ZERO)
-                    token_usd_price[token] = usd_price
+            saved_list = self.db.get_tokens_for_address_if_time(address=address, current_time=now)
+            if force_detection or saved_list is None:
+                balances = self.detect_tokens_for_address(
+                    address=address,
+                    token_usd_price=token_usd_price,
+                    chunks=chunks,
+                )
+            else:
+                balances = defaultdict(FVal)
+                self._get_tokens_balance_and_price(
+                    address=address,
+                    tokens=[x.token_info() for x in saved_list],
+                    balances=balances,
+                    token_usd_price=token_usd_price,
+                )
 
             result[address] = balances
 
         return result, token_usd_price
 
-    def query_tokens_for_addresses(self, addresses: List[ChecksumEthAddress]) -> TokensReturn:
-        return self.detect_tokens_for_addresses(addresses)
+    def _get_tokens_balance_and_price(
+            self,
+            address: ChecksumEthAddress,
+            tokens: List[EthTokenInfo],
+            balances: Dict[EthereumToken, FVal],
+            token_usd_price: Dict[EthereumToken, Price],
+    ) -> None:
+        ret = self._get_multitoken_account_balance(tokens=tokens, account=address)
+        for token_identifier, value in ret.items():
+            token = EthereumToken(token_identifier)
+            balances[token] += value
+            if token in token_usd_price:
+                continue
+            # else get the price
+            try:
+                usd_price = Inquirer().find_usd_price(token)
+            except RemoteError:
+                usd_price = Price(ZERO)
+            token_usd_price[token] = usd_price
 
     def _get_multitoken_multiaccount_balance(
             self,

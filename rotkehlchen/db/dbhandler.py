@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 import os
 import re
@@ -71,7 +72,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
-    ChecksumAddress,
+    ChecksumEthAddress,
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -645,7 +646,7 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def add_aave_events(self, address: ChecksumAddress, events: List[AaveEvent]) -> None:
+    def add_aave_events(self, address: ChecksumEthAddress, events: List[AaveEvent]) -> None:
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT INTO '
@@ -666,7 +667,11 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def get_aave_events(self, address: ChecksumAddress, atoken: EthereumToken) -> List[AaveEvent]:
+    def get_aave_events(
+            self,
+            address: ChecksumEthAddress,
+            atoken: EthereumToken,
+    ) -> List[AaveEvent]:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT event_type, amount, usd_value, block_number, timestamp, tx_hash, log_index '
@@ -843,11 +848,12 @@ class DBHandler:
         - InputError if any of the given accounts to delete did not exist
         """
         tuples = [(blockchain.value, x) for x in accounts]
+        account_tuples = [(x,) for x in accounts]
 
         cursor = self.conn.cursor()
         cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', [(x,) for x in accounts],
+            'object_reference = ?;', account_tuples,
         )
         cursor.executemany(
             'DELETE FROM blockchain_accounts WHERE '
@@ -860,6 +866,69 @@ class DBHandler:
                 f'f{blockchain.value} accounts that do not exist',
             )
 
+        # Also remove saved details (tokens detected) if it's ethereum and if any exist
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            cursor.executemany(
+                'DELETE FROM ethereum_accounts_details WHERE '
+                'account = ?;', account_tuples,
+            )
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_tokens_for_address_if_time(
+            self,
+            address: ChecksumEthAddress,
+            current_time: Timestamp,
+    ) -> Optional[List[EthereumToken]]:
+        """Gets the detected tokens for the given address if the given current time
+        is recent enough.
+
+        If not, or if there is no saved entry, return None
+        """
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT tokens_list, time FROM ethereum_accounts_details WHERE account = ?',
+            (address,),
+        )
+        result = query.fetchall()
+        if len(result) == 0:
+            return None  # no saved entry
+        if current_time - result[0][1] > 86400:
+            return None  # saved entry is outdated
+
+        try:
+            json_ret = json.loads(result[0][0])
+        except json.decoder.JSONDecodeError as e:
+            # This should never happen
+            self.msg_aggregator.add_error(
+                f'Found undecodeable tokens_list {result[0][0]} in the DB for {address}.'
+                f'Error: {str(e)}',
+            )
+            return None
+
+        if not isinstance(json_ret, list):
+            # This should never happen
+            self.msg_aggregator.add_error(
+                f'Found non-list tokens_list {json_ret} in the DB for {address}.',
+            )
+            return None
+
+        return [EthereumToken(x) for x in json_ret]
+
+    def save_tokens_for_address(
+            self,
+            address: ChecksumEthAddress,
+            tokens: List[EthereumToken],
+    ) -> None:
+        """Saves detected tokens for an address"""
+        now = ts_now()
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO ethereum_accounts_details '
+            '(account, tokens_list, time) VALUES (?, ?, ?)',
+            (address, json.dumps([x.identifier for x in tokens]), now),
+        )
         self.conn.commit()
         self.update_last_write()
 
@@ -1492,7 +1561,7 @@ class DBHandler:
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            address: Optional[ChecksumAddress] = None,
+            address: Optional[ChecksumEthAddress] = None,
     ) -> List[EthereumTransaction]:
         """Returns a list of ethereum transactions optionally filtered by time and/or from address
 
