@@ -46,6 +46,7 @@ from rotkehlchen.typing import (
     AssetMovementCategory,
     Fee,
     Location,
+    Price,
     Timestamp,
     TradePair,
 )
@@ -103,14 +104,25 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     """Turn a bittrex trade returned from bittrex trade history to our common trade
     history format
 
+    As we saw in https://github.com/rotki/rotki/issues/1281 it's quite possible
+    that some keys don't exist in a trade. The required fields are here:
+    https://bittrex.github.io/api/v3#definition-Order
+
     Throws:
         - UnknownAsset/UnsupportedAsset due to bittrex_pair_to_world()
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
     """
-    amount = deserialize_asset_amount(bittrex_trade['quantity'])
-    timestamp = deserialize_timestamp_from_date(bittrex_trade['closedAt'], 'iso8601', 'bittrex')
-    rate = deserialize_price(bittrex_trade['limit'])
+    amount = deserialize_asset_amount(bittrex_trade['fillQuantity'])
+    timestamp = deserialize_timestamp_from_date(
+        date=bittrex_trade['closedAt'],  # we only check closed orders
+        formatstr='iso8601',
+        location='bittrex',
+    )
+    if 'limit' in bittrex_trade:
+        rate = deserialize_price(bittrex_trade['limit'])
+    else:
+        rate = Price(FVal(bittrex_trade['proceeds']) / FVal(bittrex_trade['fillQuantity']))
     order_type = deserialize_trade_type(bittrex_trade['direction'])
     fee = deserialize_fee(bittrex_trade['commission'])
     pair = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
@@ -431,17 +443,21 @@ class Bittrex(ExchangeInterface):
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
+            if raw_data['status'] != 'COMPLETED':
+                # Don't mind failed/in progress asset movements
+                return None
+
             if 'source' in raw_data:
                 category = AssetMovementCategory.DEPOSIT
                 fee = Fee(ZERO)
             else:
                 category = AssetMovementCategory.WITHDRAWAL
-                fee = deserialize_fee(raw_data['txCost'])
+                fee = deserialize_fee(raw_data.get('txCost', 0))
 
             timestamp = deserialize_timestamp_from_date(
-                raw_data['completedAt'],
-                'iso8601',
-                'bittrex',
+                date=raw_data['completedAt'],  # we only check completed orders
+                formatstr='iso8601',
+                location='bittrex',
             )
             asset = asset_from_bittrex(raw_data['currencySymbol'])
             return AssetMovement(
@@ -452,7 +468,7 @@ class Bittrex(ExchangeInterface):
                 amount=deserialize_asset_amount(raw_data['quantity']),
                 fee_asset=asset,
                 fee=fee,
-                link=str(raw_data['txId']),
+                link=str(raw_data.get('txId', '')),
             )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
