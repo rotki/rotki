@@ -79,15 +79,17 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import DefiAddressSelector from '@/components/defi/wizard/DefiAddressSelector.vue';
 import DefiModuleSelector from '@/components/defi/wizard/DefiModuleSelector.vue';
+import { DEFI_SETUP_DONE } from '@/store/settings/consts';
+import { FrontendSettingsPayload } from '@/store/settings/types';
 
 @Component({
   components: { DefiAddressSelector, DefiModuleSelector },
   methods: {
-    ...mapActions('session', ['defiSetupDone'])
+    ...mapActions('settings', ['updateSetting'])
   }
 })
 export default class DefiWizard extends Vue {
-  defiSetupDone!: (done: boolean) => void;
+  updateSetting!: (payload: FrontendSettingsPayload) => void;
 
   step: number = 1;
 
@@ -96,7 +98,7 @@ export default class DefiWizard extends Vue {
   }
 
   done() {
-    this.defiSetupDone(true);
+    this.updateSetting({ [DEFI_SETUP_DONE]: true });
   }
 }
 </script>

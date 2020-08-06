@@ -19,7 +19,6 @@ export const defaultState: () => SessionState = () => ({
   syncConflict: '',
   tags: {},
   watchers: [],
-  defiSetupDone: false,
   queriedAddresses: {}
 });
 

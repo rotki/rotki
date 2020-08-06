@@ -68,9 +68,6 @@ export const mutations: MutationTree<SessionState> = {
   watchers(state: SessionState, watchers: Watcher<WatcherTypes>[]) {
     state.watchers = watchers;
   },
-  defiSetup(state: SessionState, done: boolean) {
-    state.defiSetupDone = done;
-  },
   queriedAddresses(state: SessionState, queriedAddresses: QueriedAddresses) {
     state.queriedAddresses = queriedAddresses;
   }

@@ -39,7 +39,7 @@ import TabNavigation, {
 @Component({
   components: { DefiWizard, TabNavigation },
   computed: {
-    ...mapState('session', ['defiSetupDone'])
+    ...mapState('settings', ['defiSetupDone'])
   }
 })
 export default class DecentralizedFinance extends Vue {

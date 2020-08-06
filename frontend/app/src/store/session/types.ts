@@ -20,10 +20,5 @@ export interface SessionState {
   syncConflict: string;
   tags: Tags;
   watchers: Watcher<WatcherTypes>[];
-  defiSetupDone: boolean;
   queriedAddresses: QueriedAddresses;
-}
-
-export interface FrontendSettings {
-  defiSetupDone?: boolean;
 }
