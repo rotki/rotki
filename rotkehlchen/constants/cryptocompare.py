@@ -23,6 +23,7 @@ WORLD_TO_CRYPTOCOMPARE = {
     'DATAcoin': 'DATA',
     'IOTA': 'MIOTA',
     'XRB': 'NANO',
+    'ALQO': 'XLQ',
     'AIR-2': 'AIR*',
     # In Rotkehlchen Bitswift is BITS-2 but in cryptocompare it's BITSW
     'BITS-2': 'BITSW',
