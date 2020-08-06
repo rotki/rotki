@@ -396,7 +396,11 @@ Below you can see a small demonstration of the usage of makerdao vaults by a pre
 Creating a tax report
 **********************
 
-Rotki creates a tax report for you based on your trades and the provided accounting settings. This is essentially a calculation of profit or loss for all your trades based on the given dates.
+Rotki creates a tax report for you based on your trades and the provided accounting settings. This is essentially a calculation of profit or loss for all your trades based on the given dates. Before getting into the details of generating a tax report, here's a few important details regarding the tax report generation algorithm:
+
+- By default, rotki uses an accounting strategy called "First In - First Out" (short: FIFO). There are plans to implement other strategies (e.g. `"Last In - First Out" <https://github.com/rotki/rotki/issues/44>`_ (short: LIFO)).
+- Rotki allows users in jurisdictions offering a tax free holding period (e.g. Germany with 1 year) to specify the period in days. To adjust this value, see the section `Customizing the account settings <#tax-free-period>`_.
+- When generating a report for a custom period, where rotki is aware of the user's previous crypto holdings (e.g. we trade BTC between the years 2017 - 2019 but we ask for a report between 2018 - 2019), it takes all prior crypto holdings into account to calculate a starting balance for the given period. For example, say you traded BTC between 2017 - 2019 with a balance of 0.1 BTC on December 31, 2017. When generating a tax report for 2018 - 2019, rotki will take the 0.1 BTC from December 31, 2017 as a start balance for its calculations in the period of 2018.
 
 
 To create a tax report click on the "Tax Report" button from the left menu. Choose a start and an end date for the report and then click the "Generate Report" button.
@@ -414,7 +418,23 @@ Additionally below the overview you get a table containing all of the taxable ev
    :align: center
 
 
-Finally you can get a nice CSV export by pressing the "Export CSV" button. This export is meant to be imported into google sheets. Press the button and then choose a directory to write the CSV files to. Once done you can import the CSV files into google sheets via its import menu.
+Finally you can get a CSV export by pressing the "Export CSV" button. This export is meant to be imported into Google Sheets. Press the button and then choose a directory to write the CSV files to. Once done you can import the CSV files into Google Sheets via its import menu. Following are definitions for the document's columns
+
+- ``type`` is a string describing the type of event a user engaged in, e.g. in "I buy ETH for EUR", `buy` is the `type`.
+- ``paid_asset`` is a string identifying the asset an event was paid in, e.g. in "I bought 1 ETH for 100 EUR", `EUR` is the  `paid_asset`.
+- ``paid_in_asset`` is a float specifying the amount of `paid_asset`s involved in an event, e.g. in "I bought 1 ETH for 100 EUR", `100` is the `paid_in_asset`.
+- ``taxable_amount``: is a float specifying the amount of `paid_asset` needed to be taken into consideration when generating a tax report, e.g. "I sold 1 ETH for 120 EUR", `1 ETH` is the `taxable_amount`.
+- ``received_asset`` is a string identifying the asset of an event's yield, e.g. in "I bought 1 ETH for 100 EUR", `ETH` is the `received_asset`.
+- ``received_in_asset`` is a float specifying the amount of `received_asset`s involved in an event, e.g. in "I bought 1 ETH for 100 EUR", `1` is the `received_in_asset`.
+- ``net_profit_or_loss`` is a float specifying the amount of profit or loss an event accounts for given the selected accounting strategy (currently there's only FIFO). Note that its value is based on a spreadsheet formula.
+- ``time`` is a string containing the date and time an event was executed.
+- ``is_virtual`` is a boolean describing if an event's `paid_asset` and `received_asset` are both crypto assets. As in many jurisdictions, crypto to crypto trades are taxable, the `is_virtual` column allows us to calculate the event's taxable amount given the crypto coin's rate against rotki's default currency, also known as `profit_currency` (e.g. EUR).
+- ``paid_in_XXX``, where XXX is the user's customized `profit_currency` is a float describing the amount of `paid_in_asset` converted to the user`s `profit_currency`.
+- ``taxable_received_in_XXX`` where XXX is the user's customized `profit_currency` is a float describing the amount of `received_in_asset`converted to the user's `profit_currency`. Note that rotki additionally subtracts an exchange's trading fees from this number.
+- ``taxable_bought_cost_in_EUR``, where XXX is the user's customized `profit_currency` is a float simulating the total amount of `paid_in_asset` given the user's customized accounting strategy in the user's `profit_currency`.
+
+.. note::
+   To learn more about `profit_currency` or to adjust it, see the section `Changing the Profit Currency` <#changing-the-profit-currency>`.
 
 
 Analytics
