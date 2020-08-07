@@ -62,6 +62,7 @@ class NodeName(Enum):
     OWN = 0
     ETHERSCAN = 1
     MYCRYPTO = 2
+    BLOCKSCOUT = 3
 
     def __str__(self) -> str:
         if self == NodeName.OWN:
@@ -70,6 +71,8 @@ class NodeName(Enum):
             return 'etherscan'
         elif self == NodeName.MYCRYPTO:
             return 'mycrypto'
+        elif self == NodeName.BLOCKSCOUT:
+            return 'blockscout'
 
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
 
@@ -80,12 +83,14 @@ class NodeName(Enum):
             raise TypeError('Called endpoint for etherscan')
         elif self == NodeName.MYCRYPTO:
             return 'https://api.mycryptoapi.com/eth'
+        elif self == NodeName.BLOCKSCOUT:
+            return 'https://mainnet-nethermind.blockscout.com/'
 
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
 
 
-DEFAULT_CALL_ORDER = (NodeName.OWN, NodeName.MYCRYPTO, NodeName.ETHERSCAN)
-ETHEREUM_NODES_TO_CONNECT_AT_START = (NodeName.OWN, NodeName.MYCRYPTO)
+DEFAULT_CALL_ORDER = (NodeName.OWN, NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.ETHERSCAN)
+ETHEREUM_NODES_TO_CONNECT_AT_START = (NodeName.OWN, NodeName.MYCRYPTO, NodeName.BLOCKSCOUT)
 
 
 class EthereumManager():
