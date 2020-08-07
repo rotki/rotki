@@ -17,3 +17,15 @@ export interface MakerVaultCollateralizationRatio {
 export interface WatcherArgs {
   readonly makervault_collateralization_ratio: MakerVaultCollateralizationRatio;
 }
+
+export const MODULES = ['aave', 'makerdao_dsr', 'makerdao_vaults'] as const;
+export type SupportedModules = typeof MODULES[number];
+
+export type QueriedAddresses = {
+  readonly [module in SupportedModules]?: string[];
+};
+
+export interface QueriedAddressPayload {
+  readonly module: SupportedModules;
+  readonly address: string;
+}

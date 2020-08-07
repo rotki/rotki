@@ -1,28 +1,31 @@
 <template>
-  <v-card>
+  <v-card v-bind="$attrs">
     <div class="mx-4 pt-2">
       <v-autocomplete
-        v-model="selectedAccounts"
-        :items="filteredBlockchainAccounts"
+        :value="value"
+        :items="displayedAccounts"
         :filter="filter"
         :search-input.sync="search"
         :multiple="multiple"
-        return-object
+        :loading="loading"
+        :disabled="loading"
         hide-details
         hide-selected
         hide-no-data
+        return-object
         chips
         clearable
         :open-on-clear="false"
-        label="Filter account(s)"
+        :label="label ? label : 'Filter account(s)'"
         item-text="address"
         item-value="address"
         class="blockchain-account-selector"
+        @input="input($event)"
       >
         <template #selection="data">
           <v-chip
             v-if="multiple"
-            :key="data.item.chain + data.item.label"
+            :key="data.item.chain + data.item.address"
             v-bind="data.attrs"
             :input-value="data.selected"
             :click="data.select"
@@ -30,25 +33,10 @@
             close
             @click:close="data.parent.selectItem(data.item)"
           >
-            <div class="pr-2">
-              <v-avatar left>
-                <crypto-icon :symbol="data.item.chain"></crypto-icon>
-              </v-avatar>
-              <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
-              <span>({{ data.item.address | truncateAddress }})</span>
-            </div>
+            <account-display :account="data.item" />
           </v-chip>
           <div v-else>
-            <div class="pr-2">
-              <v-avatar left>
-                <crypto-icon
-                  width="24px"
-                  :symbol="data.item.chain"
-                ></crypto-icon>
-              </v-avatar>
-              <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
-              <span>({{ data.item.address | truncateAddress }})</span>
-            </div>
+            <account-display :account="data.item" class="pr-2" />
           </div>
         </template>
         <template #item="data">
@@ -57,14 +45,7 @@
           >
             <div class="blockchain-account-selector__list__item__address-label">
               <v-chip color="grey lighten-3" filter>
-                <v-avatar left>
-                  <crypto-icon
-                    width="24px"
-                    :symbol="data.item.chain"
-                  ></crypto-icon>
-                </v-avatar>
-                <span class="font-weight-bold mr-1">{{ data.item.label }}</span>
-                <span>({{ data.item.address | truncateAddress }})</span>
+                <account-display :account="data.item" />
               </v-chip>
             </div>
             <div class="blockchain-account-selector__list__item__tags">
@@ -79,105 +60,73 @@
         </template>
       </v-autocomplete>
     </div>
-    <v-card-text>
-      Showing results across
-      {{
-        selectedAccountsArray && selectedAccountsArray.length > 0
-          ? selectedAccountsArray.length
-          : 'all'
-      }}
-      accounts.
+    <v-card-text v-if="hint">
+      Showing results across {{ hintText }} accounts.
     </v-card-text>
   </v-card>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
-import CryptoIcon from '@/components/CryptoIcon.vue';
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { mapGetters, mapState } from 'vuex';
+import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 
-import { Account, AccountDataMap, GeneralAccount, Tags } from '@/typing/types';
-
-const { mapState } = createNamespacedHelpers('session');
-const { mapState: mapBalanceState } = createNamespacedHelpers('balances');
+import { GeneralAccount, Tags } from '@/typing/types';
 
 @Component({
-  components: { CryptoIcon, TagIcon },
+  components: { AccountDisplay, TagIcon },
   computed: {
-    ...mapState(['tags']),
-    ...mapBalanceState(['ethAccounts', 'btcAccounts'])
+    ...mapState('session', ['tags']),
+    ...mapGetters('balances', ['accounts'])
   }
 })
 export default class BlockchainAccountSelector extends Vue {
-  @Prop({ required: true, type: Array, default: [] })
-  addresses!: Account[];
+  @Prop({ required: false, type: String })
+  label!: string;
+  @Prop({ required: false, type: Boolean, default: false })
+  hint!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  loading!: boolean;
+  @Prop({ required: false, type: Array, default: () => [] })
+  usableAddresses!: string[];
   @Prop({ required: false, type: Boolean, default: false })
   multiple!: boolean;
+  @Prop({ required: true })
+  value!: GeneralAccount[] | GeneralAccount | null;
 
-  ethAccounts!: AccountDataMap;
-  btcAccounts!: AccountDataMap;
+  accounts!: GeneralAccount[];
   tags!: Tags;
-
-  selectedAccountsArray: GeneralAccount[] = [];
   search: string = '';
 
-  private unselectAll() {
-    for (let i = 0; i < this.selectedAccountsArray.length; i++) {
-      this.selectedAccountsArray.pop();
+  get hintText(): string {
+    if (Array.isArray(this.value)) {
+      return `${this.value.length}`;
+    } else if (this.value) {
+      return '1';
     }
+    return 'all';
   }
 
-  set selectedAccounts(value: GeneralAccount[] | GeneralAccount | null) {
-    if (!value) {
-      this.unselectAll();
-    } else if (Array.isArray(value)) {
-      this.selectedAccountsArray.push(...value);
-    } else {
-      if (!this.multiple) {
-        this.unselectAll();
-      }
-      this.selectedAccountsArray.push(value);
-    }
-    this.$emit('selected-accounts-change', this.selectedAccountsArray);
-    if (this.search) {
-      this.search = '';
-    }
-  }
+  @Emit()
+  input(_value: string) {}
 
-  get selectedAccounts(): GeneralAccount[] | GeneralAccount | null {
-    if (this.selectedAccountsArray.length === 0) {
-      return null;
-    } else if (this.selectedAccountsArray.length === 1) {
-      const [first] = this.selectedAccountsArray;
-      return first;
+  get displayedAccounts(): GeneralAccount[] {
+    if (this.usableAddresses.length > 0) {
+      return this.accounts.filter(({ address }) =>
+        this.usableAddresses.includes(address)
+      );
     }
-    return this.selectedAccountsArray;
-  }
-
-  get filteredBlockchainAccounts(): any[] {
-    let filteredAccounts: GeneralAccount[] = [];
-
-    // filter the addresses for each blockchain then group them into filteredAddresses
-    for (let [key, value] of Object.entries(this.ethAccounts)) {
-      if (this.addresses[this.addresses.findIndex(x => x.address === key)]) {
-        filteredAccounts.push({ chain: 'ETH', ...value });
-      }
-    }
-    for (let [key, value] of Object.entries(this.btcAccounts)) {
-      if (this.addresses[this.addresses.findIndex(x => x.address === key)]) {
-        filteredAccounts.push({ chain: 'BTC', ...value });
-      }
-    }
-
-    return filteredAccounts;
+    return this.accounts;
   }
 
   filter(item: GeneralAccount, queryText: string) {
     const text = item.label.toLocaleLowerCase();
     const query = queryText.toLocaleLowerCase();
+    const address = item.address.toLocaleLowerCase();
 
     const labelMatches = text.indexOf(query) > -1;
+    const addressMatches = address.indexOf(query) > -1;
 
     const tagMatches =
       item.tags
@@ -185,7 +134,7 @@ export default class BlockchainAccountSelector extends Vue {
         .join(' ')
         .indexOf(query) > -1;
 
-    return labelMatches || tagMatches;
+    return labelMatches || tagMatches || addressMatches;
   }
 }
 </script>

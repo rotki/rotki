@@ -12,7 +12,7 @@ import {
 } from '@/model/blockchain-balances';
 import { BalanceState } from '@/store/balances/state';
 import { RotkehlchenState } from '@/store/store';
-import { Blockchain } from '@/typing/types';
+import { Blockchain, GeneralAccount } from '@/typing/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 
@@ -237,5 +237,19 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
   assetInfo: ({ supportedAssets }: BalanceState) => (key: string) => {
     return supportedAssets.find(asset => asset.key === key);
+  },
+
+  accounts: ({ ethAccounts, btcAccounts }) => {
+    const accounts: GeneralAccount[] = [];
+
+    for (const account of Object.values(ethAccounts)) {
+      accounts.push({ chain: 'ETH', ...account });
+    }
+
+    for (const account of Object.values(btcAccounts)) {
+      accounts.push({ chain: 'BTC', ...account });
+    }
+
+    return accounts;
   }
 };

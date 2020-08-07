@@ -38,6 +38,10 @@ export default class Settings extends Vue {
     {
       name: 'User & Security',
       routeTo: '/settings/user-security'
+    },
+    {
+      name: 'Defi',
+      routeTo: '/settings/defi'
     }
   ];
 
@@ -51,7 +55,7 @@ export default class Settings extends Vue {
   ) {
     if (targetState === 'success' || targetState === 'error') {
       setTimeout(() => {
-        let validationMessage = '';
+        let validationMessage: string;
         if (targetState === 'error') {
           validationMessage = 'Setting not saved';
         } else {

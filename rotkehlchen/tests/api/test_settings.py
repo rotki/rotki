@@ -87,6 +87,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = str(KrakenAccountType.PRO)
         elif setting == 'active_modules':
             value = ['makerdao_vaults']
+        elif setting == 'frontend_settings':
+            value = ''
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 

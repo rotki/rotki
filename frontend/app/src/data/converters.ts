@@ -24,7 +24,8 @@ export const convertToGeneralSettings = (
   ethRpcEndpoint: settings.eth_rpc_endpoint,
   anonymizedLogs: settings.anonymized_logs,
   anonymousUsageAnalytics: settings.submit_usage_analytics,
-  krakenAccountType: settings.kraken_account_type
+  krakenAccountType: settings.kraken_account_type,
+  activeModules: settings.active_modules
 });
 
 export const convertToAccountingSettings = (

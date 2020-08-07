@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import Vue from 'vue';
 import Router from 'vue-router';
 
@@ -48,6 +50,10 @@ export default new Router({
         {
           path: 'user-security',
           component: () => import('../views/settings/UserSecuritySettings.vue')
+        },
+        {
+          path: 'defi',
+          component: () => import('../views/settings/DefiSettings.vue')
         }
       ]
     },

@@ -1,10 +1,17 @@
 import { AxiosInstance } from 'axios';
 import { ActionResult } from '@/model/action-result';
-import { Watcher, WatcherTypes } from '@/services/session/types';
+import {
+  QueriedAddresses,
+  QueriedAddressPayload,
+  Watcher,
+  WatcherTypes
+} from '@/services/session/types';
 import {
   validWithSessionAndExternalService,
   handleResponse,
-  validWithParamsSessionAndExternalService
+  validWithParamsSessionAndExternalService,
+  validWithSessionStatus,
+  validStatus
 } from '@/services/utils';
 
 export class SessionApi {
@@ -57,6 +64,35 @@ export class SessionApi {
       .delete<ActionResult<Watcher<T>[]>>('/watchers', {
         data: { watchers: identifiers },
         validateStatus: validWithParamsSessionAndExternalService
+      })
+      .then(handleResponse);
+  }
+
+  async queriedAddresses(): Promise<QueriedAddresses> {
+    return this.axios
+      .get<ActionResult<QueriedAddresses>>('/queried_addresses', {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
+  }
+
+  async addQueriedAddress(
+    payload: QueriedAddressPayload
+  ): Promise<QueriedAddresses> {
+    return this.axios
+      .put<ActionResult<QueriedAddresses>>('/queried_addresses', payload, {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  async deleteQueriedAddress(
+    payload: QueriedAddressPayload
+  ): Promise<QueriedAddresses> {
+    return this.axios
+      .delete<ActionResult<QueriedAddresses>>('/queried_addresses', {
+        data: payload,
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }

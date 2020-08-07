@@ -700,6 +700,7 @@ class ModifiableSettingsSchema(Schema):
     date_display_format = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
     active_modules = fields.List(fields.String(), missing=None)
+    frontend_settings = fields.String(missing=None)
 
     @validates_schema  # type: ignore
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -736,6 +737,7 @@ class ModifiableSettingsSchema(Schema):
             submit_usage_analytics=data['submit_usage_analytics'],
             kraken_account_type=data['kraken_account_type'],
             active_modules=data['active_modules'],
+            frontend_settings=data['frontend_settings'],
         )
 
 

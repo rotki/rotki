@@ -82,9 +82,10 @@
     <v-row>
       <v-col cols="6">
         <blockchain-account-selector
-          :addresses="defiAccounts(selectedProtocols)"
-          @selected-accounts-change="filteredAccounts = $event"
-        ></blockchain-account-selector>
+          v-model="selectedAccount"
+          hint
+          :usable-accounts="defiAccounts(selectedProtocols)"
+        />
       </v-col>
       <v-col cols="6">
         <defi-protocol-selector v-model="protocol" />
@@ -135,7 +136,7 @@ import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
 import { Status } from '@/store/defi/status';
 import { DefiBalance, DefiLendingHistory } from '@/store/defi/types';
-import { Account, GeneralAccount } from '@/typing/types';
+import { Account, DefiAccount } from '@/typing/types';
 import { LendingHistory } from '@/utils/premium';
 
 @Component({
@@ -174,12 +175,12 @@ import { LendingHistory } from '@/utils/premium';
 export default class Lending extends Vue {
   premium!: boolean;
   floatingPrecision!: number;
-  filteredAccounts: GeneralAccount[] = [];
+  selectedAccount: Account | null = null;
   totalLendingDeposit!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => BigNumber;
-  defiAccounts!: (protocols: SupportedDefiProtocols[]) => Account[];
+  defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
   lendingBalances!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -205,6 +206,16 @@ export default class Lending extends Vue {
     addresses: string[]
   ) => BigNumber;
 
+  get selectedAddresses(): string[] {
+    return this.selectedAccount ? [this.selectedAccount.address] : [];
+  }
+
+  get defiAddresses(): string[] {
+    return this.defiAccounts(this.selectedProtocols).map(
+      ({ address }) => address
+    );
+  }
+
   async refresh() {
     await this.fetchLending(true);
     await this.fetchLendingHistory({
@@ -229,10 +240,6 @@ export default class Lending extends Vue {
       this.protocol = DEFI_PROTOCOLS[protocolIndex];
     }
     await this.fetchLendingHistory();
-  }
-
-  get selectedAddresses(): string[] {
-    return this.filteredAccounts.map(account => account.address);
   }
 
   get selectedProtocols(): SupportedDefiProtocols[] {

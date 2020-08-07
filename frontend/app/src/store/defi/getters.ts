@@ -16,7 +16,7 @@ import {
 } from '@/store/defi/types';
 import { RotkehlchenState } from '@/store/store';
 import { Writeable } from '@/types';
-import { Account } from '@/typing/types';
+import { DefiAccount } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 
 const unique = function (
@@ -37,7 +37,7 @@ export interface DefiGetters {
     addresses: string[]
   ) => BigNumber;
   loan: (identifier: string) => MakerDAOVaultModel | AaveLoan | null;
-  defiAccounts: (protocols: SupportedDefiProtocols[]) => Account[];
+  defiAccounts: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
   loans: (protocols: SupportedDefiProtocols[]) => DefiLoan[];
   loanSummary: (protocol: SupportedDefiProtocols[]) => LoanSummary;
   effectiveInterestRate: (
@@ -100,7 +100,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     aaveHistory,
     dsrBalances,
     dsrHistory
-  }: DefiState) => (protocols: SupportedDefiProtocols[]): Account[] => {
+  }: DefiState) => (protocols: SupportedDefiProtocols[]): DefiAccount[] => {
     const aaveAddresses: string[] = [];
     const makerAddresses: string[] = [];
     if (protocols.length === 0 || protocols.includes('aave')) {
@@ -119,7 +119,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       makerAddresses.push(...uniqueAddresses);
     }
 
-    const accounts: Account[] = [];
+    const accounts: DefiAccount[] = [];
     for (const address of aaveAddresses) {
       const protocols: SupportedDefiProtocols[] = ['aave'];
       const index = makerAddresses.indexOf(address);

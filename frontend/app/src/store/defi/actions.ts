@@ -265,39 +265,60 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
   },
 
-  async fetchAllDefi({ commit, dispatch, state }, refreshing: boolean = false) {
+  async fetchAllDefi(
+    { commit, dispatch, state, rootState: { session } },
+    refreshing: boolean = false
+  ) {
     if (
       state.status === Status.LOADING ||
       (state.status === Status.LOADED && !refreshing)
     ) {
       return;
     }
+
+    const { activeModules } = session!.generalSettings;
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
     commit('defiStatus', refreshing ? Status.REFRESHING : Status.LOADING);
     await dispatch('fetchDefiBalances');
     commit('defiStatus', Status.LOADED);
-    await dispatch('fetchAaveBalances');
-    await dispatch('fetchDSRBalances');
-    await dispatch('fetchMakerDAOVaults');
+
+    if (activeModules.includes('aave')) {
+      await dispatch('fetchAaveBalances');
+    }
+
+    if (activeModules.includes('makerdao_dsr')) {
+      await dispatch('fetchDSRBalances');
+    }
+
+    if (activeModules.includes('makerdao_vaults')) {
+      await dispatch('fetchMakerDAOVaults');
+    }
 
     commit('status', Status.LOADED);
   },
 
-  async fetchLending({ commit, dispatch, state }, refreshing: boolean = false) {
+  async fetchLending(
+    { commit, dispatch, state, rootState: { session } },
+    refreshing: boolean = false
+  ) {
     if (
       state.status === Status.LOADING ||
       (state.status === Status.LOADED && !refreshing)
     ) {
       return;
     }
+    const { activeModules } = session!.generalSettings;
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
 
-    await Promise.all([
-      dispatch('fetchDSRBalances'),
-      dispatch('fetchAaveBalances')
-    ]);
+    if (activeModules.includes('makerdao_dsr')) {
+      await dispatch('fetchDSRBalances');
+    }
+
+    if (activeModules.includes('aave')) {
+      await dispatch('fetchAaveBalances');
+    }
 
     commit('status', Status.LOADED);
   },
@@ -314,15 +335,20 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
 
+    const { activeModules } = session!.generalSettings;
+
     commit(
       'lendingHistoryStatus',
       payload?.refresh ? Status.REFRESHING : Status.LOADING
     );
 
-    await Promise.all([
-      dispatch('fetchDSRHistory'),
-      dispatch('fetchAaveHistory', payload?.reset)
-    ]);
+    if (activeModules.includes('makerdao_dsr')) {
+      await dispatch('fetchDSRHistory');
+    }
+
+    if (activeModules.includes('aave')) {
+      await dispatch('fetchAaveHistory', payload?.reset);
+    }
 
     commit('lendingHistoryStatus', Status.LOADED);
   },
@@ -332,16 +358,19 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refreshing: boolean = false
   ) {
     if (
-      !session?.premium ||
       state.status === Status.LOADING ||
       (state.status === Status.LOADED && !refreshing)
     ) {
       return;
     }
 
+    const { activeModules } = session!.generalSettings;
+
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
 
-    await dispatch('fetchMakerDAOVaults');
+    if (activeModules.includes('makerdao_vaults')) {
+      await dispatch('fetchMakerDAOVaults');
+    }
 
     commit('status', Status.LOADED);
   },
@@ -358,12 +387,16 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
 
+    const { activeModules } = session!.generalSettings;
+
     commit(
       'borrowingHistoryStatus',
       refreshing ? Status.REFRESHING : Status.LOADING
     );
 
-    await dispatch('fetchMakerDAOVaultDetails');
+    if (activeModules.includes('makerdao_vaults')) {
+      await dispatch('fetchMakerDAOVaultDetails');
+    }
 
     commit('borrowingHistoryStatus', Status.LOADED);
   }

@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import 'font-awesome/css/font-awesome.min.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify/lib';
@@ -29,7 +31,6 @@ export default new Vuetify({
         'rotki-brown': '#422919',
         'rotki-yellow': '#F5CB5C',
         error: '#f03a47',
-        info: '#D0FEF5',
         success: '#06D6A0',
         warning: '#FFDD00'
       }
