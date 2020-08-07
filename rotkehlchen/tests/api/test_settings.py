@@ -137,7 +137,9 @@ def test_set_rpc_endpoint_fail_not_set_others(rotkehlchen_api_server):
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to connect to ethereum node at endpoint',
+        contained_in_msg=(
+            f'Failed to connect to ethereum node own node at endpoint {eth_rpc_endpoint}'
+        ),
         status_code=HTTPStatus.CONFLICT,
     )
 
@@ -250,13 +252,14 @@ def test_set_settings_errors(rotkehlchen_api_server):
     rotki.chain_manager.ethereum.eth_rpc_timeout = 1
 
     # Eth rpc endpoint to which we can't connect
+    endpoint = 'http://lol.com:5555'
     data = {
-        'settings': {'eth_rpc_endpoint': 'http://lol.com:5555'},
+        'settings': {'eth_rpc_endpoint': endpoint},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to connect to ethereum node at endpoint',
+        contained_in_msg=f'Failed to connect to ethereum node own node at endpoint {endpoint}',
         status_code=HTTPStatus.CONFLICT,
     )
 

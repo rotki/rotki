@@ -14,6 +14,7 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.ethereum import ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
@@ -135,14 +136,19 @@ def geth_wait_and_check(ethereum_manager, rpc_endpoint, random_marker):
 
     tries = 5
     while not jsonrpc_running and tries > 0:
-        success, _ = ethereum_manager.attempt_connect(rpc_endpoint, mainnet_check=False)
+        success, _ = ethereum_manager.attempt_connect(
+            name=NodeName.OWN,
+            ethrpc_endpoint=rpc_endpoint,
+            mainnet_check=False,
+        )
         if not success:
             gevent.sleep(0.5)
             tries -= 1
         else:
             # inject the web3 middleware for PoA to not fail at extraData validation
             # https://github.com/ethereum/web3.py/issues/549
-            ethereum_manager.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            web3 = ethereum_manager.web3_mapping[NodeName.OWN]
+            web3.middleware_onion.inject(geth_poa_middleware, layer=0)
             jsonrpc_running = True
             block = ethereum_manager.get_block_by_number(0)
             running_marker = hexlify(block['proofOfAuthorityData'])[:len(random_marker)].decode()
