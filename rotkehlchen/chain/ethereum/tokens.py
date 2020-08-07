@@ -48,7 +48,7 @@ class EthTokens():
                     tokens=chunk,
                     balances=balances,
                     token_usd_price=token_usd_price,
-                    call_order=(NodeName.OWN, NodeName.MYCRYPTO),
+                    call_order=DEFAULT_CALL_ORDER,
                 )
         else:
             for chunk in etherscan_chunks:

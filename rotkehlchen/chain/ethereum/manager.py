@@ -63,6 +63,7 @@ class NodeName(Enum):
     ETHERSCAN = 1
     MYCRYPTO = 2
     BLOCKSCOUT = 3
+    AVADO_POOL = 4
 
     def __str__(self) -> str:
         if self == NodeName.OWN:
@@ -73,6 +74,8 @@ class NodeName(Enum):
             return 'mycrypto'
         elif self == NodeName.BLOCKSCOUT:
             return 'blockscout'
+        elif self == NodeName.AVADO_POOL:
+            return 'avado pool'
 
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
 
@@ -85,12 +88,25 @@ class NodeName(Enum):
             return 'https://api.mycryptoapi.com/eth'
         elif self == NodeName.BLOCKSCOUT:
             return 'https://mainnet-nethermind.blockscout.com/'
+        elif self == NodeName.AVADO_POOL:
+            return 'https://mainnet.eth.cloud.ava.do/'
 
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
 
 
-DEFAULT_CALL_ORDER = (NodeName.OWN, NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.ETHERSCAN)
-ETHEREUM_NODES_TO_CONNECT_AT_START = (NodeName.OWN, NodeName.MYCRYPTO, NodeName.BLOCKSCOUT)
+DEFAULT_CALL_ORDER = (
+    NodeName.OWN,
+    NodeName.MYCRYPTO,
+    NodeName.BLOCKSCOUT,
+    NodeName.AVADO_POOL,
+    NodeName.ETHERSCAN,
+)
+ETHEREUM_NODES_TO_CONNECT_AT_START = (
+    NodeName.OWN,
+    NodeName.MYCRYPTO,
+    NodeName.BLOCKSCOUT,
+    NodeName.AVADO_POOL,
+)
 
 
 class EthereumManager():
@@ -120,7 +136,12 @@ class EthereumManager():
             )
 
     def connected_to_any_web3(self) -> bool:
-        return NodeName.OWN in self.web3_mapping or NodeName.MYCRYPTO in self.web3_mapping
+        return (
+            NodeName.OWN in self.web3_mapping or
+            NodeName.MYCRYPTO in self.web3_mapping or
+            NodeName.BLOCKSCOUT in self.web3_mapping or
+            NodeName.AVADO_POOL in self.web3_mapping
+        )
 
     def attempt_connect(
             self,
