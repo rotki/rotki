@@ -5,7 +5,7 @@
       <h3>Active Defi modules</h3>
       <p class="text--secondary">
         Only data for the selected modules will be queried. If no modules are
-        selected, querying for the supported modules will be disabled.
+        selected, querying for all the supported modules will be disabled.
       </p>
       <defi-module-selector />
       <h3 class="mt-6">Selected accounts</h3>

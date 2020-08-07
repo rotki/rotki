@@ -277,22 +277,21 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const { activeModules } = session!.generalSettings;
-    const noActiveModules = activeModules.length === 0;
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
     commit('defiStatus', refreshing ? Status.REFRESHING : Status.LOADING);
     await dispatch('fetchDefiBalances');
     commit('defiStatus', Status.LOADED);
 
-    if (noActiveModules || activeModules.includes('aave')) {
+    if (activeModules.includes('aave')) {
       await dispatch('fetchAaveBalances');
     }
 
-    if (noActiveModules || activeModules.includes('makerdao_dsr')) {
+    if (activeModules.includes('makerdao_dsr')) {
       await dispatch('fetchDSRBalances');
     }
 
-    if (noActiveModules || activeModules.includes('makerdao_vaults')) {
+    if (activeModules.includes('makerdao_vaults')) {
       await dispatch('fetchMakerDAOVaults');
     }
 
@@ -310,15 +309,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
     const { activeModules } = session!.generalSettings;
-    const noActiveModules = activeModules.length === 0;
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
 
-    if (noActiveModules || activeModules.includes('makerdao_dsr')) {
+    if (activeModules.includes('makerdao_dsr')) {
       await dispatch('fetchDSRBalances');
     }
 
-    if (noActiveModules || activeModules.includes('aave')) {
+    if (activeModules.includes('aave')) {
       await dispatch('fetchAaveBalances');
     }
 
@@ -338,18 +336,17 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const { activeModules } = session!.generalSettings;
-    const noActiveModules = activeModules.length === 0;
 
     commit(
       'lendingHistoryStatus',
       payload?.refresh ? Status.REFRESHING : Status.LOADING
     );
 
-    if (noActiveModules || activeModules.includes('makerdao_dsr')) {
+    if (activeModules.includes('makerdao_dsr')) {
       await dispatch('fetchDSRHistory');
     }
 
-    if (noActiveModules || activeModules.includes('aave')) {
+    if (activeModules.includes('aave')) {
       await dispatch('fetchAaveHistory', payload?.reset);
     }
 
@@ -368,11 +365,10 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const { activeModules } = session!.generalSettings;
-    const noActiveModules = activeModules.length === 0;
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
 
-    if (noActiveModules || activeModules.includes('makerdao_vaults')) {
+    if (activeModules.includes('makerdao_vaults')) {
       await dispatch('fetchMakerDAOVaults');
     }
 
@@ -392,14 +388,13 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const { activeModules } = session!.generalSettings;
-    const noActiveModules = activeModules.length === 0;
 
     commit(
       'borrowingHistoryStatus',
       refreshing ? Status.REFRESHING : Status.LOADING
     );
 
-    if (noActiveModules || activeModules.includes('makerdao_vaults')) {
+    if (activeModules.includes('makerdao_vaults')) {
       await dispatch('fetchMakerDAOVaultDetails');
     }
 
