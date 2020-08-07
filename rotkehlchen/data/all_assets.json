@@ -8449,7 +8449,7 @@
         "type": "ethereum token"
     },
     "SNX": {
-        "ethereum_address": "0xC011A72400E58ecD99Ee497CF89E3775d4bd732F",
+        "ethereum_address": "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
         "ethereum_token_decimals": 18,
         "name": "Synthetix Network Token",
         "started": 1515283200,
@@ -8817,14 +8817,6 @@
         "name": "Suretly",
         "started": 1492646400,
         "symbol": "SUR",
-        "type": "ethereum token"
-    },
-    "SUSD": {
-        "ethereum_address": "0x57Ab1E02fEE23774580C119740129eAC7081e9D3",
-        "ethereum_token_decimals": 18,
-        "name": "sUSD",
-        "started": 1528426090,
-        "symbol": "SUSD",
         "type": "ethereum token"
     },
     "SUTER": {

@@ -113,6 +113,13 @@ def _get_reserve_address_decimals(symbol: str) -> Tuple[ChecksumEthAddress, int]
     return reserve_address, decimals
 
 
+def _atoken_to_reserve_asset(atoken: EthereumToken) -> Asset:
+    reserve_symbol = atoken.identifier[1:]
+    if reserve_symbol == 'SUSD':
+        reserve_symbol = 'sUSD'
+    return Asset(reserve_symbol)
+
+
 class Aave(EthereumModule):
     """Aave integration module
 
@@ -366,7 +373,7 @@ class Aave(EthereumModule):
                 event['logIndex'], 'aave log index',
             )
 
-        reserve_asset = Asset(atoken.identifier[1:])
+        reserve_asset = _atoken_to_reserve_asset(atoken)
         reserve_address, decimals = _get_reserve_address_decimals(reserve_asset.identifier)
         aave_events = []
         for event in deposit_events:
