@@ -1,10 +1,10 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.manager import DEFAULT_CALL_ORDER, EthereumManager, NodeName
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
@@ -37,16 +37,28 @@ class EthTokens():
             self,
             address: ChecksumEthAddress,
             token_usd_price: Dict[EthereumToken, Price],
-            chunks: List[List[EthTokenInfo]],
+            etherscan_chunks: List[List[EthTokenInfo]],
+            other_chunks: List[List[EthTokenInfo]],
     ) -> Dict[EthereumToken, FVal]:
         balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
-        for chunk in chunks:
-            self._get_tokens_balance_and_price(
-                address=address,
-                tokens=chunk,
-                balances=balances,
-                token_usd_price=token_usd_price,
-            )
+        if self.ethereum.connected_to_any_web3():
+            for chunk in other_chunks:
+                self._get_tokens_balance_and_price(
+                    address=address,
+                    tokens=chunk,
+                    balances=balances,
+                    token_usd_price=token_usd_price,
+                    call_order=(NodeName.OWN, NodeName.MYCRYPTO),
+                )
+        else:
+            for chunk in etherscan_chunks:
+                self._get_tokens_balance_and_price(
+                    address=address,
+                    tokens=chunk,
+                    balances=balances,
+                    token_usd_price=token_usd_price,
+                    call_order=(NodeName.ETHERSCAN,),
+                )
 
         # now that detection happened we also have to save it in the DB for the address
         self.db.save_tokens_for_address(address, list(balances.keys()))
@@ -68,7 +80,8 @@ class EthTokens():
         all_tokens = AssetResolver().get_all_eth_token_info()
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
-        chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))
+        etherscan_chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))
+        other_chunks = list(get_chunks(all_tokens, n=600))
         now = ts_now()
         token_usd_price: Dict[EthereumToken, Price] = {}
         result = {}
@@ -79,7 +92,8 @@ class EthTokens():
                 balances = self.detect_tokens_for_address(
                     address=address,
                     token_usd_price=token_usd_price,
-                    chunks=chunks,
+                    etherscan_chunks=etherscan_chunks,
+                    other_chunks=other_chunks,
                 )
             else:
                 balances = defaultdict(FVal)
@@ -88,6 +102,7 @@ class EthTokens():
                     tokens=[x.token_info() for x in saved_list],
                     balances=balances,
                     token_usd_price=token_usd_price,
+                    call_order=DEFAULT_CALL_ORDER,
                 )
 
             result[address] = balances
@@ -100,8 +115,13 @@ class EthTokens():
             tokens: List[EthTokenInfo],
             balances: Dict[EthereumToken, FVal],
             token_usd_price: Dict[EthereumToken, Price],
+            call_order: Sequence[NodeName],
     ) -> None:
-        ret = self._get_multitoken_account_balance(tokens=tokens, account=address)
+        ret = self._get_multitoken_account_balance(
+            tokens=tokens,
+            account=address,
+            call_order=call_order,
+        )
         for token_identifier, value in ret.items():
             token = EthereumToken(token_identifier)
             balances[token] += value
@@ -155,6 +175,7 @@ class EthTokens():
             self,
             tokens: List[EthTokenInfo],
             account: ChecksumEthAddress,
+            call_order: Sequence[NodeName],
     ) -> Dict[str, FVal]:
         """Queries balances of multiple tokens for an account
 
@@ -178,6 +199,7 @@ class EthTokens():
             abi=ETH_SCAN.abi,
             method_name='tokensBalance',
             arguments=[account, [x.address for x in tokens]],
+            call_order=call_order,
         )
         for tk_idx, token in enumerate(tokens):
             token_amount = result[tk_idx]
