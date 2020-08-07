@@ -13,7 +13,7 @@ WORLD_TO_CRYPTOCOMPARE = {
     'aMKR': 'MKR',
     'aREP': 'REP',
     'aSNX': 'SNX',
-    'aSUSD': 'SUSD',
+    'aSUSD': 'sUSD',
     'aTUSD': 'TUSD',
     'aUSDC': 'USDC',
     'aUSDT': 'USDT',
