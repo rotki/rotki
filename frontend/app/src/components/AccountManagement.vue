@@ -5,7 +5,7 @@
       color="grey lighten-4"
       opacity="0.8"
     >
-      <v-dialog :value="true && !premiumVisible" persistent max-width="450">
+      <v-dialog :value="!premiumVisible" persistent max-width="450">
         <v-card class="account-management__card pb-6">
           <div
             class="pt-6 pb-3 display-3 font-weight-black white--text account-management__card__title"
@@ -202,7 +202,7 @@ export default class AccountManagement extends Vue {
     } as UnlockPayload);
     this.loading = false;
     if (this.logged) {
-      this.showPremiumDialog();
+      this.loginComplete();
     }
   }
 
