@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
@@ -60,7 +60,21 @@ def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
 
 class NodeName(Enum):
     OWN = 0
-    MYCRYPTO = 1
+    ETHERSCAN = 1
+    MYCRYPTO = 2
+
+    def __str__(self) -> str:
+        if self == NodeName.OWN:
+            return 'own node'
+        elif self == NodeName.ETHERSCAN:
+            return 'etherscan'
+        elif self == NodeName.MYCRYPTO:
+            return 'mycrypto'
+
+        raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
+
+
+DEFAULT_CALL_ORDER = [NodeName.OWN, NodeName.MYCRYPTO, NodeName.ETHERSCAN]
 
 
 class EthereumManager():
@@ -198,12 +212,43 @@ class EthereumManager():
                 self.own_rpc_endpoint = endpoint
             return result, message
 
-    def get_latest_block_number(self) -> int:
-        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
-        if own_node_web3 is None:
-            return self.etherscan.get_latest_block_number()
+    def query(self, method: Callable, call_order: List[NodeName], **kwargs: Any) -> Any:
+        """Queries ethereum related data by performing the provided method to all given nodes
 
-        return own_node_web3.eth.blockNumber
+        The first node in the call order that gets a succcesful response returns.
+        If none get a result then a remote error is raised
+        """
+        for node in call_order:
+            web3 = self.web3_mapping.get(node, None)
+            if web3 is None and node != NodeName.ETHERSCAN:
+                continue
+
+            try:
+                result = method(web3, **kwargs)
+            except RemoteError:
+                # Catch all possible errors here and just try next node call
+                continue
+
+            return result
+
+        # no node in the call order list was succesfully queried
+        raise RemoteError(
+            f'Failed to query {str(callable)} after trying the following '
+            f'nodes: {[str(x) for x in call_order]}',
+        )
+
+    def _get_latest_block_number(self, web3: Optional[Web3]) -> int:
+        if web3 is not None:
+            return web3.eth.blockNumber
+
+        # else
+        return self.etherscan.get_latest_block_number()
+
+    def get_latest_block_number(self) -> int:
+        return self.query(
+            method=self._get_latest_block_number,
+            call_order=DEFAULT_CALL_ORDER,
+        )
 
     def query_eth_highest_block(self) -> BlockNumber:
         """ Attempts to query an external service for the block height
@@ -268,43 +313,61 @@ class EthereumManager():
         return balances
 
     def get_block_by_number(self, num: int) -> Dict[str, Any]:
+        return self.query(
+            method=self._get_block_by_number,
+            call_order=DEFAULT_CALL_ORDER,
+            num=num,
+        )
+
+    def _get_block_by_number(self, web3: Optional[Web3], num: int) -> Dict[str, Any]:
         """Returns the block object corresponding to the given block number
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
         there is a problem with its query.
         """
-        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
-        if own_node_web3 is None:
+        if web3 is None:
             return self.etherscan.get_block_by_number(num)
 
-        block_data: MutableAttributeDict = MutableAttributeDict(own_node_web3.eth.getBlock(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
+        block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.getBlock(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
         block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
         return block_data  # type: ignore
 
     def get_code(self, account: ChecksumEthAddress) -> str:
+        return self.query(
+            method=self._get_code,
+            call_order=DEFAULT_CALL_ORDER,
+            account=account,
+        )
+
+    def _get_code(self, web3: Optional[Web3], account: ChecksumEthAddress) -> str:
         """Gets the deployment bytecode at the given address
 
         May raise:
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
-        if own_node_web3 is None:
+        if web3 is None:
             return self.etherscan.get_code(account)
 
-        return hex_or_bytes_to_str(own_node_web3.eth.getCode(account))
+        return hex_or_bytes_to_str(web3.eth.getCode(account))
 
     def ens_lookup(self, name: str) -> Optional[ChecksumEthAddress]:
+        return self.query(
+            method=self._ens_lookup,
+            call_order=DEFAULT_CALL_ORDER,
+            name=name,
+        )
+
+    def _ens_lookup(self, web3: Optional[Web3], name: str) -> Optional[ChecksumEthAddress]:
         """Performs an ENS lookup and returns address if found else None
 
         May raise:
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
-        if own_node_web3 is not None:
-            return own_node_web3.ens.resolve(name)
+        if web3 is not None:
+            return web3.ens.resolve(name)
 
         # else we gotta manually query contracts via etherscan
         normal_name = normalize_name(name)
@@ -371,6 +434,23 @@ class EthereumManager():
             method_name: str,
             arguments: Optional[List[Any]] = None,
     ) -> Any:
+        return self.query(
+            method=self._call_contract,
+            call_order=DEFAULT_CALL_ORDER,
+            contract_address=contract_address,
+            abi=abi,
+            method_name=method_name,
+            arguments=arguments,
+        )
+
+    def _call_contract(
+            self,
+            web3: Optional[Web3],
+            contract_address: ChecksumEthAddress,
+            abi: List,
+            method_name: str,
+            arguments: Optional[List[Any]] = None,
+    ) -> Any:
         """Performs an eth_call to an ethereum contract
 
         May raise:
@@ -378,8 +458,7 @@ class EthereumManager():
         reaching it or with the returned result
         - ValueError if web3 is used and there is a VM execution error
         """
-        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
-        if own_node_web3 is None:
+        if web3 is None:
             return self._call_contract_etherscan(
                 contract_address=contract_address,
                 abi=abi,
@@ -387,7 +466,7 @@ class EthereumManager():
                 arguments=arguments,
             )
 
-        contract = own_node_web3.eth.contract(address=contract_address, abi=abi)
+        contract = web3.eth.contract(address=contract_address, abi=abi)
         try:
             method = getattr(contract.caller, method_name)
             result = method(*arguments if arguments else [])
@@ -399,6 +478,27 @@ class EthereumManager():
 
     def get_logs(
             self,
+            contract_address: ChecksumEthAddress,
+            abi: List,
+            event_name: str,
+            argument_filters: Dict[str, Any],
+            from_block: int,
+            to_block: Union[int, Literal['latest']] = 'latest',
+    ) -> List[Dict[str, Any]]:
+        return self.query(
+            method=self._get_logs,
+            call_order=[NodeName.OWN, NodeName.ETHERSCAN],
+            contract_address=contract_address,
+            abi=abi,
+            event_name=event_name,
+            argument_filters=argument_filters,
+            from_block=from_block,
+            to_block=to_block,
+        )
+
+    def _get_logs(
+            self,
+            web3: Optional[Web3],
             contract_address: ChecksumEthAddress,
             abi: List,
             event_name: str,
@@ -426,9 +526,8 @@ class EthereumManager():
             filter_args['topics'] = filter_args['topics'][1:]
         events: List[Dict[str, Any]] = []
         start_block = from_block
-        own_node_web3 = self.web3_mapping.get(NodeName.OWN, None)
-        if own_node_web3 is not None:
-            until_block = own_node_web3.eth.blockNumber if to_block == 'latest' else to_block
+        if web3 is not None:
+            until_block = web3.eth.blockNumber if to_block == 'latest' else to_block
             while start_block <= until_block:
                 filter_args['fromBlock'] = start_block
                 end_block = min(start_block + 250000, until_block)
@@ -443,7 +542,7 @@ class EthereumManager():
                 )
                 # WTF: for some reason the first time we get in here the loop resets
                 # to the start without querying eth_getLogs and ends up with double logging
-                new_events_web3 = own_node_web3.eth.getLogs(filter_args)
+                new_events_web3 = web3.eth.getLogs(filter_args)
                 start_block = end_block + 1
                 events.extend(new_events_web3)  # type: ignore
         else:
