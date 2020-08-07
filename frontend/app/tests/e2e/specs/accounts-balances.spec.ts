@@ -1,6 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
-import { ApiManualBalance } from '../../../src/services/types-api';
-import { Zero } from '../../../src/utils/bignumbers';
+import { ApiManualBalance } from '@/services/types-api';
+import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
 import { AccountBalancesPage } from '../pages/account-balances-page';
 import { DashboardPage } from '../pages/dashboard-page';
@@ -25,7 +25,6 @@ describe('Accounts', () => {
     settings = new GeneralSettingsPage();
     app.visit();
     app.createAccount(username);
-    app.closePremiumOverlay();
     page.visit();
   });
 

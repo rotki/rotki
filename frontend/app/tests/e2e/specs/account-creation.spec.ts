@@ -25,7 +25,6 @@ describe('Accounts', () => {
       it('create account', () => {
         app.visit();
         app.createAccount(username);
-        app.closePremiumOverlay();
         app.logout();
       });
 

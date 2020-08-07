@@ -34,7 +34,6 @@ describe('Settings', () => {
     pageAccounting = new AccountingSettingsPage();
     app.visit();
     app.createAccount(username, password);
-    app.closePremiumOverlay();
   });
 
   after(() => {

@@ -15,7 +15,6 @@ describe('otc trades', () => {
     page = new OtcPage();
     app.visit();
     app.createAccount(username);
-    app.closePremiumOverlay();
     cy.fixture('otc').then(otc => {
       otcData = otc;
     });

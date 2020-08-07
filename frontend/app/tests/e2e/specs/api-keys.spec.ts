@@ -13,7 +13,6 @@ describe('API keys', () => {
     page = new ApiKeysPage();
     app.visit();
     app.createAccount(username);
-    app.closePremiumOverlay();
   });
 
   after(() => {
