@@ -6,6 +6,13 @@
           <v-card-title>User Account & Security</v-card-title>
           <v-form ref="form">
             <v-card-text>
+              <v-alert v-if="premiumSync" type="warning" prominent outlined>
+                Changing the password with premium sync enabled will affect
+                other synced instances of the application. Upon login with other
+                synced instances, you will be asked to overwrite the local DB
+                with the synced version on the server. After that, you must log
+                in with the newly set password.
+              </v-alert>
               <revealable-input
                 v-model="currentPassword"
                 class="user-security-settings__fields__current-password"
@@ -53,16 +60,14 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapState } from 'vuex';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { Message } from '@/store/store';
-
-const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: { RevealableInput },
   computed: {
-    ...mapState(['username'])
+    ...mapState('session', ['username', 'premiumSync'])
   }
 })
 export default class UserSecuritySettings extends Vue {
@@ -71,6 +76,7 @@ export default class UserSecuritySettings extends Vue {
   newPasswordConfirm: string = '';
   errorMessages: string[] = [];
   username!: string;
+  premiumSync!: string;
 
   readonly passwordRules = [(v: string) => !!v || 'Please provide a password'];
   readonly passwordConfirmRules = [
