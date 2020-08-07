@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature: `1178` Adds the ability to select tracked accounts per activated protocol.
+* :feature: `1084` Adds the ability to select activated modules for defi protocols.
 * :bug: `1285` Properly track SNX tokens by pointing to the `migrated <https://blog.synthetix.io/proxy-contract-cutover-on-may-10/`__ proxy contract
 * :feature: `1213` Taxable actions table in the tax report and in the CSV exports now include a location.
 * :bug: `1249` Fix some amounts not being converted to user's main currency correctly (two components were affected: Account Asset Balances in Accounts & Balances, and the AssetBalances component which was used in both Blockchain Balances as well as Exchange Balances sub-pages that showed totals across an asset).
@@ -34,7 +36,7 @@ Changelog
 * :release:`1.6.0 <2020-07-23>`
 * :bug: `1072` Tax report progress report percentage should now work properly and negative numbers should no longer appear.
 * :feature: `921` A new DeFi overview component is added. There the user can get an overview of all their balances across all DeFi protocols. For protocols that are supported further the user can click and be taken to the protocol specific page to see more details and historical accounting for that protocol.
-* :feature: `1160` The Accounts & Balances page layout has been updated to increase usability. It is now split across three sub-pages: Blockchain Balances, Exchange Balances, Manual Balances (includes Fiat Balances). Exchange Balances is a new page where you will be able to see all of your asset balances for each connected exchange (previously this was only accessible from the Dashboard by clicking on an exchange). 
+* :feature: `1160` The Accounts & Balances page layout has been updated to increase usability. It is now split across three sub-pages: Blockchain Balances, Exchange Balances, Manual Balances (includes Fiat Balances). Exchange Balances is a new page where you will be able to see all of your asset balances for each connected exchange (previously this was only accessible from the Dashboard by clicking on an exchange).
 * :bug: `1140` The Accounts column in "Blockhain Balances" is now correctly sorted by label (if it exists) or the account address.
 * :bug: `1154` Tag filtering in "Manual Balances" within Accounts & Balances now works correctly if any balances do not have any tags assigned.
 * :bug: `1155` Fix the cryptocompate price queries of LUNA Terra
@@ -43,7 +45,7 @@ Changelog
   - Linux: ``~/.local/share/rotki/data``
   - OSX: ``~/Library/Application Support/rotki/data``
   - Windows: ``%LOCALAPPDATA%/rotki/data``
-* :feature: `1004` Aave Lending is now supported. Users can see their deposited balance for lending, the borrowed balances and the respective APY/APR. Premium users can also retrieve all events history and get a total amount earned by lending per aToken. 
+* :feature: `1004` Aave Lending is now supported. Users can see their deposited balance for lending, the borrowed balances and the respective APY/APR. Premium users can also retrieve all events history and get a total amount earned by lending per aToken.
 * :feature: `530` You can now add ethereum addresses by ENS name. Simply use an ENS name in the ETH address field and if it can be resolved it will be appended to the tracked accounts.
 * :bug: `1110` DSR Dai balance will now not be recounted with every force refresh querying of blockchain balances
 * :feature: `-` Support TUSD, KNC, ZRX and the special USDC-B collateral types for makerdao vaults.
