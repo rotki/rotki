@@ -14,7 +14,11 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
-from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+from rotkehlchen.chain.ethereum.manager import (
+    ETHEREUM_NODES_TO_CONNECT_AT_START,
+    EthereumManager,
+    NodeName,
+)
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import A_USD
@@ -198,6 +202,7 @@ class Rotkehlchen():
             etherscan=self.etherscan,
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
+            connect_at_start=ETHEREUM_NODES_TO_CONNECT_AT_START,
         )
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),

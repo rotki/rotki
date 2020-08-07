@@ -73,8 +73,19 @@ class NodeName(Enum):
 
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
 
+    def endpoint(self, own_rpc_endpoint: str) -> str:
+        if self == NodeName.OWN:
+            return own_rpc_endpoint
+        elif self == NodeName.ETHERSCAN:
+            raise TypeError('Called endpoint for etherscan')
+        elif self == NodeName.MYCRYPTO:
+            return 'https://api.mycryptoapi.com/eth'
+
+        raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
+
 
 DEFAULT_CALL_ORDER = (NodeName.OWN, NodeName.MYCRYPTO, NodeName.ETHERSCAN)
+ETHEREUM_NODES_TO_CONNECT_AT_START = (NodeName.OWN, NodeName.MYCRYPTO)
 
 
 class EthereumManager():
@@ -84,7 +95,7 @@ class EthereumManager():
             etherscan: Etherscan,
             msg_aggregator: MessagesAggregator,
             greenlet_manager: GreenletManager,
-            attempt_connect: bool = True,
+            connect_at_start: Sequence[NodeName],
             eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
     ) -> None:
         log.debug(f'Initializing Ethereum Manager with {ethrpc_endpoint}')
@@ -94,19 +105,12 @@ class EthereumManager():
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
-        if attempt_connect:
+        for node in connect_at_start:
             self.greenlet_manager.spawn_and_track(
-                task_name='Attempt connection to own ethereum node',
+                task_name=f'Attempt connection to {str(node)} ethereum node',
                 method=self.attempt_connect,
-                name=NodeName.OWN,
-                ethrpc_endpoint=self.own_rpc_endpoint,
-                mainnet_check=True,
-            )
-            self.greenlet_manager.spawn_and_track(
-                task_name='Attempt connection to mycrypto ethereum node',
-                method=self.attempt_connect,
-                name=NodeName.MYCRYPTO,
-                ethrpc_endpoint='https://api.mycryptoapi.com/eth',
+                name=node,
+                ethrpc_endpoint=node.endpoint(self.own_rpc_endpoint),
                 mainnet_check=True,
             )
 

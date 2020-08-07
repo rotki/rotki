@@ -1,12 +1,12 @@
 import json
 import os
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import pytest
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -80,8 +80,8 @@ def ethrpc_endpoint() -> Optional[str]:
 
 
 @pytest.fixture
-def ethereum_manager_connect_at_start() -> bool:
-    return False
+def ethereum_manager_connect_at_start() -> Sequence[NodeName]:
+    return ()
 
 
 @pytest.fixture
@@ -119,7 +119,7 @@ def ethereum_manager(
         etherscan=etherscan,
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
-        attempt_connect=ethereum_manager_connect_at_start,
+        connect_at_start=ethereum_manager_connect_at_start,
     )
 
 

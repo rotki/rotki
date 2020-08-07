@@ -83,6 +83,7 @@ def initialize_mock_rotkehlchen_instance(
         tags,
         manually_tracked_balances,
         default_mock_price_value,
+        ethereum_manager_connect_at_start,
 ):
     if not start_with_logged_in_user:
         return
@@ -92,9 +93,16 @@ def initialize_mock_rotkehlchen_instance(
         settings = DBSettings(active_modules=ethereum_modules)
         return settings
     settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
+
+    # Do not connect to the usual nodes at start by default. Do not want to spam
+    # them during our tests. It's configurable per test, with the default being nothing
+    rpcconnect_patch = patch(
+        'rotkehlchen.rotkehlchen.ETHEREUM_NODES_TO_CONNECT_AT_START',
+        new=ethereum_manager_connect_at_start,
+    )
     zerion_patch = create_zerion_patch()
 
-    with settings_patch, zerion_patch:
+    with settings_patch, zerion_patch, rpcconnect_patch:
         rotki.unlock_user(
             user=username,
             password=db_password,
@@ -158,6 +166,7 @@ def rotkehlchen_api_server(
         tags,
         manually_tracked_balances,
         default_mock_price_value,
+        ethereum_manager_connect_at_start,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -181,6 +190,7 @@ def rotkehlchen_api_server(
         tags=tags,
         manually_tracked_balances=manually_tracked_balances,
         default_mock_price_value=default_mock_price_value,
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
     )
     return api_server
 
@@ -204,6 +214,7 @@ def rotkehlchen_instance(
         tags,
         manually_tracked_balances,
         default_mock_price_value,
+        ethereum_manager_connect_at_start,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -225,6 +236,7 @@ def rotkehlchen_instance(
         tags=tags,
         manually_tracked_balances=manually_tracked_balances,
         default_mock_price_value=default_mock_price_value,
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
     )
     return uninitialized_rotkehlchen
 
