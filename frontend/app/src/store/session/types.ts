@@ -22,3 +22,9 @@ export interface SessionState {
   watchers: Watcher<WatcherTypes>[];
   queriedAddresses: QueriedAddresses;
 }
+
+export interface PremiumCredentialsPayload {
+  readonly username: string;
+  readonly apiKey: string;
+  readonly apiSecret: string;
+}

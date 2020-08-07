@@ -12,9 +12,10 @@ import {
   WatcherTypes
 } from '@/services/session/types';
 import { notify } from '@/store/notifications/utils';
-import { SessionState } from '@/store/session/types';
+import { PremiumCredentialsPayload, SessionState } from '@/store/session/types';
 import { loadFrontendSettings } from '@/store/settings/utils';
 import { Message, RotkehlchenState } from '@/store/store';
+import { ActionStatus } from '@/store/types';
 import { showError } from '@/store/utils';
 import {
   SettingsUpdate,
@@ -288,6 +289,44 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('queriedAddresses', queriedAddresses);
     } catch (e) {
       showError(commit, `Failure to delete a queriable address: ${e.message}`);
+    }
+  },
+
+  async setupPremium(
+    { commit },
+    { apiKey, apiSecret, username }: PremiumCredentialsPayload
+  ): Promise<ActionStatus> {
+    try {
+      const success = await api.setPremiumCredentials(
+        username,
+        apiKey,
+        apiSecret
+      );
+
+      if (success) {
+        commit('premium', true);
+      }
+      return { success };
+    } catch (e) {
+      return {
+        success: false,
+        message: e.message
+      };
+    }
+  },
+
+  async deletePremium({ commit }, username: string): Promise<ActionStatus> {
+    try {
+      const success = await api.deletePremiumCredentials(username);
+      if (success) {
+        commit('premium', false);
+      }
+      return { success };
+    } catch (e) {
+      return {
+        success: false,
+        message: e.message
+      };
     }
   }
 };

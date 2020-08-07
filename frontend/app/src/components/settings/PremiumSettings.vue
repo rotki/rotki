@@ -22,6 +22,7 @@
               prepend-icon="fa-key"
               :disabled="premium && !edit"
               :type="showKey ? 'text' : 'password'"
+              :error-messages="errorMessages"
               label="Rotki API Key"
               @click:append="showKey = !showKey"
             ></v-text-field>
@@ -48,7 +49,7 @@
               depressed
               color="primary"
               type="submit"
-              @click="setupPremium()"
+              @click="setup()"
             >
               {{ premium && !edit ? 'Replace Key' : 'Setup' }}
             </v-btn>
@@ -88,7 +89,7 @@
         primary-action="Delete"
         title="Delete rotki premium keys?"
         message="Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again."
-        @confirm="deletePremium()"
+        @confirm="remove()"
         @cancel="confirmDeletePremium = false"
       ></confirm-dialog>
     </v-row>
@@ -97,19 +98,26 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { Message } from '@/store/store';
-
-const { mapState } = createNamespacedHelpers('session');
+import { PremiumCredentialsPayload } from '@/store/session/types';
+import { ActionStatus } from '@/store/types';
+import { SettingsUpdate } from '@/typing/types';
 
 @Component({
   components: {
     ConfirmDialog,
     BaseExternalLink
   },
-  computed: mapState(['premium', 'premiumSync', 'username'])
+  computed: mapState('session', ['premium', 'premiumSync', 'username']),
+  methods: {
+    ...mapActions('session', [
+      'setupPremium',
+      'deletePremium',
+      'updateSettings'
+    ])
+  }
 })
 export default class PremiumSettings extends Vue {
   apiKey: string = '';
@@ -117,6 +125,7 @@ export default class PremiumSettings extends Vue {
   sync: boolean = false;
   edit: boolean = true;
   confirmDeletePremium: boolean = false;
+  errorMessages: string[] = [];
 
   showKey: boolean = false;
   showSecret: boolean = false;
@@ -125,98 +134,67 @@ export default class PremiumSettings extends Vue {
   premiumSync!: boolean;
   username!: string;
 
-  mounted() {
-    this.sync = this.premiumSync;
-    if (!this.premium && !this.edit) {
-      this.edit = true;
-    } else {
-      this.edit = false;
+  setupPremium!: (payload: PremiumCredentialsPayload) => Promise<ActionStatus>;
+  deletePremium!: (username: string) => Promise<ActionStatus>;
+  updateSettings!: (settings: SettingsUpdate) => Promise<void>;
+
+  private reset() {
+    this.apiSecret = '';
+    this.apiKey = '';
+    this.edit = false;
+  }
+
+  private clearErrors() {
+    for (let i = 0; i < this.errorMessages.length; i++) {
+      this.errorMessages.pop();
     }
   }
 
-  setupPremium() {
-    const apiKey = this.apiKey;
-    const apiSecret = this.apiSecret;
-    const hasPremium = this.premium;
+  mounted() {
+    this.sync = this.premiumSync;
+    this.edit = !this.premium && !this.edit;
+  }
 
-    if (hasPremium && !this.edit) {
+  async setup() {
+    this.clearErrors();
+    if (this.premium && !this.edit) {
       this.edit = true;
       return;
     }
 
-    const { commit } = this.$store;
-
-    this.$api
-      .setPremiumCredentials(this.username, apiKey, apiSecret)
-      .then(() => {
-        commit('session/premium', true);
-        commit('setMessage', {
-          title: 'Premium Credentials',
-          description: 'Successfully set Premium Credentials',
-          success: true
-        } as Message);
-        this.apiSecret = '';
-        this.apiKey = '';
-        this.edit = false;
-      })
-      .catch((reason: Error) => {
-        commit('session/premium', hasPremium);
-        commit('setMessage', {
-          title: 'Premium Credentials Error',
-          description:
-            reason.message ||
-            'Error at adding credentials for premium subscription',
-          success: false
-        } as Message);
-      });
-  }
-
-  deletePremium() {
-    this.confirmDeletePremium = false;
-    if (this.premium) {
-      const { commit } = this.$store;
-
-      this.$api
-        .deletePremiumCredentials(this.username)
-        .then(() => {
-          commit('session/premium', false);
-          commit('setMessage', {
-            title: 'Premium Credentials',
-            description: 'Successfully deleted premium credentials',
-            success: true
-          } as Message);
-          this.apiSecret = '';
-          this.apiKey = '';
-          this.edit = false;
-        })
-        .catch((reason: Error) => {
-          commit('session/premium', false);
-          commit('setMessage', {
-            title: 'Premium Credentials Error',
-            description: reason.message || 'Error deleting premium credentials',
-            success: false
-          } as Message);
-        });
+    const payload: PremiumCredentialsPayload = {
+      username: this.username,
+      apiKey: this.apiKey,
+      apiSecret: this.apiSecret
+    };
+    const { success, message } = await this.setupPremium(payload);
+    if (!success) {
+      this.errorMessages.push(message ?? 'Setting the keys was not successful');
+      return;
     }
+    this.$interop.premiumUserLoggedIn(true);
+    this.reset();
   }
 
-  onSyncChange() {
-    const { commit } = this.$store;
-    const shouldSync = this.sync;
-    this.$api
-      .setSettings({ premium_should_sync: shouldSync })
-      .then(() => {
-        commit('session/premiumSync', shouldSync);
-      })
-      .catch(() => {
-        commit('session/premiumSync', !shouldSync);
-        commit('setMessage', {
-          title: 'Premium Settings Error',
-          description: 'Failed to change sync settings',
-          success: false
-        } as Message);
-        this.sync = !shouldSync;
-      });
+  async remove() {
+    this.clearErrors();
+    this.confirmDeletePremium = false;
+    if (!this.premium) {
+      return;
+    }
+    const { success, message } = await this.deletePremium(this.username);
+    if (!success) {
+      this.errorMessages.push(
+        message ?? 'Deleting the keys was not successful'
+      );
+      return;
+    }
+    this.$interop.premiumUserLoggedIn(false);
+    this.reset();
+  }
+
+  async onSyncChange() {
+    await this.updateSettings({ premium_should_sync: this.sync });
   }
 }
 </script>
