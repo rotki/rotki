@@ -85,7 +85,6 @@ class EthTokens():
                         3,
                     ),
                 )
-                )
         else:
             for chunk in etherscan_chunks:
                 self._get_tokens_balance_and_price(
@@ -113,6 +112,10 @@ class EthTokens():
 
         Returns the token balances of each address and the usd prices of the tokens
         """
+        log.debug(
+            'Querying/detecting token balances for all addresses',
+            force_detection=force_detection,
+        )
         all_tokens = AssetResolver().get_all_eth_token_info()
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
@@ -132,6 +135,9 @@ class EthTokens():
                     other_chunks=other_chunks,
                 )
             else:
+                if len(saved_list) == 0:
+                    continue  # Do not query if we know the address has no tokens
+
                 balances = defaultdict(FVal)
                 self._get_tokens_balance_and_price(
                     address=address,
