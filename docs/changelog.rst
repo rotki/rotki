@@ -33,6 +33,7 @@ Changelog
   - `TrustSwap (SWAP) <https://coinmarketcap.com/currencies/trustswap/>`__
   - `SUKU (SUKU) <https://coinmarketcap.com/currencies/suku/>`__
   - `Tendies (TEND) <https://coinmarketcap.com/currencies/tendies/>`__
+  - `Unitrade (TRADE) <https://coinmarketcap.com/currencies/unitrade/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

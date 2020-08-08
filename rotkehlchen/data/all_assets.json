@@ -9295,6 +9295,14 @@
         "symbol": "TRAC",
         "type": "ethereum token"
     },
+    "TRADE": {
+        "ethereum_address": "0x6F87D756DAf0503d08Eb8993686c7Fc01Dc44fB1",
+        "ethereum_token_decimals": 18,
+        "name": "Unitrade",
+        "started": 1595830787,
+        "symbol": "TRADE",
+        "type": "ethereum token"
+    },
     "TRAK": {
         "active": true,
         "ethereum_address": "0x12759512D326303B45f1ceC8F7B6fd96F387778E",
