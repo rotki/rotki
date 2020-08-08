@@ -4,7 +4,7 @@ from typing import Dict, List, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.ethereum.manager import DEFAULT_CALL_ORDER, EthereumManager, NodeName
+from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
@@ -25,6 +25,7 @@ TokensReturn = Tuple[
 ]
 
 ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH = 120
+OTHER_MAX_TOKEN_CHUNK_LENGTH = 590
 
 
 class EthTokens():
@@ -42,13 +43,20 @@ class EthTokens():
     ) -> Dict[EthereumToken, FVal]:
         balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
         if self.ethereum.connected_to_any_web3():
+            call_order = []
+            if NodeName.OWN in self.ethereum.web3_mapping:
+                call_order = [NodeName.OWN]
             for chunk in other_chunks:
                 self._get_tokens_balance_and_price(
                     address=address,
                     tokens=chunk,
                     balances=balances,
                     token_usd_price=token_usd_price,
-                    call_order=DEFAULT_CALL_ORDER,
+                    call_order=call_order + random.sample(
+                        (NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.AVADO_POOL),
+                        3,
+                    ),
+                )
                 )
         else:
             for chunk in etherscan_chunks:
@@ -81,7 +89,7 @@ class EthTokens():
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
         etherscan_chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))
-        other_chunks = list(get_chunks(all_tokens, n=600))
+        other_chunks = list(get_chunks(all_tokens, n=OTHER_MAX_TOKEN_CHUNK_LENGTH))
         now = ts_now()
         token_usd_price: Dict[EthereumToken, Price] = {}
         result = {}
@@ -102,7 +110,7 @@ class EthTokens():
                     tokens=[x.token_info() for x in saved_list],
                     balances=balances,
                     token_usd_price=token_usd_price,
-                    call_order=DEFAULT_CALL_ORDER,
+                    call_order=None,  # use defaults
                 )
 
             result[address] = balances
@@ -115,7 +123,7 @@ class EthTokens():
             tokens: List[EthTokenInfo],
             balances: Dict[EthereumToken, FVal],
             token_usd_price: Dict[EthereumToken, Price],
-            call_order: Sequence[NodeName],
+            call_order: Optional[Sequence[NodeName]],
     ) -> None:
         ret = self._get_multitoken_account_balance(
             tokens=tokens,
@@ -175,7 +183,7 @@ class EthTokens():
             self,
             tokens: List[EthTokenInfo],
             account: ChecksumEthAddress,
-            call_order: Sequence[NodeName],
+            call_order: Optional[Sequence[NodeName]],
     ) -> Dict[str, FVal]:
         """Queries balances of multiple tokens for an account
 
