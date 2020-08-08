@@ -1,6 +1,7 @@
 import logging
+import random
 from collections import defaultdict
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
@@ -23,6 +24,33 @@ TokensReturn = Tuple[
     Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]],
     Dict[EthereumToken, Price],
 ]
+
+# 08/08/2020
+# Etherscan has by far the fastest responding server if you use a (free) API key
+# The chunk length for Etherscan is limited though to 120 addresses due to the URI length.
+# For all other nodes (mycrypto, avado cloud, blockscout) we have ran some benchmarks
+# with them being queried randomly with different chunk lenghts. They are all for an account with:
+# - 29 ethereum addresses
+# - Rotki knows of 1010 different ethereum tokens as of this writing
+# Type        |  Chunk Length | Elapsed Seconds | Avg. secs per call
+# Open Nodes  |     300       |      105        |      2.379
+# Open Nodes  |     400       |      112        |      2.735
+# Open Nodes  |     450       |       90        |      2.287
+# Open Nodes  |     520       |       89        |      2.275
+# Open Nodes  |     575       |       75        |      1.982
+# Open Nodes  |     585       |       77        |      2.034
+# Open Nodes  |     590       |       74        |      1.931
+# Open Nodes  |     590       |       79        |      2.086
+# Open Nodes  |     600       |       80        |      2.068
+# Open Nodes  |     600       |       86        |      2.275
+#
+# Etherscan   |     120       |       112       |      2.218
+# Etherscan   |     120       |       99        |      1.957
+# Etherscan   |     120       |       102       |      2.026
+#
+# With this we have settled on a 590 chunk length. When we surpass 1180 ethereum
+# tokens the benchmark will probably have to run again.
+
 
 ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH = 120
 OTHER_MAX_TOKEN_CHUNK_LENGTH = 590
