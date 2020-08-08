@@ -1,6 +1,5 @@
 import { ActionTree } from 'vuex';
 import { currencies } from '@/data/currencies';
-import { FiatBalance } from '@/model/blockchain-balances';
 import { BlockchainMetadata, createTask, ExchangeMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import {
@@ -13,7 +12,6 @@ import { BalanceState } from '@/store/balances/state';
 import { notify } from '@/store/notifications/utils';
 import { Message, RotkehlchenState } from '@/store/store';
 import { Blockchain, Severity, UsdToFiatExchangeRates } from '@/typing/types';
-import { bigNumberify } from '@/utils/bignumbers';
 import { toMap } from '@/utils/conversion';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
@@ -134,20 +132,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
     }
   },
-  async fetchFiatBalances({ commit }): Promise<void> {
-    try {
-      const result = await api.queryFiatBalances();
-      const fiatBalances: FiatBalance[] = Object.keys(result).map(currency => ({
-        currency: currency,
-        amount: bigNumberify(result[currency].amount as string),
-        usdValue: bigNumberify(result[currency].usd_value as string)
-      }));
-
-      commit('fiatBalances', fiatBalances);
-    } catch (e) {
-      notify(`Error at querying fiat balances: ${e}`, 'Querying Fiat balances');
-    }
-  },
   async addExchanges({ commit, dispatch }, exchanges: string[]): Promise<void> {
     commit('connectedExchanges', exchanges);
     for (const exchange of exchanges) {
@@ -172,7 +156,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     if (!newUser) {
       await dispatch('fetchBlockchainBalances');
-      await dispatch('fetchFiatBalances');
     }
   },
 

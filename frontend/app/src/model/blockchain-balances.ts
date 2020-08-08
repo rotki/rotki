@@ -56,12 +56,6 @@ export interface AssetBalance {
   readonly usdValue: BigNumber;
 }
 
-export interface FiatBalance {
-  readonly currency: string;
-  readonly amount: BigNumber;
-  readonly usdValue: BigNumber;
-}
-
 export interface ManualBalancesByLocation {
   location: string;
   usdValue: BigNumber;

@@ -38,7 +38,6 @@ import { BlockchainAccountPayload } from '@/store/balances/actions';
 import {
   AccountData,
   AccountSession,
-  ApiAssetBalances,
   Blockchain,
   ExternalServiceKey,
   ExternalServiceName,
@@ -238,14 +237,6 @@ export class RotkehlchenApi {
           ignore_cache: ignoreCache ? true : undefined
         },
         validateStatus: validWithParamsSessionAndExternalService
-      })
-      .then(handleResponse);
-  }
-
-  queryFiatBalances(): Promise<ApiAssetBalances> {
-    return this.axios
-      .get<ActionResult<ApiAssetBalances>>('/balances/fiat', {
-        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -512,22 +503,6 @@ export class RotkehlchenApi {
       )
       .then(handleResponse)
       .then(accounts => accounts.map(convertAccountData));
-  }
-
-  setFiatBalance(currency: string, balance: string): Promise<boolean> {
-    return this.axios
-      .patch<ActionResult<boolean>>(
-        '/balances/fiat',
-        {
-          balances: {
-            [currency]: balance
-          }
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
   }
 
   setupExchange(

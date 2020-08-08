@@ -29,7 +29,6 @@ from rotkehlchen.api.v1.encoding import (
     ExchangeTradesQuerySchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
-    FiatBalancesSchema,
     FiatExchangeRatesSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
@@ -316,19 +315,6 @@ class ManuallyTrackedBalancesResource(BaseResource):
     @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, labels: List[str]) -> Response:
         return self.rest_api.remove_manually_tracked_balances(labels=labels)
-
-
-class FiatBalancesResource(BaseResource):
-
-    patch_schema = FiatBalancesSchema()
-
-    def get(self) -> Response:
-        return self.rest_api.query_fiat_balances()
-
-    @use_kwargs(patch_schema, location='json')  # type: ignore
-    def patch(self, balances: Dict[Asset, AssetAmount]) -> Response:
-        # The passsed assets are guaranteed to be FIAT assets thanks to marshmallow
-        return self.rest_api.set_fiat_balances(balances)
 
 
 class TradesResource(BaseResource):

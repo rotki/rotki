@@ -54,13 +54,6 @@ describe('balances:getters', () => {
       ]
     };
     const state = {
-      fiatBalances: [
-        {
-          usdValue: bigNumberify(50),
-          amount: bigNumberify(50),
-          currency: 'EUR'
-        }
-      ],
       manualBalances: [
         {
           usdValue: bigNumberify(50),
