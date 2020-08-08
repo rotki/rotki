@@ -9,14 +9,13 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import AuthenticationError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import AssetAmount, B64EncodedBytes, B64EncodedString, Timestamp
+from rotkehlchen.typing import B64EncodedBytes, B64EncodedString, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
@@ -186,26 +185,6 @@ class DataHandler():
                 continue
 
         return users
-
-    def set_fiat_balances(
-            self,
-            balances: Dict[Asset, AssetAmount],
-    ) -> None:
-        """Saves the given FIAT balances in the DB
-
-        The given assets should have been checked before calling this function
-        that they are FIAT currencies.
-
-        If the amount for an asset is 0 then that asset is removed from the DB.
-        """
-        for asset, balance in balances.items():
-            if balance == ZERO:
-                self.db.remove_fiat_balance(asset)
-            else:
-                self.db.add_fiat_balance(asset, balance)
-
-    def get_fiat_balances(self) -> Dict[Asset, str]:
-        return self.db.get_fiat_balances()
 
     def compress_and_encrypt_db(self, password: str) -> Tuple[B64EncodedBytes, str]:
         """Decrypt the DB, dump in temporary plaintextdb, compress it,

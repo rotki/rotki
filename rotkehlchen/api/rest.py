@@ -593,16 +593,6 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
-    def query_fiat_balances(self) -> Response:
-        balances = self.rotkehlchen.query_fiat_balances()
-        return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
-
-    @require_loggedin_user()
-    def set_fiat_balances(self, balances: Dict[Asset, AssetAmount]) -> Response:
-        self.rotkehlchen.data.set_fiat_balances(balances)
-        return self.query_fiat_balances()
-
-    @require_loggedin_user()
     def get_trades(
             self,
             from_ts: Timestamp,

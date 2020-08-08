@@ -12,7 +12,6 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
@@ -21,7 +20,6 @@ from rotkehlchen.chain.ethereum.manager import (
 )
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
@@ -436,19 +434,6 @@ class Rotkehlchen():
         )
         return result, error_or_empty
 
-    def query_fiat_balances(self) -> Dict[Asset, Dict[str, FVal]]:
-        result = {}
-        balances = self.data.get_fiat_balances()
-        for currency, str_amount in balances.items():
-            amount = FVal(str_amount)
-            usd_rate = Inquirer().query_fiat_pair(currency, A_USD)
-            result[currency] = {
-                'amount': amount,
-                'usd_value': amount * usd_rate,
-            }
-
-        return result
-
     def query_balances(
             self,
             requested_save_data: bool = False,
@@ -492,9 +477,6 @@ class Rotkehlchen():
             problem_free = False
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
 
-        result = self.query_fiat_balances()
-        if result != {}:
-            balances['banks'] = result
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 
         combined = combine_stat_dicts([v for k, v in balances.items()])

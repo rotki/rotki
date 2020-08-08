@@ -932,50 +932,6 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def add_fiat_balance(self, currency: Asset, amount: FVal) -> None:
-        assert currency.is_fiat()
-        cursor = self.conn.cursor()
-        # We don't care about previous value so this simple insert or replace should work
-        cursor.execute(
-            'INSERT OR REPLACE INTO current_balances(asset, amount) VALUES (?, ?)',
-            (currency.identifier, str(amount)),
-        )
-        self.conn.commit()
-        self.update_last_write()
-
-    def remove_fiat_balance(self, currency: Asset) -> None:
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'DELETE FROM current_balances WHERE asset = ?;', (currency.identifier,),
-        )
-        self.conn.commit()
-        self.update_last_write()
-
-    def get_fiat_balances(self) -> Dict[Asset, str]:
-        cursor = self.conn.cursor()
-        query = cursor.execute(
-            'SELECT asset, amount FROM current_balances;',
-        )
-
-        result = {}
-        for entry in query:
-            try:
-                result[Asset(entry[0])] = entry[1]
-            except UnknownAsset:
-                self.msg_aggregator.add_error(
-                    f'Unknown FIAT asset {entry[0]} found in the DB. Skipping it ...',
-                )
-                continue
-            except DeserializationError:
-                # This can't really happen. DB always returns a string. Should I have this here?
-                self.msg_aggregator.add_error(
-                    f'FIAT asset with non-string type {type(entry[0])} '
-                    f'found in the DB. Skipping it ...',
-                )
-                continue
-
-        return result
-
     def get_blockchain_accounts(self) -> BlockchainAccounts:
         """Returns a Blockchain accounts instance containing all blockchain account addresses"""
         cursor = self.conn.cursor()

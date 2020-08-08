@@ -8,9 +8,9 @@ import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_CNY, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.settings import (
@@ -48,7 +48,6 @@ from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     AssetMovementCategory,
     BlockchainAccountData,
     EthereumTransaction,
@@ -163,16 +162,21 @@ def test_export_import_db(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-    data.set_fiat_balances({A_EUR: AssetAmount(FVal('10'))})
-
+    starting_balance = ManuallyTrackedBalance(
+        asset=A_EUR,
+        label='',
+        amount=FVal(10),
+        location=Location.BANKS,
+        tags=None,
+    )
+    data.db.add_manually_tracked_balances(starting_balance)
     encoded_data, _ = data.compress_and_encrypt_db('123')
 
     # The server would return them decoded
     encoded_data = encoded_data.decode()  # pylint: disable=no-member
     data.decompress_and_decrypt_db('123', encoded_data)
-    fiat_balances = data.get_fiat_balances()
-    assert len(fiat_balances) == 1
-    assert int(fiat_balances[A_EUR]) == 10
+    balances = data.db.get_manually_tracked_balances()
+    assert balances == [starting_balance]
 
 
 def test_writing_fetching_data(data_dir, username):
@@ -425,32 +429,6 @@ def test_sqlcipher_detect_version():
             detect_sqlcipher_version()
 
 
-def test_data_set_fiat_balances(data_dir, username):
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-
-    amount_eur = AssetAmount(FVal('100'))
-    amount_cny = AssetAmount(FVal('500'))
-
-    data.set_fiat_balances({A_EUR: amount_eur})
-    data.set_fiat_balances({A_CNY: amount_cny})
-    balances = data.get_fiat_balances()
-    assert len(balances) == 2
-    assert FVal(balances[A_EUR]) == amount_eur
-    assert FVal(balances[A_CNY]) == amount_cny
-
-    data.set_fiat_balances({A_EUR: ZERO})
-    balances = data.get_fiat_balances()
-    assert len(balances) == 1
-    assert FVal(balances[A_CNY]) == amount_cny
-
-    # also check that all the fiat assets in the fiat table are in
-    # all_assets.json
-    for fiat_asset in FIAT_CURRENCIES:
-        assert fiat_asset.is_fiat()
-
-
 asset_balances = [
     AssetBalance(
         time=Timestamp(1451606400),
@@ -484,29 +462,6 @@ asset_balances = [
         usd_value='249.5',
     ),
 ]
-
-
-def test_get_fiat_balances_unhappy_path(data_dir, username):
-    """Test that if somehow unsupported assets end up in the DB we don't crash"""
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT INTO current_balances(asset, amount) '
-        ' VALUES(?, ?)',
-        ('DSADASDSAD', '10.1'),
-    )
-    data.db.conn.commit()
-
-    balances = data.get_fiat_balances()
-    warnings = msg_aggregator.consume_warnings()
-    errors = msg_aggregator.consume_errors()
-    assert len(balances) == 0
-    assert len(warnings) == 0
-    assert len(errors) == 1
-    assert 'Unknown FIAT asset' in errors[0]
 
 
 def test_query_timed_balances(data_dir, username):
