@@ -9054,6 +9054,14 @@
         "symbol": "TEN",
         "type": "ethereum token"
     },
+    "TEND": {
+        "ethereum_address": "0x1453Dbb8A29551ADe11D89825CA812e05317EAEB",
+        "ethereum_token_decimals": 18,
+        "name": "Tendies",
+        "started": 1595883667,
+        "symbol": "TEND",
+        "type": "ethereum token"
+    },
     "TFD": {
         "ethereum_address": "0xE5F166c0D8872B68790061317BB6CcA04582C912",
         "ethereum_token_decimals": 18,

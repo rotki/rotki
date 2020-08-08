@@ -32,6 +32,7 @@ Changelog
   - `Darwinia Network (RING) <https://coinmarketcap.com/currencies/darwinia-network/>`__
   - `TrustSwap (SWAP) <https://coinmarketcap.com/currencies/trustswap/>`__
   - `SUKU (SUKU) <https://coinmarketcap.com/currencies/suku/>`__
+  - `Tendies (TEND) <https://coinmarketcap.com/currencies/tendies/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`
