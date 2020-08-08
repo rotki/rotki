@@ -258,7 +258,7 @@ class EthereumManager():
 
             try:
                 result = method(web3, **kwargs)
-            except RemoteError:
+            except (RemoteError, BlockchainQueryError):
                 # Catch all possible errors here and just try next node call
                 continue
 
@@ -504,7 +504,7 @@ class EthereumManager():
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
-        - ValueError if web3 is used and there is a VM execution error
+        - BlockchainQueryError if web3 is used and there is a VM execution error
         """
         if web3 is None:
             return self._call_contract_etherscan(
