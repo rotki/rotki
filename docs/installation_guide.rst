@@ -161,11 +161,12 @@ Rotki uses electron, we need to install it. To do so you need ``node.js`` and ``
 
     $ brew install node
 
-Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm::
+Almost there, we can now install all the NodeJS dependencies of the frontend app. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm::
 
+    $ cd frontend/app
     $ npm ci
 
-You can now go to the ``frontend/app`` directory and start Rotki::
+You can now start Rotki, still from the ``frontend/app`` directory::
 
     $ npm run electron:serve
 
