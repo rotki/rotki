@@ -1,4 +1,5 @@
 import logging
+import random
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
@@ -94,8 +95,7 @@ class NodeName(Enum):
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
 
 
-DEFAULT_CALL_ORDER = (
-    NodeName.OWN,
+OPEN_NODES = (
     NodeName.MYCRYPTO,
     NodeName.BLOCKSCOUT,
     NodeName.AVADO_POOL,
@@ -142,6 +142,18 @@ class EthereumManager():
             NodeName.BLOCKSCOUT in self.web3_mapping or
             NodeName.AVADO_POOL in self.web3_mapping
         )
+
+    def default_call_order(self) -> Sequence[NodeName]:
+        """Default call order for ethereum nodes
+
+        Own node always has preference. Then all other node types are randomly queried
+        in sequence
+        """
+        result = []
+        if NodeName.OWN in self.web3_mapping:
+            result.append(NodeName.OWN)
+
+        return result + random.sample(OPEN_NODES, len(OPEN_NODES))
 
     def attempt_connect(
             self,
@@ -258,7 +270,7 @@ class EthereumManager():
 
             try:
                 result = method(web3, **kwargs)
-            except RemoteError:
+            except (RemoteError, BlockchainQueryError):
                 # Catch all possible errors here and just try next node call
                 continue
 
@@ -277,10 +289,10 @@ class EthereumManager():
         # else
         return self.etherscan.get_latest_block_number()
 
-    def get_latest_block_number(self, call_order: Sequence[NodeName] = DEFAULT_CALL_ORDER) -> int:
+    def get_latest_block_number(self, call_order: Optional[Sequence[NodeName]] = None) -> int:
         return self.query(
             method=self._get_latest_block_number,
-            call_order=call_order,
+            call_order=call_order if call_order is not None else self.default_call_order(),
         )
 
     def query_eth_highest_block(self) -> BlockNumber:
@@ -322,7 +334,7 @@ class EthereumManager():
     def get_multieth_balance(
             self,
             accounts: List[ChecksumEthAddress],
-            call_order: Sequence[NodeName] = DEFAULT_CALL_ORDER,
+            call_order: Optional[Sequence[NodeName]] = None,
     ) -> Dict[ChecksumEthAddress, FVal]:
         """Returns a dict with keys being accounts and balances in ETH
 
@@ -340,7 +352,7 @@ class EthereumManager():
             abi=ETH_SCAN.abi,
             method_name='etherBalances',
             arguments=[accounts],
-            call_order=call_order,
+            call_order=call_order if call_order is not None else self.default_call_order(),
         )
         balances = {}
         for idx, account in enumerate(accounts):
@@ -350,11 +362,11 @@ class EthereumManager():
     def get_block_by_number(
             self,
             num: int,
-            call_order: Sequence[NodeName] = DEFAULT_CALL_ORDER,
+            call_order: Optional[Sequence[NodeName]] = None,
     ) -> Dict[str, Any]:
         return self.query(
             method=self._get_block_by_number,
-            call_order=call_order,
+            call_order=call_order if call_order is not None else self.default_call_order(),
             num=num,
         )
 
@@ -375,11 +387,11 @@ class EthereumManager():
     def get_code(
             self,
             account: ChecksumEthAddress,
-            call_order: Sequence[NodeName] = DEFAULT_CALL_ORDER,
+            call_order: Optional[Sequence[NodeName]] = None,
     ) -> str:
         return self.query(
             method=self._get_code,
-            call_order=call_order,
+            call_order=call_order if call_order is not None else self.default_call_order(),
             account=account,
         )
 
@@ -398,11 +410,11 @@ class EthereumManager():
     def ens_lookup(
             self,
             name: str,
-            call_order: Sequence[NodeName] = DEFAULT_CALL_ORDER,
+            call_order: Optional[Sequence[NodeName]] = None,
     ) -> Optional[ChecksumEthAddress]:
         return self.query(
             method=self._ens_lookup,
-            call_order=call_order,
+            call_order=call_order if call_order is not None else self.default_call_order(),
             name=name,
         )
 
@@ -480,11 +492,11 @@ class EthereumManager():
             abi: List,
             method_name: str,
             arguments: Optional[List[Any]] = None,
-            call_order: Sequence[NodeName] = DEFAULT_CALL_ORDER,
+            call_order: Optional[Sequence[NodeName]] = None,
     ) -> Any:
         return self.query(
             method=self._call_contract,
-            call_order=call_order,
+            call_order=call_order if call_order is not None else self.default_call_order(),
             contract_address=contract_address,
             abi=abi,
             method_name=method_name,
@@ -504,7 +516,7 @@ class EthereumManager():
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
-        - ValueError if web3 is used and there is a VM execution error
+        - BlockchainQueryError if web3 is used and there is a VM execution error
         """
         if web3 is None:
             return self._call_contract_etherscan(
