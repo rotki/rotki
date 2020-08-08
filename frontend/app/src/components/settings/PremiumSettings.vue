@@ -55,7 +55,7 @@
             </v-btn>
             <v-btn
               v-if="premium"
-              class="premium-settings__button__setup"
+              class="premium-settings__button__delete"
               depressed
               outlined
               color="primary"
