@@ -8811,6 +8811,14 @@
         "symbol": "SUB",
         "type": "ethereum token"
     },
+    "SUKU": {
+        "ethereum_address": "0x0763fdCCF1aE541A5961815C0872A8c5Bc6DE4d7",
+        "ethereum_token_decimals": 18,
+        "name": "SUKU",
+        "started": 1571338185,
+        "symbol": "SUKU",
+        "type": "ethereum token"
+    },
     "SUR": {
         "ethereum_address": "0xe120c1ECBfdFeA7F0A8f0Ee30063491E8c26fedf",
         "ethereum_token_decimals": 8,

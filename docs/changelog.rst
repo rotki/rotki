@@ -31,6 +31,7 @@ Changelog
   - `Plutus DeFi (PLT) <https://coinmarketcap.com/currencies/plutusdefi/>`__
   - `Darwinia Network (RING) <https://coinmarketcap.com/currencies/darwinia-network/>`__
   - `TrustSwap (SWAP) <https://coinmarketcap.com/currencies/trustswap/>`__
+  - `SUKU (SUKU) <https://coinmarketcap.com/currencies/suku/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

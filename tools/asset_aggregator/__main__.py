@@ -150,7 +150,7 @@ def main():
     cmc = None
     cmc_list = None
     root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    data_directory = Path(f'{Path.home()}/.rotkehlchen')
+    data_directory = default_data_directory()
     if args.cmc_api_key:
         cmc = Coinmarketcap(
             data_directory=data_directory,

@@ -102,6 +102,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'SQL',
     'SSD',
     'STMX',
+    'SUKU',
     'SWARM',  # Swarmcoin  https://coinmarketcap.com/currencies/swarm/
     'SWAP',
     'SUTER',
