@@ -73,7 +73,6 @@ TABLES_AT_INIT = [
     'blockchain_accounts',
     'ethereum_accounts_details',
     'multisettings',
-    'current_balances',
     'trades',
     'ethereum_transactions',
     'manually_tracked_balances',
