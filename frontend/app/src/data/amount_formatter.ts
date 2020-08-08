@@ -8,6 +8,7 @@ export class AmountFormatter {
     amount: BigNumber,
     format: string,
     precision: number,
+    roundingMode: BigNumber.RoundingMode,
     currency?: string
   ) {
     /**
@@ -24,7 +25,7 @@ export class AmountFormatter {
      */
     const formattedAmount = amount.toFormat(
       amount.modulo(1).comparedTo(0) === 0 ? 0 : precision,
-      BigNumber.ROUND_DOWN,
+      roundingMode,
       {
         groupSize: 3,
         groupSeparator: thousandsSeparator,

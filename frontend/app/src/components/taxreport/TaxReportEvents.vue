@@ -18,64 +18,28 @@
               Taxable Received in {{ currency }}
             </template>
             <template #item.paidInProfitCurrency="{ item }">
-              {{
-                item.paidInProfitCurrency
-                  | formatPrice(
-                    amountDisplayFormat,
-                    floatingPrecision,
-                    currency.unicode_symbol
-                  )
-              }}
+              <amount-display
+                :amount="item.paidInProfitCurrency"
+              ></amount-display>
             </template>
             <template #item.paidInAsset="{ item }">
-              {{
-                item.paidInAsset
-                  | formatPrice(
-                    amountDisplayFormat,
-                    floatingPrecision,
-                    currency.unicode_symbol
-                  )
-              }}
+              <amount-display :amount="item.paidInAsset"></amount-display>
             </template>
             <template #item.taxableAmount="{ item }">
-              {{
-                item.taxableAmount
-                  | formatPrice(
-                    amountDisplayFormat,
-                    floatingPrecision,
-                    currency.unicode_symbol
-                  )
-              }}
+              <amount-display :amount="item.taxableAmount"></amount-display>
             </template>
             <template #item.taxableBoughtCostInProfitCurrency="{ item }">
-              {{
-                item.taxableBoughtCostInProfitCurrency
-                  | formatPrice(
-                    amountDisplayFormat,
-                    floatingPrecision,
-                    currency.unicode_symbol
-                  )
-              }}
+              <amount-display
+                :amount="item.taxableBoughtCostInProfitCurrency"
+              ></amount-display>
             </template>
             <template #item.receivedInAsset="{ item }">
-              {{
-                item.receivedInAsset
-                  | formatPrice(
-                    amountDisplayFormat,
-                    floatingPrecision,
-                    currency.unicode_symbol
-                  )
-              }}
+              <amount-display :amount="item.receivedInAsset"></amount-display>
             </template>
             <template #item.taxableReceivedInProfitCurrency="{ item }">
-              {{
-                item.taxableReceivedInProfitCurrency
-                  | formatPrice(
-                    amountDisplayFormat,
-                    floatingPrecision,
-                    currency.unicode_symbol
-                  )
-              }}
+              <amount-display
+                :amount="item.taxableReceivedInProfitCurrency"
+              ></amount-display>
             </template>
             <template #item.isVirtual="{ item }">
               <v-icon v-if="item.isVirtual" color="success">
@@ -92,6 +56,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { EventEntry } from '@/model/trade-history-types';
 
 const { mapGetters } = createNamespacedHelpers('session');
@@ -99,6 +64,9 @@ const { mapState } = createNamespacedHelpers('reports');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
+  components: {
+    AmountDisplay
+  },
   computed: {
     ...mapState(['currency', 'events']),
     ...mapGetters([

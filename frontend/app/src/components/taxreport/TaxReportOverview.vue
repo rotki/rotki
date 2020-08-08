@@ -15,15 +15,7 @@
               <tr v-for="(item, key) in overview" :key="key">
                 <td>{{ key | splitOnCapital }}</td>
                 <td>
-                  {{
-                    item
-                      | calculatePrice(exchangeRate(currency.ticker_symbol))
-                      | formatPrice(
-                        amountDisplayFormat,
-                        floatingPrecision,
-                        currency.unicode_symbol
-                      )
-                  }}
+                  <amount-display :amount="item"></amount-display>
                 </td>
               </tr>
             </tbody>
@@ -37,6 +29,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
 
 const { mapGetters } = createNamespacedHelpers('session');
@@ -44,6 +37,9 @@ const { mapState: mapReportsState } = createNamespacedHelpers('reports');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
+  components: {
+    AmountDisplay
+  },
   computed: {
     ...mapReportsState(['overview']),
     ...mapGetters(['floatingPrecision', 'currency', 'amountDisplayFormat']),

@@ -20,10 +20,26 @@
         v-else-if="fiatCurrency === currency.ticker_symbol"
         class="amount-display__value"
       >
-        {{ renderValue | formatPrice(amountDisplayFormat, floatingPrecision) }}
+        {{
+          renderValue
+            | formatPrice(
+              amountDisplayFormat,
+              floatingPrecision,
+              null,
+              BigNumber.ROUND_DOWN
+            )
+        }}
       </span>
       <span v-else class="amount-display__value">
-        {{ renderValue | formatPrice(amountDisplayFormat, floatingPrecision) }}
+        {{
+          renderValue
+            | formatPrice(
+              amountDisplayFormat,
+              floatingPrecision,
+              null,
+              BigNumber.ROUND_UP
+            )
+        }}
       </span>
       <v-tooltip v-if="!fiatCurrency" top>
         <template #activator="{ on }">

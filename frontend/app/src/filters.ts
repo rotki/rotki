@@ -25,11 +25,18 @@ export function formatPrice(
   value: BigNumber,
   format: string,
   precision: number,
-  currency: string
+  currency: string,
+  roundingMode = BigNumber.ROUND_UP
 ) {
   return value.isNaN()
     ? '-'
-    : displayAmountFormatter.format(value, format, precision, currency);
+    : displayAmountFormatter.format(
+        value,
+        format,
+        precision,
+        roundingMode,
+        currency
+      );
 }
 
 export function capitalize(string: string): string {
