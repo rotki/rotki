@@ -95,6 +95,7 @@ WORLD_TO_KRAKEN = {
     'JPY': 'ZJPY',
     'CHF': 'CHF',
     'KRW': 'ZKRW',
+    'REPV2': 'REPV2',
     'DAO': 'XDAO',
     'MLN': 'XMLN',
     'ICN': 'XICN',

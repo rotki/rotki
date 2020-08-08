@@ -34,6 +34,7 @@ Changelog
   - `SUKU (SUKU) <https://coinmarketcap.com/currencies/suku/>`__
   - `Tendies (TEND) <https://coinmarketcap.com/currencies/tendies/>`__
   - `Unitrade (TRADE) <https://coinmarketcap.com/currencies/unitrade/>`__
+  - `Augur v2 (REPV2) <https://www.augur.net/blog/v2-launch/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`
