@@ -5,6 +5,10 @@ Changelog
 * :feature: `1178` Adds the ability to select tracked accounts per activated protocol.
 * :feature: `1084` Adds the ability to select activated modules for defi protocols.
 * :bug: `1285` Properly track SNX tokens by pointing to the `migrated <https://blog.synthetix.io/proxy-contract-cutover-on-may-10/`__ proxy contract
+* :feature: `820` Multiple open ethereum nodes will be now also queried along with your own ethereum node or etherscan. But in smaller frequency so as not to spam those services. The additional nodes Rotki now queries are:
+  - MyCrypto
+  - Blockscout
+  - Avado pool
 * :feature: `1213` Taxable actions table in the tax report and in the CSV exports now include a location.
 * :bug: `1249` Fix some amounts not being converted to user's main currency correctly (two components were affected: Account Asset Balances in Accounts & Balances, and the AssetBalances component which was used in both Blockchain Balances as well as Exchange Balances sub-pages that showed totals across an asset).
 * :bug: `1247` Fix glitchy autocomplete component usage which caused select menus to not open properly if the "dropdown arrows" were clicked. This has fixed the following select menus throughout the app: Asset Select, Tag Input and Tag Filter, Owned Tokens.

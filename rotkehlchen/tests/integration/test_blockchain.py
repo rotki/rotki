@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
 from rotkehlchen.typing import SupportedBlockchain
@@ -25,7 +26,8 @@ def test_eth_connection_initial_balances(
 
     But probably (1) makes more sense
     """
-    assert blockchain.ethereum.web3 is not None, 'Should be connected to ethereum node'
+    msg = 'Should be connected to ethereum node'
+    assert blockchain.ethereum.web3_mapping.get(NodeName.OWN) is not None, msg
 
 
 def test_query_btc_balances(blockchain):

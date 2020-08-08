@@ -528,11 +528,7 @@ class MakerDAODSR(MakerDAOCommon):
             return FVal('1018008449363110619399951035')
 
         block_number = self.ethereum.etherscan.get_blocknumber_by_time(time)
-        if self.ethereum.web3 is not None:
-            latest_block = self.ethereum.web3.eth.blockNumber
-        else:
-            latest_block = self.ethereum.query_eth_highest_block()
-
+        latest_block = self.ethereum.get_latest_block_number()
         blocks_queried = 0
         counter = 1
         # Keep trying to find events that could reveal the chi to us. Go back
