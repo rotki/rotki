@@ -14,7 +14,6 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from asset_aggregator.active_check import active_check
