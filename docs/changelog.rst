@@ -2,8 +2,9 @@
 Changelog
 =========
 
-* :feature: `1178` Adds the ability to select tracked accounts per activated protocol.
-* :feature: `1084` Adds the ability to select activated modules for defi protocols.
+* :feature: `1201` Changing the password when premium sync is enabled, will now display a warning to users about the change affecting synced instances.
+* :feature: `1178` Users can now select which accounts they want to track for the activated defi modules.
+* :feature: `1084` Users can now select which of the available defi modules they want to activate.
 * :bug: `1285` Properly track SNX tokens by pointing to the `migrated <https://blog.synthetix.io/proxy-contract-cutover-on-may-10/`__ proxy contract
 * :feature: `820` Multiple open ethereum nodes will be now also queried along with your own ethereum node or etherscan. But in smaller frequency so as not to spam those services. The additional nodes Rotki now queries are:
   - MyCrypto
