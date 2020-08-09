@@ -35,7 +35,6 @@
         ></manual-balances-list>
       </v-card-text>
     </v-card>
-    <fiat-balances></fiat-balances>
   </div>
 </template>
 

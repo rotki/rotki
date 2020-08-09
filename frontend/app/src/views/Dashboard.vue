@@ -72,8 +72,7 @@
           tooltip="Aggregate value of manual balances entered. Fiat balances are aggregated in the banks entry."
         >
           <div slot="tooltip">
-            Aggregate value of manual balances entered.<br />Fiat balances are
-            aggregated in the banks entry.
+            Aggregate value of manual balances entered
           </div>
           <div v-if="Object.keys(manualBalanceByLocation).length < 1">
             <v-card-actions>
