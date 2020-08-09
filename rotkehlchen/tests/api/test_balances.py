@@ -8,6 +8,7 @@ import requests
 
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -39,6 +40,7 @@ def assert_all_balances(
 
     got_external = any(x.location == Location.EXTERNAL for x in setup.manually_tracked_balances)
 
+    expected_result_keys = 5
     assert FVal(result['ETH']['amount']) == total_eth
     assert result['ETH']['usd_value'] is not None
     assert result['ETH']['percentage_of_net_value'] is not None
@@ -48,9 +50,10 @@ def assert_all_balances(
     assert FVal(result['BTC']['amount']) == total_btc
     assert result['BTC']['usd_value'] is not None
     assert result['BTC']['percentage_of_net_value'] is not None
-    assert FVal(result['EUR']['amount']) == total_eur
-    assert result['BTC']['usd_value'] is not None
-    assert result['EUR']['percentage_of_net_value'] is not None
+    if total_eur != ZERO:
+        assert FVal(result['EUR']['amount']) == total_eur
+        assert result['EUR']['percentage_of_net_value'] is not None
+        expected_result_keys += 1
 
     assert result['net_usd'] is not None
     # Check that the 4 locations are there
@@ -61,13 +64,14 @@ def assert_all_balances(
     assert result['location']['poloniex']['percentage_of_net_value'] is not None
     assert result['location']['blockchain']['usd_value'] is not None
     assert result['location']['blockchain']['percentage_of_net_value'] is not None
-    assert result['location']['banks']['usd_value'] is not None
-    assert result['location']['banks']['percentage_of_net_value'] is not None
+    if total_eur != ZERO:
+        assert result['location']['banks']['usd_value'] is not None
+        assert result['location']['banks']['percentage_of_net_value'] is not None
     if got_external:
         assert result['location']['external']['usd_value'] is not None
         assert result['location']['external']['percentage_of_net_value'] is not None
 
-    assert len(result) == 6  # 4 assets + location + net_usd
+    assert len(result) == expected_result_keys  # 3 or 4 assets + location + net_usd
 
     eth_tbalances = db.query_timed_balances(from_ts=None, to_ts=None, asset=A_ETH)
     if not expected_data_in_db:
@@ -106,15 +110,12 @@ def assert_all_balances(
             Location.POLONIEX.serialize_for_db(),
             Location.BINANCE.serialize_for_db(),
             Location.TOTAL.serialize_for_db(),
-            Location.BANKS.serialize_for_db(),
             Location.BLOCKCHAIN.serialize_for_db(),
         }
         if got_external:
             expected_locations.add(Location.EXTERNAL.serialize_for_db())
-            assert len(location_data) == 6
-        else:
-            assert len(location_data) == 5
-        assert len(location_data) == 6 if got_external else 5
+        if total_eur != ZERO:
+            expected_locations.add(Location.BANKS.serialize_for_db())
         locations = {x.location for x in location_data}
         assert locations == expected_locations
 
@@ -133,11 +134,22 @@ def test_query_all_balances(
     """Test that using the query all balances endpoint works
 
     Test that balances from various sources are returned. Such as exchanges,
-    blockchain and FIAT"""
+    blockchain and manually tracked balances"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
-    setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
+    setup = setup_balances(
+        rotki=rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=btc_accounts,
+        manually_tracked_balances=[ManuallyTrackedBalance(
+            asset=A_EUR,
+            label='My EUR bank',
+            amount=FVal('1550'),
+            location=Location.BANKS,
+            tags=None,
+        )],
+    )
     # Test that all balances request saves data on a fresh account
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
@@ -334,37 +346,6 @@ def test_query_all_balances_ignore_cache(
     'background_color': 'ffffff',
     'foreground_color': '000000',
 }]])
-@pytest.mark.parametrize('manually_tracked_balances', [[ManuallyTrackedBalance(
-    asset=A_BTC,
-    label='XPUB BTC wallet',
-    amount=FVal('10'),
-    location=Location.BLOCKCHAIN,
-    tags=None,
-), ManuallyTrackedBalance(
-    asset=A_BTC,
-    label='BTC in hardware wallet',
-    amount=FVal('20'),
-    location=Location.BLOCKCHAIN,
-    tags=['private'],
-), ManuallyTrackedBalance(
-    asset=A_ETH,
-    label='ETH in a not supported exchange wallet',
-    amount=FVal('10'),
-    location=Location.EXTERNAL,
-    tags=['private'],
-), ManuallyTrackedBalance(
-    asset=A_EUR,
-    label='N26 account',
-    amount=FVal('12500.15'),
-    location=Location.BANKS,
-    tags=None,
-), ManuallyTrackedBalance(
-    asset=A_EUR,
-    label='Deutsche Bank account',
-    amount=FVal('1337.1337'),
-    location=Location.BANKS,
-    tags=None,
-)]])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
@@ -378,6 +359,37 @@ def test_query_all_balances_with_manually_tracked_balances(
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
+    manually_tracked_balances = [ManuallyTrackedBalance(
+        asset=A_BTC,
+        label='XPUB BTC wallet',
+        amount=FVal('10'),
+        location=Location.BLOCKCHAIN,
+        tags=None,
+    ), ManuallyTrackedBalance(
+        asset=A_BTC,
+        label='BTC in hardware wallet',
+        amount=FVal('20'),
+        location=Location.BLOCKCHAIN,
+        tags=['private'],
+    ), ManuallyTrackedBalance(
+        asset=A_ETH,
+        label='ETH in a not supported exchange wallet',
+        amount=FVal('10'),
+        location=Location.EXTERNAL,
+        tags=['private'],
+    ), ManuallyTrackedBalance(
+        asset=A_EUR,
+        label='N26 account',
+        amount=FVal('12500.15'),
+        location=Location.BANKS,
+        tags=None,
+    ), ManuallyTrackedBalance(
+        asset=A_EUR,
+        label='Deutsche Bank account',
+        amount=FVal('1337.1337'),
+        location=Location.BANKS,
+        tags=None,
+    )]
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=ethereum_accounts,

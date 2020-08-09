@@ -163,12 +163,12 @@ def test_export_import_db(data_dir, username):
     data.unlock(username, '123', create_new=True)
     starting_balance = ManuallyTrackedBalance(
         asset=A_EUR,
-        label='',
+        label='foo',
         amount=FVal(10),
         location=Location.BANKS,
         tags=None,
     )
-    data.db.add_manually_tracked_balances(starting_balance)
+    data.db.add_manually_tracked_balances([starting_balance])
     encoded_data, _ = data.compress_and_encrypt_db('123')
 
     # The server would return them decoded
