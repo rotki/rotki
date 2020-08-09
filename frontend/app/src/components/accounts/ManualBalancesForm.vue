@@ -45,17 +45,16 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { Location } from '@/services/types-common';
 import { ManualBalance } from '@/services/types-model';
 
-const { mapGetters } = createNamespacedHelpers('balances');
 @Component({
   components: { TagInput, AssetSelect },
   computed: {
-    ...mapGetters(['manualLabels'])
+    ...mapGetters('balances', ['manualLabels'])
   }
 })
 export default class ManualBalancesForm extends Vue {
@@ -65,6 +64,7 @@ export default class ManualBalancesForm extends Vue {
   @Watch('edit', { immediate: true })
   onEdit(balance: ManualBalance | null) {
     if (!balance) {
+      this.reset();
       return;
     }
     this.asset = balance.asset;
