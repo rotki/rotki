@@ -138,7 +138,7 @@ class DBUpgradeManager():
         if our_version > ROTKEHLCHEN_DB_VERSION:
             raise DBUpgradeError(
                 'Your database version is newer than the version expected by the '
-                'executable. Did you perhaps try to revert to an older rotkehlchen version?'
+                'executable. Did you perhaps try to revert to an older rotki version? '
                 'Please only use the latest version of the software.',
             )
 
