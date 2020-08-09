@@ -5,15 +5,6 @@
         <v-card>
           <v-card-title>General Settings</v-card-title>
           <v-card-text>
-            <v-text-field
-              v-model="floatingPrecision"
-              class="general-settings__fields__floating-precision"
-              label="Floating Precision"
-              type="number"
-              :success-messages="settingsMessages['floatingPrecision'].success"
-              :error-messages="settingsMessages['floatingPrecision'].error"
-              @change="onFloatingPrecisionChange($event)"
-            ></v-text-field>
             <v-switch
               v-model="anonymizedLogs"
               class="general-settings__fields__anonymized-logs"
@@ -69,40 +60,6 @@
               ></v-date-picker>
             </v-menu>
 
-            <v-select
-              v-model="selectedCurrency"
-              class="general-settings__fields__currency-selector"
-              label="Select Main Currency"
-              item-text="ticker_symbol"
-              return-object
-              :items="currencies"
-              :success-messages="settingsMessages['selectedCurrency'].success"
-              :error-messages="settingsMessages['selectedCurrency'].error"
-              @change="onSelectedCurrencyChange($event)"
-            >
-              <template #item="{ item, attrs, on }">
-                <v-list-item
-                  :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
-                  v-bind="attrs"
-                  v-on="on"
-                >
-                  <v-list-item-avatar
-                    class="general-settings__currency-list primary--text"
-                  >
-                    {{ item.unicode_symbol }}
-                  </v-list-item-avatar>
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      {{ item.name }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle>
-                      Select as the main currency
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </template>
-            </v-select>
-
             <v-text-field
               v-model="rpcEndpoint"
               class="general-settings__fields__rpc-endpoint"
@@ -138,19 +95,93 @@
               :error-messages="settingsMessages['dateDisplayFormat'].error"
               @change="onDateDisplayFormatChange($event)"
             ></v-text-field>
+          </v-card-text>
+        </v-card>
+        <v-card class="mt-5">
+          <v-card-title>Amounts Settings</v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="floatingPrecision"
+              class="general-settings__fields__floating-precision"
+              label="Floating Precision"
+              type="number"
+              :success-messages="settingsMessages['floatingPrecision'].success"
+              :error-messages="settingsMessages['floatingPrecision'].error"
+              @change="onFloatingPrecisionChange($event)"
+            ></v-text-field>
+
+            <v-select
+              v-model="selectedCurrency"
+              class="general-settings__fields__currency-selector"
+              label="Select Main Currency"
+              item-text="ticker_symbol"
+              return-object
+              :items="currencies"
+              :success-messages="settingsMessages['selectedCurrency'].success"
+              :error-messages="settingsMessages['selectedCurrency'].error"
+              @change="onSelectedCurrencyChange($event)"
+            >
+              <template #item="{ item, attrs, on }">
+                <v-list-item
+                  :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  <v-list-item-avatar
+                    class="general-settings__currency-list primary--text"
+                  >
+                    {{ item.unicode_symbol }}
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ item.name }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle>
+                      Select as the main currency
+                    </v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-select>
 
             <v-text-field
-              v-model="amountDisplayFormat"
-              class="general-settings__fields__amount-display-format"
-              label="Amount display format (%T = thousands; %U = units; %D = decimals; %C = currency)"
+              v-model="thousandSeparator"
+              class="general-settings__fields__thousand-separator"
+              label="Thousands separator"
               type="text"
-              :messages="getAmountDisplayHint()"
-              :success-messages="
-                settingsMessages['amountDisplayFormat'].success
-              "
-              :error-messages="settingsMessages['amountDisplayFormat'].error"
-              @change="onAmountDisplayFormatChange($event)"
+              :success-messages="settingsMessages['thousandSeparator'].success"
+              :error-messages="settingsMessages['thousandSeparator'].error"
+              @change="onThousandSeparatorChange($event)"
             ></v-text-field>
+
+            <v-text-field
+              v-model="decimalSeparator"
+              class="general-settings__fields__decimal-separator"
+              label="Decimal separator"
+              type="text"
+              :success-messages="settingsMessages['decimalSeparator'].success"
+              :error-messages="settingsMessages['decimalSeparator'].error"
+              @change="onDecimalSeparatorChange($event)"
+            ></v-text-field>
+
+            <v-radio-group
+              v-model="currencyLocation"
+              class="general-settings__fields__currency-location"
+              label="Currency location"
+              row
+              :success-messages="settingsMessages['currencyLocation'].success"
+              :error-messages="settingsMessages['currencyLocation'].error"
+              @change="onCurrencyLocationChange($event)"
+            >
+              <v-radio label="Before" value="before"></v-radio>
+              <v-radio label="After" value="after"></v-radio>
+            </v-radio-group>
+
+            <strong>Resulting format: </strong>
+            <amount-display
+              :value="amountExample"
+              show-currency="symbol"
+            ></amount-display>
           </v-card-text>
         </v-card>
         <v-card class="mt-5">
@@ -175,6 +206,7 @@
 <script lang="ts">
 import { Component, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { convertToGeneralSettings, findCurrency } from '@/data/converters';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
@@ -186,7 +218,9 @@ import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: {},
+  components: {
+    AmountDisplay
+  },
   computed: {
     ...mapState(['generalSettings']),
     ...mapGetters(['currency'])
@@ -203,7 +237,9 @@ export default class General extends Settings {
   rpcEndpoint: string = 'http://localhost:8545';
   balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
-  amountDisplayFormat: string = '';
+  thousandSeparator: string = '';
+  decimalSeparator: string = '';
+  currencyLocation: GeneralSettings['currencyLocation'] = 'after';
   selectedCurrency: Currency = currencies[0];
   scrambleData: boolean = false;
 
@@ -215,13 +251,16 @@ export default class General extends Settings {
     rpcEndpoint: { success: '', error: '' },
     balanceSaveFrequency: { success: '', error: '' },
     dateDisplayFormat: { success: '', error: '' },
-    amountDisplayFormat: { success: '', error: '' },
+    thousandSeparator: { success: '', error: '' },
+    decimalSeparator: { success: '', error: '' },
+    currencyLocation: { success: '', error: '' },
     selectedCurrency: { success: '', error: '' },
     scrambleData: { success: '', error: '' }
   };
 
   historicDateMenu: boolean = false;
   date: string = '';
+  amountExample = bigNumberify(123456.789);
 
   @Watch('date')
   dateWatch() {
@@ -230,24 +269,6 @@ export default class General extends Settings {
       this.historicDataStart = date;
       this.onHistoricDataStartChange(this.historicDataStart);
     }
-  }
-
-  isValidAmountDisplayFormat(format?: string) {
-    return format && /.*%T.*%U.*%D.*/.test(format);
-  }
-
-  getAmountDisplayHint() {
-    return (
-      'Resulting: ' +
-      (this.isValidAmountDisplayFormat(this.amountDisplayFormat)
-        ? this.$options.filters?.formatPrice(
-            bigNumberify(123456.789),
-            this.amountDisplayFormat,
-            parseInt(this.floatingPrecision, 10),
-            this.selectedCurrency.unicode_symbol
-          )
-        : 'invalid')
-    );
   }
 
   onScrambleDataChange(enabled: boolean) {
@@ -288,6 +309,78 @@ export default class General extends Settings {
           'selectedCurrency',
           'error',
           `Error setting main currency ${reason.message}`
+        );
+      });
+  }
+
+  onThousandSeparatorChange(thousandSeparator: string) {
+    const { commit } = this.$store;
+    this.$api
+      .setSettings({ thousand_separator: thousandSeparator })
+      .then(settings => {
+        commit('session/generalSettings', {
+          ...this.generalSettings,
+          thousandSeparator: settings.thousand_separator
+        });
+        this.validateSettingChange(
+          'thousandSeparator',
+          'success',
+          `thousand separator set to ${thousandSeparator}`
+        );
+      })
+      .catch(reason => {
+        this.validateSettingChange(
+          'thousandSeparator',
+          'error',
+          `Error setting thousand separator ${reason.message}`
+        );
+      });
+  }
+  onDecimalSeparatorChange(decimalSeparator: string) {
+    const { commit } = this.$store;
+    this.$api
+      .setSettings({ decimal_separator: decimalSeparator })
+      .then(settings => {
+        commit('session/generalSettings', {
+          ...this.generalSettings,
+          decimalSeparator: settings.decimal_separator
+        });
+        this.validateSettingChange(
+          'decimalSeparator',
+          'success',
+          `decimal separator set to ${decimalSeparator}`
+        );
+      })
+      .catch(reason => {
+        this.validateSettingChange(
+          'decimalSeparator',
+          'error',
+          `Error setting decimal separator ${reason.message}`
+        );
+      });
+  }
+  onCurrencyLocationChange(
+    currencyLocation: GeneralSettings['currencyLocation']
+  ) {
+    const { commit } = this.$store;
+    this.$api
+      .setSettings({ currency_location: currencyLocation })
+      .then(settings => {
+        commit('session/generalSettings', {
+          ...this.generalSettings,
+          currencyLocation: settings.currency_location
+        });
+        this.validateSettingChange(
+          'currencyLocation',
+          'success',
+          `currency location set to ${currencyLocation}`
+        );
+      })
+      .catch(reason => {
+        this.validateSettingChange(
+          'currencyLocation',
+          'error',
+          `Error setting currency location ${reason.message}`
         );
       });
   }
@@ -448,39 +541,6 @@ export default class General extends Settings {
       });
   }
 
-  onAmountDisplayFormatChange(amountFormat: string) {
-    const { commit } = this.$store;
-    if (!this.isValidAmountDisplayFormat(amountFormat)) {
-      this.validateSettingChange(
-        'amountDisplayFormat',
-        'error',
-        `Error setting amount display format: Missing %T, %U or %D placeholders`
-      );
-      return;
-    }
-
-    this.$api
-      .setSettings({ amount_display_format: amountFormat })
-      .then(settings => {
-        commit('session/generalSettings', {
-          ...this.generalSettings,
-          amountDisplayFormat: settings.amount_display_format
-        });
-        this.validateSettingChange(
-          'amountDisplayFormat',
-          'success',
-          `amount display set to ${amountFormat}`
-        );
-      })
-      .catch(reason => {
-        this.validateSettingChange(
-          'amountDisplayFormat',
-          'error',
-          `Error setting amount display format ${reason.message}`
-        );
-      });
-  }
-
   onRpcEndpointChange(endpoint: string) {
     const { commit } = this.$store;
     const previousValue = this.generalSettings.ethRpcEndpoint;
@@ -548,7 +608,9 @@ export default class General extends Settings {
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
-    this.amountDisplayFormat = settings.amountDisplayFormat;
+    this.thousandSeparator = settings.thousandSeparator;
+    this.decimalSeparator = settings.decimalSeparator;
+    this.currencyLocation = settings.currencyLocation;
     this.date = this.parseDate(settings.historicDataStart) || '';
     this.scrambleData = this.$store.state.session.scrambleData;
   }
@@ -600,9 +662,17 @@ export default class General extends Settings {
         this.dateDisplayFormat,
         this.generalSettings.dateDisplayFormat
       ),
-      amount_display_format: setOnlyIfDifferent(
-        this.amountDisplayFormat,
-        this.generalSettings.amountDisplayFormat
+      thousand_separator: setOnlyIfDifferent(
+        this.thousandSeparator,
+        this.generalSettings.thousandSeparator
+      ),
+      decimal_separator: setOnlyIfDifferent(
+        this.decimalSeparator,
+        this.generalSettings.decimalSeparator
+      ),
+      currency_location: setOnlyIfDifferent(
+        this.currencyLocation,
+        this.generalSettings.currencyLocation
       )
     };
     this.$api

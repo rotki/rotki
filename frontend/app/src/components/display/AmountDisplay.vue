@@ -6,6 +6,12 @@
       max-width="70"
       type="text"
     >
+      <amount-currency
+        v-if="!renderValue.isNaN() && currencyLocation === 'before'"
+        :show-currency="showCurrency"
+        :currency="currency"
+        :asset="asset"
+      ></amount-currency>
       <span
         v-if="fiatCurrency && fiatCurrency !== currency.ticker_symbol"
         class="amount-display__value"
@@ -13,7 +19,11 @@
         {{
           renderValue
             | calculatePrice(exchangeRate(currency.ticker_symbol))
-            | formatPrice(amountDisplayFormat, floatingPrecision)
+            | formatPrice(
+              thousandSeparator,
+              decimalSeparator,
+              floatingPrecision
+            )
         }}
       </span>
       <span
@@ -23,10 +33,10 @@
         {{
           renderValue
             | formatPrice(
-              amountDisplayFormat,
+              thousandSeparator,
+              decimalSeparator,
               floatingPrecision,
-              null,
-              BigNumber.ROUND_DOWN
+              BIGNUMBER_ROUND_DOWN
             )
         }}
       </span>
@@ -34,10 +44,10 @@
         {{
           renderValue
             | formatPrice(
-              amountDisplayFormat,
+              thousandSeparator,
+              decimalSeparator,
               floatingPrecision,
-              null,
-              BigNumber.ROUND_UP
+              BIGNUMBER_ROUND_UP
             )
         }}
       </span>
@@ -60,30 +70,12 @@
           {{ renderValue }}
         </span>
       </v-tooltip>
-      <span
-        v-if="showCurrency === 'ticker' && !renderValue.isNaN()"
-        class="amount-display__currency"
-      >
-        {{ currency.ticker_symbol }}
-      </span>
-      <span
-        v-else-if="showCurrency === 'symbol' && !renderValue.isNaN()"
-        class="amount-display__currency"
-      >
-        {{ currency.unicode_symbol }}
-      </span>
-      <span
-        v-else-if="showCurrency === 'name' && !renderValue.isNaN()"
-        class="amount-display__currency"
-      >
-        {{ currency.name }}
-      </span>
-      <span
-        v-else-if="!!asset && !renderValue.isNaN()"
-        class="amount-display__asset"
-      >
-        {{ asset }}
-      </span>
+      <amount-currency
+        v-if="!renderValue.isNaN() && currencyLocation === 'after'"
+        :show-currency="showCurrency"
+        :currency="currency"
+        :asset="asset"
+      ></amount-currency>
     </v-skeleton-loader>
   </div>
 </template>
@@ -92,7 +84,9 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { Currency } from '@/model/currency';
+import { GeneralSettings } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 
 const { mapGetters, mapState } = createNamespacedHelpers('session');
@@ -100,8 +94,17 @@ const { mapGetters, mapState } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
+  components: {
+    AmountCurrency
+  },
   computed: {
-    ...mapGetters(['floatingPrecision', 'currency', 'amountDisplayFormat']),
+    ...mapGetters([
+      'floatingPrecision',
+      'currency',
+      'thousandSeparator',
+      'decimalSeparator',
+      'currencyLocation'
+    ]),
     ...mapState(['privacyMode', 'scrambleData']),
     ...mapBalancesGetters(['exchangeRate'])
   }
@@ -129,7 +132,11 @@ export default class AmountDisplay extends Vue {
   privacyMode!: boolean;
   scrambleData!: boolean;
   floatingPrecision!: number;
-  amountDisplayFormat!: string;
+  thousandSeparator!: string;
+  decimalSeparator!: string;
+  currencyLocation!: GeneralSettings['currencyLocation'];
+  BIGNUMBER_ROUND_DOWN = BigNumber.ROUND_DOWN;
+  BIGNUMBER_ROUND_UP = BigNumber.ROUND_UP;
 
   get renderValue() {
     const multiplier = [10, 100, 1000];
@@ -174,12 +181,6 @@ export default class AmountDisplay extends Vue {
     &:hover {
       cursor: pointer;
     }
-  }
-
-  &__asset,
-  &__currency {
-    margin-left: 5px;
-    font-size: 0.8em;
   }
 }
 

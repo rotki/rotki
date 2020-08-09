@@ -23,19 +23,19 @@ export function formatDate(value: number, format: string): string {
 
 export function formatPrice(
   value: BigNumber,
-  format: string,
+  thousandSeparator: string,
+  decimalSeparator: string,
   precision: number,
-  currency: string,
-  roundingMode = BigNumber.ROUND_UP
+  roundingMode?: BigNumber.RoundingMode
 ) {
   return value.isNaN()
     ? '-'
     : displayAmountFormatter.format(
         value,
-        format,
         precision,
-        roundingMode,
-        currency
+        thousandSeparator,
+        decimalSeparator,
+        roundingMode
       );
 }
 

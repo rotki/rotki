@@ -69,19 +69,13 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
   },
   computed: {
     ...mapState(['currency', 'events']),
-    ...mapGetters([
-      'floatingPrecision',
-      'dateDisplayFormat',
-      'amountDisplayFormat'
-    ]),
+    ...mapGetters(['dateDisplayFormat']),
     ...mapBalanceGetters(['exchangeRate'])
   }
 })
 export default class TaxReportEvents extends Vue {
   events!: EventEntry[];
   currency!: string;
-  floatingPrecision!: number;
-  amountDisplayFormat!: string;
   exchangeRate!: (currency: string) => number;
   dateDisplayFormat!: string;
 

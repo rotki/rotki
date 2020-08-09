@@ -42,15 +42,13 @@ const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
   },
   computed: {
     ...mapReportsState(['overview']),
-    ...mapGetters(['floatingPrecision', 'currency', 'amountDisplayFormat']),
+    ...mapGetters(['currency']),
     ...mapBalanceGetters(['exchangeRate'])
   }
 })
 export default class TaxReportOverview extends Vue {
   overview!: TaxReportOverview;
   currency!: Currency;
-  floatingPrecision!: number;
-  amountDisplayFormat!: string;
   exchangeRate!: (currency: string) => number;
 }
 </script>

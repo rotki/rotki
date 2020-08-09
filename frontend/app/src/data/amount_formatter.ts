@@ -6,36 +6,20 @@ export class AmountFormatter {
 
   format(
     amount: BigNumber,
-    format: string,
     precision: number,
-    roundingMode: BigNumber.RoundingMode,
-    currency?: string
+    thousandSeparator: string,
+    decimalSeparator: string,
+    roundingMode?: BigNumber.RoundingMode
   ) {
-    /**
-     * Get separators
-     */
-    const numberParts = [...format.matchAll(this.numberPartsRegex)][0];
-    if (!numberParts)
-      throw new Error('Missing format placeholders: %T, %U or %D');
-    const thousandsSeparator = numberParts[1].substring(2);
-    const decimalSeparator = numberParts[2].substring(2);
-
-    /**
-     * Format the amount using BigNumbers
-     */
-    const formattedAmount = amount.toFormat(
-      amount.modulo(1).comparedTo(0) === 0 ? 0 : precision,
-      roundingMode,
+    return amount.toFormat(
+      precision,
+      roundingMode == undefined ? BigNumber.ROUND_DOWN : roundingMode,
       {
         groupSize: 3,
-        groupSeparator: thousandsSeparator,
+        groupSeparator: thousandSeparator,
         decimalSeparator
       }
     );
-    return format
-      .replace(this.amountRegex, formattedAmount)
-      .replace(/%C/gm, currency || '')
-      .trim();
   }
 }
 
