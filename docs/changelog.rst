@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `1243` Fix a problem where the "Get Premium" menu entry would not disappear without restarting the application.
 * :feature: `1201` Changing the password when premium sync is enabled, will now display a warning to users about the change affecting synced instances.
 * :feature: `1178` Users can now select which accounts they want to track for the activated defi modules.
 * :feature: `1084` Users can now select which of the available defi modules they want to activate.
