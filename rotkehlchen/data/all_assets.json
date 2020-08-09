@@ -7702,6 +7702,14 @@
         "symbol": "ORME",
         "type": "ethereum token"
     },
+    "ORN": {
+        "ethereum_address": "0x8fB00FDeBb4E83f2C58b3bcD6732AC1B6A7b7221",
+        "ethereum_token_decimals": 8,
+        "name": "Orion Protocol",
+        "started": 1594598400,
+        "symbol": "ORN",
+        "type": "ethereum token"
+    },
     "ORS": {
         "coingecko": "origin-sport",
         "cryptocompare": "OGSP",
