@@ -21,7 +21,6 @@ from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, Location, Timesta
 class BalancesTestSetup(NamedTuple):
     eth_balances: List[str]
     btc_balances: List[str]
-    fiat_balances: Dict[str, FVal]
     token_balances: Dict[EthereumToken, List[str]]
     binance_balances: Dict[str, FVal]
     poloniex_balances: Dict[str, FVal]
@@ -120,9 +119,6 @@ def setup_balances(
     for idx, btc_acc in enumerate(btc_accounts):
         btc_map[btc_acc] = btc_balances[idx]
 
-    eur_balance = FVal('1550')
-
-    rotki.data.db.add_fiat_balance(A_EUR, eur_balance)
     binance = rotki.exchange_manager.connected_exchanges.get('binance', None)
     binance_patch = patch_binance_balances_query(binance) if binance else None
     poloniex = rotki.exchange_manager.connected_exchanges.get('poloniex', None)
@@ -150,11 +146,12 @@ def setup_balances(
 
     if manually_tracked_balances is None:
         manually_tracked_balances = []
+    rotki.data.db.add_manually_tracked_balances(manually_tracked_balances)
+
     return BalancesTestSetup(
         eth_balances=eth_balances,
         btc_balances=btc_balances,
         token_balances=token_balances,
-        fiat_balances={'EUR': eur_balance},
         binance_balances=binance_balances,
         poloniex_balances=poloniex_balances,
         manually_tracked_balances=manually_tracked_balances,
