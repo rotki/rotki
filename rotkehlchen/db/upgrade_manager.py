@@ -115,7 +115,7 @@ UPGRADES_LIST = [
         function=upgrade_v11_to_v12,
     ),
     UpgradeRecord(
-        from_version=11,
+        from_version=12,
         function=upgrade_v12_to_v13,
     ),
 ]

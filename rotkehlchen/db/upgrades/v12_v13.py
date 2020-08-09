@@ -11,17 +11,14 @@ if TYPE_CHECKING:
 def _migrate_fiat_balances(db: 'DBHandler') -> None:
     """Migrates fiat balances from the old current_balances table to manually tracked balances"""
     cursor = db.conn.cursor()
-    query = cursor.select('SELECT asset, amount FROM current_balances;')
-    balances = []
-    for q in query:
-        asset = q[0]
-        amount = q[1]
-        balances.append((asset, amount))
-
+    query = cursor.execute('SELECT asset, amount FROM current_balances;')
+    for entry in query.fetchall():  # fetchall() here since the same cursors can't be used later
+        asset = entry[0]
+        amount = entry[1]
         try:
             cursor.execute(
                 'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
-                'VALUES(?, ?, ?, ?)',
+                'VALUES(?, ?, ?, ?);',
                 (asset, f'My {asset} bank', amount, 'I'),
             )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
@@ -29,7 +26,7 @@ def _migrate_fiat_balances(db: 'DBHandler') -> None:
             try:
                 cursor.execute(
                     'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
-                    'VALUES(?, ?, ?, ?)',
+                    'VALUES(?, ?, ?, ?);',
                     (
                         asset,
                         f'Migrated from fiat balances. My {asset} bank',
@@ -45,7 +42,7 @@ def _migrate_fiat_balances(db: 'DBHandler') -> None:
         db.conn.commit()
 
     # Once any fiat balances got migrated, we can delete the table
-    cursor.execute('DROP TABLE IF EXISTS current_balances')
+    cursor.execute('DROP TABLE IF EXISTS current_balances;')
     db.conn.commit()
 
 
