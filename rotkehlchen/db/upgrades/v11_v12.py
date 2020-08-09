@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 def _delete_bittrex_data(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
-    # This is the user credentiaals trades table at v10
+    # This is the user credentials trades table at v10
     cursor.execute('DELETE FROM trades WHERE location="D";')
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "bittrex_%";')
     db.conn.commit()
