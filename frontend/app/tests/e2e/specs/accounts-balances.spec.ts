@@ -129,11 +129,28 @@ describe('Accounts', () => {
       });
     });
 
+    it('edit and add new', function () {
+      cy.get('.accounts-balances__manual-balances').click();
+      page.editBalance(1, '300');
+      page.visibleEntries(3);
+      page.isVisible(1, {
+        ...manualBalances[1],
+        amount: '300'
+      });
+
+      cy.get('.manual-balances__add-balance').click();
+
+      const apiManualBalance = { ...manualBalances[1], label: 'extra' };
+      page.addBalance(apiManualBalance);
+      page.visibleEntries(4);
+      page.isVisible(2, apiManualBalance);
+    });
+
     it('delete', () => {
       cy.get('.accounts-balances__manual-balances').click();
       page.deleteBalance(1);
       page.confirmDelete();
-      page.visibleEntries(2);
+      page.visibleEntries(3);
       page.isVisible(0, manualBalances[0]);
     });
   });

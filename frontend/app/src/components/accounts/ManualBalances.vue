@@ -23,7 +23,7 @@
           :subtitle="dialogSubtitle"
           primary-action="Save"
           @confirm="save()"
-          @cancel="openDialog = false"
+          @cancel="cancel()"
         >
           <manual-balances-form
             ref="dialogChild"
@@ -66,6 +66,7 @@ export default class ManualBalances extends Vue {
     this.dialogSubtitle = '';
     this.openDialog = true;
   }
+
   edit(balance: ManualBalance) {
     this.balanceToEdit = balance;
     this.dialogTitle = 'Edit Manual Balance';
@@ -78,9 +79,17 @@ export default class ManualBalances extends Vue {
       save(): Promise<boolean>;
     }
     const form = this.$refs.dialogChild as dataForm;
-    form.save().then(success => {
-      if (success === true) this.openDialog = false;
-    });
+    const success = await form.save();
+    if (!success) {
+      return;
+    }
+    this.openDialog = false;
+    this.balanceToEdit = null;
+  }
+
+  cancel() {
+    this.openDialog = false;
+    this.balanceToEdit = null;
   }
 }
 </script>
