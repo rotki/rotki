@@ -7780,7 +7780,8 @@
         "name": "Augur",
         "started": 1416182400,
         "symbol": "REP",
-        "type": "ethereum token"
+        "type": "ethereum token",
+        "swapped_for": "REPV2"
     },
     "REP-old": {
         "ethereum_address": "0x48c80F1f4D53D5951e5D5438B54Cba84f29F32a5",
@@ -7788,6 +7789,14 @@
         "name": "Augur old",
         "started": 1416182400,
         "symbol": "REP",
+        "type": "ethereum token"
+    },
+    "REPV2": {
+        "ethereum_address": "0x221657776846890989a759BA2973e427DfF5C9bB",
+        "ethereum_token_decimals": 18,
+        "name": "Augur",
+        "started": 1595886655,
+        "symbol": "REPv2",
         "type": "ethereum token"
     },
     "REQ": {
@@ -8811,6 +8820,14 @@
         "symbol": "SUB",
         "type": "ethereum token"
     },
+    "SUKU": {
+        "ethereum_address": "0x0763fdCCF1aE541A5961815C0872A8c5Bc6DE4d7",
+        "ethereum_token_decimals": 18,
+        "name": "SUKU",
+        "started": 1571338185,
+        "symbol": "SUKU",
+        "type": "ethereum token"
+    },
     "SUR": {
         "ethereum_address": "0xe120c1ECBfdFeA7F0A8f0Ee30063491E8c26fedf",
         "ethereum_token_decimals": 8,
@@ -9046,6 +9063,14 @@
         "symbol": "TEN",
         "type": "ethereum token"
     },
+    "TEND": {
+        "ethereum_address": "0x1453Dbb8A29551ADe11D89825CA812e05317EAEB",
+        "ethereum_token_decimals": 18,
+        "name": "Tendies",
+        "started": 1595883667,
+        "symbol": "TEND",
+        "type": "ethereum token"
+    },
     "TFD": {
         "ethereum_address": "0xE5F166c0D8872B68790061317BB6CcA04582C912",
         "ethereum_token_decimals": 18,
@@ -9277,6 +9302,14 @@
         "name": "OriginTrail",
         "started": 1511222400,
         "symbol": "TRAC",
+        "type": "ethereum token"
+    },
+    "TRADE": {
+        "ethereum_address": "0x6F87D756DAf0503d08Eb8993686c7Fc01Dc44fB1",
+        "ethereum_token_decimals": 18,
+        "name": "Unitrade",
+        "started": 1595830787,
+        "symbol": "TRADE",
         "type": "ethereum token"
     },
     "TRAK": {

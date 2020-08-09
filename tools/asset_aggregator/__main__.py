@@ -14,7 +14,6 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from asset_aggregator.active_check import active_check
@@ -150,7 +149,7 @@ def main():
     cmc = None
     cmc_list = None
     root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    data_directory = Path(f'{Path.home()}/.rotkehlchen')
+    data_directory = default_data_directory()
     if args.cmc_api_key:
         cmc = Coinmarketcap(
             data_directory=data_directory,

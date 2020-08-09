@@ -31,6 +31,10 @@ Changelog
   - `Plutus DeFi (PLT) <https://coinmarketcap.com/currencies/plutusdefi/>`__
   - `Darwinia Network (RING) <https://coinmarketcap.com/currencies/darwinia-network/>`__
   - `TrustSwap (SWAP) <https://coinmarketcap.com/currencies/trustswap/>`__
+  - `SUKU (SUKU) <https://coinmarketcap.com/currencies/suku/>`__
+  - `Tendies (TEND) <https://coinmarketcap.com/currencies/tendies/>`__
+  - `Unitrade (TRADE) <https://coinmarketcap.com/currencies/unitrade/>`__
+  - `Augur v2 (REPV2) <https://www.augur.net/blog/v2-launch/>`__
 
 
 * :release:`1.6.1 <2020-07-25>`

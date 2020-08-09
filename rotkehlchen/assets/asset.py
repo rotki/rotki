@@ -18,6 +18,8 @@ WORLD_TO_BITTREX = {
     'PAI-2': 'PI',
     # In Rotkehlchen PLA-2 is Playchip but in Bittrex is PLA
     'PLA-2': 'PLA',
+    # In Rotkehlchen sUSD is Synt USD but in Bittrex it's SUSD
+    'sUSD': 'SUSD',
     # In Rotkehlchen LUNA-2 is Terra Luna but in Bittrex it's LUNA
     'LUNA-2': 'LUNA',
     # In Rotkehlchen WorldWideAssetExchange is WAX but in Bittrex it's WASP
@@ -93,6 +95,7 @@ WORLD_TO_KRAKEN = {
     'JPY': 'ZJPY',
     'CHF': 'CHF',
     'KRW': 'ZKRW',
+    'REPV2': 'REPV2',
     'DAO': 'XDAO',
     'MLN': 'XMLN',
     'ICN': 'XICN',
