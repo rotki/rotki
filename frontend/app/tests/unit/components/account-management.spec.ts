@@ -1,21 +1,38 @@
 import { mount, Wrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises/index';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountManagement from '@/components/AccountManagement.vue';
+import { interop } from '@/electron-interop';
+import { Api } from '@/plugins/api';
+import { Interop } from '@/plugins/interop';
 import store from '@/store/store';
 
+jest.mock('@/electron-interop');
+jest.mock('@/services/rotkehlchen-api');
+
 Vue.use(Vuetify);
+Vue.use(Api);
+Vue.use(Interop);
 
 describe('AccountManagement.vue', () => {
-  let vuetify: typeof Vuetify;
   let wrapper: Wrapper<AccountManagement>;
 
   beforeEach(() => {
-    vuetify = new Vuetify();
+    document.body.setAttribute('data-app', 'true');
+    store.commit('setConnected', true);
+    const vuetify = new Vuetify();
     wrapper = mount(AccountManagement, {
       store,
       vuetify,
-      stubs: ['v-dialog'],
+      stubs: {
+        VDialog: {
+          template: '<span v-if="value"><slot></slot></span>',
+          props: {
+            value: { type: Boolean }
+          }
+        }
+      },
       propsData: {
         logged: true
       }
@@ -28,65 +45,82 @@ describe('AccountManagement.vue', () => {
 
   describe('existing account', () => {
     test('non premium users should see the premium dialog', async () => {
-      expect.assertions(3);
+      interop.premiumUserLoggedIn = jest.fn();
+      store.dispatch = jest.fn();
+      expect.assertions(4);
       // @ts-ignore
-      wrapper.vm.showPremiumDialog();
+      await wrapper.vm.login({ username: '1234', password: '1234' });
+      await flushPromises();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
-        true
-      );
+      expect(
+        wrapper.find('.account-management__premium-dialog').element
+      ).toBeVisible();
+
       wrapper
-        .find('.account-management__premium-dialog__buttons__cancel')
+        .find('.account-management__premium-dialog__buttons__confirm')
         .trigger('click');
+
       await wrapper.vm.$nextTick();
 
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
       expect(wrapper.emitted()['login-complete']).toHaveLength(1);
+      expect(interop.premiumUserLoggedIn).toHaveBeenCalledWith(false);
     });
 
     test('premium users should not see the premium dialog', async () => {
-      expect.assertions(2);
+      interop.premiumUserLoggedIn = jest.fn();
       store.commit('session/premium', true);
+      store.dispatch = jest.fn();
+      expect.assertions(4);
       // @ts-ignore
-      wrapper.vm.showPremiumDialog();
+      await wrapper.vm.login({ username: '1234', password: '1234' });
+      await flushPromises();
       await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
+        false
+      );
 
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
       expect(wrapper.emitted()['login-complete']).toHaveLength(1);
+      expect(interop.premiumUserLoggedIn).toHaveBeenCalledWith(true);
     });
   });
 
   describe('new account', () => {
-    test('non premium users should see the premium dialog', async () => {
-      expect.assertions(3);
-      store.commit('session/login', { username: 'test', newAccount: true });
+    test('non premium users should only see menu', async () => {
+      interop.premiumUserLoggedIn = jest.fn();
+      store.dispatch = jest.fn();
+      expect.assertions(4);
       // @ts-ignore
-      wrapper.vm.showPremiumDialog();
+      await wrapper.vm.createAccount({ username: '1234', password: '1234' });
       await wrapper.vm.$nextTick();
 
       expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
-        true
+        false
       );
-      wrapper
-        .find('.account-management__premium-dialog__buttons__cancel')
-        .trigger('click');
-      await wrapper.vm.$nextTick();
-
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
       expect(wrapper.emitted()['login-complete']).toHaveLength(1);
+      expect(interop.premiumUserLoggedIn).toHaveBeenCalledWith(false);
     });
 
-    test('premium users should not see the premium dialog', async () => {
-      expect.assertions(2);
+    test('premium users should not see the premium menu entry', async () => {
+      expect.assertions(4);
+      interop.premiumUserLoggedIn = jest.fn();
+      store.dispatch = jest.fn();
+
       store.commit('session/premium', true);
-      store.commit('session/login', { username: 'test', newAccount: true });
       // @ts-ignore
-      wrapper.vm.showPremiumDialog();
+      await wrapper.vm.createAccount({ username: '1234', password: '1234' });
       await wrapper.vm.$nextTick();
 
+      expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
+        false
+      );
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
       expect(wrapper.emitted()['login-complete']).toHaveLength(1);
+      expect(interop.premiumUserLoggedIn).toHaveBeenCalledWith(true);
     });
   });
 });

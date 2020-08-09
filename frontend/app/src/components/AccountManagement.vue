@@ -72,7 +72,7 @@
       </v-dialog>
 
       <v-dialog
-        :value="!premium && !message && premiumVisible"
+        :value="!premium && !!!message.title && premiumVisible"
         persistent
         max-width="450"
         @keydown.esc.stop="loginComplete()"
@@ -129,13 +129,11 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
 import Login from '@/components/account-management/Login.vue';
-import { Version } from '@/store/store';
+import { Message } from '@/store/store';
 import { Credentials, UnlockPayload } from '@/typing/types';
-
-const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
@@ -143,8 +141,8 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
     CreateAccount
   },
   computed: {
-    ...mapSessionState(['syncConflict', 'premium']),
-    ...mapState(['version', 'message', 'connected']),
+    ...mapState('session', ['syncConflict', 'premium']),
+    ...mapState(['message', 'connected']),
     ...mapGetters(['updateNeeded', 'message'])
   }
 })
@@ -152,12 +150,11 @@ export default class AccountManagement extends Vue {
   accountCreation: boolean = false;
   premium!: boolean;
   loading: boolean = false;
-  version!: Version;
-  message!: boolean;
+  message!: Message;
   connected!: boolean;
   syncConflict!: boolean;
 
-  private premiumVisible = false;
+  premiumVisible = false;
 
   @Prop({ required: true, type: Boolean })
   logged!: boolean;
@@ -202,6 +199,7 @@ export default class AccountManagement extends Vue {
     } as UnlockPayload);
     this.loading = false;
     if (this.logged) {
+      this.showGetPremiumButton();
       this.loginComplete();
     }
   }
@@ -225,11 +223,6 @@ export default class AccountManagement extends Vue {
 
   private showGetPremiumButton() {
     this.$interop.premiumUserLoggedIn(this.premium);
-  }
-
-  closeUpdateDialog() {
-    this.dismiss();
-    this.premiumVisible = true;
   }
 }
 </script>
