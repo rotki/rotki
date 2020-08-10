@@ -1,7 +1,11 @@
+import sortBy from 'lodash/sortBy';
 import { AssetBalance } from '@/model/blockchain-balances';
+import { Location } from '@/services/types-common';
 import { SupportedAsset } from '@/services/types-model';
 import { getters } from '@/store/balances/getters';
+import { BalanceState } from '@/store/balances/state';
 import { bigNumberify } from '@/utils/bignumbers';
+import { stub } from '../../../common/utils';
 
 describe('balances:getters', () => {
   test('aggregatedBalances', () => {
@@ -53,45 +57,58 @@ describe('balances:getters', () => {
         }
       ]
     };
-    const state = {
+
+    const state: BalanceState = stub<BalanceState>({
       manualBalances: [
         {
           usdValue: bigNumberify(50),
           amount: bigNumberify(50),
-          asset: 'DAI'
+          asset: 'DAI',
+          label: '123',
+          tags: [],
+          location: Location.BANKS
         }
       ],
       connectedExchanges: ['bittrex']
-    };
+    });
 
-    // @ts-ignore
-    expect(getters.aggregatedBalances(state, mockGetters)).toMatchObject([
-      {
-        asset: 'EUR',
-        amount: bigNumberify(100),
-        usdValue: bigNumberify(100)
-      },
-      {
-        asset: 'DAI',
-        amount: bigNumberify(200),
-        usdValue: bigNumberify(200)
-      },
-      {
-        asset: 'BTC',
-        amount: bigNumberify(150),
-        usdValue: bigNumberify(150)
-      },
-      {
-        asset: 'ETH',
-        amount: bigNumberify(150),
-        usdValue: bigNumberify(150)
-      },
-      {
-        asset: 'SAI',
-        amount: bigNumberify(100),
-        usdValue: bigNumberify(100)
-      }
-    ] as AssetBalance[]);
+    const actualResult = sortBy(
+      getters.aggregatedBalances(state, mockGetters, stub(), stub()),
+      'asset'
+    );
+
+    const expectedResult = sortBy(
+      [
+        {
+          asset: 'EUR',
+          amount: bigNumberify(50),
+          usdValue: bigNumberify(50)
+        },
+        {
+          asset: 'DAI',
+          amount: bigNumberify(200),
+          usdValue: bigNumberify(200)
+        },
+        {
+          asset: 'BTC',
+          amount: bigNumberify(150),
+          usdValue: bigNumberify(150)
+        },
+        {
+          asset: 'ETH',
+          amount: bigNumberify(150),
+          usdValue: bigNumberify(150)
+        },
+        {
+          asset: 'SAI',
+          amount: bigNumberify(100),
+          usdValue: bigNumberify(100)
+        }
+      ] as AssetBalance[],
+      'asset'
+    );
+
+    expect(actualResult).toMatchObject(expectedResult);
   });
 
   test('manualLabels', () => {
