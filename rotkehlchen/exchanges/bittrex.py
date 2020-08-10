@@ -21,12 +21,7 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    Trade,
-    get_pair_position_asset,
-    trade_pair_from_assets,
-)
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, get_pair_position_asset
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -79,13 +74,9 @@ def bittrex_pair_to_world(given_pair: str) -> TradePair:
             f'but found {type(given_pair)}',
         )
     pair = TradePair(given_pair.replace('-', '_'))
-    base_currency = asset_from_bittrex(get_pair_position_str(pair, 'first'))
-    quote_currency = asset_from_bittrex(get_pair_position_str(pair, 'second'))
-
-    # Since in Bittrex the base currency is the cost currency, iow in Bittrex
-    # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
-    # into the Rotkehlchen way which is following the base/quote approach.
-    pair = trade_pair_from_assets(quote_currency, base_currency)
+    # Check that there is no unsupported asset in the trade
+    _ = asset_from_bittrex(get_pair_position_str(pair, 'first'))
+    _ = asset_from_bittrex(get_pair_position_str(pair, 'second'))
     return pair
 
 
