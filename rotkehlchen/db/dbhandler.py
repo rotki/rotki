@@ -734,6 +734,26 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def purge_exchange_data(self, exchange_name: str) -> None:
+        self.delete_used_query_range_for_exchange(exchange_name)
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM trades WHERE location = ?;',
+            (deserialize_location(exchange_name).serialize_for_db(),),
+        )
+        cursor.execute(
+            'DELETE FROM asset_movements WHERE location = ?;',
+            (deserialize_location(exchange_name).serialize_for_db(),),
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def purge_ethereum_transaction_data(self) -> None:
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM ethereum_transactions;')
+        self.conn.commit()
+        self.update_last_write()
+
     def update_used_query_range(self, name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:
         cursor = self.conn.cursor()
         cursor.execute(

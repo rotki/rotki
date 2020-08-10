@@ -824,6 +824,10 @@ class ExchangesResourceAddSchema(Schema):
     passphrase = fields.String(missing=None)
 
 
+class ExchangesDataResourceSchema(Schema):
+    name = ExchangeNameField(missing=None)
+
+
 class ExchangesResourceRemoveSchema(Schema):
     name = ExchangeNameField(required=True)
 
