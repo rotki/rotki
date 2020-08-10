@@ -117,7 +117,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     order_type = deserialize_trade_type(bittrex_trade['direction'])
     fee = deserialize_fee(bittrex_trade['commission'])
     pair = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
-    base_currency = get_pair_position_asset(pair, 'first')
+    quote_currency = get_pair_position_asset(pair, 'second')
 
     log.debug(
         'Processing bittrex Trade',
@@ -138,7 +138,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         amount=amount,
         rate=rate,
         fee=fee,
-        fee_currency=base_currency,
+        fee_currency=quote_currency,
         link=str(bittrex_trade['id']),
     )
 

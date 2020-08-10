@@ -315,7 +315,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             payload = """
 [{
       "id": "fd97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "marketSymbol": "BTC-LTC",
+      "marketSymbol": "LTC-BTC",
       "closedAt": "2017-05-01T15:00:00.00Z",
       "direction": "BUY",
       "type": "LIMIT",
@@ -324,7 +324,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
       "commission": 0.00004921
     }, {
       "id": "ad97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "marketSymbol": "ETH-LTC",
+      "marketSymbol": "LTC-ETH",
       "closedAt": "2017-05-02T15:00:00.00Z",
       "direction": "SELL",
       "type": "LIMIT",
@@ -342,7 +342,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
       "limit": 0.0000295
     }, {
       "id": "1d97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "marketSymbol": "ETH-IDONTEXIST",
+      "marketSymbol": "IDONTEXIST-ETH",
       "closedAt": "2017-05-02T15:00:00.00Z",
       "direction": "SELL",
       "type": "LIMIT",
