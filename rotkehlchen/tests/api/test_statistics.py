@@ -6,6 +6,8 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
@@ -13,6 +15,7 @@ from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.typing import Location
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -235,7 +238,19 @@ def test_query_statistics_value_distribution(
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
     token_balances = {A_RDN: ['111000', '4000000']}
-    setup = setup_balances(rotki, ethereum_accounts, btc_accounts, token_balances=token_balances)
+    setup = setup_balances(
+        rotki=rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=btc_accounts,
+        token_balances=token_balances,
+        manually_tracked_balances=[ManuallyTrackedBalance(
+            asset=A_EUR,
+            label='My EUR bank',
+            amount=FVal('1550'),
+            location=Location.BANKS,
+            tags=None,
+        )],
+    )
 
     # query balances and save data in DB to have data to test the statistics endpoint
     with ExitStack() as stack:

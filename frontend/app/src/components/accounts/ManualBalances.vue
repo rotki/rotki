@@ -35,13 +35,11 @@
         ></manual-balances-list>
       </v-card-text>
     </v-card>
-    <fiat-balances></fiat-balances>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import FiatBalances from '@/components/accounts/FiatBalances.vue';
 import ManualBalancesForm from '@/components/accounts/ManualBalancesForm.vue';
 import ManualBalancesList from '@/components/accounts/ManualBalancesList.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -51,8 +49,7 @@ import { ManualBalance } from '@/services/types-model';
   components: {
     ManualBalancesList,
     ManualBalancesForm,
-    BigDialog,
-    FiatBalances
+    BigDialog
   }
 })
 export default class ManualBalances extends Vue {

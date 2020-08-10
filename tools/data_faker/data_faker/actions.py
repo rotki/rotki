@@ -3,12 +3,13 @@ import random
 from typing import Tuple
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD, FIAT_CURRENCIES
 from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_location, pair_get_assets
-from rotkehlchen.typing import Timestamp, TradePair
+from rotkehlchen.typing import Location, Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5
@@ -51,7 +52,13 @@ class ActionWriter():
         timestamp, _, _ = self.get_next_ts()
         for asset, value in self.funds.items():
             if asset.is_fiat():
-                self.rotki.data.db.add_fiat_balance(str(asset), value)
+                self.rotki.data.db.add_manually_tracked_balances([ManuallyTrackedBalance(
+                    asset=asset,
+                    label=f'{asset.identifier} balance',
+                    amount=value,
+                    location=Location.BANKS,
+                    tags=None,
+                )])
         self.rotki.query_balances(requested_save_data=True, timestamp=timestamp)
 
         # divide our starting funds between exchanges and keep a part out
@@ -70,7 +77,13 @@ class ActionWriter():
                         time=timestamp,
                     )
                 if asset in FIAT_CURRENCIES:
-                    self.rotki.data.db.add_fiat_balance(asset, amount)
+                    self.rotki.data.db.add_manually_tracked_balances([ManuallyTrackedBalance(
+                        asset=asset,
+                        label=f'{asset.identifier} balance',
+                        amount=value,
+                        location=Location.BANKS,
+                        tags=None,
+                    )])
 
         self.rotki.query_balances(requested_save_data=True, timestamp=timestamp)
         self.last_balance_save_ts = timestamp

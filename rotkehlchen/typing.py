@@ -61,7 +61,6 @@ class ApiCredentials(NamedTuple):
 class ExternalService(Enum):
     ETHERSCAN = 0
     CRYPTOCOMPARE = 1
-    ALETHIO = 2  # TODO: Remove when also removing it from DB
 
     @staticmethod
     def serialize(name: str) -> Optional['ExternalService']:
@@ -69,8 +68,6 @@ class ExternalService(Enum):
             return ExternalService.ETHERSCAN
         elif name == 'cryptocompare':
             return ExternalService.CRYPTOCOMPARE
-        elif name == 'alethio':
-            return ExternalService.ALETHIO
 
         return None
 

@@ -6,9 +6,13 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.typing import Location
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -27,6 +31,13 @@ def test_query_owned_assets(
         rotki=rotki,
         ethereum_accounts=ethereum_accounts,
         btc_accounts=btc_accounts,
+        manually_tracked_balances=[ManuallyTrackedBalance(
+            asset=A_EUR,
+            label='My EUR bank',
+            amount=FVal('1550'),
+            location=Location.BANKS,
+            tags=None,
+        )],
     )
 
     # Get all our mocked balances and save them in the DB

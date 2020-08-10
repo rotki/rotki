@@ -1440,7 +1440,7 @@ Querying all balances
 
 .. http:get:: /api/(version)/balances/
 
-   Doing a GET on the balances endpoint will query all balances across all locations for the user. That is exchanges, blockchains and FIAT in banks. And it will return an overview of all queried balances.
+   Doing a GET on the balances endpoint will query all balances across all locations for the user. That is exchanges, blockchains and all manually tracked balances. And it will return an overview of all queried balances.
 
 
    **Example Request**:
@@ -1506,85 +1506,6 @@ Querying all balances
    :resjson object result: Each key of the result object is an asset. Each asset's value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset represents. And finally ``"usd_value"`` is the total $ value this asset is worth as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above.
    :statuscode 200: Balances succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in.
-   :statuscode 500: Internal Rotki error
-
-Querying FIAT balances
-==========================
-
-.. http:get:: /api/(version)/balances/fiat/
-
-   Doing a GET on the FIAT balances endpoint will query the FIAT balances of the user.
-
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/balances/fiat/ HTTP/1.1
-      Host: localhost:5042
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "EUR": {"amount": "150", "usd_value": "166.21"},
-              "CNY": {"amount": "10500", "usd_value": "1486.05"}
-          },
-          "message": ""
-      }
-
-
-   :resjson object result: Each key of the result object is as defined `here <balances_result_>`_.
-   :statuscode 200: Balances succesfully queried.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in.
-   :statuscode 500: Internal Rotki error
-
-Setting FIAT balances
-======================
-
-.. http:patch:: /api/(version)/balances/fiat/
-
-   Doing a PATCH on the FIAT balances endpoint will edit the FIAT balances of the given currencies for the currently logged in user. If the balance for an asset is set to 0 then that asset is removed from the database. Negative balance is an error.
-
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PATCH /api/1/balances/fiat/ HTTP/1.1
-      Host: localhost:5042
-
-      {"balances": {"EUR": "5000", "USD": "3000"}}
-
-   :reqjson object balances: An object with each key being a FIAT asset and each value the amount of that asset the user owns.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "EUR": {"amount": "5000", "usd_value": "6130"},
-              "USD": {"amount": "3000", "usd_value": "3000"},
-              "CNY": {"amount": "10500", "usd_value": "1486.05"}
-          },
-          "message": ""
-      }
-
-
-   :resjson object result: Each key of the result object is as defined `here <balances_result_>`_.
-   :statuscode 200: Balances succesfully edited.
-   :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
 

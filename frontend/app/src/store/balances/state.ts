@@ -2,8 +2,7 @@ import {
   AssetBalances,
   Balances,
   EthBalances,
-  ManualBalanceByLocation,
-  FiatBalance
+  ManualBalanceByLocation
 } from '@/model/blockchain-balances';
 import { ManualBalance, SupportedAsset } from '@/services/types-model';
 import {
@@ -19,7 +18,6 @@ export interface BalanceState {
   usdToFiatExchangeRates: UsdToFiatExchangeRates;
   connectedExchanges: string[];
   exchangeBalances: ExchangeData;
-  fiatBalances: FiatBalance[];
   ethAccounts: AccountDataMap;
   btcAccounts: AccountDataMap;
   supportedAssets: SupportedAsset[];
@@ -34,7 +32,6 @@ export const defaultState = (): BalanceState => ({
   usdToFiatExchangeRates: {},
   connectedExchanges: [],
   exchangeBalances: {},
-  fiatBalances: [],
   ethAccounts: {},
   btcAccounts: {},
   supportedAssets: [],

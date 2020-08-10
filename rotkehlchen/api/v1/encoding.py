@@ -607,14 +607,6 @@ class TradeSchema(Schema):
     notes = fields.String(missing='')
 
 
-class FiatBalancesSchema(Schema):
-    balances = fields.Dict(
-        keys=FiatAssetField(),
-        values=PositiveOrZeroAmountField(),
-        required=True,
-    )
-
-
 class ManuallyTrackedBalanceSchema(Schema):
     asset = AssetField(required=True)
     label = fields.String(required=True)

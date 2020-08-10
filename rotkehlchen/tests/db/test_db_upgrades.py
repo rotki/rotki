@@ -831,6 +831,59 @@ def test_upgrade_db_11_to_12(user_data_dir):
     assert db.get_version() == 12
 
 
+def test_upgrade_db_12_to_13(user_data_dir):
+    """Test upgrading the DB from version 12 to version 13.
+
+    Migrating fiat balances to manually tracked balances and
+    deleting alethio credentials and owned eth tokens
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v12_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=13,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+
+    # Make sure that current balances table is deleted
+    cursor = db.conn.cursor()
+    # with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
+    query = cursor.execute(
+        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name="current_balances"',
+    )
+    assert query.fetchall()[0][0] == 0, 'current_balances table still exists'
+
+    # Also assure that fiat balances migrated properly
+    expected_manual_balances = [
+        ('EUR', 'My EUR bank', '3000', 'I'),
+        ('ETH', 'ETH in paper wallet', '1', 'J'),
+        ('CNY', 'My Chinese bank', '40000', 'I'),
+        ('USD', 'My USD bank', '2000', 'I'),
+        ('EUR', 'Migrated from fiat balances. My EUR bank', '2500', 'I'),
+        ('CNY', 'My CNY bank', '350000', 'I'),
+    ]
+    query = cursor.execute('SELECT asset, label, amount, location FROM manually_tracked_balances;')
+    results = query.fetchall()
+    assert set(results) == set(expected_manual_balances)
+
+    # Check that eth tokens are deleted, and only ignored asset remains
+    query = cursor.execute('SELECT name, value FROM multisettings;')
+    results = query.fetchall()
+    assert len(results) == 1
+    assert results[0][0] == 'ignored_asset'
+    assert results[0][1] == 'DAO'
+
+    # Check that alethio credentials are deleted
+    query = cursor.execute('SELECT name, api_key FROM external_service_credentials;')
+    results = query.fetchall()
+    assert len(results) == 1
+    assert results[0][0] == 'etherscan'
+    assert results[0][1] == 'APIKEYVALUE'
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 13
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the

@@ -213,22 +213,6 @@ To manage Accounts & Balances (Blockchain Balances, Exchange Balances, and Manua
    :align: center
 
 
-
-Adding Fiat Balances
-=====================
-
-Rotki is an asset analytics application. Thus you can track all your assets in one place including the fiat balances you have.
-
-To add or modify the amount of an owned fiat currency, navigate to the "Manual Balances" sub-page, scroll down to the "Fiat Balances" section and choose the currency from the dropdown menu. Input the modified balance in the text box and press the Modify button.
-
-.. image:: images/sc_fiat_balances.png
-   :alt: Manually adding fiat balances
-   :align: center
-
-.. Warning::
-   This functionality is now deprecated in favour of the manually tracked balances (see below).
-
-
 Adding Manual Balances
 ==================================
 
