@@ -95,7 +95,7 @@ def test_bittrex_query_balances_unknown_asset(bittrex):
 BITTREX_LIMIT_TRADE = """
     {
       "id": "fd97d393-e9b9-4dd1-9dbf-f288fc72a185",
-      "marketSymbol": "BTC-LTC",
+      "marketSymbol": "LTC-BTC",
       "direction": "BUY",
       "type": "LIMIT",
       "fillQuantity": 667.03644955,
@@ -108,7 +108,7 @@ BITTREX_LIMIT_TRADE = """
 BITTREX_MARKET_TRADE = """
     {
       "id": "ad97d393-19b9-6dd1-9dbf-f288fc72a185",
-      "marketSymbol": "BTC-ETH",
+      "marketSymbol": "ETH-BTC",
       "direction": "SELL",
       "type": "MARKET",
       "fillQuantity": 2,
@@ -221,14 +221,14 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
 
     # Check that for non-string pairs we give a graceful error
     input_str = history.replace(
-        '"marketSymbol": "BTC-LTC"',
+        '"marketSymbol": "LTC-BTC"',
         '"marketSymbol": 4324234',
     )
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
 
     # Check that for unsupported assets in the pair are caught
     input_str = history.replace(
-        '"marketSymbol": "BTC-LTC"',
+        '"marketSymbol": "LTC-BTC"',
         '"marketSymbol": "BTC-PTON"',
     )
     query_bittrex_and_test(
@@ -240,7 +240,7 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
 
     # Check that unprocessable pair is caught
     input_str = history.replace(
-        '"marketSymbol": "BTC-LTC"',
+        '"marketSymbol": "LTC-BTC"',
         '"marketSymbol": "SSSS"',
     )
     query_bittrex_and_test(
