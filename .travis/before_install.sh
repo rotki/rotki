@@ -14,8 +14,8 @@ if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
     # Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 else
     # Thankfully OSX has sqlcipher v4 in homebrew: https://formulae.brew.sh/formula/sqlcipher
-    brew update && brew install sqlcipher
-    brew install zmq
+    brew update
+    brew install sqlcipher
     brew install nvm
     # Moved to travis.yml since environment was not properly built here
     # git clone https://github.com/MacPython/terryfy.git
