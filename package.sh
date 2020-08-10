@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+WORKDIR=$PWD
 # cleanup before starting to package stuff
 make clean
 
@@ -25,8 +26,8 @@ fi
 
 
 # Get the arch
-ARCH=`uname -m`
-if [ ${ARCH} == 'x86_64' ]; then
+ARCH=$(uname -m)
+if [[ "$ARCH" == 'x86_64' ]]; then
     ARCH='x64'
 else
     echo "package.sh - ERROR: Unsupported architecture '${ARCH}'"
@@ -68,7 +69,7 @@ fi
 
 
 # From here and on we go into the frontend/app directory
-cd frontend/app
+cd frontend/app || exit 1
 
 # Let's make sure all npm dependencies are installed.
 npm ci
@@ -86,14 +87,56 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "Packaging finished for Rotki ${ROTKEHLCHEN_VERSION}"
 
+# Go back to root directory
+cd "$WORKDIR" || exit 1
+
 # Now if in linux make the AppImage executable
 if [[ "$PLATFORM" == "linux" ]]; then
-    # Go back to root directory
-    cd ../..
+
     # Find the appImage, make it executable and remember its filename so
     # travis can do the publishing
     # They don't do it automatically. Long discussion here:
     # https://github.com/electron-userland/electron-builder/issues/893
-    export GENERATED_APPIMAGE=$(ls frontend/app/dist/*AppImage | head -n 1)
-    chmod +x $GENERATED_APPIMAGE
+    GENERATED_APPIMAGE=$(ls frontend/app/dist/*AppImage | head -n 1)
+    export GENERATED_APPIMAGE
+    chmod +x "$GENERATED_APPIMAGE"
+fi
+
+function generate_checksum() {
+
+    local platform
+    local filter
+    local file
+    local checksum_file
+
+    platform=$1
+    filter=$2
+    file=$(find ./ -name "$filter" | sed 's|^./||' | sed 's|^/||');
+    checksum_file="$file.sha512"
+    echo "Generating sha512 sum for $file"
+
+    if [[ "$platform" == "linux" ]]; then
+      sha512sum "$file" > "$checksum_file"
+    elif [[ "$platform" == "darwin" ]]; then
+      shasum -a 512 "$file" > "$checksum_file"
+    else
+      echo "$platform not supported"
+      exit 1;
+    fi
+
+    eval "$3='frontend/app/dist/$checksum_file'"
+}
+
+cd frontend/app/dist || exit 1
+
+if [[ "$PLATFORM" == "linux" ]]; then
+  generate_checksum "$PLATFORM" "*AppImage" APPIMAGE_CHECKSUM
+  generate_checksum "$PLATFORM" "*.tar.xz" TAR_CHECKSUM
+  export APPIMAGE_CHECKSUM
+  export TAR_CHECKSUM
+elif [[ "$PLATFORM" == "darwin" ]]; then
+  generate_checksum "$PLATFORM" "*.dmg" DMG_CHECKSUM
+  generate_checksum "$PLATFORM" "*.zip" ZIP_CHECKSUM
+  export DMG_CHECKSUM
+  export ZIP_CHECKSUM
 fi
