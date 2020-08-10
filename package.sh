@@ -124,7 +124,7 @@ function generate_checksum() {
       exit 1;
     fi
 
-    eval "$3='frontend/app/dist/$checksum_file'"
+    eval "$3='$(pwd)/$checksum_file'"
 }
 
 cd frontend/app/dist || exit 1
