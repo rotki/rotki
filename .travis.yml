@@ -185,7 +185,7 @@ jobs:
           draft: true
           on:
             tags: true
-            condition: $TRAVIS_OS_NAME = linux
+            condition: $TRAVIS_OS_NAME = osx
             repo: rotki/rotki
             all_branch: true
       on:
