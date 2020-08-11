@@ -16,8 +16,10 @@
                   class="data-management__fields__exchange"
                   :items="exchanges"
                   :success-messages="
-                    exchangePurgeSuccess
-                      ? ['Cached data where successfully purged']
+                    !!exchangePurgeSuccess
+                      ? [
+                          `Cached data for ${exchangePurgeSuccess} were successfully purged.`
+                        ]
                       : []
                   "
                   :error-messages="exchangePurgeError"
@@ -52,36 +54,41 @@
                 </v-tooltip>
               </v-col>
             </v-row>
+            <status-button
+              class="data-management__purge-all-exchange"
+              tooltip="Purge all the cached exchange data. (deposits/withdrawals/trades)"
+              :success-message="
+                allExchangePurgeSuccess
+                  ? 'Cached data for all the available exchanges were successfully purged.'
+                  : null
+              "
+              :error-message="
+                !!allExchangePurgeError
+                  ? `Failed to purge cached data for all the exchanges: ${allExchangePurgeError}`
+                  : null
+              "
+              @click="confirmAllExchangePurge = true"
+            >
+              Purge Exchange Cache
+            </status-button>
             <h3>Ethereum Transactions</h3>
-            <v-row align="center">
-              <v-col cols="auto">
-                <v-btn
-                  color="primary"
-                  depressed
-                  class="data-management__purge-transactions"
-                  @click="confirmTransactionPurge = true"
-                >
-                  Purge ethereum transactions
-                </v-btn>
-              </v-col>
-              <v-col v-if="transactionPurgeSuccess">
-                <v-icon color="success">fa-check-circle</v-icon>
-                <span
-                  class="ml-2 success--text data-management__transactions__message"
-                >
-                  Ethereum transactions where successfully purged.
-                </span>
-              </v-col>
-              <v-col v-if="transactionPurgeError">
-                <v-icon color="error">fa-warning</v-icon>
-                <span
-                  class="ml-2 error--text data-management__transactions__message"
-                >
-                  Failed to purge cached ethereum transactions:
-                  {{ transactionPurgeError }}.
-                </span>
-              </v-col>
-            </v-row>
+            <status-button
+              class="data-management__purge-transactions"
+              tooltip="Purge the cached ethereum data"
+              :success-message="
+                transactionPurgeSuccess
+                  ? 'Ethereum transaction data were successfully purged.'
+                  : null
+              "
+              :error-message="
+                !!transactionPurgeError
+                  ? `Failed to purge cached ethereum transaction data: ${transactionPurgeError}`
+                  : null
+              "
+              @click="confirmTransactionPurge = true"
+            >
+              Purge transaction cache
+            </status-button>
           </v-card-text>
         </v-form>
       </v-card>
@@ -91,6 +98,13 @@
         :message="`Are you sure you want to purge the cached data for ${exchange}?`"
         @confirm="purgeExchangeData()"
         @cancel="confirmExchangePurge = false"
+      />
+      <confirm-dialog
+        :display="confirmAllExchangePurge"
+        title="Purge all cached exchange data"
+        :message="`Are you sure you want to purge the cached data for all the exchanges?`"
+        @confirm="purgeAllExchangeData()"
+        @cancel="confirmAllExchangePurge = false"
       />
       <confirm-dialog
         :display="confirmTransactionPurge"
@@ -105,24 +119,28 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import StatusButton from '@/components/settings/data-security/StatusButton.vue';
 import { exchanges } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 
 @Component({
-  components: { ConfirmDialog }
+  components: { StatusButton, ConfirmDialog }
 })
 export default class DataManagement extends Vue {
   exchange: SupportedExchange = exchanges[0];
   exchanges = exchanges;
 
   confirmExchangePurge: boolean = false;
+  confirmAllExchangePurge: boolean = false;
   confirmTransactionPurge: boolean = false;
 
   transactionPurgeSuccess: boolean = false;
-  exchangePurgeSuccess: boolean = false;
+  exchangePurgeSuccess: SupportedExchange | '' = '';
+  allExchangePurgeSuccess: boolean = false;
 
   exchangePurgeError: string[] = [];
   transactionPurgeError: string = '';
+  allExchangePurgeError: string = '';
 
   async purgeExchangeData() {
     for (let i = 0; i < this.exchangePurgeError.length; i++) {
@@ -133,14 +151,27 @@ export default class DataManagement extends Vue {
     const name = this.exchange;
     try {
       await this.$api.balances.deleteExchangeData(name);
-      this.exchangePurgeSuccess = true;
+      this.exchangePurgeSuccess = name;
       setTimeout(() => {
-        this.exchangePurgeSuccess = false;
+        this.exchangePurgeSuccess = '';
       }, 5000);
     } catch (e) {
       this.exchangePurgeError.push(
         `Purging cached data for ${name} failed: ${e.message}`
       );
+    }
+  }
+
+  async purgeAllExchangeData() {
+    this.confirmAllExchangePurge = false;
+    try {
+      await this.$api.balances.deleteExchangeData();
+      this.allExchangePurgeSuccess = true;
+      setTimeout(() => {
+        this.allExchangePurgeSuccess = false;
+      }, 5000);
+    } catch (e) {
+      this.allExchangePurgeError = `Purging the cached data for all the exchanges failed: ${e.message}`;
     }
   }
 

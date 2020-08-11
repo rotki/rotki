@@ -9,7 +9,7 @@ export class BalancesApi {
     this.axios = axios;
   }
 
-  deleteExchangeData(name: SupportedExchange): Promise<boolean> {
+  deleteExchangeData(name: SupportedExchange | '' = ''): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>(`/exchanges/data/${name}`, {
         validateStatus: validStatus

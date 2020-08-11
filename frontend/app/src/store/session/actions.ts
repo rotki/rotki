@@ -335,7 +335,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     { state: { username } },
     { currentPassword, newPassword }: ChangePasswordPayload
   ): Promise<ActionStatus> {
-    console.log(currentPassword);
     try {
       const success = await api.changeUserPassword(
         username,
