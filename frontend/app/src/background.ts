@@ -100,7 +100,7 @@ const defaultMenuTemplate: any[] = [
             { role: 'toggleDevTools' },
             { type: 'separator' }
           ]
-        : []),
+        : [{ role: 'toggleDevTools', visible: false }]),
 
       { role: 'resetZoom' },
       { role: 'zoomIn' },
@@ -175,8 +175,7 @@ function createWindow() {
       sandbox: true,
       enableRemoteModule: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
-      devTools: isDevelopment
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 

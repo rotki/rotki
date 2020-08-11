@@ -24,6 +24,7 @@ from rotkehlchen.api.v1.encoding import (
     DataImportSchema,
     EditSettingsSchema,
     ExchangeBalanceQuerySchema,
+    ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
     ExchangesResourceRemoveSchema,
     ExchangeTradesQuerySchema,
@@ -198,6 +199,21 @@ class ExchangesResource(BaseResource):
     @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, name: str) -> Response:
         return self.rest_api.remove_exchange(name=name)
+
+
+class ExchangesDataResource(BaseResource):
+
+    delete_schema = ExchangesDataResourceSchema()
+
+    @use_kwargs(delete_schema, location='view_args')  # type: ignore
+    def delete(self, name: Optional[str]) -> Response:
+        return self.rest_api.purge_exchange_data(name=name)
+
+
+class EthereumTransactionsResource(BaseResource):
+
+    def delete(self) -> Response:
+        return self.rest_api.purge_ethereum_transaction_data()
 
 
 class ExternalServicesResource(BaseResource):

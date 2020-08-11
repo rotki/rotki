@@ -12,11 +12,15 @@ import {
   WatcherTypes
 } from '@/services/session/types';
 import { notify } from '@/store/notifications/utils';
-import { PremiumCredentialsPayload, SessionState } from '@/store/session/types';
+import {
+  ChangePasswordPayload,
+  PremiumCredentialsPayload,
+  SessionState
+} from '@/store/session/types';
 import { loadFrontendSettings } from '@/store/settings/utils';
 import { Message, RotkehlchenState } from '@/store/store';
 import { ActionStatus } from '@/store/types';
-import { showError } from '@/store/utils';
+import { showError, showMessage } from '@/store/utils';
 import {
   SettingsUpdate,
   Severity,
@@ -149,7 +153,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('tasks/reset', {}, { root: true });
       commit('settings/reset', {}, { root: true });
     } catch (e) {
-      showError(commit, e.message, 'Logout failed');
+      showError(e.message, 'Logout failed');
     }
   },
 
@@ -215,7 +219,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         { root: true }
       );
     } catch (e) {
-      showError(commit, e.message, 'Error setting kraken account type');
+      showError(e.message, 'Error setting kraken account type');
     }
   },
 
@@ -224,7 +228,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const settings = await api.setSettings(update);
       commit('generalSettings', convertToGeneralSettings(settings));
     } catch (e) {
-      showError(commit, `Updating settings was not successful: ${e.message}`);
+      showError(`Updating settings was not successful: ${e.message}`);
     }
   },
 
@@ -267,10 +271,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const queriedAddresses = await api.session.queriedAddresses();
       commit('queriedAddresses', queriedAddresses);
     } catch (e) {
-      showError(
-        commit,
-        `Failure to fetch the queriable addresses: ${e.message}`
-      );
+      showError(`Failure to fetch the queriable addresses: ${e.message}`);
     }
   },
 
@@ -279,7 +280,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const queriedAddresses = await api.session.addQueriedAddress(payload);
       commit('queriedAddresses', queriedAddresses);
     } catch (e) {
-      showError(commit, `Failure to add a queriable address: ${e.message}`);
+      showError(`Failure to add a queriable address: ${e.message}`);
     }
   },
 
@@ -288,7 +289,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const queriedAddresses = await api.session.deleteQueriedAddress(payload);
       commit('queriedAddresses', queriedAddresses);
     } catch (e) {
-      showError(commit, `Failure to delete a queriable address: ${e.message}`);
+      showError(`Failure to delete a queriable address: ${e.message}`);
     }
   },
 
@@ -323,6 +324,29 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       }
       return { success };
     } catch (e) {
+      return {
+        success: false,
+        message: e.message
+      };
+    }
+  },
+
+  async changePassword(
+    { state: { username } },
+    { currentPassword, newPassword }: ChangePasswordPayload
+  ): Promise<ActionStatus> {
+    try {
+      const success = await api.changeUserPassword(
+        username,
+        currentPassword,
+        newPassword
+      );
+      showMessage('Successfully changed user password');
+      return {
+        success
+      };
+    } catch (e) {
+      showError('Error while changing the user password');
       return {
         success: false,
         message: e.message

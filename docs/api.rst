@@ -1121,6 +1121,70 @@ Querying the trades history of exchanges
    :statuscode 409: User is not logged in. Some exchange query error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+
+Purging locally saved data for exchanges
+=========================================
+
+.. http:delete:: /api/(version)/exchanges/data/(name)
+
+   Doing a DELETE on the appropriate exchanges trades endpoint will delete the cached trades, deposits and withdrawals for that exchange. If no exchange is given then all exchanges will be affected. Next time exchange history is queried, everything will be queried again, and may take some time.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/exchanges/delete/binance HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": True, "message": "" }
+
+   :statuscode 200: Data succesfully purged.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in. Exchange is not registered or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+Purging locally saved ethereum transactions
+===========================================
+
+.. http:delete:: /api/(version)/blockchains/ETH/transactions
+
+   Doing a DELETE on the transactions endpoint for ETH will purge all locally saved transaction data. Next time transactions are queried all of them will be queried again for all addresses and may take some time.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/ETH/transactions HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": True, "message": "" }
+
+   :statuscode 200: Data succesfully purged.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
 Querying tags
 =================
 

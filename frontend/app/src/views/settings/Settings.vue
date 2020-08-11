@@ -36,8 +36,8 @@ export default class Settings extends Vue {
       routeTo: '/settings/accounting'
     },
     {
-      name: 'User & Security',
-      routeTo: '/settings/user-security'
+      name: 'Data & Security',
+      routeTo: '/settings/data-security'
     },
     {
       name: 'Defi',

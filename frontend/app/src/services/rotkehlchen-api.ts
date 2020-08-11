@@ -15,6 +15,7 @@ import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { StoredTrade, Trade } from '@/model/stored-trade';
 import { VersionCheck } from '@/model/version-check';
+import { BalancesApi } from '@/services/balances/balances-api';
 import { DefiApi } from '@/services/defi/defi-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
@@ -56,6 +57,7 @@ export class RotkehlchenApi {
   private readonly axios: AxiosInstance;
   readonly defi: DefiApi;
   readonly session: SessionApi;
+  readonly balances: BalancesApi;
 
   constructor() {
     this.axios = axios.create({
@@ -64,6 +66,7 @@ export class RotkehlchenApi {
     });
     this.defi = new DefiApi(this.axios);
     this.session = new SessionApi(this.axios);
+    this.balances = new BalancesApi(this.axios);
   }
 
   checkIfLogged(username: string): Promise<boolean> {

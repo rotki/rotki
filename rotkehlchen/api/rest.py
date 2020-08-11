@@ -38,6 +38,7 @@ from rotkehlchen.errors import (
     TagConstraintError,
 )
 from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -1518,3 +1519,18 @@ class RestAPI():
     @require_premium_user(active_check=False)
     def delete_watchers(self, watchers: List[str]) -> Response:
         return self._watcher_query(method='DELETE', data={'watchers': watchers})
+
+    @require_loggedin_user()
+    def purge_exchange_data(self, name: Optional[str]) -> Response:
+        if name:
+            self.rotkehlchen.data.db.purge_exchange_data(name)
+        else:
+            for name in SUPPORTED_EXCHANGES:
+                self.rotkehlchen.data.db.purge_exchange_data(name)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def purge_ethereum_transaction_data(self) -> Response:
+        self.rotkehlchen.data.db.purge_ethereum_transaction_data()
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
