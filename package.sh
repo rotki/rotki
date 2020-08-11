@@ -97,7 +97,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     # travis can do the publishing
     # They don't do it automatically. Long discussion here:
     # https://github.com/electron-userland/electron-builder/issues/893
-    GENERATED_APPIMAGE=$(ls frontend/app/dist/*AppImage | head -n 1)
+    GENERATED_APPIMAGE=$(find "$(pwd)/frontend/app/dist/" -name "*AppImage"  | head -n 1)
     export GENERATED_APPIMAGE
     chmod +x "$GENERATED_APPIMAGE"
 fi

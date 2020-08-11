@@ -1,6 +1,6 @@
 <template>
   <v-app id="rotki">
-    <div :show="logged" class="app__content rotki-light-grey">
+    <div v-show="logged" class="app__content rotki-light-grey">
       <v-navigation-drawer
         v-model="drawer"
         width="300"
