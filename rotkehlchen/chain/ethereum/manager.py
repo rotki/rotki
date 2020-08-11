@@ -107,6 +107,12 @@ ETHEREUM_NODES_TO_CONNECT_AT_START = (
     NodeName.BLOCKSCOUT,
     NodeName.AVADO_POOL,
 )
+OPEN_NODES_WEIGHT_MAP = {  # Probability with which to select each node
+    NodeName.ETHERSCAN: 0.5,
+    NodeName.MYCRYPTO: 0.25,
+    NodeName.BLOCKSCOUT: 0.2,
+    NodeName.AVADO_POOL: 0.05,
+}
 
 
 class EthereumManager():
@@ -147,13 +153,35 @@ class EthereumManager():
         """Default call order for ethereum nodes
 
         Own node always has preference. Then all other node types are randomly queried
-        in sequence
+        in sequence depending on a weighted probability.
+
+
+        Some benchmarks on weighted probability based random selection when compared
+        to simple random selection. Benchmark was on blockchain balance querying with
+        29 ethereum accounts and at the time 1010 different ethereum tokens.
+
+        With weights: etherscan: 0.5, mycrypto: 0.25, blockscout: 0.2, avado: 0.05
+        ===> Runs: 66, 58, 60, 68, 58 seconds
+        ---> Average: 62 seconds
+        - Without weights
+        ===> Runs: 66, 82, 72, 58, 72 seconds
+        ---> Average: 70 seconds
         """
         result = []
         if NodeName.OWN in self.web3_mapping:
             result.append(NodeName.OWN)
 
-        return result + random.sample(OPEN_NODES, len(OPEN_NODES))
+        selection = list(OPEN_NODES)
+        ordered_list = []
+        while len(selection) != 0:
+            weights = []
+            for entry in selection:
+                weights.append(OPEN_NODES_WEIGHT_MAP[entry])
+            node = random.choices(selection, weights, k=1)
+            ordered_list.append(node[0])
+            selection.remove(node[0])
+
+        return result + ordered_list
 
     def attempt_connect(
             self,
