@@ -69,7 +69,7 @@
               "
               @click="confirmAllExchangePurge = true"
             >
-              Purge Exchange Cache
+              Purge All Exchanges Cache
             </status-button>
             <h3>Ethereum Transactions</h3>
             <status-button
