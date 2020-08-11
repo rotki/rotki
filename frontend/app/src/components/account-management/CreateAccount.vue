@@ -47,6 +47,11 @@
                 required
               >
               </v-text-field>
+              <v-checkbox
+                v-model="userPrompted"
+                class="create-account__boxes__user-prompted"
+                label="Rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password."
+              ></v-checkbox>
               <premium-credentials
                 :enabled="premiumEnabled"
                 :api-secret="apiSecret"
@@ -74,7 +79,7 @@
               class="create-account__buttons__continue"
               depressed
               color="primary"
-              :disabled="!valid || loading"
+              :disabled="!valid || loading || !userPrompted"
               :loading="loading"
               @click="step = 2"
             >
@@ -157,6 +162,7 @@ export default class CreateAccount extends Vue {
   passwordConfirm: string = '';
 
   premiumEnabled: boolean = false;
+  userPrompted: boolean = false;
 
   submitUsageAnalytics: boolean = true;
   apiKey: string = '';
