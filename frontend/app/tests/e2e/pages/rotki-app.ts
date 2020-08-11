@@ -12,6 +12,7 @@ export class RotkiApp {
     cy.get('.create-account__fields__username').type(username);
     cy.get('.create-account__fields__password').type(password);
     cy.get('.create-account__fields__password-repeat').type(password);
+    cy.get('.create-account__boxes__user-prompted').click();
     cy.get('.create-account__buttons__continue').click();
     cy.get('.create-account__analytics__buttons__confirm').click();
   }
