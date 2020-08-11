@@ -48,7 +48,7 @@ export default new Router({
           component: () => import('../views/settings/AccountingSettings.vue')
         },
         {
-          path: 'user-security',
+          path: 'data-security',
           component: () => import('../views/settings/UserSecuritySettings.vue')
         },
         {

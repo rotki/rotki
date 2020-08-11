@@ -45,7 +45,7 @@
                       :disabled="!!!exchange"
                       v-bind="attrs"
                       v-on="on"
-                      @click="confirmExchangePurge = true"
+                      @click="confirmationType = 'single'"
                     >
                       <v-icon>fa-trash</v-icon>
                     </v-btn>
@@ -67,7 +67,7 @@
                   ? `Failed to purge cached data for all the exchanges: ${allExchangePurgeError}`
                   : null
               "
-              @click="confirmAllExchangePurge = true"
+              @click="confirmationType = 'exchanges'"
             >
               Purge All Exchanges Cache
             </status-button>
@@ -85,7 +85,7 @@
                   ? `Failed to purge cached ethereum transaction data: ${transactionPurgeError}`
                   : null
               "
-              @click="confirmTransactionPurge = true"
+              @click="confirmationType = 'transactions'"
             >
               Purge transaction cache
             </status-button>
@@ -93,25 +93,12 @@
         </v-form>
       </v-card>
       <confirm-dialog
-        :display="confirmExchangePurge"
-        title="Purge cached exchange data"
-        :message="`Are you sure you want to purge the cached data for ${exchange}?`"
-        @confirm="purgeExchangeData()"
-        @cancel="confirmExchangePurge = false"
-      />
-      <confirm-dialog
-        :display="confirmAllExchangePurge"
-        title="Purge all cached exchange data"
-        :message="`Are you sure you want to purge the cached data for all the exchanges?`"
-        @confirm="purgeAllExchangeData()"
-        @cancel="confirmAllExchangePurge = false"
-      />
-      <confirm-dialog
-        :display="confirmTransactionPurge"
-        title="Purge ethereum transaction data"
-        :message="`Are you sure you want to purge the cached data for ethereum transactions?`"
-        @confirm="purgeEthereumTransactions()"
-        @cancel="confirmTransactionPurge = false"
+        v-if="!!confirmationType"
+        display
+        :title="confirmations[confirmationType].title"
+        :message="confirmations[confirmationType].message"
+        @confirm="confirmations[confirmationType].confirm"
+        @cancel="confirmationType = ''"
       />
     </v-col>
   </v-row>
@@ -123,16 +110,22 @@ import StatusButton from '@/components/settings/data-security/StatusButton.vue';
 import { exchanges } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 
+type ConfirmationData = {
+  readonly title: string;
+  readonly message: string;
+  readonly confirm: () => Promise<void>;
+};
+
+type AllConfirmations = { [key: string]: ConfirmationData };
+
+type ConfirmationType = 'transactions' | 'exchanges' | 'single' | '';
+
 @Component({
   components: { StatusButton, ConfirmDialog }
 })
 export default class DataManagement extends Vue {
   exchange: SupportedExchange = exchanges[0];
   exchanges = exchanges;
-
-  confirmExchangePurge: boolean = false;
-  confirmAllExchangePurge: boolean = false;
-  confirmTransactionPurge: boolean = false;
 
   transactionPurgeSuccess: boolean = false;
   exchangePurgeSuccess: SupportedExchange | '' = '';
@@ -142,12 +135,35 @@ export default class DataManagement extends Vue {
   transactionPurgeError: string = '';
   allExchangePurgeError: string = '';
 
+  confirmationType: ConfirmationType = '';
+
+  readonly confirmations: AllConfirmations = {
+    transactions: {
+      title: 'Purge ethereum transaction data',
+      message:
+        'Are you sure you want to purge the cached data for ethereum transactions?',
+      confirm: this.purgeEthereumTransactions
+    },
+    exchanges: {
+      title: 'Purge all cached exchange data',
+      message:
+        'Are you sure you want to purge the cached data for all the exchanges?',
+      confirm: this.purgeAllExchangeData
+    },
+    single: {
+      title: 'Purge cached exchange data',
+      message:
+        'Are you sure you want to purge the cached data for the selected exchange?',
+      confirm: this.purgeExchangeData
+    }
+  };
+
   async purgeExchangeData() {
     for (let i = 0; i < this.exchangePurgeError.length; i++) {
       this.exchangePurgeError.pop();
     }
 
-    this.confirmExchangePurge = false;
+    this.confirmationType = '';
     const name = this.exchange;
     try {
       await this.$api.balances.deleteExchangeData(name);
@@ -163,7 +179,7 @@ export default class DataManagement extends Vue {
   }
 
   async purgeAllExchangeData() {
-    this.confirmAllExchangePurge = false;
+    this.confirmationType = '';
     try {
       await this.$api.balances.deleteExchangeData();
       this.allExchangePurgeSuccess = true;
@@ -177,7 +193,7 @@ export default class DataManagement extends Vue {
 
   async purgeEthereumTransactions() {
     this.transactionPurgeError = '';
-    this.confirmTransactionPurge = false;
+    this.confirmationType = '';
     try {
       await this.$api.balances.deleteEthereumTransactions();
       this.transactionPurgeSuccess = true;
