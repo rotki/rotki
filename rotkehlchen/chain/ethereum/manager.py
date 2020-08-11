@@ -207,20 +207,15 @@ class EthereumManager():
                     log.warning(message)
                     return False, message
 
-                if not isinstance(web3.eth.syncing, bool):  # pylint: disable=no-member
-                    current_block = web3.eth.syncing.currentBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
-                    latest_block = web3.eth.syncing.highestBlock  # type: ignore # pylint: disable=no-member  # noqa: E501
-                    synchronized, msg = _is_synchronized(current_block, latest_block)
+                current_block = web3.eth.blockNumber  # pylint: disable=no-member
+                try:
+                    latest_block = self.query_eth_highest_block()
+                except RemoteError:
+                    msg = 'Could not query latest block'
+                    log.warning(msg)
+                    synchronized = False
                 else:
-                    current_block = web3.eth.blockNumber  # pylint: disable=no-member
-                    try:
-                        latest_block = self.query_eth_highest_block()
-                    except RemoteError:
-                        msg = 'Could not query latest block'
-                        log.warning(msg)
-                        synchronized = False
-                    else:
-                        synchronized, msg = _is_synchronized(current_block, latest_block)
+                    synchronized, msg = _is_synchronized(current_block, latest_block)
 
             if not synchronized:
                 self.msg_aggregator.add_warning(
