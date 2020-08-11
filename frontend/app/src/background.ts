@@ -230,10 +230,25 @@ app.on('ready', async () => {
   ipcMain.on('PREMIUM_USER_LOGGED_IN', (event, args) => {
     const getRotkiPremiumButton = {
       label: '&Get Rotki Premium',
-      id: 'premium-button',
-      click: () => {
-        shell.openExternal('https://rotki.com/products/');
-      }
+      ...(isMac
+        ? {
+            // submenu is mandatory to be displayed on macOS
+            submenu: [
+              {
+                label: 'Get Rotki Premium',
+                id: 'premium-button',
+                click: () => {
+                  shell.openExternal('https://rotki.com/products/');
+                }
+              }
+            ]
+          }
+        : {
+            id: 'premium-button',
+            click: () => {
+              shell.openExternal('https://rotki.com/products/');
+            }
+          })
     };
 
     // Re-render the menu with the 'Get Rotki Premium' button if the user who just logged in
