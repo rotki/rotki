@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.
 * :feature: `1303` User can now purge cached ethereum transactions and exchange data (deposits/withdrawals/trades). The next time data is fetched, the respective source will be queried to repopulate the local database cache. This might take some time depending on the amount of entries that will be queried.
 * :feature: `1265` Removed fiat balance tracking as it was unnecessary. All fiat balances have now been migrated to manually tracked balances. Each fiat balance entry you had is now migrated to a corresponding manually tracked entry with location being "bank". As an example if you had 1500 EUR Fiat balance entry you will now have a manually tracked balance entry with 1500 EUR called "My EUR bank" and having a location bank.

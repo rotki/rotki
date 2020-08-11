@@ -2,7 +2,7 @@ export class UserSecuritySettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
     cy.get('.user-dropdown__settings').click();
-    cy.get('a.settings__user-security').click();
+    cy.get('a.settings__data-security').click();
   }
 
   changePassword(currentPassword: string, newPassword: string) {
