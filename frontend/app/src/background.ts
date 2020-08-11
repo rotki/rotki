@@ -93,10 +93,15 @@ const defaultMenuTemplate: any[] = [
   {
     label: '&View',
     submenu: [
-      { role: 'reload' },
-      { role: 'forceReload' },
-      { role: 'toggleDevTools' },
-      { type: 'separator' },
+      ...(isDevelopment
+        ? [
+            { role: 'reload' },
+            { role: 'forceReload' },
+            { role: 'toggleDevTools' },
+            { type: 'separator' }
+          ]
+        : []),
+
       { role: 'resetZoom' },
       { role: 'zoomIn' },
       { role: 'zoomOut' },
@@ -170,7 +175,8 @@ function createWindow() {
       sandbox: true,
       enableRemoteModule: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      devTools: isDevelopment
     }
   });
 

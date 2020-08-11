@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `1311` Fix app bar being visible for logged out users.
 * :feature: `1265` Removed fiat balance tracking as it was unnecessary. All fiat balances have now been migrated to manually tracked balances. Each fiat balance entry you had is now migrated to a corresponding manually tracked entry with location being "bank". As an example if you had 1500 EUR Fiat balance entry you will now have a manually tracked balance entry with 1500 EUR called "My EUR bank" and having a location bank.
 * :bug: `1298` Fix an issue where it was not possible to add a new manual balances after editing one.
 * :bug: `1243` Fix a problem where the "Get Premium" menu entry would not disappear without restarting the application.

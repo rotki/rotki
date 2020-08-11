@@ -264,8 +264,8 @@ export default class AccountManagement extends Vue {
   &__loading {
     height: 800%;
     width: 800%;
-    top: -150% !important;
-    left: -40% !important;
+    top: -200% !important;
+    left: -100% !important;
     background: white url(~@/assets/images/rotkipattern2.svg);
     background-size: 450px 150px;
     filter: grayscale(0.5);
