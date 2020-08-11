@@ -1,0 +1,101 @@
+import { mount, Wrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import Vue from 'vue';
+import Vuetify from 'vuetify';
+import DataManagement from '@/components/settings/data-security/DataManagement.vue';
+import { exchanges } from '@/data/defaults';
+import { Api } from '@/plugins/api';
+import { api } from '@/services/rotkehlchen-api';
+import store from '@/store/store';
+
+jest.mock('@/services/rotkehlchen-api');
+jest.useFakeTimers();
+
+Vue.use(Vuetify);
+Vue.use(Api);
+
+describe('DataManagement.vue', () => {
+  let wrapper: Wrapper<DataManagement>;
+
+  function createWrapper() {
+    const vuetify = new Vuetify();
+    return mount(DataManagement, {
+      store,
+      vuetify,
+      stubs: {
+        VDialog: {
+          template: '<span v-if="value"><slot></slot></span>',
+          props: {
+            value: { type: Boolean }
+          }
+        }
+      }
+    });
+  }
+
+  beforeEach(() => {
+    wrapper = createWrapper();
+  });
+
+  test('purges ethereum transactions', async () => {
+    wrapper.find('.data-management__purge-transactions').trigger('click');
+    await wrapper.vm.$nextTick();
+    wrapper.find('.confirm-dialog__buttons__confirm').trigger('click');
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+    expect(
+      wrapper.find('.data-management__transactions__message').element
+    ).toBeVisible();
+    jest.advanceTimersByTime(5000);
+    await wrapper.vm.$nextTick();
+    expect(
+      wrapper.find('.data-management__transactions__message').exists()
+    ).toBe(false);
+    expect(api.balances.deleteEthereumTransactions).toHaveBeenCalledWith();
+  });
+
+  test('fails to purge ethereum transactions', async () => {
+    (api.balances.deleteEthereumTransactions as jest.Mock).mockRejectedValue(
+      new Error('failed')
+    );
+    wrapper.find('.data-management__purge-transactions').trigger('click');
+    await wrapper.vm.$nextTick();
+    wrapper.find('.confirm-dialog__buttons__confirm').trigger('click');
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+    const message = wrapper.find('.data-management__transactions__message');
+    expect(message.element).toBeVisible();
+    expect(message.classes()).toContain('error--text');
+  });
+
+  test('purges exchange data', async () => {
+    wrapper.find('.data-management__purge-exchange').trigger('click');
+    await wrapper.vm.$nextTick();
+    wrapper.find('.confirm-dialog__buttons__confirm').trigger('click');
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+    expect(
+      wrapper.find('.data-management__fields__exchange').classes()
+    ).toContain('success--text');
+    jest.advanceTimersByTime(5000);
+    await wrapper.vm.$nextTick();
+    expect(
+      wrapper.find('.data-management__fields__exchange').classes()
+    ).not.toContain('success--text');
+    expect(api.balances.deleteExchangeData).toHaveBeenCalledWith(exchanges[0]);
+  });
+
+  test('fails to purge exchange data', async () => {
+    (api.balances.deleteExchangeData as jest.Mock).mockRejectedValue(
+      new Error('failure')
+    );
+    wrapper.find('.data-management__purge-exchange').trigger('click');
+    await wrapper.vm.$nextTick();
+    wrapper.find('.confirm-dialog__buttons__confirm').trigger('click');
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+    expect(
+      wrapper.find('.data-management__fields__exchange').classes()
+    ).toContain('error--text');
+  });
+});

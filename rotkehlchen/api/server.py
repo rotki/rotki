@@ -111,7 +111,7 @@ URLS_V1: URLS = [
     ('/history/', HistoryProcessingResource),
     ('/history/export/', HistoryExportingResource),
     ('/queried_addresses', QueriedAddressesResource),
-    ('/blockchains/ETH/transaction', EthereumTransactionsResource),
+    ('/blockchains/ETH/transactions', EthereumTransactionsResource),
     ('/blockchains/ETH/defi', DefiBalancesResource),
     ('/blockchains/ETH/modules/makerdao/dsrbalance', MakerDAODSRBalanceResource),
     ('/blockchains/ETH/modules/makerdao/dsrhistory', MakerDAODSRHistoryResource),

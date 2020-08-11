@@ -167,7 +167,7 @@ describe('Settings', () => {
     });
   });
 
-  describe('User & Security Settings', () => {
+  describe('Data & Security Settings', () => {
     it('change user password', () => {
       pageUserSecurity.visit();
       pageUserSecurity.changePassword(password, newPassword);

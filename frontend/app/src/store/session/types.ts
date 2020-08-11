@@ -28,3 +28,8 @@ export interface PremiumCredentialsPayload {
   readonly apiKey: string;
   readonly apiSecret: string;
 }
+
+export interface ChangePasswordPayload {
+  readonly currentPassword: string;
+  readonly newPassword: string;
+}

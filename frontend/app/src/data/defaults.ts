@@ -18,4 +18,4 @@ export const exchanges = [
   'coinbase',
   'coinbasepro',
   'gemini'
-];
+] as const;

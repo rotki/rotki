@@ -24,7 +24,7 @@
           <v-select
             v-model="selectedExchange"
             class="exchange-settings__fields__exchange"
-            :items="availableExchanges"
+            :items="exchanges"
             label="Exchange"
           >
             <template #item="{ item, attrs, on }">
@@ -135,6 +135,8 @@ export default class ExchangeSettings extends Vue {
   krakenAccountTypes = ['starter', 'intermediate', 'pro'];
   selectedKrakenAccountType = '';
 
+  exchanges = exchanges;
+
   mounted() {
     this.selectedKrakenAccountType = this.krakenAccountType;
   }
@@ -159,10 +161,6 @@ export default class ExchangeSettings extends Vue {
     if (includeExchange) {
       this.selectedExchange = exchanges[0];
     }
-  }
-
-  get availableExchanges(): Array<string> {
-    return exchanges;
   }
 
   get isConnected(): boolean {
