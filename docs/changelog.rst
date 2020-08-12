@@ -9,7 +9,7 @@ Changelog
 * :bug: `1298` Fix an issue where it was not possible to add a new manual balances after editing one.
 * :bug: `1243` Fix a problem where the "Get Premium" menu entry would not disappear without restarting the application.
 * :feature: `1201` Changing the password when premium sync is enabled, will now display a warning to users about the change affecting synced instances.
-* :feature: `1178` Users can now select which accounts they want to track for the activated defi modules.
+* :feature: `1178` Users can now select which accounts they want to track for the activated defi modules. If none are selected all accounts are queried.
 * :feature: `1084` Users can now select which of the available defi modules they want to activate.
 * :bug: `1285` Properly track SNX tokens by pointing to the `migrated <https://blog.synthetix.io/proxy-contract-cutover-on-may-10/`__ proxy contract
 * :feature: `820` Multiple open ethereum nodes will be now also queried along with your own ethereum node or etherscan. But in smaller frequency so as not to spam those services. The additional nodes Rotki now queries are:
@@ -21,7 +21,6 @@ Changelog
 * :bug: `1247` Fix glitchy autocomplete component usage which caused select menus to not open properly if the "dropdown arrows" were clicked. This has fixed the following select menus throughout the app: Asset Select, Tag Input and Tag Filter, Owned Tokens.
 * :bug: `1234` Bittrex history can now be properly queried again. Rotki uses bittrex v3 API from now and on.
 * :bug: `-` ALQO historical price queries should now work properly again. Cryptocompare changed the mapping to XLQ and Rotki had to adjust.
-* :feature: `1187` There is now a setting per protocol with which users can specify which addresses should be queried for each protocol. If none are specified, then all addresses are queried. This should allow users to save a lot of time when querying historical and current balances for some protocols.
 * :feature:`-` Added support for the following tokens
 
   - `UMA (UMA) <https://coinmarketcap.com/currencies/uma/>`__
