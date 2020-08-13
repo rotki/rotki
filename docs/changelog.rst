@@ -2,7 +2,11 @@
 Changelog
 =========
 
+
 * :bug: `1226` Fix "Get Rotki Premium" menu button on macOS
+* :feature:`-` Added support for the following tokens
+
+  - `YAM (YAM) <https://coinmarketcap.com/currencies/yam/>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.
