@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature: `1186` Add tooltips to all app bar buttons (except drawer button)
 * :bug: `1226` Fix "Get Rotki Premium" menu button on macOS
 * :feature:`-` Added support for the following tokens
 

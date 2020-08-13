@@ -2,13 +2,13 @@
   <div>
     <v-menu transition="slide-y-transition" bottom offset-y>
       <template #activator="{ on }">
-        <v-btn
-          class="currency-dropdown secondary--text text--lighten-2"
-          icon
-          v-on="on"
+        <menu-tooltip-button
+          tooltip="Profit Currency"
+          class-name="currency-dropdown secondary--text text--lighten-2"
+          :on-menu="on"
         >
           {{ currency.unicode_symbol }}
-        </v-btn>
+        </menu-tooltip-button>
       </template>
       <v-list>
         <v-list-item
@@ -37,11 +37,13 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { SettingsUpdate } from '@/typing/types';
 
 @Component({
+  components: { MenuTooltipButton },
   computed: mapGetters('session', ['currency']),
   methods: {
     ...mapActions('session', ['updateSettings'])
@@ -66,9 +68,11 @@ export default class CurrencyDropDown extends Vue {
 </script>
 
 <style scoped lang="scss">
-.currency-dropdown {
-  font-size: 1.6em !important;
-  font-weight: bold !important;
+::v-deep {
+  .currency-dropdown {
+    font-size: 1.6em !important;
+    font-weight: bold !important;
+  }
 }
 
 .currency-list {

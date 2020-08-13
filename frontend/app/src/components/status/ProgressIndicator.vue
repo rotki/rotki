@@ -7,14 +7,18 @@
       offset-y
     >
       <template #activator="{ on }">
-        <v-btn icon class="secondary--text text--lighten-2" v-on="on">
+        <menu-tooltip-button
+          tooltip="Running Tasks"
+          class-name="secondary--text text--lighten-2"
+          :on-menu="on"
+        >
           <v-icon v-if="hasRunningTasks" class="top-loading-icon">
             fa fa-circle-o-notch fa-spin
           </v-icon>
           <v-icon v-else>
             fa fa-check-circle
           </v-icon>
-        </v-btn>
+        </menu-tooltip-button>
       </template>
       <v-row class="progress-indicator__details">
         <v-col v-if="tasks.length > 0">
@@ -53,12 +57,14 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { Task, TaskMeta } from '@/model/task';
 
 const { mapGetters } = createNamespacedHelpers('tasks');
 const { mapGetters: mapReportGetters } = createNamespacedHelpers('reports');
 
 @Component({
+  components: { MenuTooltipButton },
   computed: {
     ...mapGetters(['hasRunningTasks', 'tasks']),
     ...mapReportGetters(['progress'])

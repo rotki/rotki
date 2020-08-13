@@ -7,11 +7,15 @@
     z-index="215"
   >
     <template #activator="{ on }">
-      <v-btn icon class="secondary--text text--lighten-2" v-on="on">
+      <menu-tooltip-button
+        tooltip="Balances Snasphot Save Status"
+        class-name="secondary--text text--lighten-2"
+        :on-menu="on"
+      >
         <v-icon>
           fa fa-save
         </v-icon>
-      </v-btn>
+      </menu-tooltip-button>
     </template>
     <div class="balance-saved-indicator__content">
       <v-row>
@@ -47,11 +51,13 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { AllBalancePayload } from '@/store/balances/actions';
 
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
+  components: { MenuTooltipButton },
   computed: {
     ...mapGetters(['lastBalanceSave', 'dateDisplayFormat'])
   }

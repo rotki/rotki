@@ -7,7 +7,11 @@
     z-index="215"
   >
     <template #activator="{ on }">
-      <v-btn icon class="secondary--text text--lighten-2" v-on="on">
+      <menu-tooltip-button
+        tooltip="Ethereum Node Status"
+        class-name="secondary--text text--lighten-2"
+        :on-menu="on"
+      >
         <v-icon
           :class="`node-status-indicator__icon--${
             nodeConnection ? 'connected' : 'disconnected'
@@ -15,7 +19,7 @@
         >
           fa {{ nodeConnection ? 'fa-link' : 'fa-unlink' }}
         </v-icon>
-      </v-btn>
+      </menu-tooltip-button>
     </template>
     <v-row class="node-status-indicator__content">
       <v-col cols="2">
@@ -52,9 +56,11 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 const { mapState } = createNamespacedHelpers('session');
 
 @Component({
+  components: { MenuTooltipButton },
   computed: mapState(['nodeConnection'])
 })
 export default class NodeStatusIndicator extends Vue {

@@ -13,16 +13,16 @@
           <template #badge>
             <span>{{ count }}</span>
           </template>
-          <v-btn
-            icon
+          <menu-tooltip-button
+            tooltip="Notifications"
+            class-name="secondary--text text--lighten-2"
+            :on-menu="on"
             retain-focus-on-click
-            class="secondary--text text--lighten-2"
-            v-on="on"
           >
             <v-icon>
               fa fa-bell
             </v-icon>
-          </v-btn>
+          </menu-tooltip-button>
         </v-badge>
       </template>
       <v-row class="notification-indicator__details">
@@ -126,6 +126,7 @@ import orderBy from 'lodash/orderBy';
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { NotificationData, Severity } from '@/typing/types';
 
 const { mapState, mapGetters } = createNamespacedHelpers('notifications');
@@ -136,7 +137,8 @@ const { mapState, mapGetters } = createNamespacedHelpers('notifications');
     ...mapGetters(['count'])
   },
   components: {
-    ConfirmDialog
+    ConfirmDialog,
+    MenuTooltipButton
   }
 })
 export default class NotificationIndicator extends Vue {
