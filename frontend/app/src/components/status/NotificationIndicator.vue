@@ -52,7 +52,7 @@
                   </v-btn>
                 </template>
                 <span>
-                  Clears all notifications
+                  Clear all notifications
                 </span>
               </v-tooltip>
             </div>
@@ -80,7 +80,7 @@
                         </v-btn>
                       </template>
                       <span>
-                        Dismisses Notification
+                        Dismiss Notification
                       </span>
                     </v-tooltip>
                   </v-list-item-action-text>
@@ -100,7 +100,7 @@
                         </v-btn>
                       </template>
                       <span>
-                        Copies the notification message to the clipboard
+                        Copy the notification message to the clipboard
                       </span>
                     </v-tooltip>
                   </v-list-item-action-text>
