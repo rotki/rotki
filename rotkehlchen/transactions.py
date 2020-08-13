@@ -1,12 +1,10 @@
 import logging
 from typing import List, Optional
 
-from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EthereumTransaction, Timestamp
-from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -58,37 +56,3 @@ def query_ethereum_transactions(
 
     transactions.sort(key=lambda tx: tx.timestamp)
     return transactions
-
-
-class EthereumAnalyzer():
-    """Analyzes ethereum chain data, like transactions, contract queries e.t.c."""
-    def __init__(self, ethereum_manager: EthereumManager, database: DBHandler):
-        self.ethereum = ethereum_manager
-        self.database = database
-        self.last_run_ts = 0
-        self.running = False
-
-    def _analyze_all_transactions(self) -> None:
-        transactions = query_ethereum_transactions(
-            database=self.database,
-            etherscan=self.ethereum.etherscan,
-            from_ts=Timestamp(0),
-            to_ts=Timestamp(1581806659),  # 15/02/2020 23:44
-        )
-
-        for transaction in transactions:
-            if transaction.to_address == '':  # Empty to_address is stored as '' for now
-                # if empty to_address that means a contract was created
-                continue
-
-            # DO Something here
-
-    def analyze_ethereum_transactions(self) -> None:
-        if self.running:
-            return
-
-        if ts_now() - self.last_run_ts < 3600:
-            return
-
-        self.running = False
-        self.last_run_ts = ts_now()

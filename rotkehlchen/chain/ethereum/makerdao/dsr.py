@@ -463,6 +463,10 @@ class MakerDAODSR(MakerDAOCommon):
         )
 
     def get_historical_dsr(self) -> Dict[ChecksumEthAddress, DSRAccountReport]:
+        """Gets the historical DSR report per account
+
+            This is a premium only call. Check happens only in the API level.
+        """
         now = ts_now()
         if now - self.last_historical_dsr_query_ts < MAKERDAO_REQUERY_PERIOD:
             return self.historical_dsr_reports
