@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug: `1226` Fix "Get Rotki Premium" menu button on macOS
+
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.
 * :feature: `1303` User can now purge cached ethereum transactions and exchange data (deposits/withdrawals/trades). The next time data is fetched, the respective source will be queried to repopulate the local database cache. This might take some time depending on the amount of entries that will be queried.
