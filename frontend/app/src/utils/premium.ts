@@ -2,6 +2,7 @@ import Chart from 'chart.js';
 import moment from 'moment';
 import Vue, { VueConstructor } from 'vue';
 import Vuex from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import { api } from '@/services/rotkehlchen-api';
 
@@ -10,6 +11,11 @@ export const setupPremium = () => {
   window.Chart = Chart;
   window.Vue.use(Vuex);
   window.moment = moment;
+  window.rotki = {
+    useHostComponents: true
+  };
+  // Globally registered components are also provided to the premium components.
+  Vue.component('AmountDisplay', AmountDisplay);
 };
 
 function findComponents(): string[] {
@@ -88,5 +94,8 @@ declare global {
     Vue: any;
     Chart: typeof Chart;
     moment: typeof moment;
+    rotki: {
+      useHostComponents: boolean;
+    };
   }
 }
