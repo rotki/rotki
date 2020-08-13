@@ -10526,6 +10526,14 @@
         "symbol": "YACC",
         "type": "own chain"
     },
+    "YAM": {
+        "ethereum_address": "0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
+        "ethereum_token_decimals": 18,
+        "name": "YAM",
+        "started": 1597172400,
+        "symbol": "YAM",
+        "type": "ethereum token"
+    },
     "YEE": {
         "ethereum_address": "0x922105fAd8153F516bCfB829f56DC097a0E1D705",
         "ethereum_token_decimals": 18,
