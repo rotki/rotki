@@ -52,8 +52,6 @@ ATOKEN_TO_DEPLOYED_BLOCK = {
 }
 ATOKENS_LIST = [EthereumToken(x) for x in ATOKEN_TO_DEPLOYED_BLOCK]
 
-A_LEND = EthereumToken('LEND')
-
 
 class AaveLendingBalance(NamedTuple):
     """A balance for Aave lending.

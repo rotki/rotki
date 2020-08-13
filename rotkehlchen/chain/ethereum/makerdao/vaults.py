@@ -646,7 +646,7 @@ class MakerDAOVaults(MakerDAOCommon):
     def get_vault_details(self) -> List[MakerDAOVaultDetails]:
         """Queries vault details for the auto detected vaults of the user
 
-        This is a premium only call
+        This is a premium only call. Check happens only at the API level.
 
         If the details have been queried in the past REQUERY_PERIOD
         seconds then the old result is used.

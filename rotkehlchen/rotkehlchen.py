@@ -45,7 +45,6 @@ from rotkehlchen.logging import (
 )
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.transactions import EthereumAnalyzer
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -211,10 +210,6 @@ class Rotkehlchen():
             premium=self.premium,
             eth_modules=settings.active_modules,
         )
-        self.ethereum_analyzer = EthereumAnalyzer(
-            ethereum_manager=ethereum_manager,
-            database=self.data.db,
-        )
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
@@ -308,7 +303,6 @@ class Rotkehlchen():
             if self.user_is_logged_in:
                 log.debug('Main loop start')
                 self.premium_sync_manager.maybe_upload_data_to_server()
-                self.ethereum_analyzer.analyze_ethereum_transactions()
                 log.debug('Main loop end')
 
     def add_blockchain_accounts(

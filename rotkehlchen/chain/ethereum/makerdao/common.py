@@ -38,9 +38,6 @@ class MakerDAOCommon(EthereumModule):
         self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
         self.reset_last_query_ts()
 
-    def premium_active(self) -> bool:
-        return bool(self.premium and self.premium.is_active())
-
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
         self.last_proxy_mapping_query_ts = 0

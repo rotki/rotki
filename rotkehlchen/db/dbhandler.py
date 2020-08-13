@@ -717,13 +717,6 @@ class DBHandler:
 
         return Timestamp(int(query[0][0])), Timestamp(int(query[0][1]))
 
-    def get_used_query_block_range(self, name: str) -> Optional[Tuple[int, int]]:
-        """Get the last from_block/to_block range that has been queried for name
-
-        - aave_events_{address}
-        """
-        return self.get_used_query_range(name)
-
     def delete_used_query_range_for_exchange(self, exchange_name: str) -> None:
         """Delete the query ranges for the given exchange name"""
         cursor = self.conn.cursor()
