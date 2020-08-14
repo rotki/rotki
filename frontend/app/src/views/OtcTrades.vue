@@ -138,14 +138,16 @@ export default class OtcTrades extends Vue {
     { text: '', value: 'data-table-expand' }
   ];
 
-  saveItem(trade: TradePayload) {
+  saveItem({ trade, onSuccess }: { trade: TradePayload; onSuccess: () => {} }) {
     const onFulfilled = () => {
       this.$store.commit('setMessage', {
         title: 'Success',
         description: 'Trade was submitted successfully',
         success: true
       } as Message);
+      if (onSuccess) onSuccess();
       this.fetchData();
+      this.cancelEdit();
     };
     const onRejected = (reason: Error) => {
       this.editableItem = trade;
@@ -163,10 +165,7 @@ export default class OtcTrades extends Vue {
       promise = this.$api.addExternalTrade(trade);
     }
 
-    promise
-      .then(onFulfilled)
-      .catch(onRejected)
-      .finally(() => this.cancelEdit());
+    promise.then(onFulfilled).catch(onRejected);
   }
 
   editItem(item: StoredTrade) {
