@@ -7,13 +7,13 @@
       offset-y
     >
       <template #activator="{ on }">
-        <v-btn
-          class="user-dropdown secondary--text text--lighten-2"
-          icon
-          v-on="on"
+        <menu-tooltip-button
+          tooltip="Account"
+          class-name="user-dropdown secondary--text text--lighten-2"
+          :on-menu="on"
         >
           <v-icon>fa fa-user-circle</v-icon>
-        </v-btn>
+        </menu-tooltip-button>
       </template>
       <v-list>
         <v-list-item key="username" class="user-username">
@@ -70,13 +70,15 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 const { mapState } = createNamespacedHelpers('session');
 const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
-    ConfirmDialog
+    ConfirmDialog,
+    MenuTooltipButton
   },
   computed: {
     ...mapState(['privacyMode']),
