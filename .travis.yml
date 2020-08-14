@@ -47,17 +47,17 @@ _templates:
     os: osx
     language: generic
     osx_image: xcode12u
-    env: INSTALL_TYPE=macpython VERSION=3.7.0 VENV=venv
     before_install:
       # Travis has very low openfiles limit and fails often for OSX. Change that here.
       - ulimit -n 1024;
       # export PATH needs to be here and can't be inside before_install.sh
       - mkdir -p $HOME/.bin
       - export PATH=$PATH:$HOME/.bin
-      - git clone https://github.com/MacPython/terryfy.git
-      - source terryfy/travis_tools.sh
-      - get_python_environment $INSTALL_TYPE $VERSION $VENV
+      - export PATH="/usr/local/opt/python@3.7/bin:$PATH"
       - .travis/before_install.sh
+      - pip3 install virtualenv
+      - virtualenv -p python3 ~/venv
+      - source ~/venv/bin/activate
     install:
       - .travis/install.sh
     script:
@@ -84,6 +84,7 @@ cache:
   pip: true
   npm: true
   directories:
+    - ~/venv
     - $HOME/Library/Caches/Homebrew
     - /usr/local/Homebrew
     - $HOME/.cache/pip
