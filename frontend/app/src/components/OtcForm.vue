@@ -83,7 +83,7 @@
               type="submit"
               @click="addTrade()"
             >
-              {{ editMode ? 'Modify Trade' : 'Add  Trade' }}
+              {{ editMode ? 'Modify Trade' : 'Add Trade' }}
             </v-btn>
             <v-btn
               v-if="editMode"
@@ -179,8 +179,7 @@ export default class OtcForm extends Vue {
       trade_id: this.editMode ? this.id : undefined
     };
 
-    this.$emit('save', trade);
-    this.resetFields();
+    this.$emit('save', { trade, onSuccess: this.resetFields });
   }
 
   @Emit()
