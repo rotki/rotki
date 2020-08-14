@@ -4,10 +4,9 @@
       <v-col>
         <h1 class="d-flex justify-space-between align-center">
           Decentralized Finance
-          <v-tooltip top>
+          <v-tooltip v-if="defiSetupDone" top>
             <template #activator="{ on, attrs }">
               <v-btn
-                v-if="defiSetupDone"
                 text
                 fab
                 depressed
@@ -35,15 +34,16 @@ import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
+import { DEFI_SETUP_DONE } from '@/store/settings/consts';
 
 @Component({
   components: { DefiWizard, TabNavigation },
   computed: {
-    ...mapState('settings', ['defiSetupDone'])
+    ...mapState('settings', [DEFI_SETUP_DONE])
   }
 })
 export default class DecentralizedFinance extends Vue {
-  defiSetupDone!: boolean;
+  [DEFI_SETUP_DONE]!: boolean;
 
   readonly tabs: TabContent[] = [
     {
