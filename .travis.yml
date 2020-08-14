@@ -53,18 +53,14 @@ _templates:
       # export PATH needs to be here and can't be inside before_install.sh
       - mkdir -p $HOME/.bin
       - export PATH=$PATH:$HOME/.bin
-      - export PATH="/usr/local/opt/python@3.7/bin:$PATH"
       - .travis/before_install.sh
+      - export PATH="/usr/local/opt/python@3.7/bin:$PATH"
+    install:
       - pip3 install virtualenv
       - virtualenv -p python3 ~/venv
       - source ~/venv/bin/activate
-    install:
       - .travis/install.sh
     script:
-      # Unfortunately due to terryfy, we can't have the OSX case
-      # inside ./run_tests.sh but need to have them all here so
-      # that the environment is properly picked up
-      - source terryfy/test_tools.sh
       - python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/
 
   job-template-frontend: &job-template-frontend
@@ -86,6 +82,7 @@ cache:
   directories:
     - ~/venv
     - $HOME/Library/Caches/Homebrew
+    - $HOME/Library/Caches/pip
     - /usr/local/Homebrew
     - $HOME/.cache/pip
     - $HOME/.cache/.rotkehlchen-test-dir

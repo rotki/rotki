@@ -15,6 +15,7 @@ if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
 else
     # Thankfully OSX has sqlcipher v4 in homebrew: https://formulae.brew.sh/formula/sqlcipher
     brew update
+    brew install python@3.7
     brew install sqlcipher
     brew install nvm
     # Moved to travis.yml since environment was not properly built here
