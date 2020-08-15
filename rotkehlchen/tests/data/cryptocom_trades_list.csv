@@ -1,0 +1,17 @@
+﻿Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind
+2020-08-06 16:09:25,MCO/CRO Overall Swap,CRO,1301.64,,,EUR,182.23,211.673899,dynamic_coin_swap_credited
+2020-08-06 16:09:25,MCO/CRO Overall Swap,MCO,-50,,,EUR,-159.97,-183.7864,dynamic_coin_swap_debited
+2020-08-06 22:47:56,Early Swap Bonus,CRO,-276.46122951,,,EUR,-37.63,-44.5595645,dynamic_coin_swap_bonus_exchange_deposit
+2020-08-03 14:39:25,MCO/CRO Overall Swap,CRO,1382.306147552291,,,EUR,197.68,234.082772,dynamic_coin_swap_credited
+2020-08-03 14:39:25,MCO/CRO Overall Swap,MCO,-50.00402069,,,EUR,-168.37,-199.3753355,dynamic_coin_swap_debited
+2020-08-03 14:39:25,CRO Stake,CRO,1382.195,,,EUR,197.66,234.059089,lockup_swap_credited
+2020-08-03 14:39:25,MCO Unstake,MCO,-50.0,,,EUR,-168.36,-199.363494,lockup_swap_debited
+2020-08-03 14:39:25,MCO/CRO Wallet Swap,CRO,0.111147552291,,,EUR,0.02,0.023683,crypto_wallet_swap_credited
+2020-08-03 14:39:25,MCO/CRO Wallet Swap,MCO,-0.00402069,,,EUR,-0.01,-0.0118415,crypto_wallet_swap_debited
+2020-08-03 04:45:34,Crypto Earn,ETH,0.00061475,,,EUR,0.19,0.2249885,crypto_earn_interest_paid
+2020-07-31 15:37:07,MCO -> ETH,MCO,-12.32,ETH,0.14445954600007045,EUR,42.13,49.8882395,crypto_exchange
+2020-07-29 09:17:03,Sign-up Bonus Unlocked,MCO,12.32402069,,,USD,50.0,50.0,referral_gift
+2020-07-29 09:16:57,MCO Stake,MCO,-50.0,,,EUR,-174.36,-206.468394,lockup_lock
+2020-07-29 09:16:54,Buy MCO,MCO,50.0,,,EUR,176.05,208.4696075,crypto_purchase
+2020-07-29 09:12:07,Crypto Earn Deposit,ETH,-1.0,,,EUR,-275.55,-326.2925325,crypto_earn_program_created
+2020-07-27 06:59:55,Buy ETH,ETH,1.0,,,EUR,281.14,332.911931,crypto_purchase

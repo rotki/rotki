@@ -4,7 +4,10 @@ from http import HTTPStatus
 import requests
 
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
-from rotkehlchen.tests.utils.dataimport import assert_cointracking_import_results
+from rotkehlchen.tests.utils.dataimport import (
+    assert_cointracking_import_results,
+    assert_cryptocom_import_results,
+)
 
 
 def test_data_import_cointracking(rotkehlchen_api_server):
@@ -26,6 +29,27 @@ def test_data_import_cointracking(rotkehlchen_api_server):
     assert data['result'] is True
     # And also assert data was imported succesfully
     assert_cointracking_import_results(rotki)
+
+
+def test_data_import_cryptocom(rotkehlchen_api_server):
+    """Test that the data import endpoint works successfully for cryptocom"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    filepath = os.path.join(dir_path, 'data', 'cryptocom_trades_list.csv')
+
+    json_data = {'source': 'crypto.com', 'filepath': filepath}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "dataimportresource",
+        ), json=json_data,
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert data['result'] is True
+    # And also assert data was imported succesfully
+    assert_cryptocom_import_results(rotki)
 
 
 def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
