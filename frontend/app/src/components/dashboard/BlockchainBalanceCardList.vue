@@ -57,12 +57,8 @@ export default class BlockchainBalanceCardList extends Vue {
 .blockchain-balance-box {
   &__icon {
     filter: grayscale(100%);
-
-    &--inverted {
-      margin-left: 8px;
-      width: 45px;
-      filter: grayscale(100%) invert(100%);
-    }
+    margin: 0;
+    margin-right: 5px !important;
   }
 
   &__item:hover &__icon {

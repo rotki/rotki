@@ -3,12 +3,10 @@
     :id="`${name}_box`"
     :ripple="false"
     class="manual-balance-box__item"
-    to="/accounts-balances"
+    to="/accounts-balances/manual-balances"
   >
     <v-list-item-avatar tile class="manual-balance-box__icon">
-      <v-icon>
-        fa fa-{{ manualBalanceIcons[name.replace(/\s+/g, '')] }}
-      </v-icon>
+      <balance-location-icon :name="name"></balance-location-icon>
     </v-list-item-avatar>
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
@@ -31,13 +29,14 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import BalanceLocationIcon from '@/components/dashboard/BalanceLocationIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
 
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { AmountDisplay },
+  components: { AmountDisplay, BalanceLocationIcon },
   computed: {
     ...mapGetters(['currency'])
   }
@@ -49,32 +48,14 @@ export default class ManualBalanceCardList extends Vue {
   amount!: BigNumber;
 
   currency!: Currency;
-  manualBalanceIcons = {
-    external: 'book',
-    banks: 'bank',
-    equities: 'suitcase',
-    realestate: 'home',
-    commodities: 'shopping-basket',
-    blockchain: 'link'
-  };
 }
 </script>
 <style scoped lang="scss">
 .manual-balance-box {
-  &__currency {
-    &__symbol {
-      font-size: 2em;
-    }
-  }
-
   &__icon {
     filter: grayscale(100%);
-
-    &--inverted {
-      margin-left: 8px;
-      width: 45px;
-      filter: grayscale(100%) invert(100%);
-    }
+    margin: 0;
+    margin-right: 5px !important;
   }
 
   &__item:hover &__icon {

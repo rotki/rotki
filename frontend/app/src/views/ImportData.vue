@@ -15,8 +15,13 @@
           <v-col cols="12">
             <strong> ⚠️Important notice ⚠️:</strong> Those platforms could
             change their format in a backwards incompatible way quite often. As
-            such this import may stop working. If that happens open an issue
-            with rotki and we will see what we can do.
+            such this import may stop working. If that happens
+            <external-link
+              url="https://github.com/rotki/rotki/issues/new/choose"
+            >
+              open an issue with rotki
+            </external-link>
+            and we will see what we can do.
           </v-col>
         </v-row>
         <v-row>
@@ -80,23 +85,35 @@
             <strong>crypto.com mobile app</strong>'s CSV exports.
             <ul>
               <li>
-                Trades/deposits/withdrawals from crypto.com do not include fees
-                details. They were waived or they are handled in the traded
-                amount. Crypto purchases, since those are purchases via card,
-                are also treated as deposits.
+                [Early stage] This import script may miss some transactions
+                types, like withdrawals. Since we can't have an exhaustive list
+                of every type, we develop it using what we know at the time. If
+                you think that import script can be improved and you can help
+                providing more data types,
+                <external-link
+                  url="https://github.com/rotki/rotki/issues/new/choose"
+                >
+                  please let us know
+                </external-link>
+                .
               </li>
               <li>
-                It doesn't concern the crypto.com Exchange platform. This one
-                should be connected to rotki as an
-                <router-link to="/accounts-balance/exchange-balances">
-                  exchange accounts/balances
-                </router-link>
-                since there is an API.
+                <strong>
+                  It only concerns the Crypto.com mobile application.
+                </strong>
+                If you want to connect your Crypto.com Exchange account, please
+                wait until we support it and then connect to it as an exchange.
+              </li>
+              <li>
+                Trades/deposits/withdrawals from crypto.com do not include fees
+                details. They are waived at the moment (August 2020) or they are
+                handled in the traded amount. Crypto purchases, since those are
+                purchases via card, are also treated as deposits.
               </li>
               <li>
                 Only transactions are imported here (for tax report), if you
-                want the assets be displayed in your Rotki balances, your have
-                to added them manually as manual balances:
+                want the assets be displayed in your Rotki balances, you have to
+                add them manually as manual balances:
                 <router-link to="/accounts-balance/manual-balances">
                   Manual Accounts/Balances
                 </router-link>
@@ -111,9 +128,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { Message } from '@/store/store';
 
-@Component({})
+@Component({
+  components: { ExternalLink }
+})
 export default class ImportData extends Vue {
   async importData(importType: string) {
     try {
@@ -139,14 +159,19 @@ export default class ImportData extends Vue {
 
 <style scoped lang="scss">
 .import-data {
-  &__crypto-com:hover,
-  &__cointracking-info:hover {
-    cursor: pointer;
-  }
-
   &__crypto-com {
     max-width: 200px;
     padding: 10px;
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  &__cointracking-info {
+    &:hover {
+      cursor: pointer;
+    }
   }
 }
 </style>
