@@ -43,6 +43,24 @@ export class GeneralSettingsPage {
     cy.get(`#currency__${value.toLocaleLowerCase()}`).click();
   }
 
+  setThousandSeparator(value: string) {
+    cy.get('.general-settings__fields__thousand-separator input').clear();
+    cy.get('.general-settings__fields__thousand-separator').type(value);
+    cy.get('.general-settings__fields__thousand-separator input').blur();
+  }
+
+  setDecimalSeparator(value: string) {
+    cy.get('.general-settings__fields__decimal-separator input').clear();
+    cy.get('.general-settings__fields__decimal-separator').type(value);
+    cy.get('.general-settings__fields__decimal-separator input').blur();
+  }
+
+  setCurrencyLocation(value: 'after' | 'before') {
+    cy.get('.general-settings__fields__currency-location input').clear();
+    cy.get('.general-settings__fields__currency-location').type(value);
+    cy.get('.general-settings__fields__currency-location input').blur();
+  }
+
   setBalanceSaveFrequency(value: string) {
     cy.get('.general-settings__fields__balance-save-frequency input').clear();
     cy.get('.general-settings__fields__balance-save-frequency').type(value);
@@ -126,6 +144,9 @@ export class GeneralSettingsPage {
     anonymousUsageStatistics: boolean;
     floatingPrecision: string;
     dateDisplayFormat: string;
+    thousandSeparator: string;
+    decimalSeparator: string;
+    currencyLocation: 'after' | 'before';
     currency: string;
     balanceSaveFrequency: string;
     historicDataStart: string;
@@ -156,6 +177,21 @@ export class GeneralSettingsPage {
       'have.value',
       settings.dateDisplayFormat
     );
+    cy.get('.general-settings__fields__thousand-separator input').should(
+      'have.value',
+      settings.thousandSeparator
+    );
+    cy.get('.general-settings__fields__decimal-separator input').should(
+      'have.value',
+      settings.decimalSeparator
+    );
+    cy.get('.general-settings__fields__currency-location input').should(
+      'have.length',
+      2
+    );
+    cy.get(
+      `.general-settings__fields__currency-location input[aria-checked=true]`
+    ).should('have.value', settings.currencyLocation);
     this.verifyRPCEndpoint(settings.rpcEndpoint);
   }
 

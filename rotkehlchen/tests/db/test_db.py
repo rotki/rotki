@@ -18,6 +18,9 @@ from rotkehlchen.db.settings import (
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_DATE_DISPLAY_FORMAT,
+    DEFAULT_THOUSAND_SEPARATOR,
+    DEFAULT_DECIMAL_SEPARATOR,
+    DEFAULT_CURRENCY_LOCATION,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_KRAKEN_ACCOUNT_TYPE,
@@ -259,6 +262,9 @@ def test_writing_fetching_data(data_dir, username):
         'main_currency': DEFAULT_MAIN_CURRENCY.identifier,
         'anonymized_logs': DEFAULT_ANONYMIZED_LOGS,
         'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
+        'thousand_separator': DEFAULT_THOUSAND_SEPARATOR,
+        'decimal_separator': DEFAULT_DECIMAL_SEPARATOR,
+        'currency_location': DEFAULT_CURRENCY_LOCATION,
         'last_data_upload_ts': 0,
         'premium_should_sync': False,
         'submit_usage_analytics': True,
@@ -290,6 +296,9 @@ def test_settings_entry_types(database):
         eth_rpc_endpoint='http://localhost:8545',
         balance_save_frequency=24,
         date_display_format='%d/%m/%Y %H:%M:%S %z',
+        thousand_separator=',',
+        decimal_separator='.',
+        currency_location='after',
         submit_usage_analytics=False,
     ))
 
@@ -320,6 +329,12 @@ def test_settings_entry_types(database):
     assert res.anonymized_logs is True
     assert isinstance(res.date_display_format, str)
     assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
+    assert isinstance(res.thousand_separator, str)
+    assert res.thousand_separator == ','
+    assert isinstance(res.decimal_separator, str)
+    assert res.decimal_separator == '.'
+    assert isinstance(res.currency_location, str)
+    assert res.currency_location == 'after'
     assert isinstance(res.submit_usage_analytics, bool)
     assert res.submit_usage_analytics is False
     assert isinstance(res.active_modules, list)

@@ -21,6 +21,9 @@ describe('Settings', () => {
     currency: 'JPY',
     balanceSaveFrequency: '48',
     dateDisplayFormat: '%d-%m-%Y %H:%M:%S %z',
+    thousandSeparator: ',',
+    decimalSeparator: '.',
+    currencyLocation: 'after' as 'after' | 'before',
     rpcEndpoint: 'http://localhost:8545'
   };
 

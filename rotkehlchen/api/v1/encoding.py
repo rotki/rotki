@@ -690,6 +690,16 @@ class ModifiableSettingsSchema(Schema):
     main_currency = FiatAssetField(missing=None)
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
+    thousand_separator = fields.String(missing=None)
+    decimal_separator = fields.String(missing=None)
+    currency_location = fields.String(
+        strict=True,
+        validate=webargs.validate.Regexp(
+            regex=r"after|before",
+            error='Wrong currency location, should be: `after` or `before`',
+        ),
+        missing=None,
+    )
     kraken_account_type = KrakenAccountTypeField(missing=None)
     active_modules = fields.List(fields.String(), missing=None)
     frontend_settings = fields.String(missing=None)
@@ -726,6 +736,9 @@ class ModifiableSettingsSchema(Schema):
             eth_rpc_endpoint=data['eth_rpc_endpoint'],
             main_currency=data['main_currency'],
             date_display_format=data['date_display_format'],
+            thousand_separator=data['thousand_separator'],
+            decimal_separator=data['decimal_separator'],
+            currency_location=data['currency_location'],
             submit_usage_analytics=data['submit_usage_analytics'],
             kraken_account_type=data['kraken_account_type'],
             active_modules=data['active_modules'],

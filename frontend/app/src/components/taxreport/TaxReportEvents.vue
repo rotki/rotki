@@ -18,28 +18,28 @@
               Taxable Received in {{ currency }}
             </template>
             <template #item.paidInProfitCurrency="{ item }">
-              {{ item.paidInProfitCurrency | formatPrice(floatingPrecision) }}
+              <amount-display :value="item.paidInProfitCurrency" />
             </template>
             <template #item.paidInAsset="{ item }">
-              {{ item.paidInAsset | formatPrice(floatingPrecision) }}
+              <amount-display :value="item.paidInAsset" />
             </template>
             <template #item.taxableAmount="{ item }">
-              {{ item.taxableAmount | formatPrice(floatingPrecision) }}
+              <amount-display :value="item.taxableAmount" />
             </template>
             <template #item.taxableBoughtCostInProfitCurrency="{ item }">
-              {{
-                item.taxableBoughtCostInProfitCurrency
-                  | formatPrice(floatingPrecision)
-              }}
+              <amount-display :value="item.taxableBoughtCostInProfitCurrency" />
             </template>
             <template #item.receivedInAsset="{ item }">
-              {{ item.receivedInAsset | formatPrice(floatingPrecision) }}
+              <amount-display :value="item.receivedInAsset" />
             </template>
             <template #item.taxableReceivedInProfitCurrency="{ item }">
-              {{
-                item.taxableReceivedInProfitCurrency
-                  | formatPrice(floatingPrecision)
-              }}
+              <amount-display :value="item.taxableReceivedInProfitCurrency" />
+            </template>
+            <template #item.receivedAsset="{ item }">
+              {{ item.receivedAsset ? item.receivedAsset : '-' }}
+            </template>
+            <template #item.paidAsset="{ item }">
+              {{ item.paidAsset ? item.paidAsset : '-' }}
             </template>
             <template #item.isVirtual="{ item }">
               <v-icon v-if="item.isVirtual" color="success">
@@ -55,48 +55,47 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { EventEntry } from '@/model/trade-history-types';
 
-const { mapGetters } = createNamespacedHelpers('session');
-const { mapState } = createNamespacedHelpers('reports');
-const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
-
 @Component({
+  components: {
+    AmountDisplay
+  },
   computed: {
-    ...mapState(['currency', 'events']),
-    ...mapGetters(['floatingPrecision', 'dateDisplayFormat']),
-    ...mapBalanceGetters(['exchangeRate'])
+    ...mapState('reports', ['currency', 'events']),
+    ...mapGetters('session', ['dateDisplayFormat']),
+    ...mapGetters('balances', ['exchangeRate'])
   }
 })
 export default class TaxReportEvents extends Vue {
   events!: EventEntry[];
   currency!: string;
-  floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
   dateDisplayFormat!: string;
 
   headers = [
     { text: 'Type', value: 'type' },
     { text: 'Location', value: 'location' },
-    { text: 'Paid in USD', value: 'paidInProfitCurrency' },
+    { text: 'Paid in USD', value: 'paidInProfitCurrency', align: 'end' },
     { text: 'Paid Asset', value: 'paidAsset' },
-    { text: 'Paid in Asset', value: 'paidInAsset' },
-    { text: 'Taxable Amount', value: 'taxableAmount' },
+    { text: 'Paid in Asset', value: 'paidInAsset', align: 'end' },
+    { text: 'Taxable Amount', value: 'taxableAmount', align: 'end' },
     {
       text: 'Taxable Bought Cost in USD',
-      value: 'taxableBoughtCostInProfitCurrency'
+      value: 'taxableBoughtCostInProfitCurrency',
+      align: 'end'
     },
     { text: 'Received Asset', value: 'receivedAsset' },
-    { text: 'Received in Asset', value: 'receivedInAsset' },
+    { text: 'Received in Asset', value: 'receivedInAsset', align: 'end' },
     {
       text: 'Taxable Received in USD',
-      value: 'taxableReceivedInProfitCurrency'
+      value: 'taxableReceivedInProfitCurrency',
+      align: 'end'
     },
     { text: 'Time', value: 'time' },
     { text: 'Virtual?', value: 'isVirtual', align: 'center' }
   ];
 }
 </script>
-
-<style scoped></style>

@@ -8,18 +8,14 @@
             <thead>
               <tr>
                 <th class="text-left">Result</th>
-                <th class="text-left">{{ currency.ticker_symbol }} value</th>
+                <th class="text-right">{{ currency.ticker_symbol }} value</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(item, key) in overview" :key="key">
                 <td>{{ key | splitOnCapital }}</td>
-                <td>
-                  {{
-                    item
-                      | calculatePrice(exchangeRate(currency.ticker_symbol))
-                      | formatPrice(floatingPrecision)
-                  }}
+                <td class="text-right">
+                  <amount-display :value="item" />
                 </td>
               </tr>
             </tbody>
@@ -32,26 +28,23 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
 
-const { mapGetters } = createNamespacedHelpers('session');
-const { mapState: mapReportsState } = createNamespacedHelpers('reports');
-const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
-
 @Component({
+  components: {
+    AmountDisplay
+  },
   computed: {
-    ...mapReportsState(['overview']),
-    ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapBalanceGetters(['exchangeRate'])
+    ...mapState('reports', ['overview']),
+    ...mapGetters('session', ['currency']),
+    ...mapGetters('balances', ['exchangeRate'])
   }
 })
 export default class TaxReportOverview extends Vue {
   overview!: TaxReportOverview;
   currency!: Currency;
-  floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
 }
 </script>
-
-<style scoped></style>

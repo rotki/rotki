@@ -1,5 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import Vue from 'vue';
+import { displayAmountFormatter } from '@/data/amount_formatter';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
@@ -20,16 +21,26 @@ export function formatDate(value: number, format: string): string {
   return displayDateFormatter.format(new Date(value * 1000), format);
 }
 
-export function formatPrice(value: BigNumber, precision: number) {
-  return value.isNaN() ? '-' : value.toFormat(precision);
+export function formatPrice(
+  value: BigNumber,
+  thousandSeparator: string,
+  decimalSeparator: string,
+  precision: number,
+  roundingMode?: BigNumber.RoundingMode
+) {
+  return value.isNaN()
+    ? '-'
+    : displayAmountFormatter.format(
+        value,
+        precision,
+        thousandSeparator,
+        decimalSeparator,
+        roundingMode
+      );
 }
 
 export function capitalize(string: string): string {
   return string[0].toUpperCase() + string.slice(1);
-}
-
-export function roundDown(value: BigNumber, precision: number) {
-  return value.isNaN() ? '-' : value.toFormat(precision, BigNumber.ROUND_DOWN);
 }
 
 /**
@@ -101,7 +112,6 @@ Vue.filter('precision', precision);
 Vue.filter('formatDate', formatDate);
 Vue.filter('formatPrice', formatPrice);
 Vue.filter('capitalize', capitalize);
-Vue.filter('roundDown', roundDown);
 Vue.filter('calculatePrice', calculatePrice);
 Vue.filter('balanceSum', balanceSum);
 Vue.filter('truncateAddress', truncateAddress);

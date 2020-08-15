@@ -2,6 +2,10 @@ import { capitalize } from '@/filters';
 import { ApiManualBalance } from '../../../src/services/types-api';
 import { bigNumberify, Zero } from '../../../src/utils/bignumbers';
 
+function formatAmount(amount: ApiManualBalance['amount']) {
+  return bigNumberify(amount).toFormat(2);
+}
+
 export class AccountBalancesPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
@@ -35,7 +39,7 @@ export class AccountBalancesPage {
 
       cy.get('@row')
         .find('.manual-balances-list__amount')
-        .should('contain', bigNumberify(balance.amount).toFormat(2));
+        .should('contain', formatAmount(balance.amount));
 
       i += 1;
     }
@@ -48,7 +52,7 @@ export class AccountBalancesPage {
 
       cy.get('@row')
         .find('.manual-balances-list__amount')
-        .should('not.contain', bigNumberify(balance.amount).toFormat(2));
+        .should('not.contain', formatAmount(balance.amount));
 
       i += 1;
     }
@@ -63,7 +67,7 @@ export class AccountBalancesPage {
 
     cy.get('@row')
       .find('.manual-balances-list__amount')
-      .should('contain', bigNumberify(balance.amount).toFormat(2));
+      .should('contain', formatAmount(balance.amount));
 
     cy.get('.manual-balances-list thead').scrollIntoView();
 
