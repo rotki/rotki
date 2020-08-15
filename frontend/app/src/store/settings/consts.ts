@@ -1,1 +1,1 @@
-export const DEFI_SETUP_DONE = 'defiSetupDone';
+export const DEFI_SETUP_DONE = 'defiSetupDone' as 'defiSetupDone';
