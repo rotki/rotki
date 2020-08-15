@@ -30,7 +30,7 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
       message = {
         title: 'CSV Export',
         description: success
-          ? 'History exported to CVS successfully'
+          ? 'History exported to CSV successfully'
           : 'History export failed',
         success
       };
