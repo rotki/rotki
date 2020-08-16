@@ -183,7 +183,7 @@ class Asset():
         object.__setattr__(self, 'forked', data.forked)
         object.__setattr__(self, 'swapped_for', data.swapped_for)
         object.__setattr__(self, 'cryptocompare', data.cryptocompare)
-        object.__setattr__(self, 'cryptocompare', data.coingecko)
+        object.__setattr__(self, 'coingecko', data.coingecko)
 
     def is_fiat(self) -> bool:
         return self.asset_type == AssetType.FIAT

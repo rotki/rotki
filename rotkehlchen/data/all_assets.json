@@ -1475,6 +1475,7 @@
         "type": "ethereum token"
     },
     "BTC": {
+        "coingecko": "bitcoin",
         "name": "Bitcoin",
         "started": 1231006505,
         "symbol": "BTC",
@@ -10811,6 +10812,7 @@
         "type": "ethereum token"
     },
     "YFI": {
+        "coingecko": "yearn-finance",
         "ethereum_address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
         "ethereum_token_decimals": 18,
         "name": "yearn.finance",
