@@ -6770,20 +6770,11 @@
         "type": "ethereum token"
     },
     "OCC": {
-        "cryptocompare": "",
+        "cryptocompare": "OCC",
         "name": "Octoin Coin",
         "started": 1520894060,
         "symbol": "OCC",
         "type": "own chain"
-    },
-    "OCC-2": {
-        "cryptocompare": "OCC",
-        "ethereum_address": "0x0235fE624e044A05eeD7A43E16E3083bc8A4287A",
-        "ethereum_token_decimals": 18,
-        "name": "Original Crypto Coin",
-        "started": 1517655385,
-        "symbol": "OCC",
-        "type": "ethereum token"
     },
     "OCEAN": {
         "ethereum_address": "0x985dd3D42De1e256d09e1c10F112bCCB8015AD41",
