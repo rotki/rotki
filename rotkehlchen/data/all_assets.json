@@ -323,6 +323,7 @@
         "type": "own chain"
     },
     "AIX": {
+        "coingecko": "",
         "ethereum_address": "0x1063ce524265d5a3A624f4914acd573dD89ce988",
         "ethereum_token_decimals": 18,
         "name": "Aigang",
@@ -367,6 +368,7 @@
         "type": "ethereum token"
     },
     "ALQO": {
+        "coingecko": "alqo",
         "cryptocompare": "XLQ",
         "name": "ALQO",
         "started": 1509321600,
@@ -384,6 +386,7 @@
     },
     "AM": {
         "active": false,
+        "coingecko": "",
         "ended": 1474761600,
         "name": "AeroME",
         "started": 1420934400,
@@ -438,6 +441,7 @@
         "type": "ethereum token"
     },
     "AMP": {
+        "coingecko": "",
         "name": "HyperSpace",
         "started": 1426723200,
         "symbol": "AMP",
@@ -550,6 +554,7 @@
     },
     "ARCH": {
         "active": false,
+        "coingecko": "",
         "ended": 1491177600,
         "name": "Archcoin",
         "started": 1412553600,
@@ -720,11 +725,14 @@
         "type": "own chain"
     },
     "AURA": {
+        "coingecko": "",
+        "cryptocompare": "",
         "ethereum_address": "0xCdCFc0f66c522Fd086A1b725ea3c0Eeb9F9e8814",
         "ethereum_token_decimals": 18,
         "name": "Aurora DAO",
         "started": 1506556800,
         "symbol": "AURA",
+        "swapped_for": "IDEX",
         "type": "ethereum token"
     },
     "AUTO": {
@@ -5371,6 +5379,15 @@
         "started": 1508803200,
         "symbol": "ICX",
         "type": "own chain"
+    },
+    "IDEX": {
+        "coingecko": "idex",
+        "ethereum_address": "0xB705268213D593B8FD88d3FDEFF93AFF5CbDcfAE",
+        "ethereum_token_decimals": 18,
+        "name": "IDEX Token",
+        "started": 1556828898,
+        "symbol": "IDEX",
+        "type": "ethereum token"
     },
     "IDH": {
         "coingecko": "indahash",
