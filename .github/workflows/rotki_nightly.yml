@@ -1,105 +1,17 @@
-name: Rotki CI
+name: Rotki Nightly
 
 on:
-  push:
-    branches:
-      - master
-      - develop
-  pull_request:
-    branches:
-      - master
-      - develop
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
-  lint-frontend:
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node-version: [12.x]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup
-        uses: actions/setup-node@v1
-        with:
-          node-version: '12.x'
-      - uses: actions/cache@v1
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - uses: actions/cache@v1
-        if: startsWith(runner.os, 'Linux')
-        with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
-      - name: Install dependencies
-        working-directory: ./frontend/app
-        run: npm ci
-      - name: Lint
-        working-directory: ./frontend/app
-        run: npm run lint:check
-      - name: Stylelint
-        working-directory: ./frontend/app
-        run: npm run stylelint
-      - name: Build
-        working-directory: ./frontend/app
-        run: npm run build
-      - name: Run unit tests
-        working-directory: ./frontend/app
-        run: npm run test:unit
-      - name: Upload coverage
-        working-directory: ./frontend/app
-        run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_unit
-  docs:
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: [3.7]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup
-        uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Install dependencies
-        run: |
-          pip install -r requirements_docs.txt
-          pip install -e .
-          git rev-parse HEAD
-      - name: Build html docs
-        run: cd docs && make html
-  lint-backend:
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: [3.7]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup
-        uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Install dependencies
-        run: |
-          pip install -r requirements_lint.txt
-          pip install -e .
-          git rev-parse HEAD
-      - name: Lint
-        run: make lint
-
   test-backend:
     needs: lint-backend
     env:
       CI: true
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: [3.7]
     runs-on: ${{ matrix.os }}
     steps:
@@ -275,60 +187,3 @@ jobs:
         with:
           name: videos-${{ runner.os }}
           path: ./frontend/app/tests/e2e/videos
-  package:
-    needs: test-backend
-    if: startsWith(github.event.ref, 'refs/tags')
-    env:
-      CI: true
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: [3.7]
-        node-version: [12.x]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up python
-        uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Setup node
-        uses: actions/setup-node@v1
-        with:
-          node-version: '12.x'
-      - uses: actions/cache@v1
-        if: startsWith(runner.os, 'Linux')
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
-        if: startsWith(runner.os, 'macOS')
-        with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Setup SQLCipher
-        run: |
-          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
-          then
-            sudo apt-get update
-            sudo apt-get install libxml2-utils
-            ./install_deps.sh
-            sudo ldconfig
-          fi
-          if [ ${{ matrix.os }} == 'macos-latest' ];
-          then
-            brew install sqlcipher
-          fi
-      - name: Package
-        run: ./package.sh
