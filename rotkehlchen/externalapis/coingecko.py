@@ -128,4 +128,4 @@ class Coingecko():
         return parsed_data
 
     def all_coins(self) -> List[Dict[str, Any]]:
-        return self._query(module='coins', subpath=None)
+        return self._query(module='coins', subpath='list')

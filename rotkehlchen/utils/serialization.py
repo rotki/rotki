@@ -84,6 +84,8 @@ def rkl_decode_value(
             # there are some symbols like 1337 which are all numeric and
             # are interpreted as FVAL. Adjust for it here.
             should_not_be_fval = (
+                (k == 'name' and isinstance(value, FVal)) or
+                (k == 'id' and isinstance(value, FVal)) or
                 (k == 'symbol' and isinstance(value, FVal)) or
                 (k == 'baseAsset' and isinstance(value, FVal)) or
                 (k == 'quoteAsset' and isinstance(value, FVal))
