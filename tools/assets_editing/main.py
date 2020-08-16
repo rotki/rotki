@@ -35,8 +35,6 @@ else:
 
 
 coingecko_add = {
-    'BTT': 'bittorrent',
-    'BTT-2': 'blocktrade',
     'FTT': 'farmatrust',
     'SNX': 'synthetix-network-token',
     '0xBTC': '0xbitcoin',
@@ -45,9 +43,147 @@ coingecko_add = {
     '1WO': '1world',
     '2GIVE': '2give',
     'ABBC': 'abbc',
+
+
+    'ACC-3': 'accelerator-network',
+    'ARB': 'arbitrage',
+    'ARB-2': 'arbit-coin',
+    'ARC': 'advanced-technology-coin',
+
+    'ATX': 'aston',
+    'ATX-2': 'artex-coin',
+    'AVA': 'travala',
+    'BBK': 'brickblock',
+    'BBK-2': 'bitblocks-project',
+    'BITS': 'bitstar',
+    'BITS-2': 'bitswift',
+    'BLOC': 'blockcloud',
+    'BLOC-2': 'bloc-money',
+    'BLZ': 'bluzelle',
+    'BOX': 'box-token',
+    'BOX-2': 'contentbox',
+    'BTG': 'bitcoin-gold',
+    'BTG-2': 'bitgem',
+    'BTM': 'bitmark',
+    'BTM-2': 'bytom',
+    'BTR': 'bitether',
+    'BTT': 'bittorrent',
+    'BTT-2': 'blocktrade',
+    'CAN': 'canyacoin',
+    'CAT': 'bitclave',
+    'CBC': 'cashbet-coin',
+    'CBC-2': 'cashbery-coin',
+    'CCN': 'custom-contract-network',
+    'CET': 'coinex-token',
+    'CMCT': 'crowd-machine',
+    'CMCT-2': 'cyber-movie-chain',
+    'CMT': 'cybermiles',
+    'CPC': 'cpchain',
+    'CPC-2': 'capricoin',
+    'CRC': 'crycash',
+    'CTX': 'centauri-coin',
+    'DEC': 'darico-ecosystem-coin',
+    'DEC-2': 'decentr',
+    'DTX': 'data-exchange-token',
+    'DTX-2': 'digital-ticks',
+    'EDR': 'endor-protocol-token',
+    'EDU': 'educoin',
+    'EVN': 'envion',
+    'EVN-2': 'evencoin',
+    'EXC-2': 'eximchain',
+    'FAIR-2': 'fairgame',
+    'FORK-2': 'gastroadvisor',
+    'GBX': 'gobyte',
+    'GBX-2': 'globitex',
+    'GENE': 'parkgene',
+    'GENE-2': 'gene-source-code-token',
+    'GET': 'get-protocol',
+    'GET-2': 'themis',
+    'GLC': 'goldcoin',
+    'GLC-2': 'globalcoin',
+    'GOT': 'gonetwork',
+    'GOT-2': 'parkingo',
+    'HC': 'hypercash',
+    'HMC': 'hi-mutual-society',
+    'HMC-2': 'harmonycoin',
+    'HOT': 'holo',
+    'HOT-2': 'hydro-protocol',
+    'IQ': 'everipedia',
+    'IQ-2': 'iq-cash',
+    'KEY': 'selfkey',
+    'KEY-2': 'key',
+    'KNC': 'kyber-network',
+    'KNT': 'kora-network',
+    'KNT-2': 'knekted',
+    'LNC': 'blocklancer',
+    'LNC-2': 'linker-coin',
+    'LUNA-2': 'terra-luna',
+    'MORE': 'legends-room',
+    'MTC': 'doc-com',
+    'MTC-2': 'mtc-mesh-network',
+    'NCC': 'neurochain',
+    'NTK': 'neurotoken',
+    'NTK-2': 'netkoin',
+    'ONG': 'ontology-gas',
+    'ONG-2': 'ong-social',
+    'ORS': 'origin-sport',
+    'ORS-2': 'orsgroup-io',
+    'PAI': 'project-pai',
+    'PAI-2': 'pchain',
+    'PASS': 'blockpass',
+    'PLA': 'plair',
+    'PLA-2': 'playchip',
+    'PNT': 'pnetwork',
+    'PNT-2': 'penta-network-token',
+    'POLY': 'polymath-network',
+    'POP': 'popularcoin',
+    'RCN': 'ripio-credit-network',
+    'RCN-2': 'rcoinchain',
+    'SLT': 'smartlands',
+    'SLT-2': 'social-lending-token',
+    'SMART': 'smartcash',
+    'SOL-2': 'solana',
+    'SOUL': 'phantasma',
+    'SOUL-2': 'cryptosoul',
+    'SPD': 'spindle',
+    'SPD-2': 'stipend',
+    'TCH': 'thorecash',
+    'TCH-2': 'tigercash',
+    'USDS': 'stably',
+    'WEB': 'webcoin',
+    'WIN-2': 'wcoin',
 }
 
-not_supported_in_coingecko = {'1CR', '300'}
+not_supported_in_coingecko = {
+    '1CR',
+    '300',
+    'ACC',
+    'AIR',
+    'AIR-2',
+    'APH',
+    'ARC-2',
+    'AVA-2',
+    'BET',
+    'BET-2',
+    'BTR-2',
+    'CAN-2',
+    'CCN-2',
+    'CET-2',
+    'CMT-2',
+    'CRC-2',
+    'CTX-2',
+    'EDR-2',
+    'FAIR',
+    'FT',
+    'HC-2',
+    'KEY-3',
+    'LCT',
+    'OCC',
+    'POP-2',
+    'SOL',
+    'WEB-2',
+    'WIN',
+}
 
 new_assets = {}
 should_stop = False
@@ -58,6 +194,8 @@ for key, entry in assets.items():
     new_assets[key] = entry
 
     if key in not_supported_in_coingecko:
+        new_assets[key]['coingecko'] = ''
+        changed += 1
         continue
 
     # Under here do entry specific editing
@@ -95,11 +233,6 @@ for key, entry in assets.items():
     # if 'coingecko' not in new_assets[key]:
     #     __import__("pdb").set_trace()
     #     a = 1
-
-
-        # if len(coingecko_add) == 0:
-        #     print(f'{key} does not yet have a coingecko mapping')
-        #     sys.exit(0)
 
 
 print(f'Managed to automatically map {changed}/{len(assets)} assets for coingecko')
