@@ -66,6 +66,7 @@ export interface NotificationData {
   readonly title: string;
   readonly message: string;
   readonly severity: Severity;
+  readonly date: Date;
 }
 
 export interface TaxReportEvent {

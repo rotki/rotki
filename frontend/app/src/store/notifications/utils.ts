@@ -10,7 +10,8 @@ export const toNotification = (
   title: title,
   message: message,
   severity: severity,
-  id: id
+  id: id,
+  date: new Date()
 });
 
 export function notify(
