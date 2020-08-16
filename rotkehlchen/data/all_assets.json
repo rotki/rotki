@@ -7357,7 +7357,7 @@
     },
     "POP-2": {
         "active": false,
-        "cryptocompare": "",
+        "cryptocompare": "POPC",
         "ended": 1554841762,
         "ethereum_address": "0x5D858bcd53E085920620549214a8b27CE2f04670",
         "ethereum_token_decimals": 18,
@@ -7424,15 +7424,6 @@
         "ended": 1455235200,
         "name": "ProsperCoin",
         "started": 1390953600,
-        "symbol": "PRC",
-        "type": "own chain"
-    },
-    "PRC-2": {
-        "active": false,
-        "cryptocompare": "",
-        "ended": 1549411200,
-        "name": "PRCoin",
-        "started": 1477958400,
         "symbol": "PRC",
         "type": "own chain"
     },
