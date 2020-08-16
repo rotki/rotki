@@ -5445,15 +5445,6 @@
         "symbol": "LCT",
         "type": "ethereum token"
     },
-    "LCT-2": {
-        "cryptocompare": "",
-        "ethereum_address": "0x4A37A91eec4C97F9090CE66d21D3B3Aadf1aE5aD",
-        "ethereum_token_decimals": 18,
-        "name": "Liquor chain",
-        "started": 1527811200,
-        "symbol": "LCT",
-        "type": "ethereum token"
-    },
     "LDC": {
         "ethereum_address": "0x5102791cA02FC3595398400BFE0e33d7B6C82267",
         "ethereum_token_decimals": 18,
