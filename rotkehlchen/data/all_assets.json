@@ -4068,16 +4068,6 @@
         "symbol": "FT",
         "type": "ethereum token"
     },
-    "FT-2": {
-        "active": true,
-        "cryptocompare": "",
-        "ethereum_address": "0xd37532D304214D588aeeaC4c365E8F1d72e2304A",
-        "ethereum_token_decimals": 18,
-        "name": "FCoin Token",
-        "started": 1527897600,
-        "symbol": "FT",
-        "type": "ethereum token"
-    },
     "FTC": {
         "name": "Feathercoin",
         "started": 1366070400,
