@@ -3,7 +3,6 @@ from functools import total_ordering
 from typing import Any, Optional
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo, Timestamp
 
@@ -151,6 +150,8 @@ class Asset():
     ended: Optional[Timestamp] = field(init=False)
     forked: Optional[str] = field(init=False)
     swapped_for: Optional[str] = field(init=False)
+    # None means no special mapping. '' means not supported
+    cryptocompare: Optional[str] = field(init=False)
 
     def __post_init__(self) -> None:
         """
@@ -180,6 +181,7 @@ class Asset():
         object.__setattr__(self, 'ended', data.ended)
         object.__setattr__(self, 'forked', data.forked)
         object.__setattr__(self, 'swapped_for', data.swapped_for)
+        object.__setattr__(self, 'cryptocompare', data.cryptocompare)
 
     def is_fiat(self) -> bool:
         return self.asset_type == AssetType.FIAT
@@ -200,9 +202,9 @@ class Asset():
         return WORLD_TO_BINANCE.get(self.identifier, self.identifier)
 
     def to_cryptocompare(self) -> str:
-        cryptocompare_str = WORLD_TO_CRYPTOCOMPARE.get(self.identifier, self.identifier)
+        cryptocompare_str = self.identifier if self.cryptocompare is None else self.cryptocompare
         # There is an asset which should not be queried in cryptocompare
-        if cryptocompare_str is None:
+        if cryptocompare_str == '':
             if self.identifier == 'MRS':
                 raise UnsupportedAsset(
                     'Marginless is not in cryptocompare. Asking for MRS '

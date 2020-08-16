@@ -8,7 +8,6 @@ from rotkehlchen.assets.asset import (
     Asset,
 )
 from rotkehlchen.constants.assets import A_DAI, A_SAI
-from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.db.upgrades.v7_v8 import COINBASE_DAI_UPGRADE_END_TS
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.typing import Timestamp
@@ -414,7 +413,6 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'WRX',  # https://info.binance.com/en/currencies/WRX - not listed anywhere else
 )
 
-CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
 
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
@@ -462,10 +460,6 @@ def asset_from_kraken(kraken_name: str) -> Asset:
     else:
         name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)
     return Asset(name)
-
-
-def asset_from_cryptocompare(cc_name: str) -> Asset:
-    return Asset(CRYPTOCOMPARE_TO_WORLD[cc_name])
 
 
 def asset_from_poloniex(poloniex_name: str) -> Asset:

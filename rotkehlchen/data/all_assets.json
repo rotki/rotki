@@ -6236,7 +6236,7 @@
         "type": "ethereum token"
     },
     "MRS": {
-        "cryptocompare": null,
+        "cryptocompare": '',
         "ethereum_address": "0x1254E59712e6e727dC71E0E3121Ae952b2c4c3b6",
         "ethereum_token_decimals": 18,
         "name": "Marginless",
