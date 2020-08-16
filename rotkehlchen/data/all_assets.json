@@ -1204,15 +1204,6 @@
         "symbol": "BLZ",
         "type": "ethereum token"
     },
-    "BLZ-2": {
-        "active": false,
-        "cryptocompare": "",
-        "ended": 1549497600,
-        "name": "BlazeCoin",
-        "started": 1400803200,
-        "symbol": "BLZ",
-        "type": "own chain"
-    },
     "BMC": {
         "ethereum_address": "0xDf6Ef343350780BF8C3410BF062e0C015B1DD671",
         "ethereum_token_decimals": 8,
