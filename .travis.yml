@@ -87,6 +87,7 @@ cache:
 jobs:
   include:
     - stage: docs
+      if: type != cron
       install:
         - pip install -r requirements_docs.txt
         - pip install -e .
@@ -94,6 +95,7 @@ jobs:
         - git rev-parse HEAD
         - cd docs && make html
     - stage: lint
+      if: type != cron
       install:
         - pip install -r requirements_lint.txt
         - pip install -e .
@@ -105,9 +107,11 @@ jobs:
       <<: *job-template-linux
 
     - stage: test
+      if: type == cron
       <<: *job-template-osx
 
     - stage: lint
+      if: type != cron
       <<: *job-template-frontend
       script:
         - npm run lint:check
