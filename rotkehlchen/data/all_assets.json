@@ -5312,13 +5312,6 @@
         "symbol": "KNC",
         "type": "ethereum token"
     },
-    "KNC-2": {
-        "cryptocompare": "KNGN",
-        "name": "KingN Coin",
-        "started": 1496620800,
-        "symbol": "KNC",
-        "type": "own chain"
-    },
     "KNDC": {
         "cryptocompare": "",
         "ethereum_address": "0x8E5610ab5E39d26828167640EA29823fe1dD5843",
