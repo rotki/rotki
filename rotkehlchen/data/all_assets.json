@@ -1,5 +1,6 @@
 {
     "0xBTC": {
+        "cryptocompare": "0XBTC",
         "ethereum_address": "0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
         "ethereum_token_decimals": 8,
         "name": "0xBitcoin",
@@ -105,6 +106,7 @@
         "type": "own chain"
     },
     "ACC-3": {
+        "cryptocompare": "ACCN",
         "ethereum_address": "0x13F1b7FDFbE1fc66676D56483e21B1ecb40b58E2",
         "ethereum_token_decimals": 18,
         "name": "Accelerator Network",
@@ -290,6 +292,7 @@
     },
     "AIR-2": {
         "active": false,
+        "cryptocompare": "AIR*",
         "ended": 1491955200,
         "name": "Air coin",
         "started": 1395273600,
@@ -335,6 +338,7 @@
         "type": "ethereum token"
     },
     "ALQO": {
+        "cryptocompare": "XLQ",
         "name": "ALQO",
         "started": 1509321600,
         "symbol": "ALQO",
@@ -473,6 +477,7 @@
         "type": "own chain"
     },
     "ARB": {
+        "cryptocompare": "ARBT",
         "ethereum_address": "0xaFBeC4D65BC7b116d85107FD05d912491029Bf46",
         "ethereum_token_decimals": 18,
         "name": "ARBITRAGE",
@@ -481,6 +486,7 @@
         "type": "ethereum token"
     },
     "ARB-2": {
+        "cryptocompare": "ARB",
         "name": "ARbit",
         "started": 1431043200,
         "symbol": "ARB",
@@ -494,6 +500,7 @@
     },
     "ARC-2": {
         "active": false,
+        "cryptocompare": "ARC*",
         "ended": 1516838400,
         "ethereum_address": "0xAc709FcB44a43c35F0DA4e3163b117A17F3770f5",
         "ethereum_token_decimals": 18,
@@ -625,6 +632,7 @@
         "type": "ethereum token"
     },
     "ATX": {
+        "cryptocompare": "ASTO",
         "ethereum_address": "0x1A0F2aB46EC630F9FD638029027b552aFA64b94c",
         "ethereum_token_decimals": 18,
         "name": "Aston",
@@ -634,6 +642,7 @@
     },
     "ATX-2": {
         "active": false,
+        "cryptocompare": "ATX",
         "ended": 1539388800,
         "name": "Artex Coin",
         "started": 1470096000,
@@ -676,6 +685,7 @@
         "type": "ethereum token"
     },
     "AVA": {
+        "cryptocompare": "AVALA",
         "name": "Travala.com",
         "started": 1527536681,
         "symbol": "AVA",
@@ -683,6 +693,7 @@
     },
     "AVA-2": {
         "active": false,
+        "cryptocompare": "AVA",
         "ended": 1554044593,
         "ethereum_address": "0xeD247980396B10169BB1d36f6e278eD16700a60f",
         "ethereum_token_decimals": 4,
@@ -708,6 +719,7 @@
         "type": "ethereum token"
     },
     "B2BX": {
+        "cryptocompare": "B2B",
         "ethereum_address": "0x5d51FCceD3114A8bb5E90cDD0f9d682bCbCC5393",
         "ethereum_token_decimals": 18,
         "name": "B2BX",
@@ -790,6 +802,7 @@
         "type": "ethereum token"
     },
     "BBK": {
+        "cryptocompare": "XBB",
         "ethereum_address": "0x4a6058666cf1057eaC3CD3A5a614620547559fc9",
         "ethereum_token_decimals": 18,
         "name": "Brickblock",
@@ -798,12 +811,14 @@
         "type": "ethereum token"
     },
     "BBK-2": {
+        "cryptocompare": "BBK",
         "name": "Bitblocks",
         "started": 1517788800,
         "symbol": "BBK",
         "type": "own chain"
     },
     "BBN": {
+        "cryptocompare": "BNN",
         "ethereum_address": "0x35a69642857083BA2F30bfaB735dacC7F0bac969",
         "ethereum_token_decimals": 18,
         "name": "Banyan Network",
@@ -982,6 +997,7 @@
     },
     "BET": {
         "active": true,
+        "cryptocompare": "DAOC",
         "ethereum_address": "0x8aA33A7899FCC8eA5fBe6A608A109c3893A1B8b2",
         "ethereum_token_decimals": 18,
         "name": "DAO.Casino",
@@ -990,6 +1006,7 @@
         "type": "ethereum token"
     },
     "BET-2": {
+        "cryptocompare": "BET",
         "name": "BetaCoin",
         "started": 1382572800,
         "symbol": "BET",
@@ -1044,6 +1061,7 @@
         "type": "binance token"
     },
     "BITB": {
+        "cryptocompare": "BEAN",
         "name": "Bean Cash",
         "started": 1423785600,
         "symbol": "BITB",
@@ -1078,6 +1096,7 @@
         "type": "own chain"
     },
     "BITS-2": {
+        "cryptocompare": "BITSW",
         "name": "Bitswift",
         "started": 1411948800,
         "symbol": "BITS",
@@ -1126,6 +1145,7 @@
         "type": "own chain"
     },
     "BLN": {
+        "cryptocompare": "BLNM",
         "ethereum_address": "0xCA29db4221c111888a7e80b12eAc8a266Da3Ee0d",
         "ethereum_token_decimals": 18,
         "name": "Bolenum",
@@ -1353,6 +1373,7 @@
         "type": "ethereum token"
     },
     "BOX-2": {
+        "cryptocompare": "BOX",
         "ethereum_address": "0x63f584FA56E60e4D0fE8802b27C7e6E3b33E007f",
         "ethereum_token_decimals": 18,
         "name": "ContentBox",
@@ -1530,6 +1551,7 @@
         "type": "own chain"
     },
     "BTH": {
+        "cryptocompare": "BYTHER",
         "ethereum_address": "0xFAd572db566E5234AC9Fc3d570c4EdC0050eAA92",
         "ethereum_token_decimals": 18,
         "name": "Bytether",
@@ -1547,12 +1569,14 @@
     },
     "BTM": {
         "active": true,
+        "cryptocompare": "BTMK",
         "name": "Bitmark",
         "started": 1408449563,
         "symbol": "BTM",
         "type": "own chain"
     },
     "BTM-2": {
+        "cryptocompare": "BTM",
         "name": "Bytom",
         "started": 1497916800,
         "symbol": "BTM",
@@ -1575,6 +1599,7 @@
         "type": "ethereum token"
     },
     "BTR-2": {
+        "cryptocompare": "BTR",
         "ethereum_address": "0xcbf15FB8246F679F9Df0135881CB29a3746f734b",
         "ethereum_token_decimals": 18,
         "name": "Bither",
@@ -1604,6 +1629,7 @@
         "type": "tron token"
     },
     "BTT-2": {
+        "cryptocompare": "BKT",
         "ethereum_address": "0xFA456Cf55250A839088b27EE32A424d7DAcB54Ff",
         "ethereum_token_decimals": 18,
         "name": "Blocktrade Token",
@@ -1746,6 +1772,7 @@
         "type": "ethereum token"
     },
     "CAN-2": {
+        "cryptocompare": "CADN",
         "ethereum_address": "0x5f3789907b35DCe5605b00C0bE0a7eCDBFa8A841",
         "ethereum_token_decimals": 18,
         "name": "Content and AD Network",
@@ -1792,6 +1819,7 @@
         "type": "ethereum token"
     },
     "CAT": {
+        "cryptocompare": "BCAT",
         "ethereum_address": "0x1234567461d3f8Db7496581774Bd869C83D51c93",
         "ethereum_token_decimals": 18,
         "name": "BitClave",
@@ -1848,6 +1876,7 @@
     },
     "CCN-2": {
         "active": false,
+        "cryptocompare": "CCN",
         "ended": 1539129600,
         "name": "CannaCoin",
         "started": 1390348800,
@@ -1934,6 +1963,7 @@
         "type": "ethereum token"
     },
     "CET-2": {
+        "cryptocompare": "DICEM",
         "ethereum_address": "0xF660cA1e228e7BE1fA8B4f5583145E31147FB577",
         "ethereum_token_decimals": 18,
         "name": "DICE Money",
@@ -1974,6 +2004,7 @@
         "type": "own chain"
     },
     "CHAI": {
+        "cryptocompare": "DAI",
         "ethereum_address": "0x06AF07097C9Eeb7fD685c692751D5C66dB49c215",
         "ethereum_token_decimals": 18,
         "name": "CHAI",
@@ -2113,6 +2144,7 @@
         "type": "own chain"
     },
     "CMT-2": {
+        "cryptocompare": "CMTC",
         "name": "Comet",
         "started": 1463529600,
         "symbol": "CMT",
@@ -2221,6 +2253,7 @@
     },
     "COS": {
         "active": true,
+        "cryptocompare": "CONT",
         "name": "Contentos",
         "started": 1561074552,
         "symbol": "COS",
@@ -2271,6 +2304,7 @@
         "type": "ethereum token"
     },
     "CPC": {
+        "cryptocompare": "CPCH",
         "ethereum_address": "0xfAE4Ee59CDd86e3Be9e8b90b53AA866327D7c090",
         "ethereum_token_decimals": 18,
         "name": "CPChain",
@@ -2279,6 +2313,7 @@
         "type": "ethereum token"
     },
     "CPC-2": {
+        "cryptocompare": "CPC",
         "name": "Capricoin",
         "started": 1437350400,
         "symbol": "CPC",
@@ -2328,6 +2363,7 @@
         "type": "ethereum token"
     },
     "CRC": {
+        "cryptocompare": "CRYC",
         "ethereum_address": "0xF41e5Fbc2F6Aac200Dd8619E121CE1f05D150077",
         "ethereum_token_decimals": 18,
         "name": "CryCash",
@@ -2337,6 +2373,7 @@
     },
     "CRC-2": {
         "active": false,
+        "cryptocompare": "CRC",
         "ended": 1543622400,
         "name": "CrowdCoin",
         "started": 1509580800,
@@ -2399,6 +2436,7 @@
         "type": "own chain"
     },
     "CS": {
+        "cryptocompare": "CRDTS",
         "ethereum_address": "0x46b9Ad944d1059450Da1163511069C718F699D31",
         "ethereum_token_decimals": 6,
         "name": "Credits",
@@ -2449,6 +2487,7 @@
     },
     "CTX-2": {
         "active": false,
+        "cryptocompare": "CTX",
         "ended": 1551398400,
         "ethereum_address": "0x662aBcAd0b7f345AB7FfB1b1fbb9Df7894f18e66",
         "ethereum_token_decimals": 18,
@@ -2711,6 +2750,7 @@
         "type": "ethereum token"
     },
     "DEC-2": {
+        "cryptocompare": "DECENTR",
         "ethereum_address": "0x30f271C9E86D2B7d00a6376Cd96A1cFBD5F0b9b3",
         "ethereum_token_decimals": 18,
         "name": "Decentr",
@@ -2939,6 +2979,7 @@
         "type": "ethereum token"
     },
     "DOW": {
+        "cryptocompare": "Dow",
         "ethereum_address": "0x76974C7B79dC8a6a109Fd71fd7cEb9E40eff5382",
         "ethereum_token_decimals": 18,
         "name": "DOWCOIN",
@@ -3217,6 +3258,7 @@
         "type": "ethereum token"
     },
     "EDR": {
+        "cryptocompare": "EPT",
         "ethereum_address": "0xc528c28FEC0A90C083328BC45f587eE215760A0F",
         "ethereum_token_decimals": 18,
         "name": "Endor Protocol",
@@ -3225,6 +3267,7 @@
         "type": "ethereum token"
     },
     "EDR-2": {
+        "cryptocompare": "EDR",
         "name": "E-Dinar Coin",
         "started": 1472226274,
         "symbol": "EDR",
@@ -3442,6 +3485,7 @@
         "type": "ethereum token"
     },
     "EPY": {
+        "cryptocompare": "EMPHY",
         "ethereum_address": "0x50Ee674689d75C0f88E8f83cfE8c4B69E8fd590D",
         "ethereum_token_decimals": 8,
         "name": "Emphy",
@@ -3472,6 +3516,7 @@
         "type": "ethereum token"
     },
     "ERT": {
+        "cryptocompare": "ERIS",
         "ethereum_address": "0x92A5B04D0ED5D94D7a193d1d334D3D16996f4E13",
         "ethereum_token_decimals": 18,
         "name": "Eristica",
@@ -3618,6 +3663,7 @@
         "type": "ethereum token"
     },
     "EVN-2": {
+        "cryptocompare": "EVENC",
         "ethereum_address": "0x68909e586eeAC8F47315e84B4c9788DD54Ef65Bb",
         "ethereum_token_decimals": 18,
         "name": "EvenCoin",
@@ -3643,6 +3689,7 @@
     },
     "EXC-2": {
         "active": false,
+        "cryptocompare": "EXC",
         "ended": 1545091200,
         "ethereum_address": "0x00c4B398500645eb5dA00a1a379a88B11683ba01",
         "ethereum_token_decimals": 18,
@@ -3719,6 +3766,7 @@
         "type": "own chain"
     },
     "FAIR-2": {
+        "cryptocompare": "FAIRG",
         "ethereum_address": "0x9B20DaBcec77f6289113E61893F7BEeFAEB1990a",
         "ethereum_token_decimals": 18,
         "name": "FairGame",
@@ -3874,6 +3922,7 @@
         "type": "ethereum token"
     },
     "FLX": {
+        "cryptocompare": "FLX*",
         "ethereum_address": "0x70b147E01E9285E7cE68B9BA437Fe3a9190E756a",
         "ethereum_token_decimals": 18,
         "name": "BitFlux",
@@ -3954,6 +4003,7 @@
         "type": "own chain"
     },
     "FORK-2": {
+        "cryptocompare": "FORK",
         "ethereum_address": "0x5bB1632fA0023e1AA76a1AE92B4635C8DBa49Fa2",
         "ethereum_token_decimals": 18,
         "name": "Gastro Advisor Token",
@@ -4206,6 +4256,7 @@
         "type": "own chain"
     },
     "GBX-2": {
+        "cryptocompare": "GBXT",
         "ethereum_address": "0x12fCd6463E66974cF7bBC24FFC4d40d6bE458283",
         "ethereum_token_decimals": 18,
         "name": "Globitex",
@@ -4236,6 +4287,7 @@
         "type": "counterparty token"
     },
     "GEN": {
+        "cryptocompare": "GENS",
         "ethereum_address": "0x543Ff227F64Aa17eA132Bf9886cAb5DB55DCAddf",
         "ethereum_token_decimals": 18,
         "name": "DAOstack",
@@ -4252,6 +4304,7 @@
         "type": "ethereum token"
     },
     "GENE-2": {
+        "cryptocompare": "GENE*",
         "ethereum_address": "0x884181554dfA9e578d36379919C05C25dC4a15bB",
         "ethereum_token_decimals": 18,
         "name": "Gene Source Code Chain",
@@ -4302,12 +4355,14 @@
         "type": "ethereum token"
     },
     "GLC": {
+        "cryptocompare": "GLD",
         "name": "GoldCoin",
         "started": 1368230400,
         "symbol": "GLC",
         "type": "own chain"
     },
     "GLC-2": {
+        "cryptocompare": "GLC",
         "name": "GlobalCoin",
         "started": 1372204800,
         "symbol": "GLC",
@@ -4366,6 +4421,7 @@
         "type": "own chain"
     },
     "GOT": {
+        "cryptocompare": "GTK",
         "ethereum_address": "0x423b5F62b328D0D6D44870F4Eee316befA0b2dF5",
         "ethereum_token_decimals": 18,
         "name": "GoNetwork",
@@ -4383,6 +4439,7 @@
     },
     "GPUC": {
         "active": false,
+        "cryptocompare": "GPU",
         "ended": 1400889600,
         "name": "GPU coin",
         "started": 1395100800,
@@ -4497,6 +4554,7 @@
         "type": "ethereum token"
     },
     "GXC": {
+        "cryptocompare": "GXS",
         "name": "GXChain",
         "started": 1488585600,
         "symbol": "GXC",
@@ -4572,6 +4630,7 @@
     },
     "HC-2": {
         "active": false,
+        "cryptocompare": "HMN",
         "ended": 1549065600,
         "name": "Harvest Masternode Coin",
         "started": 1515974400,
@@ -4663,6 +4722,7 @@
         "type": "ethereum token"
     },
     "HMC-2": {
+        "cryptocompare": "HMC*",
         "name": "HarmonyCoin",
         "started": 1500921003,
         "symbol": "HMC",
@@ -4691,6 +4751,7 @@
         "type": "ethereum token"
     },
     "HOT": {
+        "cryptocompare": "HOLO",
         "ethereum_address": "0x6c6EE5e31d828De241282B9606C8e98Ea48526E2",
         "ethereum_token_decimals": 18,
         "name": "Holo",
@@ -4699,6 +4760,7 @@
         "type": "ethereum token"
     },
     "HOT-2": {
+        "cryptocompare": "HOT",
         "ethereum_address": "0x9AF839687F6C94542ac5ece2e317dAAE355493A1",
         "ethereum_token_decimals": 18,
         "name": "Hydro Protocol",
@@ -4949,6 +5011,7 @@
         "type": "ethereum token"
     },
     "INV": {
+        "cryptocompare": "INVC",
         "ethereum_address": "0xEcE83617Db208Ad255Ad4f45Daf81E25137535bb",
         "ethereum_token_decimals": 8,
         "name": "Invacio",
@@ -4991,6 +5054,7 @@
         "type": "ethereum token"
     },
     "IOTA": {
+        "cryptocompare": "MIOTA",
         "name": "IOTA",
         "started": 1497364209,
         "symbol": "IOTA",
@@ -5027,6 +5091,7 @@
         "type": "eos token"
     },
     "IQ-2": {
+        "cryptocompare": "IQC",
         "name": "IQ.cash",
         "started": 1536789557,
         "symbol": "IQ",
@@ -5133,6 +5198,7 @@
         "type": "ethereum token"
     },
     "JOY": {
+        "cryptocompare": "JOY*",
         "ethereum_address": "0xDDe12a12A6f67156e0DA672be05c374e1B0a3e57",
         "ethereum_token_decimals": 6,
         "name": "JOYSO",
@@ -5205,6 +5271,7 @@
     },
     "KEY-3": {
         "active": false,
+        "cryptocompare": "KEYC",
         "ended": 1452038400,
         "name": "KeyCoin",
         "started": 1405382400,
@@ -5255,6 +5322,7 @@
         "type": "ethereum token"
     },
     "KNC-2": {
+        "cryptocompare": "KNGN",
         "name": "KingN Coin",
         "started": 1496620800,
         "symbol": "KNC",
@@ -5547,6 +5615,7 @@
         "type": "ethereum token"
     },
     "LNC-2": {
+        "cryptocompare": "LNKC",
         "ethereum_address": "0x6BEB418Fc6E1958204aC8baddCf109B8E9694966",
         "ethereum_token_decimals": 18,
         "name": "Linker Coin",
@@ -5573,6 +5642,7 @@
         "type": "ethereum token"
     },
     "LOC": {
+        "cryptocompare": "LOCK",
         "ethereum_address": "0x5e3346444010135322268a4630d2ED5F8D09446c",
         "ethereum_token_decimals": 18,
         "name": "LockTrip",
@@ -5627,6 +5697,7 @@
         "type": "ethereum token"
     },
     "LQD": {
+        "cryptocompare": "LQDN",
         "ethereum_address": "0xD29F0b5b3F50b07Fe9a9511F7d86F4f4bAc3f8c4",
         "ethereum_token_decimals": 18,
         "name": "Liquidity Network",
@@ -5708,6 +5779,7 @@
     },
     "LUNA-2": {
         "active": true,
+        "cryptocompare": "LUNA",
         "name": "Luna Terra",
         "started": 1564103351,
         "symbol": "LUNA",
@@ -5728,6 +5800,7 @@
         "type": "omni token"
     },
     "MAN": {
+        "cryptocompare": "MXAI",
         "ethereum_address": "0xe25bCec5D3801cE3a794079BF94adF1B8cCD802D",
         "ethereum_token_decimals": 18,
         "name": "Matrix AI Network",
@@ -5745,6 +5818,7 @@
     },
     "MARS": {
         "active": false,
+        "cryptocompare": "MRS",
         "ended": 1545350400,
         "name": "Marscoin",
         "started": 1390780800,
@@ -5774,6 +5848,7 @@
         "type": "own chain"
     },
     "MAZA": {
+        "cryptocompare": "MZC",
         "name": "MazaCoin",
         "started": 1393200000,
         "symbol": "MAZA",
@@ -5818,6 +5893,7 @@
     },
     "MCN": {
         "active": false,
+        "cryptocompare": "MNV",
         "ended": 1473206400,
         "name": "Monetaverde",
         "started": 1402963200,
@@ -5849,6 +5925,7 @@
         "type": "ethereum token"
     },
     "MDT": {
+        "cryptocompare": "MSDT",
         "ethereum_address": "0x814e0908b12A99FeCf5BC101bB5d0b8B5cDf7d26",
         "ethereum_token_decimals": 18,
         "name": "Measurable Data Token",
@@ -5869,6 +5946,7 @@
         "type": "own chain"
     },
     "MED": {
+        "cryptocompare": "MEDIB",
         "name": "MediBloc",
         "started": 1508284800,
         "symbol": "MED",
@@ -6054,6 +6132,7 @@
         "type": "ethereum token"
     },
     "MNT": {
+        "cryptocompare": "MNT*",
         "ethereum_address": "0xA9877b1e05D035899131DBd1e403825166D09f92",
         "ethereum_token_decimals": 18,
         "name": "Media Network Token",
@@ -6140,6 +6219,7 @@
         "type": "ethereum token"
     },
     "MRP": {
+        "cryptocompare": "MNRB",
         "ethereum_address": "0x21f0F0fD3141Ee9E11B3d7f13a1028CD515f459c",
         "ethereum_token_decimals": 18,
         "name": "Money Rebel",
@@ -6156,6 +6236,7 @@
         "type": "ethereum token"
     },
     "MRS": {
+        "cryptocompare": null,
         "ethereum_address": "0x1254E59712e6e727dC71E0E3121Ae952b2c4c3b6",
         "ethereum_token_decimals": 18,
         "name": "Marginless",
@@ -6198,6 +6279,7 @@
         "type": "ethereum token"
     },
     "MTC-2": {
+        "cryptocompare": "MTCMN",
         "ethereum_address": "0xdfdc0D82d96F8fd40ca0CFB4A288955bECEc2088",
         "ethereum_token_decimals": 18,
         "name": "MTC Mesh Network",
@@ -6222,6 +6304,7 @@
         "type": "ethereum token"
     },
     "MTN": {
+        "cryptocompare": "MDCL",
         "ethereum_address": "0x41dBECc1cdC5517C6f76f6a6E836aDbEe2754DE3",
         "ethereum_token_decimals": 18,
         "name": "Medicalchain",
@@ -6724,6 +6807,7 @@
         "type": "own chain"
     },
     "OCC-2": {
+        "cryptocompare": "OCC",
         "ethereum_address": "0x0235fE624e044A05eeD7A43E16E3083bc8A4287A",
         "ethereum_token_decimals": 18,
         "name": "Original Crypto Coin",
@@ -6808,6 +6892,7 @@
         "type": "ethereum token"
     },
     "ONE": {
+        "cryptocompare": "MENLO",
         "ethereum_address": "0x4D807509aECe24C0fa5A102b6a3B059Ec6E14392",
         "ethereum_token_decimals": 18,
         "name": "Menlo One",
@@ -6816,12 +6901,14 @@
         "type": "ethereum token"
     },
     "ONG": {
+        "cryptocompare": "ONGAS",
         "name": "Ontology Gas",
         "started": 1530316800,
         "symbol": "ONG",
         "type": "ontology token"
     },
     "ONG-2": {
+        "cryptocompare": "ONG",
         "ethereum_address": "0xd341d1680Eeee3255b8C4c75bCCE7EB57f144dAe",
         "ethereum_token_decimals": 18,
         "name": "SoMee.Social",
@@ -6899,6 +6986,7 @@
         "type": "ethereum token"
     },
     "ORS": {
+        "cryptocompare": "OGSP",
         "ethereum_address": "0xEB9A4B185816C354dB92DB09cC3B50bE60b901b6",
         "ethereum_token_decimals": 18,
         "name": "Origin Sport",
@@ -6907,6 +6995,7 @@
         "type": "ethereum token"
     },
     "ORS-2": {
+        "cryptocompare": "ORS",
         "ethereum_address": "0xac2e58A06E6265F1Cf5084EE58da68e5d75b49CA",
         "ethereum_token_decimals": 18,
         "name": "ORS Group",
@@ -6947,12 +7036,14 @@
         "type": "ethereum token"
     },
     "PAI": {
+        "cryptocompare": "PPAI",
         "name": "Project Pai",
         "started": 1509408000,
         "symbol": "PAI",
         "type": "own chain"
     },
     "PAI-2": {
+        "cryptocompare": "PAI",
         "ethereum_address": "0xB9bb08AB7E9Fa0A1356bd4A39eC0ca267E03b0b3",
         "ethereum_token_decimals": 18,
         "name": "PCHAIN",
@@ -7087,6 +7178,7 @@
         "type": "ethereum token"
     },
     "PHB": {
+        "cryptocompare": "PHX",
         "name": "Red Pulse Phoenix Binance",
         "started": 1558497600,
         "symbol": "PHB",
@@ -7166,12 +7258,14 @@
         "type": "ethereum token"
     },
     "PLA": {
+        "cryptocompare": "PLAI",
         "name": "Plair",
         "started": 1527206400,
         "symbol": "PLA",
         "type": "vechain token"
     },
     "PLA-2": {
+        "cryptocompare": "PLA",
         "ethereum_address": "0x0198f46f520F33cd4329bd4bE380a25a90536CD5",
         "ethereum_token_decimals": 18,
         "name": "PlayChip",
@@ -7260,6 +7354,7 @@
         "type": "ethereum token"
     },
     "PNT-2": {
+        "cryptocompare": "PENTA",
         "ethereum_address": "0x53066cdDBc0099eb6c96785d9b3DF2AAeEDE5DA3",
         "ethereum_token_decimals": 18,
         "name": "Penta Network Token",
@@ -7290,6 +7385,7 @@
         "type": "ethereum token"
     },
     "POLY": {
+        "cryptocompare": "POLYN",
         "ethereum_address": "0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC",
         "ethereum_token_decimals": 18,
         "name": "Polymath Network",
@@ -7299,6 +7395,7 @@
     },
     "POLY-2": {
         "active": false,
+        "cryptocompare": "POLY",
         "ended": 1444780800,
         "name": "Polybit",
         "started": 1433376000,
@@ -7391,6 +7488,7 @@
         "type": "own chain"
     },
     "PRE": {
+        "cryptocompare": "SRCH",
         "ethereum_address": "0x88A3E4F35D64aAD41A6d4030ac9AFE4356cB84fA",
         "ethereum_token_decimals": 18,
         "name": "Presearch",
@@ -7683,6 +7781,7 @@
         "type": "ethereum token"
     },
     "RCN-2": {
+        "cryptocompare": "RCOIN",
         "name": "Rcoin",
         "started": 1472688000,
         "symbol": "RCN",
@@ -7703,6 +7802,7 @@
         "type": "own chain"
     },
     "RDN": {
+        "cryptocompare": "RDNN",
         "ethereum_address": "0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6",
         "ethereum_token_decimals": 18,
         "name": "Raiden Network Token",
@@ -8264,6 +8364,7 @@
         "type": "counterparty token"
     },
     "SKB": {
+        "cryptocompare": "SKRB",
         "ethereum_address": "0x4aF328C52921706dCB739F25786210499169AFe6",
         "ethereum_token_decimals": 8,
         "name": "Sakura Bloom",
@@ -8288,6 +8389,7 @@
         "type": "ethereum token"
     },
     "SKR": {
+        "cryptocompare": "SKRT",
         "ethereum_address": "0x4c382F8E09615AC86E08CE58266CC227e7d4D913",
         "ethereum_token_decimals": 6,
         "name": "Skrilla Token",
@@ -8330,12 +8432,14 @@
         "type": "own chain"
     },
     "SLT": {
+        "cryptocompare": "SLST",
         "name": "Smartlands",
         "started": 1504742400,
         "symbol": "SLT",
         "type": "stellar token"
     },
     "SLT-2": {
+        "cryptocompare": "SLT",
         "ethereum_address": "0x851017523AE205adc9195e7F97D029f4Cfe7794c",
         "ethereum_token_decimals": 9,
         "name": "Social Lending Token",
@@ -8351,6 +8455,7 @@
     },
     "SMART-2": {
         "active": false,
+        "cryptocompare": "SMART*",
         "ended": 1555010711,
         "ethereum_address": "0x6F6DEb5db0C4994A8283A01D6CFeEB27Fc3bBe9C",
         "ethereum_token_decimals": 0,
@@ -8490,6 +8595,7 @@
         "type": "ethereum token"
     },
     "SOL-2": {
+        "cryptocompare": "SOLAN",
         "name": "Solana",
         "started": 1586494758,
         "symbol": "SOL",
@@ -8512,6 +8618,7 @@
         "type": "ethereum token"
     },
     "SOUL": {
+        "cryptocompare": "GOST",
         "name": "Phantasma",
         "started": 1527536682,
         "symbol": "SOUL",
@@ -8542,12 +8649,14 @@
         "type": "ethereum token"
     },
     "SPC": {
+        "cryptocompare": "APCC",
         "name": "SpaceChain",
         "started": 1516147466,
         "symbol": "SPC",
         "type": "qtum token"
     },
     "SPD": {
+        "cryptocompare": "SPND",
         "ethereum_address": "0x1dEa979ae76f26071870F824088dA78979eb91C8",
         "ethereum_token_decimals": 18,
         "name": "SPINDLE",
@@ -8556,6 +8665,7 @@
         "type": "ethereum token"
     },
     "SPD-2": {
+        "cryptocompare": "SPD",
         "name": "Stipend",
         "started": 1522170861,
         "symbol": "SPD",
@@ -8617,6 +8727,7 @@
         "type": "ethereum token"
     },
     "SPX": {
+        "cryptocompare": "SPCIE",
         "ethereum_address": "0x05aAaA829Afa407D83315cDED1d45EB16025910c",
         "ethereum_token_decimals": 18,
         "name": "Sp8de",
@@ -8796,6 +8907,7 @@
     },
     "STRC": {
         "active": false,
+        "cryptocompare": "SRC*",
         "ended": 1539216000,
         "ethereum_address": "0x46492473755e8dF960F8034877F61732D718CE96",
         "ethereum_token_decimals": 8,
@@ -9016,6 +9128,7 @@
     },
     "TCH-2": {
         "active": true,
+        "cryptocompare": "TCH",
         "ethereum_address": "0xFb54C2a6b2a4fC3AF9B781585215DA8Ee6BCE363",
         "ethereum_token_decimals": 18,
         "name": "TigerCash",
@@ -9040,6 +9153,7 @@
         "type": "ethereum token"
     },
     "TEAM": {
+        "cryptocompare": "TEAMT",
         "ethereum_address": "0x1c79ab32C66aCAa1e9E81952B8AAa581B43e54E7",
         "ethereum_token_decimals": 4,
         "name": "TokenStars Team",
@@ -9257,6 +9371,7 @@
         "type": "ethereum token"
     },
     "TNC": {
+        "cryptocompare": "TNCC",
         "ethereum_address": "0x39e743fEE400a5D9b36f1167B70C10e8F06440E5",
         "ethereum_token_decimals": 18,
         "name": "TNC Coin",
@@ -9632,6 +9747,7 @@
         "type": "ethereum token and more"
     },
     "USNBT": {
+        "cryptocompare": "NBT",
         "name": "NuBits",
         "started": 1411430400,
         "symbol": "USNBT",
@@ -9847,6 +9963,7 @@
         "type": "ethereum token"
     },
     "VLX": {
+        "cryptocompare": "VELAS",
         "name": "Velas",
         "started": 1570070048,
         "symbol": "VLX",
@@ -9898,6 +10015,7 @@
     },
     "VSF": {
         "active": true,
+        "cryptocompare": "CPLO",
         "ethereum_address": "0xBA3a79D758f19eFe588247388754b8e4d6EddA81",
         "ethereum_token_decimals": 18,
         "name": "VeriSafe",
@@ -9992,12 +10110,14 @@
         "type": "ethereum token"
     },
     "WEB-2": {
+        "cryptocompare": "WEBC",
         "name": "Webchain",
         "started": 1531047649,
         "symbol": "WEB",
         "type": "own chain"
     },
     "WETH": {
+        "cryptocompare": "ETH",
         "ethereum_address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
         "ethereum_token_decimals": 18,
         "name": "WETH",
@@ -10073,6 +10193,7 @@
     },
     "WIN-2": {
         "active": false,
+        "cryptocompare": "WIN",
         "ended": 1536192000,
         "ethereum_address": "0x899338b84D25aC505a332aDCE7402d697D947494",
         "ethereum_token_decimals": 8,
@@ -10210,6 +10331,7 @@
         "type": "ethereum token"
     },
     "XBP": {
+        "cryptocompare": "BPX",
         "ethereum_address": "0x28dee01D53FED0Edf5f6E310BF8Ef9311513Ae40",
         "ethereum_token_decimals": 18,
         "name": "BlitzPredict",
@@ -10528,6 +10650,7 @@
     },
     "YACC": {
         "active": false,
+        "cryptocompare": "YAC",
         "ended": 1473206400,
         "name": "YaCcoin",
         "started": 1367712000,
@@ -10576,6 +10699,7 @@
         "type": "ethereum token"
     },
     "YOYOW": {
+        "cryptocompare": "YOYOW",
         "ethereum_address": "0xcbeAEc699431857FDB4d37aDDBBdc20E132D4903",
         "ethereum_token_decimals": 18,
         "name": "YOYOW",
@@ -10738,6 +10862,7 @@
         "type": "ethereum token"
     },
     "aBAT": {
+        "cryptocompare": "BAT",
         "ethereum_address": "0xE1BA0FB44CCb0D11b80F92f4f8Ed94CA3fF51D00",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing BAT",
@@ -10746,6 +10871,7 @@
         "type": "ethereum token"
     },
     "aBUSD": {
+        "cryptocompare": "BUSD",
         "ethereum_address": "0x6Ee0f7BB50a54AB5253dA0667B0Dc2ee526C30a8",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing Binance USD",
@@ -10754,6 +10880,7 @@
         "type": "ethereum token"
     },
     "aDAI": {
+        "cryptocompare": "DAI",
         "ethereum_address": "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing DAI",
@@ -10770,6 +10897,7 @@
         "type": "ethereum token"
     },
     "aETH": {
+        "cryptocompare": "ETH",
         "ethereum_address": "0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing ETH",
@@ -10778,6 +10906,7 @@
         "type": "ethereum token"
     },
     "aKNC": {
+        "cryptocompare": "KNC",
         "ethereum_address": "0x9D91BE44C06d373a8a226E1f3b146956083803eB",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing KNC",
@@ -10786,6 +10915,7 @@
         "type": "ethereum token"
     },
     "aLEND": {
+        "cryptocompare": "LEND",
         "ethereum_address": "0x7D2D3688Df45Ce7C552E19c27e007673da9204B8",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing LEND",
@@ -10794,6 +10924,7 @@
         "type": "ethereum token"
     },
     "aLINK": {
+        "cryptocompare": "LINK",
         "ethereum_address": "0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing LINK",
@@ -10802,6 +10933,7 @@
         "type": "ethereum token"
     },
     "aMANA": {
+        "cryptocompare": "MANA",
         "ethereum_address": "0x6FCE4A401B6B80ACe52baAefE4421Bd188e76F6f",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing MANA",
@@ -10810,6 +10942,7 @@
         "type": "ethereum token"
     },
     "aMKR": {
+        "cryptocompare": "MKR",
         "ethereum_address": "0x7deB5e830be29F91E298ba5FF1356BB7f8146998",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing MKR",
@@ -10826,6 +10959,7 @@
         "type": "ethereum token"
     },
     "aREP": {
+        "cryptocompare": "REP",
         "ethereum_address": "0x71010A9D003445aC60C4e6A7017c1E89A477B438",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing REP",
@@ -10834,6 +10968,7 @@
         "type": "ethereum token"
     },
     "aSNX": {
+        "cryptocompare": "SNX",
         "ethereum_address": "0x328C4c80BC7aCa0834Db37e6600A6c49E12Da4DE",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing SNX",
@@ -10842,6 +10977,7 @@
         "type": "ethereum token"
     },
     "aSUSD": {
+        "cryptocompare": "sUSD",
         "ethereum_address": "0x625aE63000f46200499120B906716420bd059240",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing SUSD",
@@ -10850,6 +10986,7 @@
         "type": "ethereum token"
     },
     "aTUSD": {
+        "cryptocompare": "TUSD",
         "ethereum_address": "0x4DA9b813057D04BAef4e5800E36083717b4a0341",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing TUSD",
@@ -10858,6 +10995,7 @@
         "type": "ethereum token"
     },
     "aUSDC": {
+        "cryptocompare": "USDC",
         "ethereum_address": "0x9bA00D6856a4eDF4665BcA2C2309936572473B7E",
         "ethereum_token_decimals": 6,
         "name": "Aave Interest bearing USDC",
@@ -10866,6 +11004,7 @@
         "type": "ethereum token"
     },
     "aUSDT": {
+        "cryptocompare": "USDT",
         "ethereum_address": "0x71fc860F7D3A592A4a98740e39dB31d25db65ae8",
         "ethereum_token_decimals": 6,
         "name": "Aave Interest bearing USDT",
@@ -10874,6 +11013,7 @@
         "type": "ethereum token"
     },
     "aWBTC": {
+        "cryptocompare": "WBTC",
         "ethereum_address": "0xFC4B8ED459e00e5400be803A9BB3954234FD50e3",
         "ethereum_token_decimals": 8,
         "name": "Aave Interest bearing WBTC",
@@ -10882,6 +11022,7 @@
         "type": "ethereum token"
     },
     "aZRX": {
+        "cryptocompare": "ZRX",
         "ethereum_address": "0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing ZRX",
