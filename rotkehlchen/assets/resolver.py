@@ -73,6 +73,7 @@ class AssetResolver():
             ethereum_address=data.get('ethereum_address', None),
             decimals=data.get('ethereum_token_decimals', None),
             cryptocompare=data.get('cryptocompare', None),
+            coingecko=data.get('coingecko', None),
         )
         return result
 

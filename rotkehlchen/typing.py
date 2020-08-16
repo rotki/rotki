@@ -207,6 +207,7 @@ class AssetData(NamedTuple):
     decimals: Optional[int]
     # None means, no special mapping. '' means not supported
     cryptocompare: Optional[str]
+    coingecko: Optional[str]
 
 
 class TradeType(Enum):

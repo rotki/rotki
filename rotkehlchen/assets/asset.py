@@ -152,6 +152,7 @@ class Asset():
     swapped_for: Optional[str] = field(init=False)
     # None means no special mapping. '' means not supported
     cryptocompare: Optional[str] = field(init=False)
+    coingecko: Optional[str] = field(init=False)
 
     def __post_init__(self) -> None:
         """
@@ -182,6 +183,7 @@ class Asset():
         object.__setattr__(self, 'forked', data.forked)
         object.__setattr__(self, 'swapped_for', data.swapped_for)
         object.__setattr__(self, 'cryptocompare', data.cryptocompare)
+        object.__setattr__(self, 'cryptocompare', data.coingecko)
 
     def is_fiat(self) -> bool:
         return self.asset_type == AssetType.FIAT
@@ -214,6 +216,18 @@ class Asset():
 
         # Seems cryptocompare capitalizes everything. So cDAI -> CDAI
         return cryptocompare_str.upper()
+
+    def to_coingecko(self) -> str:
+        """Returns the symbol with which to query coingecko for the asset
+
+        May raise:
+            - UnsupportedAsset() if the asset is not supported by coingecko
+        """
+        coingecko_str = self.identifier if self.coingecko is None else self.coingecko
+        # There is an asset which should not be queried in cryptocompare
+        if coingecko_str == '':
+            raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
+        return coingecko_str
 
     def __hash__(self) -> int:
         return hash(self.identifier)
