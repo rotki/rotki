@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature: `1235` Numerical displays can now be customized. Users can choose the thousands, the decimals separator. and the position of the currency symbol.
 * :feature: `1186` Add tooltips to all app bar buttons (except drawer button)
 * :bug: `1226` Fix "Get Rotki Premium" menu button on macOS
 * :feature:`-` Added support for the following tokens
