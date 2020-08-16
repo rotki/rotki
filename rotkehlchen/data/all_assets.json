@@ -7049,15 +7049,6 @@
         "symbol": "PASS",
         "type": "ethereum token"
     },
-    "PASS-2": {
-        "cryptocompare": "",
-        "ethereum_address": "0x77761e63C05aeE6648FDaeaa9B94248351AF9bCd",
-        "ethereum_token_decimals": 18,
-        "name": "Wisepass",
-        "started": 1533552737,
-        "symbol": "PASS",
-        "type": "ethereum token"
-    },
     "PAT": {
         "ethereum_address": "0xF3b3Cad094B89392fcE5faFD40bC03b80F2Bc624",
         "ethereum_token_decimals": 18,
