@@ -6171,7 +6171,7 @@
         "cryptocompare": "MORE",
         "ethereum_address": "0x59061b6f26BB4A9cE5828A19d35CFD5A4B80F056",
         "ethereum_token_decimals": 8,
-        "name": "More Coin",
+        "name": "Legends",
         "started": 1492473600,
         "symbol": "MORE",
         "type": "ethereum token"
@@ -6431,22 +6431,11 @@
         "type": "ethereum token"
     },
     "NCC": {
-        "cryptocompare": "",
+        "cryptocompare": "NCC",
         "ethereum_address": "0x5d48F293BaED247A2D0189058bA37aa238bD4725",
         "ethereum_token_decimals": 18,
         "name": "NeuroChain",
         "started": 1521205388,
-        "symbol": "NCC",
-        "type": "ethereum token"
-    },
-    "NCC-2": {
-        "active": false,
-        "cryptocompare": "",
-        "ended": 1554595200,
-        "ethereum_address": "0x9344b383b1D59b5ce3468B234DAB43C7190ba735",
-        "ethereum_token_decimals": 18,
-        "name": "NeedsCoin",
-        "started": 1493942400,
         "symbol": "NCC",
         "type": "ethereum token"
     },
