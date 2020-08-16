@@ -1,6 +1,7 @@
 import { GetterTree } from 'vuex';
 import { NotificationState } from '@/store/notifications/state';
 import { RotkehlchenState } from '@/store/store';
+import { NotificationData } from '@/typing/types';
 
 export const getters: GetterTree<NotificationState, RotkehlchenState> = {
   count(state: NotificationState): number {
@@ -16,5 +17,8 @@ export const getters: GetterTree<NotificationState, RotkehlchenState> = {
       nextId = 1;
     }
     return nextId;
+  },
+  queue(state: NotificationState): NotificationData[] {
+    return state.data.filter(notification => notification.display);
   }
 };

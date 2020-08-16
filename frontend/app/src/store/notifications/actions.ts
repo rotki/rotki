@@ -3,7 +3,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { NotificationState } from '@/store/notifications/state';
 import { toNotification } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/store';
-import { Severity } from '@/typing/types';
+import { NotificationBase, Severity } from '@/typing/types';
 
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
   consume({ commit, getters }): any {
@@ -30,5 +30,21 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
           toNotification(reason, Severity.ERROR, getters.nextId, title)
         ]);
       });
+  },
+  displayed({ commit, state }, id: number): void {
+    const index = state.data.findIndex(notification => notification.id === id);
+    if (index < 0) {
+      return;
+    }
+    const notifications = [...state.data];
+    notifications[index] = { ...notifications[index], display: false };
+    commit('notifications', notifications);
+  },
+  notify(
+    { commit, getters: { nextId } },
+    { message, severity, title }: NotificationBase
+  ): void {
+    const notification = toNotification(message, severity, nextId, title);
+    commit('update', [notification]);
   }
 };

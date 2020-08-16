@@ -61,11 +61,16 @@ export enum Severity {
   INFO = 'info'
 }
 
-export interface NotificationData {
-  readonly id: number;
+export interface NotificationBase {
   readonly title: string;
   readonly message: string;
   readonly severity: Severity;
+}
+
+export interface NotificationData extends NotificationBase {
+  readonly id: number;
+  readonly display: boolean;
+  readonly duration: number;
   readonly date: Date;
 }
 

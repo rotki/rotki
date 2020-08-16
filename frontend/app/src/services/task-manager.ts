@@ -28,7 +28,7 @@ export class TaskManager {
     const { result, message } = payload;
 
     if (message) {
-      notify(message, 'Exchange Query Error ');
+      notify(message, 'Exchange Query Error');
       return;
     }
 

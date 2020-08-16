@@ -1,5 +1,5 @@
 import store from '@/store/store';
-import { NotificationData, Severity } from '@/typing/types';
+import { NotificationBase, NotificationData, Severity } from '@/typing/types';
 
 export const toNotification = (
   message: string,
@@ -10,16 +10,22 @@ export const toNotification = (
   title: title,
   message: message,
   severity: severity,
+  display: false,
+  duration: 5000,
   id: id,
   date: new Date()
 });
+
+export const emptyNotification = () => toNotification('', Severity.INFO, 0);
 
 export function notify(
   message: string,
   title: string = '',
   severity: Severity = Severity.ERROR
 ) {
-  const id = store.getters['notifications/nextId'] as number;
-  const notification = toNotification(message, severity, id, title);
-  store.commit('notifications/update', [notification]);
+  store.dispatch('notifications/notify', {
+    title,
+    message,
+    severity
+  } as NotificationBase);
 }
