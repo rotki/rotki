@@ -1,6 +1,7 @@
 <template>
   <v-app id="rotki">
     <div v-show="logged" class="app__content rotki-light-grey">
+      <notification-popup />
       <v-navigation-drawer
         v-model="drawer"
         width="300"
@@ -80,6 +81,7 @@ import NavigationMenu from '@/components/NavigationMenu.vue';
 import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
+import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import '@/services/task-manager';
@@ -90,6 +92,7 @@ import { Message } from '@/store/store';
 
 @Component({
   components: {
+    NotificationPopup,
     NotificationSidebar,
     ErrorScreen,
     AccountManagement,

@@ -6,6 +6,7 @@ export const mutations: MutationTree<NotificationState> = {
   update(state: NotificationState, payload: NotificationData[]) {
     state.data = [...state.data, ...payload];
   },
+
   remove(state: NotificationState, id: number) {
     const notifications = [...state.data];
 
@@ -15,6 +16,10 @@ export const mutations: MutationTree<NotificationState> = {
     }
 
     state.data = notifications;
+  },
+
+  notifications(state: NotificationState, data: NotificationData[]) {
+    state.data = data;
   },
 
   reset(state: NotificationState) {
