@@ -438,15 +438,6 @@
         "symbol": "APH",
         "type": "neo token"
     },
-    "APH-2": {
-        "active": false,
-        "cryptocompare": "",
-        "ended": 1401408000,
-        "name": "Aphrodite coin",
-        "started": 1395446400,
-        "symbol": "APH",
-        "type": "own chain"
-    },
     "APIS": {
         "ethereum_address": "0x4C0fBE1BB46612915E7967d2C3213cd4d87257AD",
         "ethereum_token_decimals": 18,
