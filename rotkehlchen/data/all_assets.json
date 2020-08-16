@@ -3291,15 +3291,6 @@
         "symbol": "EDU",
         "type": "ethereum token"
     },
-    "EDU-2": {
-        "cryptocompare": "",
-        "ethereum_address": "0x2A22e5cCA00a3D63308fa39f29202eB1b39eEf52",
-        "ethereum_token_decimals": 18,
-        "name": "Open Source University",
-        "started": 1527292800,
-        "symbol": "EDU",
-        "type": "ethereum token"
-    },
     "EFL": {
         "active": true,
         "name": "e-Gulden",
