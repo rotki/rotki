@@ -100,13 +100,6 @@
         "symbol": "ACC",
         "type": "own chain"
     },
-    "ACC-2": {
-        "cryptocompare": "",
-        "name": "ACChain",
-        "started": 1496275200,
-        "symbol": "ACC",
-        "type": "own chain"
-    },
     "ACC-3": {
         "cryptocompare": "ACCN",
         "ethereum_address": "0x13F1b7FDFbE1fc66676D56483e21B1ecb40b58E2",
