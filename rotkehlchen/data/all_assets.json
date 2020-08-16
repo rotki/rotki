@@ -725,8 +725,8 @@
         "type": "own chain"
     },
     "AURA": {
-        "coingecko": "",
-        "cryptocompare": "",
+        "coingecko": "idex",
+        "cryptocompare": "IDEX",
         "ethereum_address": "0xCdCFc0f66c522Fd086A1b725ea3c0Eeb9F9e8814",
         "ethereum_token_decimals": 18,
         "name": "Aurora DAO",
@@ -783,6 +783,7 @@
         "type": "ethereum token"
     },
     "B2BX": {
+        "coingecko": "b2bx",
         "cryptocompare": "B2B",
         "ethereum_address": "0x5d51FCceD3114A8bb5E90cDD0f9d682bCbCC5393",
         "ethereum_token_decimals": 18,
@@ -893,6 +894,7 @@
         "type": "own chain"
     },
     "BBN": {
+        "coingecko": "",
         "cryptocompare": "BNN",
         "ethereum_address": "0x35a69642857083BA2F30bfaB735dacC7F0bac969",
         "ethereum_token_decimals": 18,
@@ -928,6 +930,7 @@
     },
     "BCAP": {
         "active": false,
+        "coingecko": "",
         "ended": 1518307200,
         "ethereum_address": "0x1f41E42D0a9e3c0Dd3BA15B527342783B43200A9",
         "ethereum_token_decimals": 0,
@@ -1150,6 +1153,7 @@
     },
     "BHPC": {
         "active": false,
+        "coingecko": "blockchain-of-hash-power",
         "ended": 1547510400,
         "ethereum_address": "0xEE74110fB5A1007b06282e0DE5d73A61bf41d9Cd",
         "ethereum_token_decimals": 18,
@@ -1190,6 +1194,7 @@
         "type": "bitshares token"
     },
     "BITPARK": {
+        "coingecko": "bitparkcoin",
         "cryptocompare": "",
         "ethereum_address": "0xF3d29Fb98D2DC5E78c87198DEEF99377345fD6F1",
         "ethereum_token_decimals": 8,
@@ -1214,6 +1219,7 @@
         "type": "ardor token"
     },
     "BITUSD": {
+        "coingecko": "",
         "name": "bitUSD",
         "started": 1411446262,
         "symbol": "BITUSD",
@@ -1229,7 +1235,7 @@
         "type": "ethereum token"
     },
     "BKC": {
-        "coingecko": "facts",
+        "coingecko": "bankcoin-cash",
         "cryptocompare": "",
         "ethereum_address": "0xc88Be04c809856B75E3DfE19eB4dCf0a3B15317a",
         "ethereum_token_decimals": 8,
@@ -1239,6 +1245,7 @@
         "type": "ethereum token"
     },
     "BKRW": {
+        "coingecko": "binance-krw",
         "name": "Binance KRW",
         "started": 1580947200,
         "symbol": "BKRW",
