@@ -1823,16 +1823,6 @@
         "symbol": "CAT",
         "type": "ethereum token"
     },
-    "CAT-2": {
-        "active": true,
-        "cryptocompare": "",
-        "ethereum_address": "0x56ba2Ee7890461f463F7be02aAC3099f6d5811A8",
-        "ethereum_token_decimals": 18,
-        "name": "BlockCAT",
-        "started": 1499990400,
-        "symbol": "CAT",
-        "type": "ethereum token"
-    },
     "CBC": {
         "ethereum_address": "0x26DB5439F651CAF491A87d48799dA81F191bDB6b",
         "ethereum_token_decimals": 8,
