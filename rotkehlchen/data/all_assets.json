@@ -7349,15 +7349,6 @@
         "symbol": "POLY",
         "type": "ethereum token"
     },
-    "POLY-2": {
-        "active": false,
-        "cryptocompare": "POLY",
-        "ended": 1444780800,
-        "name": "Polybit",
-        "started": 1433376000,
-        "symbol": "POLY",
-        "type": "own chain"
-    },
     "POP": {
         "name": "PopularCoin",
         "started": 1390867200,
