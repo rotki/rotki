@@ -625,13 +625,6 @@
         "symbol": "ATOM",
         "type": "own chain"
     },
-    "ATOM-2": {
-        "cryptocompare": "",
-        "name": "Atomic Coin",
-        "started": 1474588800,
-        "symbol": "ATOM",
-        "type": "own chain"
-    },
     "ATS": {
         "ethereum_address": "0x2dAEE1AA61D60A252DC80564499A69802853583A",
         "ethereum_token_decimals": 4,
