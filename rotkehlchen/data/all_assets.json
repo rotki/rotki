@@ -1471,6 +1471,7 @@
         "type": "own chain"
     },
     "BOU": {
+        "coingecko": "",
         "ethereum_address": "0xC2C63F23ec5E97efbD7565dF9Ec764FDc7d4e91d",
         "ethereum_token_decimals": 18,
         "name": "Boulle",
@@ -1545,6 +1546,7 @@
         "type": "ethereum token"
     },
     "BRK": {
+        "coingecko": "",
         "name": "Breakout",
         "started": 1425513600,
         "symbol": "BRK",
@@ -1599,6 +1601,7 @@
     },
     "BTCA": {
         "active": false,
+        "coingecko": "",
         "ended": 1531008000,
         "ethereum_address": "0x02725836ebF3eCDb1cDf1c7b02FcbBfaa2736AF8",
         "ethereum_token_decimals": 8,
@@ -1609,6 +1612,7 @@
     },
     "BTCD": {
         "active": false,
+        "coingecko": "",
         "ended": 1538697600,
         "name": "BitcoinDark",
         "started": 1405468800,
@@ -1623,6 +1627,7 @@
         "type": "own chain"
     },
     "BTCE": {
+        "coingecko": "",
         "ethereum_address": "0x0886949c1b8C412860c4264Ceb8083d1365e86CF",
         "ethereum_token_decimals": 8,
         "name": "EthereumBitcoin",
@@ -1706,15 +1711,6 @@
         "name": "Bytether",
         "started": 1507680000,
         "symbol": "BTH",
-        "type": "ethereum token"
-    },
-    "BTK": {
-        "cryptocompare": "",
-        "ethereum_address": "0xdb8646F5b487B5Dd979FAC618350e85018F557d4",
-        "ethereum_token_decimals": 18,
-        "name": "Bitcoin Token",
-        "started": 1516319086,
-        "symbol": "BTK",
         "type": "ethereum token"
     },
     "BTM": {
