@@ -3991,13 +3991,6 @@
         "symbol": "FOR",
         "type": "ethereum token"
     },
-    "FORK": {
-        "active": true,
-        "name": "Forkcoin",
-        "started": 1533856467,
-        "symbol": "FORK",
-        "type": "own chain"
-    },
     "FORK-2": {
         "cryptocompare": "FORK",
         "ethereum_address": "0x5bB1632fA0023e1AA76a1AE92B4635C8DBa49Fa2",
