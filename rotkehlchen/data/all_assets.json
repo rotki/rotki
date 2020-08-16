@@ -5755,13 +5755,6 @@
         "symbol": "LUN",
         "type": "ethereum token"
     },
-    "LUNA": {
-        "cryptocompare": "",
-        "name": "Luna Coin",
-        "started": 1484092800,
-        "symbol": "LUNA",
-        "type": "own chain"
-    },
     "LUNA-2": {
         "active": true,
         "cryptocompare": "LUNA",
