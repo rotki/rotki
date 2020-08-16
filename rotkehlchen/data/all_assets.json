@@ -1326,16 +1326,6 @@
         "symbol": "BLUE",
         "type": "ethereum token"
     },
-    "BLX": {
-        "active": false,
-        "ended": 1518307200,
-        "ethereum_address": "0xE5a7c12972f3bbFe70ed29521C8949b8Af6a0970",
-        "ethereum_token_decimals": 18,
-        "name": "Blockchain Index",
-        "started": 1503079928,
-        "symbol": "BLX",
-        "type": "ethereum token"
-    },
     "BLZ": {
         "coingecko": "bluzelle",
         "ethereum_address": "0x5732046A883704404F284Ce41FfADd5b007FD668",
