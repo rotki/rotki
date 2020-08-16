@@ -1,7 +1,6 @@
 #Inspiration for OSX from: https://github.com/bjones1/CodeChat/blob/master/.travis.yml
 os: linux
 language: python
-sudo: required
 dist: xenial
 conditions: v1
 python:
@@ -24,12 +23,11 @@ env:
   - GETH_VERSION='1.8.13'
   - secure: GHP9nhN+M8aYU+XY7R2vzpIftCEv9J/rPnvtJZ8mcYT591Fpom8OvWFrJlHgDDVU0kGKNNE6kMcvZ4zKpOakiKzghONemclUSMotaJSTnWkdEUHi7oUFWtP/VQMv4/ywBbhrIY7R6kZzlJ0QAGh9Yl62Azlq2cal3XrURNP1ehOr5yENgg+rQwPoeqyv5lvcTbI8D5dq+7XqodKdh4toCb2BRbBzj8xPE+m71hzA3McwEBXa5Hn1A2U7HUWM74mOPV1JFoG8ED0qIHfprLWW2mwHZNYgwuLgSsyzNeqN2+jL6OIFoBSzugzfLojD9hmiAJTLI/QNR/7lXN7N/CjBlQos7aeWdaZhnVfj+ca2w0qJ1MLGz17fJWzko5UbWBWFqNF2IMBvI9VB0MXCMYVZEAns7r//ymPM4i6rVD8Tnh0vOkCoRdaM5MEGMfO8hYDKzrcava59CGJA5XjBIka3feb5fkYhUdqnvZCcbZu7upCKQXadTxFxHhKxWXjUD/yOw7o20gujVRnzcsJ51/rKy9gwbGjWh0t/6+2SgWdaM20TJDbrzTLSnI1GHwMphCHkl2vHY10uclauihdjruvh4fwIYhU+Ic1FXsvaKexCDgArOSdp5UxX/xiK/AlHu/8EKV4bg7efKxYTi+EK/sm815GaOi1AVHd/2tm7OLdkfJQ=
 
-templates:
+_templates:
   job-template-linux: &job-template-linux
     os: linux
     language: python
     python: '3.7'
-    sudo: true
     before_install:
       # export PATH needs to be here and can't be inside before_install.sh
       - mkdir -p $HOME/.bin
@@ -69,13 +67,12 @@ templates:
       - source terryfy/test_tools.sh
       - python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/
 
-    job-template-frontend: &job-template-frontend
-      os: linux
-      language: node_js
-      node_js:
-        - 12
-      before_install:
-        - cd ./frontend/app
+  job-template-frontend: &job-template-frontend
+    os: linux
+    language: node_js
+    node_js: "12"
+    before_install:
+      - cd ./frontend/app
 
 cache:
   pip: true
@@ -90,7 +87,6 @@ cache:
 jobs:
   include:
     - stage: docs
-      sudo: false
       install:
         - pip install -r requirements_docs.txt
         - pip install -e .
@@ -98,7 +94,6 @@ jobs:
         - git rev-parse HEAD
         - cd docs && make html
     - stage: lint
-      sudo: false
       install:
         - pip install -r requirements_lint.txt
         - pip install -e .
@@ -133,16 +128,6 @@ jobs:
       after_success:
         - bash <(curl -s https://codecov.io/bash) -F frontend_integration
 
-#    - stage: ui-test
-#      <<: *job-template-osx
-#      script:
-#        - source terryfy/test_tools.sh
-#        - cd ./frontend/app
-#        - npm ci
-#        - npm run test:integration-ci
-#      after_failure:
-#        - ./tools/scripts/screenshot_upload.py ./failure-screenshots
-
     - stage: deploy
       <<: *job-template-linux
       name: "Deploy Job"
@@ -156,18 +141,12 @@ jobs:
             - $GENERATED_APPIMAGE
             - $APPIMAGE_CHECKSUM
             - $TAR_CHECKSUM
-          skip_cleanup: true
           draft: true
           on:
             tags: true
             condition: $TRAVIS_OS_NAME = linux
             repo: rotki/rotki
-            all_branch: true
-      on:
-        tags: true
-        condition: $TRAVIS_OS_NAME = linux
-        repo: rotki/rotki
-        all_branch: true
+            all_branches: true
 
     - stage: deploy
       <<: *job-template-osx
@@ -181,15 +160,9 @@ jobs:
           file:
             - $DMG_CHECKSUM
             - $ZIP_CHECKSUM
-          skip_cleanup: true
           draft: true
           on:
             tags: true
             condition: $TRAVIS_OS_NAME = osx
             repo: rotki/rotki
-            all_branch: true
-      on:
-        tags: true
-        condition: $TRAVIS_OS_NAME = osx
-        repo: rotki/rotki
-        all_branch: true
+            all_branches: true
