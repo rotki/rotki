@@ -9065,7 +9065,7 @@
         "type": "ethereum token"
     },
     "TCH": {
-        "cryptocompare": "",
+        "cryptocompare": "THCH",
         "ethereum_address": "0x9972A0F24194447E73a7e8b6CD26a52e02DDfAD5",
         "ethereum_token_decimals": 0,
         "name": "Thore Cash",
@@ -9685,13 +9685,6 @@
         "symbol": "USDS",
         "type": "ethereum token"
     },
-    "USDS-2": {
-        "cryptocompare": "",
-        "name": "Stronghold USD",
-        "started": 1545259175,
-        "symbol": "USDS",
-        "type": "stellar token"
-    },
     "USDT": {
         "ethereum_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
         "ethereum_token_decimals": 6,
@@ -10144,7 +10137,7 @@
         "type": "ethereum token"
     },
     "WIN": {
-        "cryptocompare": "",
+        "cryptocompare": "WINT",
         "ethereum_address": "0xBfaA8cF522136C6FAfC1D53Fe4b85b4603c765b8",
         "ethereum_token_decimals": 18,
         "name": "WinToken",
@@ -10154,7 +10147,7 @@
     },
     "WIN-2": {
         "active": false,
-        "cryptocompare": "WIN",
+        "cryptocompare": "WCOIN",
         "ended": 1536192000,
         "ethereum_address": "0x899338b84D25aC505a332aDCE7402d697D947494",
         "ethereum_token_decimals": 8,
