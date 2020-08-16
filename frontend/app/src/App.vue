@@ -14,36 +14,41 @@
         <div v-else class="app__logo-mini">
           rotki
         </div>
-        <navigation-menu :show-tooltips="mini"></navigation-menu>
-        <v-spacer></v-spacer>
+        <navigation-menu :show-tooltips="mini" />
+        <v-spacer />
         <div
           v-if="!mini"
           class="my-2 text-center px-2 app__navigation-drawer__version"
         >
           <span class="overline">
-            <v-divider class="mx-3 my-1"></v-divider>
+            <v-divider class="mx-3 my-1" />
             {{ version }}
           </span>
         </div>
       </v-navigation-drawer>
+
       <v-app-bar app fixed clipped-left flat color="white" class="app__app-bar">
         <v-app-bar-nav-icon
           class="secondary--text text--lighten-2"
           @click="toggleDrawer()"
-        ></v-app-bar-nav-icon>
-        <node-status-indicator></node-status-indicator>
-        <balance-saved-indicator></balance-saved-indicator>
-        <v-spacer></v-spacer>
-        <update-indicator></update-indicator>
+        />
+        <node-status-indicator />
+        <balance-saved-indicator />
+        <v-spacer />
+        <update-indicator />
         <notification-indicator
+          :visible="notifications"
           class="app__app-bar__button"
-        ></notification-indicator>
-        <progress-indicator class="app__app-bar__button"></progress-indicator>
-        <currency-drop-down
-          class="red--text app__app-bar__button"
-        ></currency-drop-down>
-        <user-dropdown class="app__app-bar__button"></user-dropdown>
+          @click="notifications = !notifications"
+        />
+        <progress-indicator class="app__app-bar__button" />
+        <currency-drop-down class="red--text app__app-bar__button" />
+        <user-dropdown class="app__app-bar__button" />
       </v-app-bar>
+      <notification-sidebar
+        :visible="notifications"
+        @close="notifications = false"
+      />
       <v-main v-if="logged" class="fill-height">
         <router-view></router-view>
       </v-main>
@@ -53,17 +58,14 @@
       :message="message.description"
       :success="message.success"
       @dismiss="dismiss()"
-    ></message-dialog>
-    <error-screen
-      v-if="startupError.length > 0"
-      :message="startupError"
-    ></error-screen>
+    />
+    <error-screen v-if="startupError.length > 0" :message="startupError" />
     <v-fade-transition>
       <account-management
         v-if="startupError.length === 0 && !loginIn"
         :logged="logged"
         @login-complete="completeLogin(true)"
-      ></account-management>
+      />
     </v-fade-transition>
   </v-app>
 </template>
@@ -78,6 +80,7 @@ import NavigationMenu from '@/components/NavigationMenu.vue';
 import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
+import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import '@/services/task-manager';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
@@ -87,6 +90,7 @@ import { Message } from '@/store/store';
 
 @Component({
   components: {
+    NotificationSidebar,
     ErrorScreen,
     AccountManagement,
     UpdateIndicator,
@@ -115,6 +119,8 @@ export default class App extends Vue {
 
   loginComplete!: boolean;
   completeLogin!: (complete: boolean) => void;
+
+  notifications: boolean = false;
 
   get loginIn(): boolean {
     return this.logged && this.loginComplete;

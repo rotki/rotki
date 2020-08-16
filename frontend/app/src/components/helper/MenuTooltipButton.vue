@@ -5,6 +5,7 @@
         icon
         :class="className"
         :retain-focus-on-click="retainFocusOnClick"
+        @click="click()"
         v-on="{ ...tooltip, ...onMenu }"
       >
         <slot></slot>
@@ -15,18 +16,21 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator';
 
 @Component({})
 export default class MenuTooltipButton extends Vue {
   @Prop({ required: true, default: '' })
   tooltip!: string;
-  @Prop({ required: true, default: () => {} })
+  @Prop({ required: false, default: () => {} })
   onMenu!: () => void;
   @Prop({ required: false, default: false })
   retainFocusOnClick!: boolean;
   @Prop({ required: true, default: '' })
   className!: string;
+
+  @Emit()
+  click() {}
 }
 </script>
 

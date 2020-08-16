@@ -7,15 +7,16 @@ import { Severity } from '@/typing/types';
 
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
   consume({ commit, getters }): any {
+    const title = 'Backend messages';
     api
       .consumeMessages()
       .then(value => {
         let id = getters.nextId;
         const errors = value.errors.map(error =>
-          toNotification(error, Severity.ERROR, id++)
+          toNotification(error, Severity.ERROR, id++, title)
         );
         const warnings = value.warnings.map(warning =>
-          toNotification(warning, Severity.WARNING, id++)
+          toNotification(warning, Severity.WARNING, id++, title)
         );
 
         const notifications = errors.concat(warnings);
@@ -26,7 +27,7 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
       })
       .catch(reason => {
         commit('update', [
-          toNotification(reason, Severity.ERROR, getters.nextId)
+          toNotification(reason, Severity.ERROR, getters.nextId, title)
         ]);
       });
   }
