@@ -19,6 +19,7 @@ class CoingeckoAssetData(NamedTuple):
     identifier: str
     symbol: str
     name: str
+    description: str
     images: CoingeckoImageURLs
 
 
@@ -86,6 +87,7 @@ class Coingecko():
                 identifier=gecko_id,
                 symbol=data['symbol'],
                 name=data['name'],
+                description=data['description']['en'],
                 images=CoingeckoImageURLs(
                     thumb=data['image']['thumb'],
                     small=data['image']['small'],
