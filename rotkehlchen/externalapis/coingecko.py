@@ -1,12 +1,13 @@
 import json
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
 import requests
+from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsonloads
 
 
 class CoingeckoImageURLs(NamedTuple):
@@ -29,7 +30,30 @@ class Coingecko():
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
-    def _query(self, url: str, options: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    @overload  # noqa: F811
+    def _query(
+            self,
+            module: Literal['coins'],
+            subpath: None,
+            options: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
+        ...
+
+    @overload  # noqa: F811
+    def _query(
+            self,
+            module: Literal['coins'],
+            subpath: str,
+            options: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        ...
+
+    def _query(
+            self,
+            module: str,
+            subpath: Optional[str],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Performs a coingecko query
 
         May raise:
@@ -37,6 +61,9 @@ class Coingecko():
         """
         if options is None:
             options = {}
+        url = f'https://api.coingecko.com/api/v3/{module}/'
+        if subpath:
+            url += subpath
         try:
             response = self.session.get(f'{url}?{urlencode(options)}')
         except requests.exceptions.ConnectionError as e:
@@ -49,7 +76,7 @@ class Coingecko():
             )
 
         try:
-            decoded_json = rlk_jsonloads_dict(response.text)
+            decoded_json = rlk_jsonloads(response.text)
         except json.decoder.JSONDecodeError as e:
             raise RemoteError(f'Invalid JSON in Kraken response. {e}')
 
@@ -78,7 +105,8 @@ class Coingecko():
         }
         gecko_id = asset.to_coingecko()
         data = self._query(
-            url=f'https://api.coingecko.com/api/v3/coins/{gecko_id}',
+            module='coins',
+            subpath=f'{gecko_id}',
             options=options,
         )
 
@@ -98,3 +126,6 @@ class Coingecko():
             raise RemoteError(f'Missing expected key entry {e} in coingecko coin data response')
 
         return parsed_data
+
+    def all_coins(self) -> List[Dict[str, Any]]:
+        return self._query(module='coins', subpath=None)
