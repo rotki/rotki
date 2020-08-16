@@ -100,6 +100,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'RZR',
     'SPA',
     'SQL',
+    'SRM',
     'SSD',
     'STMX',
     'SUKU',

@@ -115,6 +115,7 @@ MANUALLY_CHECKED_TYPES = {
     'SPICE': 'ethereum token',
     'STMX': 'ethereum token',
     'SS': 'ethereum token',
+    'SRM': 'ethereum token',
     'SSH': 'ethereum token',
     'STP': 'ethereum token',
     'SUTER': 'ethereum token',

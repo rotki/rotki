@@ -7779,9 +7779,9 @@
         "ethereum_token_decimals": 18,
         "name": "Augur",
         "started": 1416182400,
+        "swapped_for": "REPV2",
         "symbol": "REP",
-        "type": "ethereum token",
-        "swapped_for": "REPV2"
+        "type": "ethereum token"
     },
     "REP-old": {
         "ethereum_address": "0x48c80F1f4D53D5951e5D5438B54Cba84f29F32a5",
@@ -8629,6 +8629,14 @@
         "started": 1409356800,
         "symbol": "SQL",
         "type": "own chain"
+    },
+    "SRM": {
+        "ethereum_address": "0x476c5E26a75bd202a9683ffD34359C0CC15be0fF",
+        "ethereum_token_decimals": 6,
+        "name": "Serum",
+        "started": 1596238023,
+        "symbol": "SRM",
+        "type": "ethereum token"
     },
     "SRN": {
         "ethereum_address": "0x68d57c9a1C35f63E2c83eE8e49A64e9d70528D25",
