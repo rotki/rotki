@@ -13,7 +13,6 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_USD
-from rotkehlchen.constants.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -566,7 +565,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         - RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
-        if from_asset in KNOWN_TO_MISS_FROM_CRYPTOCOMPARE:
+        if from_asset.cryptocompare == '':
             raise PriceQueryUnknownFromAsset(from_asset)
 
         data = self.get_historical_data(

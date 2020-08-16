@@ -202,19 +202,15 @@ class Asset():
         return WORLD_TO_BINANCE.get(self.identifier, self.identifier)
 
     def to_cryptocompare(self) -> str:
+        """Returns the symbol with which to query cryptocompare for the asset
+
+        May raise:
+            - UnsupportedAsset() if the asset is not supported by cryptocompare
+        """
         cryptocompare_str = self.identifier if self.cryptocompare is None else self.cryptocompare
         # There is an asset which should not be queried in cryptocompare
         if cryptocompare_str == '':
-            if self.identifier == 'MRS':
-                raise UnsupportedAsset(
-                    'Marginless is not in cryptocompare. Asking for MRS '
-                    'will return MARScoin',
-                )
-            else:
-                raise RuntimeError(
-                    f'Got {self.identifier} as a cryptocompare query but it is '
-                    f'documented as returning None and is not handled',
-                )
+            raise UnsupportedAsset(f'{self.identifier} is not supported by cryptocompare')
 
         # Seems cryptocompare capitalizes everything. So cDAI -> CDAI
         return cryptocompare_str.upper()

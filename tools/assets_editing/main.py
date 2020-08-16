@@ -9,8 +9,9 @@ with open(ASSETS_FILE, 'r') as f:
 
 new_assets = {}
 for key, entry in assets.items():
-    # here edit
-    pass
+    new_assets[key] = entry
+    # Under here do entry specific editing
+
 
 with open(ASSETS_FILE, 'w') as f:
     f.write(
