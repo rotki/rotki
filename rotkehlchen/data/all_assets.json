@@ -207,6 +207,8 @@
         "type": "own chain"
     },
     "ADST": {
+        "cryptocompare": "ADS",
+        "coingecko": "adshares",
         "ethereum_address": "0x422866a8F0b032c5cf1DfBDEf31A20F4509562b0",
         "ethereum_token_decimals": 0,
         "name": "Adshares",
@@ -271,16 +273,6 @@
         "name": "SingularityNET",
         "started": 1513296000,
         "symbol": "AGI",
-        "type": "ethereum token"
-    },
-    "AI": {
-        "active": true,
-        "cryptocompare": "",
-        "ethereum_address": "0x5121E348e897dAEf1Eef23959Ab290e5557CF274",
-        "ethereum_token_decimals": 18,
-        "name": "POLY AI",
-        "started": 1507024045,
-        "symbol": "AI",
         "type": "ethereum token"
     },
     "AID": {
