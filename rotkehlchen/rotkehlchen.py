@@ -31,11 +31,13 @@ from rotkehlchen.errors import (
     SystemPermissionError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import PriceHistorian, TradesHistorian
+from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import (
     DEFAULT_ANONYMIZED_LOGS,
@@ -96,6 +98,8 @@ class Rotkehlchen():
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
+        self.coingecko = Coingecko()
+        self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
 

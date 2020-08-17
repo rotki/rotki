@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -13,6 +12,7 @@ from webargs.multidictproxy import MultiDictProxy
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
+    AssetIconsSchema,
     AsyncQueryArgumentSchema,
     AsyncQueryResetDBSchema,
     AsyncTasksQuerySchema,
@@ -830,3 +830,12 @@ class WatchersResource(BaseResource):
     @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, watchers: List[str]) -> Response:
         return self.rest_api.delete_watchers(watchers)
+
+
+class AssetIconsResource(BaseResource):
+
+    get_schema = AssetIconsSchema()
+
+    @use_kwargs(get_schema, location='view_args')  # type: ignore
+    def get(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Response:
+        return self.rest_api.get_asset_icon(asset, size)

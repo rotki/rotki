@@ -1704,7 +1704,7 @@ Querying asset icons
 .. http:get:: /api/(version)/assets/(identifier)/icon/(size)
 
    Doing a GET on the asset icon endpoint will return the icon of the specified
-   size identified with the asset. If size is not provided then the thumb size icon is return
+   size identified with the asset. If size is not provided then the thumb size icon is returned. Possible values for size are ``thumb``, ``small`` and ``large``.
 
 
    **Example Request**:

@@ -33,8 +33,8 @@ class Coingecko():
     @overload  # noqa: F811
     def _query(
             self,
-            module: Literal['coins'],
-            subpath: None,
+            module: Literal['coins/list'],
+            subpath: Optional[str] = None,
             options: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         ...
@@ -43,7 +43,7 @@ class Coingecko():
     def _query(
             self,
             module: Literal['coins'],
-            subpath: str,
+            subpath: Optional[str] = None,
             options: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         ...
@@ -51,7 +51,7 @@ class Coingecko():
     def _query(
             self,
             module: str,
-            subpath: Optional[str],
+            subpath: Optional[str] = None,
             options: Optional[Dict[str, Any]] = None,
     ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Performs a coingecko query
@@ -128,4 +128,4 @@ class Coingecko():
         return parsed_data
 
     def all_coins(self) -> List[Dict[str, Any]]:
-        return self._query(module='coins', subpath='list')
+        return self._query(module='coins/list')

@@ -1534,3 +1534,10 @@ class RestAPI():
     def purge_ethereum_transaction_data(self) -> Response:
         self.rotkehlchen.data.db.purge_ethereum_transaction_data()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def get_asset_icon(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Response:
+        image_data = self.rotkehlchen.icon_manager.get_icon(asset, size)
+        response = make_response(
+            (image_data, HTTPStatus.OK, {"mimetype": "image/png", "Content-Type": "image/png"}),
+        )
+        return response

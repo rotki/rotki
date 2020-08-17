@@ -1103,3 +1103,11 @@ class WatchersDeleteSchema(Schema):
     avoid potential server roundtrip for nothing
     """
     watchers = fields.List(fields.String(required=True), required=True)
+
+
+class AssetIconsSchema(Schema):
+    asset = AssetField(required=True)
+    size = fields.String(
+        validate=webargs.validate.OneOf(choices=('thumb', 'small', 'large')),
+        missing='thumb',
+    )
