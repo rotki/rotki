@@ -1698,6 +1698,30 @@ Querying owned assets
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error
 
+Querying asset icons
+======================
+
+.. http:get:: /api/(version)/assets/(identifier)/icon/(size)
+
+   Doing a GET on the asset icon endpoint will return the icon of the specified
+   size identified with the asset. If size is not provided then the thumb size icon is return
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/YFI/icon/large HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: image/png
+
+
 Statistics for netvalue over time
 ====================================
 
