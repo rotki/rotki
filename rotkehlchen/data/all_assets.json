@@ -7429,6 +7429,7 @@
     },
     "NTWK": {
         "active": false,
+        "coingecko": "",
         "ended": 1543622400,
         "ethereum_address": "0x2233799Ee2683d75dfefAcbCd2A26c78D34b470d",
         "ethereum_token_decimals": 18,
@@ -7458,6 +7459,7 @@
         "type": "ethereum token"
     },
     "NXC": {
+        "coingecko": "",
         "ethereum_address": "0x45e42D659D9f9466cD5DF622506033145a9b89Bc",
         "ethereum_token_decimals": 3,
         "name": "Nexium",
@@ -7481,21 +7483,12 @@
     },
     "NXTI": {
         "active": false,
+        "coingecko": "",
         "ended": 1471219200,
         "name": "NXTInspect",
         "started": 1412812800,
         "symbol": "NXTI",
         "type": "nxt token"
-    },
-    "NXX": {
-        "active": false,
-        "ended": 1524787200,
-        "ethereum_address": "0x7627de4B93263a6a7570b8dAfa64bae812e5c394",
-        "ethereum_token_decimals": 8,
-        "name": "Nexxus",
-        "started": 1510155129,
-        "symbol": "NXX",
-        "type": "ethereum token"
     },
     "OAK": {
         "ethereum_address": "0x5e888B83B7287EED4fB7DA7b7d0A0D4c735d94b3",
