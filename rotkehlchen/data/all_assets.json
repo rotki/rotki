@@ -4330,15 +4330,6 @@
         "symbol": "FLUZ",
         "type": "ethereum token"
     },
-    "FMF": {
-        "cryptocompare": "",
-        "ethereum_address": "0xb4d0FDFC8497AEF97d3c2892AE682eE06064A2BC",
-        "ethereum_token_decimals": 18,
-        "name": "Formosa Financial",
-        "started": 1527675800,
-        "symbol": "FMF",
-        "type": "ethereum token"
-    },
     "FNB": {
         "coingecko": "fnb-protocol",
         "ethereum_address": "0x47b28F365Bf4CB38DB4B6356864BDE7bc4B35129",
