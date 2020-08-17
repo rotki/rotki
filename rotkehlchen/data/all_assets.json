@@ -3116,6 +3116,7 @@
     },
     "DGPT": {
         "active": false,
+        "coingecko": "",
         "ended": 1541548800,
         "ethereum_address": "0xf6cFe53d6FEbaEEA051f400ff5fc14F0cBBDacA1",
         "ethereum_token_decimals": 18,
@@ -3163,6 +3164,7 @@
     },
     "DIEM": {
         "active": false,
+        "coingecko": "",
         "ended": 1483660800,
         "name": "CarpeDiemCoin",
         "started": 1398643200,
@@ -3195,14 +3197,24 @@
         "symbol": "DIT",
         "type": "ethereum token"
     },
+    "DIVI": {
+        "coingecko": "divi",
+        "cryptocompare": "DIVX",
+        "name": "Divi Exchange Token",
+        "started": 1549065600,
+        "symbol": "DIVI",
+        "type": "own chain"
+    },
     "DIVX": {
         "active": false,
+        "coingecko": "divi",
         "ended": 1549065600,
         "ethereum_address": "0x13f11C9905A08ca76e3e853bE63D4f0944326C72",
         "ethereum_token_decimals": 18,
         "name": "Divi Exchange Token",
         "started": 1505199359,
         "symbol": "DIVX",
+        "swapped_for": "DIVI",
         "type": "ethereum token"
     },
     "DLT": {
