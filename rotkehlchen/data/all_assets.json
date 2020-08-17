@@ -8620,6 +8620,7 @@
         "type": "ethereum token"
     },
     "REA": {
+        "coingecko": "",
         "ethereum_address": "0x767bA2915EC344015a7938E3eEDfeC2785195D05",
         "ethereum_token_decimals": 18,
         "name": "Realisto",
@@ -8637,6 +8638,7 @@
         "type": "ethereum token"
     },
     "REBL": {
+        "coingecko": "",
         "ethereum_address": "0x5F53f7A8075614b699Baad0bC2c899f4bAd8FBBF",
         "ethereum_token_decimals": 18,
         "name": "REBL",
@@ -8664,6 +8666,7 @@
         "type": "ethereum token"
     },
     "REF": {
+        "coingecko": "",
         "ethereum_address": "0x89303500a7Abfb178B274FD89F2469C264951e1f",
         "ethereum_token_decimals": 8,
         "name": "RefToken",
@@ -8709,6 +8712,8 @@
         "type": "ethereum token"
     },
     "REPV2": {
+        "coingecko": "augur",
+        "cryptocompare": "REP",
         "ethereum_address": "0x221657776846890989a759BA2973e427DfF5C9bB",
         "ethereum_token_decimals": 18,
         "name": "Augur",
@@ -8750,17 +8755,6 @@
         "name": "Refereum",
         "started": 1506297600,
         "symbol": "RFR",
-        "type": "ethereum token"
-    },
-    "RGS": {
-        "active": false,
-        "cryptocompare": "",
-        "ended": 1545091200,
-        "ethereum_address": "0x4c383bDCae52a6e1cb810C76C70d6f31A249eC9B",
-        "ethereum_token_decimals": 8,
-        "name": "RusGas",
-        "started": 1521992773,
-        "symbol": "RGS",
         "type": "ethereum token"
     },
     "RHOC": {
