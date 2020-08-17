@@ -8758,6 +8758,7 @@
         "type": "ethereum token"
     },
     "RHOC": {
+        "coingecko": "",
         "ethereum_address": "0x168296bb09e24A88805CB9c33356536B980D3fC5",
         "ethereum_token_decimals": 8,
         "name": "RChain",
@@ -8801,6 +8802,7 @@
     },
     "RIYA": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0x0b1724cc9FDA0186911EF6a75949e9c0d3F0f2F3",
         "ethereum_token_decimals": 8,
         "name": "Etheriya",
@@ -8848,6 +8850,7 @@
         "type": "ethereum token"
     },
     "RMESH": {
+        "coingecko": "",
         "ethereum_address": "0x8D5682941cE456900b12d47ac06a88b47C764CE1",
         "ethereum_token_decimals": 18,
         "name": "RightMesh",
@@ -8913,6 +8916,7 @@
     },
     "RTB": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0xEC491c1088Eae992B7A214efB0a266AD0927A72A",
         "ethereum_token_decimals": 18,
         "name": "AB-Chain RTB",
@@ -8959,6 +8963,7 @@
         "type": "own chain"
     },
     "RVR": {
+        "coingecko": "",
         "name": "RevolutionVR",
         "started": 1446508800,
         "symbol": "RVR",
@@ -8975,8 +8980,9 @@
     },
     "RZR": {
         "active": false,
+        "coingecko": "",
         "ended": 1452038400,
-        "name": "Razor",
+        "name": "RazorCoin",
         "started": 1403308800,
         "symbol": "RZR",
         "type": "own chain"
@@ -9043,11 +9049,13 @@
         "type": "ethereum token"
     },
     "SCRL": {
+        "coingecko": "data-transaction-token",
+        "cryptocompare": "SCRL",
         "ethereum_address": "0x24DCc881E7Dd730546834452F21872D5cb4b5293",
         "ethereum_token_decimals": 18,
-        "name": "Scroll",
+        "name": "Data Transaction Token ",
         "started": 1504656000,
-        "symbol": "SCRL",
+        "symbol": "XD",
         "type": "ethereum token"
     },
     "SDC": {
@@ -9101,8 +9109,9 @@
         "type": "own chain"
     },
     "SERV": {
-        "cryptocompare": "",
-        "ethereum_address": "0x1237b0d12B15e3c609e37885597bFCad85745cf1",
+        "coingecko": "",
+        "cryptocompare": "SERV",
+        "ethereum_address": "0xe1F4328DEF6AE4aE2EEAc62D58BaEaEcF05E8d30",
         "ethereum_token_decimals": 18,
         "name": "Serve",
         "started": 1549065600,
