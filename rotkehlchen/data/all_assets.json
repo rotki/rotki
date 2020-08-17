@@ -7491,6 +7491,7 @@
         "type": "nxt token"
     },
     "OAK": {
+        "coingecko": "",
         "ethereum_address": "0x5e888B83B7287EED4fB7DA7b7d0A0D4c735d94b3",
         "ethereum_token_decimals": 18,
         "name": "Acorn Collective",
@@ -7738,6 +7739,7 @@
         "type": "ethereum token"
     },
     "OTN": {
+        "coingecko": "",
         "ethereum_address": "0x881Ef48211982D01E2CB7092C915E647Cd40D85C",
         "ethereum_token_decimals": 18,
         "name": "Open Trading Network",
@@ -7870,6 +7872,7 @@
         "type": "ethereum token"
     },
     "PBT": {
+        "coingecko": "",
         "ethereum_address": "0xF4c07b1865bC326A3c01339492Ca7538FD038Cc0",
         "ethereum_token_decimals": 4,
         "name": "Primalbase Token",
@@ -7914,6 +7917,7 @@
         "type": "ethereum token"
     },
     "PHB": {
+        "coingecko": "red-pulse-phoenix",
         "cryptocompare": "PHX",
         "name": "Red Pulse Phoenix Binance",
         "started": 1558497600,
@@ -7930,7 +7934,7 @@
         "type": "ethereum token"
     },
     "PHX": {
-        "coingecko": "red-pulse",
+        "coingecko": "red-pulse-phoenix",
         "ended": 1558497600,
         "name": "Red Pulse Phoenix",
         "started": 1507420800,
@@ -7940,6 +7944,7 @@
     },
     "PIGGY": {
         "active": true,
+        "coingecko": "",
         "name": "Piggycoin",
         "started": 1433894400,
         "symbol": "PIGGY",
@@ -8085,6 +8090,7 @@
         "type": "ethereum token"
     },
     "PMNT": {
+        "coingecko": "",
         "ethereum_address": "0x81b4D08645DA11374a03749AB170836E4e539767",
         "ethereum_token_decimals": 9,
         "name": "Paymon",
@@ -8094,7 +8100,7 @@
     },
     "PNK": {
         "coingecko": "kleros",
-        "cryptocompare": "",
+        "cryptocompare": "PNK",
         "ethereum_address": "0x93ED3FBe21207Ec2E8f2d3c3de6e058Cb73Bc04d",
         "ethereum_token_decimals": 18,
         "name": "Kleros",
@@ -8255,6 +8261,7 @@
         "type": "ethereum token"
     },
     "PRG": {
+        "coingecko": "",
         "ethereum_address": "0x7728dFEF5aBd468669EB7f9b48A7f70a501eD29D",
         "ethereum_token_decimals": 6,
         "name": "Paragon",
@@ -8273,6 +8280,7 @@
     },
     "PRL": {
         "active": false,
+        "coingecko": "",
         "ended": 1545177600,
         "ethereum_address": "0x1844b21593262668B7248d0f57a220CaaBA46ab9",
         "ethereum_token_decimals": 18,
@@ -8292,6 +8300,7 @@
     },
     "PRPS": {
         "active": false,
+        "coingecko": "",
         "ended": 1554844109,
         "ethereum_address": "0xE40C374d8805b1dD58CDcEFf998A2F6920Cb52FD",
         "ethereum_token_decimals": 18,
@@ -8375,6 +8384,7 @@
     },
     "Q2C": {
         "active": false,
+        "coingecko": "",
         "ended": 1549497600,
         "name": "QubitCoin",
         "started": 1389484800,
@@ -8392,6 +8402,7 @@
     },
     "QAU": {
         "active": false,
+        "coingecko": "",
         "ended": 1536883200,
         "ethereum_address": "0x671AbBe5CE652491985342e85428EB1b07bC6c64",
         "ethereum_token_decimals": 8,
@@ -8411,6 +8422,7 @@
     },
     "QBK": {
         "active": false,
+        "coingecko": "",
         "ended": 1407628800,
         "name": "Qibuck Asset",
         "started": 1407628800,
@@ -8419,6 +8431,7 @@
     },
     "QCN": {
         "active": false,
+        "coingecko": "",
         "ended": 1528416000,
         "name": "QuazarCoin",
         "started": 1399507200,
@@ -8452,6 +8465,7 @@
     },
     "QORA": {
         "active": false,
+        "coingecko": "",
         "ended": 1529539200,
         "name": "Qora",
         "started": 1395187200,
@@ -8478,6 +8492,7 @@
     },
     "QTL": {
         "active": false,
+        "coingecko": "",
         "ended": 1549497600,
         "name": "Quatloo",
         "started": 1403827200,
@@ -8503,6 +8518,7 @@
         "type": "ethereum token"
     },
     "QVT": {
+        "coingecko": "",
         "ethereum_address": "0x1183F92A5624D68e85FFB9170F16BF0443B4c242",
         "ethereum_token_decimals": 18,
         "name": "Qvolta",
@@ -8511,17 +8527,20 @@
         "type": "ethereum token"
     },
     "QWARK": {
+        "coingecko": "",
         "name": "Qwark",
         "started": 1460937600,
         "symbol": "QWARK",
         "type": "Ubiq token"
     },
     "R": {
-        "ethereum_address": "0x48f775EFBE4F5EcE6e0DF2f7b5932dF56823B990",
-        "ethereum_token_decimals": 0,
+        "coingecko": "revain",
+        "cryptocompare": "REV",
+        "ethereum_address": "0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9",
+        "ethereum_token_decimals": 6,
         "name": "Revain",
         "started": 1501804800,
-        "symbol": "R",
+        "symbol": "REV",
         "type": "ethereum token"
     },
     "RADS": {
