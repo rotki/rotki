@@ -94,15 +94,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         commit('syncConflict', e.message);
         return;
       }
-      commit(
-        'setMessage',
-        {
-          title: 'Login failed',
-          description: e.message,
-          success: false
-        },
-        { root: true }
-      );
+      showError(e.message, 'Login failed');
     }
   },
   async periodicCheck({ commit }) {
@@ -138,7 +130,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         );
       }
     } catch (e) {
-      notify(`Error at periodic client query: ${e}`, 'Periodic client query');
+      notify(
+        `Error at periodic client query: ${e}`,
+        'Periodic client query',
+        Severity.ERROR,
+        true
+      );
     }
   },
   async logout({ commit, state }) {
@@ -161,14 +158,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       commit('tags', await api.addTag(tag));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Adding tag',
-          description: e.message || ''
-        } as Message,
-        { root: true }
-      );
+      showError(e.message, 'Adding tag');
     }
   },
 
@@ -176,14 +166,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       commit('tags', await api.editTag(tag));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Editing tag',
-          description: e.message || ''
-        } as Message,
-        { root: true }
-      );
+      showError(e.message, 'Editing tag');
     }
   },
 
@@ -191,14 +174,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       commit('tags', await api.deleteTag(tagName));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Deleting tag',
-          description: e.message || ''
-        } as Message,
-        { root: true }
-      );
+      showError(e.message, 'Deleting tag');
     }
     dispatch('balances/removeTag', tagName, { root: true });
   },
@@ -241,7 +217,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const watchers = await api.session.watchers();
       commit('watchers', watchers);
     } catch (e) {
-      notify(`Error: ${e}`, 'Fetching watchers', Severity.ERROR);
+      notify(`Error: ${e}`, 'Fetching watchers', Severity.ERROR, true);
     }
   },
 

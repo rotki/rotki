@@ -58,7 +58,7 @@
           :key="notification.id"
           class="mb-2"
           :notification="notification"
-          @dismiss="remove($event)"
+          @dismiss="remove($event.id)"
         />
       </v-col>
     </v-row>

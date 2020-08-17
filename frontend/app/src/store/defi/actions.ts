@@ -24,7 +24,7 @@ import { Status } from '@/store/defi/status';
 import { DefiState } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { Message, RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/store';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
   async fetchDSRBalances({
@@ -51,7 +51,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       notify(
         `There was an issue while fetching DSR Balances: ${e.message}`,
         'DSR Balances',
-        Severity.ERROR
+        Severity.ERROR,
+        true
       );
     }
   },
@@ -81,7 +82,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       notify(
         `There was an issue while fetching DSR History: ${e.message}`,
         'DSR History',
-        Severity.ERROR
+        Severity.ERROR,
+        true
       );
     }
   },
@@ -110,14 +112,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       >(taskType);
       commit('makerDAOVaults', convertMakerDAOVaults(makerDAOVaults));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'MakerDAO Vaults',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
+      notify(`${e.message}`, 'MakerDAO Vaults', Severity.ERROR, true);
     }
   },
 
@@ -146,14 +141,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('makerDAOVaultDetails', convertVaultDetails(makerDAOVaultDetails));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'MakerDAO Vault details',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
+      notify(`${e.message}`, 'MakerDAO Vault details', Severity.ERROR, true);
     }
   },
 
@@ -180,14 +168,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('aaveBalances', convertAaveBalances(result));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Fetching Aave Balances',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
+      notify(`${e.message}`, 'Fetching Aave Balances', Severity.ERROR, true);
     }
   },
 
@@ -219,14 +200,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('aaveHistory', convertAaveHistory(result));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Fetching Aave History',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
+      notify(`${e.message}`, 'Fetching Aave History', Severity.ERROR, true);
     }
   },
 
@@ -254,14 +228,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('allDefiProtocols', convertAllDefiProtocols(result));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Fetching Defi Balances',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
+      notify(`${e.message}`, 'Fetching Defi Balances', Severity.ERROR, true);
     }
   },
 

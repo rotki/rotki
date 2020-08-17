@@ -2,6 +2,7 @@ import { ActionTree } from 'vuex';
 import { createTask } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
+import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { TaxReportState } from '@/store/reports/state';
 import { Message, RotkehlchenState } from '@/store/store';
@@ -19,7 +20,7 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
       });
       commit('tasks/add', task, { root: true });
     } catch (e) {
-      notify(e.message, 'Trade History Report');
+      notify(e.message, 'Trade History Report', Severity.ERROR, true);
     }
   },
 
