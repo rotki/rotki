@@ -2981,6 +2981,7 @@
         "type": "ethereum token"
     },
     "DCC": {
+        "coingecko": "",
         "ethereum_address": "0xFFa93Aacf49297D51E211817452839052FDFB961",
         "ethereum_token_decimals": 18,
         "name": "Distributed Credit Chain",
@@ -3013,6 +3014,7 @@
     },
     "DDF": {
         "active": false,
+        "coingecko": "",
         "ended": 1542153600,
         "ethereum_address": "0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
         "ethereum_token_decimals": 18,
@@ -3078,21 +3080,12 @@
         "type": "ethereum token"
     },
     "DEPO": {
+        "coingecko": "",
         "ethereum_address": "0x89cbeAC5E8A13F0Ebb4C74fAdFC69bE81A501106",
         "ethereum_token_decimals": 18,
         "name": "Depository Network",
         "started": 1529488628,
         "symbol": "DEPO",
-        "type": "ethereum token"
-    },
-    "DEW": {
-        "active": true,
-        "cryptocompare": "",
-        "ethereum_address": "0x20E94867794dBA030Ee287F1406E100d03C84Cd3",
-        "ethereum_token_decimals": 18,
-        "name": "DEW",
-        "started": 1505433600,
-        "symbol": "DEW",
         "type": "ethereum token"
     },
     "DEX": {
