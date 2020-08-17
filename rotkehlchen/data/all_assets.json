@@ -10176,6 +10176,7 @@
     },
     "TGT": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0xAc3Da587eac229C9896D919aBC235CA4Fd7f72c1",
         "ethereum_token_decimals": 1,
         "name": "Target Coin",
@@ -10256,13 +10257,13 @@
         "type": "ethereum token"
     },
     "TIO": {
-        "active": false,
-        "ended": 1555082478,
+        "coingecko": "trade-token-x",
+        "cryptocompare": "TIOX",
         "ethereum_address": "0xd947b0ceab2A8885866B9A04A06AE99DE852a3d4",
         "ethereum_token_decimals": 18,
-        "name": "Trade Token",
+        "name": "Trade Token X",
         "started": 1509494400,
-        "symbol": "TIO",
+        "symbol": "TIOx",
         "type": "ethereum token"
     },
     "TIX": {
