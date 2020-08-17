@@ -6,7 +6,6 @@ on:
 
 jobs:
   test-backend:
-    needs: lint-backend
     env:
       CI: true
     strategy:
@@ -79,7 +78,7 @@ jobs:
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash) -F backend
   test-integration:
-    needs: [lint-frontend, test-backend]
+    needs: [test-backend]
     env:
       CI: true
       FILTER: '[ui tests]'
