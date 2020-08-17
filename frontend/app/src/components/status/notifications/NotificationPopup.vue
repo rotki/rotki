@@ -35,8 +35,8 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import Notification from '@/components/status/notifications/Notification.vue';
+import { NotificationData } from '@/store/notifications/types';
 import { emptyNotification } from '@/store/notifications/utils';
-import { NotificationData } from '@/typing/types';
 
 @Component({
   components: { Notification },
@@ -49,8 +49,8 @@ import { NotificationData } from '@/typing/types';
 })
 export default class NotificationPopup extends Vue {
   notification: NotificationData = emptyNotification();
-  queue: NotificationData[];
-  displayed: (id: number) => void;
+  queue!: NotificationData[];
+  displayed!: (id: number) => void;
 
   @Watch('queue', { deep: true })
   onQueueUpdate() {

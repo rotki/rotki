@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex';
 import { defaultState, NotificationState } from '@/store/notifications/state';
-import { NotificationData } from '@/typing/types';
+import { NotificationData } from '@/store/notifications/types';
 
 export const mutations: MutationTree<NotificationState> = {
   update(state: NotificationState, payload: NotificationData[]) {

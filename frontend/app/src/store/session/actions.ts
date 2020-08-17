@@ -11,6 +11,7 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
+import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import {
   ChangePasswordPayload,
@@ -23,7 +24,6 @@ import { ActionStatus } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
 import {
   SettingsUpdate,
-  Severity,
   SyncConflictError,
   Tag,
   UnlockPayload

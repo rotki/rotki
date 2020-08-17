@@ -11,9 +11,10 @@ import {
 } from '@/model/trade-history-types';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';
+import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
-import { ApiAssetBalances, Severity } from '@/typing/types';
+import { ApiAssetBalances } from '@/typing/types';
 import {
   convertAssetBalances,
   convertBalances,

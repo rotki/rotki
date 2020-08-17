@@ -9,9 +9,10 @@ import {
 import { api } from '@/services/rotkehlchen-api';
 import { ApiManualBalance } from '@/services/types-api';
 import { BalanceState } from '@/store/balances/state';
+import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { Message, RotkehlchenState } from '@/store/store';
-import { Blockchain, Severity, UsdToFiatExchangeRates } from '@/typing/types';
+import { Blockchain, UsdToFiatExchangeRates } from '@/typing/types';
 import { toMap } from '@/utils/conversion';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {

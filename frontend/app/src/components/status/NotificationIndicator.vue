@@ -1,5 +1,11 @@
 <template>
-  <v-badge :value="count" color="primary" right overlap>
+  <v-badge
+    :value="count"
+    color="primary"
+    right
+    overlap
+    class="notification-indicator"
+  >
     <template #badge>
       <span>{{ count }}</span>
     </template>
@@ -41,6 +47,15 @@ export default class NotificationIndicator extends Vue {
 
 <style scoped lang="scss">
 .notification-indicator {
+  ::v-deep {
+    .v-badge {
+      &__badge {
+        bottom: calc(100% - 20px) !important;
+        left: calc(100% - 20px) !important;
+      }
+    }
+  }
+
   &--visible {
     transform: rotate(-25deg);
   }
