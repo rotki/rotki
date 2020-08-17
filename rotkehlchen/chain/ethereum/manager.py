@@ -293,7 +293,7 @@ class EthereumManager():
 
             try:
                 result = method(web3, **kwargs)
-            except (RemoteError, BlockchainQueryError):
+            except (RemoteError, BlockchainQueryError, requests.exceptions.HTTPError):
                 # Catch all possible errors here and just try next node call
                 continue
 
