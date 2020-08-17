@@ -4415,6 +4415,7 @@
     },
     "FRAC": {
         "active": false,
+        "coingecko": "",
         "ended": 1452038400,
         "name": "Fractalcoin",
         "started": 1402790400,
@@ -4423,6 +4424,7 @@
     },
     "FRD": {
         "active": false,
+        "coingecko": "",
         "ened": 1531008000,
         "ethereum_address": "0x0ABeFb7611Cb3A01EA3FaD85f33C3C934F8e2cF4",
         "ethereum_token_decimals": 18,
@@ -4442,6 +4444,7 @@
     },
     "FRK": {
         "active": false,
+        "coingecko": "",
         "ended": 1522886400,
         "name": "Franko",
         "started": 1367366400,
@@ -4450,6 +4453,7 @@
     },
     "FRV": {
         "active": false,
+        "coingecko": "",
         "ended": 1535673600,
         "ethereum_address": "0x48DF4E0296f908CEAb0428A5182D19B31fC037d6",
         "ethereum_token_decimals": 8,
@@ -4531,6 +4535,7 @@
     },
     "FUCK": {
         "active": false,
+        "coingecko": "",
         "ended": 1525305600,
         "ethereum_address": "0x65Be44C747988fBF606207698c944Df4442efE19",
         "ethereum_token_decimals": 4,
@@ -4588,6 +4593,7 @@
     },
     "FYN": {
         "active": false,
+        "coingecko": "",
         "ended": 1540166400,
         "ethereum_address": "0x88FCFBc22C6d3dBaa25aF478C578978339BDe77a",
         "ethereum_token_decimals": 18,
@@ -4606,6 +4612,7 @@
         "type": "ethereum token"
     },
     "GAM": {
+        "coingecko": "",
         "ethereum_address": "0xF67451Dc8421F0e0afEB52faa8101034ed081Ed9",
         "ethereum_token_decimals": 8,
         "name": "Gambit",
@@ -4646,6 +4653,7 @@
         "type": "ethereum token"
     },
     "GBG": {
+        "coingecko": "",
         "name": "Golos Gold",
         "started": 1476748800,
         "symbol": "GBG",
@@ -4691,6 +4699,7 @@
     },
     "GEMZ": {
         "active": false,
+        "coingecko": "",
         "ended": 1495411200,
         "name": "GetGems",
         "started": 1421020800,
@@ -4792,6 +4801,7 @@
     },
     "GML": {
         "active": false,
+        "coingecko": "",
         "name": "GameLeagueCoin",
         "symbol": "GML",
         "type": "own chain"
@@ -4870,6 +4880,7 @@
     },
     "GPUC": {
         "active": false,
+        "coingecko": "gpu-coin",
         "cryptocompare": "GPU",
         "ended": 1400889600,
         "name": "GPU coin",
@@ -4902,6 +4913,7 @@
     },
     "GRMD": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0xb444208cB0516C150178fCf9a52604BC04A1aCEa",
         "ethereum_token_decimals": 18,
         "name": "GreenMed",
@@ -4955,6 +4967,7 @@
     },
     "GUE": {
         "active": false,
+        "coingecko": "",
         "ended": 1452038400,
         "name": "Guerillacoin",
         "started": 1403481600,
@@ -5014,6 +5027,14 @@
         "symbol": "GZE",
         "type": "ethereum token"
     },
+    "HAI": {
+        "coingecko": "hackenai",
+        "cryptocompare": "HKN",
+        "name": "Hacken token",
+        "started": 1588118400,
+        "symbol": "HAI",
+        "type": "vechain token"
+    },
     "HAND": {
         "coingecko": "showhand",
         "ethereum_address": "0x48C1B2f3eFA85fbafb2ab951bF4Ba860a08cdBB7",
@@ -5025,6 +5046,7 @@
     },
     "HAT": {
         "active": false,
+        "coingecko": "",
         "ended": 1532649600,
         "ethereum_address": "0x9002D4485b7594e3E850F0a206713B305113f69e",
         "ethereum_token_decimals": 18,
@@ -5050,6 +5072,7 @@
         "type": "own chain"
     },
     "HBD": {
+        "coingecko": "hive_dollar",
         "name": "Hive dollar",
         "started": 1585267200,
         "symbol": "HBD",
@@ -5107,6 +5130,7 @@
         "type": "ethereum token"
     },
     "HDG": {
+        "coingecko": "",
         "ethereum_address": "0xfFe8196bc259E8dEDc544d935786Aa4709eC3E64",
         "ethereum_token_decimals": 18,
         "name": "Hedge",
@@ -5158,6 +5182,7 @@
         "type": "own chain"
     },
     "HKG": {
+        "coingecko": "",
         "ethereum_address": "0x14F37B574242D366558dB61f3335289a5035c506",
         "ethereum_token_decimals": 3,
         "name": "Hacker Gold",
@@ -5166,11 +5191,13 @@
         "type": "ethereum token"
     },
     "HKN": {
+        "coingecko": "hackenai"
         "ethereum_address": "0x9e6B2B11542f2BC52f3029077acE37E8fD838D7F",
         "ethereum_token_decimals": 8,
         "name": "Hacken",
         "started": 1504051200,
         "symbol": "HKN",
+        "swapped_for": "HAI",
         "type": "ethereum token"
     },
     "HMC": {
@@ -5254,6 +5281,7 @@
         "type": "ethereum token"
     },
     "HUC": {
+        "coingecko": "",
         "name": "HunterCoin",
         "started": 1391212800,
         "symbol": "HUC",
@@ -5261,6 +5289,7 @@
     },
     "HUGE": {
         "active": false,
+        "coingecko": "",
         "ended": 1460761200,
         "name": "BIGcoin",
         "started": 1429830000,
@@ -5278,6 +5307,7 @@
     },
     "HVC": {
         "active": false,
+        "coingecko": "",
         "ended": 1452038400,
         "name": "Heavycoin",
         "started": 1394582400,
