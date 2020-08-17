@@ -9424,6 +9424,7 @@
         "type": "ethereum token"
     },
     "SNT": {
+        "coingecko": "status",
         "ethereum_address": "0x744d70FDBE2Ba4CF95131626614a1763DF805B9E",
         "ethereum_token_decimals": 18,
         "name": "Status Network Token",
@@ -9524,6 +9525,7 @@
     },
     "SPA": {
         "active": false,
+        "coingecko": "",
         "ended": 1452038400,
         "name": "SpainCoin",
         "started": 1394668800,
@@ -9639,6 +9641,7 @@
         "type": "ethereum token"
     },
     "SQL": {
+        "coingecko": "",
         "name": "Squallcoin",
         "started": 1409356800,
         "symbol": "SQL",
@@ -9673,6 +9676,7 @@
     },
     "SSD": {
         "active": false,
+        "coingecko": "",
         "ended": 1467331200,
         "name": "Sonic",
         "started": 1407542400,
@@ -9680,6 +9684,7 @@
         "type": "own chain"
     },
     "SSH": {
+        "coingecko": "",
         "ethereum_address": "0x6e2050CBFB3eD8A4d39b64cC9f47E711a03a5a89",
         "ethereum_token_decimals": 18,
         "name": "StreamSpace",
@@ -9697,6 +9702,7 @@
         "type": "ethereum token"
     },
     "STAC": {
+        "coingecko": "",
         "ethereum_address": "0x9a005c9a89BD72a4Bd27721E7a09A3c11D2b03C4",
         "ethereum_token_decimals": 18,
         "name": "StarterCoin",
@@ -9705,6 +9711,7 @@
         "type": "ethereum token"
     },
     "STACS": {
+        "coingecko": "",
         "ethereum_address": "0x286708f069225905194673755F12359e6afF6FE1",
         "ethereum_token_decimals": 18,
         "name": "STACS",
@@ -9774,6 +9781,7 @@
         "type": "ethereum token"
     },
     "STORM": {
+        "coingecko": "",
         "ethereum_address": "0xD0a4b8946Cb52f0661273bfbC6fD0E0C75Fc6433",
         "ethereum_token_decimals": 18,
         "name": "Storm",
@@ -9782,6 +9790,7 @@
         "type": "ethereum token"
     },
     "STP": {
+        "coingecko": "stash",
         "ethereum_address": "0xecd570bBf74761b960Fa04Cc10fe2c4e86FfDA36",
         "ethereum_token_decimals": 8,
         "name": "StashPay",
@@ -9823,17 +9832,6 @@
         "started": 1465862400,
         "symbol": "STRAT",
         "type": "own chain"
-    },
-    "STRC": {
-        "active": false,
-        "cryptocompare": "SRC*",
-        "ended": 1539216000,
-        "ethereum_address": "0x46492473755e8dF960F8034877F61732D718CE96",
-        "ethereum_token_decimals": 8,
-        "name": "StarCredits",
-        "started": 1493164800,
-        "symbol": "STRC",
-        "type": "ethereum token"
     },
     "STU": {
         "coingecko": "bitjob",
