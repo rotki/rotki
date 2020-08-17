@@ -6,14 +6,29 @@ import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
 import { assert } from '@/utils/assertions';
 
-async function streamToString(given_stream: stream.Readable): Promise<string> {
-  const chunks: Buffer[] = [];
+async function streamToString(givenStream: stream.Readable): Promise<string> {
+  const bufferChunks: Buffer[] = [];
+  const stringChunks: string[] = [];
   return new Promise((resolve, reject) => {
-    given_stream.on('data', chunk => chunks.push(chunk));
-    given_stream.on('error', reject);
-    given_stream.on('end', () =>
-      resolve(Buffer.concat(chunks).toString('utf8'))
-    );
+    givenStream.on('data', chunk => {
+      if (typeof chunk === 'string') {
+        stringChunks.push(chunk);
+      } else {
+        bufferChunks.push(chunk);
+      }
+    });
+    givenStream.on('error', reject);
+    givenStream.on('end', () => {
+      if (bufferChunks.length > 0) {
+        try {
+          stringChunks.push(Buffer.concat(bufferChunks).toString('utf8'));
+        } catch (e) {
+          stringChunks.push(e.message);
+        }
+      }
+
+      resolve(stringChunks.join('\n'));
+    });
   });
 }
 
