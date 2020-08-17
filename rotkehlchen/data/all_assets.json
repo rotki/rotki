@@ -9861,6 +9861,7 @@
         "type": "ethereum token"
     },
     "SUKU": {
+        "coingecko": "suku",
         "ethereum_address": "0x0763fdCCF1aE541A5961815C0872A8c5Bc6DE4d7",
         "ethereum_token_decimals": 18,
         "name": "SUKU",
@@ -9906,6 +9907,7 @@
     },
     "SWARM": {
         "active": false,
+        "coingecko": "",
         "ended": 1473984000,
         "name": "SwarmCoin",
         "started": 1403568000,
@@ -10007,20 +10009,13 @@
     },
     "TALAO": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0x1D4cCC31dAB6EA20f461d329a0562C1c58412515",
         "ethereum_token_decimals": 18,
         "name": "Talao",
         "started": 1521936000,
         "symbol": "TALAO",
         "type": "ethereum token"
-    },
-    "TALK": {
-        "active": true,
-        "cryptocompare": "",
-        "name": "BTCtalkcoin",
-        "started": 1399053201,
-        "symbol": "TALK",
-        "type": "own chain"
     },
     "TAN": {
         "coingecko": "taklimakan-network",
