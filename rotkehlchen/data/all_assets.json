@@ -9129,6 +9129,7 @@
     },
     "SGP": {
         "active": false,
+        "coingecko": "",
         "ended": 1554934557,
         "ethereum_address": "0x33C623a2BAAfEb8D15DfaF3cE44095efec83D72C",
         "ethereum_token_decimals": 18,
@@ -9165,6 +9166,7 @@
     },
     "SHL": {
         "active": false,
+        "coingecko": "",
         "ended": 1541548800,
         "ethereum_address": "0x8542325B72C6D9fC0aD2Ca965A78435413a915A0",
         "ethereum_token_decimals": 18,
@@ -9191,6 +9193,7 @@
     },
     "SIFT": {
         "active": false,
+        "coingecko": "",
         "ended": 1518220800,
         "ethereum_address": "0x8a187D5285d316bcBC9ADafc08b51d70a0d8e000",
         "ethereum_token_decimals": 0,
@@ -9225,6 +9228,7 @@
         "type": "stellar token"
     },
     "SJCX": {
+        "coingecko": "storj",
         "active": false,
         "ended": 1530316800,
         "name": "Storjcoin X",
@@ -9399,14 +9403,6 @@
         "name": "SingularDTV",
         "started": 1475366400,
         "symbol": "SNGLS",
-        "type": "ethereum token"
-    },
-    "SNIP": {
-        "ethereum_address": "0x44F588aEeB8C44471439D1270B3603c66a9262F1",
-        "ethereum_token_decimals": 18,
-        "name": "SnipCoin",
-        "started": 1506668499,
-        "symbol": "SNIP",
         "type": "ethereum token"
     },
     "SNM": {
