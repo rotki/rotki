@@ -29,7 +29,7 @@ export class TaskManager {
     const { result, message } = payload;
 
     if (message) {
-      notify(message, 'Exchange Query Error');
+      notify(message, 'Exchange Query Error', Severity.ERROR, true);
       return;
     }
 
@@ -48,7 +48,9 @@ export class TaskManager {
     if (message) {
       notify(
         `Querying blockchain balances died because of: ${message}. Check the logs for more details.`,
-        'Blockchain Query Error'
+        'Blockchain Query Error',
+        Severity.ERROR,
+        true
       );
       return;
     }
@@ -69,7 +71,12 @@ export class TaskManager {
     const { description, blockchain } = meta;
 
     if (message) {
-      notify(`Operation failed due to ${message}`, description);
+      notify(
+        `Operation failed due to ${message}`,
+        description,
+        Severity.ERROR,
+        true
+      );
       return;
     }
     const { per_account, totals } = result;
@@ -91,7 +98,9 @@ export class TaskManager {
     if (message) {
       notify(
         `During trade history query we got:${message}. History report is probably not complete.`,
-        'Trade History Query Warning'
+        'Trade History Query Warning',
+        Severity.ERROR,
+        true
       );
     }
 
@@ -176,7 +185,8 @@ export class TaskManager {
       notify(
         `An error occurred while processing task [${task.id}] '${task.meta.description}': ${e}`,
         'Task processing failed',
-        Severity.ERROR
+        Severity.ERROR,
+        true
       );
     }
     store.commit('tasks/remove', task.id);

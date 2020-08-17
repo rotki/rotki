@@ -27,11 +27,13 @@ export const emptyNotification = () => createNotification();
 export function notify(
   message: string,
   title: string = '',
-  severity: Severity = Severity.ERROR
+  severity: Severity = Severity.ERROR,
+  display: boolean = false
 ) {
   store.dispatch('notifications/notify', {
     title,
     message,
-    severity
+    severity,
+    display
   } as NotificationPayload);
 }

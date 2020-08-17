@@ -11,7 +11,8 @@ import { ApiManualBalance } from '@/services/types-api';
 import { BalanceState } from '@/store/balances/state';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { Message, RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/store';
+import { showError } from '@/store/utils';
 import { Blockchain, UsdToFiatExchangeRates } from '@/typing/types';
 import { toMap } from '@/utils/conversion';
 
@@ -40,7 +41,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       notify(
         `Failed to fetch all balances: ${e}`,
         'Querying all Balances',
-        Severity.ERROR
+        Severity.ERROR,
+        true
       );
     }
     await dispatch('accounts');
@@ -77,7 +79,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         notify(
           `Error at querying exchange ${name} balances: ${reason}`,
           'Exchange balance query',
-          Severity.ERROR
+          Severity.ERROR,
+          true
         );
       });
   },
@@ -97,7 +100,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       }
       commit('usdToFiatExchangeRates', exchangeRates);
     } catch (e) {
-      notify(`Failed fetching exchange rates: ${e.message}`, 'Exchange Rates');
+      notify(
+        `Failed fetching exchange rates: ${e.message}`,
+        'Exchange Rates',
+        Severity.ERROR,
+        true
+      );
     }
   },
   async fetchBlockchainBalances(
@@ -129,7 +137,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } catch (e) {
       notify(
         `Error at querying blockchain balances: ${e}`,
-        'Querying blockchain balances'
+        'Querying blockchain balances',
+        Severity.ERROR,
+        true
       );
     }
   },
@@ -202,7 +212,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('ethAccounts', ethMap);
       commit('btcAccounts', btcMap);
     } catch (e) {
-      notify(`Failed to accounts: ${e}`, 'Querying accounts', Severity.ERROR);
+      notify(
+        `Failed to accounts: ${e}`,
+        'Querying accounts',
+        Severity.ERROR,
+        true
+      );
     }
   },
   /* Remove a tag from all accounts of the state */
@@ -243,7 +258,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const supportedAssets = await api.supportedAssets();
       commit('supportedAssets', convertSupportedAssets(supportedAssets));
     } catch (e) {
-      notify(`Error: ${e}`, 'Fetching supported assets', Severity.ERROR);
+      notify(`Error: ${e}`, 'Fetching supported assets', Severity.ERROR, true);
     }
   },
 
@@ -252,7 +267,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const manualBalances = await api.manualBalances();
       commit('manualBalances', convertManualBalances(manualBalances));
     } catch (e) {
-      notify(`Failed: ${e}`, 'Retrieving manual balances', Severity.ERROR);
+      notify(
+        `Failed: ${e}`,
+        'Retrieving manual balances',
+        Severity.ERROR,
+        true
+      );
     }
   },
 
@@ -263,14 +283,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('manualBalances', convertManualBalances(manualBalances));
       result = true;
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Adding Manual Balance',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
+      showError(`${e.message}`, 'Adding Manual Balance');
     }
     return result;
   },
@@ -282,14 +295,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('manualBalances', convertManualBalances(manualBalances));
       result = true;
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Adding Manual Balance',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
+      showError(`${e.message}`, 'Editing Manual Balance');
     }
     return result;
   },
@@ -299,14 +305,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const manualBalances = await api.deleteManualBalances([label]);
       commit('manualBalances', convertManualBalances(manualBalances));
     } catch (e) {
-      commit(
-        'setMessage',
-        {
-          title: 'Deleting Manual Balance',
-          description: `${e.message}`
-        } as Message,
-        { root: true }
-      );
+      showError(`${e.message}`, 'Deleting Manual Balance');
     }
   }
 };
