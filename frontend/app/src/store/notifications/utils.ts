@@ -1,22 +1,28 @@
+import { Severity } from '@/store/notifications/consts';
+import {
+  NotificationData,
+  NotificationPayload
+} from '@/store/notifications/types';
 import store from '@/store/store';
-import { NotificationBase, NotificationData, Severity } from '@/typing/types';
 
-export const toNotification = (
-  message: string,
-  severity: Severity,
-  id: number,
-  title: string = ''
+export const createNotification = (
+  id: number = 0,
+  { display, duration, message, severity, title }: NotificationPayload = {
+    title: '',
+    message: '',
+    severity: Severity.INFO
+  }
 ): NotificationData => ({
   title: title,
   message: message,
   severity: severity,
-  display: false,
-  duration: 5000,
+  display: display ?? false,
+  duration: duration ?? 5000,
   id: id,
   date: new Date()
 });
 
-export const emptyNotification = () => toNotification('', Severity.INFO, 0);
+export const emptyNotification = () => createNotification();
 
 export function notify(
   message: string,
@@ -27,5 +33,5 @@ export function notify(
     title,
     message,
     severity
-  } as NotificationBase);
+  } as NotificationPayload);
 }

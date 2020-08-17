@@ -67,7 +67,8 @@
 <script lang="ts">
 import moment from 'moment';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { NotificationData, Severity } from '@/typing/types';
+import { Severity } from '@/store/notifications/consts';
+import { NotificationData } from '@/store/notifications/types';
 @Component({
   components: {}
 })

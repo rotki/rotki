@@ -6,6 +6,7 @@
     clipped
     :value="visible"
     right
+    @input="input($event)"
   >
     <v-row align="center" no-gutters class="pl-2 pr-2 pt-1 pb-2">
       <v-col cols="auto">
@@ -77,7 +78,7 @@ import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapMutations, mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
-import { NotificationData } from '@/typing/types';
+import { NotificationData } from '@/store/notifications/types';
 
 @Component({
   components: { Notification, ConfirmDialog },
@@ -101,6 +102,13 @@ export default class NotificationSidebar extends Vue {
   clear() {
     this.confirmClear = false;
     this.reset();
+  }
+
+  input(visible: boolean) {
+    if (visible) {
+      return;
+    }
+    this.close();
   }
 
   @Emit()
@@ -141,6 +149,10 @@ export default class NotificationSidebar extends Vue {
   &__messages {
     height: 100%;
     overflow-y: scroll !important;
+  }
+
+  @media only screen and (max-width: 1050px) {
+    top: 56px !important;
   }
 }
 

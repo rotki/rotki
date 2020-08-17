@@ -1,9 +1,10 @@
 import { ActionTree } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
+import { Severity } from '@/store/notifications/consts';
 import { NotificationState } from '@/store/notifications/state';
-import { toNotification } from '@/store/notifications/utils';
+import { NotificationPayload } from '@/store/notifications/types';
+import { createNotification } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/store';
-import { NotificationBase, Severity } from '@/typing/types';
 
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
   consume({ commit, getters }): any {
@@ -12,11 +13,19 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
       .consumeMessages()
       .then(value => {
         let id = getters.nextId;
-        const errors = value.errors.map(error =>
-          toNotification(error, Severity.ERROR, id++, title)
+        const errors = value.errors.map(message =>
+          createNotification(id++, {
+            title,
+            message,
+            severity: Severity.ERROR
+          })
         );
-        const warnings = value.warnings.map(warning =>
-          toNotification(warning, Severity.WARNING, id++, title)
+        const warnings = value.warnings.map(message =>
+          createNotification(id++, {
+            title,
+            message,
+            severity: Severity.WARNING
+          })
         );
 
         const notifications = errors.concat(warnings);
@@ -25,9 +34,13 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
         }
         commit('update', notifications);
       })
-      .catch(reason => {
+      .catch(message => {
         commit('update', [
-          toNotification(reason, Severity.ERROR, getters.nextId, title)
+          createNotification(getters.nextId, {
+            title,
+            message,
+            severity: Severity.ERROR
+          })
         ]);
       });
   },
@@ -40,11 +53,7 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
     notifications[index] = { ...notifications[index], display: false };
     commit('notifications', notifications);
   },
-  notify(
-    { commit, getters: { nextId } },
-    { message, severity, title }: NotificationBase
-  ): void {
-    const notification = toNotification(message, severity, nextId, title);
-    commit('update', [notification]);
+  notify({ commit, getters: { nextId } }, payload: NotificationPayload): void {
+    commit('update', [createNotification(nextId, payload)]);
   }
 };

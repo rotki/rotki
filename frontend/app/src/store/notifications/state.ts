@@ -1,4 +1,4 @@
-import { NotificationData } from '@/typing/types';
+import { NotificationData } from '@/store/notifications/types';
 
 export interface NotificationState {
   data: NotificationData[];
