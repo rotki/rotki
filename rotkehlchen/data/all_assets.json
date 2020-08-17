@@ -6462,6 +6462,7 @@
         "type": "own chain"
     },
     "MAZA": {
+        "coingecko": "maza",
         "cryptocompare": "MZC",
         "name": "MazaCoin",
         "started": 1393200000,
@@ -6479,6 +6480,7 @@
     },
     "MBRS": {
         "active": false,
+        "coingecko": "",
         "ended": 1549411200,
         "ethereum_address": "0x386467F1f3ddbE832448650418311a479EECFC57",
         "ethereum_token_decimals": 0,
@@ -6489,6 +6491,7 @@
     },
     "MCAP": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0x93E682107d1E9defB0b5ee701C71707a4B2E46Bc",
         "ethereum_token_decimals": 8,
         "name": "MCAP",
@@ -6498,6 +6501,7 @@
     },
     "MCI": {
         "active": false,
+        "coingecko": "",
         "ended": 1549411200,
         "ethereum_address": "0x138A8752093F4f9a79AaeDF48d4B9248fab93c9C",
         "ethereum_token_decimals": 18,
@@ -6576,11 +6580,13 @@
         "type": "qtum token"
     },
     "MEDX": {
+        "coingecko": "medibloc",
         "ethereum_address": "0xfd1e80508F243E64CE234eA88A5Fd2827c71D4b7",
         "ethereum_token_decimals": 8,
         "name": "MediBlock",
         "started": 1527465600,
         "symbol": "MEDX",
+        "swapped_for": "MED",
         "type": "ethereum token"
     },
     "MEME": {
@@ -6681,6 +6687,7 @@
         "type": "ethereum token"
     },
     "MILC": {
+        "coingecko": "",
         "ethereum_address": "0xD717B75404022fb1C8582ADf1c66B9A553811754",
         "ethereum_token_decimals": 18,
         "name": "Micro Licensing Coin",
@@ -6742,6 +6749,7 @@
     },
     "MMC": {
         "active": false,
+        "coingecko": "",
         "ended": 1473206400,
         "name": "Memorycoin",
         "started": 1387065600,
@@ -6750,6 +6758,7 @@
     },
     "MMNXT": {
         "active": false,
+        "coingecko": "",
         "ended": 1483747200,
         "name": "MMNXT",
         "started": 1413936000,
@@ -6758,6 +6767,7 @@
     },
     "MMXIV": {
         "active": false,
+        "coingecko": "",
         "ended": 1435881600,
         "name": "Maieuticoin",
         "started": 1400889600,
@@ -6846,6 +6856,7 @@
         "type": "ethereum token"
     },
     "MOT": {
+        "coingecko": "",
         "ethereum_address": "0x263c618480DBe35C300D8d5EcDA19bbB986AcaeD",
         "ethereum_token_decimals": 18,
         "name": "Olympus Labs",
@@ -6863,6 +6874,7 @@
         "type": "ethereum token"
     },
     "MRP": {
+        "coingecko": "",
         "cryptocompare": "MNRB",
         "ethereum_address": "0x21f0F0fD3141Ee9E11B3d7f13a1028CD515f459c",
         "ethereum_token_decimals": 18,
@@ -6881,7 +6893,8 @@
         "type": "ethereum token"
     },
     "MRS": {
-        "cryptocompare": "",
+        "coingecko": "",
+        "cryptocompare": "MRS",
         "ethereum_address": "0x1254E59712e6e727dC71E0E3121Ae952b2c4c3b6",
         "ethereum_token_decimals": 18,
         "name": "Marginless",
@@ -7078,6 +7091,7 @@
     },
     "NAUT": {
         "active": false,
+        "coingecko": "",
         "ended": 1511481600,
         "name": "Nautilus coin",
         "started": 1400112000,
@@ -7148,6 +7162,7 @@
     },
     "NDC": {
         "active": false,
+        "coingecko": "",
         "ended": 1554595200,
         "ethereum_address": "0xA54ddC7B3CcE7FC8b1E3Fa0256D0DB80D2c10970",
         "ethereum_token_decimals": 18,
@@ -7190,6 +7205,7 @@
         "type": "own chain"
     },
     "NEOS": {
+        "coingecko": "",
         "name": "NeosCoin",
         "started": 1408838400,
         "symbol": "NEOS",
@@ -7205,10 +7221,9 @@
         "type": "ethereum token"
     },
     "NEWB": {
-        "active": false,
-        "ended": 1529280000,
-        "ethereum_address": "0x814964b1bceAf24e26296D031EaDf134a2Ca4105",
-        "ethereum_token_decimals": 0,
+        "coingecko": "",
+        "ethereum_address": "0x5A63Eb358a751b76e58325eadD86c2473fC40e87",
+        "ethereum_token_decimals": 18,
         "name": "Newbium",
         "started": 1459296000,
         "symbol": "NEWB",
