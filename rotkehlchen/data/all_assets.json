@@ -3285,6 +3285,7 @@
     },
     "DOR": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0x906b3f8b7845840188Eab53c3f5AD348A787752f",
         "ethereum_token_decimals": 15,
         "name": "Dorado",
@@ -3312,6 +3313,7 @@
         "type": "ethereum token"
     },
     "DPP": {
+        "coingecko": "",
         "ethereum_address": "0x01b3Ec4aAe1B8729529BEB4965F27d008788B0EB",
         "ethereum_token_decimals": 18,
         "name": "Digital Assets Power Play",
@@ -3347,6 +3349,7 @@
         "type": "ethereum token"
     },
     "DRKC": {
+        "coingecko": "",
         "active": false,
         "ended": 1458259200,
         "name": "DarkCash",
@@ -3382,6 +3385,7 @@
         "type": "ethereum token"
     },
     "DRPU": {
+        "coingecko": "",
         "ethereum_address": "0xe30e02f049957e2A5907589e06Ba646fB2c321bA",
         "ethereum_token_decimals": 8,
         "name": "DCORP Utility",
@@ -3400,6 +3404,7 @@
     },
     "DSH": {
         "active": false,
+        "coingecko": "",
         "ended": 1542326400,
         "name": "Dashcoin",
         "started": 1404518400,
@@ -3416,12 +3421,14 @@
         "type": "ethereum token"
     },
     "DTB": {
+        "coingecko": "",
         "name": "Databits",
         "started": 1484784000,
         "symbol": "DTB",
         "type": "counterparty token"
     },
     "DTH": {
+        "coingecko": "dether",
         "ethereum_address": "0x5adc961D6AC3f7062D2eA45FEFB8D8167d44b190",
         "ethereum_token_decimals": 18,
         "name": "Dether",
@@ -3468,6 +3475,7 @@
     },
     "DUBI": {
         "active": false,
+        "coingecko": "",
         "ended": 1543708800,
         "ethereum_address": "0xEd7fEA78C393cF7B17B152A8c2D0CD97aC31790B",
         "ethereum_token_decimals": 18,
@@ -3500,17 +3508,6 @@
         "started": 1490547284,
         "symbol": "DYN",
         "type": "own chain"
-    },
-    "E4ROW": {
-        "active": false,
-        "cryptocompare": "",
-        "ended": 1515628800,
-        "ethereum_address": "0xCe5c603C78d047Ef43032E96b5B785324f753a4F",
-        "ethereum_token_decimals": 2,
-        "name": "Ether for the rest of the world",
-        "started": 1498158578,
-        "symbol": "E4ROW",
-        "type": "ethereum token"
     },
     "EAC": {
         "coingecko": "earthcoin",
