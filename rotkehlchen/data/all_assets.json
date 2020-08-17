@@ -1803,6 +1803,7 @@
         "type": "ethereum token"
     },
     "BTXCRD": {
+        "coingecko": "",
         "cryptocompare": "",
         "name": "Bittrex Credits",
         "symbol": "BTXCRD",
@@ -1880,6 +1881,7 @@
         "type": "ethereum token"
     },
     "C2": {
+        "coingecko": "",
         "name": "Coin2.1",
         "started": 1399334400,
         "symbol": "C2",
@@ -1929,6 +1931,7 @@
     },
     "CAIX": {
         "active": false,
+        "coingecko": "",
         "ended": 1451952000,
         "name": "Caishen",
         "started": 1397520000,
@@ -1971,6 +1974,7 @@
         "type": "ethereum token"
     },
     "CAR": {
+        "coingecko": "",
         "ethereum_address": "0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B",
         "ethereum_token_decimals": 18,
         "name": "CarBlock",
@@ -2033,6 +2037,7 @@
         "type": "ethereum token"
     },
     "CCCX": {
+        "coingecko": "",
         "ethereum_address": "0x378903a03FB2C3AC76BB52773e3CE11340377A32",
         "ethereum_token_decimals": 18,
         "name": "Clipper Coin",
@@ -2161,6 +2166,7 @@
     },
     "CFI": {
         "active": false,
+        "coingecko": "",
         "ended": 1552089600,
         "ethereum_address": "0x12FEF5e57bF45873Cd9B62E9DBd7BFb99e32D73e",
         "ethereum_token_decimals": 18,
@@ -2170,6 +2176,7 @@
         "type": "ethereum token"
     },
     "CFTY": {
+        "coingecko": "",
         "ethereum_address": "0x6956983F8B3Ce173B4AB84361AA0ad52f38D936f",
         "ethereum_token_decimals": 8,
         "name": "Crafty",
@@ -2179,6 +2186,7 @@
     },
     "CGA": {
         "active": false,
+        "coingecko": "",
         "ended": 1483660800,
         "name": "Cryptographic Anomaly",
         "started": 1392940800,
@@ -2186,6 +2194,7 @@
         "type": "own chain"
     },
     "CGLD": {
+        "coingecko": "",
         "name": "Celo Gold",
         "started": 1590115455,
         "symbol": "CGLD",
@@ -2193,7 +2202,7 @@
     },
     "CHAI": {
         "coingecko": "chai",
-        "cryptocompare": "DAI",
+        "cryptocompare": "",
         "ethereum_address": "0x06AF07097C9Eeb7fD685c692751D5C66dB49c215",
         "ethereum_token_decimals": 18,
         "name": "CHAI",
@@ -2260,6 +2269,7 @@
     },
     "CINNI": {
         "active": false,
+        "coingecko": "",
         "ended": 1446422400,
         "name": "Cinnicoin",
         "started": 1398211200,
@@ -2309,6 +2319,7 @@
         "type": "ethereum token"
     },
     "CLN": {
+        "coingecko": "",
         "ethereum_address": "0x4162178B78D6985480A308B2190EE5517460406D",
         "ethereum_token_decimals": 18,
         "name": "Colu Local Network",
@@ -2368,6 +2379,7 @@
     },
     "CNL": {
         "active": false,
+        "coingecko": "",
         "ended": 1451952000,
         "name": "ConcealCoin",
         "started": 1405900800,
@@ -2376,6 +2388,7 @@
     },
     "CNMT": {
         "active": false,
+        "coingecko": "",
         "ended": 1479772800,
         "name": "Coinomat",
         "started": 1409875200,
@@ -2488,6 +2501,7 @@
         "type": "ethereum token"
     },
     "COSS": {
+        "coingecko": "",
         "ethereum_address": "0x9e96604445Ec19fFed9a5e8dd7B50a29C899A10C",
         "ethereum_token_decimals": 18,
         "name": "COSS",
@@ -2546,6 +2560,7 @@
         "type": "own chain"
     },
     "CPEX": {
+        "coingecko": "",
         "active": false,
         "ended": 1551398400,
         "ethereum_address": "0xb787d4eAc8899730bb8C57fc3c998c49c5244ec0",
@@ -2565,6 +2580,7 @@
         "type": "ethereum token"
     },
     "CPY": {
+        "coingecko": "",
         "ethereum_address": "0xf44745fBd41F6A1ba151df190db0564c5fCc4410",
         "ethereum_token_decimals": 18,
         "name": "COPYTRACK",
@@ -2632,6 +2648,7 @@
         "type": "ethereum token"
     },
     "CRGO": {
+        "coingecko": "",
         "ethereum_address": "0xf49CDD50aD408d387d611F88A647179C3de3492b",
         "ethereum_token_decimals": 18,
         "name": "CargoCoin",
@@ -2705,6 +2722,7 @@
     },
     "CTR": {
         "active": false,
+        "coingecko": "",
         "ended": 1527984000,
         "ethereum_address": "0x96A65609a7B84E8842732DEB08f56C3E21aC6f8a",
         "ethereum_token_decimals": 18,
@@ -2787,6 +2805,7 @@
     },
     "CYC": {
         "active": false,
+        "coingecko": "",
         "ended": 1455148800,
         "name": "ConspiracyCoin",
         "started": 1404518400,
@@ -2834,9 +2853,10 @@
         "type": "ethereum token"
     },
     "DADI": {
+        "coingecko": "edge",
         "ethereum_address": "0xFb2f26F266Fb2805a387230f2aa0a331b4d96Fba",
         "ethereum_token_decimals": 18,
-        "name": "DADI",
+        "name": "Edge",
         "started": 1504224000,
         "symbol": "DADI",
         "type": "ethereum token"
@@ -2871,6 +2891,7 @@
     },
     "DAO": {
         "active": false,
+        "coingecko": "",
         "ended": 1469020840,
         "ethereum_address": "0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413",
         "ethereum_token_decimals": 16,
@@ -2939,15 +2960,6 @@
         "name": "DAEX",
         "started": 1517981944,
         "symbol": "DAX",
-        "type": "ethereum token"
-    },
-    "DAXT": {
-        "cryptocompare": "",
-        "ethereum_address": "0x61725f3db4004AFE014745B21DAb1E1677CC328b",
-        "ethereum_token_decimals": 18,
-        "name": "Digital Asset Exchange Token",
-        "started": 1521249319,
-        "symbol": "DAXT",
         "type": "ethereum token"
     },
     "DAY": {
