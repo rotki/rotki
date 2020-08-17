@@ -648,11 +648,8 @@ class DBHandler:
 
     def add_aave_events(self, address: ChecksumEthAddress, events: List[AaveEvent]) -> None:
         cursor = self.conn.cursor()
-        cursor.executemany(
-            'INSERT INTO '
-            'aave_events(address, event_type, asset, amount, usd_value, block_number, timestamp, tx_hash, log_index)'  # noqa: E501
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [(
+        for e in events:
+            event_tuple = (
                 address,
                 e.event_type,
                 e.asset.identifier,
@@ -661,9 +658,21 @@ class DBHandler:
                 str(e.block_number),
                 str(e.timestamp),
                 e.tx_hash,
-                e.log_index)
-             for e in events],
-        )
+                e.log_index,
+            )
+            try:
+                cursor.execute(
+                    'INSERT INTO '
+                    'aave_events(address, event_type, asset, amount, usd_value, block_number, timestamp, tx_hash, log_index)'  # noqa: E501
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    event_tuple,
+                )
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add an aave event that already exists in the DB. '
+                    f'Event data: {event_tuple}. Skipping...',
+                )
+
         self.conn.commit()
         self.update_last_write()
 
