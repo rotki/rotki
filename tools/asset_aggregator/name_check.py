@@ -36,7 +36,6 @@ MANUALLY_CHECKED_NAMES = {
     'ENTRP': 'Hut34 Entropy Token',
     'ETHB': 'EtherBTC',
     'FIH': 'FidelityHouse',
-    'FLX': 'BitFlux',
     'FORK-2': 'Gastro Advisor Token',
     'HBD': 'Hive dollar',
     'HIVE': 'Hive',

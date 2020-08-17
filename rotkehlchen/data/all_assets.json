@@ -4255,6 +4255,7 @@
     },
     "FLAP": {
         "active": false,
+        "coingecko": "",
         "ended": 1525651200,
         "name": "FlappyCoin",
         "started": 1393027200,
@@ -4327,15 +4328,6 @@
         "name": "Fluz Fluz",
         "started": 1510185600,
         "symbol": "FLUZ",
-        "type": "ethereum token"
-    },
-    "FLX": {
-        "cryptocompare": "FLX*",
-        "ethereum_address": "0x70b147E01E9285E7cE68B9BA437Fe3a9190E756a",
-        "ethereum_token_decimals": 18,
-        "name": "BitFlux",
-        "started": 1515283200,
-        "symbol": "FLX",
         "type": "ethereum token"
     },
     "FMF": {

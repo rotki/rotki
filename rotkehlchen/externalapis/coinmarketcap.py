@@ -402,9 +402,6 @@ KNOWN_TO_MISS_FROM_CMC = (
     # FidelityHouse (https://www.cryptocompare.com/coins/fih/overview)
     # is not in coinmarketcap but is in cryptocompare
     'FIH',
-    # Bitflux (https://www.cryptocompare.com/coins/flxstar/overview)
-    # is not in coinmarketcap but is in cryptocompare
-    'FLX',
     # GastroAdvisor (https://www.cryptocompare.com/coins/fork/)
     # is not in coinmarketcap but is in cryptocompare. Note. Coinmarketcap
     # has the same symbol (FORK) for another asset:
