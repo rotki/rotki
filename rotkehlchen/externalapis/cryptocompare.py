@@ -800,9 +800,5 @@ class Cryptocompare(ExternalServiceWithApiKey):
         data['THR'] = object()
         # This is Transcodium (https://coinmarketcap.com/currencies/transcodium/)
         data['TNS'] = object()
-        # This is XMedChainToken (https://coinmarketcap.com/currencies/xmct/)
-        data['XMCT'] = object()
-        # This is Xplay (https://coinmarketcap.com/currencies/xpa)
-        data['XPA'] = object()
 
         return data

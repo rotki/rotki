@@ -183,6 +183,9 @@ not_supported_in_coingecko = {
     'SOL',
     'WEB-2',
     'WIN',
+    'ADADOWN',
+    'ADAUP',
+    'AERO',
 }
 
 new_assets = {}
@@ -192,6 +195,9 @@ same_name_count = 0
 same_symbol_count = 0
 for key, entry in assets.items():
     new_assets[key] = entry
+
+    if entry['type'] == 'fiat':
+        continue
 
     if key in not_supported_in_coingecko:
         new_assets[key]['coingecko'] = ''

@@ -150,12 +150,14 @@
         "type": "own chain"
     },
     "ADADOWN": {
+        "coingecko": "",
         "name": "Binance leveraged token ADADOWN",
         "started": 1594771200,
         "symbol": "ADADOWN",
         "type": "own chain"
     },
     "ADAUP": {
+        "coingecko": "",
         "name": "Binance leveraged token ADAUP",
         "started": 1594771200,
         "symbol": "ADAUP",
@@ -207,8 +209,8 @@
         "type": "own chain"
     },
     "ADST": {
-        "cryptocompare": "ADS",
         "coingecko": "adshares",
+        "cryptocompare": "ADS",
         "ethereum_address": "0x422866a8F0b032c5cf1DfBDEf31A20F4509562b0",
         "ethereum_token_decimals": 0,
         "name": "Adshares",
@@ -259,6 +261,7 @@
     },
     "AERO": {
         "active": false,
+        "coingecko": "",
         "ended": 1420934400,
         "name": "Aerocoin",
         "started": 1403395200,
@@ -731,8 +734,8 @@
         "ethereum_token_decimals": 18,
         "name": "Aurora DAO",
         "started": 1506556800,
-        "symbol": "AURA",
         "swapped_for": "IDEX",
+        "symbol": "AURA",
         "type": "ethereum token"
     },
     "AUTO": {
@@ -2560,8 +2563,8 @@
         "type": "own chain"
     },
     "CPEX": {
-        "coingecko": "",
         "active": false,
+        "coingecko": "",
         "ended": 1551398400,
         "ethereum_address": "0xb787d4eAc8899730bb8C57fc3c998c49c5244ec0",
         "ethereum_token_decimals": 8,
@@ -3213,8 +3216,8 @@
         "ethereum_token_decimals": 18,
         "name": "Divi Exchange Token",
         "started": 1505199359,
-        "symbol": "DIVX",
         "swapped_for": "DIVI",
+        "symbol": "DIVX",
         "type": "ethereum token"
     },
     "DLT": {
@@ -3349,8 +3352,8 @@
         "type": "ethereum token"
     },
     "DRKC": {
-        "coingecko": "",
         "active": false,
+        "coingecko": "",
         "ended": 1458259200,
         "name": "DarkCash",
         "started": 1406592000,
@@ -5196,8 +5199,8 @@
         "ethereum_token_decimals": 8,
         "name": "Hacken",
         "started": 1504051200,
-        "symbol": "HKN",
         "swapped_for": "HAI",
+        "symbol": "HKN",
         "type": "ethereum token"
     },
     "HMC": {
@@ -6585,8 +6588,8 @@
         "ethereum_token_decimals": 8,
         "name": "MediBlock",
         "started": 1527465600,
-        "symbol": "MEDX",
         "swapped_for": "MED",
+        "symbol": "MEDX",
         "type": "ethereum token"
     },
     "MEME": {
@@ -7319,8 +7322,8 @@
         "ethereum_token_decimals": 18,
         "name": "Noah Coin",
         "started": 1508500309,
-        "symbol": "NOAH",
         "swapped_for": "NOAHP",
+        "symbol": "NOAH",
         "type": "ethereum token"
     },
     "NOAHP": {
@@ -9049,7 +9052,7 @@
         "type": "ethereum token"
     },
     "SCRL": {
-        "coingecko": "data-transaction-token",
+        "coingecko": "scroll-token",
         "cryptocompare": "SCRL",
         "ethereum_address": "0x24DCc881E7Dd730546834452F21872D5cb4b5293",
         "ethereum_token_decimals": 18,
@@ -9228,8 +9231,8 @@
         "type": "stellar token"
     },
     "SJCX": {
-        "coingecko": "storj",
         "active": false,
+        "coingecko": "storj",
         "ended": 1530316800,
         "name": "Storjcoin X",
         "started": 1405641600,
@@ -10257,7 +10260,7 @@
         "type": "ethereum token"
     },
     "TIO": {
-        "coingecko": "trade-token-x",
+        "coingecko": "trade-token",
         "cryptocompare": "TIOX",
         "ethereum_address": "0xd947b0ceab2A8885866B9A04A06AE99DE852a3d4",
         "ethereum_token_decimals": 18,
@@ -10726,8 +10729,8 @@
         "type": "ethereum token"
     },
     "USDE": {
-        "coingecko": "",
         "active": false,
+        "coingecko": "",
         "ended": 1517011200,
         "name": "USDe",
         "started": 1389484800,
@@ -10768,8 +10771,8 @@
         "type": "own chain"
     },
     "UTC": {
-        "coingecko": "",
         "active": true,
+        "coingecko": "",
         "name": "UltraCoin",
         "started": 1391212800,
         "symbol": "UTC",
@@ -10865,8 +10868,8 @@
     },
     "VEN": {
         "active": false,
-        "ended": 1533254400,
         "coingecko": "vechain",
+        "ended": 1533254400,
         "ethereum_address": "0xD850942eF8811f2A866692A623011bDE52a462C1",
         "ethereum_token_decimals": 18,
         "name": "Vechain Token",
@@ -11629,6 +11632,7 @@
     },
     "XPB": {
         "active": false,
+        "coingecko": "",
         "ended": 1473206400,
         "name": "Pebblecoin",
         "started": 1420070400,
@@ -11643,6 +11647,7 @@
         "type": "own chain"
     },
     "XRL": {
+        "coingecko": "",
         "ethereum_address": "0xB24754bE79281553dc1adC160ddF5Cd9b74361a4",
         "ethereum_token_decimals": 9,
         "name": "Rialto",
@@ -11677,6 +11682,7 @@
     },
     "XSI": {
         "active": false,
+        "coingecko": "",
         "ended": 1514764800,
         "name": "Stability shares",
         "started": 1398211200,
@@ -11727,6 +11733,7 @@
     },
     "XVC": {
         "active": false,
+        "coingecko": "vcash-token",
         "ended": 1533340800,
         "name": "Vcash",
         "started": 1425600000,
@@ -11765,6 +11772,7 @@
     },
     "YACC": {
         "active": false,
+        "coingecko": "yacoin",
         "cryptocompare": "YAC",
         "ended": 1473206400,
         "name": "YaCcoin",
@@ -11941,6 +11949,7 @@
         "type": "ethereum token"
     },
     "ZIX": {
+        "coingecko": "",
         "ethereum_address": "0xf3C092cA8CD6D3d4ca004Dc1d0f1fe8CcAB53599",
         "ethereum_token_decimals": 18,
         "name": "Zeex Token",
@@ -12033,6 +12042,8 @@
         "type": "ethereum token"
     },
     "aENJ": {
+        "coingecko": "",
+        "cryptocompare": "ENJ",
         "ethereum_address": "0x712DB54daA836B53Ef1EcBb9c6ba3b9Efb073F40",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing ENJ",
@@ -12041,7 +12052,7 @@
         "type": "ethereum token"
     },
     "aETH": {
-        "coingecko": "anarcheth",
+        "coingecko": "aave-eth",
         "cryptocompare": "ETH",
         "ethereum_address": "0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04",
         "ethereum_token_decimals": 18,
@@ -12101,6 +12112,8 @@
         "type": "ethereum token"
     },
     "aREN": {
+        "coingecko": "",
+        "cryptocompare": "REN",
         "ethereum_address": "0x69948cC03f478B95283F7dbf1CE764d0fc7EC54C",
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing REN",
@@ -12270,7 +12283,7 @@
         "type": "ethereum token"
     },
     "sUSD": {
-        "coingecko": "nusd",
+        "coingecko": "susd",
         "ethereum_address": "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51",
         "ethereum_token_decimals": 18,
         "name": "Synth sUSD",
