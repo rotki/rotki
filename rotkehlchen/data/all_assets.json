@@ -5358,6 +5358,7 @@
     },
     "HZ": {
         "active": false,
+        "coingecko": "",
         "ended": 1493942400,
         "name": "Horizon",
         "started": 1402531200,
@@ -5365,6 +5366,7 @@
         "type": "own chain"
     },
     "ICE": {
+        "coingecko": "",
         "ethereum_address": "0x5a84969bb663fb64F6d015DcF9F622Aedc796750",
         "ethereum_token_decimals": 18,
         "name": "iDice",
@@ -5373,6 +5375,7 @@
         "type": "ethereum token"
     },
     "ICN": {
+        "coingecko": "",
         "ethereum_address": "0x888666CA69E0f178DED6D75b5726Cee99A87D698",
         "ethereum_token_decimals": 18,
         "name": "Iconomi",
@@ -5449,6 +5452,7 @@
         "type": "own chain"
     },
     "IFT": {
+        "coingecko": "",
         "ethereum_address": "0x7654915A1b82D6D2D0AFc37c52Af556eA8983c7E",
         "ethereum_token_decimals": 18,
         "name": "InvestFeed",
@@ -5543,6 +5547,7 @@
         "type": "ethereum token"
     },
     "INV": {
+        "coingecko": "",
         "cryptocompare": "INVC",
         "ethereum_address": "0xEcE83617Db208Ad255Ad4f45Daf81E25137535bb",
         "ethereum_token_decimals": 8,
@@ -5591,6 +5596,7 @@
         "type": "ethereum token"
     },
     "IOTA": {
+        "coingecko": "iota",
         "cryptocompare": "MIOTA",
         "name": "IOTA",
         "started": 1497364209,
@@ -5665,6 +5671,7 @@
         "type": "ethereum token"
     },
     "ITM": {
+        "coingecko": "",
         "ethereum_address": "0x1dbED266D20D27d0bd1c4707FC002dEfE7E0267B",
         "ethereum_token_decimals": 18,
         "name": "Intimate",
@@ -5716,6 +5723,7 @@
         "type": "ethereum token"
     },
     "JC": {
+        "coingecko": "",
         "ethereum_address": "0xE2D82Dc7dA0E6f882E96846451F4faBcc8f90528",
         "ethereum_token_decimals": 18,
         "name": "Jesus Coin",
@@ -5739,15 +5747,6 @@
         "name": "Jibrel Network",
         "started": 1511740800,
         "symbol": "JNT",
-        "type": "ethereum token"
-    },
-    "JOT": {
-        "cryptocompare": "",
-        "ethereum_address": "0xdb455c71C1bC2de4e80cA451184041Ef32054001",
-        "ethereum_token_decimals": 18,
-        "name": "Jury.Online Token",
-        "started": 1508627153,
-        "symbol": "JOT",
         "type": "ethereum token"
     },
     "JOY": {
