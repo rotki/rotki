@@ -3518,6 +3518,7 @@
     },
     "EAGLE": {
         "active": false,
+        "coingecko": "eaglex",
         "cryptocompare": "",
         "ended": 1539129600,
         "ethereum_address": "0x994f0DffdbaE0BbF09b652D6f11A493fd33F42B9",
@@ -3529,6 +3530,7 @@
     },
     "EARTH": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0x900b4449236a7bb26b286601dD14d2bDe7a6aC6c",
         "ethereum_token_decimals": 8,
         "name": "Earth Token",
@@ -3643,6 +3645,7 @@
     },
     "EGAS": {
         "active": false,
+        "coingecko": "",
         "ended": 1518307200,
         "ethereum_address": "0xb53A96bcBdD9CF78dfF20BAB6C2be7bAec8f00f8",
         "ethereum_token_decimals": 8,
@@ -3713,6 +3716,7 @@
         "type": "ethereum token"
     },
     "ELIX": {
+        "coingecko": "",
         "ethereum_address": "0xc8C6A31A4A806d3710A7B38b7B296D2fABCCDBA8",
         "ethereum_token_decimals": 18,
         "name": "Elixir",
@@ -3763,6 +3767,7 @@
     },
     "EMV": {
         "active": false,
+        "coingecko": "",
         "ended": 1531958400,
         "ethereum_address": "0xB802b24E0637c2B87D2E8b7784C055BBE921011a",
         "ethereum_token_decimals": 2,
@@ -3781,6 +3786,7 @@
         "type": "ethereum token"
     },
     "ENGT": {
+        "coingecko": "",
         "ethereum_address": "0x5DBAC24e98E2a4f43ADC0DC82Af403fca063Ce2c",
         "ethereum_token_decimals": 18,
         "name": "Engagement Token",
@@ -3850,6 +3856,7 @@
         "type": "ethereum token"
     },
     "EPY": {
+        "coingecko": "",
         "cryptocompare": "EMPHY",
         "ethereum_address": "0x50Ee674689d75C0f88E8f83cfE8c4B69E8fd590D",
         "ethereum_token_decimals": 8,
@@ -3937,6 +3944,7 @@
         "type": "own chain"
     },
     "ETHB": {
+        "coingecko": "",
         "ethereum_address": "0x3a26746Ddb79B1B8e4450e3F4FFE3285A307387E",
         "ethereum_token_decimals": 8,
         "name": "EtherBTC",
@@ -3964,6 +3972,7 @@
     },
     "ETHD": {
         "active": false,
+        "coingecko": "",
         "ended": 1549411200,
         "ethereum_address": "0xdbFb423E9bBF16294388e07696A5120E4CeBA0C5",
         "ethereum_token_decimals": 18,
@@ -3973,20 +3982,24 @@
         "type": "ethereum token"
     },
     "ETHDOWN": {
+        "coingecko": "",
         "name": "Binance leveraged token ETHDOWN",
         "started": 1594771200,
         "symbol": "ETHDOWN",
         "type": "own chain"
     },
     "ETHOS": {
+        "coingecko": "voyager-token",
+        "cryptocompare": "VGX",
         "ethereum_address": "0x5Af2Be193a6ABCa9c8817001F45744777Db30756",
         "ethereum_token_decimals": 8,
-        "name": "Ethos",
+        "name": "Voyager Token",
         "started": 1498608000,
-        "symbol": "ETHOS",
+        "symbol": "VGX",
         "type": "ethereum token"
     },
     "ETHUP": {
+        "coingecko": "",
         "name": "Binance leveraged token ETHUP",
         "started": 1594771200,
         "symbol": "ETHUP",
@@ -4126,6 +4139,7 @@
     },
     "EZT": {
         "active": true,
+        "coingecko": "",
         "ethereum_address": "0x5e6016Ae7d7C49d347dcF834860B9f3Ee282812b",
         "ethereum_token_decimals": 8,
         "name": "EZToken",
@@ -4207,20 +4221,12 @@
     },
     "FIBRE": {
         "active": false,
+        "coingecko": "",
         "ended": 1473206400,
         "name": "Fibrecoin",
         "started": 1409356800,
         "symbol": "FIBRE",
         "type": "own chain"
-    },
-    "FID": {
-        "active": true,
-        "ethereum_address": "0x52fb36C83ad33C1824912FC81071cA5eEB8AB390",
-        "ethereum_token_decimals": 18,
-        "name": "Fidelium",
-        "started": 1520951331,
-        "symbol": "FID",
-        "type": "ethereum token"
     },
     "FIH": {
         "coingecko": "fidelityhouse",

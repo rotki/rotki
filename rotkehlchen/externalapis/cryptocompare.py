@@ -757,8 +757,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
         data['EBCH'] = object()
         # This is Educare (https://coinmarketcap.com/currencies/educare/)
         data['EKT'] = object()
-        # This is Fidelium (https://coinmarketcap.com/currencies/fidelium/)
-        data['FID'] = object()
         # This is Knoxstertoken (https://coinmarketcap.com/currencies/knoxstertoken/)
         data['FKX'] = object()
         # This is FNKOS (https://coinmarketcap.com/currencies/fnkos/)
