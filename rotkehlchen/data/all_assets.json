@@ -5191,7 +5191,7 @@
         "type": "ethereum token"
     },
     "HKN": {
-        "coingecko": "hackenai"
+        "coingecko": "hackenai",
         "ethereum_address": "0x9e6B2B11542f2BC52f3029077acE37E8fD838D7F",
         "ethereum_token_decimals": 8,
         "name": "Hacken",
@@ -5806,6 +5806,7 @@
     },
     "KDC": {
         "active": false,
+        "coingecko": "",
         "ended": 1539129600,
         "name": "KlondikeCoin",
         "started": 1389225600,
@@ -5842,6 +5843,7 @@
         "type": "own chain"
     },
     "KFEE": {
+        "coingecko": "",
         "cryptocompare": "",
         "name": "Kraken fees",
         "symbol": "KFEE",
@@ -5977,6 +5979,7 @@
         "type": "ethereum token"
     },
     "LALA": {
+        "coingecko": "",
         "ethereum_address": "0xfD107B473AB90e8Fbd89872144a3DC92C40Fa8C9",
         "ethereum_token_decimals": 18,
         "name": "LALA World",
@@ -6103,6 +6106,7 @@
         "type": "ethereum token"
     },
     "LGR": {
+        "coingecko": "",
         "ethereum_address": "0x2eb86e8fC520E0F6Bb5D9Af08F924fe70558Ab89",
         "ethereum_token_decimals": 8,
         "name": "Logarithm",
@@ -6147,12 +6151,14 @@
         "type": "ethereum token"
     },
     "LINKDOWN": {
+        "coingecko": "",
         "name": "Binance leveraged token LINKDOWN",
         "started": 1594771200,
         "symbol": "LINKDOWN",
         "type": "own chain"
     },
     "LINKUP": {
+        "coingecko": "",
         "name": "Binance leveraged token LINKUP",
         "started": 1594771200,
         "symbol": "LINKUP",
@@ -6160,6 +6166,7 @@
     },
     "LIVE": {
         "active": false,
+        "coingecko": "",
         "ended": 1549065600,
         "ethereum_address": "0x24A77c1F17C547105E14813e517be06b0040aa76",
         "ethereum_token_decimals": 18,
@@ -6180,6 +6187,7 @@
         "type": "ethereum token"
     },
     "LMC": {
+        "coingecko": "",
         "name": "LoMoCoin",
         "started": 1460937600,
         "symbol": "LMC",
@@ -6325,6 +6333,7 @@
     },
     "LTBC": {
         "active": false,
+        "coingecko": "",
         "ended": 1509062400,
         "name": "LTBcoin",
         "started": 1406419200,
@@ -6340,6 +6349,7 @@
     },
     "LTCX": {
         "active": false,
+        "coingecko": "",
         "ended": 1404864000,
         "name": "LitecoinX",
         "started": 1401494400,
@@ -6423,15 +6433,6 @@
         "started": 1502824689,
         "symbol": "MANA",
         "type": "ethereum token"
-    },
-    "MARS": {
-        "active": false,
-        "cryptocompare": "MRS",
-        "ended": 1545350400,
-        "name": "Marscoin",
-        "started": 1390780800,
-        "symbol": "MARS",
-        "type": "own chain"
     },
     "MAS": {
         "coingecko": "midas-protocol",

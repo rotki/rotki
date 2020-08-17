@@ -134,8 +134,6 @@ KNOWN_TO_MISS_FROM_CMC = (
     'MMNXT',
     # Missing from API, is in https://coinmarketcap.com/currencies/mmxiv/
     'MMXIV',
-    # Missing from API, is in https://coinmarketcap.com/currencies/marscoin/
-    'MARS',
     # Missing from API, is in https://coinmarketcap.com/currencies/mazacoin/
     'MAZA',
     # Missing from API, is in https://coinmarketcap.com/currencies/nautiluscoin/

@@ -55,8 +55,6 @@ WORLD_TO_POLONIEX = {
     'FAIR': 'FAC',
     # KeyCoin in Poloniex is KEY but in Rotkehlchen it's KEY-3
     'KEY-3': 'KEY',
-    # Marscoin in Poloniex is MRS but in Rotkehlchen it's MARS
-    'MARS': 'MRS',
     # Mazacoin in Poloniex is MZC but in Rotkehlchen it's MAZA
     'MAZA': 'MZC',
     # Myriadcoin in Poloniex is MYR but in Rotkehlchen it's XMY
