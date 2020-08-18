@@ -21,7 +21,8 @@ module.exports = {
     '@vue/typescript',
     'plugin:import/errors',
     'plugin:import/warnings',
-    'plugin:import/typescript'
+    'plugin:import/typescript',
+    'plugin:@intlify/vue-i18n/recommended'
   ],
 
   rules: {
@@ -90,7 +91,29 @@ module.exports = {
         allowBinding: false
       }
     ],
-    'rulesdir/no-unused-components': 'error'
+    'rulesdir/no-unused-components': 'error',
+    '@intlify/vue-i18n/key-format-style': [
+      'error',
+      'snake_case',
+      {
+        allowArray: false
+      }
+    ],
+    '@intlify/vue-i18n/no-duplicate-keys-in-locale': 'error',
+    '@intlify/vue-i18n/no-unused-keys': [
+      'error',
+      {
+        extensions: ['.ts', '.vue']
+      }
+    ],
+    '@intlify/vue-i18n/no-raw-text': [
+      process.env.CI ? 'off' : 'warn',
+      {
+        ignoreNodes: ['md-icon', 'v-icon'],
+        ignorePattern: '^[-#:()&]+$',
+        ignoreText: ['EUR', 'HKD', 'USD']
+      }
+    ]
   },
 
   parserOptions: {
@@ -103,6 +126,10 @@ module.exports = {
         map: [['@', path.resolve('src')]],
         extensions: ['.vue', '.ts', '.d.ts']
       }
+    },
+    'vue-i18n': {
+      localeDir:
+        path.resolve(__dirname, 'src', 'locales') + '/*.{json,json5,yaml,yml}'
     }
   }
 };

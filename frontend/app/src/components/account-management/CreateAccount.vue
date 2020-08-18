@@ -1,14 +1,16 @@
 <template>
   <div v-if="displayed" class="create-account">
-    <div class="title text--primary create-account__header">Create Account</div>
+    <div class="title text--primary create-account__header">
+      {{ $t('create_account.title') }}
+    </div>
     <v-stepper v-model="step">
       <v-stepper-header>
         <v-stepper-step step="1" :complete="step > 1">
-          Select Credentials
+          {{ $t('create_account.select_credentials.title') }}
         </v-stepper-step>
         <v-divider />
         <v-stepper-step step="2">
-          Usage analytics
+          {{ $t('create_account.usage_analytics.title') }}
         </v-stepper-step>
       </v-stepper-header>
       <v-stepper-items>
@@ -19,22 +21,22 @@
                 v-model="username"
                 autofocus
                 class="create-account__fields__username"
-                label="Username"
+                :label="$t('create_account.select_credentials.label_username')"
                 prepend-icon="fa-user"
                 :rules="usernameRules"
                 :disabled="loading"
                 required
-              ></v-text-field>
+              />
               <v-text-field
                 v-model="password"
                 class="create-account__fields__password"
-                label="Password"
+                :label="$t('create_account.select_credentials.label_password')"
                 prepend-icon="fa-lock"
                 :rules="passwordRules"
                 :disabled="loading"
                 type="password"
                 required
-              ></v-text-field>
+              />
               <v-text-field
                 v-model="passwordConfirm"
                 class="create-account__fields__password-repeat"
@@ -42,16 +44,21 @@
                 :error-messages="errorMessages"
                 :rules="passwordConfirmRules"
                 :disabled="loading"
-                label="Repeat Password"
+                :label="
+                  $t('create_account.select_credentials.label_password_repeat')
+                "
                 type="password"
                 required
-              >
-              </v-text-field>
+              />
               <v-checkbox
                 v-model="userPrompted"
                 class="create-account__boxes__user-prompted"
-                label="Rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password."
-              ></v-checkbox>
+                :label="
+                  $t(
+                    'create_account.select_credentials.label_password_backup_reminder'
+                  )
+                "
+              />
               <premium-credentials
                 :enabled="premiumEnabled"
                 :api-secret="apiSecret"
@@ -60,11 +67,11 @@
                 @api-key-changed="apiKey = $event"
                 @api-secret-changed="apiSecret = $event"
                 @enabled-changed="premiumEnabled = $event"
-              ></premium-credentials>
+              />
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-spacer></v-spacer>
+            <v-spacer />
             <v-btn
               class="create-account__buttons__cancel"
               depressed
@@ -73,7 +80,7 @@
               :disabled="loading"
               @click="cancel()"
             >
-              Cancel
+              {{ $t('create_account.select_credentials.button_cancel') }}
             </v-btn>
             <v-btn
               class="create-account__buttons__continue"
@@ -83,7 +90,7 @@
               :loading="loading"
               @click="step = 2"
             >
-              Continue
+              {{ $t('create_account.select_credentials.button_continue') }}
             </v-btn>
           </v-card-actions>
         </v-stepper-content>
@@ -100,23 +107,19 @@
                 color="primary"
                 class="mx-auto text-justify text-body-2 create-account__analytics__content"
               >
-                rotki is a local application and anonymous usage analytics is
-                the only way for us to have an idea of how many people use our
-                software, where they are from etc. These data are really
-                important to us, are completely anonymous and help us create a
-                better product for you.
+                {{ $t('create_account.usage_analytics.description') }}
               </v-alert>
               <v-row no-gutters>
                 <v-col>
                   <v-checkbox
                     v-model="submitUsageAnalytics"
-                    label="Submit anonymous usage analytics"
-                  ></v-checkbox>
+                    :label="$t('create_account.usage_analytics.label_confirm')"
+                  />
                 </v-col>
               </v-row>
             </v-card-text>
             <v-card-actions>
-              <v-spacer></v-spacer>
+              <v-spacer />
               <v-btn
                 color="primary"
                 class="create-account__analytics__buttons__back"
@@ -124,7 +127,7 @@
                 outlined
                 @click="step = 1"
               >
-                Back
+                {{ $t('create_account.usage_analytics.button_back') }}
               </v-btn>
               <v-btn
                 color="primary"
@@ -132,7 +135,7 @@
                 class="create-account__analytics__buttons__confirm"
                 @click="confirm()"
               >
-                Create
+                {{ $t('create_account.usage_analytics.button_create') }}
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -173,15 +176,27 @@ export default class CreateAccount extends Vue {
   step = 1;
 
   readonly usernameRules = [
-    (v: string) => !!v || 'Please provide a user name',
+    (v: string) =>
+      !!v ||
+      this.$t(
+        'create_account.select_credentials.validation.non_empty_username'
+      ),
     (v: string) =>
       (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
-      'A username must contain only alphanumeric characters and have no spaces'
+      this.$t('create_account.select_credentials.validation.valid_username')
   ];
 
-  readonly passwordRules = [(v: string) => !!v || 'Please provide a password'];
+  readonly passwordRules = [
+    (v: string) =>
+      !!v ||
+      this.$t('create_account.select_credentials.validation.non_empty_password')
+  ];
   readonly passwordConfirmRules = [
-    (v: string) => !!v || 'Please provide a password confirmation'
+    (v: string) =>
+      !!v ||
+      this.$t(
+        'create_account.select_credentials.validation.non_empty_password_confirmation'
+      )
   ];
 
   private updateConfirmationError() {
@@ -189,7 +204,9 @@ export default class CreateAccount extends Vue {
       return;
     }
     this.errorMessages.push(
-      'The password confirmation does not match the provided password'
+      this.$t(
+        'create_account.select_credentials.validation.password_confirmation_missmatch'
+      ).toString()
     );
   }
 

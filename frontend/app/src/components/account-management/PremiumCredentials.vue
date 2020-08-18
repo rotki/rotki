@@ -3,20 +3,17 @@
     <v-row no-gutters>
       <v-checkbox
         :value="enabled"
-        label="Enable Premium"
+        :label="$t('premium_credentials.label_enable')"
         off-icon="fa fa-square-o"
         @change="enabledChanged"
-      ></v-checkbox>
-      <v-tooltip bottom>
+      />
+      <v-tooltip bottom max-width="400px">
         <template #activator="{ on }">
           <v-icon small class="mb-3 ml-1" v-on="on">fa fa-info-circle</v-icon>
         </template>
-        <div>
-          Enabling premium for a new account will restore the database
-          associated with these credentials from the server. <br />
-          Ensure that the account uses the same password as the database
-          originally backed up.
-        </div>
+        <span>
+          {{ $t('premium_credentials.tooltip') }}
+        </span>
       </v-tooltip>
     </v-row>
     <div v-if="enabled">
@@ -28,10 +25,10 @@
         prepend-icon="fa-key"
         :type="showKey ? 'text' : 'password'"
         :rules="apiKeyRules"
-        label="Rotki API Key"
+        :label="$t('premium_credentials.label_api_key')"
         @input="apiKeyChanged"
         @click:append="showKey = !showKey"
-      ></v-text-field>
+      />
       <v-text-field
         :value="apiSecret"
         :disabled="loading"
@@ -39,11 +36,11 @@
         :append-icon="showSecret ? 'fa-eye' : 'fa-eye-slash'"
         prepend-icon="fa-user-secret"
         :type="showSecret ? 'text' : 'password'"
-        label="Rotki API Secret"
+        :label="$t('premium_credentials.label_api_secret')"
         :rules="apiSecretRules"
         @input="apiSecretChanged"
         @click:append="showSecret = !showSecret"
-      ></v-text-field>
+      />
     </div>
   </div>
 </template>
@@ -73,9 +70,13 @@ export default class PremiumCredentials extends Vue {
     }
   }
 
-  readonly apiKeyRules = [(v: string) => !!v || 'The API key cannot be empty'];
+  readonly apiKeyRules = [
+    (v: string) =>
+      !!v || this.$t('premium_credentials.validation.non_empty_key')
+  ];
   readonly apiSecretRules = [
-    (v: string) => !!v || 'The API secret cannot be empty'
+    (v: string) =>
+      !!v || this.$t('premium_credentials.validation.non_empty_secret')
   ];
 
   @Emit()

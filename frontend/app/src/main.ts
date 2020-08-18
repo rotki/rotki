@@ -10,6 +10,7 @@ import 'font-awesome/css/font-awesome.css';
 import { Interop } from '@/plugins/interop';
 import vuetify from '@/plugins/vuetify';
 import { setupPremium } from '@/utils/premium';
+import i18n from './i18n';
 import router from './router';
 import store from './store/store';
 
@@ -24,5 +25,6 @@ new Vue({
   vuetify,
   router,
   store,
+  i18n,
   render: h => h(App)
 }).$mount('#app');
