@@ -6,6 +6,8 @@
     clipped
     :value="visible"
     right
+    temporary
+    hide-overlay
     @input="input($event)"
   >
     <v-row align="center" no-gutters class="pl-2 pr-2 pt-1 pb-2">
@@ -123,6 +125,9 @@ export default class NotificationSidebar extends Vue {
 <style scoped lang="scss">
 .notification-sidebar {
   top: 64px !important;
+  box-shadow: none !important;
+  padding-top: 0 !important;
+  border-top: var(--v-rotki-light-grey-darken1) solid thin;
 
   &__details {
     background-color: white;
@@ -151,7 +156,7 @@ export default class NotificationSidebar extends Vue {
     overflow-y: scroll !important;
   }
 
-  @media only screen and (max-width: 1050px) {
+  @media only screen and (max-width: 960px) {
     top: 56px !important;
   }
 }
