@@ -227,6 +227,9 @@ class Asset():
             raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
         return coingecko_str
 
+    def has_coingecko(self) -> bool:
+        return self.coingecko is not None and self.coingecko != ''
+
     def __hash__(self) -> int:
         return hash(self.identifier)
 

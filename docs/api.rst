@@ -1706,6 +1706,8 @@ Querying asset icons
    Doing a GET on the asset icon endpoint will return the icon of the specified
    size identified with the asset. If size is not provided then the thumb size icon is returned. Possible values for size are ``thumb``, ``small`` and ``large``.
 
+   If we have no icon for an asset a 404 is returned.
+
 
    **Example Request**:
 
@@ -1720,6 +1722,12 @@ Querying asset icons
 
       HTTP/1.1 200 OK
       Content-Type: image/png
+
+   :resuslt: The data of the image
+   :statuscode 200: Icon succesfully queried
+   :statuscode 400: Provided JSON is in some way malformed. Either unknown asset or invalid size.
+   :statuscode 404: We have no icon for that asset
+   :statuscode 500: Internal Rotki error
 
 
 Statistics for netvalue over time

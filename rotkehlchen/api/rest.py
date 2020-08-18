@@ -1537,7 +1537,16 @@ class RestAPI():
 
     def get_asset_icon(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Response:
         image_data = self.rotkehlchen.icon_manager.get_icon(asset, size)
-        response = make_response(
-            (image_data, HTTPStatus.OK, {"mimetype": "image/png", "Content-Type": "image/png"}),
-        )
+        if image_data is None:
+            response = make_response(
+                (
+                    b'',
+                    HTTPStatus.NOT_FOUND, {"mimetype": "image/png", "Content-Type": "image/png"}),
+            )
+        else:
+            response = make_response(
+                (
+                    image_data,
+                    HTTPStatus.OK, {"mimetype": "image/png", "Content-Type": "image/png"}),
+            )
         return response
