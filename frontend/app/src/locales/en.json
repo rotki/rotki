@@ -1,0 +1,55 @@
+{
+  "create_account": {
+    "title": "Create Account",
+    "select_credentials": {
+      "title": "Select Credentials",
+      "label_username": "Username",
+      "label_password": "Password",
+      "label_password_repeat": "Repeat Password",
+      "label_password_backup_reminder": "Rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
+      "button_cancel": "Cancel",
+      "button_continue": "Continue",
+      "validation": {
+        "non_empty_username": "Please provide a user name",
+        "valid_username": "A username must contain only alphanumeric characters and have no spaces",
+        "non_empty_password": "Please provide a password",
+        "non_empty_password_confirmation": "Please provide a password confirmation",
+        "password_confirmation_missmatch": "The password confirmation does not match the provided password"
+      }
+    },
+    "usage_analytics": {
+      "title": "Usage analytics",
+      "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
+      "label_confirm": "Submit anonymous usage analytics",
+      "button_back": "Back",
+      "button_create": "Create"
+    }
+  },
+  "login": {
+    "title": "Sign In",
+    "label_username": "Username",
+    "label_password": "Password",
+    "sync_error": {
+      "title": "Sync Error",
+      "button_yes": "Yes",
+      "button_no": "No"
+    },
+    "button_signin": "Sign In",
+    "button_new_account": "Create New Account",
+    "validation": {
+      "non_empty_username": "Please provide a user name",
+      "valid_username": "A username must contain only alphanumeric characters and have no spaces",
+      "non_empty_password": "Please provide a password"
+    }
+  },
+  "premium_credentials": {
+    "label_enable": "Enable Premium",
+    "label_api_key": "Rotki API Key",
+    "label_api_secret": "Rotki API Secret",
+    "tooltip": "Enabling premium for a new account will restore the database associated with these credentials from the server. Ensure that the account uses the same password as the database originally backed up.",
+    "validation": {
+      "non_empty_key": "The API key cannot be empty",
+      "non_empty_secret": "The API secret cannot be empty"
+    }
+  }
+}

@@ -1,6 +1,8 @@
 <template>
   <div v-if="displayed" class="login">
-    <v-card-title>Sign In</v-card-title>
+    <v-card-title>
+      {{ $t('login.title') }}
+    </v-card-title>
     <v-card-text>
       <v-form ref="form" v-model="valid">
         <v-text-field
@@ -8,25 +10,25 @@
           autofocus
           class="login__fields__username"
           color="secondary"
-          label="Username"
+          :label="$t('login.label_username')"
           prepend-icon="fa-user"
           validate-on-blur
           :rules="usernameRules"
           :disabled="loading || !!syncConflict"
           required
-        ></v-text-field>
+        />
         <v-text-field
           v-model="password"
           class="login__fields__password"
           color="secondary"
-          label="Password"
+          :label="$t('login.label_password')"
           prepend-icon="fa-lock"
           :rules="passwordRules"
           :disabled="loading || !!syncConflict"
           type="password"
           required
           @keypress.enter="login()"
-        ></v-text-field>
+        />
         <transition name="bounce">
           <v-alert
             v-if="!!syncConflict"
@@ -37,7 +39,9 @@
             type="error"
             icon="fa-cloud-download"
           >
-            <h3 class="login__sync-error__header">Sync Error</h3>
+            <h3 class="login__sync-error__header">
+              {{ $t('login.sync_error.title') }}
+            </h3>
             <div class="login__sync-error__body">
               {{ syncConflict }}
             </div>
@@ -45,12 +49,12 @@
             <v-row no-gutters justify="end">
               <v-col cols="3" class="shrink">
                 <v-btn color="error" depressed @click="login('no')">
-                  No
+                  {{ $t('login.sync_error.button_no') }}
                 </v-btn>
               </v-col>
               <v-col cols="3" class="shrink">
                 <v-btn color="success" depressed @click="login('yes')">
-                  Yes
+                  {{ $t('login.sync_error.button_yes') }}
                 </v-btn>
               </v-col>
             </v-row>
@@ -68,16 +72,16 @@
           :loading="loading"
           @click="login()"
         >
-          Sign In
+          {{ $t('login.button_signin') }}
         </v-btn>
       </span>
-      <v-divider class="my-3"></v-divider>
+      <v-divider class="my-3" />
       <span class="login__actions__footer">
         <a
           class="login__button__new-account font-weight-bold secondary--text"
           @click="newAccount()"
         >
-          Create New Account
+          {{ $t('login.button_new_account') }}
         </a>
       </span>
     </v-card-actions>
@@ -115,13 +119,15 @@ export default class Login extends Vue {
   valid = false;
 
   readonly usernameRules = [
-    (v: string) => !!v || 'Please provide a user name',
+    (v: string) => !!v || this.$t('login.validation.non_empty_username'),
     (v: string) =>
       (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
-      'A username must contain only alphanumeric characters and have no spaces'
+      this.$t('login.validation.valid_username')
   ];
 
-  readonly passwordRules = [(v: string) => !!v || 'Please provide a password'];
+  readonly passwordRules = [
+    (v: string) => !!v || this.$t('login.validation.non_empty_password')
+  ];
 
   login(syncApproval: SyncApproval = 'unknown') {
     const credentials: Credentials = {

@@ -12,6 +12,8 @@ on:
 
 jobs:
   lint-frontend:
+    env:
+      CI: true
     strategy:
       matrix:
         os: [ubuntu-latest]
