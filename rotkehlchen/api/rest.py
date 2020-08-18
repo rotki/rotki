@@ -1535,12 +1535,29 @@ class RestAPI():
         self.rotkehlchen.data.db.purge_ethereum_transaction_data()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def get_asset_icon(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Response:
-        image_data = self.rotkehlchen.icon_manager.get_icon(asset, size)
-        if image_data is None:
-            response = make_response(
+    def get_asset_icon(
+            self,
+            asset: Asset,
+            size: Literal['thumb', 'small', 'large'],
+            match_header: Optional[str],
+    ) -> Response:
+        etag_id = f'{asset.identifier}-{size}'
+        if match_header and match_header == etag_id:
+            # Response content unmodified
+            return make_response(
                 (
                     b'',
+                    HTTPStatus.NOT_MODIFIED,
+                    {"mimetype": "image/png", "Content-Type": "image/png"},
+                ),
+            )
+
+        image_data = self.rotkehlchen.icon_manager.get_icon(asset, size)
+        if image_data is None:
+            image_data = b''
+            response = make_response(
+                (
+                    image_data,
                     HTTPStatus.NOT_FOUND, {"mimetype": "image/png", "Content-Type": "image/png"}),
             )
         else:
@@ -1549,4 +1566,6 @@ class RestAPI():
                     image_data,
                     HTTPStatus.OK, {"mimetype": "image/png", "Content-Type": "image/png"}),
             )
+
+        response.set_etag(etag_id)
         return response

@@ -1725,6 +1725,7 @@ Querying asset icons
 
    :resuslt: The data of the image
    :statuscode 200: Icon succesfully queried
+   :statuscode 304: Icon data has not changed. Should be cached on the client. This is returned if the given If-Match or If-None-Match header match the etag of the previous response.
    :statuscode 400: Provided JSON is in some way malformed. Either unknown asset or invalid size.
    :statuscode 404: We have no icon for that asset
    :statuscode 500: Internal Rotki error

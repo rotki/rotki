@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from flask import Blueprint, Request, Response
+from flask import Blueprint, Request, Response, request as flask_request
 from flask_restful import Resource
 from marshmallow import Schema
 from marshmallow.utils import missing
@@ -838,4 +838,11 @@ class AssetIconsResource(BaseResource):
 
     @use_kwargs(get_schema, location='view_args')  # type: ignore
     def get(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Response:
-        return self.rest_api.get_asset_icon(asset, size)
+        # Process the if-match and if-none-match headers so that comparison with etag can be done
+        match_header = flask_request.headers.get('If-Match', None)
+        if not match_header:
+            match_header = flask_request.headers.get('If-None-Match', None)
+        if match_header:
+            match_header = match_header[1:-1]  # remove enclosing quotes
+
+        return self.rest_api.get_asset_icon(asset, size, match_header)
