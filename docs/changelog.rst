@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature: `840` Add a new notification UI. Backend errors should now display a notification on the upper right corner.
+* :feature: `983` The asset icons that are displayed in the rotki frontend have been revamped. We are now pulling icon data from coingecko so a lot more token/asset icons should be visible and up to date.
 * :feature: `1235` Numerical displays can now be customized. Users can choose the thousands, the decimals separator. and the position of the currency symbol.
 * :feature: `1186` Add tooltips to all app bar buttons (except drawer button)
 * :bug: `1226` Fix "Get Rotki Premium" menu button on macOS
