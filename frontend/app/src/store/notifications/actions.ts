@@ -17,7 +17,8 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
           createNotification(id++, {
             title,
             message,
-            severity: Severity.ERROR
+            severity: Severity.ERROR,
+            display: true
           })
         );
         const warnings = value.warnings.map(message =>
@@ -39,7 +40,8 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
           createNotification(getters.nextId, {
             title,
             message,
-            severity: Severity.ERROR
+            severity: Severity.ERROR,
+            display: true
           })
         ]);
       });
