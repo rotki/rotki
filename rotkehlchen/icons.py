@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -5,7 +6,10 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
+
+log = logging.getLogger(__name__)
 
 
 class IconManager():
@@ -38,7 +42,14 @@ class IconManager():
             return image_data
 
         # else query coingecko for the icons and cache all of them
-        data = self.coingecko.asset_data(asset)
+        try:
+            data = self.coingecko.asset_data(asset)
+        except RemoteError as e:
+            log.warning(
+                f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
+            )
+
+            return None
         for size in ('thumb', 'small', 'large'):
             url = getattr(data.images, size)
             response = requests.get(url)
