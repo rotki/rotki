@@ -14,7 +14,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
     DeserializationError,
     NoPriceForGivenTimestamp,
-    PriceQueryUnknownFromAsset,
+    PriceQueryUnsupportedAsset,
     RemoteError,
     UnknownAsset,
     UnsupportedAsset,
@@ -100,7 +100,7 @@ class Accountant():
         """Get the profit_currency rate of the fee of the given trade
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from all price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the price oracle
         - RemoteError if there is a problem reaching the price oracle server
@@ -118,7 +118,7 @@ class Accountant():
         Adds the given asset movement to the processed events
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from all price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the price oracle server
@@ -164,7 +164,7 @@ class Accountant():
         Accounts for the gas costs of the given ethereum transaction
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to assets are missing from all price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the price oracle server
@@ -206,7 +206,7 @@ class Accountant():
         Adds the given trade to the sell events
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from all price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the price oracle server
@@ -316,7 +316,7 @@ class Accountant():
                     should_continue,
                     prev_time,
                 ) = self.process_action(action, end_ts, prev_time, db_settings)
-            except PriceQueryUnknownFromAsset as e:
+            except PriceQueryUnsupportedAsset as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
@@ -408,7 +408,7 @@ class Accountant():
         looping through the rest of the actions or not
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the price oracle server

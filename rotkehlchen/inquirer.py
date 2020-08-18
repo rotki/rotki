@@ -10,7 +10,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
-from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
@@ -92,10 +92,17 @@ class Inquirer():
         May raise:
         - RemoteError if the cryptocompare query has a problem
         """
-        result = Inquirer()._cryptocompare.query_endpoint_price(
-            from_asset=asset,
-            to_asset=A_USD,
-        )
+        try:
+            result = Inquirer()._cryptocompare.query_endpoint_price(
+                from_asset=asset,
+                to_asset=A_USD,
+            )
+        except UnsupportedAsset:
+            log.error(
+                'Cryptocompare usd price for asset failed since it is not known to cryptocompare',
+                asset=asset,
+            )
+            return Price(ZERO)
         if 'USD' not in result:
             log.error('Cryptocompare usd price query failed', asset=asset)
             return Price(ZERO)

@@ -14,7 +14,12 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_USD
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset, RemoteError
+from rotkehlchen.errors import (
+    NoPriceForGivenTimestamp,
+    PriceQueryUnsupportedAsset,
+    RemoteError,
+    UnsupportedAsset,
+)
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
@@ -308,6 +313,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
+        - May raise PriceQueryUnsupportedAsset if from/to assets are not known to cryptocompare
         """
         special_asset = (
             from_asset in CRYPTOCOMPARE_SPECIAL_CASES or to_asset in CRYPTOCOMPARE_SPECIAL_CASES
@@ -321,9 +327,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 to_timestamp=to_timestamp,
             )
 
-        # These two can raise but them raising here is a bug
-        cc_from_asset_symbol = from_asset.to_cryptocompare()
-        cc_to_asset_symbol = to_asset.to_cryptocompare()
+        try:
+            cc_from_asset_symbol = from_asset.to_cryptocompare()
+            cc_to_asset_symbol = to_asset.to_cryptocompare()
+        except UnsupportedAsset as e:
+            raise PriceQueryUnsupportedAsset(e.asset_name)
+
         query_path = (
             f'v2/histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
             f'&limit={limit}&toTs={to_timestamp}'
@@ -341,6 +350,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
+        - May raise PriceQueryUnsupportedAsset if from/to assets are not known to cryptocompare
         """
         special_asset = (
             from_asset in CRYPTOCOMPARE_SPECIAL_CASES or to_asset in CRYPTOCOMPARE_SPECIAL_CASES
@@ -351,9 +361,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 from_asset=from_asset,
                 to_asset=to_asset,
             )
-        # These two can raise but them raising here is a bug
-        cc_from_asset_symbol = from_asset.to_cryptocompare()
-        cc_to_asset_symbol = to_asset.to_cryptocompare()
+        try:
+            cc_from_asset_symbol = from_asset.to_cryptocompare()
+            cc_to_asset_symbol = to_asset.to_cryptocompare()
+        except UnsupportedAsset as e:
+            raise PriceQueryUnsupportedAsset(e.asset_name)
+
         query_path = f'price?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
         result = self._api_query(path=query_path)
         return result
@@ -369,6 +382,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
+        - May raise PriceQueryUnsupportedAsset if from/to assets are not known to cryptocompare
         """
         log.debug(
             'Querying cryptocompare for daily historical price',
@@ -387,9 +401,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 timestamp=timestamp,
             )
 
-        # These two can raise but them raising here is a bug
-        cc_from_asset_symbol = from_asset.to_cryptocompare()
-        cc_to_asset_symbol = to_asset.to_cryptocompare()
+        try:
+            cc_from_asset_symbol = from_asset.to_cryptocompare()
+            cc_to_asset_symbol = to_asset.to_cryptocompare()
+        except UnsupportedAsset as e:
+            raise PriceQueryUnsupportedAsset(e.asset_name)
+
         query_path = (
             f'pricehistorical?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
             f'&ts={timestamp}'
@@ -434,6 +451,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
+        - May raise UnsupportedAsset if from/to asset is not supported by cryptocompare
         """
         log.debug(
             'Retrieving historical price data from cryptocompare',
@@ -559,21 +577,22 @@ class Cryptocompare(ExternalServiceWithApiKey):
         So how much `to_asset` does 1 unit of `from_asset` cost.
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is known to miss from cryptocompare
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
-        if from_asset.cryptocompare == '':
-            raise PriceQueryUnknownFromAsset(from_asset)
 
-        data = self.get_historical_data(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-            historical_data_start=historical_data_start,
-        )
+        try:
+            data = self.get_historical_data(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+                historical_data_start=historical_data_start,
+            )
+        except UnsupportedAsset as e:
+            raise PriceQueryUnsupportedAsset(e.asset_name)
 
         # all data are sorted and timestamps are always increasing by 1 hour
         # find the closest entry to the provided timestamp
@@ -669,7 +688,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         of cryptocompare.
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if the from asset is known to miss from cryptocompare
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the cryptocompare server

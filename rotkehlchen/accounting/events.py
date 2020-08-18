@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
-from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset
+from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.exchanges.data_structures import BuyEvent, Events, MarginPosition, SellEvent
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
@@ -90,7 +90,7 @@ class TaxableEvents():
         """Get the profit_currency price of asset in the given timestamp
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the price oracle
         - RemoteError if there is a problem reaching the price oracle server
@@ -216,7 +216,7 @@ class TaxableEvents():
         Account for the given buy and the corresponding sell if it's a crypto to crypto
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the price oracle server
@@ -246,7 +246,7 @@ class TaxableEvents():
                 bought_asset,
                 timestamp,
             )
-        except (NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset):
+        except (NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset):
             bought_asset_rate_in_profit_currency = FVal(-1)
 
         if bought_asset_rate_in_profit_currency != FVal(-1):
@@ -305,7 +305,7 @@ class TaxableEvents():
         Account for the given buy
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from all price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the price oracle server
@@ -398,7 +398,7 @@ class TaxableEvents():
             timestamp (int): The timestamp for the trade
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the price oracle server
@@ -455,7 +455,7 @@ class TaxableEvents():
         """Account for the given sell action
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from cryptocompare
         - RemoteError if there is a problem reaching the price oracle server
@@ -739,7 +739,7 @@ class TaxableEvents():
     ) -> None:
         """Account for gains from the given loan
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the external service.
         - RemoteError if there is a problem reaching the price oracle server
@@ -792,7 +792,7 @@ class TaxableEvents():
         """Account for the given margin position
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the external service.
         - RemoteError if there is a problem reaching the price oracle server
