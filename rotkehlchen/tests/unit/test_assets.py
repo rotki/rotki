@@ -4,6 +4,7 @@ from eth_utils import is_checksum_address
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.typing import AssetType
 
 
@@ -69,3 +70,23 @@ def test_tokens_address_is_checksummed():
             f'is not checksummed {asset_data["ethereum_address"]}'
         )
         assert is_checksum_address(asset_data['ethereum_address']), msg
+
+
+def test_coingecko_identifiers_are_reachable():
+    """
+    Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
+    """
+    coingecko = Coingecko()
+    all_coins = coingecko.all_coins()
+    for _, asset_data in AssetResolver().assets.items():
+        coingecko_str = asset_data.get('coingecko', None)
+        msg = f'Asset {asset_data["name"]} does not have a coingecko entry'
+        assert coingecko_str is not None, msg
+        if coingecko_str != '':
+            found = False
+            for entry in all_coins:
+                if coingecko_str == entry['id']:
+                    found = True
+                    break
+
+        assert found, f'Asset {asset_data["name"]} coingecko mapping does not exist'

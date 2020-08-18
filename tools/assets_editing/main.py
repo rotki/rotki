@@ -1,5 +1,4 @@
 import json
-import sys
 from pathlib import Path
 
 from Levenshtein import distance as levenshtein_distance
