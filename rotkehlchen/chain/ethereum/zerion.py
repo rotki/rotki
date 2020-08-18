@@ -154,7 +154,7 @@ class Zerion():
             usd_price = Inquirer().find_usd_price(asset)
         except (UnknownAsset, UnsupportedAsset):
             if not _is_symbol_non_standard(token_symbol):
-                self.msg_aggregator.add_error(
+                self.msg_aggregator.add_warning(
                     f'Unsupported asset {token_symbol} encountered during DeFi protocol queries',
                 )
             usd_price = Price(ZERO)
