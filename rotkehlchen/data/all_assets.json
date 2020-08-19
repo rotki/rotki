@@ -1412,7 +1412,7 @@
         "type": "ethereum token"
     },
     "BNT": {
-        "coingecko": "bitflexo-native-token",
+        "coingecko": "bancor",
         "ethereum_address": "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C",
         "ethereum_token_decimals": 18,
         "name": "Bancor",
@@ -8992,7 +8992,7 @@
         "type": "ethereum token"
     },
     "SAI": {
-        "coingecko": "sideshift-ai",
+        "coingecko": "sai",
         "ethereum_address": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
         "ethereum_token_decimals": 18,
         "name": "Single Collateral Dai",
