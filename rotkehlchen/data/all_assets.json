@@ -65,7 +65,7 @@
         "type": "ethereum token"
     },
     "ABBC": {
-        "coingecko": "abbc",
+        "coingecko": "alibabacoin",
         "name": "ABBC Coin",
         "started": 1520208000,
         "symbol": "ABBC",
@@ -519,7 +519,7 @@
         "type": "own chain"
     },
     "ARB": {
-        "coingecko": "arbitrage",
+        "coingecko": "arbitraging",
         "cryptocompare": "ARBT",
         "ethereum_address": "0xaFBeC4D65BC7b116d85107FD05d912491029Bf46",
         "ethereum_token_decimals": 18,
@@ -529,7 +529,7 @@
         "type": "ethereum token"
     },
     "ARB-2": {
-        "coingecko": "arbit-coin",
+        "coingecko": "arbit",
         "cryptocompare": "ARB",
         "name": "ARbit",
         "started": 1431043200,
@@ -537,7 +537,7 @@
         "type": "own chain"
     },
     "ARC": {
-        "coingecko": "advanced-technology-coin",
+        "coingecko": "arcticcoin",
         "name": "Advanced Technology Coin",
         "started": 1406160000,
         "symbol": "ARC",
@@ -728,7 +728,7 @@
         "type": "own chain"
     },
     "AURA": {
-        "coingecko": "idex",
+        "coingecko": "aurora-dao",
         "cryptocompare": "IDEX",
         "ethereum_address": "0xCdCFc0f66c522Fd086A1b725ea3c0Eeb9F9e8814",
         "ethereum_token_decimals": 18,
@@ -748,7 +748,7 @@
         "type": "ethereum token"
     },
     "AVA": {
-        "coingecko": "travala",
+        "coingecko": "concierge-io",
         "cryptocompare": "AVALA",
         "name": "Travala.com",
         "started": 1527536681,
@@ -786,7 +786,7 @@
         "type": "ethereum token"
     },
     "B2BX": {
-        "coingecko": "b2bx",
+        "coingecko": "b2b",
         "cryptocompare": "B2B",
         "ethereum_address": "0x5d51FCceD3114A8bb5E90cDD0f9d682bCbCC5393",
         "ethereum_token_decimals": 18,
@@ -1780,7 +1780,7 @@
         "type": "own chain"
     },
     "BTT": {
-        "coingecko": "bittorrent",
+        "coingecko": "bittorrent-2",
         "name": "BitTorrent",
         "started": 1548633600,
         "symbol": "BTT",
@@ -2856,7 +2856,7 @@
         "type": "ethereum token"
     },
     "DADI": {
-        "coingecko": "edge",
+        "coingecko": "dadi",
         "ethereum_address": "0xFb2f26F266Fb2805a387230f2aa0a331b4d96Fba",
         "ethereum_token_decimals": 18,
         "name": "Edge",
@@ -3036,7 +3036,7 @@
         "type": "ethereum token"
     },
     "DEC": {
-        "coingecko": "darico-ecosystem-coin",
+        "coingecko": "darico",
         "ethereum_address": "0x89c6c856a6db3e46107163D0cDa7A7FF211BD655",
         "ethereum_token_decimals": 18,
         "name": "Darico Ecosystem Coin",
@@ -3458,7 +3458,7 @@
         "type": "ethereum token"
     },
     "DTX": {
-        "coingecko": "data-exchange-token",
+        "coingecko": "databroker-dao",
         "ethereum_address": "0x765f0C16D1Ddc279295c1a7C24B0883F62d33F75",
         "ethereum_token_decimals": 18,
         "name": "DaTa eXchange",
@@ -3612,7 +3612,7 @@
         "type": "ethereum token"
     },
     "EDR": {
-        "coingecko": "endor-protocol-token",
+        "coingecko": "endor",
         "cryptocompare": "EPT",
         "ethereum_address": "0xc528c28FEC0A90C083328BC45f587eE215760A0F",
         "ethereum_token_decimals": 18,
@@ -3992,7 +3992,7 @@
         "type": "own chain"
     },
     "ETHOS": {
-        "coingecko": "voyager-token",
+        "coingecko": "ethos",
         "cryptocompare": "VGX",
         "ethereum_address": "0x5Af2Be193a6ABCa9c8817001F45744777Db30756",
         "ethereum_token_decimals": 8,
@@ -4746,7 +4746,7 @@
         "type": "Ubiq token"
     },
     "GET": {
-        "coingecko": "get-protocol",
+        "coingecko": "get-token",
         "ethereum_address": "0x8a854288a5976036A725879164Ca3e91d30c6A1B",
         "ethereum_token_decimals": 18,
         "name": "GET Protocol",
