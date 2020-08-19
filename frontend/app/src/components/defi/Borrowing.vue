@@ -65,7 +65,7 @@
                   aspect-ratio="1"
                   contain
                   position="left"
-                  max-width="48px"
+                  max-width="26px"
                   max-height="24px"
                   :src="require(`@/assets/images/defi/${item.protocol}.svg`)"
                 />
@@ -76,7 +76,7 @@
                   aspect-ratio="1"
                   contain
                   position="left"
-                  max-width="48px"
+                  max-width="26px"
                   max-height="24px"
                   :src="require(`@/assets/images/defi/${item.protocol}.svg`)"
                 />

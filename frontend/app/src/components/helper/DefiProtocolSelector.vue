@@ -20,7 +20,7 @@
         <template #selection="data">
           <span>
             <v-img
-              width="55px"
+              width="26px"
               contain
               position="left"
               max-height="24px"
@@ -31,7 +31,7 @@
         <template #item="data">
           <span v-bind="data.attrs">
             <v-img
-              width="55px"
+              width="26px"
               contain
               position="left"
               max-height="24px"
