@@ -4777,7 +4777,7 @@
     },
     "GLA": {
         "active": false,
-        "coingecko": "gladius-token",
+        "coingecko": "",
         "ended": 1552089600,
         "ethereum_address": "0x71D01dB8d6a2fBEa7f8d434599C237980C234e4C",
         "ethereum_token_decimals": 8,
@@ -5100,7 +5100,7 @@
         "type": "ethereum token"
     },
     "HC": {
-        "coingecko": "hypercash",
+        "coingecko": "hshare",
         "name": "HyperCash",
         "started": 1503240899,
         "symbol": "HC",
@@ -5246,7 +5246,7 @@
         "type": "ethereum token"
     },
     "HOT": {
-        "coingecko": "holo",
+        "coingecko": "holotoken",
         "cryptocompare": "HOLO",
         "ethereum_address": "0x6c6EE5e31d828De241282B9606C8e98Ea48526E2",
         "ethereum_token_decimals": 18,
@@ -5403,7 +5403,7 @@
         "type": "own chain"
     },
     "IDEX": {
-        "coingecko": "idex",
+        "coingecko": "aurora-dao",
         "ethereum_address": "0xB705268213D593B8FD88d3FDEFF93AFF5CbDcfAE",
         "ethereum_token_decimals": 18,
         "name": "IDEX Token",
@@ -6196,16 +6196,6 @@
         "symbol": "LMC",
         "type": "own chain"
     },
-    "LML": {
-        "coingecko": "lisk-machine-learning",
-        "cryptocompare": "",
-        "ethereum_address": "0x25B6325f5BB1c1E03cfbC3e53F470E1F1ca022E3",
-        "ethereum_token_decimals": 18,
-        "name": "Lisk Machine Learning",
-        "started": 1540179034,
-        "symbol": "LML",
-        "type": "ethereum token"
-    },
     "LNC": {
         "coingecko": "blocklancer",
         "ethereum_address": "0x63e634330A20150DbB61B15648bC73855d6CCF07",
@@ -6935,7 +6925,7 @@
         "type": "ethereum token"
     },
     "MTC": {
-        "coingecko": "doc-com",
+        "coingecko": "medical-token-currency",
         "ethereum_address": "0x905E337c6c8645263D3521205Aa37bf4d034e745",
         "ethereum_token_decimals": 18,
         "name": "doc.com Token",
@@ -7008,7 +6998,7 @@
         "type": "own chain"
     },
     "MUSIC": {
-        "coingecko": "musicoin",
+        "coingecko": "",
         "name": "Musicoin",
         "started": 1486944000,
         "symbol": "MUSIC",
@@ -7317,7 +7307,7 @@
         "type": "ethereum token"
     },
     "NOAH": {
-        "coingecko": "noah-platinum",
+        "coingecko": "noah-coin",
         "ethereum_address": "0x58a4884182d9E835597f405e5F258290E46ae7C2",
         "ethereum_token_decimals": 18,
         "name": "Noah Coin",
@@ -7327,7 +7317,7 @@
         "type": "ethereum token"
     },
     "NOAHP": {
-        "coingecko": "noah-platinum",
+        "coingecko": "noah-coin",
         "cryptocompare": "NOAH",
         "name": "Noah Platinum",
         "started": 1569888000,
@@ -7616,7 +7606,7 @@
         "type": "ethereum token"
     },
     "ONG": {
-        "coingecko": "ontology-gas",
+        "coingecko": "ong",
         "cryptocompare": "ONGAS",
         "name": "Ontology Gas",
         "started": 1530316800,
@@ -7920,7 +7910,7 @@
         "type": "ethereum token"
     },
     "PHB": {
-        "coingecko": "red-pulse-phoenix",
+        "coingecko": "red-pulse",
         "cryptocompare": "PHX",
         "name": "Red Pulse Phoenix Binance",
         "started": 1558497600,
@@ -7937,7 +7927,7 @@
         "type": "ethereum token"
     },
     "PHX": {
-        "coingecko": "red-pulse-phoenix",
+        "coingecko": "red-pulse",
         "ended": 1558497600,
         "name": "Red Pulse Phoenix",
         "started": 1507420800,
@@ -8121,7 +8111,7 @@
         "type": "ethereum token"
     },
     "PNT-2": {
-        "coingecko": "penta-network-token",
+        "coingecko": "penta",
         "cryptocompare": "PENTA",
         "ethereum_address": "0x53066cdDBc0099eb6c96785d9b3DF2AAeEDE5DA3",
         "ethereum_token_decimals": 18,
@@ -9445,7 +9435,7 @@
         "type": "ethereum token"
     },
     "SNX": {
-        "coingecko": "synthetix-network-token",
+        "coingecko": "havven",
         "ethereum_address": "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
         "ethereum_token_decimals": 18,
         "name": "Synthetix Network Token",
@@ -10745,7 +10735,7 @@
         "type": "tron token"
     },
     "USDS": {
-        "coingecko": "stably",
+        "coingecko": "stableusd",
         "ethereum_address": "0xA4Bdb11dc0a2bEC88d24A3aa1E6Bb17201112eBe",
         "ethereum_token_decimals": 6,
         "name": "StableUSD",
@@ -11274,7 +11264,7 @@
     },
     "WIN-2": {
         "active": false,
-        "coingecko": "wcoin",
+        "coingecko": "wawllet",
         "cryptocompare": "WCOIN",
         "ended": 1536192000,
         "ethereum_address": "0x899338b84D25aC505a332aDCE7402d697D947494",
@@ -11472,7 +11462,7 @@
         "type": "own chain"
     },
     "XDCE": {
-        "coingecko": "xinfin",
+        "coingecko": "xdce-crowd-sale",
         "ethereum_address": "0x41AB1b6fcbB2fA9DCEd81aCbdeC13Ea6315F2Bf2",
         "ethereum_token_decimals": 18,
         "name": "XinFin Network",
@@ -12283,7 +12273,7 @@
         "type": "ethereum token"
     },
     "sUSD": {
-        "coingecko": "susd",
+        "coingecko": "nusd",
         "ethereum_address": "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51",
         "ethereum_token_decimals": 18,
         "name": "Synth sUSD",

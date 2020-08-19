@@ -78,9 +78,13 @@ def test_coingecko_identifiers_are_reachable():
     """
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
-    for _, asset_data in AssetResolver().assets.items():
+    for identifier, asset_data in AssetResolver().assets.items():
+        asset_type = asset_type_mapping[asset_data['type']]
+        if asset_type == AssetType.FIAT:
+            continue
+
         coingecko_str = asset_data.get('coingecko', None)
-        msg = f'Asset {asset_data["name"]} does not have a coingecko entry'
+        msg = f'Asset {identifier} does not have a coingecko entry'
         assert coingecko_str is not None, msg
         if coingecko_str != '':
             found = False
@@ -89,4 +93,14 @@ def test_coingecko_identifiers_are_reachable():
                     found = True
                     break
 
-        assert found, f'Asset {asset_data["name"]} coingecko mapping does not exist'
+        suggestions = []
+        if not found:
+            for entry in all_coins:
+                if entry['symbol'].upper() == asset_data['symbol']:
+                    suggestions.append((entry['id'], entry['name'], entry['symbol']))
+
+        msg = f'Asset {identifier} coingecko mapping does not exist.'
+        if len(suggestions) != 0:
+            for s in suggestions:
+                msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
+        assert found, msg
