@@ -33,10 +33,10 @@ SQLCIPHER_EXISTS=$(ldconfig -p | grep libsqlcipher)
 echo "SQLCIPHER_EXISTS: $SQLCIPHER_EXISTS";
 if [[ $SQLCIPHER_EXISTS == "" ]]; then
     echo "Downloading and compiling sqlcipher";
-    # Go into the directory and build sqlciper
-    cd $WORK_DIR
+    # Go into the directory and build sqlcipher
+    cd "$WORK_DIR" || exit 1
     git clone https://github.com/sqlcipher/sqlcipher
-    cd sqlcipher
+    cd sqlcipher || exit 1
     git checkout v4.0.1
     ./configure \
 	--enable-tempstore=yes \
@@ -45,5 +45,5 @@ if [[ $SQLCIPHER_EXISTS == "" ]]; then
     make
     sudo make install
 
-    cd $DIR
+    cd "$DIR" || exit 1
 fi
