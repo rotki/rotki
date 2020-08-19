@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
+from gevent.lock import Semaphore
+
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.makerdao.common import RAY
@@ -30,6 +32,8 @@ log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+
+MAX_BLOCKTIME_CACHE_AAVE = 250  # 55 mins with 13 secs avg block time
 
 ATOKEN_TO_DEPLOYED_BLOCK = {
     'aETH': 9241088,
@@ -135,8 +139,20 @@ class Aave(EthereumModule):
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium
+        self.history_lock = Semaphore()
+        self.balances_lock = Semaphore()
 
     def get_balances(
+            self,
+            given_defi_balances: Union[
+                Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
+                Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
+            ],
+    ) -> Dict[ChecksumEthAddress, AaveBalances]:
+        with self.balances_lock:
+            return self._get_balances(given_defi_balances)
+
+    def _get_balances(
             self,
             given_defi_balances: Union[
                 Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
@@ -206,22 +222,24 @@ class Aave(EthereumModule):
             addresses: List[ChecksumEthAddress],
             reset_db_data: bool,
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
+        """Detects aave historical data for the given addresses"""
         result = {}
         latest_block = self.ethereum.get_latest_block_number()
+        with self.history_lock:
 
-        if reset_db_data is True:
-            self.database.delete_aave_data()
+            if reset_db_data is True:
+                self.database.delete_aave_data()
 
-        for address in addresses:
-            last_query = self.database.get_used_query_range(f'aave_events_{address}')
-            history_results = self.get_history_for_address(
-                user_address=address,
-                to_block=latest_block,
-                given_from_block=last_query[1] + 1 if last_query is not None else None,
-            )
-            if len(history_results.events) == 0:
-                continue
-            result[address] = history_results
+            for address in addresses:
+                last_query = self.database.get_used_query_range(f'aave_events_{address}')
+                history_results = self.get_history_for_address(
+                    user_address=address,
+                    to_block=latest_block,
+                    given_from_block=last_query[1] + 1 if last_query is not None else None,
+                )
+                if len(history_results.events) == 0:
+                    continue
+                result[address] = history_results
 
         return result
 
@@ -232,13 +250,19 @@ class Aave(EthereumModule):
             atokens_list: Optional[List[EthereumToken]] = None,
             given_from_block: Optional[int] = None,
     ) -> AaveHistory:
+        """
+        Queries aave history for a single address.
+
+        This function should be entered while holding the history_lock
+        semaphore
+        """
         # Get all deposit events for the address
         from_block = AAVE_LENDING_POOL.deployed_block if given_from_block is None else given_from_block  # noqa: E501
         argument_filters = {
             '_user': user_address,
         }
         query_events = True
-        if given_from_block is not None and to_block - given_from_block < 250:  # noqa: E501
+        if given_from_block is not None and to_block - given_from_block < MAX_BLOCKTIME_CACHE_AAVE:  # noqa: E501
             query_events = False  # Save time by not querying events if last query is recent
 
         deposit_events = []
@@ -342,6 +366,8 @@ class Aave(EthereumModule):
             from_block: int,
             to_block: int,
     ) -> List[AaveEvent]:
+        """This function should be entered while holding the history_lock
+        semaphore"""
         argument_filters = {
             'from': ZERO_ADDRESS,
             'to': user_address,
