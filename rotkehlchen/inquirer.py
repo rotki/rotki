@@ -10,7 +10,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
-from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData, UnsupportedAsset
+from rotkehlchen.errors import PriceQueryUnsupportedAsset, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
@@ -97,7 +97,7 @@ class Inquirer():
                 from_asset=asset,
                 to_asset=A_USD,
             )
-        except UnsupportedAsset:
+        except PriceQueryUnsupportedAsset:
             log.error(
                 'Cryptocompare usd price for asset failed since it is not known to cryptocompare',
                 asset=asset,
