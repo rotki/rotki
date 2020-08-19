@@ -72,6 +72,7 @@ fi
 cd frontend/app || exit 1
 
 # Let's make sure all npm dependencies are installed.
+echo "Installing node dependencies"
 npm ci
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: npm ci step failed"

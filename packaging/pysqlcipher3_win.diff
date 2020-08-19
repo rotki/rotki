@@ -1,0 +1,13 @@
+diff --git a/setup.py b/setup.py
+index 42b98f7..dda7658 100644
+--- a/setup.py
++++ b/setup.py
+@@ -165,6 +165,8 @@ def get_setup_args():
+         ext_modules=[Extension(
+             name=PACKAGE_NAME + EXTENSION_MODULE_NAME,
+             sources=sources,
++            library_dirs=[r'../sqlcipher'],
++            include_dirs=[r'../'],
+             define_macros=define_macros)
+         ],
+         classifiers=[

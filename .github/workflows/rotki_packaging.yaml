@@ -1,0 +1,140 @@
+name: Rotki Packaging
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - ga-packaging
+jobs:
+  package:
+    if: false
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7]
+        node-version: [12.x]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - uses: actions/cache@v2
+        if: startsWith(runner.os, 'Linux')
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - uses: actions/cache@v2
+        if: startsWith(runner.os, 'macOS')
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Setup SQLCipher
+        run: |
+          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
+          then
+            sudo apt-get update
+            sudo apt-get install libxml2-utils
+            ./install_deps.sh
+            sudo ldconfig
+          fi
+          if [ ${{ matrix.os }} == 'macos-latest' ];
+          then
+            brew install sqlcipher
+          fi
+      - name: Package
+        id: packaging
+        run: |
+          source ./package.sh
+          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
+          then
+            echo "##[set-output name=executable;]$(echo $APPIMAGE_CHECKSUM)"
+            echo "##[set-output name=archive;]$(echo $TAR_CHECKSUM)"
+          elif [ ${{ matrix.os }} == 'macos-latest' ];
+          then
+            echo "##[set-output name=executable;]$(echo $DMG_CHECKSUM)"
+            echo "##[set-output name=archive;]$(echo $ZIP_CHECKSUM)"
+          fi
+
+  windows:
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SQLCIPHER_VERSION: '4.4.0'
+      PYSQLCIPHER3_VERSION: 'fd1b547407bcb7198107fe3c458105286a060b0d'
+      BUILD_DEPENDENCIES: "build-dependencies"
+    strategy:
+      matrix:
+        os: [ windows-latest ]
+        python-version: [ 3.7 ]
+        node-version: [ 12.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: Persist pip cache
+        uses: actions/cache@v2    
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Get npm cache directory
+        id: npm-cache
+        run: |
+          echo "::set-output name=dir::$(npm config get cache)"
+      - name: Persist npm cache
+        uses: actions/cache@v2    
+        with:
+          path: | 
+            ${{ steps.npm-cache.outputs.dir }}
+            ~\AppData\Local\Cypress
+          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-    
+      - name: Persist Build Dependencies
+        uses: actions/cache@v2        
+        with:
+          path: | 
+            ~\${{ env.BUILD_DEPENDENCIES }}\
+            ~\AppData\Local\Temp\chocolatey\
+          key: ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-build-dependencies
+      - name: Build rotki
+        id: build
+        run: .\package.ps1
+        shell: powershell
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ${{ steps.build.outputs.binary }}    
+          

@@ -25,17 +25,17 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: startsWith(runner.os, 'Linux')
         with:
           path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-cypress-
       - name: Install dependencies
@@ -132,7 +132,7 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: startsWith(runner.os, 'Linux')
         with:
           path: ~/.cache/pip
@@ -140,14 +140,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: startsWith(runner.os, 'macOS')
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
@@ -197,42 +197,42 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: startsWith(runner.os, 'Linux') && contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: startsWith(runner.os, 'macOS') && contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: startsWith(runner.os, 'Linux') && contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-cypress-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: startsWith(runner.os, 'macOS') && contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/Library/Caches/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-cypress-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         if: contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/.cache/.rotkehlchen-test-dir
@@ -278,60 +278,3 @@ jobs:
         with:
           name: videos-${{ runner.os }}
           path: ./frontend/app/tests/e2e/videos
-  package:
-    needs: test-backend
-    if: startsWith(github.event.ref, 'refs/tags')
-    env:
-      CI: true
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: [3.7]
-        node-version: [12.x]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up python
-        uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Setup node
-        uses: actions/setup-node@v1
-        with:
-          node-version: '12.x'
-      - uses: actions/cache@v1
-        if: startsWith(runner.os, 'Linux')
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
-        if: startsWith(runner.os, 'macOS')
-        with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Setup SQLCipher
-        run: |
-          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
-          then
-            sudo apt-get update
-            sudo apt-get install libxml2-utils
-            ./install_deps.sh
-            sudo ldconfig
-          fi
-          if [ ${{ matrix.os }} == 'macos-latest' ];
-          then
-            brew install sqlcipher
-          fi
-      - name: Package
-        run: ./package.sh
