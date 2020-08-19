@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `1352` Defi cached state should now properly reset when an account is added or deleted.
 * :bug: `1329` If aave historical data is queried in quick succession a UNIQUE constraint error will no longer be generated.
 * :feature: `840` Add a new notification UI. Backend errors should now display a notification on the upper right corner.
 * :feature: `1235` Numerical displays can now be customized. Users can choose the thousands, the decimals separator. and the position of the currency symbol.
