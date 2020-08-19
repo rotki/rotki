@@ -12,6 +12,7 @@ from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.typing import AssetType
+from rotkehlchen.utils.hashing import file_md5
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +32,20 @@ class IconManager():
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
 
+    def iconfile_path(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Path:
+        return self.icons_dir / f'{asset.identifier}_{size}.png'
+
+    def iconfile_md5(
+            self,
+            asset: Asset,
+            size: Literal['thumb', 'small', 'large'],
+    ) -> Optional[str]:
+        path = self.iconfile_path(asset, size)
+        if not path.is_file():
+            return None
+
+        return file_md5(path)
+
     def _query_coingecko_for_icon(self, asset: Asset) -> bool:
         """Queries coingecko for icons of an asset
 
@@ -48,8 +63,7 @@ class IconManager():
         for size in ('thumb', 'small', 'large'):
             url = getattr(data.images, size)
             response = requests.get(url)
-            icon_path = self.icons_dir / f'{asset.identifier}_{size}.png'
-            with open(icon_path, 'wb') as f:
+            with open(self.iconfile_path(asset, size), 'wb') as f:  # type: ignore
                 f.write(response.content)
 
         return True
@@ -70,7 +84,7 @@ class IconManager():
         if not asset.has_coingecko():
             return None
 
-        needed_path = self.icons_dir / f'{asset.identifier}_{given_size}.png'
+        needed_path = self.iconfile_path(asset, given_size)
         if needed_path.is_file():
             with open(needed_path, 'rb') as f:
                 image_data = f.read()

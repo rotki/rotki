@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import traceback
@@ -1541,8 +1542,8 @@ class RestAPI():
             size: Literal['thumb', 'small', 'large'],
             match_header: Optional[str],
     ) -> Response:
-        etag_id = f'{asset.identifier}-{size}'
-        if match_header and match_header == etag_id:
+        file_md5 = self.rotkehlchen.icon_manager.iconfile_md5(asset, size)
+        if file_md5 and match_header and match_header == file_md5:
             # Response content unmodified
             return make_response(
                 (
@@ -1554,10 +1555,9 @@ class RestAPI():
 
         image_data = self.rotkehlchen.icon_manager.get_icon(asset, size)
         if image_data is None:
-            image_data = b''
             response = make_response(
                 (
-                    image_data,
+                    b'',
                     HTTPStatus.NOT_FOUND, {"mimetype": "image/png", "Content-Type": "image/png"}),
             )
         else:
@@ -1566,6 +1566,6 @@ class RestAPI():
                     image_data,
                     HTTPStatus.OK, {"mimetype": "image/png", "Content-Type": "image/png"}),
             )
+            response.set_etag(hashlib.md5(image_data).hexdigest())
 
-        response.set_etag(etag_id)
         return response
