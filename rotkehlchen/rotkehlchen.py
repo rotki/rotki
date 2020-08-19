@@ -100,6 +100,12 @@ class Rotkehlchen():
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         self.coingecko = Coingecko()
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
+        self.greenlet_manager.spawn_and_track(
+            task_name='periodically_query_icons_until_all_cached',
+            method=self.icon_manager.periodically_query_icons_until_all_cached,
+            batch_size=5,
+            sleep_time_secs=10,
+        )
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
 

@@ -1,23 +1,58 @@
+import itertools
 import logging
 from pathlib import Path
 from typing import Optional
 
+import gevent
 import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
+from rotkehlchen.typing import AssetType
 
 log = logging.getLogger(__name__)
 
 
 class IconManager():
+    """
+    Manages the icons for all the assets of the application
+
+    The get_icon() and the periodic task of query_uncached_icons_batch() may at
+    a point query the same icon but that's fine and not worth of locking mechanism as
+    it should be rather rare and worst case scenario once in a blue moon we waste
+    an API call. In the end the right file would be written on disk.
+"""
 
     def __init__(self, data_dir: Path, coingecko: Coingecko) -> None:
         self.icons_dir = data_dir / 'icons'
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
+
+    def _query_coingecko_for_icon(self, asset: Asset) -> bool:
+        """Queries coingecko for icons of an asset
+
+        If query was okay it returns True, else False
+        """
+        try:
+            data = self.coingecko.asset_data(asset)
+        except RemoteError as e:
+            log.warning(
+                f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
+            )
+
+            return False
+
+        for size in ('thumb', 'small', 'large'):
+            url = getattr(data.images, size)
+            response = requests.get(url)
+            icon_path = self.icons_dir / f'{asset.identifier}_{size}.png'
+            with open(icon_path, 'wb') as f:
+                f.write(response.content)
+
+        return True
 
     def get_icon(
             self,
@@ -42,21 +77,48 @@ class IconManager():
             return image_data
 
         # else query coingecko for the icons and cache all of them
-        try:
-            data = self.coingecko.asset_data(asset)
-        except RemoteError as e:
-            log.warning(
-                f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
-            )
-
+        if self._query_coingecko_for_icon(asset) is False:
             return None
-        for size in ('thumb', 'small', 'large'):
-            url = getattr(data.images, size)
-            response = requests.get(url)
-            icon_path = self.icons_dir / f'{asset.identifier}_{size}.png'
-            with open(icon_path, 'wb') as f:
-                f.write(response.content)
 
         with open(needed_path, 'rb') as f:
             image_data = f.read()
         return image_data
+
+    def query_uncached_icons_batch(self, batch_size: int) -> bool:
+        """Queries a batch of uncached icons for assets
+
+        Returns true if there is more icons left to cache after this batch.
+        """
+        coingecko_integrated_assets = []
+
+        for identifier, asset_data in AssetResolver().assets.items():
+            asset_type = asset_type_mapping[asset_data['type']]
+            if asset_type != AssetType.FIAT and asset_data['coingecko'] != '':
+                coingecko_integrated_assets.append(identifier)
+
+        cached_assets = [
+            str(x.name)[:-10] for x in self.icons_dir.glob('*_thumb.png') if x.is_file()
+        ]
+
+        uncached_assets = set(coingecko_integrated_assets) - set(cached_assets)
+        log.info(
+            f'Periodic task to query coingecko for {batch_size} uncached asset icons. '
+            f'Uncached assets: {len(uncached_assets)}. Cached assets: {len(cached_assets)}',
+        )
+        for asset_name in itertools.islice(uncached_assets, batch_size):
+            self._query_coingecko_for_icon(Asset(asset_name))
+
+        return len(uncached_assets) > batch_size
+
+    def periodically_query_icons_until_all_cached(
+            self,
+            batch_size: int,
+            sleep_time_secs: float,
+    ) -> None:
+        """Periodically query all uncached icons until we have icons cached for all
+        of the known assets that have coingecko integration"""
+        while True:
+            carry_on = self.query_uncached_icons_batch(batch_size=batch_size)
+            if not carry_on:
+                break
+            gevent.sleep(sleep_time_secs)
