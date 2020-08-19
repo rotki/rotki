@@ -7,10 +7,7 @@
     class="blockchain-balance-box__item"
   >
     <v-list-item-avatar tile class="blockchain-balance-box__icon">
-      <crypto-icon
-        width="24px"
-        :symbol="blockchainBalanceIcons[name]"
-      ></crypto-icon>
+      <crypto-icon size="24px" :symbol="blockchainBalanceIcons[name]" />
     </v-list-item-avatar>
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
@@ -22,7 +19,7 @@
             show-currency="symbol"
             fiat-currency="USD"
             :value="amount"
-          ></amount-display>
+          />
         </span>
       </v-list-item-title>
     </v-list-item-content>

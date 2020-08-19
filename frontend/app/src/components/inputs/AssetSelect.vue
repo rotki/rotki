@@ -16,14 +16,11 @@
     @input="input"
   >
     <template #selection="{ item }">
-      <asset-details
-        class="asset-select__details"
-        :asset="item.key"
-      ></asset-details>
+      <asset-details class="asset-select__details" :asset="item.key" />
     </template>
     <template #item="{ item }">
       <v-list-item-avatar>
-        <crypto-icon :symbol="item.symbol"></crypto-icon>
+        <crypto-icon size="50px" :symbol="item.symbol" />
       </v-list-item-avatar>
       <v-list-item-content :id="`asset-${item.key.toLocaleLowerCase()}`">
         <v-list-item-title>{{ item.symbol }}</v-list-item-title>

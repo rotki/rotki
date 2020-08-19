@@ -8,11 +8,7 @@
   >
     <template #item.asset="{ item }">
       <span class="d-flex flex-row align-center">
-        <crypto-icon
-          width="26px"
-          :symbol="item.asset"
-          class="mr-2"
-        ></crypto-icon>
+        <crypto-icon size="26px" :symbol="item.asset" class="mr-2" />
         {{ item.asset }}
       </span>
     </template>
@@ -27,22 +23,16 @@
       </span>
     </template>
     <template #item.balance.amount="{ item }">
-      <amount-display :value="item.balance.amount"></amount-display>
+      <amount-display :value="item.balance.amount" />
     </template>
     <template #item.balance.usdValue="{ item }">
-      <amount-display
-        fiat-currency="USD"
-        :value="item.balance.usdValue"
-      ></amount-display>
+      <amount-display fiat-currency="USD" :value="item.balance.usdValue" />
     </template>
     <template #item.apy="{ item }">
       {{ item.effectiveInterestRate ? item.effectiveInterestRate : '-' }}
     </template>
     <template #item.address="{item}">
-      <hash-link
-        :text="item.address"
-        class="d-inline font-weight-medium"
-      ></hash-link>
+      <hash-link :text="item.address" class="d-inline font-weight-medium" />
     </template>
     <template #header.balance.usdValue>
       {{ currency.ticker_symbol }} Value
