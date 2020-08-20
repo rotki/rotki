@@ -64,6 +64,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 15
 
+ICONS_BATCH_SIZE = 5
+ICONS_QUERY_SLEEP = 10
+
 
 class Rotkehlchen():
     def __init__(self, args: argparse.Namespace) -> None:
@@ -103,8 +106,8 @@ class Rotkehlchen():
         self.greenlet_manager.spawn_and_track(
             task_name='periodically_query_icons_until_all_cached',
             method=self.icon_manager.periodically_query_icons_until_all_cached,
-            batch_size=5,
-            sleep_time_secs=10,
+            batch_size=ICONS_BATCH_SIZE,
+            sleep_time_secs=ICONS_QUERY_SLEEP,
         )
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)

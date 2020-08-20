@@ -131,6 +131,9 @@ class IconManager():
     ) -> None:
         """Periodically query all uncached icons until we have icons cached for all
         of the known assets that have coingecko integration"""
+        if batch_size == 0:
+            return
+
         while True:
             carry_on = self.query_uncached_icons_batch(batch_size=batch_size)
             if not carry_on:

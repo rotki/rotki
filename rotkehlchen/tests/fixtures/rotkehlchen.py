@@ -143,7 +143,13 @@ def uninitialized_rotkehlchen(cli_args, inquirer):  # pylint: disable=unused-arg
     For this to happen inquirer fixture must be initialized before Rotkehlchen so
     that the inquirer initialization in Rotkehlchen's __init__ uses the fixture's instance
     """
-    return Rotkehlchen(cli_args)
+    # patch the constants to make sure that the periodic query for icons
+    # does not run during tests
+    size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
+    sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
+    with size_patch, sleep_patch:
+        rotki = Rotkehlchen(cli_args)
+    return rotki
 
 
 @pytest.fixture()
