@@ -180,6 +180,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } as BlockchainMetadata);
 
     commit('tasks/add', task, { root: true });
+    commit('defi/reset', undefined, { root: true });
   },
 
   async addAccount({ commit }, payload: BlockchainAccountPayload) {
@@ -191,6 +192,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } as BlockchainMetadata);
 
     commit('tasks/add', task, { root: true });
+    commit('defi/reset', undefined, { root: true });
   },
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
