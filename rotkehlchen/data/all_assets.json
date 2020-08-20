@@ -10408,7 +10408,7 @@
     },
     "TRAK": {
         "active": true,
-        "coingecko": "trakinvest",
+        "coingecko": "",
         "ethereum_address": "0x12759512D326303B45f1ceC8F7B6fd96F387778E",
         "ethereum_token_decimals": 18,
         "name": "TrakInvest",
