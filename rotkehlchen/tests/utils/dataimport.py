@@ -86,7 +86,6 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
 def assert_cryptocom_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
     trades = rotki.data.db.get_trades()
-    asset_movements = rotki.data.db.get_asset_movements()
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_warnings()
     assert len(errors) == 0
@@ -174,24 +173,3 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         notes=get_trade_note('Coin Swap'),
     )]
     assert expected_trades == trades
-
-    expected_movements = [AssetMovement(
-        location=Location.CRYPTOCOM,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1595833195),
-        asset=A_EUR,
-        amount=AssetAmount(FVal('281.14')),
-        fee_asset=A_USD,
-        fee=Fee(ZERO),
-        link='',
-    ), AssetMovement(
-        location=Location.CRYPTOCOM,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1596014214),
-        asset=A_EUR,
-        amount=AssetAmount(FVal('176.05')),
-        fee_asset=A_USD,
-        fee=Fee(ZERO),
-        link='',
-    )]
-    assert expected_movements == asset_movements

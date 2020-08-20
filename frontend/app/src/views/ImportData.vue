@@ -107,8 +107,7 @@
               <li>
                 Trades/deposits/withdrawals from crypto.com do not include fees
                 details. They are waived at the moment (August 2020) or they are
-                handled in the traded amount. Crypto purchases, since those are
-                purchases via card, are also treated as deposits.
+                handled in the traded amount.
               </li>
               <li>
                 Only transactions are imported here (for tax report), if you

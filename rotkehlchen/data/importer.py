@@ -83,6 +83,7 @@ class DataImporter():
             - DeserializationError if something is wrong with the format of the expected values
             - UnsupportedCointrackingEntry if importing of this entry is not supported.
             - IndexError if the CSV file is corrupt
+            - KeyError if the an expected CSV key is missing
             - UnknownAsset if one of the assets founds in the entry are not supported
         """
         row_type = csv_row['Type']
@@ -192,7 +193,7 @@ class DataImporter():
         Can raise:
             - DeserializationError if something is wrong with the format of the expected values
             - UnsupportedCryptocomEntry if importing of this entry is not supported.
-            - IndexError if the CSV file is corrupt
+            - KeyError if the an expected CSV key is missing
             - UnknownAsset if one of the assets founds in the entry are not supported
         """
         row_type = csv_row['Transaction Kind']
@@ -224,7 +225,7 @@ class DataImporter():
 
             trade_type = TradeType.BUY if to_currency != native_currency else TradeType.SELL
 
-            if row_type in ('crypto_exchange'):
+            if row_type == 'crypto_exchange':
                 # trades crypto to crypto
                 base_asset = Asset(to_currency)
                 quote_asset = Asset(currency)
@@ -254,21 +255,6 @@ class DataImporter():
             )
             self.db.add_trades([trade])
 
-            # crypto_purchase is buying crypto assets using a card so
-            # it should also be considered as a deposit movement
-            if row_type == 'crypto_purchase':
-                asset_movement = AssetMovement(
-                    location=Location.CRYPTOCOM,
-                    category=AssetMovementCategory.DEPOSIT,
-                    timestamp=timestamp,
-                    asset=Asset(native_currency),
-                    amount=deserialize_asset_amount(native_amount),
-                    fee=fee,
-                    fee_asset=fee_currency,
-                    link='',
-                )
-                self.db.add_asset_movements([asset_movement])
-
         elif row_type in (
             'crypto_earn_program_created',
             'lockup_lock',
@@ -291,13 +277,18 @@ class DataImporter():
                 f'cryptocom data import. Ignoring entry',
             )
 
-    # A swapping trade is a debited row + a credited row
-    def _import_cryptocom_swap(self, header: list, data: Any) -> None:
-        swapping_rows = {}
+    def _import_cryptocom_swap(self, data: Any) -> None:
+        """Look for swapping events and handle them as trades.
+
+        Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
+        `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
+        This method looks for `dynamic_coin_swap_debited` and `dynamic_coin_swap_credited`
+        entries using the same timestamp to handle them as one trade.
+        """
+        swapping_rows: Dict[Any, Dict[str, Any]] = {}
         debited_row = None
         credited_row = None
-        for data_row in data:
-            row = dict(zip(header, data_row))
+        for row in data:
             if row['Transaction Kind'] == 'dynamic_coin_swap_debited':
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
@@ -349,24 +340,19 @@ class DataImporter():
 
     def import_cryptocom_csv(self, filepath: Path) -> None:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
-            data = csv.reader(csvfile, delimiter=',', quotechar='"')
-            self._import_cryptocom_swap(next(data), data)
+            data = csv.DictReader(csvfile)
+            self._import_cryptocom_swap(data)
             # reset the iterator
             csvfile.seek(0)
-            header = next(data)
+            # pass the header since seek(0) make the first row to be the header
+            next(data)
             for row in data:
                 try:
-                    self._consume_cryptocom_entry(dict(zip(header, row)))
+                    self._consume_cryptocom_entry(row)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During cryptocom CSV import found action with unknown '
                         f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except IndexError:
-                    self.db.msg_aggregator.add_warning(
-                        'During cryptocom CSV import found entry with '
-                        'unexpected number of columns',
                     )
                     continue
                 except DeserializationError as e:
