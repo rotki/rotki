@@ -25,22 +25,22 @@
         pill
         @click:close="unselect(data.item.identifier)"
       >
-        <span class="d-flex flex-row align-center">
-          <v-img width="55px" contain max-height="24px" :src="data.item.icon" />
-          <span> {{ data.item.name }}</span>
-        </span>
+        <v-avatar left>
+          <v-img width="26px" contain max-height="24px" :src="data.item.icon" />
+        </v-avatar>
+        <span> {{ data.item.name }}</span>
       </v-chip>
     </template>
     <template #item="data">
       <span v-bind="data.attrs" class="d-flex flex-row align-center">
         <v-img
-          width="55px"
+          width="26px"
           contain
           position="left"
           max-height="24px"
           :src="data.item.icon"
         />
-        <span> {{ data.item.name }}</span>
+        <span class="ml-2"> {{ data.item.name }}</span>
       </span>
     </template>
   </v-autocomplete>
