@@ -17,21 +17,18 @@
       <template #item.asset="{ item }">
         <span class="asset-balances__balance__asset">
           <crypto-icon
-            width="26px"
+            size="26px"
             class="asset-balances__balance__asset__icon"
             :symbol="item.asset"
-          ></crypto-icon>
+          />
           {{ item.asset }}
         </span>
       </template>
       <template #item.amount="{ item }">
-        <amount-display :value="item.amount"></amount-display>
+        <amount-display :value="item.amount" />
       </template>
       <template #item.usdValue="{ item }">
-        <amount-display
-          fiat-currency="USD"
-          :value="item.usdValue"
-        ></amount-display>
+        <amount-display fiat-currency="USD" :value="item.usdValue" />
       </template>
       <template v-if="balances.length > 0" #body.append>
         <tr class="asset-balances__total">
@@ -41,8 +38,7 @@
             <amount-display
               fiat-currency="USD"
               :value="balances.map(val => val.usdValue) | balanceSum"
-            >
-            </amount-display>
+            />
           </td>
         </tr>
       </template>

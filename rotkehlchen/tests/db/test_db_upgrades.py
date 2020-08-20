@@ -24,6 +24,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
     v7_deserialize_asset_movement_category,
     v7_generate_asset_movement_id,
 )
+from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.typing import Timestamp
@@ -882,6 +883,54 @@ def test_upgrade_db_12_to_13(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 13
+
+
+def test_upgrade_db_13_to_14(user_data_dir):
+    """Test upgrading the DB from version 13 to version 14.
+
+    Deletes all references of removed assets from the DB
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v13_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=14,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+
+    cursor = db.conn.cursor()
+    # Make sure that all cached ethereum account details are deleted
+    query = cursor.execute('SELECT COUNT(*) FROM ethereum_accounts_details;')
+    assert query.fetchall()[0][0] == 0, 'ethereum accounts details were not deleted'
+    # Make sure that timed balances with removed assets are removed
+    query = cursor.execute('SELECT currency FROM timed_balances;')
+    result = query.fetchall()
+    assert len(result) == 32
+    for entry in result:
+        assert entry[0] not in REMOVED_ASSETS + REMOVED_ETH_TOKENS
+
+    # Make sure that manually tracked balances with removed assets are removed
+    query = cursor.execute('SELECT asset FROM manually_tracked_balances;')
+    result = query.fetchall()
+    assert len(result) == 1
+    assert result[0][0] == 'EUR'
+
+    # Make sure that trades with removed assets in the pair or in the fee currency are removed
+    query = cursor.execute('SELECT pair FROM trades;')
+    result = query.fetchall()
+    assert len(result) == 1
+    assert result[0][0] == 'ETH_EUR'
+
+    # Make sure that removed assets are also gone from the ignored_assets
+    query = cursor.execute(
+        'SELECT name, value FROM multisettings where name = ?;', ('ignored_asset',),
+    )
+    result = query.fetchall()
+    assert len(result) == 1
+    assert result[0][1] == 'DAO'
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 14
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

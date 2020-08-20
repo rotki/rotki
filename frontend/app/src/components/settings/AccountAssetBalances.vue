@@ -19,21 +19,18 @@
         <template #item.asset="{ item }">
           <span class="account-asset-balances__balance__asset">
             <crypto-icon
-              width="26px"
+              size="26px"
               class="account-asset-balances__balance__asset__icon"
               :symbol="item.asset"
-            ></crypto-icon>
+            />
             {{ item.asset }}
           </span>
         </template>
         <template #item.amount="{ item }">
-          <amount-display :value="item.amount"></amount-display>
+          <amount-display :value="item.amount" />
         </template>
         <template #item.usdValue="{ item }">
-          <amount-display
-            fiat-currency="USD"
-            :value="item.usdValue"
-          ></amount-display>
+          <amount-display fiat-currency="USD" :value="item.usdValue" />
         </template>
       </v-data-table>
     </v-col>

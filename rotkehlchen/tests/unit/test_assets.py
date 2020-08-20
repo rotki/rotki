@@ -4,6 +4,7 @@ from eth_utils import is_checksum_address
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.typing import AssetType
 
 
@@ -69,3 +70,37 @@ def test_tokens_address_is_checksummed():
             f'is not checksummed {asset_data["ethereum_address"]}'
         )
         assert is_checksum_address(asset_data['ethereum_address']), msg
+
+
+def test_coingecko_identifiers_are_reachable():
+    """
+    Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
+    """
+    coingecko = Coingecko()
+    all_coins = coingecko.all_coins()
+    for identifier, asset_data in AssetResolver().assets.items():
+        asset_type = asset_type_mapping[asset_data['type']]
+        if asset_type == AssetType.FIAT:
+            continue
+
+        coingecko_str = asset_data.get('coingecko', None)
+        msg = f'Asset {identifier} does not have a coingecko entry'
+        assert coingecko_str is not None, msg
+        if coingecko_str != '':
+            found = False
+            for entry in all_coins:
+                if coingecko_str == entry['id']:
+                    found = True
+                    break
+
+        suggestions = []
+        if not found:
+            for entry in all_coins:
+                if entry['symbol'].upper() == asset_data['symbol']:
+                    suggestions.append((entry['id'], entry['name'], entry['symbol']))
+
+        msg = f'Asset {identifier} coingecko mapping does not exist.'
+        if len(suggestions) != 0:
+            for s in suggestions:
+                msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
+        assert found, msg

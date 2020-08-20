@@ -31,11 +31,13 @@ from rotkehlchen.errors import (
     SystemPermissionError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import PriceHistorian, TradesHistorian
+from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import (
     DEFAULT_ANONYMIZED_LOGS,
@@ -61,6 +63,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 15
+
+ICONS_BATCH_SIZE = 5
+ICONS_QUERY_SLEEP = 10
 
 
 class Rotkehlchen():
@@ -96,6 +101,14 @@ class Rotkehlchen():
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
+        self.coingecko = Coingecko()
+        self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
+        self.greenlet_manager.spawn_and_track(
+            task_name='periodically_query_icons_until_all_cached',
+            method=self.icon_manager.periodically_query_icons_until_all_cached,
+            batch_size=ICONS_BATCH_SIZE,
+            sleep_time_secs=ICONS_QUERY_SLEEP,
+        )
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
 

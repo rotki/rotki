@@ -25,10 +25,6 @@ from asset_aggregator.typeinfo_check import typeinfo_check
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
-from rotkehlchen.constants.cryptocompare import (
-    KNOWN_TO_MISS_FROM_CRYPTOCOMPARE,
-    WORLD_TO_CRYPTOCOMPARE,
-)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.coinmarketcap import Coinmarketcap, find_cmc_coin_data
 from rotkehlchen.externalapis.coinpaprika import (
@@ -119,13 +115,7 @@ def process_asset(
         symbol = match.group(1)
     our_data[asset_symbol]['symbol'] = symbol
 
-    # Make sure that the asset is also known to cryptocompare
-    cryptocompare_symbol = WORLD_TO_CRYPTOCOMPARE.get(asset_symbol, asset_symbol)
-    cryptocompare_problem = (
-        asset_symbol not in KNOWN_TO_MISS_FROM_CRYPTOCOMPARE and
-        cryptocompare_symbol not in cryptocompare_coins_map
-    )
-    if cryptocompare_problem:
+    if asset_symbol not in cryptocompare_coins_map:
         print(f'Asset {asset_symbol} is not in cryptocompare')
         sys.exit(1)
 

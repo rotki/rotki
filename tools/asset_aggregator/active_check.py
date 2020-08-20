@@ -201,10 +201,6 @@ MANUALLY_CHECKED = {
     # https://coinmarketcap.com/currencies/neverdie/
     # For some reason coinmarketcap does not show it as inactive yet
     'NDC': False,
-    # On 07/04/2019 Fujinto appears to be inactive and trading in 0 exchanges
-    # https://coinmarketcap.com/currencies/fujinto/#
-    # For some reason coinmarketcap does not show it as inactive yet
-    'NTO': False,
     # On 07/04/2019 Nuggets is still active and trading in 1 exchange
     # https://coinmarketcap.com/currencies/nuggets/
     # For some reason coin paprika thinks it's not so specify here we
@@ -303,11 +299,6 @@ MANUALLY_CHECKED = {
     # https://coinmarketcap.com/currencies/xenon/
     # For some reason coinmarketcap does not show it as inactive yet
     'XNN': False,
-    # On 20/04/2019 XPlay is still active and trading in 1 exchange
-    # https://coinmarketcap.com/currencies/xpa/
-    # For some reason coin paprika thinks it's not so specify here we
-    # manually checked.
-    'XPA': True,
     # On 29/01/2020 Xensor is still active and trading in multiple exchanges
     # https://coinmarketcap.com/currencies/xensor/markets/
     # For some reason coin paprika thinks it's not so specify here we

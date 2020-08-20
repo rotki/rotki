@@ -72,6 +72,8 @@ class AssetResolver():
             swapped_for=data.get('swapped_for', None),
             ethereum_address=data.get('ethereum_address', None),
             decimals=data.get('ethereum_token_decimals', None),
+            cryptocompare=data.get('cryptocompare', None),
+            coingecko=data.get('coingecko', None),
         )
         return result
 

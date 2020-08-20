@@ -45,10 +45,11 @@ class RemoteError(Exception):
     pass
 
 
-class PriceQueryUnknownFromAsset(Exception):
-    def __init__(self, from_asset: 'Asset') -> None:
+class PriceQueryUnsupportedAsset(Exception):
+    def __init__(self, asset_name: str) -> None:
+        self.asset_name = asset_name
         super().__init__(
-            f'Unable to query historical price for unknown asset: "{from_asset.identifier}"')
+            f'Unable to query historical price for unknown asset: "{self.asset_name}"')
 
 
 class UnprocessableTradePair(Exception):

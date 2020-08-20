@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import traceback
@@ -1534,3 +1535,37 @@ class RestAPI():
     def purge_ethereum_transaction_data(self) -> Response:
         self.rotkehlchen.data.db.purge_ethereum_transaction_data()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def get_asset_icon(
+            self,
+            asset: Asset,
+            size: Literal['thumb', 'small', 'large'],
+            match_header: Optional[str],
+    ) -> Response:
+        file_md5 = self.rotkehlchen.icon_manager.iconfile_md5(asset, size)
+        if file_md5 and match_header and match_header == file_md5:
+            # Response content unmodified
+            return make_response(
+                (
+                    b'',
+                    HTTPStatus.NOT_MODIFIED,
+                    {"mimetype": "image/png", "Content-Type": "image/png"},
+                ),
+            )
+
+        image_data = self.rotkehlchen.icon_manager.get_icon(asset, size)
+        if image_data is None:
+            response = make_response(
+                (
+                    b'',
+                    HTTPStatus.NOT_FOUND, {"mimetype": "image/png", "Content-Type": "image/png"}),
+            )
+        else:
+            response = make_response(
+                (
+                    image_data,
+                    HTTPStatus.OK, {"mimetype": "image/png", "Content-Type": "image/png"}),
+            )
+            response.set_etag(hashlib.md5(image_data).hexdigest())
+
+        return response

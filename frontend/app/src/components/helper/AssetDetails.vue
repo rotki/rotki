@@ -1,10 +1,10 @@
 <template>
   <span class="asset-details">
     <crypto-icon
-      width="26px"
+      size="26px"
       class="asset-details__icon"
       :symbol="details.symbol"
-    ></crypto-icon>
+    />
     <span class="asset-details__details">
       <span class="asset-details__details__symbol">
         {{ details.symbol }}

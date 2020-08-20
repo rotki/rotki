@@ -1,7 +1,7 @@
 <template>
   <span>
     <v-avatar left>
-      <crypto-icon width="24px" :symbol="account.chain" />
+      <crypto-icon size="24px" :symbol="account.chain" />
     </v-avatar>
     <span class="font-weight-bold mr-1">{{ account.label }}</span>
     <span :class="privacyMode ? 'blur-content' : ''">

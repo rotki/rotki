@@ -143,7 +143,6 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'ENTRP',
     'ETHB',
     'FIH',
-    'FLX',
     'FORK-2',
     'HKG',
     'JOY',

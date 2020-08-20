@@ -3,7 +3,6 @@ from functools import total_ordering
 from typing import Any, Optional
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo, Timestamp
 
@@ -56,8 +55,6 @@ WORLD_TO_POLONIEX = {
     'FAIR': 'FAC',
     # KeyCoin in Poloniex is KEY but in Rotkehlchen it's KEY-3
     'KEY-3': 'KEY',
-    # Marscoin in Poloniex is MRS but in Rotkehlchen it's MARS
-    'MARS': 'MRS',
     # Mazacoin in Poloniex is MZC but in Rotkehlchen it's MAZA
     'MAZA': 'MZC',
     # Myriadcoin in Poloniex is MYR but in Rotkehlchen it's XMY
@@ -151,6 +148,9 @@ class Asset():
     ended: Optional[Timestamp] = field(init=False)
     forked: Optional[str] = field(init=False)
     swapped_for: Optional[str] = field(init=False)
+    # None means no special mapping. '' means not supported
+    cryptocompare: Optional[str] = field(init=False)
+    coingecko: Optional[str] = field(init=False)
 
     def __post_init__(self) -> None:
         """
@@ -180,6 +180,8 @@ class Asset():
         object.__setattr__(self, 'ended', data.ended)
         object.__setattr__(self, 'forked', data.forked)
         object.__setattr__(self, 'swapped_for', data.swapped_for)
+        object.__setattr__(self, 'cryptocompare', data.cryptocompare)
+        object.__setattr__(self, 'coingecko', data.coingecko)
 
     def is_fiat(self) -> bool:
         return self.asset_type == AssetType.FIAT
@@ -200,22 +202,33 @@ class Asset():
         return WORLD_TO_BINANCE.get(self.identifier, self.identifier)
 
     def to_cryptocompare(self) -> str:
-        cryptocompare_str = WORLD_TO_CRYPTOCOMPARE.get(self.identifier, self.identifier)
+        """Returns the symbol with which to query cryptocompare for the asset
+
+        May raise:
+            - UnsupportedAsset() if the asset is not supported by cryptocompare
+        """
+        cryptocompare_str = self.identifier if self.cryptocompare is None else self.cryptocompare
         # There is an asset which should not be queried in cryptocompare
-        if cryptocompare_str is None:
-            if self.identifier == 'MRS':
-                raise UnsupportedAsset(
-                    'Marginless is not in cryptocompare. Asking for MRS '
-                    'will return MARScoin',
-                )
-            else:
-                raise RuntimeError(
-                    f'Got {self.identifier} as a cryptocompare query but it is '
-                    f'documented as returning None and is not handled',
-                )
+        if cryptocompare_str == '':
+            raise UnsupportedAsset(f'{self.identifier} is not supported by cryptocompare')
 
         # Seems cryptocompare capitalizes everything. So cDAI -> CDAI
         return cryptocompare_str.upper()
+
+    def to_coingecko(self) -> str:
+        """Returns the symbol with which to query coingecko for the asset
+
+        May raise:
+            - UnsupportedAsset() if the asset is not supported by coingecko
+        """
+        coingecko_str = self.identifier if self.coingecko is None else self.coingecko
+        # There is an asset which should not be queried in cryptocompare
+        if coingecko_str == '':
+            raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
+        return coingecko_str
+
+    def has_coingecko(self) -> bool:
+        return self.coingecko is not None and self.coingecko != ''
 
     def __hash__(self) -> int:
         return hash(self.identifier)

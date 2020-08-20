@@ -61,7 +61,6 @@ MANUALLY_CHECKED_TYPES = {
     'EOSBEAR': 'ethereum token',
     'EOSBULL': 'ethereum token',
     'FIH': 'ethereum token',
-    'FLX': 'ethereum token',
     'FORK-2': 'ethereum token',
     'HBD': 'own chain',
     'HDAO': 'ethereum token',

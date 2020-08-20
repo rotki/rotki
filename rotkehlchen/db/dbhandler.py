@@ -1,4 +1,3 @@
-import hashlib
 import json
 import logging
 import os
@@ -83,6 +82,7 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
@@ -250,17 +250,7 @@ class DBHandler:
         """
         no_active_connection = not hasattr(self, 'conn') or not self.conn
         assert no_active_connection, 'md5hash should be taken only with a closed DB'
-        filename = self.user_data_dir / 'rotkehlchen.db'
-        md5_hash = hashlib.md5()
-        try:
-            with open(filename, 'rb') as f:
-                # Read and update hash in chunks of 4K
-                for byte_block in iter(lambda: f.read(4096), b''):
-                    md5_hash.update(byte_block)
-        except PermissionError as e:
-            raise SystemPermissionError(f'Failed to open DB: {filename}. {str(e)}')
-
-        return md5_hash.hexdigest()
+        return file_md5(self.user_data_dir / 'rotkehlchen.db')
 
     def read_info_at_start(self) -> DBStartupAction:
         """Read some metadata info at initialization

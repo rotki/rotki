@@ -106,7 +106,7 @@ class PriceHistorian():
             timestamp: The timestamp at which to query the price
 
         May raise:
-        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the external service.
         - RemoteError if there is a problem reaching the price oracle server

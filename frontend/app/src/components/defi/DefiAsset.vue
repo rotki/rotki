@@ -1,6 +1,6 @@
 <template>
   <div class="defi-asset d-flex flex-row align-center">
-    <crypto-icon width="32px" :symbol="asset.tokenSymbol" />
+    <crypto-icon size="32px" :symbol="asset.tokenSymbol" />
     <span class="ml-3">{{ asset.tokenSymbol }}</span>
     <v-spacer />
     <div class="d-flex flex-column align-end">
