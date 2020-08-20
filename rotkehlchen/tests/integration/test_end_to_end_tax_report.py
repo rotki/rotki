@@ -602,11 +602,11 @@ def test_cryptocompare_asset_and_price_not_found_in_history_processing(accountan
         'location': 'kraken',
     }, {
         'timestamp': 1492685761,
-        'pair': 'EXC_BTC',
+        'pair': 'FGP_BTC',
         'trade_type': 'buy',
         'rate': '0.100',
         'fee': '0.15',
-        'fee_currency': 'EXC',
+        'fee_currency': 'FGP',
         'amount': 2.5,
         'location': 'kraken',
     }]
