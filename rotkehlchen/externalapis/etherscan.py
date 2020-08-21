@@ -13,7 +13,7 @@ from rotkehlchen.errors import ConversionError, DeserializationError, RemoteErro
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes

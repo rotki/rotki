@@ -58,7 +58,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_movement_category_from_db,
     deserialize_fee,
-    deserialize_fval,
     deserialize_hex_color_code,
     deserialize_location,
     deserialize_location_from_db,

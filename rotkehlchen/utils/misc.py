@@ -272,7 +272,7 @@ def convert_to_int(
             try:
                 return FVal(val).to_int(exact=accept_only_exact)
             except ValueError:
-                raise ConversionError(f'Could not convert {val} to an int')
+                raise ConversionError(f'Could not convert {val!r} to an int')
     elif isinstance(val, int):
         return val
     elif isinstance(val, float):

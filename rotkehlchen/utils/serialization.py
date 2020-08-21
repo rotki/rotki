@@ -5,8 +5,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, TradeType
 
-DecodableValue = Union[Dict, List, float, bytes, str]
-DecodedValue = Union[Dict, FVal, List, bytes, str]
+DecodableValue = Union[Dict, List, float, bytes, str, int, FVal]
+DecodedValue = Union[Dict, FVal, List, bytes, str, int]
 
 
 class RKLDecoder(json.JSONDecoder):

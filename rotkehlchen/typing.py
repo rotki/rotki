@@ -138,8 +138,8 @@ class EthereumTransaction(NamedTuple):
     tx_hash: bytes
     timestamp: Timestamp
     block_number: int
-    from_address: EthAddress
-    to_address: EthAddress
+    from_address: ChecksumEthAddress
+    to_address: ChecksumEthAddress
     value: int
     gas: int
     gas_price: int
