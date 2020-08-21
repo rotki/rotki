@@ -229,6 +229,7 @@ def test_cache_response_timewise_ignore_cache():
 
 def test_convert_to_int():
     assert convert_to_int('5') == 5
+    assert convert_to_int('37451082560000003241000000000003221111111111') == 37451082560000003241000000000003221111111111  # noqa: E501
     with pytest.raises(ConversionError):
         assert convert_to_int(5.44, accept_only_exact=True) == 5
     assert convert_to_int(5.44, accept_only_exact=False) == 5
