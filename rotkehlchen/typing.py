@@ -140,10 +140,10 @@ class EthereumTransaction(NamedTuple):
     block_number: int
     from_address: EthAddress
     to_address: EthAddress
-    value: FVal
-    gas: FVal
-    gas_price: FVal
-    gas_used: FVal
+    value: int
+    gas: int
+    gas_price: int
+    gas_used: int
     input_data: bytes
     # The ethereum transaction nonce. Even though for normal ethereum transactions
     # this can't be negative it can be for us. IF it's negative it means that

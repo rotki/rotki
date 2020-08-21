@@ -52,7 +52,7 @@ def deserialize_transaction_from_etherscan(
     """
     try:
         # internal tx list contains no gasprice
-        gas_price = FVal(-1) if internal else FVal(data['gasPrice'])
+        gas_price = -1 if internal else read_integer(data, 'gasPrice')
         tx_hash = read_hash(data, 'hash')
         input_data = read_hash(data, 'input')
         timestamp = deserialize_timestamp(data['timeStamp'])
@@ -66,10 +66,10 @@ def deserialize_transaction_from_etherscan(
             tx_hash=tx_hash,
             from_address=data['from'],
             to_address=data['to'],
-            value=deserialize_fval(data['value']),
-            gas=deserialize_fval(data['gas']),
+            value=read_integer(data, 'value'),
+            gas=read_integer(data, 'gas'),
             gas_price=gas_price,
-            gas_used=deserialize_fval(data['gasUsed']),
+            gas_used=read_integer(data, 'gasUsed'),
             input_data=input_data,
             nonce=nonce,
         )

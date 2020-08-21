@@ -1234,11 +1234,11 @@ Querying ethereum transactions
             "block_number": 10700085,
             "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
             "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
-            "value": "0",
+            "value": "56000300000000000000000",
             "gas": "610676",
             "gas_price": "106000000000",
             "gas_used": "270154",
-            "input_data": "0x0",
+            "input_data": "0x",
             "nonce": 55
         }],
         "message": ""
