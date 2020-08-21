@@ -94,9 +94,3 @@ export function toMap<T, K extends keyof T>(
   }
   return map;
 }
-
-export function snakeToCamel(value: string): string {
-  return value.replace(/([-_][a-z])/g, group =>
-    group.toUpperCase().replace('-', '').replace('_', '')
-  );
-}

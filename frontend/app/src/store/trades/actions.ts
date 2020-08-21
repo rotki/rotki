@@ -1,17 +1,16 @@
 import { ActionTree } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
-import { ApiTrade } from '@/services/types-api';
+import { NewTrade, Trade, TradeUpdate } from '@/services/trades/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/store';
-import { convertTrade, convertTrades } from '@/store/trades/converters';
 import { TradesState } from '@/store/trades/types';
+import { ActionStatus } from '@/store/types';
 
 export const actions: ActionTree<TradesState, RotkehlchenState> = {
   async fetchTrades({ commit }): Promise<void> {
     try {
-      const trades: ApiTrade[] = await api.allTrades();
-      commit('allTrades', convertTrades(trades));
+      commit('allTrades', await api.allTrades());
     } catch (e) {
       notify(`Failed: ${e}`, 'Retrieving trades', Severity.ERROR);
     }
@@ -19,61 +18,55 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
 
   async fetchExternalTrades({ commit }): Promise<void> {
     try {
-      const trades: ApiTrade[] = await api.externalTrades();
-      commit('externalTrades', convertTrades(trades));
+      commit('trades', await api.trades.externalTrades());
     } catch (e) {
       notify(`Failed: ${e}`, 'Retrieving external trades', Severity.ERROR);
     }
   },
 
-  async addExternalTrade(
-    { commit },
-    trade: Omit<ApiTrade, 'trade_id'>
-  ): Promise<{ result: boolean; error: string }> {
-    let result = false;
-    let error = '';
+  async addExternalTrade({ commit }, trade: NewTrade): Promise<ActionStatus> {
+    let success = false;
+    let message = '';
     try {
-      const newTrade = await api.addExternalTrade(trade);
-      commit('addTrade', convertTrade(newTrade));
-      result = true;
+      commit('addTrade', await api.trades.addExternalTrade(trade));
+      success = true;
     } catch (e) {
-      result = false;
-      error = e;
+      message = e.message;
     }
-    return { result, error };
+    return { success, message };
   },
 
-  async editExternalTrade(
-    { commit },
-    trade: ApiTrade
-  ): Promise<{ result: boolean; error: string }> {
-    let result = false;
-    let error = '';
+  async editExternalTrade({ commit }, trade: Trade): Promise<ActionStatus> {
+    let success = false;
+    let message = '';
     try {
-      const originalTrade = convertTrade(trade);
-      const editedTrade = await api.editExternalTrade(trade);
-      const updatedTrade = convertTrade(editedTrade);
-      const mutationParams = { originalTrade, updatedTrade };
-      commit('updateTrade', mutationParams);
-      result = true;
+      const updatedTrade = await api.trades.editExternalTrade(trade);
+      const payload: TradeUpdate = {
+        trade: updatedTrade,
+        oldTradeId: trade.tradeId
+      };
+      commit('updateTrade', payload);
+      success = true;
     } catch (e) {
-      result = false;
-      error = e;
+      message = e.message;
     }
-    return { result, error };
+    return { success, message };
   },
 
-  async deleteExternalTrade({ commit }, tradeId: string) {
-    let result = false;
+  async deleteExternalTrade(
+    { commit },
+    tradeId: string
+  ): Promise<ActionStatus> {
+    let success = false;
+    let message = '';
     try {
-      const success = await api.deleteExternalTrade(tradeId);
+      success = await api.trades.deleteExternalTrade(tradeId);
       if (success) {
         commit('deleteTrade', tradeId);
-        result = true;
       }
     } catch (e) {
-      result = false;
+      message = e.message;
     }
-    return result;
+    return { success, message };
   }
 };

@@ -17,12 +17,13 @@ import { VersionCheck } from '@/model/version-check';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { DefiApi } from '@/services/defi/defi-api';
 import { SessionApi } from '@/services/session/session-api';
+import { TradesApi } from '@/services/trades/trades-api';
+import { Trade } from '@/services/trades/types';
 import {
   ApiManualBalance,
   ApiManualBalances,
   SupportedAssets,
-  TaskNotFoundError,
-  ApiTrade
+  TaskNotFoundError
 } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
@@ -58,6 +59,7 @@ export class RotkehlchenApi {
   readonly defi: DefiApi;
   readonly session: SessionApi;
   readonly balances: BalancesApi;
+  readonly trades: TradesApi;
 
   constructor() {
     this.axios = axios.create({
@@ -67,6 +69,7 @@ export class RotkehlchenApi {
     this.defi = new DefiApi(this.axios);
     this.session = new SessionApi(this.axios);
     this.balances = new BalancesApi(this.axios);
+    this.trades = new TradesApi(this.axios);
   }
 
   checkIfLogged(username: string): Promise<boolean> {
@@ -141,43 +144,9 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async allTrades(): Promise<ApiTrade[]> {
+  async allTrades(): Promise<Trade[]> {
     return this.axios
-      .get<ActionResult<ApiTrade[]>>('/trades', {
-        validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
-  }
-
-  async externalTrades(): Promise<ApiTrade[]> {
-    return this.axios
-      .get<ActionResult<ApiTrade[]>>('/trades', {
-        data: { location: 'external' },
-        validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
-  }
-
-  async addExternalTrade(trade: Omit<ApiTrade, 'trade_id'>): Promise<ApiTrade> {
-    return this.axios
-      .put<ActionResult<ApiTrade>>('/trades', trade, {
-        validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
-  }
-
-  async editExternalTrade(trade: ApiTrade): Promise<ApiTrade> {
-    return this.axios
-      .patch<ActionResult<ApiTrade>>('/trades', trade, {
-        validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
-  }
-
-  async deleteExternalTrade(tradeId: string): Promise<boolean> {
-    return this.axios
-      .delete<ActionResult<boolean>>('/trades', {
-        data: { trade_id: tradeId },
+      .get<ActionResult<Trade[]>>('/trades', {
         validateStatus: validWithSessionStatus
       })
       .then(handleResponse);

@@ -7,98 +7,78 @@
             <date-time-picker
               v-model="datetime"
               class="otc-form__date"
-              label="Time"
+              :label="$t('otc_form.date.label')"
               persistent-hint
-              hint="Time the trade took place"
+              :hint="$t('otc_form.date.hint')"
               :error-messages="errorMessages['timestamp']"
-            ></date-time-picker>
+            />
             <v-radio-group
               v-model="type"
-              label="Trade type"
+              :label="$t('otc_form.trade_type.label')"
               class="otc-form__type"
             >
-              <v-radio label="Buy" value="buy"></v-radio>
-              <v-radio label="Sell" value="sell"></v-radio>
+              <v-radio :label="$t('otc_form.trade_type.buy')" value="buy" />
+              <v-radio :label="$t('otc_form.trade_type.sell')" value="sell" />
             </v-radio-group>
           </v-col>
           <v-col cols="12" sm="9" class="d-flex flex-column">
             <v-text-field
               v-model="pair"
               class="otc-form__pair"
-              label="Pair"
+              :label="$t('otc_form.pair.label')"
               persistent-hint
-              hint="Pair for the trade. BASECURRENCY_QUOTECURRENCY"
+              :hint="$t('otc_form.pair.hint')"
               :error-messages="errorMessages['pair']"
-            ></v-text-field>
+            />
             <v-text-field
               v-model="amount"
               class="otc-form__amount"
-              label="Amount"
+              :label="$t('otc_form.amount.label')"
               persistent-hint
-              hint="Amount bought/sold"
+              :hint="$t('otc_form.amount.hint')"
               :error-messages="errorMessages['amount']"
-            ></v-text-field>
+            />
             <v-text-field
               v-model="rate"
               class="otc-form__rate"
-              label="Rate"
+              :label="$t('otc_form.rate.label')"
               persistent-hint
-              hint="Rate of the trade"
+              :hint="$t('otc_form.rate.label')"
               :error-messages="errorMessages['rate']"
-            ></v-text-field>
+            />
             <v-text-field
               v-model="fee"
               class="otc-form__fee"
-              label="Fee"
+              :label="$t('otc_form.fee.label')"
               persistent-hint
-              hint="Fee if any of the trade that occurred"
+              :hint="$t('otc_form.fee.hint')"
               :error-messages="errorMessages['fee']"
-            ></v-text-field>
+            />
             <asset-select
               v-model="feeCurrency"
-              label="Fee Currency"
+              :label="$t('otc_form.fee_currency.label')"
               class="otc-form__fee-currency"
               :rules="assetRules"
               :error-messages="errorMessages['feeCurrency']"
-            ></asset-select>
+            />
           </v-col>
         </v-row>
         <v-text-field
           v-model="link"
           class="otc-form__link"
-          label="Link"
+          :label="$t('otc_form.link.label')"
           persistent-hint
-          hint="[Optional] A link to the trade. e.g. in an explorer"
+          :hint="$t('otc_form.link.hint')"
           :error-messages="errorMessages['link']"
-        ></v-text-field>
+        />
         <v-textarea
           v-model="notes"
           class="otc-form__notes"
-          label="Additional notes"
+          :label="$t('otc_form.notes.label')"
           persistent-hint
-          hint="[Optional] Additional notes to store for the trade"
+          :hint="$t('otc_form.notes.hint')"
           :error-messages="errorMessages['notes']"
-        ></v-textarea>
-        <!-- <v-card-actions>
-            <v-btn
-              class="otc-form__buttons__save"
-              depressed
-              color="primary"
-              type="submit"
-              @click="addTrade()"
-            >
-              {{ editMode ? 'Modify Trade' : 'Add Trade' }}
-            </v-btn>
-            <v-btn
-              v-if="editMode"
-              class="otc-form__buttons__edit"
-              depressed=""
-              color="primary"
-              @click="cancel"
-            >
-              Cancel
-            </v-btn>
-          </v-card-actions> -->
+        />
       </v-col>
     </v-row>
   </div>
@@ -110,10 +90,12 @@ import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import { ApiTrade } from '@/services/types-api';
-import { Trade } from '@/store/trades/types';
+import { convertKeys } from '@/services/axios-tranformers';
+import { deserializeApiErrorMessage } from '@/services/converters';
+import { Trade, TradeType, NewTrade } from '@/services/trades/types';
+import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
-import { snakeToCamel } from '@/utils/conversion';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 @Component({
   components: { AssetSelect, DateTimePicker },
@@ -127,16 +109,12 @@ export default class OtcForm extends Vue {
   errorMessages: {
     [field: string]: string[];
   } = {};
-  addExternalTrade!: (
-    trade: Omit<ApiTrade, 'trade_id'>
-  ) => Promise<{ result: boolean; error: string }>;
-  editExternalTrade!: (
-    trade: ApiTrade
-  ) => Promise<{ result: boolean; error: string }>;
+  addExternalTrade!: (trade: NewTrade) => Promise<ActionStatus>;
+  editExternalTrade!: (trade: Trade) => Promise<ActionStatus>;
 
   private static format = 'DD/MM/YYYY HH:mm';
   readonly assetRules = [
-    (v: string) => !!v || 'The fee currency cannot be empty'
+    (v: string) => !!v || this.$t('otc_form.validation.non_empty_fee')
   ];
 
   id: string = '';
@@ -148,7 +126,7 @@ export default class OtcForm extends Vue {
   feeCurrency: string = '';
   link: string = '';
   notes: string = '';
-  type: 'buy' | 'sell' = 'buy';
+  type: TradeType = 'buy';
 
   mounted() {
     this.setEditMode();
@@ -161,7 +139,7 @@ export default class OtcForm extends Vue {
 
   private setEditMode() {
     if (!this.edit) {
-      this.resetFields();
+      this.reset();
       return;
     }
 
@@ -175,10 +153,10 @@ export default class OtcForm extends Vue {
     this.link = trade.link;
     this.notes = trade.notes;
     this.type = trade.tradeType;
-    this.id = trade.tradeId ?? '';
+    this.id = trade.tradeId;
   }
 
-  private resetFields() {
+  reset() {
     this.id = '';
     this.pair = '';
     this.datetime = moment().format(OtcForm.format);
@@ -192,58 +170,40 @@ export default class OtcForm extends Vue {
     this.errorMessages = {};
   }
 
-  async saveTrade(): Promise<boolean> {
-    const tradePayload: Writeable<ApiTrade> = {
-      amount: this.amount,
-      fee: this.fee,
-      fee_currency: this.feeCurrency,
+  async save(): Promise<boolean> {
+    const amount = bigNumberify(this.amount);
+    const fee = bigNumberify(this.fee);
+    const rate = bigNumberify(this.rate);
+
+    const tradePayload: Writeable<NewTrade> = {
+      amount: amount.isNaN() ? Zero : amount,
+      fee: fee.isNaN() ? Zero : fee,
+      feeCurrency: this.feeCurrency,
       link: this.link,
       notes: this.notes,
       pair: this.pair,
-      rate: this.rate,
+      rate: rate.isNaN() ? Zero : rate,
       location: 'external',
       timestamp: moment(this.datetime, OtcForm.format).unix(),
-      trade_type: this.type,
-      trade_id: this.id ? this.id : undefined
+      tradeType: this.type
     };
 
-    try {
-      let result: boolean;
-      let error: string;
-      if (tradePayload.trade_id === undefined) {
-        // add trade
-        delete tradePayload.trade_id;
-        ({ result, error } = await this.addExternalTrade(tradePayload));
-        if (result) {
-          this.resetFields();
-          return true;
-        }
-        throw error;
-      }
+    const { success, message } = !this.id
+      ? await this.addExternalTrade(tradePayload)
+      : await this.editExternalTrade({ ...tradePayload, tradeId: this.id });
 
-      // edit trade
-      ({ result, error } = await this.editExternalTrade(tradePayload));
-      if (result) {
-        this.resetFields();
-        return true;
-      }
-      throw error;
-      // await this.$api.editExternalTrade(tradePayload as Required<ApiTrade>);
-    } catch (e) {
-      // TODO: put this into a common helper func that always yields something in the form of
-      // { [field: string]: string[] } = {} , e.g: { amount: ['Amount is not a number', 'Amount is negative'] }
-      const errors = JSON.parse(e.message);
-      let errorMessages: { [field: string]: string[] } = {};
-
-      for (const [k, v] of Object.entries(errors)) {
-        errorMessages[snakeToCamel(k)] = v as string[];
-      }
-
-      this.errorMessages = errorMessages;
-      return false;
+    if (success) {
+      this.reset();
+      return true;
     }
+    if (message) {
+      this.errorMessages = convertKeys(
+        deserializeApiErrorMessage(message) ?? {},
+        true
+      );
+    }
+
+    return false;
   }
 }
 </script>
-
-<style scoped></style>

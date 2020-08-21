@@ -108,7 +108,7 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
-import { Status } from '@/store/defi/status';
+import { Status } from '@/store/const';
 import {
   AaveLoan,
   DefiLoan,

@@ -1,37 +1,32 @@
 import { MutationTree } from 'vuex';
+import { Trade, TradeUpdate } from '@/services/trades/types';
+import { Status } from '@/store/const';
 import { defaultState } from '@/store/trades/state';
-import { Status } from '@/store/trades/status';
-import { Trade, TradesState } from '@/store/trades/types';
+import { TradesState } from '@/store/trades/types';
 
 export const mutations: MutationTree<TradesState> = {
-  allTrades(state: TradesState, trades: Trade[]) {
-    state.allTrades = trades;
+  trades(state: TradesState, trades: Trade[]) {
+    state.trades = trades;
   },
-  externalTrades(state: TradesState, trades: Trade[]) {
-    state.externalTrades = trades;
-  },
+
   status(state: TradesState, status: Status) {
     state.status = status;
   },
 
   addTrade(state: TradesState, trade: Trade) {
-    // TODO: when we're not using "externalTrades" as the "master" trades store, change this to allTrades
-    state.externalTrades.push(trade);
+    state.trades.push(trade);
   },
 
-  updateTrade(state: TradesState, { originalTrade, updatedTrade }) {
-    const updatedTradeIndex = state.externalTrades.findIndex(trade => {
-      return trade.tradeId === originalTrade.tradeId;
+  updateTrade(state: TradesState, { trade, oldTradeId }: TradeUpdate) {
+    const index = state.trades.findIndex(exTrade => {
+      return exTrade.tradeId === oldTradeId;
     });
-    Object.assign(state.externalTrades[updatedTradeIndex], updatedTrade);
+    Object.assign(state.trades[index], trade);
   },
 
   deleteTrade(state: TradesState, tradeId: string) {
-    // TODO: when we're not using "externalTrades" as the "master" trades store, change this to allTrades
-    const deletedTradeIndex = state.externalTrades.findIndex(
-      trade => trade.tradeId === tradeId
-    );
-    state.externalTrades.splice(deletedTradeIndex, 1);
+    const index = state.trades.findIndex(trade => trade.tradeId === tradeId);
+    state.trades.splice(index, 1);
   },
 
   reset(state: TradesState) {

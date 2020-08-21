@@ -11,6 +11,7 @@ import {
   ApiMakerDAOVaultDetails
 } from '@/services/defi/types';
 import { api } from '@/services/rotkehlchen-api';
+import { Status } from '@/store/const';
 import {
   convertAaveBalances,
   convertAaveHistory,
@@ -20,7 +21,6 @@ import {
   convertMakerDAOVaults,
   convertVaultDetails
 } from '@/store/defi/converters';
-import { Status } from '@/store/defi/status';
 import { DefiState } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';

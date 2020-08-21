@@ -1,10 +1,9 @@
-import { Status } from '@/store/trades/status';
+import { Status } from '@/store/const';
 import { TradesState } from '@/store/trades/types';
 
 export const defaultState = (): TradesState => ({
   status: Status.NONE,
-  allTrades: [],
-  externalTrades: []
+  trades: []
 });
 
 export const state: TradesState = defaultState();

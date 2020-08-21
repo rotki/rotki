@@ -33,7 +33,7 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { Status } from '@/store/defi/status';
+import { Status } from '@/store/const';
 import { DefiProtocolSummary } from '@/store/defi/types';
 
 @Component({

@@ -51,5 +51,117 @@
       "non_empty_key": "The API key cannot be empty",
       "non_empty_secret": "The API secret cannot be empty"
     }
+  },
+  "open_trades": {
+    "title": "Open Orders",
+    "header": {
+      "location": "Location",
+      "action": "Action",
+      "pair": "Pair",
+      "rate": "Rate",
+      "amount": "Amount",
+      "fee": "Fee",
+      "fee_currency": "Fee Currency"
+    }
+  },
+  "closed_trades": {
+    "title":  "Closed Orders",
+    "headers": {
+      "location": "Location",
+      "action": "Action",
+      "pair": "Pair",
+      "rate": "Rate",
+      "amount": "Amount",
+      "fee": "Fee",
+      "fee_currency": "Fee Currency",
+      "timestamp": "Date",
+      "actions": "Actions"
+    },
+    "details": {
+      "title": "Trade Details",
+      "fee": "Fee",
+      "notes": "Notes",
+      "note_data": "Trade has no notes",
+      "link_data": "Trade has no link",
+      "link": "Link"
+    },
+    "dialog": {
+      "save": "Save",
+      "add": {
+        "title": "Add External Trade"
+      },
+      "edit": {
+        "title": "Edit External Trade",
+        "subtitle": "Edit an existing trade"
+      }
+    },
+    "confirmation": {
+      "title": "Delete Trade",
+      "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}"
+    }
+  },
+  "trade_location_selector": {
+    "selection": "Showing results across all locations | Showing results for {location} | Showing results for {location}",
+    "label": "Filter location"
+  },
+  "deposits_withdrawals": {
+    "title": "Deposits & Withdrawals",
+    "headers": {
+      "location": "Location",
+      "action": "Action",
+      "asset": "Asset",
+      "amount": "amount",
+      "usd_value": "USD Value",
+      "fee": "Fee",
+      "fee_currency": "Fee Currency"
+    }
+  },
+  "trades": {
+    "header": "Trades",
+    "tabs": {
+      "trades": "Trades",
+      "deposits_withdrawals": "Deposits & Withdrawals"
+    }
+  },
+  "otc_form": {
+    "date": {
+      "hint": "Time the trade took place",
+      "label": "Time"
+    },
+    "trade_type": {
+      "label": "Trade type",
+      "buy": "Buy",
+      "sell": "Sell"
+    },
+    "pair": {
+      "label": "Pair",
+      "hint": "Pair for the trade. BASECURRENCY_QUOTECURRENCY"
+    },
+    "amount": {
+      "label": "Amount",
+      "hint": "Amount bought/sold"
+    },
+    "rate": {
+      "label": "Rate",
+      "hint": "Rate of the trade"
+    },
+    "fee": {
+      "label": "Fee",
+      "hint": "Fee if any of the trade that occurred"
+    },
+    "fee_currency": {
+      "label": "Fee Currency"
+    },
+    "link": {
+      "label": "Link",
+      "hint": "[Optional] A link to the trade. e.g. in an explorer"
+    },
+    "notes": {
+      "label": "Additional notes",
+      "hint": "[Optional] Additional notes to store for the trade"
+    },
+    "validation": {
+      "non_empty_fee": "The fee currency cannot be empty"
+    }
   }
 }

@@ -3,7 +3,7 @@ import sortBy from 'lodash/sortBy';
 import { GetterTree } from 'vuex';
 import { truncateAddress } from '@/filters';
 import { SupportedDefiProtocols } from '@/services/defi/types';
-import { Status } from '@/store/defi/status';
+import { Status } from '@/store/const';
 import {
   AaveLoan,
   DefiBalance,

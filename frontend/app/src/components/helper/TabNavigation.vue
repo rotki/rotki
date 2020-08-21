@@ -8,7 +8,7 @@
     class="tab-navigation__tabs py-6"
   >
     <v-tab
-      v-for="tab in tabContents"
+      v-for="tab in tabContents.filter(t => !t.hidden)"
       :key="tab.name"
       :to="tab.routeTo"
       class="tab-navigation__tabs__tab"
@@ -35,8 +35,9 @@
 import { Component, Vue, Prop } from 'vue-property-decorator';
 
 export interface TabContent {
-  name: string;
-  routeTo: string;
+  readonly name: string;
+  readonly routeTo: string;
+  readonly hidden?: boolean;
 }
 
 @Component({})

@@ -1,7 +1,7 @@
 <template>
   <v-container>
-    <base-page-header text="Trades"></base-page-header>
-    <tab-navigation :tab-contents="tabs"></tab-navigation>
+    <base-page-header :text="$t('trades.header')" />
+    <tab-navigation :tab-contents="tabs" />
   </v-container>
 </template>
 
@@ -18,15 +18,14 @@ import TabNavigation, {
 export default class TradesHistory extends Vue {
   readonly tabs: TabContent[] = [
     {
-      name: 'Trades',
+      name: this.$t('trades.tabs.trades').toString(),
       routeTo: '/trades/trade-history'
     },
     {
-      name: 'Deposits & Withdrawals',
-      routeTo: '/trades/deposits-withdrawals'
+      name: this.$t('trades.tabs.deposits_withdrawals').toString(),
+      routeTo: '/trades/deposits-withdrawals',
+      hidden: !process.env.VUE_APP_TRADES_PREVIEW
     }
   ];
 }
 </script>
-
-<style scoped></style>

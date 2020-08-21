@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex';
+import { Status } from '@/store/const';
 import { defaultState } from '@/store/defi/state';
-import { Status } from '@/store/defi/status';
 import {
   AaveBalances,
   AaveHistory,

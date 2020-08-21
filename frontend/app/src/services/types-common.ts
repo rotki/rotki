@@ -15,5 +15,3 @@ export enum Location {
   COMMODITIES = 'commodities',
   CRYPTOCOM = 'crypto.com'
 }
-
-export type TradeType = 'buy' | 'sell';

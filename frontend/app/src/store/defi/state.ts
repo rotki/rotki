@@ -1,4 +1,4 @@
-import { Status } from '@/store/defi/status';
+import { Status } from '@/store/const';
 import { DefiState } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
 
