@@ -1277,6 +1277,8 @@ class DBHandler:
                         # But this can't be avoided with the way we query etherscan
                         # right now since we don't query transactions in a specific
                         # time range, so duplicate addition attempts can happen.
+                        # Also if we have transactions of one account sending to the
+                        # other and both accounts are being tracked.
                         string_repr = db_tuple_to_str(entry, tuple_type)
                         logger.debug(
                             f'Did not add "{string_repr}" to the DB since'

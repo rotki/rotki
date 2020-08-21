@@ -154,6 +154,12 @@ class EthereumTransaction(NamedTuple):
         result = self._asdict()  # pylint: disable=no-member
         result['tx_hash'] = '0x' + result['tx_hash'].hex()
         result['input_data'] = '0x' + result['input_data'].hex()
+
+        # Most integers are turned to string to be sent via the API
+        result['value'] = str(result['value'])
+        result['gas'] = str(result['gas'])
+        result['gas_price'] = str(result['gas_price'])
+        result['gas_used'] = str(result['gas_used'])
         return result
 
 

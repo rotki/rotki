@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union, overload
 
 import gevent
 import requests
+from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import EthereumToken
@@ -64,8 +65,8 @@ def deserialize_transaction_from_etherscan(
             timestamp=timestamp,
             block_number=block_number,
             tx_hash=tx_hash,
-            from_address=data['from'],
-            to_address=data['to'],
+            from_address=to_checksum_address(data['from']),
+            to_address=to_checksum_address(data['to']),
             value=read_integer(data, 'value'),
             gas=read_integer(data, 'gas'),
             gas_price=gas_price,
@@ -207,11 +208,8 @@ class Etherscan(ExternalServiceWithApiKey):
                         f'Missing a result in response. Response was: {response.text}',
                     )
 
-                if 'status' not in json_ret:
-                    # sucessful proxy calls do not include a status
-                    status = 1
-                else:
-                    status = json_ret['status'].to_int(exact=True)
+                # sucessful proxy calls do not include a status
+                status = json_ret.get('status', 1)
 
                 if status != 1:
                     if status == 0 and 'rate limit reached' in result:
