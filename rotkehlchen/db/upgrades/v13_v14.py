@@ -57,7 +57,6 @@ REMOVED_ETH_TOKENS = [
 
 def _delete_unsupported_assets(db: 'DBHandler') -> None:
     """Deletes all assets that are no longer supported from various DB tables"""
-    db.conn.commit()
     cursor = db.conn.cursor()
     # Kind of heavy handed, but let's just delete the ethereum tokens cache
     # Easier query than deleting tokens from the string that is a json list
