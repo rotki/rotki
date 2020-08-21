@@ -1248,6 +1248,7 @@ Querying ethereum transactions
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Querying tags
 =================

@@ -4,7 +4,7 @@ from typing import List, Optional
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import EthereumTransaction, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -13,6 +13,7 @@ log = RotkehlchenLogsAdapter(logger)
 def query_ethereum_transactions(
         database: DBHandler,
         etherscan: Etherscan,
+        address: Optional[ChecksumEthAddress] = None,
         from_ts: Optional[Timestamp] = None,
         to_ts: Optional[Timestamp] = None,
 ) -> List[EthereumTransaction]:
@@ -25,8 +26,11 @@ def query_ethereum_transactions(
     """
     transactions: List[EthereumTransaction] = []
 
-    accounts = database.get_blockchain_accounts()
-    for address in accounts.eth:
+    if address is not None:
+        accounts = [address]
+    else:
+        accounts = database.get_blockchain_accounts().eth
+    for address in accounts:
         # If we already have any transactions in the DB for this from_address
         # from to_ts and on then that means the range has already been queried
         if to_ts:

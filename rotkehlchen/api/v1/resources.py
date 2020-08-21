@@ -23,6 +23,7 @@ from rotkehlchen.api.v1.encoding import (
     BlockchainBalanceQuerySchema,
     DataImportSchema,
     EditSettingsSchema,
+    EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
@@ -211,6 +212,22 @@ class ExchangesDataResource(BaseResource):
 
 
 class EthereumTransactionsResource(BaseResource):
+    get_schema = EthereumTransactionQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
+    def get(
+            self,
+            async_query: bool,
+            address: Optional[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_ethereum_transactions(
+            async_query=async_query,
+            address=address,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
 
     def delete(self) -> Response:
         return self.rest_api.purge_ethereum_transaction_data()

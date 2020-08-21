@@ -26,7 +26,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db
-from rotkehlchen.typing import EthTokenInfo, Location, TradeType
+from rotkehlchen.typing import EthereumTransaction, EthTokenInfo, Location, TradeType
 from rotkehlchen.utils.version_check import VersionCheckResult
 
 
@@ -68,6 +68,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return entry.serialize()
     elif isinstance(entry, (
             Trade,
+            EthereumTransaction,
             MakerDAOVault,
             DSRAccountReport,
             Balance,

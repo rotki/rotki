@@ -588,6 +588,13 @@ class AsyncTasksQuerySchema(Schema):
     task_id = fields.Integer(strict=True, missing=None)
 
 
+class EthereumTransactionQuerySchema(Schema):
+    async_query = fields.Boolean(missing=False)
+    address = EthereumAddressField(missing=None)
+    from_timestamp = TimestampField(missing=Timestamp(0))
+    to_timestamp = TimestampField(missing=ts_now)
+
+
 class TradesQuerySchema(Schema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
