@@ -128,7 +128,7 @@ def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
     return deserialize_timestamp_from_date(date, '%Y-%m-%d %H:%M:%S', 'poloniex')
 
 
-def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
+def deserialize_timestamp_from_kraken(time: Union[str, FVal, int]) -> Timestamp:
     """Deserializes a timestamp from a kraken api query result entry
     Kraken has timestamps in floating point strings. Example: '1561161486.3056'.
 
@@ -141,7 +141,9 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
             'Failed to deserialize a timestamp entry from a null entry in kraken',
         )
 
-    if isinstance(time, str):
+    if isinstance(time, int):
+        return Timestamp(time)
+    elif isinstance(time, str):
         try:
             return Timestamp(convert_to_int(time, accept_only_exact=False))
         except ConversionError:
