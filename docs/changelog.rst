@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-` Add support for New Zealand Dollar (NZD) as a fiat currency
+* :feature:`-` Add support for Brazilian Real (BRL) as a fiat currency
 * :bug: `1352` Defi cached state should now properly reset when an account is added or deleted.
 * :bug: `1329` If aave historical data is queried in quick succession a UNIQUE constraint error will no longer be generated.
 * :feature: `840` Add a new notification UI. Backend errors should now display a notification on the upper right corner.
