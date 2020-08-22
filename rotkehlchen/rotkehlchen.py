@@ -100,6 +100,8 @@ class Rotkehlchen():
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
+        # Initialize the AssetResolver singleton
+        AssetResolver(data_directory=self.data_dir)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         self.coingecko = Coingecko()
@@ -112,8 +114,6 @@ class Rotkehlchen():
         )
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
-        # Initialize the AssetResolver singleton
-        AssetResolver(data_directory=self.data_dir)
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()

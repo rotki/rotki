@@ -126,20 +126,20 @@ def main():
     arg_parser = aggregator_args()
     args = arg_parser.parse_args()
     msg_aggregator = MessagesAggregator()
+    data_directory = default_data_directory()
 
-    user_data_dir = default_data_directory() / args.db_user
+    user_data_dir = data_directory / args.db_user
     database = DBHandler(
         user_data_dir=user_data_dir,
         password=args.db_password,
         msg_aggregator=msg_aggregator,
         initial_settings=None,
     )
-    our_data = AssetResolver().assets
+    our_data = AssetResolver(data_directory).assets
     paprika = CoinPaprika()
     cmc = None
     cmc_list = None
     root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    data_directory = default_data_directory()
     if args.cmc_api_key:
         cmc = Coinmarketcap(
             data_directory=data_directory,
