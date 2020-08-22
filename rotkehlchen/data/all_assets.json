@@ -4518,7 +4518,7 @@
         "type": "ethereum token"
     },
     "FTX": {
-        "coingecko": "ftw",
+        "coingecko": "fintrux",
         "ethereum_address": "0xd559f20296FF4895da39b5bd9ADd54b442596a61",
         "ethereum_token_decimals": 18,
         "name": "FintruX Network",
