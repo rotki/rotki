@@ -5,7 +5,7 @@
     class="pb-3"
   >
     <v-row no-gutters class="pa-3 secondary--text summary-card__header">
-      <v-toolbar-title class="font-weight-medium">
+      <v-toolbar-title class="font-weight-medium text-capitalize">
         {{ name }} balances
         <v-tooltip v-if="this.$slots.tooltip" bottom>
           <template #activator="{ on }">

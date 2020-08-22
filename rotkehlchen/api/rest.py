@@ -1327,10 +1327,13 @@ class RestAPI():
     @require_loggedin_user()
     def import_data(
             self,
-            source: Literal['cointracking.info'],  # pylint: disable=unused-argument
+            source: Literal['cointracking.info', 'crypto.com'],
             filepath: Path,
     ) -> Response:
-        self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
+        if source == 'cointracking.info':
+            self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
+        elif source == 'crypto.com':
+            self.rotkehlchen.data_importer.import_cryptocom_csv(filepath)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_defi_balances(self) -> Dict[str, Any]:

@@ -50,6 +50,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('M', 13);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('N', 14);
 /* Commodities */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('O', 15);
+/* Crypto.com */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('P', 16);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
