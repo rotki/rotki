@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from eth_utils import is_checksum_address
 
@@ -6,6 +8,7 @@ from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.typing import AssetType
+from rotkehlchen.utils.hashing import file_md5
 
 
 def test_unknown_asset():
@@ -104,3 +107,14 @@ def test_coingecko_identifiers_are_reachable():
             for s in suggestions:
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
         assert found, msg
+
+
+def test_assets_json_md5():
+    """Test that all_assets.json md5 matches"""
+    data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
+    data_md5 = file_md5(data_dir / 'all_assets.json')
+
+    with open(data_dir / 'all_assets.md5', 'r') as f:
+        saved_md5 = f.read()
+
+    assert data_md5 == saved_md5
