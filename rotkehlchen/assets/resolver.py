@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -46,7 +46,7 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
     If there is no new file (same hash) or if there is any problem contacting the remote
     then the builtin assets file is used.
     """
-    root_dir = Path(__file__).resolve().parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent
     our_downloaded_meta = data_directory / 'assets' / 'all_assets.meta'
     our_builtin_meta = root_dir / 'data' / 'all_assets.meta'
     try:
@@ -65,6 +65,9 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
             response = requests.get('https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.json')  # noqa: E501
             remote_asset_data = response.text
 
+            # Make sure directory exists
+            (data_directory / 'assets').mkdir(parents=True, exist_ok=True)
+            # Write the files
             with open(data_directory / 'assets' / 'all_assets.meta', 'w') as f:
                 f.write(json.dumps(remote_meta))
             with open(data_directory / 'assets' / 'all_assets.json', 'w') as f:
@@ -76,8 +79,8 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
             )
             return json.loads(remote_asset_data)
 
-        # else, same as RemotError use the current one
-    except (RemoteError, KeyError):
+        # else, same as all error cases use the current one
+    except (RemoteError, KeyError, json.decoder.JSONDecodeError):
         pass
 
     if our_downloaded_meta.is_file():
@@ -89,8 +92,22 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
         return json.loads(f.read())
 
 
+def _attempt_initialization(data_directory: Optional[Path]) -> Tuple[Dict[str, Any], bool]:
+    if not data_directory:
+        root_dir = Path(__file__).resolve().parent.parent
+        with open(root_dir / 'data' / 'all_assets.json', 'r') as f:
+            assets = json.loads(f.read())
+
+        return assets, False
+
+    # else we got the data directory so we can do the check
+    assets = _get_latest_assets(data_directory)
+    return assets, True
+
+
 class AssetResolver():
     __instance = None
+    remote_check_happened: bool = False
     assets: Dict[str, Dict[str, Any]] = {}
     eth_token_info: Optional[List[EthTokenInfo]] = None
 
@@ -98,18 +115,29 @@ class AssetResolver():
             cls,
             data_directory: Path = None,
     ) -> 'AssetResolver':
+        """Lazily initializes AssetResolver
+
+        As long as it's called without a data_directory path it uses the builtin
+        all_assets file. Once a data directory is given it attempts to see if a
+        newer file exists on the remote and uses that. Once that's done the remote
+        check flag is set to True.
+
+        From that point on all calls to AssetResolver() return the same data.
+        """
         if AssetResolver.__instance is not None:
-            return AssetResolver.__instance  # type: ignore
+            if AssetResolver.__instance.remote_check_happened:  # type: ignore
+                return AssetResolver.__instance
 
-        assert data_directory, 'arguments should be given at the first instantiation'
-
-        AssetResolver.__instance = object.__new__(cls)
-        assets = _get_latest_assets(data_directory)
-        root_dir = Path(__file__).resolve().parent.parent.parent
-        with open(root_dir / 'data' / 'all_assets.json', 'r') as f:
-            assets = json.loads(f.read())
+            # else we still have not performed the remote check
+            assets, check_happened = _attempt_initialization(data_directory)
+        else:
+            # first initialization
+            assets, check_happened = _attempt_initialization(data_directory)
+            AssetResolver.__instance = object.__new__(cls)
 
         AssetResolver.__instance.assets = assets
+        AssetResolver.__instance.remote_check_happened = check_happened
+
         return AssetResolver.__instance
 
     @staticmethod

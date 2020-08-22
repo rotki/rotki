@@ -2,6 +2,7 @@
 # flake8: noqa
 
 from rotkehlchen.tests.fixtures.accounting import *
+from rotkehlchen.tests.fixtures.assets import *
 from rotkehlchen.tests.fixtures.blockchain import *
 from rotkehlchen.tests.fixtures.db import *
 from rotkehlchen.tests.fixtures.exchanges.binance import *
