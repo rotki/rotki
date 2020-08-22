@@ -45,12 +45,14 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
+from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
     ChecksumEthAddress,
+    EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -1538,6 +1540,57 @@ class RestAPI():
     def purge_ethereum_transaction_data(self) -> Response:
         self.rotkehlchen.data.db.purge_ethereum_transaction_data()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def _get_ethereum_transactions(
+            self,
+            address: Optional[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Dict[str, Any]:
+        transactions: Optional[List[EthereumTransaction]]
+        try:
+            transactions = query_ethereum_transactions(
+                database=self.rotkehlchen.data.db,
+                etherscan=self.rotkehlchen.etherscan,
+                address=address,
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+            )
+            status_code = HTTPStatus.OK
+            message = ''
+        except RemoteError as e:
+            transactions = None
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = str(e)
+
+        return {'result': transactions, 'message': message, 'status_code': status_code}
+
+    @require_loggedin_user()
+    def get_ethereum_transactions(
+            self,
+            async_query: bool,
+            address: Optional[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_ethereum_transactions',
+                address=address,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        response = self._get_ethereum_transactions(address, from_timestamp, to_timestamp)
+        result = response['result']
+        msg = response['message']
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     def get_asset_icon(
             self,

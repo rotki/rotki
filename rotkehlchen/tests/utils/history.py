@@ -607,7 +607,7 @@ def mock_history_processing(
         assert eth_transactions[0].block_number == 54092
         assert eth_transactions[0].tx_hash == hexstring_to_bytes(TX_HASH_STR1)
         assert eth_transactions[0].from_address == ETH_ADDRESS1
-        assert eth_transactions[0].to_address == ''
+        assert eth_transactions[0].to_address is None
         assert eth_transactions[0].value == FVal('11901464239480000000000000')
         assert eth_transactions[0].input_data == MOCK_INPUT_DATA
         assert eth_transactions[1].block_number == 54093
@@ -862,8 +862,8 @@ def assert_poloniex_trades_result(
             assert trade['pair'] == 'ETH_BTC'
             assert trade['trade_type'] == 'sell'
             assert trade['amount'] == '1.40308443'
-            assert trade['rate'] == '0.06935244'
-            assert trade['fee'] == '0.0000973073287465092'
+            assert FVal(trade['rate']) == FVal('0.06935244')
+            assert FVal(trade['fee']) == FVal('0.0000973073287465092')
             assert trade['fee_currency'] == 'BTC'
             assert trade['link'] == '394131412'
             assert trade['notes'] == ''
@@ -872,9 +872,9 @@ def assert_poloniex_trades_result(
             assert trade['location'] == 'poloniex'
             assert trade['pair'] == 'ETH_BTC'
             assert trade['trade_type'] == 'buy'
-            assert trade['amount'] == '1.40308443'
-            assert trade['rate'] == '0.06935244'
-            assert trade['fee'] == '0.00140308443'
+            assert FVal(trade['amount']) == FVal('1.40308443')
+            assert FVal(trade['rate']) == FVal('0.06935244')
+            assert FVal(trade['fee']) == FVal('0.00140308443')
             assert trade['fee_currency'] == 'ETH'
             assert trade['link'] == '394131413'
             assert trade['notes'] == ''
@@ -883,9 +883,9 @@ def assert_poloniex_trades_result(
             assert trade['location'] == 'poloniex'
             assert trade['pair'] == 'XMR_ETH'
             assert trade['trade_type'] == 'buy'
-            assert trade['amount'] == '1.40308443'
-            assert trade['rate'] == '0.06935244'
-            assert trade['fee'] == '0.00140308443'
+            assert FVal(trade['amount']) == FVal('1.40308443')
+            assert FVal(trade['rate']) == FVal('0.06935244')
+            assert FVal(trade['fee']) == FVal('0.00140308443')
             assert trade['fee_currency'] == 'XMR'
             assert trade['link'] == '394131415'
             assert trade['notes'] == ''

@@ -1,6 +1,6 @@
 
 from enum import Enum
-from typing import Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
 
 from eth_utils.typing import ChecksumAddress
 from typing_extensions import Literal
@@ -138,17 +138,29 @@ class EthereumTransaction(NamedTuple):
     tx_hash: bytes
     timestamp: Timestamp
     block_number: int
-    from_address: EthAddress
-    to_address: EthAddress
-    value: FVal
-    gas: FVal
-    gas_price: FVal
-    gas_used: FVal
+    from_address: ChecksumEthAddress
+    to_address: Optional[ChecksumEthAddress]
+    value: int
+    gas: int
+    gas_price: int
+    gas_used: int
     input_data: bytes
     # The ethereum transaction nonce. Even though for normal ethereum transactions
     # this can't be negative it can be for us. IF it's negative it means that
     # this is an internal transaction returned by etherscan
     nonce: int
+
+    def serialize(self) -> Dict[str, Any]:
+        result = self._asdict()  # pylint: disable=no-member
+        result['tx_hash'] = '0x' + result['tx_hash'].hex()
+        result['input_data'] = '0x' + result['input_data'].hex()
+
+        # Most integers are turned to string to be sent via the API
+        result['value'] = str(result['value'])
+        result['gas'] = str(result['gas'])
+        result['gas_price'] = str(result['gas_price'])
+        result['gas_used'] = str(result['gas_used'])
+        return result
 
 
 class SupportedBlockchain(Enum):

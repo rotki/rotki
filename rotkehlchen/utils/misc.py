@@ -266,11 +266,13 @@ def convert_to_int(
         # Since float string are not converted to int we have to first convert
         # to float and try to convert to int afterwards
         try:
-            val = float(val)
-        except ValueError:
-            raise ConversionError(f'Could not convert {val!r} to a float')
-        if val.is_integer() or accept_only_exact is False:
             return int(val)
+        except ValueError:
+            # else also try to turn it into a float
+            try:
+                return FVal(val).to_int(exact=accept_only_exact)
+            except ValueError:
+                raise ConversionError(f'Could not convert {val!r} to an int')
     elif isinstance(val, int):
         return val
     elif isinstance(val, float):

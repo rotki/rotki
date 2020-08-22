@@ -58,7 +58,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_movement_category_from_db,
     deserialize_fee,
-    deserialize_fval,
     deserialize_hex_color_code,
     deserialize_location,
     deserialize_location_from_db,
@@ -1277,6 +1276,8 @@ class DBHandler:
                         # But this can't be avoided with the way we query etherscan
                         # right now since we don't query transactions in a specific
                         # time range, so duplicate addition attempts can happen.
+                        # Also if we have transactions of one account sending to the
+                        # other and both accounts are being tracked.
                         string_repr = db_tuple_to_str(entry, tuple_type)
                         logger.debug(
                             f'Did not add "{string_repr}" to the DB since'
@@ -1563,10 +1564,10 @@ class DBHandler:
                     block_number=result[2],
                     from_address=result[3],
                     to_address=result[4],
-                    value=deserialize_fval(result[5]),
-                    gas=deserialize_fval(result[6]),
-                    gas_price=deserialize_fval(result[7]),
-                    gas_used=deserialize_fval(result[8]),
+                    value=int(result[5]),
+                    gas=int(result[6]),
+                    gas_price=int(result[7]),
+                    gas_used=int(result[8]),
                     input_data=result[9],
                     nonce=result[10],
                 )

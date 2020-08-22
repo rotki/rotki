@@ -96,7 +96,7 @@ def test_gemini_query_balances(sandbox_gemini):
     assert msg == ''
     assert len(balances) == 6
 
-    assert balances[A_USD]['amount'] == FVal('523384.71365986584')
+    assert balances[A_USD]['amount'] == FVal('523384.71365986583339')
     assert balances[A_USD]['usd_value'] == balances[A_USD]['amount']
     assert balances[A_ETH]['amount'] == FVal('19985.07921584')
     assert balances[A_ETH]['usd_value'] > ZERO

@@ -1,6 +1,6 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_EUR
-from rotkehlchen.typing import EthAddress
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 
 A_RDN = EthereumToken('RDN')
 A_GNO = EthereumToken('GNO')
@@ -26,9 +26,9 @@ A_CNY = Asset('CNY')
 A_JPY = Asset('JPY')
 A_ZEC = Asset('ZEC')
 
-ETH_ADDRESS1 = EthAddress('0x5153493bB1E1642A63A098A65dD3913daBB6AE24')
-ETH_ADDRESS2 = EthAddress('0x4FED1fC4144c223aE3C1553be203cDFcbD38C581')
-ETH_ADDRESS3 = EthAddress('0x267FdC6F9F1C1a783b36126c1A59a9fbEBf42f84')
+ETH_ADDRESS1 = deserialize_ethereum_address('0x5153493bB1E1642A63A098A65dD3913daBB6AE24')
+ETH_ADDRESS2 = deserialize_ethereum_address('0x4FED1fC4144c223aE3C1553be203cDFcbD38C581')
+ETH_ADDRESS3 = deserialize_ethereum_address('0x267FdC6F9F1C1a783b36126c1A59a9fbEBf42f84')
 
 TX_HASH_STR1 = '0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4'
 TX_HASH_STR2 = '0x1c81f44c29ff0236f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e899'

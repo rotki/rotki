@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union, overload
 
 import gevent
 import requests
+from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import EthereumToken
@@ -12,7 +13,7 @@ from rotkehlchen.errors import ConversionError, DeserializationError, RemoteErro
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes
@@ -52,7 +53,7 @@ def deserialize_transaction_from_etherscan(
     """
     try:
         # internal tx list contains no gasprice
-        gas_price = FVal(-1) if internal else FVal(data['gasPrice'])
+        gas_price = -1 if internal else read_integer(data, 'gasPrice')
         tx_hash = read_hash(data, 'hash')
         input_data = read_hash(data, 'input')
         timestamp = deserialize_timestamp(data['timeStamp'])
@@ -64,12 +65,12 @@ def deserialize_transaction_from_etherscan(
             timestamp=timestamp,
             block_number=block_number,
             tx_hash=tx_hash,
-            from_address=data['from'],
-            to_address=data['to'],
-            value=deserialize_fval(data['value']),
-            gas=deserialize_fval(data['gas']),
+            from_address=to_checksum_address(data['from']),
+            to_address=to_checksum_address(data['to']) if data['to'] != '' else None,
+            value=read_integer(data, 'value'),
+            gas=read_integer(data, 'gas'),
             gas_price=gas_price,
-            gas_used=deserialize_fval(data['gasUsed']),
+            gas_used=read_integer(data, 'gasUsed'),
             input_data=input_data,
             nonce=nonce,
         )
@@ -207,11 +208,8 @@ class Etherscan(ExternalServiceWithApiKey):
                         f'Missing a result in response. Response was: {response.text}',
                     )
 
-                if 'status' not in json_ret:
-                    # sucessful proxy calls do not include a status
-                    status = 1
-                else:
-                    status = json_ret['status'].to_int(exact=True)
+                # sucessful proxy calls do not include a status
+                status = json_ret.get('status', 1)
 
                 if status != 1:
                     if status == 0 and 'rate limit reached' in result:

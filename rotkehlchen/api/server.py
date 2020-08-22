@@ -119,6 +119,11 @@ URLS_V1: URLS = [
     ('/history/export/', HistoryExportingResource),
     ('/queried_addresses', QueriedAddressesResource),
     ('/blockchains/ETH/transactions', EthereumTransactionsResource),
+    (
+        '/blockchains/ETH/transactions/<string:address>',
+        EthereumTransactionsResource,
+        'per_address_ethereum_transactions_resource',
+    ),
     ('/blockchains/ETH/defi', DefiBalancesResource),
     ('/blockchains/ETH/modules/makerdao/dsrbalance', MakerDAODSRBalanceResource),
     ('/blockchains/ETH/modules/makerdao/dsrhistory', MakerDAODSRHistoryResource),

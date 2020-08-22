@@ -62,7 +62,7 @@ class Accountant():
         self.events = TaxableEvents(self.csvexporter, profit_currency)
 
         self.asset_movement_fees = FVal(0)
-        self.last_gas_price = FVal(0)
+        self.last_gas_price = 0
 
         self.started_processing_timestamp = Timestamp(-1)
         self.currently_processing_timestamp = Timestamp(-1)
@@ -182,7 +182,7 @@ class Accountant():
             self.last_gas_price = transaction.gas_price
 
         rate = self.events.get_rate_in_profit_currency(A_ETH, transaction.timestamp)
-        eth_burned_as_gas = (transaction.gas_used * gas_price) / FVal(10 ** 18)
+        eth_burned_as_gas = FVal(transaction.gas_used * gas_price) / FVal(10 ** 18)
         cost = eth_burned_as_gas * rate
         self.eth_transactions_gas_costs += cost
 
@@ -275,7 +275,7 @@ class Accountant():
             end_ts=end_ts,
         )
         self.events.reset(start_ts, end_ts)
-        self.last_gas_price = FVal("2000000000")
+        self.last_gas_price = 2000000000
         self.start_ts = start_ts
         self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)

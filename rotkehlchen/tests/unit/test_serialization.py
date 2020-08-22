@@ -24,7 +24,7 @@ def test_rkl_decode_value():
 
 
 def test_rlk_jsonloads():
-    data = '{"a": "5.4", "b": "foo", "c": 32.1, "d": 5, "e": [1, "a", "5.1"]}'
+    data = '{"a": "5.4", "b": "foo", "c": 32.1, "d": 5, "e": [1, "a", "5.1"], "f": "37451082560000003241"}'  # noqa: E501
     result = rlk_jsonloads(data)
     assert result == {
         'a': FVal('5.4'),
@@ -32,6 +32,7 @@ def test_rlk_jsonloads():
         'c': FVal('32.1'),
         'd': 5,
         'e': [1, 'a', FVal('5.1')],
+        'f': 37451082560000003241,
     }
 
 

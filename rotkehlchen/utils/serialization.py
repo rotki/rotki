@@ -5,8 +5,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, TradeType
 
-DecodableValue = Union[Dict, List, float, bytes, str]
-DecodedValue = Union[Dict, FVal, List, bytes, str]
+DecodableValue = Union[Dict, List, float, bytes, str, int, FVal]
+DecodedValue = Union[Dict, FVal, List, bytes, str, int]
 
 
 class RKLDecoder(json.JSONDecoder):
@@ -84,11 +84,10 @@ def rkl_decode_value(
             # there are some symbols like 1337 which are all numeric and
             # are interpreted as FVAL. Adjust for it here.
             should_not_be_fval = (
-                (k == 'name' and isinstance(value, FVal)) or
-                (k == 'id' and isinstance(value, FVal)) or
-                (k == 'symbol' and isinstance(value, FVal)) or
-                (k == 'baseAsset' and isinstance(value, FVal)) or
-                (k == 'quoteAsset' and isinstance(value, FVal))
+                (k == 'name' and isinstance(value, (FVal, int))) or
+                (k == 'symbol' and isinstance(value, (FVal, int))) or
+                (k == 'baseAsset' and isinstance(value, (FVal, int))) or
+                (k == 'quoteAsset' and isinstance(value, (FVal, int)))
             )
             if should_not_be_fval:
                 value = str(v)
@@ -99,11 +98,15 @@ def rkl_decode_value(
     elif isinstance(val, float):
         return FVal(val)
     elif isinstance(val, (bytes, str)):
-        try:
-            val = float(val)
-            return FVal(val)
+        try:  # try to interpet it as an integer
+            val = int(val)
+            return val
         except ValueError:
-            pass
+            try:  # if not then try to interpet as an Fval
+                val = FVal(val)
+                return val
+            except ValueError:
+                pass  # then just return it as string
 
     assert not isinstance(val, float)
     return val

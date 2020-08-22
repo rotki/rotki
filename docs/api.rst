@@ -1185,6 +1185,71 @@ Purging locally saved ethereum transactions
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+
+Querying ethereum transactions
+=================================
+
+.. http:get:: /api/(version)/blockchains/ETH/transactions/(address)
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also he can limit the queried transactions by timestamps.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/transactions/0xdAC17F958D2ee523a2206206994597C13D831ec7/ HTTP/1.1
+      Host: localhost:5042
+
+      {"from_timestamp": 1514764800, "to_timestamp": 1572080165}
+
+   :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
+   :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": [{
+            "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
+            "timestamp": 1598006527,
+            "block_number": 10703085,
+            "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
+            "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
+            "value": "0",
+            "gas": "61676",
+            "gas_price": "206000000000",
+            "gas_used": "37154",
+            "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
+            "nonce": 2720
+        }, {
+            "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
+            "timestamp": 1588006528,
+            "block_number": 10700085,
+            "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
+            "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
+            "value": "56000300000000000000000",
+            "gas": "610676",
+            "gas_price": "106000000000",
+            "gas_used": "270154",
+            "input_data": "0x",
+            "nonce": 55
+        }],
+        "message": ""
+      }
+
+   :statuscode 200: Transactions succesfull queries
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 Querying tags
 =================
 
