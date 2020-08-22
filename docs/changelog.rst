@@ -13,6 +13,7 @@ Changelog
 
   - `YAM (YAM) <https://coinmarketcap.com/currencies/yam/>`__
   - `Serum (SRM) <https://coinmarketcap.com/currencies/serum/>`__
+  - `Orion Protocol (ORN) <https://www.coingecko.com/en/coins/orion-protocol>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.
