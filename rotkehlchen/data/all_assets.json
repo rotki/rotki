@@ -7703,10 +7703,11 @@
         "type": "ethereum token"
     },
     "ORN": {
+        "coingecko": "orion-protocol",
         "ethereum_address": "0x8fB00FDeBb4E83f2C58b3bcD6732AC1B6A7b7221",
         "ethereum_token_decimals": 8,
         "name": "Orion Protocol",
-        "started": 1594598400,
+        "started": 1594674901,
         "symbol": "ORN",
         "type": "ethereum token"
     },
