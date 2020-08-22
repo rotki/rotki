@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -109,12 +110,21 @@ def test_coingecko_identifiers_are_reachable():
         assert found, msg
 
 
-def test_assets_json_md5():
-    """Test that all_assets.json md5 matches"""
+def test_assets_json_meta():
+    """Test that all_assets.json md5 matches and that if md5 changes since last
+    time then version is also bumped"""
+    last_meta = {'md5': '648f41b1849bf52e0b3ff273dc07c142', 'version': 1}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
-    with open(data_dir / 'all_assets.md5', 'r') as f:
-        saved_md5 = f.read()
+    with open(data_dir / 'all_assets.meta', 'r') as f:
+        saved_meta = json.loads(f.read())
 
-    assert data_md5 == saved_md5
+    assert data_md5 == saved_meta['md5']
+
+    if data_md5 != last_meta['md5']:
+        msg = (
+            'The md5 has changed since the last time assets.json was edited '
+            'and the version has not been bumped',
+        )
+        assert saved_meta['version'] == last_meta['version'] + 1, msg
