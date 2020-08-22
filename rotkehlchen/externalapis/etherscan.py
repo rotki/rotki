@@ -66,7 +66,7 @@ def deserialize_transaction_from_etherscan(
             block_number=block_number,
             tx_hash=tx_hash,
             from_address=to_checksum_address(data['from']),
-            to_address=to_checksum_address(data['to']),
+            to_address=to_checksum_address(data['to']) if data['to'] != '' else None,
             value=read_integer(data, 'value'),
             gas=read_integer(data, 'gas'),
             gas_price=gas_price,
