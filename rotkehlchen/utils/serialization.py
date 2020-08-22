@@ -85,7 +85,6 @@ def rkl_decode_value(
             # are interpreted as FVAL. Adjust for it here.
             should_not_be_fval = (
                 (k == 'name' and isinstance(value, (FVal, int))) or
-                (k == 'id' and isinstance(value, (FVal, int))) or
                 (k == 'symbol' and isinstance(value, (FVal, int))) or
                 (k == 'baseAsset' and isinstance(value, (FVal, int))) or
                 (k == 'quoteAsset' and isinstance(value, (FVal, int)))
