@@ -25,9 +25,11 @@
         </div>
         <v-card-text>
           {{
-            $tc('trade_location_selector.selection', {
-              location: value
-            })
+            !value
+              ? $t('trade_location_selector.selection-none')
+              : $t('trade_location_selector.selection-single', {
+                  location: name
+                })
           }}
         </v-card-text>
       </v-card>
@@ -37,39 +39,22 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { tradeLocations } from '@/components/trades/consts';
 import LocationIcon from '@/components/trades/LocationIcon.vue';
-import { TradeLocationData, TradeLocation } from '@/components/trades/type';
+import { TradeLocation } from '@/components/trades/type';
 
 @Component({
   components: { LocationIcon }
 })
 export default class TradeLocationSelector extends Vue {
-  readonly tradeLocations: TradeLocationData[] = [
-    {
-      identifier: 'kraken',
-      name: 'Kraken',
-      icon: require('@/assets/images/kraken.png')
-    },
-    {
-      identifier: 'bittrex',
-      name: 'Bittrex',
-      icon: require('@/assets/images/bittrex.png')
-    },
-    {
-      identifier: 'binance',
-      name: 'Binance',
-      icon: require('@/assets/images/binance.png')
-    },
-    {
-      identifier: 'gemini',
-      name: 'Gemini',
-      icon: require('@/assets/images/gemini.png')
-    },
-    {
-      identifier: 'external',
-      name: 'External'
-    }
-  ];
+  readonly tradeLocations = tradeLocations;
+
+  get name(): string {
+    return (
+      this.tradeLocations.find(location => location.identifier === this.value)
+        ?.name ?? ''
+    );
+  }
 
   @Prop({ required: true })
   value!: TradeLocation;

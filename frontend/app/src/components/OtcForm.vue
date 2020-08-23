@@ -43,7 +43,7 @@
               class="otc-form__rate"
               :label="$t('otc_form.rate.label')"
               persistent-hint
-              :hint="$t('otc_form.rate.label')"
+              :hint="$t('otc_form.rate.hint')"
               :error-messages="errorMessages['rate']"
             />
             <v-text-field

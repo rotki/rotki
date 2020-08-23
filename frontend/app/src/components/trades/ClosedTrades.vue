@@ -31,6 +31,9 @@
             class="closed-trades"
             item-key="tradeId"
           >
+            <template #item.location="{ item }">
+              <location-display :identifier="item.location" />
+            </template>
             <template #item.rate="{ item }">
               <amount-display
                 class="closed-trades__trade__rate"
@@ -46,6 +49,8 @@
             <template #item.fee="{ item }">
               <amount-display
                 class="closed-trades__trade__fee"
+                show
+                :asset="item.feeCurrency"
                 :value="item.fee"
               />
             </template>
@@ -88,30 +93,23 @@
                     </span>
                   </v-row>
                   <v-row>
-                    <v-col cols="1" class="font-weight-medium">
-                      {{ $t('closed_trades.details.fee') }}
-                    </v-col>
-                    <v-col cols="auto">
-                      <amount-display
-                        class="closed-trades__trade__fee"
-                        show
-                        :asset="item.feeCurrency"
-                        :value="item.fee"
-                      />
-                    </v-col>
-                    <v-col cols="auto" class="font-weight-medium">
-                      {{ $t('closed_trades.details.notes') }}
-                    </v-col>
                     <v-col>
-                      {{
-                        item.notes
-                          ? item.notes
-                          : $t('closed_trades.details.note_data')
-                      }}
+                      <v-card outlined>
+                        <v-card-title class="subtitle-2">
+                          {{ $t('closed_trades.details.notes') }}
+                        </v-card-title>
+                        <v-card-text>
+                          {{
+                            item.notes
+                              ? item.notes
+                              : $t('closed_trades.details.note_data')
+                          }}
+                        </v-card-text>
+                      </v-card>
                     </v-col>
                   </v-row>
                   <v-row>
-                    <v-col cols="1" class="font-weight-medium">
+                    <v-col cols="auto" class="font-weight-medium">
                       {{ $t('closed_trades.details.link') }}
                     </v-col>
                     <v-col>
@@ -157,10 +155,11 @@ import { mapActions, mapGetters } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import OtcForm from '@/components/OtcForm.vue';
+import LocationDisplay from '@/components/trades/LocationDisplay.vue';
 import { Trade } from '@/services/trades/types';
 
 @Component({
-  components: { OtcForm, ConfirmDialog, BigDialog },
+  components: { LocationDisplay, OtcForm, ConfirmDialog, BigDialog },
   computed: {
     ...mapGetters('session', ['dateDisplayFormat'])
   },
@@ -193,10 +192,6 @@ export default class ClosedTrades extends Vue {
       text: this.$t('closed_trades.headers.fee').toString(),
       value: 'fee',
       align: 'end'
-    },
-    {
-      text: this.$t('closed_trades.headers.fee_currency').toString(),
-      value: 'feeCurrency'
     },
     {
       text: this.$t('closed_trades.headers.timestamp').toString(),

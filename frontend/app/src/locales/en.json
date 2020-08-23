@@ -73,13 +73,11 @@
       "rate": "Rate",
       "amount": "Amount",
       "fee": "Fee",
-      "fee_currency": "Fee Currency",
       "timestamp": "Date",
       "actions": "Actions"
     },
     "details": {
       "title": "Trade Details",
-      "fee": "Fee",
       "notes": "Notes",
       "note_data": "Trade has no notes",
       "link_data": "Trade has no link",
@@ -101,7 +99,8 @@
     }
   },
   "trade_location_selector": {
-    "selection": "Showing results across all locations | Showing results for {location} | Showing results for {location}",
+    "selection-none": "Showing results across all locations",
+    "selection-single": "Showing results for {location}",
     "label": "Filter location"
   },
   "deposits_withdrawals": {
