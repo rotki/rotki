@@ -62,7 +62,12 @@ class IconManager():
 
         for size in ('thumb', 'small', 'large'):
             url = getattr(data.images, size)
-            response = requests.get(url)
+            try:
+                response = requests.get(url)
+            except requests.exceptions.RequestException:
+                # Any problem getting the image skip it: https://github.com/rotki/rotki/issues/1370
+                continue
+
             with open(self.iconfile_path(asset, size), 'wb') as f:  # type: ignore
                 f.write(response.content)
 
