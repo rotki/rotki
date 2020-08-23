@@ -113,7 +113,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '648f41b1849bf52e0b3ff273dc07c142', 'version': 1}
+    last_meta = {'md5': 'd2076264e370ce731fa3d0b08f54f376', 'version': 1}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
@@ -128,3 +128,20 @@ def test_assets_json_meta():
             'and the version has not been bumped',
         )
         assert saved_meta['version'] == last_meta['version'] + 1, msg
+
+
+@pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('mock_asset_github_response', ["""{
+"COMPRLASSET": {
+    "coingecko": "",
+    "name": "Completely real asset, totally not for testing only",
+    "symbol": "COMPRLASSET",
+    "type": "own chain"
+}
+}"""])
+def test_assets_pulling_from_github_works(asset_resolver):  # pylint: disable=unused-argument
+    """Test that pulling assets from mock github (due to super high version) makes the
+    pulled assets available to the local Rotki instance"""
+    new_asset = Asset("COMPRLASSET")
+    assert new_asset.name == 'Completely real asset, totally not for testing only'
