@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <trade-location-selector v-if="preview" v-model="selectedLocation" />
+    <trade-location-selector v-model="selectedLocation" />
     <open-trades v-if="preview" :data="openTrades" />
     <closed-trades class="mt-8" :data="closedTrades" />
   </v-container>
@@ -12,8 +12,7 @@ import { mapActions, mapState } from 'vuex';
 import ClosedTrades from '@/components/trades/ClosedTrades.vue';
 import OpenTrades from '@/components/trades/OpenTrades.vue';
 import TradeLocationSelector from '@/components/trades/TradeLocationSelector.vue';
-import { TradeLocation } from '@/components/trades/type';
-import { Trade } from '@/services/trades/types';
+import { Trade, TradeLocation } from '@/services/trades/types';
 
 @Component({
   components: { TradeLocationSelector, ClosedTrades, OpenTrades },
@@ -21,12 +20,12 @@ import { Trade } from '@/services/trades/types';
     ...mapState('trades', ['trades'])
   },
   methods: {
-    ...mapActions('trades', ['fetchExternalTrades', 'deleteExternalTrade'])
+    ...mapActions('trades', ['fetchTrades', 'deleteExternalTrade'])
   }
 })
 export default class TradeHistory extends Vue {
-  selectedLocation: TradeLocation | null = 'external';
-  fetchExternalTrades!: () => Promise<void>;
+  selectedLocation: TradeLocation | null = null;
+  fetchTrades!: () => Promise<void>;
   trades!: Trade[];
   openTrades: Trade[] = [];
 
@@ -45,7 +44,7 @@ export default class TradeHistory extends Vue {
   }
 
   mounted() {
-    this.fetchExternalTrades();
+    this.fetchTrades();
   }
 }
 </script>

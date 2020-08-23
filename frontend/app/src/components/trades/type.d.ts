@@ -1,15 +1,4 @@
-export type TradeLocation =
-  | 'kraken'
-  | 'poloniex'
-  | 'bitmex'
-  | 'binance'
-  | 'bittrex'
-  | 'gemini'
-  | 'coinbase'
-  | 'coinbasepro'
-  | 'ethereum'
-  | 'bitcoin'
-  | 'external';
+import { TradeLocation } from '@/services/trades/types';
 
 export type TradeLocationData = {
   readonly identifier: TradeLocation;

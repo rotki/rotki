@@ -10,17 +10,9 @@ import { ActionStatus } from '@/store/types';
 export const actions: ActionTree<TradesState, RotkehlchenState> = {
   async fetchTrades({ commit }): Promise<void> {
     try {
-      commit('allTrades', await api.allTrades());
+      commit('trades', await api.trades.trades());
     } catch (e) {
-      notify(`Failed: ${e}`, 'Retrieving trades', Severity.ERROR);
-    }
-  },
-
-  async fetchExternalTrades({ commit }): Promise<void> {
-    try {
-      commit('trades', await api.trades.externalTrades());
-    } catch (e) {
-      notify(`Failed: ${e}`, 'Retrieving external trades', Severity.ERROR);
+      notify(`Failed: ${e}`, 'Retrieving trades', Severity.ERROR, true);
     }
   },
 

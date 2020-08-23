@@ -18,7 +18,6 @@ import { BalancesApi } from '@/services/balances/balances-api';
 import { DefiApi } from '@/services/defi/defi-api';
 import { SessionApi } from '@/services/session/session-api';
 import { TradesApi } from '@/services/trades/trades-api';
-import { Trade } from '@/services/trades/types';
 import {
   ApiManualBalance,
   ApiManualBalances,
@@ -141,14 +140,6 @@ export class RotkehlchenApi {
           validateStatus: validAuthorizedStatus
         }
       )
-      .then(handleResponse);
-  }
-
-  async allTrades(): Promise<Trade[]> {
-    return this.axios
-      .get<ActionResult<Trade[]>>('/trades', {
-        validateStatus: validWithSessionStatus
-      })
       .then(handleResponse);
   }
 

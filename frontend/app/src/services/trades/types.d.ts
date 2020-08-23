@@ -5,7 +5,7 @@ export type TradeType = 'buy' | 'sell';
 export interface Trade {
   readonly tradeId: string;
   readonly timestamp: number;
-  readonly location: string;
+  readonly location: TradeLocation;
   readonly pair: string;
   readonly tradeType: TradeType;
   readonly amount: BigNumber;
@@ -22,3 +22,16 @@ export interface TradeUpdate {
   readonly trade: Trade;
   readonly oldTradeId: string;
 }
+
+export type TradeLocation =
+  | 'kraken'
+  | 'poloniex'
+  | 'bitmex'
+  | 'binance'
+  | 'bittrex'
+  | 'gemini'
+  | 'coinbase'
+  | 'coinbasepro'
+  | 'ethereum'
+  | 'bitcoin'
+  | 'external';

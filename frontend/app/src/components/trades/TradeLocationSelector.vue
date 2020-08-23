@@ -16,10 +16,10 @@
             @input="input"
           >
             <template #selection="{ item }">
-              <location-icon :item="item" />
+              <location-icon horizontal :item="item" />
             </template>
             <template #item="{ item }">
-              <location-icon :item="item" />
+              <location-icon horizontal :item="item" />
             </template>
           </v-autocomplete>
         </div>
@@ -41,7 +41,7 @@
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { tradeLocations } from '@/components/trades/consts';
 import LocationIcon from '@/components/trades/LocationIcon.vue';
-import { TradeLocation } from '@/components/trades/type';
+import { TradeLocation } from '@/services/trades/types';
 
 @Component({
   components: { LocationIcon }

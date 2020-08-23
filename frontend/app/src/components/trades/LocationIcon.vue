@@ -1,17 +1,20 @@
 <template>
-  <span class="d-flex flex-row align-center">
+  <span
+    class="d-flex align-center"
+    :class="horizontal ? 'flex-row' : 'flex-column'"
+  >
     <span>
       <v-img
         v-if="item.identifier !== 'external'"
-        width="34px"
+        width="24px"
         contain
         position="left"
         max-height="24px"
         :src="item.icon"
       />
-      <v-icon v-else color="accent" class="mr-2">mdi-book-open</v-icon>
+      <v-icon v-else color="accent">mdi-book-open</v-icon>
     </span>
-    <span>
+    <span :class="horizontal ? 'ml-2' : null">
       {{ item.name }}
     </span>
   </span>
@@ -24,5 +27,7 @@ import { TradeLocationData } from '@/components/trades/type';
 export default class LocationIcon extends Vue {
   @Prop({ required: true })
   item!: TradeLocationData;
+  @Prop({ required: false, type: Boolean, default: false })
+  horizontal!: boolean;
 }
 </script>

@@ -79,7 +79,7 @@ class ActionWriter():
                 if asset in FIAT_CURRENCIES:
                     self.rotki.data.db.add_manually_tracked_balances([ManuallyTrackedBalance(
                         asset=asset,
-                        label=f'{asset.identifier} balance',
+                        label=f'{asset.identifier} balance {timestamp}',
                         amount=value,
                         location=Location.BANKS,
                         tags=None,
@@ -104,8 +104,11 @@ class ActionWriter():
             current_ts, save_balances, make_trade = self.get_next_ts()
 
             if make_trade:
-                self.create_action(created_trades, current_ts)
-                created_trades += 1
+                try:
+                    self.create_action(created_trades, current_ts)
+                    created_trades += 1
+                except Exception as e:
+                    logger.error(f'failed to create trade: {e}')
 
             if save_balances:
                 self.maybe_save_balances(save_ts=current_ts)

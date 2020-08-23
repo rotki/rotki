@@ -4,7 +4,7 @@ import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { NewTrade, Trade } from '@/services/trades/types';
+import { NewTrade, Trade, TradeLocation } from '@/services/trades/types';
 import { handleResponse, validStatus } from '@/services/utils';
 
 export class TradesApi {
@@ -21,6 +21,16 @@ export class TradesApi {
     this.requestTransformer = [axiosSnakeCaseTransformer].concat(
       axios.defaults.transformRequest as AxiosTransformer[]
     );
+  }
+
+  async trades(location?: TradeLocation): Promise<Trade[]> {
+    return this.axios
+      .get<ActionResult<Trade[]>>('/trades', {
+        data: location ? { data: location } : undefined,
+        validateStatus: validStatus,
+        transformResponse: this.responseTransformer
+      })
+      .then(handleResponse);
   }
 
   async externalTrades(): Promise<Trade[]> {
