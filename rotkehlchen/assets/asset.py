@@ -73,6 +73,7 @@ WORLD_TO_KRAKEN = {
     'AUD': 'ZAUD',
     'BAT': 'BAT',
     'COMP': 'COMP',
+    'DOT': 'DOT',
     'KAVA': 'KAVA',
     'KNC': 'KNC',
     'LINK': 'LINK',

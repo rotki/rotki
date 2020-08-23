@@ -3306,6 +3306,13 @@
         "symbol": "DOR",
         "type": "ethereum token"
     },
+    "DOT": {
+        "coingecko": "polkadot",
+        "name": "Polkadot",
+        "started": 1590451200,
+        "symbol": "DOT",
+        "type": "own chain"
+    },
     "DOV": {
         "coingecko": "dovu",
         "ethereum_address": "0xac3211a5025414Af2866FF09c23FC18bc97e79b1",
