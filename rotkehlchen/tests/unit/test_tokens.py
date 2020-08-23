@@ -21,7 +21,7 @@ def test_detect_tokens_for_addresses(ethtokens, inquirer):  # pylint: disable=un
     Autodetect tokens of two addresses
 
     This is going to be a bit slow test since it actually queries etherscan without any mocks.
-    By doing so we can test that the whole behaviou with etherscan works fine and our
+    By doing so we can test that the whole behavior with etherscan works fine and our
     chosen chunk length for it is also acceptable.
 
     USD price queries are mocked so we don't care about the result.

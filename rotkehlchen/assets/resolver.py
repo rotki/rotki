@@ -92,15 +92,34 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
         return json.loads(f.read())
 
 
-def _attempt_initialization(data_directory: Optional[Path]) -> Tuple[Dict[str, Any], bool]:
+def _attempt_initialization(
+        data_directory: Optional[Path],
+        saved_assets: Optional[Dict[str, Any]],
+) -> Tuple[Dict[str, Any], bool]:
+    """Reads the asset data either from builtin data or from the remote
+
+    1. If it's the very first time data is initialized (and data directory is not given)
+    then just get assets from the builtin file
+    2. If data directory is still not given but we have some saved assets return them directly
+    3. If data directory is given then we can finally do the comparison of local
+    saved and builtin file with the remote and return the most recent assets.
+
+    Returns a tuple of the most recent assets mapping it can get and a boolean denoting
+    if the remote check happened or not. If it did then we havethe most recent assets.
+    """
     if not data_directory:
+        if saved_assets is not None:
+            # Do not read the all_assets file again if it has been already read
+            return saved_assets, False
+
+        # First initialization. Read the builtin all_assets.json
         root_dir = Path(__file__).resolve().parent.parent
         with open(root_dir / 'data' / 'all_assets.json', 'r') as f:
             assets = json.loads(f.read())
 
         return assets, False
 
-    # else we got the data directory so we can do the check
+    # else we got the data directory so we can finally do the remote check
     assets = _get_latest_assets(data_directory)
     return assets, True
 
@@ -129,10 +148,16 @@ class AssetResolver():
                 return AssetResolver.__instance
 
             # else we still have not performed the remote check
-            assets, check_happened = _attempt_initialization(data_directory)
+            assets, check_happened = _attempt_initialization(
+                data_directory=data_directory,
+                saved_assets=AssetResolver.__instance.assets,
+            )
         else:
             # first initialization
-            assets, check_happened = _attempt_initialization(data_directory)
+            assets, check_happened = _attempt_initialization(
+                data_directory=data_directory,
+                saved_assets=None,
+            )
             AssetResolver.__instance = object.__new__(cls)
 
         AssetResolver.__instance.assets = assets

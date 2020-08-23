@@ -28,7 +28,10 @@ def force_reinitialize_asset_resolver() -> bool:
     return False
 
 
-@pytest.fixture()
+# We need auto-use here since the fixture needs to be included
+# everywhere so as to not have Asset() calls use a Resolver not
+# initialized from here which would take more time
+@pytest.fixture(autouse=True)
 def asset_resolver(
         data_dir,
         query_github_for_assets,
@@ -36,7 +39,10 @@ def asset_resolver(
         mock_asset_github_response,
         force_reinitialize_asset_resolver,
 ):
-    """Run the first initialization of the AssetResolver singleton"""
+    """Run the first initialization of the AssetResolver singleton
+
+    It's an autouse fixture so that it always gets initialized
+    """
     if force_reinitialize_asset_resolver:
         AssetResolver._AssetResolver__instance = None
 
