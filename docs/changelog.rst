@@ -2,8 +2,11 @@
 Changelog
 =========
 
+
 * :feature:`-` Add support for New Zealand Dollar (NZD) as a fiat currency
 * :feature:`-` Add support for Brazilian Real (BRL) as a fiat currency
+* :feature:`-` Rotki users can now import data from their Crypto.com mobile application. For more information go to the data import component of Rotki.
+* :feature: `1361` Users of Rotki will now no longer need to wait until the next version is available to be able to access the newly supported assets. Rotki will pull newly available supported assets directly from Github.
 * :bug: `1352` Defi cached state should now properly reset when an account is added or deleted.
 * :bug: `1329` If aave historical data is queried in quick succession a UNIQUE constraint error will no longer be generated.
 * :feature: `840` Add a new notification UI. Backend errors should now display a notification on the upper right corner.

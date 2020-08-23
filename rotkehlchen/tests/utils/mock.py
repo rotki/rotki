@@ -1,5 +1,6 @@
+import json
 from collections import namedtuple
-from typing import Dict
+from typing import Any, Dict
 
 from hexbytes import HexBytes
 
@@ -10,6 +11,9 @@ class MockResponse():
         self.text = text
         self.content = text.encode()
         self.url = 'http://someurl.com'
+
+    def json(self) -> Dict[str, Any]:
+        return json.loads(self.text)
 
 
 class MockEth():

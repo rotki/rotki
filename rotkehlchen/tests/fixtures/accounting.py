@@ -33,6 +33,13 @@ def data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
 
     data_directory.mkdir(parents=True, exist_ok=True)
 
+    # do not keep pull github assets between tests. Can really confuse test results
+    # as we may end up with different set of assets in tests
+    try:
+        (data_directory / 'assets').unlink()
+    except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink
+        pass
+
     # Remove any old accounts. The only reason we keep this directory around is for
     # cached price queries, not for user DBs
     for x in data_directory.iterdir():

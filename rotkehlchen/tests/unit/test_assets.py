@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import pytest
 from eth_utils import is_checksum_address
 
@@ -6,6 +9,7 @@ from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.typing import AssetType
+from rotkehlchen.utils.hashing import file_md5
 
 
 def test_unknown_asset():
@@ -104,3 +108,44 @@ def test_coingecko_identifiers_are_reachable():
             for s in suggestions:
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
         assert found, msg
+
+
+def test_assets_json_meta():
+    """Test that all_assets.json md5 matches and that if md5 changes since last
+    time then version is also bumped"""
+    last_meta = {'md5': 'd2076264e370ce731fa3d0b08f54f376', 'version': 1}
+    data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
+    data_md5 = file_md5(data_dir / 'all_assets.json')
+
+    with open(data_dir / 'all_assets.meta', 'r') as f:
+        saved_meta = json.loads(f.read())
+
+    assert data_md5 == saved_meta['md5']
+
+    if data_md5 != last_meta['md5']:
+        msg = (
+            'The md5 has changed since the last time assets.json was edited '
+            'and the version has not been bumped',
+        )
+        assert saved_meta['version'] == last_meta['version'] + 1, msg
+
+
+@pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('mock_asset_github_response', ["""{
+"COMPRLASSET": {
+    "coingecko": "",
+    "name": "Completely real asset, totally not for testing only",
+    "symbol": "COMPRLASSET",
+    "type": "own chain"
+}
+}"""])
+@pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
+def test_assets_pulling_from_github_works(asset_resolver):  # pylint: disable=unused-argument
+    """Test that pulling assets from mock github (due to super high version) makes the
+    pulled assets available to the local Rotki instance"""
+    new_asset = Asset("COMPRLASSET")
+    assert new_asset.name == 'Completely real asset, totally not for testing only'
+    # After the test runs we must reset the asset resolver so that it goes back to
+    # the normal list of assets
+    AssetResolver._AssetResolver__instance = None
