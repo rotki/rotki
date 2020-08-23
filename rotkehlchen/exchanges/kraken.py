@@ -543,7 +543,13 @@ class Kraken(ExchangeInterface):
                     continue
                 entry['usd_value'] = FVal(v * usd_price)
 
-            balances[our_asset] = entry
+            if our_asset not in balances:
+                balances[our_asset] = entry
+            else:  # Some assets may appear twice in kraken balance query for different locations
+                # Spot/staking for example
+                balances[our_asset]['amount'] += entry['amount']
+                balances[our_asset]['usd_value'] += entry['usd_value']
+
             log.debug(
                 'kraken balance query result',
                 sensitive_log=True,

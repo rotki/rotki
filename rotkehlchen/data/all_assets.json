@@ -3166,6 +3166,15 @@
         "symbol": "DGX",
         "type": "ethereum token"
     },
+    "DIA": {
+        "coingecko": "dia-data",
+        "ethereum_address": "0x84cA8bc7997272c7CfB4D0Cd3D55cd942B3c9419",
+        "ethereum_token_decimals": 18,
+        "name": "DIAToken",
+        "started": 1574868479,
+        "symbol": "DIA",
+        "type": "ethereum token"
+    },
     "DICE": {
         "coingecko": "trondice",
         "ethereum_address": "0x2e071D2966Aa7D8dECB1005885bA1977D6038A65",
@@ -3305,6 +3314,13 @@
         "started": 1517356800,
         "symbol": "DOR",
         "type": "ethereum token"
+    },
+    "DOT": {
+        "coingecko": "polkadot",
+        "name": "Polkadot",
+        "started": 1590451200,
+        "symbol": "DOT",
+        "type": "own chain"
     },
     "DOV": {
         "coingecko": "dovu",
