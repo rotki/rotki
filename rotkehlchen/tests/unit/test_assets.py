@@ -140,8 +140,12 @@ def test_assets_json_meta():
     "type": "own chain"
 }
 }"""])
+@pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
 def test_assets_pulling_from_github_works(asset_resolver):  # pylint: disable=unused-argument
     """Test that pulling assets from mock github (due to super high version) makes the
     pulled assets available to the local Rotki instance"""
     new_asset = Asset("COMPRLASSET")
     assert new_asset.name == 'Completely real asset, totally not for testing only'
+    # After the test runs we must reset the asset resolver so that it goes back to
+    # the normal list of assets
+    AssetResolver._AssetResolver__instance = None

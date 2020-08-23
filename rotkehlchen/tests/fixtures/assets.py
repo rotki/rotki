@@ -23,13 +23,23 @@ def query_github_for_assets() -> bool:
 
 
 @pytest.fixture()
+def force_reinitialize_asset_resolver() -> bool:
+    """If True, the asset resolver instance will be force to start frm scratch"""
+    return False
+
+
+@pytest.fixture()
 def asset_resolver(
         data_dir,
         query_github_for_assets,
         mock_asset_meta_github_response,
         mock_asset_github_response,
+        force_reinitialize_asset_resolver,
 ):
     """Run the first initialization of the AssetResolver singleton"""
+    if force_reinitialize_asset_resolver:
+        AssetResolver._AssetResolver__instance = None
+
     if query_github_for_assets:
         AssetResolver(data_dir)
         return
