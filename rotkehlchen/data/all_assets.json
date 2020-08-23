@@ -720,6 +720,11 @@
         "symbol": "AUD",
         "type": "fiat"
     },
+    "NZD": {
+        "name": "New Zealand Dollar",
+        "symbol": "NZD",
+        "type": "fiat"
+    },
     "AUR": {
         "coingecko": "auroracoin",
         "name": "Auroracoin",
@@ -1554,6 +1559,11 @@
         "started": 1425513600,
         "symbol": "BRK",
         "type": "own chain"
+    },
+    "BRL": {
+        "name": "Brazilian Real",
+        "symbol": "BRL",
+        "type": "fiat"
     },
     "BRX": {
         "coingecko": "berryx",
