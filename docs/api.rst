@@ -2046,9 +2046,12 @@ Dealing with trades
 .. http:get:: /api/(version)/trades
 
    .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
       This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on this endpoint will return all trades of the current user. They can be further filtered by time range and/or location.
+   Doing a GET on this endpoint will return all trades of the current user. They can be further filtered by time range and/or location. If the user is not premium and has more than 250 trades then the returned trades will be limited to that number. Any filtering will also be limited to those first 250 trades.
 
    **Example Request**:
 
@@ -2076,23 +2079,26 @@ Dealing with trades
       Content-Type: application/json
 
       {
-          "result": [{
-              "trade_id": "dsadfasdsad",
-              "timestamp": 1491606401,
-              "location": "external",
-              "pair": "BTC_EUR",
-              "trade_type": "buy",
-              "amount": "0.5541",
-              "rate": "8422.1",
-              "fee": "0.55",
-              "fee_currency": "USD",
-              "link": "Optional unique trade identifier"
-              "notes": "Optional notes"
-          }]
+          "result": {
+	      "trades": [{
+		  "trade_id": "dsadfasdsad",
+		  "timestamp": 1491606401,
+		  "location": "external",
+		  "pair": "BTC_EUR",
+		  "trade_type": "buy",
+		  "amount": "0.5541",
+		  "rate": "8422.1",
+		  "fee": "0.55",
+		  "fee_currency": "USD",
+		  "link": "Optional unique trade identifier"
+		  "notes": "Optional notes"
+              }],
+	      "trades_found": 95,
+	      "trades_limit": 250,
           "message": ""
       }
 
-   :resjson object result: An array of trade objects.
+   :resjson object trades: An array of trade objects.
    :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
@@ -2104,6 +2110,8 @@ Dealing with trades
    :resjsonarr string fee_currency: The currency in which ``fee`` is denominated in
    :resjsonarr string link: Optional unique trade identifier or link to the trade. Can be an empty string
    :resjsonarr string notes: Optional notes about the trade. Can be an empty string
+   :resjson int trades_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
+   :resjson int trades_limit: The trades limit for the account tier of the user.
    :statuscode 200: Trades are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.
