@@ -8,7 +8,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
-from rotkehlchen.utils.interfaces import CacheableObject, LockableQueryObject
+from rotkehlchen.utils.interfaces import CacheableObject, LockableQueryObject, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -166,6 +166,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             end_ts=max(ends),
         )
 
+    @protect_with_lock()
     def query_trade_history(
             self,
             start_ts: Timestamp,

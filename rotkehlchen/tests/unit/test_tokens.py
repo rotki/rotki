@@ -1,3 +1,4 @@
+import warnings as test_warnings
 from unittest.mock import patch
 
 import pytest
@@ -7,6 +8,7 @@ from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 
@@ -26,13 +28,19 @@ def test_detect_tokens_for_addresses(ethtokens, inquirer):  # pylint: disable=un
 
     USD price queries are mocked so we don't care about the result.
     Just check that all prices are included
+
+    Warning: this test is using live data from an account and if it moves its tokens
+    the test may give warnings or fail
     """
-    addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+    addr1 = AAVE_TEST_ACC_1
     addr2 = '0xD3A962916a19146D658de0ab62ee237ed3115873'
     result, token_usd_prices = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
 
     assert len(result[addr1]) >= 2
-    balance = result[addr1]['aDAI']
+    try:
+        balance = result[addr1]['aLEND']
+    except KeyError:
+        test_warnings.warn(UserWarning(f'Test account {addr1} has no aLEND'))
     assert isinstance(balance, FVal)
     assert balance > ZERO
     assert len(result[addr2]) >= 20

@@ -4,6 +4,7 @@ import argparse
 import logging.config
 import os
 import time
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -31,6 +32,7 @@ from rotkehlchen.errors import (
     RemoteError,
     SystemPermissionError,
 )
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -48,11 +50,13 @@ from rotkehlchen.logging import (
 )
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
+from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
     ListOfBlockchainAddresses,
+    Location,
     SupportedBlockchain,
     Timestamp,
 )
@@ -64,6 +68,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 15
+FREE_TRADES_LIMIT = 250
 
 ICONS_BATCH_SIZE = 5
 ICONS_QUERY_SLEEP = 10
@@ -114,6 +119,8 @@ class Rotkehlchen():
         )
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
+        # Keeps how many trades we have found per location. Used for free user limiting
+        self.trades_per_location: Dict[Location, int] = defaultdict(int)
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
@@ -443,6 +450,102 @@ class Rotkehlchen():
             defi_events=defi_events,
         )
         return result, error_or_empty
+
+    def _apply_trade_limit(
+            self,
+            location: Location,
+            location_trades: List[Trade],
+            all_trades: List[Trade],
+    ) -> List[Trade]:
+        """Take as many trades from location trades and add them to all trades as the imit permits
+
+        Returns the modifies (or not) all_trades
+        """
+        # If we are already at or above the limit return current trades, disregarding this location
+        current_num_trades = sum(x for _, x in self.trades_per_location.items())
+        if current_num_trades >= FREE_TRADES_LIMIT:
+            return all_trades
+
+        # Find out how many more trades can we return, and depending on that get
+        # the number of trades from the location trades and add them to the total
+        remaining_num_trades = FREE_TRADES_LIMIT - current_num_trades
+        if remaining_num_trades < 0:
+            remaining_num_trades = 0
+
+        num_trades_to_take = min(len(location_trades), remaining_num_trades)
+
+        self.trades_per_location[location] = num_trades_to_take
+        all_trades.extend(location_trades[0:num_trades_to_take])
+        return all_trades
+
+    def query_trades(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            location: Optional[Location],
+    ) -> List[Trade]:
+        """Queries trades for the given location and time range.
+        If no location is given then all external and all exchange trades are queried.
+
+        If the user does not have premium then a trade limit is applied.
+
+        May raise:
+        - RemoteError: If there are problems connectingto any of the remote exchanges
+        """
+        if location is not None:
+            trades = self.query_location_trades(from_ts, to_ts, location)
+        else:
+            trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL)
+            for name, exchange in self.exchange_manager.connected_exchanges.items():
+                exchange_trades = exchange.query_trade_history(start_ts=from_ts, end_ts=to_ts)
+                if self.premium is None:
+                    trades = self._apply_trade_limit(
+                        location=deserialize_location(name),
+                        location_trades=exchange_trades,
+                        all_trades=trades,
+                    )
+                else:
+                    trades.extend(exchange_trades)
+
+        # return trades with most recent first
+        trades.sort(key=lambda x: x.timestamp, reverse=True)
+        return trades
+
+    def query_location_trades(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            location: Location,
+    ) -> List[Trade]:
+        if location == Location.EXTERNAL:
+            location_trades = self.data.db.get_trades(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                location=location,
+            )
+        else:
+            # should only be an exchange
+            exchange = self.exchange_manager.get(str(location))
+            if not exchange:
+                logger.warn(
+                    f'Tried to query trades from {location} which is either not an '
+                    f'exchange or not an exchange the user has connected to',
+                )
+                return []
+
+            location_trades = exchange.query_trade_history(start_ts=from_ts, end_ts=to_ts)
+
+        trades: List[Trade] = []
+        if self.premium is None:
+            trades = self._apply_trade_limit(
+                location=location,
+                location_trades=location_trades,
+                all_trades=trades,
+            )
+        else:
+            trades = location_trades
+
+        return trades
 
     def query_balances(
             self,

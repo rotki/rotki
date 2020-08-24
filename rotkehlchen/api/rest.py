@@ -43,7 +43,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import (
@@ -453,93 +453,6 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
-    def _query_all_exchange_trades(
-            self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-    ) -> Dict[str, List[Trade]]:
-        trades: Dict[str, List[Trade]] = {}
-        for name, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
-            trades[name] = exchange_obj.query_trade_history(start_ts=from_ts, end_ts=to_ts)
-
-        return trades
-
-    def _query_exchange_trades(
-            self,
-            name: Optional[str],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Dict[str, Any]:
-        """Returns a list of trades if a single exchange is queried or a dict of
-        exchange names to list of trades if multiple exchanges are queried"""
-        if name is None:
-            # Query all exchanges
-            trades_map = self._query_all_exchange_trades(
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-            )
-            # For the outside world we should also add the trade identifier
-            processed_map: Dict[str, List[Trade]] = {}
-            for name, trades_dict in trades_map.items():
-                processed_map[name] = []
-                for trade in trades_dict:
-                    t = self.trade_schema.dump(trade)
-                    t['trade_id'] = trade.identifier
-                    processed_map[name].append(t)
-
-            return {'result': processed_map, 'message': ''}
-        else:
-            # else query only the specific exchange
-            exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
-            if not exchange_obj:
-                return {
-                    'result': None,
-                    'message': f'Could not query trades for {name} since it is not registered',
-                }
-            trades = exchange_obj.query_trade_history(
-                start_ts=from_timestamp,
-                end_ts=to_timestamp,
-            )
-            # For the outside world we should also add the trade identifier
-            processed_trades: List[Trade] = []
-            for trade in trades:
-                t = self.trade_schema.dump(trade)
-                t['trade_id'] = trade.identifier
-                processed_trades.append(t)
-
-            return {'result': processed_trades, 'message': ''}
-
-    @require_loggedin_user()
-    def query_exchange_trades(
-            self,
-            name: Optional[str],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            async_query: bool,
-    ) -> Response:
-        if async_query:
-            return self._query_async(
-                command='_query_exchange_trades',
-                name=name,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
-
-        response = self._query_exchange_trades(
-            name=name,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-        trades = response['result']
-        msg = response['message']
-
-        if trades is None:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-
-        # If it's a single exchange query, it's a list, otherwise it's a dict
-        result = process_result_list(trades) if name else process_result(trades)
-        return api_response(_wrap_in_ok_result(result), HTTPStatus.OK)
-
     def _query_blockchain_balances(
             self,
             blockchain: Optional[SupportedBlockchain],
@@ -596,25 +509,54 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
+    def _get_trades(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            location: Optional[Location],
+    ) -> Dict[str, Any]:
+        try:
+            trades = self.rotkehlchen.query_trades(from_ts=from_ts, to_ts=to_ts, location=location)
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        trades_result = []
+        for trade in trades:
+            serialized_trade = self.trade_schema.dump(trade)
+            serialized_trade['trade_id'] = trade.identifier
+            trades_result.append(serialized_trade)
+
+        result = {
+            'trades': trades_result,
+            'trades_found': self.rotkehlchen.data.db.get_trades_num(),
+            'trades_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
+
+        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+
     @require_loggedin_user()
     def get_trades(
             self,
             from_ts: Timestamp,
             to_ts: Timestamp,
             location: Optional[Location],
+            async_query: bool,
     ) -> Response:
-        trades = self.rotkehlchen.data.db.get_trades(
+        if async_query:
+            return self._query_async(
+                command='_get_trades',
+                from_ts=from_ts,
+                to_ts=to_ts,
+                location=location,
+            )
+
+        response = self._get_trades(
             from_ts=from_ts,
             to_ts=to_ts,
             location=location,
         )
-        result = []
-        for trade in trades:
-            serialized_trade = self.trade_schema.dump(trade)
-            serialized_trade['trade_id'] = trade.identifier
-            result.append(serialized_trade)
-
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
     def add_trade(
