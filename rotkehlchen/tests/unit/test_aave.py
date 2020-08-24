@@ -5,6 +5,7 @@ from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.aave import (
+    AAVE_TEST_ACC_2,
     aave_mocked_current_prices,
     aave_mocked_historical_prices,
     expected_aave_test_events,
@@ -36,7 +37,7 @@ def aave(
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 def test_get_lending_profit_for_address(aave, price_historian):  # pylint: disable=unused-argument
     history = aave.get_history_for_address(
-        user_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        user_address=AAVE_TEST_ACC_2,
         to_block=10386830,  # test was written at this block
         atokens_list=[EthereumToken('aDAI')],
     )
@@ -44,6 +45,6 @@ def test_get_lending_profit_for_address(aave, price_historian):  # pylint: disab
     assert history.events == expected_aave_test_events[:10]
     assert len(history.total_earned) == 1
     # comparison is greater than since interest is always accruing since writing the test
-    # and 7 "should be" the principal balance at the given block
-    assert history.total_earned['aDAI'].amount >= FVal('7')
-    assert history.total_earned['aDAI'].usd_value >= FVal('7')
+    # and 5.6 "should be" the principal balance at the given block
+    assert history.total_earned['aDAI'].amount >= FVal('5.6')
+    assert history.total_earned['aDAI'].usd_value >= FVal('5.6')

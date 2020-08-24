@@ -8,6 +8,8 @@ import requests
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.aave import (
+    AAVE_TEST_ACC_1,
+    AAVE_TEST_ACC_2,
     aave_mocked_current_prices,
     aave_mocked_historical_prices,
     expected_aave_test_events,
@@ -22,12 +24,14 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 @pytest.mark.parametrize('async_query', [True, False])
 def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts, async_query):
     """Check querying the aave balances endpoint works. Uses real data.
 
+    Warning: this is an unstable test. If the owner of this test account moves
+    stuff out of Aave this will break.
     TODO: Here we should use a test account for which we will know what balances
     it has and we never modify
     """
@@ -54,18 +58,24 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts, async_qu
             result = assert_proper_response_with_result(response)
 
     assert len(result) == 1
-    # Assume no borrowing in this account and check that lending response has proper format
-    assert result['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']['borrowing'] == {}
-    result = result['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']['lending']
-    for _, entry in result.items():
+    lending = result[AAVE_TEST_ACC_1]['lending']
+    for _, entry in lending.items():
         assert len(entry) == 2
         assert len(entry['balance']) == 2
         assert 'amount' in entry['balance']
         assert 'usd_value' in entry['balance']
         assert '%' in entry['apy']
+    borrowing = result[AAVE_TEST_ACC_1]['borrowing']
+    for _, entry in borrowing.items():
+        assert len(entry) == 3
+        assert len(entry['balance']) == 2
+        assert 'amount' in entry['balance']
+        assert 'usd_value' in entry['balance']
+        assert '%' in entry['variable_apr']
+        assert '%' in entry['stable_apr']
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_aave_balances_module_not_activated(
         rotkehlchen_api_server,
@@ -88,7 +98,7 @@ def test_query_aave_balances_module_not_activated(
     )
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_aave_balances_async_module_not_activated(
         rotkehlchen_api_server,
@@ -111,7 +121,7 @@ def test_query_aave_balances_async_module_not_activated(
     assert outcome['message'] == 'aave module is not activated'
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_2]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
@@ -146,9 +156,9 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
             result = assert_proper_response_with_result(response)
 
     assert len(result) == 1
-    assert len(result['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']) == 2
-    events = result['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']['events']
-    total_earned = result['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']['total_earned']
+    assert len(result[AAVE_TEST_ACC_2]) == 2
+    events = result[AAVE_TEST_ACC_2]['events']
+    total_earned = result[AAVE_TEST_ACC_2]['total_earned']
     assert len(total_earned) == 1
     assert len(total_earned['aDAI']) == 2
     assert FVal(total_earned['aDAI']['amount']) >= FVal('24.207179802347627414')

@@ -5,6 +5,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_ADAI
 from rotkehlchen.typing import Timestamp
 
+AAVE_TEST_ACC_1 = '0x21d05071cA08593e13cd3aFD0b4869537e015C92'
+AAVE_TEST_ACC_2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+
 aave_mocked_historical_prices = {
     'aDAI': {
         'USD': {
