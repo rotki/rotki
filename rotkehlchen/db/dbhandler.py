@@ -1657,6 +1657,12 @@ class DBHandler:
         self.conn.commit()
         return True, ''
 
+    def get_trades_num(self) -> int:
+        """Returns how many trades are saved in the DB"""
+        cursor = self.conn.cursor()
+        query = cursor.execute('SELECT COUNT(*) from trades;')
+        return query.fetchone()[0]
+
     def get_trades(
             self,
             from_ts: Optional[Timestamp] = None,

@@ -2051,7 +2051,7 @@ Dealing with trades
    .. note::
       This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on this endpoint will return all trades of the current user. They can be further filtered by time range and/or location. If the user is not premium and has more than 250 trades then the returned trades will be limited to that number. Any filtering will also be limited to those first 250 trades.
+   Doing a GET on this endpoint will return all trades of the current user. They can be further filtered by time range and/or location. If the user is not premium and has more than 250 trades then the returned trades will be limited to that number. Any filtering will also be limited to those first 250 trades. Trades are returned most recent first.
 
    **Example Request**:
 
@@ -2111,11 +2111,12 @@ Dealing with trades
    :resjsonarr string link: Optional unique trade identifier or link to the trade. Can be an empty string
    :resjsonarr string notes: Optional notes about the trade. Can be an empty string
    :resjson int trades_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
-   :resjson int trades_limit: The trades limit for the account tier of the user.
+   :resjson int trades_limit: The trades limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Trades are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Error reaching the remote from which the trades got requested
 
 .. http:put:: /api/(version)/trades
 

@@ -43,7 +43,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import (
@@ -596,25 +596,54 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
+    def _get_trades(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            location: Optional[Location],
+    ) -> Dict[str, Any]:
+        try:
+            trades = self.rotkehlchen.query_trades(from_ts=from_ts, to_ts=to_ts, location=location)
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        trades_result = []
+        for trade in trades:
+            serialized_trade = self.trade_schema.dump(trade)
+            serialized_trade['trade_id'] = trade.identifier
+            trades_result.append(serialized_trade)
+
+        result = {
+            'trades': trades_result,
+            'trades_found': self.rotkehlchen.data.db.get_trades_num(),
+            'trades_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
+
+        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+
     @require_loggedin_user()
     def get_trades(
             self,
             from_ts: Timestamp,
             to_ts: Timestamp,
             location: Optional[Location],
+            async_query: bool,
     ) -> Response:
-        trades = self.rotkehlchen.data.db.get_trades(
+        if async_query:
+            return self._query_async(
+                command='_get_trades',
+                from_ts=from_ts,
+                to_ts=to_ts,
+                location=location,
+            )
+
+        response = self._get_trades(
             from_ts=from_ts,
             to_ts=to_ts,
             location=location,
         )
-        result = []
-        for trade in trades:
-            serialized_trade = self.trade_schema.dump(trade)
-            serialized_trade['trade_id'] = trade.identifier
-            result.append(serialized_trade)
-
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
     def add_trade(

@@ -363,11 +363,13 @@ class TradesResource(BaseResource):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             location: Optional[Location],
+            async_query: bool,
     ) -> Response:
         return self.rest_api.get_trades(
             from_ts=from_timestamp,
             to_ts=to_timestamp,
             location=location,
+            async_query=async_query,
         )
 
     @use_kwargs(put_schema, location='json')  # type: ignore
