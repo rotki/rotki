@@ -4,7 +4,10 @@ from typing import Any, Dict
 import pytest
 import requests
 
+from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.fval import FVal
+from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -16,6 +19,7 @@ from rotkehlchen.tests.utils.history import (
     assert_poloniex_trades_result,
     mock_history_processing_and_exchanges,
 )
+from rotkehlchen.typing import Location, TradeType
 
 
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
@@ -153,6 +157,49 @@ def test_query_trades_errors(rotkehlchen_api_server_with_exchanges):
         contained_in_msg='Failed to deserialize location symbol. Unknown symbol foo for location',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
+    """
+    Test querying the trades endpoint with trades over the limit limits the result if non premium
+    """
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    setup = mock_history_processing_and_exchanges(rotki)
+
+    spam_trades = [Trade(
+        timestamp=x,
+        location=Location.EXTERNAL,
+        pair='BTC_EUR',
+        trade_type=TradeType.BUY,
+        amount=FVal(x + 1),
+        rate=FVal(1),
+        fee=FVal(0),
+        fee_currency=A_EUR,
+        link='',
+        notes='') for x in range(FREE_TRADES_LIMIT + 50)
+    ]
+    rotki.data.db.add_trades(spam_trades)
+
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "tradesresource",
+            ),
+        )
+    result = assert_proper_response_with_result(response)
+
+    all_trades_num = FREE_TRADES_LIMIT + 50 + 5  # 5 = 3 polo and 2 binance
+    if start_with_valid_premium:
+        assert len(result['trades']) == all_trades_num
+        assert result['trades_limit'] == -1
+        assert result['trades_found'] == all_trades_num
+    else:
+        assert len(result['trades']) == FREE_TRADES_LIMIT
+        assert result['trades_limit'] == FREE_TRADES_LIMIT
+        assert result['trades_found'] == all_trades_num
 
 
 def test_add_trades(rotkehlchen_api_server):
