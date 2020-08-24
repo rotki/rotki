@@ -49,7 +49,6 @@
             <template #item.fee="{ item }">
               <amount-display
                 class="closed-trades__trade__fee"
-                show
                 :asset="item.feeCurrency"
                 :value="item.fee"
               />
