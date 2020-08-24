@@ -859,13 +859,6 @@ class ExchangeBalanceQuerySchema(Schema):
     ignore_cache = fields.Boolean(missing=False)
 
 
-class ExchangeTradesQuerySchema(Schema):
-    name = ExchangeNameField(missing=None)
-    from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now)
-    async_query = fields.Boolean(missing=False)
-
-
 class BlockchainBalanceQuerySchema(Schema):
     blockchain = BlockchainField(missing=None)
     async_query = fields.Boolean(missing=False)

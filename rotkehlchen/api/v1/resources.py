@@ -28,7 +28,6 @@ from rotkehlchen.api.v1.encoding import (
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
     ExchangesResourceRemoveSchema,
-    ExchangeTradesQuerySchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
     FiatExchangeRatesSchema,
@@ -289,26 +288,6 @@ class AllAssetsResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.query_all_assets()
-
-
-class ExchangeTradesResource(BaseResource):
-
-    get_schema = ExchangeTradesQuerySchema()
-
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
-    def get(
-            self,
-            name: Optional[str],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            async_query: bool,
-    ) -> Response:
-        return self.rest_api.query_exchange_trades(
-            name=name,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            async_query=async_query,
-        )
 
 
 class BlockchainBalancesResource(BaseResource):
