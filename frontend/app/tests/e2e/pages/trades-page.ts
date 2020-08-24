@@ -1,72 +1,66 @@
 import { OTCTrade } from '../support/types';
 
-export class OtcPage {
+export class TradesPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
     cy.get('.navigation__trades').click();
-    cy.get('.navigation__otc-trades').click();
   }
 
   addTrade(otcData: OTCTrade) {
-    cy.get('.otc-form__date').type(otcData.time).click(); // Click is needed to hide the popup
+    cy.get('.closed-trades__add-trade').click();
+    cy.get('.otc-form__date')
+      .type(`{selectall}{backspace}${otcData.time}`)
+      .click(); // Click is needed to hide the popup
     cy.get('.otc-form__pair').type(otcData.pair);
     cy.get('.otc-form__type input').check(otcData.trade_type, { force: true });
     cy.get('.otc-form__amount').type(otcData.amount);
-    cy.get('.otc-form__rate').type(otcData.rate);
+    cy.get('.otc-form__rate input').type(otcData.rate);
     cy.get('.otc-form__fee').type(otcData.fee);
     cy.get('.otc-form__fee-currency').type(otcData.fee_currency);
+    cy.get(`#asset-${otcData.fee_currency.toLocaleLowerCase()}`).click();
     cy.get('.otc-form__link').type(otcData.link);
     cy.get('.otc-form__notes').type(otcData.notes);
-    cy.get('.otc-form__buttons__save').click();
-  }
-
-  confirmSuccess() {
-    cy.get('.message-dialog__title').should('contain', 'Success');
-    cy.get('.message-dialog__buttons__confirm').click();
+    cy.get('.big-dialog__buttons__confirm').click();
   }
 
   confirmDelete() {
-    cy.get('.confirm-dialog__title').should('contain', 'Delete OTC Trade');
+    cy.get('.confirm-dialog__title').should('contain', 'Delete Trade');
     cy.get('.confirm-dialog__buttons__confirm').click();
     cy.get('.confirm-dialog__title').should('not.be.visible');
   }
 
   visibleEntries(visible: number) {
-    cy.get('.otc-trades tbody').find('tr').should('have.length', visible);
+    cy.get('.closed-trades tbody').find('tr').should('have.length', visible);
   }
 
   tradeIsVisible(position: number, otcTrade: OTCTrade) {
-    cy.get('.otc-trades tbody > tr').eq(position).as('row');
+    cy.get('.closed-trades tbody > tr').eq(position).as('row');
 
+    cy.get('@row').find('td').eq(2).should('contain', otcTrade.pair);
     cy.get('@row')
-      .find('.otc-trades__trade__pair')
-      .should('contain', otcTrade.pair);
-
-    cy.get('@row')
-      .find('.otc-trades__trade__amount')
+      .find('td')
+      .eq(4)
+      .find('.amount-display__value')
       .should('contain', otcTrade.amount);
-
-    cy.get('@row')
-      .find('.otc-trades__trade__type')
-      .should('contain', otcTrade.trade_type);
+    cy.get('@row').find('td').eq(1).should('contain', otcTrade.trade_type);
   }
 
   editTrade(position: number, amount: string) {
-    cy.get('.otc-trades tbody > tr')
+    cy.get('.closed-trades tbody > tr')
       .eq(position)
-      .find('button.otc-trades__trade__actions__edit')
+      .find('button.closed-trades__trade__actions__edit')
       .click();
 
     cy.get('.otc-form__amount input').clear();
     cy.get('.otc-form__amount').type(amount);
 
-    cy.get('.otc-form__buttons__save').click();
+    cy.get('.big-dialog__buttons__confirm').click();
   }
 
   deleteTrade(position: number) {
-    cy.get('.otc-trades tbody > tr')
+    cy.get('.closed-trades tbody > tr')
       .eq(position)
-      .find('.otc-trades__trade__actions__delete')
+      .find('.closed-trades__trade__actions__delete')
       .click();
   }
 }

@@ -9,7 +9,7 @@
           right
           dark
           color="primary"
-          class="add-external-trade"
+          class="closed-trades__add-trade"
           @click="newExternalTrade()"
         >
           <v-icon>

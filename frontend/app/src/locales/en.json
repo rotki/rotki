@@ -162,5 +162,14 @@
     "validation": {
       "non_empty_fee": "The fee currency cannot be empty"
     }
+  },
+  "user_dropdown": {
+    "settings": "Settings",
+    "toggle_privacy": "Toggle Privacy Mode",
+    "logout": "Logout",
+    "confirmation": {
+      "message": "Are you sure you want to log out of your current rotki session?",
+      "title": "Confirmation Required"
+    }
   }
 }
