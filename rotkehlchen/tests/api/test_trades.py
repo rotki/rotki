@@ -240,7 +240,7 @@ def test_add_trades(rotkehlchen_api_server):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert data['result'] == [new_trade]
+    assert data['result']['trades'] == [new_trade]
 
 
 def assert_all_missing_fields_are_handled(correct_trade, server):
@@ -547,24 +547,19 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = mock_history_processing_and_exchanges(rotki)
 
-    # Query trades of all exchanges to get them saved in the DB
+    # Simply get all trades without any filtering
     with setup.binance_patch, setup.polo_patch:
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "exchangetradesresource"))
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "tradesresource",
+            ),
+        )
     assert_proper_response(response)
-
-    # Simply get all trades without any filtering
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
-        ),
-    )
-    assert_proper_response(response)
-    data = response.json()
+    trades = response.json()['result']['trades']
 
     # get the binance trades
-    original_binance_trades = [t for t in data['result'] if t['location'] == 'binance']
+    original_binance_trades = [t for t in trades if t['location'] == 'binance']
 
     for trade in original_binance_trades:
         # edit two fields of each binance trade
@@ -589,11 +584,9 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
             "tradesresource",
         ), json={'location': 'binance'},
     )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 2  # only 2 binance trades
-    for idx, trade in enumerate(data['result']):
+    trades = assert_proper_response_with_result(response)['trades']
+    assert len(trades) == 2  # only 2 binance trades
+    for idx, trade in enumerate(trades):
         _check_trade_is_edited(original_trade=original_binance_trades[idx], result_trade=trade)
 
 
@@ -657,24 +650,18 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = mock_history_processing_and_exchanges(rotki)
 
-    # Query trades of all exchanges to get them saved in the DB
+    # Simply get all trades without any filtering
     with setup.binance_patch, setup.polo_patch:
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "exchangetradesresource"))
-    assert_proper_response(response)
-
-    # Simply get all trades without any filtering
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
-        ),
-    )
-    assert_proper_response(response)
-    data = response.json()
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "tradesresource",
+            ),
+        )
+    trades = assert_proper_response_with_result(response)['trades']
 
     # get the poloniex trade ids
-    poloniex_trade_ids = [t['trade_id'] for t in data['result'] if t['location'] == 'poloniex']
+    poloniex_trade_ids = [t['trade_id'] for t in trades if t['location'] == 'poloniex']
 
     for trade_id in poloniex_trade_ids:
         # delete all poloniex trades
@@ -690,16 +677,15 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
         assert data['result'] is True
 
     # Finally also query poloniex trades to see they no longer exist
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
-        ), json={'location': 'poloniex'},
-    )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 0
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "tradesresource",
+            ), json={'location': 'poloniex'},
+        )
+    trades = assert_proper_response_with_result(response)['trades']
+    assert len(trades) == 0
 
 
 def test_delete_trades_trades_errors(rotkehlchen_api_server):
