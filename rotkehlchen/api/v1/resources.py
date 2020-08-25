@@ -425,8 +425,8 @@ class AssetMovementsResource(BaseResource):
             async_query: bool,
     ) -> Response:
         return self.rest_api.get_asset_movements(
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
             location=location,
             async_query=async_query,
         )

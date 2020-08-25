@@ -10,14 +10,15 @@ from rotkehlchen.typing import ChecksumEthAddress, ResultCache
 from rotkehlchen.utils.misc import ts_now
 
 
-def _function_sig_key(name: str, *args: Any, **kwargs: Any) -> int:
+def _function_sig_key(name: str, arguments_matter: bool, *args: Any, **kwargs: Any) -> int:
     """Return a unique int identifying a function's call signature"""
     function_sig = name
     for arg in args:
         function_sig += str(arg)
-    for _, value in kwargs.items():
-        function_sig += str(value)
 
+    if arguments_matter:
+        for _, value in kwargs.items():
+            function_sig += str(value)
     return hash(function_sig)
 
 
@@ -51,7 +52,7 @@ def cache_response_timewise() -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableObject, *args: Any, **kwargs: Any) -> Any:
             ignore_cache = kwargs.pop('ignore_cache', False)
-            cache_key = _function_sig_key(f.__name__, *args, **kwargs)
+            cache_key = _function_sig_key(f.__name__, False, *args, **kwargs)
             now = ts_now()
             if ignore_cache is False:
                 # Check the cache
@@ -91,7 +92,7 @@ class LockableQueryObject():
         self.query_locks_map_lock = Semaphore()
 
 
-def protect_with_lock() -> Callable:
+def protect_with_lock(arguments_matter: bool = False) -> Callable:
     """ This is a decorator for protecting a call of an object with a lock
     The objects must adhere to the interface of having:
         - A mapping of ids to query_lock objects
@@ -103,7 +104,7 @@ def protect_with_lock() -> Callable:
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: LockableQueryObject, *args: Any, **kwargs: Any) -> Any:
-            lock_key = _function_sig_key(f.__name__, *args, **kwargs)
+            lock_key = _function_sig_key(f.__name__, arguments_matter, *args, **kwargs)
             with wrappingobj.query_locks_map_lock:
                 lock = wrappingobj.query_locks_map[lock_key]
             with lock:

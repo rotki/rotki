@@ -267,7 +267,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
     def get_balances_update(self) -> BlockchainBalancesUpdate:
         return BlockchainBalancesUpdate(per_account=self.balances, totals=self.totals)
 
-    @protect_with_lock()
+    @protect_with_lock(arguments_matter=True)
     @cache_response_timewise()
     def query_balances(
             self,  # pylint: disable=unused-argument

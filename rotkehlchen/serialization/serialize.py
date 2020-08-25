@@ -26,7 +26,13 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db
-from rotkehlchen.typing import EthereumTransaction, EthTokenInfo, Location, TradeType
+from rotkehlchen.typing import (
+    AssetMovementCategory,
+    EthereumTransaction,
+    EthTokenInfo,
+    Location,
+    TradeType,
+)
 from rotkehlchen.utils.version_check import VersionCheckResult
 
 
@@ -47,8 +53,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return new_dict
     elif isinstance(entry, HexBytes):
         return entry.hex()
-    elif isinstance(entry, Location):
-        return str(entry)
     elif isinstance(entry, LocationData):
         return {
             'time': entry.time,
@@ -96,7 +100,14 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         raise ValueError('Query results should not contain plain tuples')
     elif isinstance(entry, Asset):
         return entry.identifier
-    elif isinstance(entry, (TradeType, Location, KrakenAccountType, Location, VaultEventType)):
+    elif isinstance(entry, (
+            TradeType,
+            Location,
+            KrakenAccountType,
+            Location,
+            VaultEventType,
+            AssetMovementCategory,
+    )):
         return str(entry)
     else:
         return entry

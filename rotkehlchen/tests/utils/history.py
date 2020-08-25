@@ -8,6 +8,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPos
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS1,
     ETH_ADDRESS2,
@@ -22,7 +23,14 @@ from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Location, Timestamp, TradeType
+from rotkehlchen.typing import (
+    AssetAmount,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 TEST_END_TS = 1559427707
@@ -481,6 +489,113 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
         )
 
     return polo_patch, binance_patch, bittrex_patch, bitmex_patch
+
+
+def assert_asset_movements(
+        expected: List[AssetMovement],
+        to_check_list: List[Any],
+        deserialized: bool,
+        movements_to_check: Optional[Tuple[int, ...]] = None,
+) -> None:
+    if deserialized:
+        expected = process_result_list([x.serialize() for x in expected])
+
+    if movements_to_check is None:
+        assert len(to_check_list) == len(expected)
+        assert all(x in to_check_list for x in expected)
+    else:
+        assert all(expected[x] in to_check_list for x in movements_to_check)
+        assert len(to_check_list) == len(movements_to_check)
+
+
+def assert_poloniex_asset_movements(
+        to_check_list: List[Any],
+        deserialized: bool,
+        movements_to_check: Optional[Tuple[int, ...]] = None,
+) -> None:
+    expected = [AssetMovement(
+        location=Location.POLONIEX,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=Timestamp(1468994442),
+        asset=A_ETH,
+        amount=FVal('10.0'),
+        fee_asset=A_ETH,
+        fee=Fee(FVal('0.1')),
+        link='2',
+    ), AssetMovement(
+        location=Location.POLONIEX,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=Timestamp(1458994442),
+        asset=A_BTC,
+        amount=FVal('5.0'),
+        fee_asset=A_BTC,
+        fee=Fee(FVal('0.5')),
+        link='1',
+    ), AssetMovement(
+        location=Location.POLONIEX,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=Timestamp(1448994442),
+        asset=A_BTC,
+        amount=FVal('50.0'),
+        fee_asset=A_BTC,
+        fee=Fee(FVal('0')),
+        link='1',
+    ), AssetMovement(
+        location=Location.POLONIEX,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=Timestamp(1438994442),
+        asset=A_ETH,
+        amount=FVal('100.0'),
+        fee_asset=A_ETH,
+        fee=Fee(FVal('0')),
+        link='2',
+    )]
+    assert_asset_movements(expected, to_check_list, deserialized, movements_to_check)
+
+
+def assert_kraken_asset_movements(
+        to_check_list: List[Any],
+        deserialized: bool,
+        movements_to_check: Optional[Tuple[int, ...]] = None,
+):
+    expected = [AssetMovement(
+        location=Location.KRAKEN,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=Timestamp(1458994442),
+        asset=A_BTC,
+        amount=FVal('5.0'),
+        fee_asset=A_BTC,
+        fee=Fee(FVal('0.1')),
+        link='1',
+    ), AssetMovement(
+        location=Location.KRAKEN,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=Timestamp(1448994442),
+        asset=A_ETH,
+        amount=FVal('10.0'),
+        fee_asset=A_ETH,
+        fee=Fee(FVal('0.11')),
+        link='2',
+    ), AssetMovement(
+        location=Location.KRAKEN,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=Timestamp(1439994442),
+        asset=A_ETH,
+        amount=FVal('10.0'),
+        fee_asset=A_ETH,
+        fee=Fee(FVal('0.11')),
+        link='5',
+    ), AssetMovement(
+        location=Location.KRAKEN,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=Timestamp(1428994442),
+        asset=A_BTC,
+        amount=FVal('5.0'),
+        fee_asset=A_BTC,
+        fee=Fee(FVal('0.1')),
+        link='4',
+    )]
+    assert_asset_movements(expected, to_check_list, deserialized, movements_to_check)
 
 
 def mock_history_processing(

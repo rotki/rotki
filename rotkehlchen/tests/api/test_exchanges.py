@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -23,8 +24,11 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.history import (
     assert_binance_trades_result,
+    assert_kraken_asset_movements,
+    assert_poloniex_asset_movements,
     assert_poloniex_trades_result,
     mock_history_processing_and_exchanges,
+    prepare_rotki_for_history_processing_test,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 
@@ -556,7 +560,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges, async_quer
         else:
             result = assert_proper_response_with_result(response)
     assert result['entries_found'] > 0
-    assert result['entries_limit'] == 250
+    assert result['entries_limit'] == FREE_TRADES_LIMIT
     assert_binance_trades_result(result['entries'])
 
     # query trades of all exchanges
@@ -600,4 +604,78 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges, async_quer
     with setup.binance_patch, setup.polo_patch:
         response = requests.get(
             api_url_for(server, "tradesresource") + '?' + urlencode(data))
+        assert_okay(response)
+
+
+@pytest.mark.parametrize('added_exchanges', [('kraken', 'poloniex')])
+@pytest.mark.parametrize('async_query', [False, True])
+def test_exchange_query_asset_movements(rotkehlchen_api_server_with_exchanges, async_query):
+    """Test that using the asset movements query endpoint works fine"""
+    server = rotkehlchen_api_server_with_exchanges
+    setup = prepare_rotki_for_history_processing_test(server.rest_api.rotkehlchen)
+    # setup = mock_history_processing_and_exchanges(server.rest_api.rotkehlchen)
+    # query asset movements of one specific exchange
+    with setup.polo_patch:
+        response = requests.get(
+            api_url_for(
+                server,
+                "assetmovementsresource",
+            ), json={'location': 'poloniex', 'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 4
+    assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+    assert_poloniex_asset_movements(result['entries'], deserialized=True)
+
+    # query asset movements of all exchanges
+    with setup.polo_patch:
+        response = requests.get(
+            api_url_for(server, "assetmovementsresource"),
+            json={'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    movements = result['entries']
+    assert_poloniex_asset_movements([x for x in movements if x['location'] == 'poloniex'], True)
+    assert_kraken_asset_movements([x for x in movements if x['location'] == 'kraken'], True)
+
+    def assert_okay(response):
+        """Helper function for DRY checking below assertions"""
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+        movements = result['entries']
+        assert_poloniex_asset_movements(
+            to_check_list=[x for x in movements if x['location'] == 'poloniex'],
+            deserialized=True,
+            movements_to_check=(1, 2),
+        )
+        assert_kraken_asset_movements(
+            to_check_list=[x for x in movements if x['location'] == 'kraken'],
+            deserialized=True,
+            movements_to_check=(0, 1, 2),
+        )
+
+    # and now query them in a specific time range excluding some asset movements
+    data = {'from_timestamp': 1439994442, 'to_timestamp': 1458994442, 'async_query': async_query}
+    with setup.polo_patch:
+        response = requests.get(api_url_for(server, "assetmovementsresource"), json=data)
+        assert_okay(response)
+    # do the same but with query args. This serves as test of from/to timestamp with query args
+    with setup.polo_patch:
+        response = requests.get(
+            api_url_for(server, "assetmovementsresource") + '?' + urlencode(data))
         assert_okay(response)

@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
-
 from dataclasses import dataclass
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import sha3
@@ -95,6 +94,11 @@ class AssetMovement(NamedTuple):
             self.link
         )
         return hash_id(string)
+
+    def serialize(self) -> Dict[str, Any]:
+        result = self._asdict()  # pylint: disable=no-member
+        result['identifier'] = self.identifier
+        return result
 
 
 class Trade(NamedTuple):
