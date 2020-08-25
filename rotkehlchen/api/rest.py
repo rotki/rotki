@@ -43,7 +43,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT, Rotkehlchen
+from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import (
@@ -527,9 +527,9 @@ class RestAPI():
             trades_result.append(serialized_trade)
 
         result = {
-            'trades': trades_result,
-            'trades_found': self.rotkehlchen.data.db.get_trades_num(),
-            'trades_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
+            'entries': trades_result,
+            'entries_found': self.rotkehlchen.data.db.get_trades_num(),
+            'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
@@ -635,6 +635,58 @@ class RestAPI():
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def _get_asset_movements(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            location: Optional[Location],
+    ) -> Dict[str, Any]:
+        msg = ''
+        status_code = HTTPStatus.OK
+        result = None
+        try:
+            movements = self.rotkehlchen.query_asset_movements(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                location=location,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        serialized_movements = [x.serialize() for x in movements]
+        limit = FREE_ASSET_MOVEMENTS_LIMIT if self.rotkehlchen.premium is None else -1
+        result = {
+            'entries': process_result_list(serialized_movements),
+            'entries_found': self.rotkehlchen.data.db.get_asset_movements_num(),
+            'entries_limit': limit,
+        }
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
+
+    @require_loggedin_user()
+    def get_asset_movements(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            location: Optional[Location],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_asset_movements',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                location=location,
+            )
+
+        response = self._get_asset_movements(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            location=location,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
     def get_tags(self) -> Response:

@@ -1939,7 +1939,7 @@ Dealing with trades
 
       {
           "result": {
-	      "trades": [{
+	      "entries": [{
 		  "trade_id": "dsadfasdsad",
 		  "timestamp": 1491606401,
 		  "location": "external",
@@ -1952,12 +1952,12 @@ Dealing with trades
 		  "link": "Optional unique trade identifier"
 		  "notes": "Optional notes"
               }],
-	      "trades_found": 95,
-	      "trades_limit": 250,
+	      "entries_found": 95,
+	      "entries_limit": 250,
           "message": ""
       }
 
-   :resjson object trades: An array of trade objects.
+   :resjson object entries: An array of trade objects.
    :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
@@ -1969,8 +1969,8 @@ Dealing with trades
    :resjsonarr string fee_currency: The currency in which ``fee`` is denominated in
    :resjsonarr string link: Optional unique trade identifier or link to the trade. Can be an empty string
    :resjsonarr string notes: Optional notes about the trade. Can be an empty string
-   :resjson int trades_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
-   :resjson int trades_limit: The trades limit for the account tier of the user. If unlimited then -1 is returned.
+   :resjson int entries_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
+   :resjson int entries_limit: The trades limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Trades are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.
@@ -2140,6 +2140,73 @@ Dealing with trades
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is logged in. The given trade identifier to delete does not exist.
    :statuscode 500: Internal Rotki error.
+
+Querying asset movements
+===========================
+
+.. http:get:: /api/(version)/asset_movements
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on this endpoint will return all asset movements (deposits/withdrawals) from all possible exchanges for the current user. It can be further filtered by a time range of a location. For non premium users there is a limit on the amount of movements returned.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/trades HTTP/1.1
+      Host: localhost:5042
+
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "kraken"}
+
+   :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
+   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :reqjson string location: Optionally filter trades by location. A valid location name has to be provided. Valid locations are for now only exchanges for deposits/widthrawals.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "entries": [{
+	          "identifier": "foo"
+                  "location": "kraken",
+		  "category": "deposit",
+		  "timestamp": 1451706400
+		  "asset": "ETH",
+		  "amount": "500.55",
+		  "fee_asset": "ETH",
+		  "fee": "0.1",
+		  "link": "optional exchange unique id",
+              }],
+	      "entries_found": 80,
+	      "entries_limit": 100,
+          "message": ""
+      }
+
+   :resjson object entries: An array of deposit/withdrawal objects
+   :resjsonarr string identifier: The uniquely identifying identifier for this asset movement
+   :resjsonarr string location: A valid location at which the deposit/withdrawal occured
+   :resjsonarr string category: Either ``"deposit"`` or ``"withdrawal"``
+   :resjsonarr integer timestamp: The timestamp at which the deposit/withdrawal occured
+   :resjsonarr string asset: The asset deposited or withdrawn
+   :resjsonarr string amount: The amount of asset deposited or withdrawn
+   :resjsonarr string fee_asset: The asset in which ``fee`` is denominated in
+   :resjsonarr string fee: The fee that was paid, if anything, for this deposit/withdrawal
+   :resjsonarr string link: Optional unique exchange identifier for the deposit/withdrawal
+:resjson int entries_found: The amount of deposit/withdrawals found for the user. That disregards the filter and shows all asset movements found.
+:resjson int entries_limit: The movements query limit for the account tier of the user. If unlimited then -1 is returned.
+   :statuscode 200: Deposits/withdrawals are succesfully returned
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error querying the remote for the asset movements
 
 Querying messages to show to the user
 =====================================

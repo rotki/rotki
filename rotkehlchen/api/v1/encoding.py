@@ -595,7 +595,7 @@ class EthereumTransactionQuerySchema(Schema):
     to_timestamp = TimestampField(missing=ts_now)
 
 
-class TradesQuerySchema(Schema):
+class TimerangeLocationQuerySchema(Schema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
     location = LocationField(missing=None)

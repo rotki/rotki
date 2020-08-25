@@ -1352,7 +1352,7 @@ class DBHandler:
             '  notes FROM margin_positions '
         )
         if location is not None:
-            query += f'WHERE location="{location}" '
+            query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
@@ -1443,7 +1443,7 @@ class DBHandler:
             '  link FROM asset_movements '
         )
         if location is not None:
-            query += f'WHERE location="{location}" '
+            query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
@@ -1475,6 +1475,12 @@ class DBHandler:
             asset_movements.append(movement)
 
         return asset_movements
+
+    def get_asset_movements_num(self) -> int:
+        """Returns how many asset movements are saved in the DB"""
+        cursor = self.conn.cursor()
+        query = cursor.execute('SELECT COUNT(*) from asset_movements;')
+        return query.fetchone()[0]
 
     def add_ethereum_transactions(
             self,

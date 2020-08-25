@@ -41,14 +41,14 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
             ),
         )
     result = assert_proper_response_with_result(response)
-    result = result['trades']
+    result = result['entries']
     assert len(result) == 5  # 3 polo and 2 binance trades
     assert_binance_trades_result([t for t in result if t['location'] == 'binance'])
     assert_poloniex_trades_result([t for t in result if t['location'] == 'poloniex'])
 
     def assert_okay(response):
         """Helper function to run next query and its assertion twice"""
-        result = assert_proper_response_with_result(response)['trades']
+        result = assert_proper_response_with_result(response)['entries']
         assert len(result) == 2  # only 2 binance trades
         assert_binance_trades_result([t for t in result if t['location'] == 'binance'])
 
@@ -79,7 +79,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
                 "tradesresource",
             ), json={'from_timestamp': 1512561942, 'to_timestamp': 1539713237},
         )
-    result = assert_proper_response_with_result(response)['trades']
+    result = assert_proper_response_with_result(response)['entries']
     assert len(result) == 3  # 1 binance trade and 2 poloniex trades
     assert_binance_trades_result(
         trades=[t for t in result if t['location'] == 'binance'],
@@ -99,7 +99,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
                 "tradesresource",
             ), json=data,
         )
-    result = assert_proper_response_with_result(response)['trades']
+    result = assert_proper_response_with_result(response)['entries']
     assert len(result) == 2  # only 2/3 poloniex trades
     assert_poloniex_trades_result(
         trades=[t for t in result if t['location'] == 'poloniex'],
@@ -193,13 +193,13 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
 
     all_trades_num = FREE_TRADES_LIMIT + 50 + 5  # 5 = 3 polo and 2 binance
     if start_with_valid_premium:
-        assert len(result['trades']) == all_trades_num
-        assert result['trades_limit'] == -1
-        assert result['trades_found'] == all_trades_num
+        assert len(result['entries']) == all_trades_num
+        assert result['entries_limit'] == -1
+        assert result['entries_found'] == all_trades_num
     else:
-        assert len(result['trades']) == FREE_TRADES_LIMIT
-        assert result['trades_limit'] == FREE_TRADES_LIMIT
-        assert result['trades_found'] == all_trades_num
+        assert len(result['entries']) == FREE_TRADES_LIMIT
+        assert result['entries_limit'] == FREE_TRADES_LIMIT
+        assert result['entries_found'] == all_trades_num
 
 
 def test_add_trades(rotkehlchen_api_server):
@@ -240,7 +240,7 @@ def test_add_trades(rotkehlchen_api_server):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert data['result']['trades'] == [new_trade]
+    assert data['result']['entries'] == [new_trade]
 
 
 def assert_all_missing_fields_are_handled(correct_trade, server):
@@ -556,7 +556,7 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
             ),
         )
     assert_proper_response(response)
-    trades = response.json()['result']['trades']
+    trades = response.json()['result']['entries']
 
     # get the binance trades
     original_binance_trades = [t for t in trades if t['location'] == 'binance']
@@ -578,13 +578,14 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
         _check_trade_is_edited(original_trade=trade, result_trade=data['result'])
 
     # Finally also query binance trades to see they are edited
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
-        ), json={'location': 'binance'},
-    )
-    trades = assert_proper_response_with_result(response)['trades']
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "tradesresource",
+            ), json={'location': 'binance'},
+        )
+    trades = assert_proper_response_with_result(response)['entries']
     assert len(trades) == 2  # only 2 binance trades
     for idx, trade in enumerate(trades):
         _check_trade_is_edited(original_trade=original_binance_trades[idx], result_trade=trade)
@@ -658,7 +659,7 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
                 "tradesresource",
             ),
         )
-    trades = assert_proper_response_with_result(response)['trades']
+    trades = assert_proper_response_with_result(response)['entries']
 
     # get the poloniex trade ids
     poloniex_trade_ids = [t['trade_id'] for t in trades if t['location'] == 'poloniex']
@@ -684,7 +685,7 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
                 "tradesresource",
             ), json={'location': 'poloniex'},
         )
-    trades = assert_proper_response_with_result(response)['trades']
+    trades = assert_proper_response_with_result(response)['entries']
     assert len(trades) == 0
 
 
