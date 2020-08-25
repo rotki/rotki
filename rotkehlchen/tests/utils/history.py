@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
@@ -309,7 +310,16 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 "close": "2017-01-01 23:38:45"
             }]"""
         elif 'returnDepositsWithdrawals' == req['command']:
-            payload = POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
+            data = json.loads(POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE)
+            new_data = {}
+            for x in ('deposits', 'withdrawals'):
+                new_data[x] = []
+                for entry in data[x]:
+                    if entry['timestamp'] < req['start'] or entry['timestamp'] > req['end']:
+                        continue
+                    new_data[x].append(entry)
+
+            payload = json.dumps(new_data)
         else:
             raise RuntimeError(
                 f'Poloniex test mock got unexpected/unmocked command {req["command"]}',

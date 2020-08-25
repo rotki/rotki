@@ -1,6 +1,6 @@
 import json
 import random
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
 from rotkehlchen.db.dbhandler import DBHandler
@@ -367,10 +367,20 @@ class MockKraken(Kraken):
                 )
 
             # else use specific data
-            if ledger_type == 'deposit':
-                response = KRAKEN_SPECIFIC_DEPOSITS_RESPONSE
-            elif ledger_type == 'withdrawal':
-                response = KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE
+            if ledger_type in ('deposit', 'withdrawal'):
+                data = json.loads(
+                    KRAKEN_SPECIFIC_DEPOSITS_RESPONSE if ledger_type == 'deposit'
+                    else KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE,
+                )
+                new_data: Dict[str, Any] = {'ledger': {}}
+                for key, val in data['ledger'].items():
+                    ts = int(val['time'])
+                    if ts < req['start'] or ts > req['end']:
+                        continue
+                    new_data['ledger'][key] = val
+
+                new_data['count'] = len(new_data['ledger'])
+                response = json.dumps(new_data)
             else:
                 raise AssertionError('Unknown ledger type at kraken ledgers mock query')
 
