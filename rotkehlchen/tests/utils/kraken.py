@@ -374,7 +374,10 @@ class MockKraken(Kraken):
                 )
                 new_data: Dict[str, Any] = {'ledger': {}}
                 for key, val in data['ledger'].items():
-                    ts = int(val['time'])
+                    try:
+                        ts = int(val['time'])
+                    except ValueError:
+                        ts = req['start']  # can happen for tests of invalid data -- let it through
                     if ts < req['start'] or ts > req['end']:
                         continue
                     new_data['ledger'][key] = val
