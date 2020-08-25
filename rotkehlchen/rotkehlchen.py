@@ -6,7 +6,7 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 from gevent.lock import Semaphore
@@ -32,7 +32,8 @@ from rotkehlchen.errors import (
     RemoteError,
     SystemPermissionError,
 )
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -69,6 +70,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 15
 FREE_TRADES_LIMIT = 250
+FREE_ASSET_MOVEMENTS_LIMIT = 100
+LIMITS_MAPPING = {
+    'trade': FREE_TRADES_LIMIT,
+    'asset_movement': FREE_ASSET_MOVEMENTS_LIMIT,
+}
 
 ICONS_BATCH_SIZE = 5
 ICONS_QUERY_SLEEP = 10
@@ -120,7 +126,10 @@ class Rotkehlchen():
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
         # Keeps how many trades we have found per location. Used for free user limiting
-        self.trades_per_location: Dict[Location, int] = defaultdict(int)
+        self.actions_per_location: Dict[str, Dict[Location, int]] = {
+            'trades': defaultdict(int),
+            'asset_movements': defaultdict(int),
+        }
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
@@ -451,32 +460,55 @@ class Rotkehlchen():
         )
         return result, error_or_empty
 
-    def _apply_trade_limit(
+    @overload
+    def _apply_actions_limit(
             self,
             location: Location,
-            location_trades: List[Trade],
-            all_trades: List[Trade],
+            action_type: Literal['trade'],
+            location_actions: List[Trade],
+            all_actions: List[Trade],
     ) -> List[Trade]:
-        """Take as many trades from location trades and add them to all trades as the imit permits
+        ...
 
-        Returns the modifies (or not) all_trades
+    @overload
+    def _apply_actions_limit(
+            self,
+            location: Location,
+            action_type: Literal['asset_movement'],
+            location_actions: List[AssetMovement],
+            all_actions: List[AssetMovement],
+    ) -> List[AssetMovement]:
+        ...
+
+    def _apply_actions_limit(
+            self,
+            location: Location,
+            action_type: Literal['trade', 'asset_movement'],
+            location_actions: Union[List[Trade], List[AssetMovement]],
+            all_actions: Union[List[Trade], List[AssetMovement]],
+    ) -> Union[List[Trade], List[AssetMovement]]:
+        """Take as many actions from location actions and add them to all actions as the limit permits
+
+        Returns the modified (or not) all_actions
         """
-        # If we are already at or above the limit return current trades, disregarding this location
-        current_num_trades = sum(x for _, x in self.trades_per_location.items())
-        if current_num_trades >= FREE_TRADES_LIMIT:
-            return all_trades
+        # If we are already at or above the limit return current actions disregarding this location
+        actions_mapping = self.actions_per_location[action_type]
+        current_num_actions = sum(x for _, x in actions_mapping.items())
+        limit = LIMITS_MAPPING[action_type]
+        if current_num_actions >= limit:
+            return all_actions
 
-        # Find out how many more trades can we return, and depending on that get
-        # the number of trades from the location trades and add them to the total
-        remaining_num_trades = FREE_TRADES_LIMIT - current_num_trades
-        if remaining_num_trades < 0:
-            remaining_num_trades = 0
+        # Find out how many more actions can we return, and depending on that get
+        # the number of actions from the location actions and add them to the total
+        remaining_num_actions = limit - current_num_actions
+        if remaining_num_actions < 0:
+            remaining_num_actions = 0
 
-        num_trades_to_take = min(len(location_trades), remaining_num_trades)
+        num_actions_to_take = min(len(location_actions), remaining_num_actions)
 
-        self.trades_per_location[location] = num_trades_to_take
-        all_trades.extend(location_trades[0:num_trades_to_take])
-        return all_trades
+        actions_mapping[location] = num_actions_to_take
+        all_actions.extend(location_actions[0:num_actions_to_take])  # type: ignore
+        return all_actions
 
     def query_trades(
             self,
@@ -499,10 +531,11 @@ class Rotkehlchen():
             for name, exchange in self.exchange_manager.connected_exchanges.items():
                 exchange_trades = exchange.query_trade_history(start_ts=from_ts, end_ts=to_ts)
                 if self.premium is None:
-                    trades = self._apply_trade_limit(
+                    trades = self._apply_actions_limit(
                         location=deserialize_location(name),
-                        location_trades=exchange_trades,
-                        all_trades=trades,
+                        action_type='trade',
+                        location_actions=exchange_trades,
+                        all_actions=trades,
                     )
                 else:
                     trades.extend(exchange_trades)
@@ -537,10 +570,11 @@ class Rotkehlchen():
 
         trades: List[Trade] = []
         if self.premium is None:
-            trades = self._apply_trade_limit(
+            trades = self._apply_actions_limit(
                 location=location,
-                location_trades=location_trades,
-                all_trades=trades,
+                action_type='trade',
+                location_actions=location_trades,
+                all_actions=trades,
             )
         else:
             trades = location_trades
@@ -663,6 +697,69 @@ class Rotkehlchen():
             pass
 
         return result_dict
+
+    def _query_exchange_asset_movements(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            all_movements: List[AssetMovement],
+            exchange: ExchangeInterface,
+    ) -> List[AssetMovement]:
+        location_movements = exchange.query_deposits_withdrawals(start_ts=from_ts, end_ts=to_ts)
+
+        movements: List[AssetMovement] = []
+        if self.premium is None:
+            movements = self._apply_actions_limit(
+                location=deserialize_location(exchange.name),
+                action_type='asset_movement',
+                location_actions=location_movements,
+                all_actions=all_movements,
+            )
+        else:
+            movements = location_movements
+
+        return movements
+
+    def query_asset_movements(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            location: Optional[Location],
+    ) -> List[AssetMovement]:
+        """Queries AssetMovements for the given location and time range.
+
+        If no location is given then all exchange asset movements are queried.
+        If the user does not have premium then a limit is applied.
+        May raise:
+        - RemoteError: If there are problems connecting to any of the remote exchanges
+        """
+        movements: List[AssetMovement] = []
+        if location is not None:
+            exchange = self.exchange_manager.get(str(location))
+            if not exchange:
+                logger.warn(
+                    f'Tried to query deposits/withdrawals from {location} which is either not an '
+                    f'exchange or not an exchange the user has connected to',
+                )
+                return []
+            movements = self._query_exchange_asset_movements(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                all_movements=movements,
+                exchange=exchange,
+            )
+        else:
+            for _, exchange in self.exchange_manager.connected_exchanges.items():
+                movements = self._query_exchange_asset_movements(
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    all_movements=movements,
+                    exchange=exchange,
+                )
+
+        # return movements with most recent first
+        movements.sort(key=lambda x: x.timestamp, reverse=True)
+        return movements
 
     def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""

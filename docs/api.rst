@@ -2141,7 +2141,6 @@ Dealing with trades
    :statuscode 409: No user is logged in. The given trade identifier to delete does not exist.
    :statuscode 500: Internal Rotki error.
 
-
 Querying asset movements
 ===========================
 

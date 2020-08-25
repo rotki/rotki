@@ -1476,6 +1476,12 @@ class DBHandler:
 
         return asset_movements
 
+    def get_asset_movements_num(self) -> int:
+        """Returns how many asset movements are saved in the DB"""
+        cursor = self.conn.cursor()
+        query = cursor.execute('SELECT COUNT(*) from asset_movements;')
+        return query.fetchone()[0]
+
     def add_ethereum_transactions(
             self,
             ethereum_transactions: List[EthereumTransaction],

@@ -237,6 +237,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
 
         return margin_positions
 
+    @protect_with_lock()
     def query_deposits_withdrawals(
             self,
             start_ts: Timestamp,

@@ -43,7 +43,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT, Rotkehlchen
+from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import (
@@ -635,6 +635,63 @@ class RestAPI():
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def _get_asset_movements(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            location: Optional[Location],
+    ) -> Dict[str, Any]:
+        msg = ''
+        status_code = HTTPStatus.OK
+        result = None
+        try:
+            movements = self.rotkehlchen.query_asset_movements(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                location=location,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        movements_list = []
+        for movement in movements:
+            serialized_movement = self.trade_schema.dump(movement)
+            serialized_movement['identifier'] = movement.identifier
+            movements_list.append(serialized_movement)
+
+        limit = FREE_ASSET_MOVEMENTS_LIMIT if self.rotkehlchen.premium is None else -1
+        result = {
+            'movements': movements_list,
+            'movements_found': self.rotkehlchen.data.db.get_asset_movements_num(),
+            'movements_limit': limit,
+        }
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
+
+    @require_loggedin_user()
+    def get_asset_movements(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            location: Optional[Location],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_asset_movements',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                location=location,
+            )
+
+        response = self._get_asset_movements(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            location=location,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
     def get_tags(self) -> Response:
