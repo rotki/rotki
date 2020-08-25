@@ -127,8 +127,8 @@ class Rotkehlchen():
         Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
         # Keeps how many trades we have found per location. Used for free user limiting
         self.actions_per_location: Dict[str, Dict[Location, int]] = {
-            'trades': defaultdict(int),
-            'asset_movements': defaultdict(int),
+            'trade': defaultdict(int),
+            'asset_movement': defaultdict(int),
         }
 
         self.lock.release()

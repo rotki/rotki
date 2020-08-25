@@ -1939,7 +1939,7 @@ Dealing with trades
 
       {
           "result": {
-	      "trades": [{
+	      "entries": [{
 		  "trade_id": "dsadfasdsad",
 		  "timestamp": 1491606401,
 		  "location": "external",
@@ -1952,12 +1952,12 @@ Dealing with trades
 		  "link": "Optional unique trade identifier"
 		  "notes": "Optional notes"
               }],
-	      "trades_found": 95,
-	      "trades_limit": 250,
+	      "entries_found": 95,
+	      "entries_limit": 250,
           "message": ""
       }
 
-   :resjson object trades: An array of trade objects.
+   :resjson object entries: An array of trade objects.
    :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
@@ -1969,8 +1969,8 @@ Dealing with trades
    :resjsonarr string fee_currency: The currency in which ``fee`` is denominated in
    :resjsonarr string link: Optional unique trade identifier or link to the trade. Can be an empty string
    :resjsonarr string notes: Optional notes about the trade. Can be an empty string
-   :resjson int trades_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
-   :resjson int trades_limit: The trades limit for the account tier of the user. If unlimited then -1 is returned.
+   :resjson int entries_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
+   :resjson int entries_limit: The trades limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Trades are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.
@@ -2174,7 +2174,7 @@ Querying asset movements
 
       {
           "result": {
-              "movements": [{
+              "entries": [{
 	          "identifier": "foo"
                   "location": "kraken",
 		  "category": "deposit",
@@ -2185,12 +2185,12 @@ Querying asset movements
 		  "fee": "0.1",
 		  "link": "optional exchange unique id",
               }],
-	      "movements_found": 80,
-	      "movements_limit": 100,
+	      "entries_found": 80,
+	      "entries_limit": 100,
           "message": ""
       }
 
-   :resjson object movements: An array of deposit/withdrawal objects
+   :resjson object entries: An array of deposit/withdrawal objects
    :resjsonarr string identifier: The uniquely identifying identifier for this asset movement
    :resjsonarr string location: A valid location at which the deposit/withdrawal occured
    :resjsonarr string category: Either ``"deposit"`` or ``"withdrawal"``
@@ -2200,8 +2200,8 @@ Querying asset movements
    :resjsonarr string fee_asset: The asset in which ``fee`` is denominated in
    :resjsonarr string fee: The fee that was paid, if anything, for this deposit/withdrawal
    :resjsonarr string link: Optional unique exchange identifier for the deposit/withdrawal
-:resjson int movements_found: The amount of deposit/withdrawals found for the user. That disregards the filter and shows all asset movements found.
-:resjson int movements_limit: The movements query limit for the account tier of the user. If unlimited then -1 is returned.
+:resjson int entries_found: The amount of deposit/withdrawals found for the user. That disregards the filter and shows all asset movements found.
+:resjson int entries_limit: The movements query limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Deposits/withdrawals are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.

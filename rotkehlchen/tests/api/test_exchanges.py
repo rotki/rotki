@@ -555,9 +555,9 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges, async_quer
             result = outcome['result']
         else:
             result = assert_proper_response_with_result(response)
-    assert result['trades_found'] > 0
-    assert result['trades_limit'] == 250
-    assert_binance_trades_result(result['trades'])
+    assert result['entries_found'] > 0
+    assert result['entries_limit'] == 250
+    assert_binance_trades_result(result['entries'])
 
     # query trades of all exchanges
     with setup.binance_patch, setup.polo_patch:
@@ -572,7 +572,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges, async_quer
         else:
             result = assert_proper_response_with_result(response)
 
-    trades = result['trades']
+    trades = result['entries']
     assert_binance_trades_result([x for x in trades if x['location'] == 'binance'])
     assert_poloniex_trades_result([x for x in trades if x['location'] == 'poloniex'])
 
@@ -584,7 +584,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges, async_quer
             result = outcome['result']
         else:
             result = assert_proper_response_with_result(response)
-        trades = result['trades']
+        trades = result['entries']
         assert_binance_trades_result([x for x in trades if x['location'] == 'binance'])
         assert_poloniex_trades_result(
             trades=[x for x in trades if x['location'] == 'poloniex'],

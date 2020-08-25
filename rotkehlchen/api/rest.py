@@ -527,9 +527,9 @@ class RestAPI():
             trades_result.append(serialized_trade)
 
         result = {
-            'trades': trades_result,
-            'trades_found': self.rotkehlchen.data.db.get_trades_num(),
-            'trades_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
+            'entries': trades_result,
+            'entries_found': self.rotkehlchen.data.db.get_trades_num(),
+            'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
@@ -662,9 +662,9 @@ class RestAPI():
 
         limit = FREE_ASSET_MOVEMENTS_LIMIT if self.rotkehlchen.premium is None else -1
         result = {
-            'movements': movements_list,
-            'movements_found': self.rotkehlchen.data.db.get_asset_movements_num(),
-            'movements_limit': limit,
+            'entries': movements_list,
+            'entries_found': self.rotkehlchen.data.db.get_asset_movements_num(),
+            'entries_limit': limit,
         }
 
         return {'result': result, 'message': msg, 'status_code': status_code}
