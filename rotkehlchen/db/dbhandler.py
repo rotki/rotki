@@ -1352,7 +1352,7 @@ class DBHandler:
             '  notes FROM margin_positions '
         )
         if location is not None:
-            query += f'WHERE location="{location}" '
+            query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
@@ -1443,7 +1443,7 @@ class DBHandler:
             '  link FROM asset_movements '
         )
         if location is not None:
-            query += f'WHERE location="{location}" '
+            query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
