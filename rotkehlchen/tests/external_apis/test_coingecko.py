@@ -44,9 +44,9 @@ def test_asset_data(session_coingecko):
         name='yearn.finance',
         description='Management token for the yearn.finance ecosystem',
         images=CoingeckoImageURLs(
-            thumb='https://assets.coingecko.com/coins/images/11849/thumb/yearn-finance.png?1595602501',  # noqa: E501
-            small='https://assets.coingecko.com/coins/images/11849/small/yearn-finance.png?1595602501',  # noqa: E501
-            large='https://assets.coingecko.com/coins/images/11849/large/yearn-finance.png?1595602501',  # noqa: E501
+            thumb='https://assets.coingecko.com/coins/images/11849/thumb/yfi-192x192.png?1598325330',  # noqa: E501
+            small='https://assets.coingecko.com/coins/images/11849/small/yfi-192x192.png?1598325330',  # noqa: E501
+            large='https://assets.coingecko.com/coins/images/11849/large/yfi-192x192.png?1598325330',  # noqa: E501
         ),
     )
     data = session_coingecko.asset_data(Asset('YFI'))
