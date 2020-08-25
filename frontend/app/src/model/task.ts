@@ -11,6 +11,7 @@ export interface Task<T extends TaskMeta> {
 export interface TaskMeta {
   readonly description: string;
   readonly ignoreResult: boolean;
+  readonly numericKeys?: string[];
 }
 
 export interface ExchangeMeta extends TaskMeta {
@@ -32,18 +33,24 @@ export const createTask: <T extends TaskMeta>(
 });
 
 export function taskCompletion<R, M extends TaskMeta>(
-  task: TaskType
+  task: TaskType,
+  taskId?: string
 ): Promise<TaskResult<R, M>> {
   return new Promise((resolve, reject) => {
-    taskManager.registerHandler<R, M>(task, (actionResult, meta) => {
-      taskManager.unregisterHandler(task);
-      const { result, message } = actionResult;
-      if (message) {
-        reject(new Error(message));
-      } else {
-        resolve({ result, meta });
-      }
-    });
+    taskManager.registerHandler<R, M>(
+      task,
+      (actionResult, meta) => {
+        console.log('handling');
+        taskManager.unregisterHandler(task, taskId);
+        const { result, message } = actionResult;
+        if (message) {
+          reject(new Error(message));
+        } else {
+          resolve({ result, meta });
+        }
+      },
+      taskId
+    );
   });
 }
 

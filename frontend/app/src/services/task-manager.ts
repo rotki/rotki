@@ -1,5 +1,4 @@
 import map from 'lodash/map';
-import { ActionResult } from '@/model/action-result';
 import { BlockchainBalances } from '@/model/blockchain-balances';
 import { BlockchainMetadata, ExchangeMeta, Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
@@ -10,7 +9,7 @@ import {
   TradeHistory
 } from '@/model/trade-history-types';
 import { api } from '@/services/rotkehlchen-api';
-import { TaskNotFoundError } from '@/services/types-api';
+import { ActionResult, TaskNotFoundError } from '@/services/types-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
@@ -141,7 +140,7 @@ export class TaskManager {
       store.commit('tasks/lock', task.id);
 
       api
-        .queryTaskResult(task.id)
+        .queryTaskResult(task.id, task.meta.numericKeys)
         .then(result => this.handleResult(result, task))
         .catch(e => {
           // When the request fails for any reason (pending or network error) then we unlock it
@@ -168,7 +167,8 @@ export class TaskManager {
       return;
     }
 
-    const handler = this.handler[task.type];
+    const handler =
+      this.handler[task.type] ?? this.handler[`${task.type}-${task.id}`];
 
     if (!handler) {
       notify(
@@ -204,13 +204,16 @@ export class TaskManager {
 
   registerHandler<R, M extends TaskMeta>(
     task: TaskType,
-    handlerImpl: (actionResult: ActionResult<R>, meta: M) => void
+    handlerImpl: (actionResult: ActionResult<R>, meta: M) => void,
+    taskId?: string
   ) {
-    this.handler[task] = handlerImpl;
+    const identifier = taskId ? `${task}-${taskId}` : task;
+    this.handler[identifier] = handlerImpl;
   }
 
-  unregisterHandler(task: TaskType) {
-    delete this.handler[task];
+  unregisterHandler(task: TaskType, taskId?: string) {
+    const identifier = taskId ? `${task}-${taskId}` : task;
+    delete this.handler[identifier];
   }
 }
 

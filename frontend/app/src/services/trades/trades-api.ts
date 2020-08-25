@@ -1,19 +1,18 @@
 import { AxiosInstance, AxiosTransformer } from 'axios';
-import { ActionResult } from '@/model/action-result';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
+import { tradeNumericKeys } from '@/services/trades/const';
 import { NewTrade, Trade, TradeLocation } from '@/services/trades/types';
+import { ActionResult, PendingTask } from '@/services/types-api';
 import { handleResponse, validStatus } from '@/services/utils';
 
 export class TradesApi {
   private readonly axios: AxiosInstance;
-  private readonly responseTransformer: AxiosTransformer[] = setupTransformer([
-    'fee',
-    'amount',
-    'rate'
-  ]);
+  private readonly responseTransformer: AxiosTransformer[] = setupTransformer(
+    tradeNumericKeys
+  );
   private readonly requestTransformer: AxiosTransformer[];
 
   constructor(axios: AxiosInstance) {
@@ -23,20 +22,14 @@ export class TradesApi {
     );
   }
 
-  async trades(location?: TradeLocation): Promise<Trade[]> {
+  async trades(location?: TradeLocation): Promise<PendingTask> {
+    const params = {
+      asyncQuery: true,
+      location
+    };
     return this.axios
-      .get<ActionResult<Trade[]>>('/trades', {
-        data: location ? { data: location } : undefined,
-        validateStatus: validStatus,
-        transformResponse: this.responseTransformer
-      })
-      .then(handleResponse);
-  }
-
-  async externalTrades(): Promise<Trade[]> {
-    return this.axios
-      .get<ActionResult<Trade[]>>('/trades', {
-        data: { location: 'external' },
+      .get<ActionResult<PendingTask>>('/trades', {
+        params: axiosSnakeCaseTransformer(params),
         validateStatus: validStatus,
         transformResponse: this.responseTransformer
       })
@@ -66,7 +59,7 @@ export class TradesApi {
   async deleteExternalTrade(tradeId: string): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/trades', {
-        data: { trade_id: tradeId },
+        data: axiosSnakeCaseTransformer({ tradeId }),
         validateStatus: validStatus
       })
       .then(handleResponse);

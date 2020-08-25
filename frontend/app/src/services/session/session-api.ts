@@ -1,11 +1,11 @@
 import { AxiosInstance } from 'axios';
-import { ActionResult } from '@/model/action-result';
 import {
   QueriedAddresses,
   QueriedAddressPayload,
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
+import { ActionResult } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
   handleResponse,

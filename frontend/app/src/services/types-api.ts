@@ -29,4 +29,23 @@ export interface ApiManualBalances {
   readonly balances: ApiManualBalanceWithValue[];
 }
 
+export interface LimitedResponse<T> {
+  readonly trades: T;
+  readonly tradesFound: number;
+  readonly tradesLimit: number;
+}
+
 export class TaskNotFoundError extends Error {}
+
+export interface ActionResult<T> {
+  readonly result: T;
+  readonly message: string;
+}
+
+export interface AsyncQuery {
+  readonly task_id: number;
+}
+
+export interface PendingTask {
+  readonly taskId: number;
+}

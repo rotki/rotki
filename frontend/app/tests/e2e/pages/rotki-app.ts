@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ActionResult } from '@/model/action-result';
+import { ActionResult } from '@/services/types-api';
 
 export class RotkiApp {
   visit() {

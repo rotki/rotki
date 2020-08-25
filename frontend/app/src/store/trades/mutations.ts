@@ -5,6 +5,14 @@ import { defaultState } from '@/store/trades/state';
 import { TradesState } from '@/store/trades/types';
 
 export const mutations: MutationTree<TradesState> = {
+  appendTrades(state: TradesState, trades: Trade[]) {
+    state.trades = [...state.trades, ...trades];
+  },
+
+  updateLimit(state: TradesState, limit: number) {
+    state.limit = limit;
+  },
+
   trades(state: TradesState, trades: Trade[]) {
     state.trades = trades;
   },

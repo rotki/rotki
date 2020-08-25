@@ -4,6 +4,7 @@ import {
   EthBalances,
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
+import { SupportedExchange } from '@/services/balances/types';
 import { ManualBalance, SupportedAsset } from '@/services/types-model';
 import {
   AccountDataMap,
@@ -16,7 +17,7 @@ export interface BalanceState {
   btc: Balances;
   totals: AssetBalances;
   usdToFiatExchangeRates: UsdToFiatExchangeRates;
-  connectedExchanges: string[];
+  connectedExchanges: SupportedExchange[];
   exchangeBalances: ExchangeData;
   ethAccounts: AccountDataMap;
   btcAccounts: AccountDataMap;

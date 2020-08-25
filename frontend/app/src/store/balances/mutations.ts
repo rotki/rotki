@@ -1,5 +1,6 @@
 import { MutationTree } from 'vuex';
 import { Balances, EthBalances } from '@/model/blockchain-balances';
+import { SupportedExchange } from '@/services/balances/types';
 import { ManualBalance, SupportedAsset } from '@/services/types-model';
 import { BalanceState, defaultState } from '@/store/balances/state';
 import {
@@ -25,10 +26,13 @@ export const mutations: MutationTree<BalanceState> = {
   ) {
     state.usdToFiatExchangeRates = usdToFiatExchangeRates;
   },
-  connectedExchanges(state: BalanceState, connectedExchanges: string[]) {
+  connectedExchanges(
+    state: BalanceState,
+    connectedExchanges: SupportedExchange[]
+  ) {
     state.connectedExchanges = connectedExchanges;
   },
-  addExchange(state: BalanceState, exchangeName: string) {
+  addExchange(state: BalanceState, exchangeName: SupportedExchange) {
     state.connectedExchanges.push(exchangeName);
   },
   removeExchange(state: BalanceState, exchangeName: string) {

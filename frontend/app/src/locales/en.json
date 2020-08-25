@@ -171,5 +171,14 @@
       "message": "Are you sure you want to log out of your current rotki session?",
       "title": "Confirmation Required"
     }
+  },
+  "actions": {
+    "trades" : {
+      "task_description": "Fetching Trades",
+      "error": {
+        "description": "Failed: {error}",
+        "title": "Retrieving trades"
+      }
+    }
   }
 }

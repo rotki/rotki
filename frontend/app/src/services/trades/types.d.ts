@@ -1,4 +1,5 @@
 import { default as BigNumber } from 'bignumber.js';
+import { SupportedExchange } from '@/services/balances/types';
 
 export type TradeType = 'buy' | 'sell';
 
@@ -24,14 +25,7 @@ export interface TradeUpdate {
 }
 
 export type TradeLocation =
-  | 'kraken'
-  | 'poloniex'
-  | 'bitmex'
-  | 'binance'
-  | 'bittrex'
-  | 'gemini'
-  | 'coinbase'
-  | 'coinbasepro'
+  | SupportedExchange
   | 'ethereum'
   | 'bitcoin'
   | 'external';

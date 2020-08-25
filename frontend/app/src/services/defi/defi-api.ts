@@ -1,5 +1,5 @@
 import { AxiosInstance } from 'axios';
-import { ActionResult, AsyncQuery } from '@/model/action-result';
+import { ActionResult, AsyncQuery } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
   handleResponse

@@ -1,6 +1,6 @@
 import { AxiosInstance } from 'axios';
-import { ActionResult } from '@/model/action-result';
 import { SupportedExchange } from '@/services/balances/types';
+import { ActionResult } from '@/services/types-api';
 import { handleResponse, validStatus } from '@/services/utils';
 
 export class BalancesApi {

@@ -1,9 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import {
   AccountState,
-  ActionResult,
   ApiAccountData,
-  AsyncQuery,
   DBSettings,
   ExternalServiceKeys
 } from '@/model/action-result';
@@ -14,13 +12,16 @@ import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result'
 import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { VersionCheck } from '@/model/version-check';
+import { setupTransformer } from '@/services/axios-tranformers';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { DefiApi } from '@/services/defi/defi-api';
 import { SessionApi } from '@/services/session/session-api';
 import { TradesApi } from '@/services/trades/trades-api';
 import {
+  ActionResult,
   ApiManualBalance,
   ApiManualBalances,
+  AsyncQuery,
   SupportedAssets,
   TaskNotFoundError
 } from '@/services/types-api';
@@ -226,10 +227,18 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryTaskResult<T>(id: number): Promise<ActionResult<T>> {
+  queryTaskResult<T>(
+    id: number,
+    numericKeys?: string[]
+  ): Promise<ActionResult<T>> {
+    const transformer = numericKeys
+      ? setupTransformer(numericKeys)
+      : this.axios.defaults.transformResponse;
+
     return this.axios
       .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`, {
-        validateStatus: validTaskStatus
+        validateStatus: validTaskStatus,
+        transformResponse: transformer
       })
       .then(response => {
         if (response.status === 404) {
