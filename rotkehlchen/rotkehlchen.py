@@ -229,6 +229,7 @@ class Rotkehlchen():
         ethereum_manager = EthereumManager(
             ethrpc_endpoint=eth_rpc_endpoint,
             etherscan=self.etherscan,
+            database=self.data.db,
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
             connect_at_start=ETHEREUM_NODES_TO_CONNECT_AT_START,

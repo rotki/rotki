@@ -45,7 +45,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
-from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -1543,9 +1542,7 @@ class RestAPI():
     ) -> Dict[str, Any]:
         transactions: Optional[List[EthereumTransaction]]
         try:
-            transactions = query_ethereum_transactions(
-                database=self.rotkehlchen.data.db,
-                etherscan=self.rotkehlchen.etherscan,
+            transactions = self.rotkehlchen.chain_manager.ethereum.transactions.query(
                 address=address,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,

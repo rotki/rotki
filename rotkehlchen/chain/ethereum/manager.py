@@ -19,7 +19,9 @@ from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.ethereum import ETH_SCAN
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -120,6 +122,7 @@ class EthereumManager():
             self,
             ethrpc_endpoint: str,
             etherscan: Etherscan,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             greenlet_manager: GreenletManager,
             connect_at_start: Sequence[NodeName],
@@ -132,6 +135,7 @@ class EthereumManager():
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
+        self.transactions = EthTransactions(database=database, etherscan=etherscan)
         for node in connect_at_start:
             self.greenlet_manager.spawn_and_track(
                 task_name=f'Attempt connection to {str(node)} ethereum node',

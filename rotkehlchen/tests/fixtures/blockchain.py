@@ -108,6 +108,7 @@ def ethereum_manager(
         ethrpc_endpoint,
         ethereum_manager_connect_at_start,
         greenlet_manager,
+        database,
 ):
     if ethrpc_endpoint is None:
         endpoint = f'http://localhost:{ethrpc_port}'
@@ -117,6 +118,7 @@ def ethereum_manager(
     return EthereumManager(
         ethrpc_endpoint=endpoint,
         etherscan=etherscan,
+        database=database,
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=ethereum_manager_connect_at_start,

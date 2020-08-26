@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple
 
 import requests
 
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -125,47 +126,6 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             'query_online_deposits_withdrawals should only be implemented by subclasses',
         )
 
-    def get_online_query_ranges(
-            self,
-            location_suffix: str,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> List[Tuple[Timestamp, Timestamp]]:
-        """Takes in the start/end ts for a location query and after checking the
-        last query ranges of the DB provides a list of timestamp ranges that still
-        need to be queried."""
-        queried_range = self.db.get_used_query_range(self.name + location_suffix)
-        if not queried_range:
-            ranges_to_query = [(start_ts, end_ts)]
-        else:
-            ranges_to_query = []
-            if start_ts < queried_range[0]:
-                ranges_to_query.append((start_ts, Timestamp(queried_range[0] - 1)))
-
-            if end_ts > queried_range[1]:
-                ranges_to_query.append((Timestamp(queried_range[1] + 1), end_ts))
-
-        return ranges_to_query
-
-    def update_used_query_range(
-            self,
-            location_suffix: str,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            ranges_to_query: List[Tuple[Timestamp, Timestamp]],
-    ) -> None:
-        """Depending on the ranges to query and the given start and end ts update the DB"""
-        starts = [x[0] for x in ranges_to_query]
-        starts.append(start_ts)
-        ends = [x[1] for x in ranges_to_query]
-        ends.append(end_ts)
-
-        self.db.update_used_query_range(
-            name=self.name + location_suffix,
-            start_ts=min(starts),
-            end_ts=max(ends),
-        )
-
     @protect_with_lock()
     def query_trade_history(
             self,
@@ -178,7 +138,12 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             to_ts=end_ts,
             location=deserialize_location(self.name),
         )
-        ranges_to_query = self.get_online_query_ranges('_trades', start_ts=start_ts, end_ts=end_ts)
+        ranges = DBQueryRanges(self.db)
+        ranges_to_query = ranges.get_location_query_ranges(
+            location_string=f'{self.name}_trades',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
 
         new_trades = []
         for query_start_ts, query_end_ts in ranges_to_query:
@@ -197,7 +162,12 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
         if new_trades != []:
             self.db.add_trades(new_trades)
         # and also set the used queried timestamp range for the exchange
-        self.update_used_query_range('_trades', start_ts, end_ts, ranges_to_query)
+        ranges.update_used_query_range(
+            location_string=f'{self.name}_trades',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=ranges_to_query,
+        )
         # finally append them to the already returned DB trades
         trades.extend(new_trades)
 
@@ -215,8 +185,12 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             to_ts=end_ts,
             location=self.name,
         )
-        ranges_to_query = self.get_online_query_ranges('_margins', start_ts, end_ts)
-
+        ranges = DBQueryRanges(self.db)
+        ranges_to_query = ranges.get_location_query_ranges(
+            location_string=f'{self.name}_margins',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
         new_positions = []
         for query_start_ts, query_end_ts in ranges_to_query:
             try:
@@ -231,7 +205,12 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
         if new_positions != []:
             self.db.add_margin_positions(new_positions)
         # and also set the last queried timestamp for the exchange
-        self.update_used_query_range('_margins', start_ts, end_ts, ranges_to_query)
+        ranges.update_used_query_range(
+            location_string=f'{self.name}_margins',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=ranges_to_query,
+        )
         # finally append them to the already returned DB margin positions
         margin_positions.extend(new_positions)
 
@@ -249,8 +228,12 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             to_ts=end_ts,
             location=self.name,
         )
-        ranges_to_query = self.get_online_query_ranges('_asset_movements', start_ts, end_ts)
-
+        ranges = DBQueryRanges(self.db)
+        ranges_to_query = ranges.get_location_query_ranges(
+            location_string=f'{self.name}_asset_movements',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
         new_movements = []
         for query_start_ts, query_end_ts in ranges_to_query:
             new_movements.extend(self.query_online_deposits_withdrawals(
@@ -260,7 +243,12 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
 
         if new_movements != []:
             self.db.add_asset_movements(new_movements)
-        self.update_used_query_range('_asset_movements', start_ts, end_ts, ranges_to_query)
+        ranges.update_used_query_range(
+            location_string=f'{self.name}_asset_movements',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=ranges_to_query,
+        )
         asset_movements.extend(new_movements)
 
         return asset_movements
