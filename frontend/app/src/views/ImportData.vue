@@ -128,7 +128,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 
 @Component({
   components: { ExternalLink }

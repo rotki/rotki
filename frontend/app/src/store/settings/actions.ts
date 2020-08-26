@@ -1,7 +1,7 @@
 import { ActionContext, ActionTree } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
 import { FrontendSettingsPayload, SettingsState } from '@/store/settings/types';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 
 interface Actions {
   updateSetting(

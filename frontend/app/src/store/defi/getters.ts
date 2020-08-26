@@ -14,7 +14,7 @@ import {
   LoanSummary,
   MakerDAOVaultModel
 } from '@/store/defi/types';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 import { Writeable } from '@/types';
 import { DefiAccount } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';

@@ -3,19 +3,20 @@ import Vuex, { StoreOptions } from 'vuex';
 import { VersionCheck } from '@/model/version-check';
 import { api } from '@/services/rotkehlchen-api';
 import { balances } from '@/store/balances';
-import { BalanceState } from '@/store/balances/state';
+import { Section, Status } from '@/store/const';
 import { defi } from '@/store/defi';
 import { notifications } from '@/store/notifications';
-import { NotificationState } from '@/store/notifications/state';
 import { reports } from '@/store/reports';
-import { TaxReportState } from '@/store/reports/state';
 import { session } from '@/store/session';
-import { SessionState } from '@/store/session/types';
 import { settings } from '@/store/settings';
-import { SettingsState } from '@/store/settings/types';
 import { tasks } from '@/store/tasks';
-import { TaskState } from '@/store/tasks/state';
 import { trades } from '@/store/trades';
+import {
+  Message,
+  RotkehlchenState,
+  StatusPayload,
+  Version
+} from '@/store/types';
 
 Vue.use(Vuex);
 
@@ -36,7 +37,8 @@ const store: StoreOptions<RotkehlchenState> = {
   state: {
     message: emptyMessage(),
     version: defaultVersion(),
-    connected: false
+    connected: false,
+    status: {}
   },
   mutations: {
     setMessage: (state: RotkehlchenState, message: Message) => {
@@ -54,6 +56,9 @@ const store: StoreOptions<RotkehlchenState> = {
     },
     setConnected: (state: RotkehlchenState, connected: boolean) => {
       state.connected = connected;
+    },
+    setStatus: (state: RotkehlchenState, status: StatusPayload) => {
+      state.status = { ...state.status, [status.section]: status.status };
     }
   },
   actions: {
@@ -94,6 +99,9 @@ const store: StoreOptions<RotkehlchenState> = {
     },
     message: (state: RotkehlchenState) => {
       return state.message.title.length > 0;
+    },
+    status: (state: RotkehlchenState) => (section: Section): Status => {
+      return state.status[section] ?? Status.NONE;
     }
   },
   modules: {
@@ -108,27 +116,3 @@ const store: StoreOptions<RotkehlchenState> = {
   }
 };
 export default new Vuex.Store(store);
-
-export interface Version {
-  readonly version: string;
-  readonly latestVersion: string;
-  readonly downloadUrl: string;
-}
-
-export interface RotkehlchenState {
-  message: Message;
-  version: Version;
-  connected: boolean;
-  session?: SessionState;
-  tasks?: TaskState;
-  notifications?: NotificationState;
-  reports?: TaxReportState;
-  balances?: BalanceState;
-  settings?: SettingsState;
-}
-
-export interface Message {
-  readonly title: string;
-  readonly description: string;
-  readonly success: boolean;
-}

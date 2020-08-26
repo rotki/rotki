@@ -14,9 +14,8 @@ import { LimitedResponse } from '@/services/types-api';
 import { Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { RotkehlchenState } from '@/store/store';
-import { TradeMeta, TradesState } from '@/store/trades/types';
-import { ActionStatus } from '@/store/types';
+import { LocationRequestMeta, TradesState } from '@/store/trades/types';
+import { ActionStatus, RotkehlchenState } from '@/store/types';
 
 export const actions: ActionTree<TradesState, RotkehlchenState> = {
   async fetchTrades(
@@ -49,10 +48,10 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
       location: TradeLocation
     ) => Promise<void> = async location => {
       const { taskId } = await api.trades.trades(location);
-      const task = createTask<TradeMeta>(taskId, taskType, {
+      const task = createTask<LocationRequestMeta>(taskId, taskType, {
         description: i18n.tc('actions.trades.task_description'),
         ignoreResult: false,
-        location: locations[0],
+        location: location,
         numericKeys: tradeNumericKeys
       });
 

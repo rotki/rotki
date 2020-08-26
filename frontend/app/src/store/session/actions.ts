@@ -19,8 +19,7 @@ import {
   SessionState
 } from '@/store/session/types';
 import { loadFrontendSettings } from '@/store/settings/utils';
-import { Message, RotkehlchenState } from '@/store/store';
-import { ActionStatus } from '@/store/types';
+import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
 import {
   SettingsUpdate,

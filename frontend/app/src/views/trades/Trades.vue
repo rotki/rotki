@@ -23,8 +23,7 @@ export default class TradesHistory extends Vue {
     },
     {
       name: this.$t('trades.tabs.deposits_withdrawals').toString(),
-      routeTo: '/trades/deposits-withdrawals',
-      hidden: !process.env.VUE_APP_TRADES_PREVIEW
+      routeTo: '/trades/deposits-withdrawals'
     }
   ];
 }

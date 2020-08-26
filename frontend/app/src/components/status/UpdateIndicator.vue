@@ -16,7 +16,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
-import { Version } from '@/store/store';
+import { Version } from '@/store/types';
 
 @Component({
   computed: {

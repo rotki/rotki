@@ -210,7 +210,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { convertToGeneralSettings, findCurrency } from '@/data/converters';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 import { GeneralSettings, SettingsUpdate } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';

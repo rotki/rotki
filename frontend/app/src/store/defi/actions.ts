@@ -24,7 +24,7 @@ import {
 import { DefiState } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
   async fetchDSRBalances({

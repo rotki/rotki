@@ -6,7 +6,7 @@ import {
   WatcherType
 } from '@/services/session/types';
 import { SessionState } from '@/store/session/types';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 import { Tag } from '@/typing/types';
 
 export interface SessionGetters {

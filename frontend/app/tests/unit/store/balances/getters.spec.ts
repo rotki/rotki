@@ -3,7 +3,7 @@ import { AssetBalance } from '@/model/blockchain-balances';
 import { Location } from '@/services/types-common';
 import { SupportedAsset } from '@/services/types-model';
 import { getters } from '@/store/balances/getters';
-import { BalanceState } from '@/store/balances/state';
+import { BalanceState } from '@/store/balances/types';
 import { bigNumberify } from '@/utils/bignumbers';
 import { stub } from '../../../common/utils';
 

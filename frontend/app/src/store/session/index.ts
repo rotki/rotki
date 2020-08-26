@@ -1,6 +1,6 @@
 import { Module } from 'vuex';
 import { SessionState } from '@/store/session/types';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 import { actions } from './actions';
 import { getters } from './getters';
 import { mutations } from './mutations';

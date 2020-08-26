@@ -97,8 +97,7 @@
       "title": "Delete Trade",
       "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}"
     },
-    "upgrade": "Displaying {limit} out of {total} trades. To view more trades please upgrade to {0}",
-    "rotki_premium": "rotki Premium"
+    "label": "trades"
   },
   "trade_location_selector": {
     "selection-none": "Showing results across all locations",
@@ -111,11 +110,11 @@
       "location": "Location",
       "action": "Action",
       "asset": "Asset",
-      "amount": "amount",
-      "usd_value": "USD Value",
+      "amount": "Amount",
       "fee": "Fee",
-      "fee_currency": "Fee Currency"
-    }
+      "timestamp": "Date"
+    },
+    "label": "asset movements"
   },
   "trades": {
     "header": "Trades",
@@ -123,6 +122,10 @@
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals"
     }
+  },
+  "upgrade_row": {
+    "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
+    "rotki_premium": "rotki Premium"
   },
   "otc_form": {
     "date": {
@@ -175,11 +178,18 @@
     }
   },
   "actions": {
-    "trades" : {
-      "task_description": "Fetching Trades",
+    "asset_movements": {
+      "task_description": "Querying asset movements",
       "error": {
         "description": "Failed: {error}",
-        "title": "Retrieving trades"
+        "title": "Asset movement query"
+      }
+    },
+    "trades" : {
+      "task_description": "Querying Trades",
+      "error": {
+        "description": "Failed: {error}",
+        "title": "Trades query"
       }
     }
   }

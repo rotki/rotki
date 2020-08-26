@@ -9,6 +9,6 @@ export interface TradesState {
   trades: Trade[];
 }
 
-export interface TradeMeta extends TaskMeta {
+export interface LocationRequestMeta extends TaskMeta {
   readonly location: TradeLocation;
 }

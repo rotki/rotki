@@ -38,7 +38,7 @@ import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
 import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 import { TaxReportEvent } from '@/typing/types';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');

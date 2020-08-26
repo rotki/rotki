@@ -62,9 +62,7 @@
               />
             </template>
             <template #item.timestamp="{ item }">
-              <span class="closed-trades__trade__time">
-                {{ item.timestamp | formatDate(dateDisplayFormat) }}
-              </span>
+              <date-display :timestamp="item.timestamp" />
             </template>
             <template #item.actions="{ item }">
               <div v-if="item.location === 'external'">
@@ -130,31 +128,16 @@
                 </v-col>
               </td>
             </template>
-            <template v-if="limit <= total" #body.append="{ headers }">
-              <td
+            <template
+              v-if="limit <= total && total !== 0"
+              #body.append="{ headers }"
+            >
+              <upgrade-row
+                :limit="limit"
+                :total="total"
                 :colspan="headers.length"
-                class="closed-trades__limit font-weight-medium"
-              >
-                <i18n
-                  tag="span"
-                  path="closed_trades.upgrade"
-                  class="d-flex flex-row justify-center"
-                >
-                  <template #total>
-                    {{ total }}
-                  </template>
-                  <template #limit>
-                    {{ limit }}
-                  </template>
-                  <template #0>
-                    <base-external-link
-                      class="ml-1"
-                      :text="$t('closed_trades.rotki_premium')"
-                      :href="$interop.premiumURL"
-                    />
-                  </template>
-                </i18n>
-              </td>
+                :label="$t('closed_trades.label')"
+              />
             </template>
           </v-data-table>
         </v-card-text>
@@ -184,24 +167,25 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters, mapState } from 'vuex';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import { mapActions, mapState } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import OtcForm from '@/components/OtcForm.vue';
 import LocationDisplay from '@/components/trades/LocationDisplay.vue';
 import { Trade } from '@/services/trades/types';
+import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
 @Component({
   components: {
-    BaseExternalLink,
+    UpgradeRow,
+    DateDisplay,
     LocationDisplay,
     OtcForm,
     ConfirmDialog,
     BigDialog
   },
   computed: {
-    ...mapGetters('session', ['dateDisplayFormat']),
     ...mapState('trades', ['total', 'limit'])
   },
   methods: {
@@ -255,7 +239,6 @@ export default class ClosedTrades extends Vue {
   editableItem: Trade | null = null;
   tradeToDelete: Trade | null = null;
   confirmationMessage: string = '';
-  dateDisplayFormat!: string;
   limit!: number;
   total!: number;
   expanded = [];
@@ -321,10 +304,6 @@ export default class ClosedTrades extends Vue {
 
 <style scoped lang="scss">
 .closed-trades {
-  &__limit {
-    height: 60px;
-  }
-
   &__trade {
     &__details {
       box-shadow: inset 1px 8px 10px -10px;

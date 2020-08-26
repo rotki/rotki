@@ -41,7 +41,7 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 import { Account, Blockchain, SupportedBlockchains } from '@/typing/types';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
