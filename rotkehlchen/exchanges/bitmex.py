@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -308,6 +309,8 @@ class Bitmex(ExchangeInterface):
                 movements.append(AssetMovement(
                     location=Location.BITMEX,
                     category=transaction_type,
+                    address=deserialize_asset_movement_address(movement, 'address', asset),
+                    transaction_id=get_key_if_has_val(movement, 'tx'),
                     timestamp=timestamp,
                     asset=asset,
                     amount=amount,

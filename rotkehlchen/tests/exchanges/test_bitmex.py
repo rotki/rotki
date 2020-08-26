@@ -67,6 +67,8 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
         AssetMovement(
             location=Location.BITMEX,
             category=AssetMovementCategory.DEPOSIT,
+            address=None,
+            transaction_id=None,
             timestamp=1536486278,
             asset=A_BTC,
             amount=FVal('0.46966992'),
@@ -77,6 +79,8 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
         AssetMovement(
             location=Location.BITMEX,
             category=AssetMovementCategory.DEPOSIT,
+            address=None,
+            transaction_id=None,
             timestamp=1537014656,
             asset=A_BTC,
             amount=FVal(0.16960386),
@@ -87,6 +91,8 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
         AssetMovement(
             location=Location.BITMEX,
             category=AssetMovementCategory.DEPOSIT,
+            address=None,
+            transaction_id=None,
             timestamp=1536563759,
             asset=A_BTC,
             amount=FVal('0.38474377'),
@@ -97,6 +103,8 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
         AssetMovement(
             location=Location.BITMEX,
             category=AssetMovementCategory.WITHDRAWAL,
+            address='mv4rnyY3Su5gjcDNzbMLKBQkBicCtHUtFB',
+            transaction_id=None,
             timestamp=1536536707,
             asset=A_BTC,
             amount=FVal('0.00700000'),

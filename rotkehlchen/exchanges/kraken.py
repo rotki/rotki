@@ -712,6 +712,8 @@ class Kraken(ExchangeInterface):
                     location=Location.KRAKEN,
                     category=deserialize_asset_movement_category(movement['type']),
                     timestamp=deserialize_timestamp_from_kraken(movement['time']),
+                    address=None,  # no data from kraken ledger endpoint
+                    transaction_id=None,  # no data from kraken ledger endpoint
                     asset=asset,
                     amount=deserialize_asset_amount(movement['amount']),
                     fee_asset=asset,

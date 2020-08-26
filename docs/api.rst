@@ -2184,6 +2184,8 @@ Querying asset movements
                   "identifier": "foo"
                   "location": "kraken",
                   "category": "deposit",
+                  "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+                  "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
                   "timestamp": 1451706400
                   "asset": "ETH",
                   "amount": "500.55",
@@ -2200,6 +2202,8 @@ Querying asset movements
    :resjsonarr string identifier: The uniquely identifying identifier for this asset movement
    :resjsonarr string location: A valid location at which the deposit/withdrawal occured
    :resjsonarr string category: Either ``"deposit"`` or ``"withdrawal"``
+   :resjsonarr string address: The source address if this is a deposit or the destination address if this is a withdrawal.
+   :resjsonarr string transaction_id: The transaction id
    :resjsonarr integer timestamp: The timestamp at which the deposit/withdrawal occured
    :resjsonarr string asset: The asset deposited or withdrawn
    :resjsonarr string amount: The amount of asset deposited or withdrawn

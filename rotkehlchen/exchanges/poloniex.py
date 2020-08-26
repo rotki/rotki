@@ -32,6 +32,7 @@ from rotkehlchen.exchanges.data_structures import (
     trade_pair_from_assets,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
@@ -690,13 +691,24 @@ class Poloniex(ExchangeInterface):
             if movement_type == AssetMovementCategory.DEPOSIT:
                 fee = Fee(ZERO)
                 uid_key = 'depositNumber'
+                transaction_id = get_key_if_has_val(movement_data, 'txid')
             else:
                 fee = deserialize_fee(movement_data['fee'])
                 uid_key = 'withdrawalNumber'
+                split = movement_data['status'].split(':')
+                if len(split) != 2:
+                    transaction_id = None
+                else:
+                    transaction_id = split[1].lstrip()
+                    if transaction_id == '':
+                        transaction_id = None
+
             asset = asset_from_poloniex(movement_data['currency'])
             return AssetMovement(
                 location=Location.POLONIEX,
                 category=movement_type,
+                address=deserialize_asset_movement_address(movement_data, 'address', asset),
+                transaction_id=transaction_id,
                 timestamp=deserialize_timestamp(movement_data['timestamp']),
                 asset=asset,
                 amount=deserialize_asset_amount(movement_data['amount']),

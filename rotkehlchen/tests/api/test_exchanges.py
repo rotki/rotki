@@ -710,6 +710,8 @@ def test_query_asset_movements_over_limit(
     movements = [AssetMovement(
         location=Location.KRAKEN,
         category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
         timestamp=x,
         asset=A_BTC,
         amount=FVal(x * 100),

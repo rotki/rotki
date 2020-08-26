@@ -1407,6 +1407,8 @@ class DBHandler:
                 movement.fee_asset.identifier,
                 str(movement.fee),
                 movement.link,
+                movement.address,
+                movement.transaction_id,
             ))
 
         query = """
@@ -1419,8 +1421,11 @@ class DBHandler:
               amount,
               fee_asset,
               fee,
-              link)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              link,
+              address,
+              transaction_id
+)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.write_tuples(tuple_type='asset_movement', query=query, tuples=movement_tuples)
 
@@ -1444,7 +1449,9 @@ class DBHandler:
             '  amount,'
             '  fee_asset,'
             '  fee,'
-            '  link FROM asset_movements '
+            '  link,'
+            '  address,'
+            '  transaction_id FROM asset_movements '
         )
         if location is not None:
             query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
@@ -1463,6 +1470,8 @@ class DBHandler:
                     fee_asset=Asset(result[6]),
                     fee=deserialize_fee(result[7]),
                     link=result[8],
+                    address=result[9],
+                    transaction_id=result[10],
                 )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(

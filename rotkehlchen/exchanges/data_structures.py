@@ -62,6 +62,9 @@ class AssetMovement(NamedTuple):
     location: Location
     category: AssetMovementCategory
     timestamp: Timestamp
+    # The source address if this is a deposit and the destination address if withdrawal
+    address: Optional[str]
+    transaction_id: Optional[str]
     asset: Asset
     # Amount is the original amount removed from the account
     amount: FVal

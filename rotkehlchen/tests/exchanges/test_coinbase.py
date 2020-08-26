@@ -394,14 +394,15 @@ TRANSACTIONS_RESPONSE = """{
   "instant_exchange": false,
   "network": {
     "status": "confirmed",
-    "hash": "bbb",
+    "hash": "0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169",
     "transaction_url": "https://etherscan.io/tx/bbb",
     "transaction_fee": {"amount": "0.00021", "currency": "ETH"},
     "transaction_amount": {"amount": "0.05749427", "currency": "ETH"},
-    "confirmations": 86},
+    "confirmations": 86
+   },
     "to": {
       "resource": "ethereum_address",
-      "address": "0xboo",
+      "address": "0x6dcd6449dbca615e40d696328209686ea95327b2",
       "currency": "ETH",
       "address_info": {"address": "0xboo"}
     },
@@ -705,6 +706,8 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         location=Location.COINBASE,
         category=AssetMovementCategory.DEPOSIT,
         timestamp=1519001640,
+        address=None,
+        transaction_id=None,
         asset=A_USD,
         amount=FVal('55'),
         fee_asset=A_USD,
@@ -713,6 +716,8 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     ), AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
         timestamp=1485895742,
         asset=A_USD,
         amount=FVal('10.0'),
@@ -722,6 +727,8 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     ), AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.WITHDRAWAL,
+        address='0x6dcD6449dbCa615e40d696328209686eA95327b2',
+        transaction_id='0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
         timestamp=1566726126,
         asset=A_ETH,
         amount=FVal('0.05770427'),

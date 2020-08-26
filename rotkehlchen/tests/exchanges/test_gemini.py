@@ -248,6 +248,8 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         location=Location.GEMINI,
         category=AssetMovementCategory.DEPOSIT,
         timestamp=Timestamp(1507913541),
+        address=None,
+        transaction_id=None,
         asset=A_USD,
         amount=FVal('36'),
         fee_asset=A_USD,
@@ -256,6 +258,8 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         location=Location.GEMINI,
         category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id='605c5fa8bf99458d24d61e09941bc443ddc44839d9aaa508b14b296c0c8269b2',
         timestamp=Timestamp(1499990797),
         asset=A_ETH,
         amount=FVal('100'),
@@ -265,6 +269,8 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         location=Location.GEMINI,
         category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id='163eeee4741f8962b748289832dd7f27f754d892f5d23bf3ea6fba6e350d9ce3',
         timestamp=Timestamp(1495550176),
         asset=A_BTC,
         amount=FVal('1500'),
@@ -274,6 +280,8 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         location=Location.GEMINI,
         category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
         timestamp=Timestamp(1458862076),
         asset=A_USD,
         amount=FVal('500'),
@@ -283,6 +291,8 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         location=Location.GEMINI,
         category=AssetMovementCategory.WITHDRAWAL,
+        address='mqjvCtt4TJfQaC7nUgLMvHwuDPXMTEUGqx',
+        transaction_id='c458b86955b80db0718cfcadbff3df3734a906367982c6eb191e61117b810bbb',
         timestamp=Timestamp(1450403787),
         asset=A_BTC,
         amount=FVal('5'),
@@ -292,6 +302,8 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         location=Location.GEMINI,
         category=AssetMovementCategory.WITHDRAWAL,
+        address='0xd24400ae8BfEBb18cA49Be86258a3C749cf46853',
+        transaction_id='7bffd85893ee8e72e31061a84d25c45f2c4537c2f765a1e79feb06a7294445c3',
         timestamp=Timestamp(1535451930),
         asset=A_USD,
         amount=FVal('1'),

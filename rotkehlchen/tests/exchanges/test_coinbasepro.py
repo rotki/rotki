@@ -445,6 +445,8 @@ def test_query_trade_history_invalid_response(function_scope_coinbasepro):
 EXPECTED_MOVEMENTS = [AssetMovement(
     location=Location.COINBASEPRO,
     category=AssetMovementCategory.DEPOSIT,
+    address=None,
+    transaction_id=None,
     timestamp=Timestamp(1578871604),
     asset=A_BAT,
     amount=FVal('14.25'),
@@ -454,6 +456,8 @@ EXPECTED_MOVEMENTS = [AssetMovement(
 ), AssetMovement(
     location=Location.COINBASEPRO,
     category=AssetMovementCategory.DEPOSIT,
+    address=None,
+    transaction_id=None,
     timestamp=Timestamp(1578872309),
     asset=A_BAT,
     amount=FVal('160.8'),
@@ -463,6 +467,8 @@ EXPECTED_MOVEMENTS = [AssetMovement(
 ), AssetMovement(
     location=Location.COINBASEPRO,
     category=AssetMovementCategory.DEPOSIT,
+    address=None,
+    transaction_id=None,
     timestamp=Timestamp(1578873432),
     asset=A_BAT,
     amount=FVal('8.65'),
@@ -472,6 +478,8 @@ EXPECTED_MOVEMENTS = [AssetMovement(
 ), AssetMovement(
     location=Location.COINBASEPRO,
     category=AssetMovementCategory.WITHDRAWAL,
+    address=None,
+    transaction_id=None,
     timestamp=Timestamp(1579132286),
     asset=A_ETH,
     amount=FVal('0.0011085300000000'),

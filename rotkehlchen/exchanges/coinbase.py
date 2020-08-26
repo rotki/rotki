@@ -14,6 +14,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -467,6 +468,9 @@ class Coinbase(ExchangeInterface):
                     'coinbase',
                 )
 
+            # Only get address/transaction id for "send" type of transactions
+            address = None
+            transaction_id = None
             # movement_category: Union[Literal['deposit'], Literal['withdrawal']]
             if 'type' in raw_data:
                 # Then this should be a "send" which is the way Coinbase uses to send
@@ -499,6 +503,10 @@ class Coinbase(ExchangeInterface):
                     else:
                         fee = deserialize_fee(raw_fee['amount'])
 
+                if 'network' in raw_data:
+                    transaction_id = get_key_if_has_val(raw_data['network'], 'hash')
+                if 'to' in raw_data:
+                    address = deserialize_asset_movement_address(raw_data['to'], 'address', asset)
             else:
                 movement_category = deserialize_asset_movement_category(raw_data['resource'])
                 amount = deserialize_asset_amount(raw_data['amount']['amount'])
@@ -508,6 +516,8 @@ class Coinbase(ExchangeInterface):
             return AssetMovement(
                 location=Location.COINBASE,
                 category=movement_category,
+                address=address,
+                transaction_id=transaction_id,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,

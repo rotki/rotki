@@ -23,6 +23,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -472,15 +473,17 @@ class Gemini(ExchangeInterface):
             end_ts=end_ts,
         )
         movements = []
-
         for entry in result:
             try:
                 timestamp = deserialize_timestamp(entry['timestampms'])
                 timestamp = Timestamp(int(timestamp / 1000))
                 asset = Asset(entry['currency'])
+
                 movement = AssetMovement(
                     location=Location.GEMINI,
                     category=deserialize_asset_movement_category(entry['type']),
+                    address=deserialize_asset_movement_address(entry, 'destination', asset),
+                    transaction_id=get_key_if_has_val(entry, 'txHash'),
                     timestamp=timestamp,
                     asset=asset,
                     amount=deserialize_asset_amount(entry['amount']),
