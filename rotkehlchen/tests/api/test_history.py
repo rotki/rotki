@@ -1,5 +1,6 @@
 import csv
 import os
+import re
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
@@ -8,6 +9,15 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import (
+    EV_ASSET_MOVE,
+    EV_DEFI,
+    EV_INTEREST_PAYMENT,
+    EV_LOAN_SETTLE,
+    EV_MARGIN_CLOSE,
+    EV_SELL,
+    EV_TX_GAS_COST,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import (
     FILENAME_ALL_CSV,
@@ -301,6 +311,85 @@ def test_query_history_errors(rotkehlchen_api_server):
     )
 
 
+def _assert_column(keys, letter, expected_column_name, location):
+    msg = f'{location} should be {expected_column_name}'
+    assert keys[ord(letter) - ord('A')] == expected_column_name, msg
+
+
+CSV_SELL_RE = re.compile(r'=IF\(([A-Z]).*=0,0,([A-Z]).*-([A-Z]).*\)')
+
+
+def assert_csv_formulas_trades(row, profit_currency):
+    keys = list(row.keys())
+    if row['type'] == 'sell':
+        taxable_profit_loss = row[f'taxable_profit_loss_in_{profit_currency.identifier}']
+        match = CSV_SELL_RE.search(taxable_profit_loss)
+        assert match
+        groups = match.groups()
+        assert len(groups) == 3
+
+        _assert_column(
+            keys=keys,
+            letter=groups[0],
+            expected_column_name='taxable_amount',
+            location='conditional column name in trades sell pnl',
+        )
+        _assert_column(
+            keys=keys,
+            letter=groups[1],
+            expected_column_name=f'taxable_gain_in_{profit_currency.identifier}',
+            location='taxable gain in trades sell pnl',
+        )
+        _assert_column(
+            keys=keys,
+            letter=groups[2],
+            expected_column_name=f'taxable_bought_cost_in_{profit_currency.identifier}',
+            location='taxable bought in trades sell pnl',
+        )
+
+
+def assert_csv_formulas_all_events(row, profit_currency):
+    keys = list(row.keys())
+    net_profit_loss = row['net_profit_or_loss']
+    if row['type'] == EV_SELL:
+        match = CSV_SELL_RE.search(net_profit_loss)
+        assert match
+        groups = match.groups()
+        assert len(groups) == 3
+        _assert_column(
+            keys=keys,
+            letter=groups[0],
+            expected_column_name='taxable_amount',
+            location='conditional column name in all events sell pnl',
+        )
+        _assert_column(
+            keys=keys,
+            letter=groups[1],
+            expected_column_name=f'taxable_received_in_{profit_currency.identifier}',
+            location='taxable received in all events sell pnl',
+        )
+        _assert_column(
+            keys=keys,
+            letter=groups[2],
+            expected_column_name=f'taxable_bought_cost_in_{profit_currency.identifier}',
+            location='taxable bought cost in all events sell pnl',
+        )
+    elif row['type'] in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
+        _assert_column(
+            keys=keys,
+            letter=net_profit_loss[2],
+            expected_column_name=f'paid_in_{profit_currency.identifier}',
+            location='paid in profit currency in all events tx gas cost and more pnl',
+        )
+    elif row['type'] in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE, EV_DEFI):
+        _assert_column(
+            keys=keys,
+            letter=net_profit_loss[1],
+            expected_column_name=f'taxable_received_in_{profit_currency.identifier}',
+            location='gained in profit currenty in all events defi and more',
+        )
+
+
 def assert_csv_export_response(response, profit_currency, csv_dir):
     assert_proper_response(response)
     data = response.json()
@@ -314,6 +403,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
+            assert_csv_formulas_trades(row, profit_currency)
             assert len(row) == 15
             assert row['location'] in ('kraken', 'bittrex', 'binance', 'poloniex')
             assert row['type'] in ('buy', 'sell')
@@ -397,7 +487,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
     num_margins = 2
     assert count == num_margins, 'Incorrect amount of margin CSV entries found'
 
-    # None of this in the current history. TODO: add
+    # None of this in the current history. TODO: add and also test formula
     # with open(os.path.join(csv_dir, FILENAME_LOAN_SETTLEMENTS_CSV), newline='') as csvfile:
     #     reader = csv.DictReader(csvfile)
     #     count = 0
@@ -417,6 +507,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
+            assert_csv_formulas_all_events(row, profit_currency)
             assert len(row) == 13
             assert row['location'] in (
                 'kraken',

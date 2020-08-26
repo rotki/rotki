@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :bug: `1321` CSV export formulas have now been fixed and should properly calculate profit/loss per different action type.
 * :feature:`-` Add support for New Zealand Dollar (NZD) as a fiat currency
 * :feature:`-` Add support for Brazilian Real (BRL) as a fiat currency
 * :feature:`-` Rotki users can now import data from their Crypto.com mobile application. For more information go to the data import component of Rotki.
