@@ -741,6 +741,10 @@ class DBHandler:
 
     def purge_ethereum_transaction_data(self) -> None:
         cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+            ('ethtxs\\_%', '\\'),
+        )
         cursor.execute('DELETE FROM ethereum_transactions;')
         self.conn.commit()
         self.update_last_write()
