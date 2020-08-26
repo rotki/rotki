@@ -1,12 +1,14 @@
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.typing import Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 class DBQueryRanges():
 
-    def __init__(self, database: DBHandler) -> None:
+    def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
     def get_location_query_ranges(

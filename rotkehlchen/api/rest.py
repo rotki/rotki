@@ -22,6 +22,7 @@ from rotkehlchen.balances.manual import (
     edit_manually_tracked_balances,
     get_manually_tracked_balances,
 )
+from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
@@ -527,7 +528,7 @@ class RestAPI():
 
         result = {
             'entries': trades_result,
-            'entries_found': self.rotkehlchen.data.db.get_trades_num(),
+            'entries_found': self.rotkehlchen.data.db.get_entries_count('trades'),
             'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
@@ -657,7 +658,7 @@ class RestAPI():
         limit = FREE_ASSET_MOVEMENTS_LIMIT if self.rotkehlchen.premium is None else -1
         result = {
             'entries': process_result_list(serialized_movements),
-            'entries_found': self.rotkehlchen.data.db.get_asset_movements_num(),
+            'entries_found': self.rotkehlchen.data.db.get_entries_count('asset_movements'),
             'entries_limit': limit,
         }
 
@@ -1546,6 +1547,8 @@ class RestAPI():
                 address=address,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
+                with_limit=self.rotkehlchen.premium is None,
+                recent_first=True,
             )
             status_code = HTTPStatus.OK
             message = ''
@@ -1554,7 +1557,13 @@ class RestAPI():
             status_code = HTTPStatus.BAD_GATEWAY
             message = str(e)
 
-        return {'result': transactions, 'message': message, 'status_code': status_code}
+        result = {
+            'entries': transactions,
+            'entries_found': self.rotkehlchen.data.db.get_entries_count('ethereum_transactions'),
+            'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
+
+        return {'result': process_result(result), 'message': message, 'status_code': status_code}
 
     @require_loggedin_user()
     def get_ethereum_transactions(

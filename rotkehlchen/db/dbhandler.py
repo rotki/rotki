@@ -1480,10 +1480,20 @@ class DBHandler:
 
         return asset_movements
 
-    def get_asset_movements_num(self) -> int:
-        """Returns how many asset movements are saved in the DB"""
+    def get_entries_count(
+            self,
+            entries_table: Literal['asset_movements', 'trades', 'ethereum_transactions'],
+            op: Literal['OR', 'AND'] = 'OR',
+            **kwargs: Any,
+    ) -> int:
+        """Returns how many of a certain type of entry are saved in the DB"""
         cursor = self.conn.cursor()
-        query = cursor.execute('SELECT COUNT(*) from asset_movements;')
+        cursorstr = f'SELECT COUNT(*) from {entries_table}'
+        if len(kwargs) != 0:
+            cursorstr += ' WHERE'
+        op.join([f' {arg} = "{val}" ' for arg, val in kwargs.items()])
+        cursorstr += ';'
+        query = cursor.execute(cursorstr)
         return query.fetchone()[0]
 
     def add_ethereum_transactions(
@@ -1666,12 +1676,6 @@ class DBHandler:
 
         self.conn.commit()
         return True, ''
-
-    def get_trades_num(self) -> int:
-        """Returns how many trades are saved in the DB"""
-        cursor = self.conn.cursor()
-        query = cursor.execute('SELECT COUNT(*) from trades;')
-        return query.fetchone()[0]
 
     def get_trades(
             self,

@@ -136,6 +136,8 @@ class TradesHistorian():
                 # We need to have full history of transactions available
                 from_ts=Timestamp(0),
                 to_ts=now,
+                with_limit=False,  # at the moment ignore the limit for historical processing,
+                recent_first=False,  # for history processing we need oldest first
             )
         except RemoteError as e:
             eth_transactions = []

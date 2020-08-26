@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -143,7 +144,10 @@ def test_query_transactions(rotkehlchen_api_server, async_query):
         result = assert_proper_response_with_result(response)
     expected_result = EXPECTED_AFB7_TXS + EXPECTED_4193_TXS
     expected_result.sort(key=lambda x: x['timestamp'])
-    assert result == expected_result
+    expected_result.reverse()
+    assert result['entries'] == expected_result
+    assert result['entries_found'] == len(expected_result)
+    assert result['entries_limit'] == FREE_ETH_TX_LIMIT
 
     # Check that transactions per address and in a specific time range can be
     # queried and that this is from the DB and not etherscan
@@ -172,7 +176,7 @@ def test_query_transactions(rotkehlchen_api_server, async_query):
 
         assert mock_call.call_count == 0
 
-    assert result == EXPECTED_AFB7_TXS[2:-2]
+    assert result['entries'] == EXPECTED_AFB7_TXS[2:-2]
 
 
 def test_query_transactions_errors(rotkehlchen_api_server):

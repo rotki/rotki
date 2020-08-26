@@ -23,10 +23,10 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
+    EthereumTransaction,
     Fee,
     Location,
     Timestamp,

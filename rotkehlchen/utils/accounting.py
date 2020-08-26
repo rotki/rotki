@@ -10,8 +10,7 @@ from rotkehlchen.exchanges.data_structures import (
     Trade,
     trade_get_assets,
 )
-from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import EthereumTransaction, Timestamp
 
 TaxableAction = Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Loan, DefiEvent]
 
