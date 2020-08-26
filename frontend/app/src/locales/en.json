@@ -96,7 +96,9 @@
     "confirmation": {
       "title": "Delete Trade",
       "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}"
-    }
+    },
+    "upgrade": "Displaying {limit} out of {total} trades. To view more trades please upgrade to {0}",
+    "rotki_premium": "rotki Premium"
   },
   "trade_location_selector": {
     "selection-none": "Showing results across all locations",

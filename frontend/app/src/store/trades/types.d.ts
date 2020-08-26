@@ -5,6 +5,7 @@ import { Status } from '@/store/const';
 export interface TradesState {
   status: Status;
   limit: number;
+  total: number;
   trades: Trade[];
 }
 

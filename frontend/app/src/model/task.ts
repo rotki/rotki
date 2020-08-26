@@ -40,7 +40,6 @@ export function taskCompletion<R, M extends TaskMeta>(
     taskManager.registerHandler<R, M>(
       task,
       (actionResult, meta) => {
-        console.log('handling');
         taskManager.unregisterHandler(task, taskId);
         const { result, message } = actionResult;
         if (message) {

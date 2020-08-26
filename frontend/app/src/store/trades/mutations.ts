@@ -13,6 +13,10 @@ export const mutations: MutationTree<TradesState> = {
     state.limit = limit;
   },
 
+  updateTotal(state: TradesState, total: number) {
+    state.total = total;
+  },
+
   trades(state: TradesState, trades: Trade[]) {
     state.trades = trades;
   },

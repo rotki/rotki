@@ -30,9 +30,9 @@ export interface ApiManualBalances {
 }
 
 export interface LimitedResponse<T> {
-  readonly trades: T;
-  readonly tradesFound: number;
-  readonly tradesLimit: number;
+  readonly entries: T;
+  readonly entriesFound: number;
+  readonly entriesLimit: number;
 }
 
 export class TaskNotFoundError extends Error {}

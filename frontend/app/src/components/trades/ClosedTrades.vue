@@ -28,6 +28,14 @@
             show-expand
             sort-by="timestamp"
             sort-desc
+            :footer-props="{
+              showFirstLastPage: true,
+              firstIcon: 'mdi-chevron-double-left',
+              lastIcon: 'mdi-chevron-double-right',
+              prevIcon: 'mdi-chevron-left',
+              nextIcon: 'mdi-chevron-right',
+              'items-per-page-options': [10, 25, 50, 100]
+            }"
             class="closed-trades"
             item-key="tradeId"
           >
@@ -122,6 +130,32 @@
                 </v-col>
               </td>
             </template>
+            <template v-if="limit <= total" #body.append="{ headers }">
+              <td
+                :colspan="headers.length"
+                class="closed-trades__limit font-weight-medium"
+              >
+                <i18n
+                  tag="span"
+                  path="closed_trades.upgrade"
+                  class="d-flex flex-row justify-center"
+                >
+                  <template #total>
+                    {{ total }}
+                  </template>
+                  <template #limit>
+                    {{ limit }}
+                  </template>
+                  <template #0>
+                    <base-external-link
+                      class="ml-1"
+                      :text="$t('closed_trades.rotki_premium')"
+                      :href="$interop.premiumURL"
+                    />
+                  </template>
+                </i18n>
+              </td>
+            </template>
           </v-data-table>
         </v-card-text>
       </v-card>
@@ -150,7 +184,8 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import OtcForm from '@/components/OtcForm.vue';
@@ -158,9 +193,16 @@ import LocationDisplay from '@/components/trades/LocationDisplay.vue';
 import { Trade } from '@/services/trades/types';
 
 @Component({
-  components: { LocationDisplay, OtcForm, ConfirmDialog, BigDialog },
+  components: {
+    BaseExternalLink,
+    LocationDisplay,
+    OtcForm,
+    ConfirmDialog,
+    BigDialog
+  },
   computed: {
-    ...mapGetters('session', ['dateDisplayFormat'])
+    ...mapGetters('session', ['dateDisplayFormat']),
+    ...mapState('trades', ['total', 'limit'])
   },
   methods: {
     ...mapActions('trades', ['deleteExternalTrade'])
@@ -170,11 +212,13 @@ export default class ClosedTrades extends Vue {
   readonly headersClosed: DataTableHeader[] = [
     {
       text: this.$t('closed_trades.headers.location').toString(),
-      value: 'location'
+      value: 'location',
+      width: '40px'
     },
     {
       text: this.$t('closed_trades.headers.action').toString(),
-      value: 'tradeType'
+      value: 'tradeType',
+      width: '90px'
     },
     { text: this.$t('closed_trades.headers.pair').toString(), value: 'pair' },
     {
@@ -212,6 +256,8 @@ export default class ClosedTrades extends Vue {
   tradeToDelete: Trade | null = null;
   confirmationMessage: string = '';
   dateDisplayFormat!: string;
+  limit!: number;
+  total!: number;
   expanded = [];
 
   deleteExternalTrade!: (tradeId: string) => Promise<boolean>;
@@ -275,6 +321,10 @@ export default class ClosedTrades extends Vue {
 
 <style scoped lang="scss">
 .closed-trades {
+  &__limit {
+    height: 60px;
+  }
+
   &__trade {
     &__details {
       box-shadow: inset 1px 8px 10px -10px;

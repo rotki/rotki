@@ -62,9 +62,9 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
         LimitedResponse<Trade[]>,
         TaskMeta
       >(taskType, `${taskId}`);
-      console.log(result);
-      commit('appendTrades', result.trades);
-      commit('updateLimit', result.tradesLimit);
+      commit('appendTrades', result.entries);
+      commit('updateLimit', result.entriesLimit);
+      commit('updateTotal', result.entriesFound);
     };
 
     commit('reset');
