@@ -551,6 +551,9 @@ class Rotkehlchen():
             to_ts: Timestamp,
             location: Location,
     ) -> List[Trade]:
+        # clear the trades queried for this location
+        self.actions_per_location['trade'][location] = 0
+
         if location == Location.EXTERNAL:
             location_trades = self.data.db.get_trades(
                 from_ts=from_ts,
