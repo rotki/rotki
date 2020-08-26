@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -12,7 +13,9 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import EthereumTransaction
 
 EXPECTED_AFB7_TXS = [{
     'tx_hash': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad',
@@ -221,3 +224,76 @@ def test_query_transactions_errors(rotkehlchen_api_server):
         contained_in_msg='Failed to deserialize a timestamp entry from string foo',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_query_transactions_over_limit(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        start_with_valid_premium,
+):
+    start_ts = 0
+    end_ts = 1598453214
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    all_transactions_num = FREE_ETH_TX_LIMIT + 50
+    transactions = [EthereumTransaction(
+        tx_hash=x.to_bytes(2, byteorder='little'),
+        timestamp=x,
+        block_number=x,
+        from_address=ethereum_accounts[0],
+        to_address=make_ethereum_address(),
+        value=x,
+        gas=x,
+        gas_price=x,
+        gas_used=x,
+        input_data=x.to_bytes(2, byteorder='little'),
+        nonce=x,
+    ) for x in range(FREE_ETH_TX_LIMIT - 10)]
+    transactions.extend([EthereumTransaction(
+        tx_hash=(x + 500).to_bytes(2, byteorder='little'),
+        timestamp=x,
+        block_number=x,
+        from_address=ethereum_accounts[1],
+        to_address=make_ethereum_address(),
+        value=x,
+        gas=x,
+        gas_price=x,
+        gas_used=x,
+        input_data=x.to_bytes(2, byteorder='little'),
+        nonce=x,
+    ) for x in range(60)])
+
+    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    # Also make sure to update query ranges so as not to query etherscan at all
+    for address in ethereum_accounts:
+        DBQueryRanges(db).update_used_query_range(
+            location_string=f'ethtxs_{address}',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=[],
+        )
+
+    free_expected_entries = [FREE_ETH_TX_LIMIT - 10, 10]
+    premium_expected_entries = [FREE_ETH_TX_LIMIT - 10, 60]
+
+    # Check that we get all transactions correctly even if we query two times
+    for _ in range(2):
+        for idx, address in enumerate(ethereum_accounts):
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'ethereumtransactionsresource',
+                ), json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'address': address},
+            )
+            result = assert_proper_response_with_result(response)
+
+            if start_with_valid_premium:
+                assert len(result['entries']) == premium_expected_entries[idx]
+                assert result['entries_found'] == all_transactions_num
+                assert result['entries_limit'] == -1
+            else:
+                assert len(result['entries']) == free_expected_entries[idx]
+                assert result['entries_found'] == all_transactions_num
+                assert result['entries_limit'] == FREE_ETH_TX_LIMIT
