@@ -709,12 +709,15 @@ class Rotkehlchen():
             all_movements: List[AssetMovement],
             exchange: ExchangeInterface,
     ) -> List[AssetMovement]:
+        location = deserialize_location(exchange.name)
+        # clear the asset movements queried for this exchange
+        self.actions_per_location['asset_movement'][location] = 0
         location_movements = exchange.query_deposits_withdrawals(start_ts=from_ts, end_ts=to_ts)
 
         movements: List[AssetMovement] = []
         if self.premium is None:
             movements = self._apply_actions_limit(
-                location=deserialize_location(exchange.name),
+                location=location,
                 action_type='asset_movement',
                 location_actions=location_movements,
                 all_actions=all_movements,
