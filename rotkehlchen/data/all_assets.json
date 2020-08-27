@@ -3143,6 +3143,15 @@
         "symbol": "DEX",
         "type": "ethereum token"
     },
+    "DEXT": {
+        "coingecko": "dextools",
+        "ethereum_address": "0x26CE25148832C04f3d7F26F32478a9fe55197166",
+        "ethereum_token_decimals": 18,
+        "name": "DEXTools",
+        "started": 1592511275,
+        "symbol": "DEXT",
+        "type": "ethereum token"
+    },
     "DGB": {
         "coingecko": "digibyte",
         "name": "DigiByte",
