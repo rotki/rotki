@@ -20,6 +20,7 @@ Changelog
   - `Serum (SRM) <https://coinmarketcap.com/currencies/serum/>`__
   - `Orion Protocol (ORN) <https://www.coingecko.com/en/coins/orion-protocol>`__
   - `Polkadot (DOT) <https://coinmarketcap.com/currencies/polkadot-new/>`__
+  - `Curve DAO Token (CRV) <https://www.coingecko.com/en/coins/curve-dao-token>`__
   - `DIAToken (DIA) <https://coinmarketcap.com/currencies/dia-data/>`__
   - `Binance leveraged token BNBDOWN (BNBDOWN) <https://www.cryptocompare.com/coins/bnbdown/>`__
   - `Binance leveraged token BNBUP (BNBUP) <https://www.cryptocompare.com/coins/bnbup/>`__
