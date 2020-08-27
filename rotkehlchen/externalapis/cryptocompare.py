@@ -69,6 +69,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('XTZDOWN'): Asset('USDT'),
     Asset('XTZUP'): Asset('USDT'),
     Asset('STAKE'): Asset('USDT'),
+    Asset('MCB'): Asset('USDT'),
     Asset('TRB'): Asset('USDT'),
     Asset('YFI'): Asset('USDT'),
     Asset('YAM'): Asset('USDT'),
