@@ -35,6 +35,7 @@ Changelog
   - `DEXTools (DEXT) <https://www.coingecko.com/en/coins/dextools>`__
   - `DMM: Governance Token (DMG) <https://www.coingecko.com/en/coins/dmm-governance>`__
   - `DOS Network Token (DOS) <https://www.coingecko.com/en/coins/dos-network>`__
+  - `Geeq (GEEQ) <https://www.coingecko.com/en/coins/geeq>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.
