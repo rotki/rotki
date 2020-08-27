@@ -3372,6 +3372,15 @@
         "symbol": "DOT",
         "type": "own chain"
     },
+    "DOS": {
+        "coingecko": "dos-network",
+        "ethereum_address": "0x0A913beaD80F321E7Ac35285Ee10d9d922659cB7",
+        "ethereum_token_decimals": 18,
+        "name": "DOS Network Token",
+        "started": 1595509748,
+        "symbol": "DOS",
+        "type": "ethereum token"
+    },
     "DOV": {
         "coingecko": "dovu",
         "ethereum_address": "0xac3211a5025414Af2866FF09c23FC18bc97e79b1",
