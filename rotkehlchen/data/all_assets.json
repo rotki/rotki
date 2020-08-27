@@ -10492,6 +10492,15 @@
         "symbol": "TRAK",
         "type": "ethereum token"
     },
+    "TRB": {
+        "coingecko": "tellor",
+        "ethereum_address": "0x0Ba45A8b5d5575935B8158a88C631E9F9C95a2e5",
+        "ethereum_token_decimals": 18,
+        "name": "Tellor Tributes",
+        "started": 1564671864,
+        "symbol": "TRB",
+        "type": "ethereum token"
+    },
     "TRCT": {
         "coingecko": "",
         "ethereum_address": "0x30ceCB5461A449A90081F5a5F55db4e048397BAB",

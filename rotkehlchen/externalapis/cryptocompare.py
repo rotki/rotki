@@ -63,6 +63,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('LINKDOWN'): Asset('USDT'),
     Asset('LINKUP'): Asset('USDT'),
     Asset('STAKE'): Asset('USDT'),
+    Asset('TRB'): Asset('USDT'),
     Asset('YFI'): Asset('USDT'),
     Asset('YAM'): Asset('USDT'),
     Asset('DEC-2'): Asset('USDT'),

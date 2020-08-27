@@ -26,6 +26,7 @@ Changelog
   - `Binance leveraged token BNBUP (BNBUP) <https://www.cryptocompare.com/coins/bnbup/>`__
   - `Reserve Rights (RSR) <https://www.coingecko.com/en/coins/reserve-rights-token>`__
   - `The Sandbox (SAND) <https://www.coingecko.com/en/coins/sand>`__
+  - `Tellor Tributes (TRB) <https://www.coingecko.com/en/coins/tellor>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.
