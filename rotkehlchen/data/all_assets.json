@@ -9277,6 +9277,15 @@
         "symbol": "SENSE",
         "type": "ethereum token"
     },
+    "SENSO": {
+        "coingecko": "senso",
+        "ethereum_address": "0xBa6DB13aeAE3607D400DDFFD675aa4e88ECc9a69",
+        "ethereum_token_decimals": 18,
+        "name": "Sensorium",
+        "started": 1568223216,
+        "symbol": "SENSO",
+        "type": "ethereum token"
+    },
     "SENT": {
         "coingecko": "sentinel-group",
         "ethereum_address": "0xa44E5137293E855B1b7bC7E2C6f8cD796fFCB037",
