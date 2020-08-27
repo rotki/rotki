@@ -7683,6 +7683,15 @@
         "symbol": "OLT",
         "type": "ethereum token"
     },
+    "OM": {
+        "coingecko": "mantra-dao",
+        "ethereum_address": "0x2baEcDf43734F22FD5c152DB08E3C27233F0c7d2",
+        "ethereum_token_decimals": 18,
+        "name": "Mantra DAO",
+        "started": 1597508166,
+        "symbol": "OM",
+        "type": "ethereum token"
+    },
     "OMG": {
         "coingecko": "omisego",
         "ethereum_address": "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
