@@ -399,6 +399,10 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Ecochain. As of 22/07/2020 no data found outside of Bittrex for this token.
     # All ECOC data refer to a different coin called EcoCoin
     'ECOC',
+    # As of 28/08/2020 the following assets don't have prices listed anywhere
+    'FME',
+    'INX',
+    'MFA',
 )
 
 
