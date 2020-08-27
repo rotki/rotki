@@ -9085,6 +9085,15 @@
         "symbol": "SAN",
         "type": "ethereum token"
     },
+    "SAND": {
+        "coingecko": "sand",
+        "ethereum_address": "0x3845badAde8e6dFF049820680d1F14bD3903a5d0",
+        "ethereum_token_decimals": 18,
+        "name": "The Sandbox",
+        "started": 1572367723,
+        "symbol": "SAND",
+        "type": "ethereum token"
+    },
     "SBD": {
         "coingecko": "steem-dollars",
         "name": "Steem Dollars",
