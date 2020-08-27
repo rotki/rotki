@@ -33,6 +33,7 @@ Changelog
   - `Wrapped Nexus Mutual (wNXM) <https://www.coingecko.com/en/coins/wrapped-nxm>`__
   - `Blocery Token (BLY) <https://www.coingecko.com/en/coins/blocery>`__
   - `DEXTools (DEXT) <https://www.coingecko.com/en/coins/dextools>`__
+  - `DMM: Governance Token (DMG) <https://www.coingecko.com/en/coins/dmm-governance>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.
