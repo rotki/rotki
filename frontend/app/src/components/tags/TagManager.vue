@@ -4,7 +4,7 @@
       Tag Manager
       <v-spacer v-if="dialog"></v-spacer>
       <v-btn v-if="dialog" class="tag-manager__close" icon text @click="close">
-        <v-icon>fa-close</v-icon>
+        <v-icon>mdi-close</v-icon>
       </v-btn>
     </v-card-title>
     <v-card-subtitle>
@@ -28,7 +28,7 @@
         <v-col cols="4">
           <v-text-field
             v-model="search"
-            append-icon="fa-search"
+            append-icon="mdi-magnify"
             label="Search"
             single-line
             hide-details
@@ -40,6 +40,7 @@
         item-key="name"
         :headers="headers"
         :search="search"
+        :footer-props="footerProps"
       >
         <template #item.name="{ item }">
           <tag-icon :tag="item"></tag-icon>
@@ -71,6 +72,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { defaultTag } from '@/components/tags/types';
+import { footerProps } from '@/config/datatable.common';
 import { Tag } from '@/typing/types';
 
 const { mapGetters } = createNamespacedHelpers('session');
@@ -88,6 +90,8 @@ export default class TagManager extends Vue {
   tagToDelete: string = '';
 
   search: string = '';
+
+  footerProps = footerProps;
 
   @Prop({ required: false, default: false, type: Boolean })
   dialog!: boolean;

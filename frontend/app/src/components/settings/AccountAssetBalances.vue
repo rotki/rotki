@@ -12,6 +12,7 @@
         class="account-asset-balances__table"
         sort-by="usdValue"
         sort-desc
+        :footer-props="footerProps"
       >
         <template #header.usdValue>
           {{ currency.ticker_symbol }} value
@@ -42,6 +43,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { footerProps } from '@/config/datatable.common';
 import { AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 
@@ -70,6 +72,8 @@ export default class AccountAssetBalances extends Vue {
     { text: 'Amount', value: 'amount', align: 'end' },
     { text: 'USD Value', value: 'usdValue', align: 'end' }
   ];
+
+  footerProps = footerProps;
 
   get assets(): AssetBalances[] {
     return this.accountAssets(this.account);

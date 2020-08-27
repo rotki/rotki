@@ -42,6 +42,7 @@
       item-key="account"
       :expanded.sync="expanded"
       sort-by="usdValue"
+      :footer-props="footerProps"
       sort-desc
     >
       <template v-if="blockchain === 'ETH'" #header.usdValue>
@@ -162,6 +163,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { footerProps } from '@/config/datatable.common';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
@@ -209,6 +211,8 @@ export default class AccountBalances extends Vue {
   accountTags!: (blockchain: Blockchain, address: string) => string[];
   accountLabel!: (blockchain: Blockchain, address: string) => string;
   tags!: Tags;
+
+  footerProps = footerProps;
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);

@@ -6,7 +6,11 @@
           {{ $t('open_trades.title') }}
         </v-card-title>
         <v-card-text>
-          <v-data-table :items="data" :headers="headersOpen" />
+          <v-data-table
+            :items="data"
+            :headers="headersOpen"
+            :footer-props="footerProps"
+          />
         </v-card-text>
       </v-card>
     </v-col>
@@ -15,6 +19,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
+import { footerProps } from '@/config/datatable.common';
 import { Trade } from '@/services/trades/types';
 
 @Component({})
@@ -57,5 +62,7 @@ export default class OpenTrades extends Vue {
       align: 'end'
     }
   ];
+
+  footerProps = footerProps;
 }
 </script>

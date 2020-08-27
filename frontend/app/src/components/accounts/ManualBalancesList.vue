@@ -12,6 +12,7 @@
           :items="visibleBalances"
           class="manual-balances-list"
           sort-by="usdValue"
+          :footer-props="footerProps"
           sort-desc
         >
           <template #item.label="{ item }">
@@ -120,6 +121,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { footerProps } from '@/config/datatable.common';
 import { Currency } from '@/model/currency';
 import { ManualBalance } from '@/services/types-model';
 import { Tags } from '@/typing/types';
@@ -167,6 +169,8 @@ export default class ManualBalancesList extends Vue {
   currency!: Currency;
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
+
+  footerProps = footerProps;
 
   get visibleBalances(): ManualBalance[] {
     if (this.onlyTags.length === 0) {

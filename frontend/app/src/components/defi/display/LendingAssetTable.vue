@@ -3,6 +3,7 @@
     :items="assets"
     :headers="headers"
     :loading="loading"
+    :footer-props="footerProps"
     sort-desc
     sort-by="balance.usdValue"
   >
@@ -46,6 +47,7 @@ import { mapGetters } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import HashLink from '@/components/helper/HashLink.vue';
+import { footerProps } from '@/config/datatable.common';
 import { Currency } from '@/model/currency';
 import { DefiBalance } from '@/store/defi/types';
 
@@ -61,6 +63,8 @@ export default class LendingAssetTable extends Vue {
   @Prop({ required: false, type: Boolean })
   loading!: boolean;
   currency!: Currency;
+
+  footerProps = footerProps;
 
   headers = [
     { text: 'Asset', value: 'asset' },

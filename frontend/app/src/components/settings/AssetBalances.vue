@@ -12,6 +12,7 @@
       loading-text="Please wait while Rotki queries the blockchain..."
       sort-by="usdValue"
       sort-desc
+      :footer-props="footerProps"
     >
       <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
       <template #item.asset="{ item }">
@@ -51,6 +52,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { footerProps } from '@/config/datatable.common';
 import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
@@ -77,6 +79,8 @@ export default class AssetBalances extends Vue {
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
   isTaskRunning!: (type: TaskType) => boolean;
+
+  footerProps = footerProps;
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);

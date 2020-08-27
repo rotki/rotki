@@ -13,7 +13,7 @@
           @click="newExternalTrade()"
         >
           <v-icon>
-            fa fa-plus
+            mdi-plus
           </v-icon>
         </v-btn>
         <v-card-title>
@@ -28,14 +28,7 @@
             show-expand
             sort-by="timestamp"
             sort-desc
-            :footer-props="{
-              showFirstLastPage: true,
-              firstIcon: 'mdi-chevron-double-left',
-              lastIcon: 'mdi-chevron-double-right',
-              prevIcon: 'mdi-chevron-left',
-              nextIcon: 'mdi-chevron-right',
-              'items-per-page-options': [10, 25, 50, 100]
-            }"
+            :footer-props="footerProps"
             class="closed-trades"
             item-key="tradeId"
           >
@@ -173,6 +166,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import OtcForm from '@/components/OtcForm.vue';
 import LocationDisplay from '@/components/trades/LocationDisplay.vue';
+import { footerProps } from '@/config/datatable.common';
 import { Trade } from '@/services/trades/types';
 import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
@@ -232,6 +226,7 @@ export default class ClosedTrades extends Vue {
     },
     { text: '', value: 'data-table-expand' }
   ];
+  footerProps = footerProps;
 
   dialogTitle: string = '';
   dialogSubtitle: string = '';

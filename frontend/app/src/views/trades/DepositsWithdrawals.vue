@@ -13,14 +13,7 @@
               item-key="identifier"
               sort-by="timestamp"
               sort-desc
-              :footer-props="{
-                showFirstLastPage: true,
-                firstIcon: 'mdi-chevron-double-left',
-                lastIcon: 'mdi-chevron-double-right',
-                prevIcon: 'mdi-chevron-left',
-                nextIcon: 'mdi-chevron-right',
-                'items-per-page-options': [10, 25, 50, 100]
-              }"
+              :footer-props="footerProps"
             >
               <template #item.location="{ item }">
                 <location-display :identifier="item.location" />
@@ -73,6 +66,7 @@ import { mapActions, mapGetters } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import LocationDisplay from '@/components/trades/LocationDisplay.vue';
+import { footerProps } from '@/config/datatable.common';
 import { AssetMovement } from '@/services/balances/types';
 import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
@@ -128,6 +122,8 @@ export default class DepositsWithdrawals extends Vue {
   assetMovements!: AssetMovement[];
   assetMovementsTotal!: number;
   assetMovementsLimit!: number;
+
+  footerProps = footerProps;
 
   async mounted() {
     await this.fetchMovements();

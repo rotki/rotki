@@ -132,7 +132,7 @@
                 @click="addWatcher()"
               >
                 <v-icon>
-                  fa fa-plus
+                  mdi-plus
                 </v-icon>
               </v-btn>
             </v-col>
