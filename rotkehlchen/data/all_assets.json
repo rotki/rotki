@@ -10110,6 +10110,13 @@
         "symbol": "SWT",
         "type": "ethereum token"
     },
+    "SWINGBY": {
+        "coingecko": "swingby",
+        "name": "Swingby",
+        "started": 1595548800,
+        "symbol": "SWINGBY",
+        "type": "binance token"
+    },
     "SXC": {
         "coingecko": "sxc",
         "name": "Sexcoin",

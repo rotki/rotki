@@ -41,6 +41,7 @@ Changelog
   - `PeerEx Network (PERX) <https://www.coingecko.com/en/coins/peerex-network>`__
   - `Parsiq Token (PRQ) <https://www.coingecko.com/en/coins/parsiq>`__
   - `Synthetic CBDAO (SBREE) <https://www.coingecko.com/en/coins/cbdao>`__
+  - `Swingby (SWINGBY) <https://www.coingecko.com/en/coins/swingby>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.
