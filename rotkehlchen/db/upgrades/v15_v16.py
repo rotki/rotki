@@ -20,6 +20,7 @@ def upgrade_v15_to_v16(db: 'DBHandler') -> None:
         'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
         ('%\\_asset_movements', '\\'),
     )
+    cursor.execute('DROP TABLE IF EXISTS asset_movements;')
     # and create the table. Same schema as was in launch of v1.7.0
     cursor.execute("""CREATE TABLE IF NOT EXISTS asset_movements (
     id TEXT PRIMARY KEY,

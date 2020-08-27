@@ -933,6 +933,32 @@ def test_upgrade_db_13_to_14(user_data_dir):
     assert db.get_version() == 14
 
 
+def test_upgrade_db_15_to_16(user_data_dir):
+    """Test upgrading the DB from version 15 to version 16.
+
+    Deletes all transactions and asset movements from the DB, also asset movement query ranges
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v15_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=16,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    assert cursor.execute('SELECT COUNT(*) FROM ethereum_transactions;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) FROM asset_movements;').fetchone()[0] == 0
+    # Make sure address and transaction_id exist as part of asset movements
+    assert cursor.execute('SELECT address FROM asset_movements;').fetchall() == []
+    assert cursor.execute('SELECT transaction_id FROM asset_movements;').fetchall() == []
+    # Test that the only remaining query ranges are the non-asset movements ones
+    assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges;').fetchone()[0] == 2
+
+    # # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 16
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
