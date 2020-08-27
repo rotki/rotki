@@ -28,8 +28,6 @@ WORLD_TO_BITTREX = {
 WORLD_TO_POLONIEX = {
     # AIR-2 is aircoin for us and AIR is airtoken. Poloniex has only aircoin
     'AIR-2': 'AIR',
-    # APH-2 is Aphrodite coin for us and APH is Aphelion. Poloniex has only aphrodite
-    'APH-2': 'APH',
     # Decentr is DEC-2 for us but DEC in Poloniex
     'DEC-2': 'DEC',
     # Poloniex listed BTCtalkcoin as BCC as it was its original ticker but the

@@ -18,6 +18,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # Only info is here: https://bitcointalk.org/index.php?topic=632818.0
     # No price info in cryptocompare or paprika. So we don't support it.
     'AXIS',
+    'APH',
     # This was yet another shortlived coin whose announcement is here:
     # https://bitcointalk.org/index.php?topic=843495 and coinmarketcap:
     # https://coinmarketcap.com/currencies/snowballs/.

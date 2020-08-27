@@ -31,6 +31,7 @@ Changelog
   - `Tellor Tributes (TRB) <https://www.coingecko.com/en/coins/tellor>`__
   - `Nexus Mutual (NXM) <https://www.coingecko.com/en/coins/nxm>`__
   - `Wrapped Nexus Mutual (wNXM) <https://www.coingecko.com/en/coins/wrapped-nxm>`__
+  - `Blocery Token (BLY) <https://www.coingecko.com/en/coins/blocery>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.

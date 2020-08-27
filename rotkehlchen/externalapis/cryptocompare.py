@@ -44,6 +44,7 @@ RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
 # No special case needed for cETH. Cryptocompare maps it correctly
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
+    Asset('BLY'): Asset('USDT'),
     Asset('cDAI'): A_DAI,
     Asset('cBAT'): Asset('BAT'),
     Asset('cREP'): Asset('REP'),

@@ -1334,6 +1334,15 @@
         "symbol": "BLUE",
         "type": "ethereum token"
     },
+    "BLY": {
+        "coingecko": "blocery",
+        "ethereum_address": "0xf8aD7dFe656188A23e89da09506Adf7ad9290D5d",
+        "ethereum_token_decimals": 18,
+        "name": "Blocery Token",
+        "started": 1593069593,
+        "symbol": "BLY",
+        "type": "ethereum token"
+    },
     "BLZ": {
         "coingecko": "bluzelle",
         "ethereum_address": "0x5732046A883704404F284Ce41FfADd5b007FD668",
