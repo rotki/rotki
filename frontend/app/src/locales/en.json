@@ -117,7 +117,7 @@
     },
     "label": "asset movements",
     "loading": "Please wait while your asset movements are getting loaded...",
-    "refresh_tooltip": "Refresh your asset movements",
+    "refresh_tooltip": "Refresh your deposits & withdrawals",
     "details": {
       "title": "Details",
       "no_details": "No details found."

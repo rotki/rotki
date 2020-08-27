@@ -11,7 +11,7 @@
         {{ $t('movement_links.transaction') }}
       </span>
       <hash-link
-        :text="item.transactionId"
+        :text="transactionId"
         :base-url="transactionBaseUrl"
         full-address
       />
@@ -24,20 +24,50 @@ import { mapGetters } from 'vuex';
 import HashLink from '@/components/helper/HashLink.vue';
 import { AssetMovement } from '@/services/balances/types';
 
+type ExplorerUrls = { readonly address: string; readonly transaction: string };
+
+type AssetExplorerUrls = {
+  [key in 'ETH' | 'BTC' | 'ETC']: ExplorerUrls;
+};
+
 @Component({
   components: { HashLink },
   computed: { ...mapGetters('balances', ['isEthereumToken']) }
 })
 export default class MovementLinks extends Vue {
-  private etherscanAddress = 'https://etherscan.io/address/';
-  private etherscanTransaction = 'https://etherscan.io/tx/';
-  private blockstreamInfoAddress = 'https://blockstream.info/address/';
-  private blockstreamInfoTransaction = 'https://blockstream.info/tx/';
+  private urls: AssetExplorerUrls = {
+    ETH: {
+      address: 'https://etherscan.io/address/',
+      transaction: 'https://etherscan.io/tx/'
+    },
+    BTC: {
+      address: 'https://blockstream.info/address/',
+      transaction: 'https://blockstream.info/tx/'
+    },
+    ETC: {
+      address: 'https://blockscout.com/etc/mainnet/address/',
+      transaction: 'https://blockscout.com/etc/mainnet/tx/'
+    }
+  };
 
   isEthereumToken!: (asset: string) => boolean;
 
   @Prop({ required: true })
   item!: AssetMovement;
+
+  get transactionId(): string {
+    const { transactionId } = this.item;
+    if (!this.isEthOrToken) {
+      return transactionId;
+    }
+    return transactionId.startsWith('0x')
+      ? transactionId
+      : `0x${transactionId}`;
+  }
+
+  get isEtc(): boolean {
+    return this.item.asset === 'ETC';
+  }
 
   get isBtc(): boolean {
     return this.item.asset === 'BTC';
@@ -49,18 +79,22 @@ export default class MovementLinks extends Vue {
 
   get addressBaseUrl(): string | null {
     if (this.isBtc) {
-      return this.blockstreamInfoAddress;
+      return this.urls.BTC.address;
     } else if (this.isEthOrToken) {
-      return this.etherscanAddress;
+      return this.urls.ETH.address;
+    } else if (this.isEtc) {
+      return this.urls.ETC.address;
     }
     return null;
   }
 
   get transactionBaseUrl(): string | null {
     if (this.isBtc) {
-      return this.blockstreamInfoTransaction;
+      return this.urls.BTC.transaction;
     } else if (this.isEthOrToken) {
-      return this.etherscanTransaction;
+      return this.urls.ETH.transaction;
+    } else if (this.isEtc) {
+      return this.urls.ETC.transaction;
     }
     return null;
   }
