@@ -4,7 +4,7 @@ import { TradeLocation } from '@/services/trades/types';
 
 export type SupportedExchange = typeof exchanges[number];
 
-export type MovementCategory = 'deposit' | 'withdrawel';
+export type MovementCategory = 'deposit' | 'withdrawal';
 
 export interface AssetMovement {
   readonly identifier: string;
