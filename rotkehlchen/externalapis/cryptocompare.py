@@ -54,6 +54,8 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('cZRX'): Asset('ZRX'),
     Asset('ADADOWN'): Asset('USDT'),
     Asset('ADAUP'): Asset('USDT'),
+    Asset('BNBDOWN'): Asset('USDT'),
+    Asset('BNBUP'): Asset('USDT'),
     Asset('BTCDOWN'): Asset('USDT'),
     Asset('BTCUP'): Asset('USDT'),
     Asset('ETHDOWN'): Asset('USDT'),

@@ -1406,6 +1406,20 @@
         "symbol": "BNBBULL",
         "type": "ethereum token"
     },
+    "BNBDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token BNBDOWN",
+        "started": 1596585600,
+        "symbol": "BNBDOWN",
+        "type": "own chain"
+    },
+    "BNBUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token BNBUP",
+        "started": 1596585600,
+        "symbol": "BNBUP",
+        "type": "own chain"
+    },
     "BNC": {
         "coingecko": "bnoincoin",
         "cryptocompare": "",
