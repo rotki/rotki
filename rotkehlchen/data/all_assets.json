@@ -11790,6 +11790,20 @@
         "symbol": "XTP",
         "type": "ethereum token"
     },
+    "XTZDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token XTZDOWN",
+        "started": 1596585600,
+        "symbol": "XTZDOWN",
+        "type": "own chain"
+    },
+    "XTZUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token XTZUP",
+        "started": 1596585600,
+        "symbol": "XTZUP",
+        "type": "own chain"
+    },
     "XTZ": {
         "coingecko": "tezos",
         "name": "Tezos",

@@ -24,6 +24,8 @@ Changelog
   - `DIAToken (DIA) <https://coinmarketcap.com/currencies/dia-data/>`__
   - `Binance leveraged token BNBDOWN (BNBDOWN) <https://www.cryptocompare.com/coins/bnbdown/>`__
   - `Binance leveraged token BNBUP (BNBUP) <https://www.cryptocompare.com/coins/bnbup/>`__
+  - `Binance leveraged token XTZDOWN (XTZDOWN) <https://www.cryptocompare.com/coins/xtzdown/>`__
+  - `Binance leveraged token XTZUP (XTZUP) <https://www.cryptocompare.com/coins/xtzup/>`__
   - `Reserve Rights (RSR) <https://www.coingecko.com/en/coins/reserve-rights-token>`__
   - `The Sandbox (SAND) <https://www.coingecko.com/en/coins/sand>`__
   - `Tellor Tributes (TRB) <https://www.coingecko.com/en/coins/tellor>`__
