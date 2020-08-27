@@ -954,3 +954,13 @@ def test_db_newer_than_software_raises_error(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     with pytest.raises(DBUpgradeError):
         data.unlock(username, '123', create_new=False)
+
+
+def test_upgrades_list_is_sane():
+    for idx, entry in enumerate(UPGRADES_LIST):
+        msg = (
+            f'{idx} upgrade record was expected to have {idx + 1} '
+            f'from_version but has {entry.from_version}'
+        )
+        assert entry.from_version == idx + 1, msg
+    assert idx + 2 == ROTKEHLCHEN_DB_VERSION, 'the final version + 1 should be current version'
