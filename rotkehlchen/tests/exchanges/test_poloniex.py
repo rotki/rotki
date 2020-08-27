@@ -415,7 +415,7 @@ def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
         response = MockResponse(
             200,
             '{"withdrawals": [{"currency": "FAC", "timestamp": 1478994442, '
-            '"amount": "100.5", "fee": null, "withdrawalNumber": 1}], "deposits": []}',
+            '"amount": "100.5", "fee": null, "withdrawalNumber": 1, "address": "131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR", "status": "COMPLETED"}], "deposits": []}',  # noqa: E501
         )
         return response
 
@@ -496,9 +496,9 @@ def test_poloniex_deposits_withdrawal_unexpected_data(function_scope_poloniex):
 
     input_withdrawals = """
     {"withdrawals": [{"currency": "FAC", "timestamp": 1478994442,
-    "amount": "100.5", "fee": "0.1", "withdrawalNumber": 1}], "deposits": []}"""
+    "amount": "100.5", "fee": "0.1", "withdrawalNumber": 1, "status": "COMPLETE", "address": "131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR"}], "deposits": []}"""  # noqa: E501
     check_permutations_of_input_invalid_data(input_withdrawals)
     input_deposits = """
     {"deposits": [{"currency": "FAC", "timestamp": 1478994442,
-    "amount": "100.5", "depositNumber": 1}], "withdrawals": []}"""
+    "amount": "100.5", "depositNumber": 1, "txid": "0xfoo", "address": "0xboo"}], "withdrawals": []}"""  # noqa: E501
     check_permutations_of_input_invalid_data(input_deposits)

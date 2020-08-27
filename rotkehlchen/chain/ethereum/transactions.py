@@ -8,6 +8,7 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import LockableQueryObject, protect_with_lock
 
 logger = logging.getLogger(__name__)
@@ -18,10 +19,16 @@ FREE_ETH_TX_LIMIT = 500
 
 class EthTransactions(LockableQueryObject):
 
-    def __init__(self, database: DBHandler, etherscan: Etherscan) -> None:
+    def __init__(
+            self,
+            database: DBHandler,
+            etherscan: Etherscan,
+            msg_aggregator: MessagesAggregator,
+    ) -> None:
         super().__init__()
         self.database = database
         self.etherscan = etherscan
+        self.msg_aggregator = msg_aggregator
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
     def _single_address_query_transactions(
@@ -54,12 +61,12 @@ class EthTransactions(LockableQueryObject):
                         to_ts=query_end_ts,
                     ))
                 except RemoteError as e:
-                    log.error(
-                        f'Got error {str(e)} while querying ethereum transactions '
-                        f'from Etherscan. Transactions not added to the DB',
-                        from_ts=query_start_ts,
-                        to_ts=query_end_ts,
-                        internal=internal,
+                    self.msg_aggregator.add_error(
+                        f'Got error "{str(e)}" while querying ethereum transactions '
+                        f'from Etherscan. Transactions not added to the DB '
+                        f'from_ts: {query_start_ts} '
+                        f'to_ts: {query_end_ts} '
+                        f'internal: {internal}',
                     )
 
         # add new transactions to the DB

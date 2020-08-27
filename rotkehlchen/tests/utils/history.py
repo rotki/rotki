@@ -823,10 +823,10 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
         """
         addr3_tx = f"""{{"blockNumber":"54094","timeStamp":"1439048645","hash":"{TX_HASH_STR3}","nonce":"0","blockHash":"0xe3cabad6adab0b52eb632c3165a194036805713682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS3}","to":"{ETH_ADDRESS1}","value":"500520300","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
         """
-        if 'txlistinternal' in url:
+        if '=txlistinternal&' in url:
             # don't return any internal transactions
             payload = '{"status":"1","message":"OK","result":[]}'
-        else:
+        elif '=txlist&' in url:
             # And depending on the given query return corresponding mock transactions for address
             if ETH_ADDRESS1 in url:
                 tx_str = addr1_tx
@@ -840,6 +840,9 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
                 )
 
             payload = f'{{"status":"1","message":"OK","result":[{tx_str}]}}'
+        elif '=getblocknobytime&' in url:
+            # we don't really care about this in the history tests so just return whatever
+            payload = '{"status":"1","message":"OK","result": "1"}'
         return MockResponse(200, payload)
 
     return patch.object(etherscan.session, 'get', wraps=mocked_request_dict)

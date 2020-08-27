@@ -135,7 +135,11 @@ class EthereumManager():
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
-        self.transactions = EthTransactions(database=database, etherscan=etherscan)
+        self.transactions = EthTransactions(
+            database=database,
+            etherscan=etherscan,
+            msg_aggregator=msg_aggregator,
+        )
         for node in connect_at_start:
             self.greenlet_manager.spawn_and_track(
                 task_name=f'Attempt connection to {str(node)} ethereum node',

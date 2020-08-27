@@ -80,9 +80,17 @@ def test_coingecko_identifiers_are_reachable():
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
+    coins_delisted_from_coingecko = ['FLUZ']
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
     for identifier, asset_data in AssetResolver().assets.items():
+        if identifier in coins_delisted_from_coingecko:
+            # data = coingecko.asset_data(Asset(identifier))
+            # Figure out if the removed assets can still be queried
+            # for historical prices. If not, then remove their mapping from
+            # all_assets.json and remove them from this tests.
+            continue
+
         asset_type = asset_type_mapping[asset_data['type']]
         if asset_type == AssetType.FIAT:
             continue
