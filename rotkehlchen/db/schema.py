@@ -205,6 +205,8 @@ CREATE TABLE IF NOT EXISTS asset_movements (
     id TEXT PRIMARY KEY,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_movement_category(category),
+    address TEXT,
+    transaction_id TEXT,
     time INTEGER,
     asset VARCHAR[10],
     amount TEXT,

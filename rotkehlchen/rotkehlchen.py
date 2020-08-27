@@ -229,6 +229,7 @@ class Rotkehlchen():
         ethereum_manager = EthereumManager(
             ethrpc_endpoint=eth_rpc_endpoint,
             etherscan=self.etherscan,
+            database=self.data.db,
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
             connect_at_start=ETHEREUM_NODES_TO_CONNECT_AT_START,
@@ -550,6 +551,9 @@ class Rotkehlchen():
             to_ts: Timestamp,
             location: Location,
     ) -> List[Trade]:
+        # clear the trades queried for this location
+        self.actions_per_location['trade'][location] = 0
+
         if location == Location.EXTERNAL:
             location_trades = self.data.db.get_trades(
                 from_ts=from_ts,
@@ -705,12 +709,15 @@ class Rotkehlchen():
             all_movements: List[AssetMovement],
             exchange: ExchangeInterface,
     ) -> List[AssetMovement]:
+        location = deserialize_location(exchange.name)
+        # clear the asset movements queried for this exchange
+        self.actions_per_location['asset_movement'][location] = 0
         location_movements = exchange.query_deposits_withdrawals(start_ts=from_ts, end_ts=to_ts)
 
         movements: List[AssetMovement] = []
         if self.premium is None:
             movements = self._apply_actions_limit(
-                location=deserialize_location(exchange.name),
+                location=location,
                 action_type='asset_movement',
                 location_actions=location_movements,
                 all_actions=all_movements,

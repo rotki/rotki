@@ -13,7 +13,6 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import EthereumTransaction, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
@@ -132,12 +131,13 @@ class TradesHistorian():
             )
 
         try:
-            eth_transactions = query_ethereum_transactions(
-                database=self.db,
-                etherscan=self.chain_manager.ethereum.etherscan,
+            eth_transactions = self.chain_manager.ethereum.transactions.query(
+                address=None,  # all addresses
                 # We need to have full history of transactions available
                 from_ts=Timestamp(0),
                 to_ts=now,
+                with_limit=False,  # at the moment ignore the limit for historical processing,
+                recent_first=False,  # for history processing we need oldest first
             )
         except RemoteError as e:
             eth_transactions = []

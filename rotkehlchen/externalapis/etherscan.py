@@ -131,7 +131,7 @@ class Etherscan(ExternalServiceWithApiKey):
             module: str,
             action: Literal['getblocknobytime'],
             options: Optional[Dict[str, Any]] = None,
-    ) -> FVal:
+    ) -> int:
         ...
 
     def _query(  # noqa: F811
@@ -139,7 +139,7 @@ class Etherscan(ExternalServiceWithApiKey):
             module: str,
             action: str,
             options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Dict[str, Any]], str, FVal, List[EthereumTransaction], Dict[str, Any]]:
+    ) -> Union[List[Dict[str, Any]], str, int, List[EthereumTransaction], Dict[str, Any]]:
         """Queries etherscan
 
         May raise:
@@ -283,8 +283,8 @@ class Etherscan(ExternalServiceWithApiKey):
             self,
             account: ChecksumEthAddress,
             internal: bool,
-            from_block: Optional[int] = None,
-            to_block: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
     ) -> List[EthereumTransaction]:
         """Gets a list of transactions (either normal or internal) for account.
 
@@ -293,9 +293,11 @@ class Etherscan(ExternalServiceWithApiKey):
         is not in the expected format
         """
         options = {'address': str(account)}
-        if from_block:
+        if from_ts is not None:
+            from_block = self.get_blocknumber_by_time(from_ts)
             options['startBlock'] = str(from_block)
-        if to_block:
+        if to_ts is not None:
+            to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
         action: Literal['txlistinternal', 'txlist'] = 'txlistinternal' if internal else 'txlist'
 
@@ -421,10 +423,13 @@ class Etherscan(ExternalServiceWithApiKey):
         - RemoteError if there are any problems with reaching Etherscan or if
         an unexpected response is returned
         """
+        if ts < 1438269989:
+            return 0  # etherscan does not handle timestamps close and before genesis well
+
         options = {'timestamp': ts, 'closest': 'before'}
         result = self._query(
             module='block',
             action='getblocknobytime',
             options=options,
         )
-        return result.to_int(exact=True)
+        return result

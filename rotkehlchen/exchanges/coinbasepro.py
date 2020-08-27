@@ -362,6 +362,8 @@ class Coinbasepro(ExchangeInterface):
                         movements.append(AssetMovement(
                             location=Location.COINBASEPRO,
                             category=deserialize_asset_movement_category(row['type']),
+                            address=None,  # can't get it from csv data
+                            transaction_id=None,  # can't get it from csv data
                             timestamp=timestamp,
                             asset=asset,
                             amount=amount,

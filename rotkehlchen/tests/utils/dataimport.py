@@ -65,6 +65,8 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         location=Location.POLONIEX,
         category=AssetMovementCategory.DEPOSIT,
         timestamp=Timestamp(1565848624),
+        address=None,
+        transaction_id=None,
         asset=A_XMR,
         amount=AssetAmount(FVal('5')),
         fee_asset=A_USD,
@@ -73,6 +75,8 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
         timestamp=Timestamp(1566726155),
         asset=A_ETH,
         amount=AssetAmount(FVal('0.05770427')),

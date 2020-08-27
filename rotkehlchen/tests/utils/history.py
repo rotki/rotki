@@ -23,10 +23,10 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
+    EthereumTransaction,
     Fee,
     Location,
     Timestamp,
@@ -526,6 +526,8 @@ def assert_poloniex_asset_movements(
     expected = [AssetMovement(
         location=Location.POLONIEX,
         category=AssetMovementCategory.WITHDRAWAL,
+        address='0xB7E033598Cb94EF5A35349316D3A2e4f95f308Da',
+        transaction_id='0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4',
         timestamp=Timestamp(1468994442),
         asset=A_ETH,
         amount=FVal('10.0'),
@@ -535,6 +537,8 @@ def assert_poloniex_asset_movements(
     ), AssetMovement(
         location=Location.POLONIEX,
         category=AssetMovementCategory.WITHDRAWAL,
+        address='131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR',
+        transaction_id='2d27ae26fa9c70d6709e27ac94d4ce2fde19b3986926e9f3bfcf3e2d68354ec5',
         timestamp=Timestamp(1458994442),
         asset=A_BTC,
         amount=FVal('5.0'),
@@ -544,6 +548,8 @@ def assert_poloniex_asset_movements(
     ), AssetMovement(
         location=Location.POLONIEX,
         category=AssetMovementCategory.DEPOSIT,
+        address='131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR',
+        transaction_id='b05bdec7430a56b5a5ed34af4a31a54859dda9b7c88a5586bc5d6540cdfbfc7a',
         timestamp=Timestamp(1448994442),
         asset=A_BTC,
         amount=FVal('50.0'),
@@ -553,6 +559,8 @@ def assert_poloniex_asset_movements(
     ), AssetMovement(
         location=Location.POLONIEX,
         category=AssetMovementCategory.DEPOSIT,
+        address='0xB7E033598Cb94EF5A35349316D3A2e4f95f308Da',
+        transaction_id='0xf7e7eeb44edcad14c0f90a5fffb1cbb4b80e8f9652124a0838f6906ca939ccd2',
         timestamp=Timestamp(1438994442),
         asset=A_ETH,
         amount=FVal('100.0'),
@@ -571,6 +579,8 @@ def assert_kraken_asset_movements(
     expected = [AssetMovement(
         location=Location.KRAKEN,
         category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
         timestamp=Timestamp(1458994442),
         asset=A_BTC,
         amount=FVal('5.0'),
@@ -579,6 +589,8 @@ def assert_kraken_asset_movements(
         link='1',
     ), AssetMovement(
         location=Location.KRAKEN,
+        address=None,
+        transaction_id=None,
         category=AssetMovementCategory.DEPOSIT,
         timestamp=Timestamp(1448994442),
         asset=A_ETH,
@@ -589,6 +601,8 @@ def assert_kraken_asset_movements(
     ), AssetMovement(
         location=Location.KRAKEN,
         category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
         timestamp=Timestamp(1439994442),
         asset=A_ETH,
         amount=FVal('10.0'),
@@ -598,6 +612,8 @@ def assert_kraken_asset_movements(
     ), AssetMovement(
         location=Location.KRAKEN,
         category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
         timestamp=Timestamp(1428994442),
         asset=A_BTC,
         amount=FVal('5.0'),
@@ -807,10 +823,10 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
         """
         addr3_tx = f"""{{"blockNumber":"54094","timeStamp":"1439048645","hash":"{TX_HASH_STR3}","nonce":"0","blockHash":"0xe3cabad6adab0b52eb632c3165a194036805713682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS3}","to":"{ETH_ADDRESS1}","value":"500520300","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
         """
-        if 'txlistinternal' in url:
+        if '=txlistinternal&' in url:
             # don't return any internal transactions
             payload = '{"status":"1","message":"OK","result":[]}'
-        else:
+        elif '=txlist&' in url:
             # And depending on the given query return corresponding mock transactions for address
             if ETH_ADDRESS1 in url:
                 tx_str = addr1_tx
@@ -824,6 +840,9 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
                 )
 
             payload = f'{{"status":"1","message":"OK","result":[{tx_str}]}}'
+        elif '=getblocknobytime&' in url:
+            # we don't really care about this in the history tests so just return whatever
+            payload = '{"status":"1","message":"OK","result": "1"}'
         return MockResponse(200, payload)
 
     return patch.object(etherscan.session, 'get', wraps=mocked_request_dict)

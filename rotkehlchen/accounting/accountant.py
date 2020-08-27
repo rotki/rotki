@@ -30,8 +30,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Fee, Timestamp
+from rotkehlchen.typing import EthereumTransaction, Fee, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import (
     TaxableAction,

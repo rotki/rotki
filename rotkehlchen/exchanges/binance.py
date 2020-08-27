@@ -20,6 +20,7 @@ from rotkehlchen.exchanges.data_structures import (
     trade_pair_from_assets,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -468,6 +469,8 @@ class Binance(ExchangeInterface):
             return AssetMovement(
                 location=Location.BINANCE,
                 category=category,
+                address=deserialize_asset_movement_address(raw_data, 'address', asset),
+                transaction_id=get_key_if_has_val(raw_data, 'txId'),
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,

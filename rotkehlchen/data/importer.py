@@ -143,6 +143,8 @@ class DataImporter():
             asset_movement = AssetMovement(
                 location=location,
                 category=category,
+                address=None,
+                transaction_id=None,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,

@@ -741,6 +741,10 @@ class DBHandler:
 
     def purge_ethereum_transaction_data(self) -> None:
         cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+            ('ethtxs\\_%', '\\'),
+        )
         cursor.execute('DELETE FROM ethereum_transactions;')
         self.conn.commit()
         self.update_last_write()
@@ -1403,6 +1407,8 @@ class DBHandler:
                 movement.fee_asset.identifier,
                 str(movement.fee),
                 movement.link,
+                movement.address,
+                movement.transaction_id,
             ))
 
         query = """
@@ -1415,8 +1421,11 @@ class DBHandler:
               amount,
               fee_asset,
               fee,
-              link)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              link,
+              address,
+              transaction_id
+)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.write_tuples(tuple_type='asset_movement', query=query, tuples=movement_tuples)
 
@@ -1440,7 +1449,9 @@ class DBHandler:
             '  amount,'
             '  fee_asset,'
             '  fee,'
-            '  link FROM asset_movements '
+            '  link,'
+            '  address,'
+            '  transaction_id FROM asset_movements '
         )
         if location is not None:
             query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
@@ -1459,6 +1470,8 @@ class DBHandler:
                     fee_asset=Asset(result[6]),
                     fee=deserialize_fee(result[7]),
                     link=result[8],
+                    address=result[9],
+                    transaction_id=result[10],
                 )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
@@ -1476,10 +1489,20 @@ class DBHandler:
 
         return asset_movements
 
-    def get_asset_movements_num(self) -> int:
-        """Returns how many asset movements are saved in the DB"""
+    def get_entries_count(
+            self,
+            entries_table: Literal['asset_movements', 'trades', 'ethereum_transactions'],
+            op: Literal['OR', 'AND'] = 'OR',
+            **kwargs: Any,
+    ) -> int:
+        """Returns how many of a certain type of entry are saved in the DB"""
         cursor = self.conn.cursor()
-        query = cursor.execute('SELECT COUNT(*) from asset_movements;')
+        cursorstr = f'SELECT COUNT(*) from {entries_table}'
+        if len(kwargs) != 0:
+            cursorstr += ' WHERE'
+        op.join([f' {arg} = "{val}" ' for arg, val in kwargs.items()])
+        cursorstr += ';'
+        query = cursor.execute(cursorstr)
         return query.fetchone()[0]
 
     def add_ethereum_transactions(
@@ -1662,12 +1685,6 @@ class DBHandler:
 
         self.conn.commit()
         return True, ''
-
-    def get_trades_num(self) -> int:
-        """Returns how many trades are saved in the DB"""
-        cursor = self.conn.cursor()
-        query = cursor.execute('SELECT COUNT(*) from trades;')
-        return query.fetchone()[0]
 
     def get_trades(
             self,

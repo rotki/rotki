@@ -22,12 +22,16 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
   "withdrawals": [
     {
       "currency": "BTC",
+      "address": "131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR",
+      "status": "COMPLETE: 2d27ae26fa9c70d6709e27ac94d4ce2fde19b3986926e9f3bfcf3e2d68354ec5",
       "timestamp": 1458994442,
       "amount": "5.0",
       "fee": "0.5",
       "withdrawalNumber": 1
     }, {
       "currency": "ETH",
+      "address": "0xb7e033598cb94ef5a35349316d3a2e4f95f308da",
+      "status": "COMPLETE: 0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4",
       "timestamp": 1468994442,
       "amount": "10.0",
       "fee": "0.1",
@@ -37,32 +41,42 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
       "timestamp": 1478994442,
       "amount": "10.0",
       "fee": "0.1",
-      "withdrawalNumber": 3
+      "withdrawalNumber": 3,
+      "status": "COMPLETE: 0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4"
     }, {
       "currency": "DIS",
       "timestamp": 1478994442,
       "amount": "10.0",
       "fee": "0.1",
+      "status": "COMPLETE: 0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4",
       "withdrawalNumber": 4
   }],
   "deposits": [
     {
       "currency": "BTC",
       "timestamp": 1448994442,
+      "address": "131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR",
+      "txid": "b05bdec7430a56b5a5ed34af4a31a54859dda9b7c88a5586bc5d6540cdfbfc7a",
       "amount": "50.0",
       "depositNumber": 1
     }, {
       "currency": "ETH",
+      "address": "0xb7e033598cb94ef5a35349316d3a2e4f95f308da",
+      "txid": "0xf7e7eeb44edcad14c0f90a5fffb1cbb4b80e8f9652124a0838f6906ca939ccd2",
       "timestamp": 1438994442,
       "amount": "100.0",
       "depositNumber": 2
     }, {
       "currency": "IDONTEXIST",
+      "address": "0xb7e033598cb94ef5a35349316d3a2e4f95f308da",
+      "txid": "0xf7e7eeb44edcad14c0f90a5fffb1cbb4b80e8f9652124a0838f6906ca939ccd2",
       "timestamp": 1478994442,
       "amount": "10.0",
       "depositNumber": 3
     }, {
       "currency": "EBT",
+      "address": "0xb7e033598cb94ef5a35349316d3a2e4f95f308da",
+      "txid": "0xf7e7eeb44edcad14c0f90a5fffb1cbb4b80e8f9652124a0838f6906ca939ccd2",
       "timestamp": 1478994442,
       "amount": "10.0",
       "depositNumber": 4

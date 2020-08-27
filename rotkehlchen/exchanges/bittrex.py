@@ -23,6 +23,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, get_pair_position_asset
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -454,6 +455,8 @@ class Bittrex(ExchangeInterface):
             return AssetMovement(
                 location=Location.BITTREX,
                 category=category,
+                address=deserialize_asset_movement_address(raw_data, 'cryptoAddress', asset),
+                transaction_id=get_key_if_has_val(raw_data, 'txId'),
                 timestamp=timestamp,
                 asset=asset,
                 amount=deserialize_asset_amount(raw_data['quantity']),

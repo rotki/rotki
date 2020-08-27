@@ -5,7 +5,11 @@ from urllib.parse import urlencode
 import pytest
 import requests
 
+from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.exchanges.data_structures import AssetMovement
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -31,6 +35,7 @@ from rotkehlchen.tests.utils.history import (
     prepare_rotki_for_history_processing_test,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import AssetMovementCategory, Location
 
 
 def mock_validate_api_key():
@@ -609,7 +614,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges, async_quer
 
 @pytest.mark.parametrize('added_exchanges', [('kraken', 'poloniex')])
 @pytest.mark.parametrize('async_query', [False, True])
-def test_exchange_query_asset_movements(rotkehlchen_api_server_with_exchanges, async_query):
+def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, async_query):
     """Test that using the asset movements query endpoint works fine"""
     server = rotkehlchen_api_server_with_exchanges
     setup = prepare_rotki_for_history_processing_test(server.rest_api.rotkehlchen)
@@ -679,3 +684,72 @@ def test_exchange_query_asset_movements(rotkehlchen_api_server_with_exchanges, a
         response = requests.get(
             api_url_for(server, "assetmovementsresource") + '?' + urlencode(data))
         assert_okay(response)
+
+
+@pytest.mark.parametrize('added_exchanges', [('kraken', 'poloniex')])
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+def test_query_asset_movements_over_limit(
+        rotkehlchen_api_server_with_exchanges,
+        start_with_valid_premium,
+):
+    """Test that using the asset movements query endpoint works fine"""
+    start_ts = 0
+    end_ts = 1598453214
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = server.rest_api.rotkehlchen
+    # Make sure online kraken is not queried by setting query ranges
+    DBQueryRanges(rotki.data.db).update_used_query_range(
+        location_string='kraken_asset_movements',
+        start_ts=start_ts,
+        end_ts=end_ts,
+        ranges_to_query=[],
+    )
+    polo_entries_num = 4
+    # Set a ton of kraken asset movements in the DB
+    kraken_entries_num = FREE_ASSET_MOVEMENTS_LIMIT + 50
+    movements = [AssetMovement(
+        location=Location.KRAKEN,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        timestamp=x,
+        asset=A_BTC,
+        amount=FVal(x * 100),
+        fee_asset=A_BTC,
+        fee=FVal(x),
+        link='') for x in range(kraken_entries_num)
+    ]
+    rotki.data.db.add_asset_movements(movements)
+    all_movements_num = kraken_entries_num + polo_entries_num
+    setup = prepare_rotki_for_history_processing_test(server.rest_api.rotkehlchen)
+
+    # Check that querying movements with/without limits works even if we query two times
+    for _ in range(2):
+        # query asset movements of polo which has less movements than the limit
+        with setup.polo_patch:
+            response = requests.get(
+                api_url_for(
+                    server,
+                    "assetmovementsresource",
+                ), json={'location': 'poloniex'},
+            )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_found'] == all_movements_num
+        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
+        assert_poloniex_asset_movements(result['entries'], deserialized=True)
+
+        # now query kraken which has a ton of DB entries
+        response = requests.get(
+            api_url_for(server, "assetmovementsresource"),
+            json={'location': 'kraken'},
+        )
+        result = assert_proper_response_with_result(response)
+
+        if start_with_valid_premium:
+            assert len(result['entries']) == kraken_entries_num
+            assert result['entries_limit'] == -1
+            assert result['entries_found'] == all_movements_num
+        else:
+            assert len(result['entries']) == FREE_ASSET_MOVEMENTS_LIMIT - polo_entries_num
+            assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+            assert result['entries_found'] == all_movements_num

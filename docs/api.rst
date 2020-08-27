@@ -1053,7 +1053,10 @@ Querying ethereum transactions
    .. note::
       This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also he can limit the queried transactions by timestamps.
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also he can limit the queried transactions by timestamps. If the user is not premium and has more than 500 transaction then the returned transaction will be limited to that number. Any filtering will also be limited to those first 500 transaction. Transactions are returned most recent first.
 
    **Example Request**:
 
@@ -1075,35 +1078,38 @@ Querying ethereum transactions
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": [{
-            "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
-            "timestamp": 1598006527,
-            "block_number": 10703085,
-            "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
-            "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
-            "value": "0",
-            "gas": "61676",
-            "gas_price": "206000000000",
-            "gas_used": "37154",
-            "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
-            "nonce": 2720
-        }, {
-            "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
-            "timestamp": 1588006528,
-            "block_number": 10700085,
-            "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
-            "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
-            "value": "56000300000000000000000",
-            "gas": "610676",
-            "gas_price": "106000000000",
-            "gas_used": "270154",
-            "input_data": "0x",
-            "nonce": 55
-        }],
+      { "result":
+            "entries": [{
+                "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
+                "timestamp": 1598006527,
+                "block_number": 10703085,
+                "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
+                "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
+                "value": "0",
+                "gas": "61676",
+                "gas_price": "206000000000",
+                "gas_used": "37154",
+                "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
+                "nonce": 2720
+            }, {
+                "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
+                "timestamp": 1588006528,
+                "block_number": 10700085,
+                "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
+                "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
+                "value": "56000300000000000000000",
+                "gas": "610676",
+                "gas_price": "106000000000",
+                "gas_used": "270154",
+                "input_data": "0x",
+                "nonce": 55
+            }],
+            "entries_found": 95,
+            "entries_limit": 500,
         "message": ""
       }
 
-   :statuscode 200: Transactions succesfull queries
+   :statuscode 200: Transactions succesfull queried
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal Rotki error
@@ -1939,21 +1945,21 @@ Dealing with trades
 
       {
           "result": {
-	      "entries": [{
-		  "trade_id": "dsadfasdsad",
-		  "timestamp": 1491606401,
-		  "location": "external",
-		  "pair": "BTC_EUR",
-		  "trade_type": "buy",
-		  "amount": "0.5541",
-		  "rate": "8422.1",
-		  "fee": "0.55",
-		  "fee_currency": "USD",
-		  "link": "Optional unique trade identifier"
-		  "notes": "Optional notes"
+              "entries": [{
+                  "trade_id": "dsadfasdsad",
+                  "timestamp": 1491606401,
+                  "location": "external",
+                  "pair": "BTC_EUR",
+                  "trade_type": "buy",
+                  "amount": "0.5541",
+                  "rate": "8422.1",
+                  "fee": "0.55",
+                  "fee_currency": "USD",
+                  "link": "Optional unique trade identifier"
+                  "notes": "Optional notes"
               }],
-	      "entries_found": 95,
-	      "entries_limit": 250,
+              "entries_found": 95,
+              "entries_limit": 250,
           "message": ""
       }
 
@@ -2155,7 +2161,7 @@ Querying asset movements
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/trades HTTP/1.1
+      GET /api/1/asset_movements HTTP/1.1
       Host: localhost:5042
 
       {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "kraken"}
@@ -2175,18 +2181,20 @@ Querying asset movements
       {
           "result": {
               "entries": [{
-	          "identifier": "foo"
+                  "identifier": "foo"
                   "location": "kraken",
-		  "category": "deposit",
-		  "timestamp": 1451706400
-		  "asset": "ETH",
-		  "amount": "500.55",
-		  "fee_asset": "ETH",
-		  "fee": "0.1",
-		  "link": "optional exchange unique id",
+                  "category": "deposit",
+                  "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+                  "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
+                  "timestamp": 1451706400
+                  "asset": "ETH",
+                  "amount": "500.55",
+                  "fee_asset": "ETH",
+                  "fee": "0.1",
+                  "link": "optional exchange unique id",
               }],
-	      "entries_found": 80,
-	      "entries_limit": 100,
+              "entries_found": 80,
+              "entries_limit": 100,
           "message": ""
       }
 
@@ -2194,6 +2202,8 @@ Querying asset movements
    :resjsonarr string identifier: The uniquely identifying identifier for this asset movement
    :resjsonarr string location: A valid location at which the deposit/withdrawal occured
    :resjsonarr string category: Either ``"deposit"`` or ``"withdrawal"``
+   :resjsonarr string address: The source address if this is a deposit or the destination address if this is a withdrawal.
+   :resjsonarr string transaction_id: The transaction id
    :resjsonarr integer timestamp: The timestamp at which the deposit/withdrawal occured
    :resjsonarr string asset: The asset deposited or withdrawn
    :resjsonarr string amount: The amount of asset deposited or withdrawn

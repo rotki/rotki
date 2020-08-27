@@ -182,24 +182,26 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
     ]
     rotki.data.db.add_trades(spam_trades)
 
-    with setup.binance_patch, setup.polo_patch:
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
-            ),
-        )
-    result = assert_proper_response_with_result(response)
+    # Check that we get all trades correctly even if we query two times
+    for _ in range(2):
+        with setup.binance_patch, setup.polo_patch:
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server_with_exchanges,
+                    "tradesresource",
+                ),
+            )
+        result = assert_proper_response_with_result(response)
 
-    all_trades_num = FREE_TRADES_LIMIT + 50 + 5  # 5 = 3 polo and 2 binance
-    if start_with_valid_premium:
-        assert len(result['entries']) == all_trades_num
-        assert result['entries_limit'] == -1
-        assert result['entries_found'] == all_trades_num
-    else:
-        assert len(result['entries']) == FREE_TRADES_LIMIT
-        assert result['entries_limit'] == FREE_TRADES_LIMIT
-        assert result['entries_found'] == all_trades_num
+        all_trades_num = FREE_TRADES_LIMIT + 50 + 5  # 5 = 3 polo and 2 binance
+        if start_with_valid_premium:
+            assert len(result['entries']) == all_trades_num
+            assert result['entries_limit'] == -1
+            assert result['entries_found'] == all_trades_num
+        else:
+            assert len(result['entries']) == FREE_TRADES_LIMIT
+            assert result['entries_limit'] == FREE_TRADES_LIMIT
+            assert result['entries_found'] == all_trades_num
 
 
 def test_add_trades(rotkehlchen_api_server):
