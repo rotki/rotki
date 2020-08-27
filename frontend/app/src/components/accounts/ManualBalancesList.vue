@@ -67,14 +67,14 @@
                 class="mr-2 manual-balances-list__actions__edit"
                 @click="editBalance(item)"
               >
-                fa-edit
+                mdi-pencil
               </v-icon>
               <v-icon
                 small
                 class="manual-balances-list__actions__delete"
                 @click="labelToDelete = item.label"
               >
-                fa-trash
+                mdi-delete
               </v-icon>
             </span>
           </template>

@@ -62,30 +62,32 @@
               />
             </template>
             <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
-            </template>
-            <template #item.actions="{ item }">
-              <div v-if="item.location === 'external'">
-                <v-btn icon>
-                  <v-icon
-                    small
-                    class="closed-trades__trade__actions__edit"
-                    @click="editTrade(item)"
-                  >
-                    fa-edit
-                  </v-icon>
-                </v-btn>
-                <v-btn icon>
-                  <v-icon
-                    class="closed-trades__trade__actions__delete"
-                    small
-                    @click="promptForDelete(item)"
-                  >
-                    fa-trash
-                  </v-icon>
-                </v-btn>
+              <div class="d-flex flex-row align-center">
+                <date-display :timestamp="item.timestamp" />
+                <v-spacer v-if="item.location === 'external'" />
+                <div v-if="item.location === 'external'">
+                  <v-btn icon>
+                    <v-icon
+                      small
+                      class="closed-trades__trade__actions__edit"
+                      @click="editTrade(item)"
+                    >
+                      mdi-pencil
+                    </v-icon>
+                  </v-btn>
+                  <v-btn icon>
+                    <v-icon
+                      class="closed-trades__trade__actions__delete"
+                      small
+                      @click="promptForDelete(item)"
+                    >
+                      mdi-delete
+                    </v-icon>
+                  </v-btn>
+                </div>
               </div>
             </template>
+
             <template #expanded-item="{ headers, item }">
               <td
                 :colspan="headers.length"
@@ -129,7 +131,7 @@
               </td>
             </template>
             <template
-              v-if="limit <= total && total !== 0"
+              v-if="limit <= total && limit > 0"
               #body.append="{ headers }"
             >
               <upgrade-row
@@ -200,39 +202,33 @@ import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 export default class ClosedTrades extends Mixins(StatusMixin) {
   readonly headersClosed: DataTableHeader[] = [
     {
-      text: this.$t('closed_trades.headers.location').toString(),
+      text: this.$tc('closed_trades.headers.location'),
       value: 'location'
     },
     {
-      text: this.$t('closed_trades.headers.action').toString(),
+      text: this.$tc('closed_trades.headers.action'),
       value: 'tradeType',
       width: '90px'
     },
-    { text: this.$t('closed_trades.headers.pair').toString(), value: 'pair' },
+    { text: this.$tc('closed_trades.headers.pair'), value: 'pair' },
     {
-      text: this.$t('closed_trades.headers.rate').toString(),
+      text: this.$tc('closed_trades.headers.rate'),
       value: 'rate',
       align: 'end'
     },
     {
-      text: this.$t('closed_trades.headers.amount').toString(),
+      text: this.$tc('closed_trades.headers.amount'),
       value: 'amount',
       align: 'end'
     },
     {
-      text: this.$t('closed_trades.headers.fee').toString(),
+      text: this.$tc('closed_trades.headers.fee'),
       value: 'fee',
       align: 'end'
     },
     {
-      text: this.$t('closed_trades.headers.timestamp').toString(),
+      text: this.$tc('closed_trades.headers.timestamp'),
       value: 'timestamp'
-    },
-    {
-      text: this.$t('closed_trades.headers.actions').toString(),
-      value: 'actions',
-      width: '110',
-      sortable: false
     },
     { text: '', value: 'data-table-expand' }
   ];
@@ -258,17 +254,15 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   data!: Trade[];
 
   newExternalTrade() {
-    this.dialogTitle = this.$t('closed_trades.dialog.add.title').toString();
+    this.dialogTitle = this.$tc('closed_trades.dialog.add.title');
     this.dialogSubtitle = '';
     this.openDialog = true;
   }
 
   editTrade(trade: Trade) {
     this.editableItem = trade;
-    this.dialogTitle = this.$t('closed_trades.dialog.edit.title').toString();
-    this.dialogSubtitle = this.$t(
-      'closed_trades.dialog.edit.subtitle'
-    ).toString();
+    this.dialogTitle = this.$tc('closed_trades.dialog.edit.title');
+    this.dialogSubtitle = this.$tc('closed_trades.dialog.edit.subtitle');
     this.openDialog = true;
   }
 

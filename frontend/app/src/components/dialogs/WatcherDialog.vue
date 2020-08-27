@@ -83,7 +83,7 @@
               </v-btn>
               <v-btn small icon @click="deleteWatcher(watcher.identifier)">
                 <v-icon small>
-                  fa fa-trash
+                  mdi-delete
                 </v-icon>
               </v-btn>
             </v-col>

@@ -233,5 +233,14 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   },
   assetMovementsLimit: ({ assetMovements }) => {
     return assetMovements.limit;
+  },
+  isEthereumToken: ({ supportedAssets }) => (asset: string) => {
+    const match = supportedAssets.find(
+      supportedAsset => supportedAsset.symbol === asset
+    );
+    if (match) {
+      return match.type === 'ethereum token';
+    }
+    return false;
   }
 };

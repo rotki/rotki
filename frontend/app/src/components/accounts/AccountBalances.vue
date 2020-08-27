@@ -97,7 +97,7 @@
             :disabled="accountOperation"
             @click="editAccount(item.account)"
           >
-            fa-edit
+            mdi-pencil
           </v-icon>
           <v-icon
             small
@@ -105,7 +105,7 @@
             :disabled="accountOperation"
             @click="toDeleteAccount = item.account"
           >
-            fa-trash
+            mdi-delete
           </v-icon>
         </span>
       </template>

@@ -30,6 +30,6 @@ export default class LocationDisplay extends Vue {
 
 <style scoped lang="scss">
 .location-display {
-  width: 50px;
+  width: 90px;
 }
 </style>

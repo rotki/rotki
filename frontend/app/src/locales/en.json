@@ -117,7 +117,12 @@
     },
     "label": "asset movements",
     "loading": "Please wait while your asset movements are getting loaded...",
-    "refresh_tooltip": "Refresh your asset movements"
+    "refresh_tooltip": "Refresh your asset movements",
+    "details": {
+      "title": "Details",
+      "no_details": "No details found."
+    },
+    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
   },
   "history": {
     "header": "History",
@@ -207,6 +212,11 @@
     "tax_report": "Tax Report"
   },
   "trade_history": {
-    "loading": "Please wait while your trades are getting loaded..."
+    "loading": "Please wait while your trades are getting loaded...",
+    "loading_subtitle": "The loading of trades might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
+  },
+  "movement_links": {
+    "address": "Address:",
+    "transaction": "TX:"
   }
 }

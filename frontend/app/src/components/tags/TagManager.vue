@@ -47,10 +47,10 @@
         </template>
         <template #item.action="{ item }">
           <v-icon small class="mr-2" @click="editItem(item)">
-            fa-edit
+            mdi-pencil
           </v-icon>
           <v-icon small class="mr-2" @click="deleteItem(item)">
-            fa-trash
+            mdi-delete
           </v-icon>
         </template>
       </v-data-table>

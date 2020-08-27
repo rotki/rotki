@@ -3,6 +3,7 @@
     <template #message>
       {{ $t('trade_history.loading') }}
     </template>
+    {{ $t('trade_history.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
     <trade-location-selector v-model="selectedLocation" />

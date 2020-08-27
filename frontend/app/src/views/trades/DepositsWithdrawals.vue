@@ -3,6 +3,7 @@
     <template #message>
       {{ $t('deposits_withdrawals.loading') }}
     </template>
+    {{ $t('deposits_withdrawals.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
     <v-row>
@@ -21,6 +22,9 @@
             <v-data-table
               :headers="headers"
               :items="assetMovements"
+              show-expand
+              single-expand
+              :expanded="expanded"
               item-key="identifier"
               sort-by="timestamp"
               sort-desc
@@ -52,7 +56,7 @@
               <template
                 v-if="
                   assetMovementsLimit <= assetMovementsTotal &&
-                  assetMovementsTotal !== 0
+                  assetMovementsLimit > 0
                 "
                 #body.append="{ headers }"
               >
@@ -62,6 +66,27 @@
                   :colspan="headers.length"
                   :label="$t('deposits_withdrawals.label')"
                 />
+              </template>
+              <template #expanded-item="{ headers, item }">
+                <td
+                  :colspan="headers.length"
+                  class="deposits-withdrawals__movement__details"
+                >
+                  <v-card outlined>
+                    <v-card-title>
+                      {{ $t('deposits_withdrawals.details.title') }}
+                    </v-card-title>
+                    <v-card-text>
+                      <movement-links
+                        v-if="item.address || item.transactionId"
+                        :item="item"
+                      />
+                      <span v-else class="font-weight-medium">
+                        {{ $t('deposits_withdrawals.details.no_details') }}
+                      </span>
+                    </v-card-text>
+                  </v-card>
+                </td>
               </template>
             </v-data-table>
           </v-card-text>
@@ -84,10 +109,12 @@ import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { AssetMovement } from '@/services/balances/types';
 import { Section } from '@/store/const';
+import MovementLinks from '@/views/trades/MovementLinks.vue';
 import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
 @Component({
   components: {
+    MovementLinks,
     RefreshButton,
     ProgressScreen,
     UpgradeRow,
@@ -133,7 +160,8 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
     {
       text: this.$tc('deposits_withdrawals.headers.timestamp'),
       value: 'timestamp'
-    }
+    },
+    { text: '', value: 'data-table-expand' }
   ];
 
   fetchMovements!: (refresh: boolean) => Promise<void>;
@@ -143,9 +171,22 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
 
   footerProps = footerProps;
   section = Section.ASSET_MOVEMENT;
+  expanded = [];
 
   async mounted() {
     await this.fetchMovements(false);
   }
 }
 </script>
+
+<style scoped lang="scss">
+.deposits-withdrawals {
+  &__movement {
+    &__details {
+      height: 150px !important;
+      box-shadow: inset 1px 8px 10px -10px;
+      background-color: var(--v-rotki-light-grey-base);
+    }
+  }
+}
+</style>

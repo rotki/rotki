@@ -10,6 +10,8 @@ export interface AssetMovement {
   readonly identifier: string;
   readonly location: TradeLocation;
   readonly category: MovementCategory;
+  readonly address: string;
+  readonly transactionId: string;
   readonly timestamp: number;
   readonly asset: string;
   readonly amount: BigNumber;
