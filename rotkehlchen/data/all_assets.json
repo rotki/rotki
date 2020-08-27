@@ -8442,6 +8442,15 @@
         "symbol": "PRPS",
         "type": "ethereum token"
     },
+    "PRQ": {
+        "coingecko": "parsiq",
+        "ethereum_address": "0xFE2786D7D1cCAb8B015f6Ef7392F67d778f8d8D7",
+        "ethereum_token_decimals": 18,
+        "name": "Parsiq Token",
+        "started": 1569095115,
+        "symbol": "PRQ",
+        "type": "ethereum token"
+    },
     "PST": {
         "coingecko": "primas",
         "ethereum_address": "0x5d4ABC77B8405aD177d8ac6682D584ecbFd46CEc",
