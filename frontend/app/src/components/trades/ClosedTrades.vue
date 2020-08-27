@@ -18,6 +18,12 @@
         </v-btn>
         <v-card-title>
           {{ $t('closed_trades.title') }}
+          <v-spacer />
+          <refresh-button
+            :loading="refreshing"
+            :tooltip="$t('closed_trades.refresh_tooltip')"
+            @refresh="refresh"
+          />
         </v-card-title>
         <v-card-text>
           <v-data-table
@@ -31,6 +37,7 @@
             :footer-props="footerProps"
             class="closed-trades"
             item-key="tradeId"
+            :loading="refreshing"
           >
             <template #item.location="{ item }">
               <location-display :identifier="item.location" />
@@ -158,20 +165,24 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapState } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import OtcForm from '@/components/OtcForm.vue';
 import LocationDisplay from '@/components/trades/LocationDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
+import StatusMixin from '@/mixins/status-mixin';
 import { Trade } from '@/services/trades/types';
+import { Section } from '@/store/const';
 import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
 @Component({
   components: {
+    RefreshButton,
     UpgradeRow,
     DateDisplay,
     LocationDisplay,
@@ -186,12 +197,11 @@ import UpgradeRow from '@/views/trades/UpgradeRow.vue';
     ...mapActions('trades', ['deleteExternalTrade'])
   }
 })
-export default class ClosedTrades extends Vue {
+export default class ClosedTrades extends Mixins(StatusMixin) {
   readonly headersClosed: DataTableHeader[] = [
     {
       text: this.$t('closed_trades.headers.location').toString(),
-      value: 'location',
-      width: '40px'
+      value: 'location'
     },
     {
       text: this.$t('closed_trades.headers.action').toString(),
@@ -239,6 +249,10 @@ export default class ClosedTrades extends Vue {
   expanded = [];
 
   deleteExternalTrade!: (tradeId: string) => Promise<boolean>;
+  section = Section.TRADES;
+
+  @Emit()
+  refresh() {}
 
   @Prop({ required: true })
   data!: Trade[];

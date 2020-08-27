@@ -11,18 +11,17 @@ import {
   TradeUpdate
 } from '@/services/trades/types';
 import { LimitedResponse } from '@/services/types-api';
-import { Status } from '@/store/const';
+import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { LocationRequestMeta, TradesState } from '@/store/trades/types';
-import { ActionStatus, RotkehlchenState } from '@/store/types';
+import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 
 export const actions: ActionTree<TradesState, RotkehlchenState> = {
   async fetchTrades(
     {
       commit,
-      state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning },
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
       rootState: { balances }
     },
     refresh: boolean = false
@@ -32,14 +31,20 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
       return;
     }
 
+    const currentStatus = status(Section.TRADES);
+
     if (
-      state.status === Status.LOADING ||
-      (state.status === Status.LOADED && !refresh)
+      currentStatus === Status.LOADING ||
+      (currentStatus === Status.LOADED && !refresh)
     ) {
       return;
     }
 
-    commit('status', refresh ? Status.REFRESHING : Status.LOADING);
+    const loadingPayload: StatusPayload = {
+      section: Section.TRADES,
+      status: refresh ? Status.REFRESHING : Status.LOADING
+    };
+    commit('setStatus', loadingPayload, { root: true });
 
     const { connectedExchanges } = balances!;
     const locations: TradeLocation[] = [...connectedExchanges, 'external'];
@@ -81,7 +86,11 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
       );
     }
 
-    commit('status', Status.LOADED);
+    const loadedPayload: StatusPayload = {
+      section: Section.TRADES,
+      status: Status.LOADED
+    };
+    commit('setStatus', loadedPayload, { root: true });
   },
 
   async addExternalTrade({ commit }, trade: NewTrade): Promise<ActionStatus> {

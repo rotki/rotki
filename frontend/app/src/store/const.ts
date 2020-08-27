@@ -6,6 +6,7 @@ export enum Status {
 }
 
 export enum Section {
+  NONE = 'none',
   ASSET_MOVEMENT = 'asset_movement',
   TRADES = 'trades'
 }

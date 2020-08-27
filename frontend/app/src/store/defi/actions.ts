@@ -243,6 +243,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
 
+    console.log('fetch-all');
+
     const { activeModules } = session!.generalSettings;
 
     commit('status', refreshing ? Status.REFRESHING : Status.LOADING);

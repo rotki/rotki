@@ -97,7 +97,8 @@
       "title": "Delete Trade",
       "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}"
     },
-    "label": "trades"
+    "label": "trades",
+    "refresh_tooltip": "Refresh your trades"
   },
   "trade_location_selector": {
     "selection-none": "Showing results across all locations",
@@ -114,7 +115,9 @@
       "fee": "Fee",
       "timestamp": "Date"
     },
-    "label": "asset movements"
+    "label": "asset movements",
+    "loading": "Please wait while your asset movements are getting loaded...",
+    "refresh_tooltip": "Refresh your asset movements"
   },
   "history": {
     "header": "History",
@@ -202,5 +205,8 @@
     "defi": "DeFi",
     "statistics": "Statistics",
     "tax_report": "Tax Report"
+  },
+  "trade_history": {
+    "loading": "Please wait while your trades are getting loaded..."
   }
 }

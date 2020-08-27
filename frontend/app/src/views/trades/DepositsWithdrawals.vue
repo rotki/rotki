@@ -1,10 +1,21 @@
 <template>
-  <v-container>
+  <progress-screen v-if="loading">
+    <template #message>
+      {{ $t('deposits_withdrawals.loading') }}
+    </template>
+  </progress-screen>
+  <v-container v-else>
     <v-row>
       <v-col cols="12">
         <v-card>
           <v-card-title>
             {{ $t('deposits_withdrawals.title') }}
+            <v-spacer />
+            <refresh-button
+              :loading="refreshing"
+              :tooltip="$t('deposits_withdrawals.refresh_tooltip')"
+              @refresh="fetchMovements(true)"
+            />
           </v-card-title>
           <v-card-text>
             <v-data-table
@@ -14,6 +25,7 @@
               sort-by="timestamp"
               sort-desc
               :footer-props="footerProps"
+              :loading="refreshing"
             >
               <template #item.location="{ item }">
                 <location-display :identifier="item.location" />
@@ -60,18 +72,24 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import LocationDisplay from '@/components/trades/LocationDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
+import StatusMixin from '@/mixins/status-mixin';
 import { AssetMovement } from '@/services/balances/types';
+import { Section } from '@/store/const';
 import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
 @Component({
   components: {
+    RefreshButton,
+    ProgressScreen,
     UpgradeRow,
     AssetDetails,
     LocationDisplay,
@@ -88,7 +106,7 @@ import UpgradeRow from '@/views/trades/UpgradeRow.vue';
     ...mapActions('balances', ['fetchMovements'])
   }
 })
-export default class DepositsWithdrawals extends Vue {
+export default class DepositsWithdrawals extends Mixins(StatusMixin) {
   readonly headers: DataTableHeader[] = [
     {
       text: this.$tc('deposits_withdrawals.headers.location'),
@@ -118,15 +136,16 @@ export default class DepositsWithdrawals extends Vue {
     }
   ];
 
-  fetchMovements!: () => Promise<void>;
+  fetchMovements!: (refresh: boolean) => Promise<void>;
   assetMovements!: AssetMovement[];
   assetMovementsTotal!: number;
   assetMovementsLimit!: number;
 
   footerProps = footerProps;
+  section = Section.ASSET_MOVEMENT;
 
   async mounted() {
-    await this.fetchMovements();
+    await this.fetchMovements(false);
   }
 }
 </script>

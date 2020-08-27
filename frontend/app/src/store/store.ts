@@ -33,13 +33,15 @@ const defaultVersion = () =>
     downloadUrl: ''
   } as Version);
 
+const defaultState = () => ({
+  message: emptyMessage(),
+  version: defaultVersion(),
+  connected: false,
+  status: {}
+});
+
 const store: StoreOptions<RotkehlchenState> = {
-  state: {
-    message: emptyMessage(),
-    version: defaultVersion(),
-    connected: false,
-    status: {}
-  },
+  state: defaultState(),
   mutations: {
     setMessage: (state: RotkehlchenState, message: Message) => {
       state.message = message;
@@ -59,6 +61,9 @@ const store: StoreOptions<RotkehlchenState> = {
     },
     setStatus: (state: RotkehlchenState, status: StatusPayload) => {
       state.status = { ...state.status, [status.section]: status.status };
+    },
+    reset: (state: RotkehlchenState) => {
+      Object.assign(state, defaultState());
     }
   },
   actions: {

@@ -1,6 +1,5 @@
 import { MutationTree } from 'vuex';
 import { Trade, TradeUpdate } from '@/services/trades/types';
-import { Status } from '@/store/const';
 import { defaultState } from '@/store/trades/state';
 import { TradesState } from '@/store/trades/types';
 
@@ -19,10 +18,6 @@ export const mutations: MutationTree<TradesState> = {
 
   trades(state: TradesState, trades: Trade[]) {
     state.trades = trades;
-  },
-
-  status(state: TradesState, status: Status) {
-    state.status = status;
   },
 
   addTrade(state: TradesState, trade: Trade) {
