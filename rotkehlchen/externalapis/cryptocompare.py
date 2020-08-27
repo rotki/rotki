@@ -78,6 +78,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('PERX'): Asset('USDT'),
     Asset('PRQ'): Asset('USDT'),
     Asset('RING'): Asset('USDT'),
+    Asset('SBREE'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 
