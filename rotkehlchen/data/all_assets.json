@@ -8965,6 +8965,15 @@
         "symbol": "RPL",
         "type": "ethereum token"
     },
+    "RSR": {
+        "coingecko": "reserve-rights-token",
+        "ethereum_address": "0x8762db106B2c2A0bccB3A80d1Ed41273552616E8",
+        "ethereum_token_decimals": 18,
+        "name": "Reserve Rights",
+        "started": 1558074046,
+        "symbol": "RSR",
+        "type": "ethereum token"
+    },
     "RTB": {
         "active": true,
         "coingecko": "",

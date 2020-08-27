@@ -132,6 +132,8 @@ WORLD_TO_BINANCE = {
     'ETHOS': 'BQX',
     # GXChain is GXS in Binance but GXC in Rotkehlchen
     'GXC': 'GXS',
+    # Luna Terra is LUNA-2 in rotki
+    'LUNA-2': 'LUNA',
     # YOYOW is known as YOYO in Binance
     'YOYOW': 'YOYO',
 }
