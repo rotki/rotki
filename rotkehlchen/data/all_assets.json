@@ -8031,6 +8031,15 @@
         "symbol": "PERL",
         "type": "ethereum token"
     },
+    "PERX": {
+        "coingecko": "peerex-network",
+        "ethereum_address": "0x3C6ff50c9Ec362efa359317009428d52115fe643",
+        "ethereum_token_decimals": 9,
+        "name": "PeerEx Network",
+        "started": 1596548338,
+        "symbol": "PERX",
+        "type": "ethereum token"
+    },
     "PFR": {
         "coingecko": "payfair",
         "ethereum_address": "0x2FA32a39fc1c399E0Cc7B2935868f5165De7cE97",
