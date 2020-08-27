@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <base-page-header :text="$t('trades.header')" />
+    <base-page-header :text="$t('history.header')" />
     <tab-navigation :tab-contents="tabs" />
   </v-container>
 </template>
@@ -15,15 +15,15 @@ import TabNavigation, {
 @Component({
   components: { BasePageHeader, TabNavigation }
 })
-export default class TradesHistory extends Vue {
+export default class History extends Vue {
   readonly tabs: TabContent[] = [
     {
-      name: this.$t('trades.tabs.trades').toString(),
-      routeTo: '/trades/trade-history'
+      name: this.$tc('history.tabs.trades'),
+      routeTo: '/history/trades'
     },
     {
-      name: this.$t('trades.tabs.deposits_withdrawals').toString(),
-      routeTo: '/trades/deposits-withdrawals'
+      name: this.$tc('history.tabs.deposits_withdrawals'),
+      routeTo: '/history/deposits-withdrawals'
     }
   ];
 }

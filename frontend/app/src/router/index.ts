@@ -30,17 +30,17 @@ export default new Router({
       component: () => import('../views/TaxReport.vue')
     },
     {
-      path: '/trades',
-      component: () => import('../views/trades/Trades.vue'),
+      path: '/history',
+      component: () => import('../views/trades/History.vue'),
       children: [
         {
           path: '',
           name: 'trades',
-          redirect: 'trade-history',
+          redirect: 'trades',
           component: () => import('../views/trades/TradeHistory.vue')
         },
         {
-          path: 'trade-history',
+          path: 'trades',
           component: () => import('../views/trades/TradeHistory.vue')
         },
         {

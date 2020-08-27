@@ -1,18 +1,18 @@
 import { Guid } from '../../common/guid';
+import { HistoryPage } from '../pages/history-page';
 import { RotkiApp } from '../pages/rotki-app';
-import { TradesPage } from '../pages/trades-page';
 import { OTCTrade } from '../support/types';
 
 describe('trades', () => {
   let username: string;
   let app: RotkiApp;
-  let page: TradesPage;
+  let page: HistoryPage;
   let otcData: OTCTrade[];
 
   before(() => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
-    page = new TradesPage();
+    page = new HistoryPage();
     app.visit();
     app.createAccount(username);
     cy.fixture('otc').then(otc => {

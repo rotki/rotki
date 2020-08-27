@@ -116,8 +116,8 @@
     },
     "label": "asset movements"
   },
-  "trades": {
-    "header": "Trades",
+  "history": {
+    "header": "History",
     "tabs": {
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals"
@@ -192,5 +192,15 @@
         "title": "Trades query"
       }
     }
+  },
+  "navigation_menu": {
+    "dashboard": "Dashboard",
+    "accounts_balances": "Accounts & Balances",
+    "api_keys": "API Keys",
+    "import_data": "Import Data",
+    "history": "History",
+    "defi": "DeFi",
+    "statistics": "Statistics",
+    "tax_report": "Tax Report"
   }
 }
