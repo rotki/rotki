@@ -2229,6 +2229,15 @@
         "symbol": "CGA",
         "type": "own chain"
     },
+    "CGT": {
+        "coingecko": "cache-gold",
+        "ethereum_address": "0xF5238462E7235c7B62811567E63Dd17d12C2EAA0",
+        "ethereum_token_decimals": 8,
+        "name": "CACHE Gold",
+        "started": 1581937395,
+        "symbol": "CGT",
+        "type": "ethereum token"
+    },
     "CGLD": {
         "coingecko": "",
         "name": "Celo Gold",

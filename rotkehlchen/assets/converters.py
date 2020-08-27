@@ -327,6 +327,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # in cryptocompare but they have no price
     'BVOL',
     'IBVOL',
+    'XDOT',  # old polkadot before the split
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
