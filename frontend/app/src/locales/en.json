@@ -73,8 +73,7 @@
       "rate": "Rate",
       "amount": "Amount",
       "fee": "Fee",
-      "timestamp": "Date",
-      "actions": "Actions"
+      "timestamp": "Date"
     },
     "details": {
       "title": "Trade Details",

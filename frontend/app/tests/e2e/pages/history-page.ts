@@ -55,6 +55,7 @@ export class HistoryPage {
     cy.get('.otc-form__amount').type(amount);
 
     cy.get('.big-dialog__buttons__confirm').click();
+    cy.get('.big-dialog').should('not.be.visible');
   }
 
   deleteTrade(position: number) {

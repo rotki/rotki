@@ -63,7 +63,10 @@ const store: StoreOptions<RotkehlchenState> = {
       state.status = { ...state.status, [status.section]: status.status };
     },
     reset: (state: RotkehlchenState) => {
-      Object.assign(state, defaultState());
+      Object.assign(state, defaultState(), {
+        version: state.version,
+        connected: state.connected
+      });
     }
   },
   actions: {
