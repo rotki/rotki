@@ -29,6 +29,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_amount_force_positive,
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp_from_date,
@@ -459,7 +460,7 @@ class Bittrex(ExchangeInterface):
                 transaction_id=get_key_if_has_val(raw_data, 'txId'),
                 timestamp=timestamp,
                 asset=asset,
-                amount=deserialize_asset_amount(raw_data['quantity']),
+                amount=deserialize_asset_amount_force_positive(raw_data['quantity']),
                 fee_asset=asset,
                 fee=fee,
                 link=str(raw_data.get('txId', '')),

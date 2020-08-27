@@ -26,6 +26,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_amount_force_positive,
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp_from_binance,
@@ -465,7 +466,6 @@ class Binance(ExchangeInterface):
 
             timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
             asset = asset_from_binance(raw_data['asset'])
-            amount = deserialize_asset_amount(raw_data['amount'])
             return AssetMovement(
                 location=Location.BINANCE,
                 category=category,
@@ -473,7 +473,7 @@ class Binance(ExchangeInterface):
                 transaction_id=get_key_if_has_val(raw_data, 'txId'),
                 timestamp=timestamp,
                 asset=asset,
-                amount=amount,
+                amount=deserialize_asset_amount_force_positive(raw_data['amount']),
                 fee_asset=asset,
                 # Binance does not include withdrawal fees neither in the API nor in their UI
                 fee=Fee(ZERO),

@@ -38,6 +38,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_amount_force_positive,
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp,
@@ -711,7 +712,7 @@ class Poloniex(ExchangeInterface):
                 transaction_id=transaction_id,
                 timestamp=deserialize_timestamp(movement_data['timestamp']),
                 asset=asset,
-                amount=deserialize_asset_amount(movement_data['amount']),
+                amount=deserialize_asset_amount_force_positive(movement_data['amount']),
                 fee_asset=asset,
                 fee=fee,
                 link=str(movement_data[uid_key]),

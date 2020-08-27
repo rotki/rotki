@@ -15,11 +15,11 @@ from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, 
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_amount_force_positive,
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp_from_date,
@@ -28,7 +28,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     AssetMovementCategory,
     Fee,
     Location,
@@ -481,9 +480,7 @@ class Coinbase(ExchangeInterface):
                 movement_category = AssetMovementCategory.WITHDRAWAL
                 # Can't see the fee being charged from the "send" resource
 
-                amount = deserialize_asset_amount(raw_data['amount']['amount'])
-                # For sends the amount is always returned negative so we have to fix this here
-                amount = AssetAmount(amount * FVal('-1'))
+                amount = deserialize_asset_amount_force_positive(raw_data['amount']['amount'])
                 asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
                 # Fees dont appear in the docs but from an experiment of sending ETH
                 # to an address from coinbase there is the network fee in the response
@@ -509,7 +506,7 @@ class Coinbase(ExchangeInterface):
                     address = deserialize_asset_movement_address(raw_data['to'], 'address', asset)
             else:
                 movement_category = deserialize_asset_movement_category(raw_data['resource'])
-                amount = deserialize_asset_amount(raw_data['amount']['amount'])
+                amount = deserialize_asset_amount_force_positive(raw_data['amount']['amount'])
                 fee = deserialize_fee(raw_data['fee']['amount'])
                 asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
 

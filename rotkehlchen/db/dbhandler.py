@@ -1466,6 +1466,8 @@ class DBHandler:
                     category=deserialize_asset_movement_category_from_db(result[2]),
                     timestamp=result[3],
                     asset=Asset(result[4]),
+                    # TODO: should we also _force_positive here? I guess not since
+                    # we always make sure to save it as positive
                     amount=deserialize_asset_amount(result[5]),
                     fee_asset=Asset(result[6]),
                     fee=deserialize_fee(result[7]),

@@ -37,6 +37,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_amount_force_positive,
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_price,
@@ -715,7 +716,7 @@ class Kraken(ExchangeInterface):
                     address=None,  # no data from kraken ledger endpoint
                     transaction_id=None,  # no data from kraken ledger endpoint
                     asset=asset,
-                    amount=deserialize_asset_amount(movement['amount']),
+                    amount=deserialize_asset_amount_force_positive(movement['amount']),
                     fee_asset=asset,
                     fee=deserialize_fee(movement['fee']),
                     link=str(movement['refid']),

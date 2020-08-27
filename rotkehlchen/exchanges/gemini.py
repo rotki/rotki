@@ -28,6 +28,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_amount_force_positive,
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_price,
@@ -486,7 +487,7 @@ class Gemini(ExchangeInterface):
                     transaction_id=get_key_if_has_val(entry, 'txHash'),
                     timestamp=timestamp,
                     asset=asset,
-                    amount=deserialize_asset_amount(entry['amount']),
+                    amount=deserialize_asset_amount_force_positive(entry['amount']),
                     fee_asset=asset,
                     # Gemini does not include withdrawal fees neither in the API nor in their UI
                     fee=Fee(ZERO),
