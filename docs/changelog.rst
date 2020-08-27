@@ -43,6 +43,7 @@ Changelog
   - `Synthetic CBDAO (SBREE) <https://www.coingecko.com/en/coins/cbdao>`__
   - `Swingby (SWINGBY) <https://www.coingecko.com/en/coins/swingby>`__
   - `Cache Gold Token (CGT) <https://www.coingecko.com/en/coins/cache-gold>`__
+  - `Centric (CNS) <https://www.coingecko.com/en/coins/centric>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.

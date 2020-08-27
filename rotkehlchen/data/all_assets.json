@@ -2449,6 +2449,13 @@
         "symbol": "CNN",
         "type": "ethereum token"
     },
+    "CNS": {
+        "coingecko": "centric",
+        "name": "Centric",
+        "started": 1595980800,
+        "symbol": "CNS",
+        "type": "tron token"
+    },
     "CNTM": {
         "coingecko": "connectome",
         "ethereum_address": "0x9a1bf361798Ef6538cCB8137EA900C4D4B48CA3D",
