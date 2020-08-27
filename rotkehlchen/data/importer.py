@@ -11,6 +11,7 @@ from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, AssetMovementCategory, Trade
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_amount_force_positive,
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp_from_date,
@@ -137,7 +138,7 @@ class DataImporter():
                 amount = deserialize_asset_amount(csv_row['Buy'])
                 asset = Asset(csv_row['Cur.Buy'])
             else:
-                amount = deserialize_asset_amount(csv_row['Sell'])
+                amount = deserialize_asset_amount_force_positive(csv_row['Sell'])
                 asset = Asset(csv_row['Cur.Sell'])
 
             asset_movement = AssetMovement(

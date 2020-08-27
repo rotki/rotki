@@ -29,18 +29,18 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_amount_force_positive,
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now
@@ -354,10 +354,6 @@ class Coinbasepro(ExchangeInterface):
                             'iso8601',
                             'coinbasepro',
                         )
-                        amount = deserialize_asset_amount(row['amount'])
-                        if row['type'] == 'withdrawal':
-                            # For withdrawals the withdraw amount is negative
-                            amount = AssetAmount(amount * FVal('-1'))
                         asset = Asset(row['amount/balance unit'])
                         movements.append(AssetMovement(
                             location=Location.COINBASEPRO,
@@ -366,7 +362,7 @@ class Coinbasepro(ExchangeInterface):
                             transaction_id=None,  # can't get it from csv data
                             timestamp=timestamp,
                             asset=asset,
-                            amount=amount,
+                            amount=deserialize_asset_amount_force_positive(row['amount']),
                             fee_asset=asset,
                             # I don't see any fee in deposit withdrawals in coinbasepro
                             fee=Fee(ZERO),

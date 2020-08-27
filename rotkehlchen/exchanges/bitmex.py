@@ -17,7 +17,10 @@ from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
+from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount_force_positive,
+    deserialize_fee,
+)
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -295,11 +298,8 @@ class Bitmex(ExchangeInterface):
                     continue
 
                 asset = bitmex_to_world(movement['currency'])
-                amount = deserialize_asset_amount(movement['amount'])
+                amount = deserialize_asset_amount_force_positive(movement['amount'])
                 fee = deserialize_fee(movement['fee'])
-                # bitmex has negative numbers for withdrawals
-                if amount < 0:
-                    amount = AssetAmount(amount * -1)
 
                 if asset == A_BTC:
                     # bitmex stores amounts in satoshis
