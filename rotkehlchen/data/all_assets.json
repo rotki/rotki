@@ -2450,7 +2450,7 @@
         "type": "ethereum token"
     },
     "CNS": {
-        "coingecko": "centric",
+        "coingecko": "centric-cash",
         "name": "Centric",
         "started": 1595980800,
         "symbol": "CNS",
@@ -3160,7 +3160,7 @@
         "type": "ethereum token"
     },
     "DEXT": {
-        "coingecko": "dextools",
+        "coingecko": "idextools",
         "ethereum_address": "0x26CE25148832C04f3d7F26F32478a9fe55197166",
         "ethereum_token_decimals": 18,
         "name": "DEXTools",
@@ -9193,7 +9193,7 @@
         "type": "ethereum token"
     },
     "SAND": {
-        "coingecko": "sand",
+        "coingecko": "the-sandbox",
         "ethereum_address": "0x3845badAde8e6dFF049820680d1F14bD3903a5d0",
         "ethereum_token_decimals": 18,
         "name": "The Sandbox",
