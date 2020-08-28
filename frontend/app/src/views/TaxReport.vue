@@ -5,7 +5,7 @@
         <h1>Tax Report</h1>
       </v-row>
     </v-col>
-    <generate v-show="!isRunning" @generate="generate($event)"></generate>
+    <generate v-show="!isRunning" @generate="generate($event)" />
     <div v-if="loaded && !isRunning">
       <v-btn
         class="tax-report__export-csv"
@@ -15,8 +15,8 @@
       >
         Export CSV
       </v-btn>
-      <tax-report-overview class="tax-report__section"></tax-report-overview>
-      <tax-report-events class="tax-report__section"></tax-report-events>
+      <tax-report-overview class="tax-report__section" />
+      <tax-report-events class="tax-report__section" />
     </div>
     <progress-screen v-if="isRunning" :progress="progress">
       <template #message>

@@ -13,7 +13,7 @@
               :success-messages="settingsMessages['anonymizedLogs'].success"
               :error-messages="settingsMessages['anonymizedLogs'].error"
               @change="onAnonymizedLogsChange($event)"
-            ></v-switch>
+            />
             <v-switch
               v-model="anonymousUsageAnalytics"
               class="general-settings__fields__anonymous-usage-statistics"
@@ -26,7 +26,7 @@
                 settingsMessages['anonymousUsageAnalytics'].error
               "
               @change="onAnonymousUsageAnalyticsChange($event)"
-            ></v-switch>
+            />
             <v-menu
               ref="historicDateMenu"
               v-model="historicDateMenu"
@@ -51,13 +51,13 @@
                   readonly
                   v-on="on"
                   @change="onHistoricDataStartChange($event)"
-                ></v-text-field>
+                />
               </template>
               <v-date-picker
                 v-model="date"
                 no-title
                 @input="historicDateMenu = false"
-              ></v-date-picker>
+              />
             </v-menu>
 
             <v-text-field
@@ -72,7 +72,7 @@
               @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
               @click:clear="onRpcEndpointChange('')"
               @change="onRpcEndpointChange($event)"
-            ></v-text-field>
+            />
 
             <v-text-field
               v-model="balanceSaveFrequency"
@@ -84,7 +84,7 @@
               "
               :error-messages="settingsMessages['balanceSaveFrequency'].error"
               @change="onBalanceSaveFrequencyChange($event)"
-            ></v-text-field>
+            />
 
             <v-text-field
               v-model="dateDisplayFormat"
@@ -94,7 +94,7 @@
               :success-messages="settingsMessages['dateDisplayFormat'].success"
               :error-messages="settingsMessages['dateDisplayFormat'].error"
               @change="onDateDisplayFormatChange($event)"
-            ></v-text-field>
+            />
           </v-card-text>
         </v-card>
         <v-card class="mt-5">
@@ -108,7 +108,7 @@
               :success-messages="settingsMessages['floatingPrecision'].success"
               :error-messages="settingsMessages['floatingPrecision'].error"
               @change="onFloatingPrecisionChange($event)"
-            ></v-text-field>
+            />
 
             <v-select
               v-model="selectedCurrency"
@@ -152,7 +152,7 @@
               :success-messages="settingsMessages['thousandSeparator'].success"
               :error-messages="settingsMessages['thousandSeparator'].error"
               @change="onThousandSeparatorChange($event)"
-            ></v-text-field>
+            />
 
             <v-text-field
               v-model="decimalSeparator"
@@ -162,7 +162,7 @@
               :success-messages="settingsMessages['decimalSeparator'].success"
               :error-messages="settingsMessages['decimalSeparator'].error"
               @change="onDecimalSeparatorChange($event)"
-            ></v-text-field>
+            />
 
             <v-radio-group
               v-model="currencyLocation"
@@ -173,15 +173,12 @@
               :error-messages="settingsMessages['currencyLocation'].error"
               @change="onCurrencyLocationChange($event)"
             >
-              <v-radio label="Before" value="before"></v-radio>
-              <v-radio label="After" value="after"></v-radio>
+              <v-radio label="Before" value="before" />
+              <v-radio label="After" value="after" />
             </v-radio-group>
 
             <strong>Resulting format: </strong>
-            <amount-display
-              :value="amountExample"
-              show-currency="symbol"
-            ></amount-display>
+            <amount-display :value="amountExample" show-currency="symbol" />
           </v-card-text>
         </v-card>
         <v-card class="mt-5">
@@ -194,8 +191,7 @@
               :success-messages="settingsMessages['scrambleData'].success"
               :error-messages="settingsMessages['scrambleData'].error"
               @change="onScrambleDataChange($event)"
-            >
-            </v-switch>
+            />
           </v-card-text>
         </v-card>
       </v-col>

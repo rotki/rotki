@@ -27,7 +27,7 @@
         </slot>
       </v-card-text>
       <v-card-actions>
-        <v-spacer></v-spacer>
+        <v-spacer />
         <v-btn text @click="menu = false">Cancel</v-btn>
         <v-btn color="primary" text @click="reset()">Confirm</v-btn>
       </v-card-actions>

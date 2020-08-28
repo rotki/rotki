@@ -2,7 +2,7 @@
   <v-card light class="tag-manager">
     <v-card-title>
       Tag Manager
-      <v-spacer v-if="dialog"></v-spacer>
+      <v-spacer v-if="dialog" />
       <v-btn v-if="dialog" class="tag-manager__close" icon text @click="close">
         <v-icon>mdi-close</v-icon>
       </v-btn>
@@ -17,9 +17,9 @@
         @changed="onChange($event)"
         @cancel="cancel"
         @save="save"
-      ></tag-creator>
+      />
 
-      <v-divider></v-divider>
+      <v-divider />
 
       <v-row no-gutters justify="space-between" align="end">
         <v-col cols="8">
@@ -32,7 +32,7 @@
             label="Search"
             single-line
             hide-details
-          ></v-text-field>
+          />
         </v-col>
       </v-row>
       <v-data-table
@@ -43,7 +43,7 @@
         :footer-props="footerProps"
       >
         <template #item.name="{ item }">
-          <tag-icon :tag="item"></tag-icon>
+          <tag-icon :tag="item" />
         </template>
         <template #item.action="{ item }">
           <v-icon small class="mr-2" @click="editItem(item)">
@@ -60,7 +60,7 @@
         :display="!!tagToDelete"
         @confirm="confirmDelete"
         @cancel="tagToDelete = ''"
-      ></confirm-dialog>
+      />
     </v-card-text>
   </v-card>
 </template>

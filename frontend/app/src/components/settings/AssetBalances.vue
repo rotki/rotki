@@ -34,7 +34,7 @@
       <template v-if="balances.length > 0" #body.append>
         <tr class="asset-balances__total">
           <td>Total</td>
-          <td></td>
+          <td />
           <td class="text-end">
             <amount-display
               fiat-currency="USD"

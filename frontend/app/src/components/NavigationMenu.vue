@@ -14,7 +14,7 @@
               :show-tooltips="showTooltips"
               :text="navItem.text"
               :icon="navItem.icon"
-            ></navigation-menu-item>
+            />
           </v-list-item>
           <v-list-group v-else-if="navItem.type === 'group'" :key="i">
             <template #activator>
@@ -23,7 +23,7 @@
                 :text="navItem.text"
                 :icon="navItem.icon"
                 :class="`navigation__${navItem.class}`"
-              ></navigation-menu-item>
+              />
             </template>
             <v-list-item
               v-for="(subNavItem, si) in navItem.items"
@@ -36,7 +36,7 @@
                 :show-tooltips="showTooltips"
                 :text="subNavItem.text"
                 :icon="subNavItem.icon"
-              ></navigation-menu-item>
+              />
             </v-list-item>
           </v-list-group>
         </template>

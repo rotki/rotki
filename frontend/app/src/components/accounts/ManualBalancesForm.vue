@@ -5,7 +5,7 @@
       class="manual-balances-form__asset"
       :rules="assetRules"
       :disabled="pending"
-    ></asset-select>
+    />
     <v-text-field
       v-model="label"
       class="manual-balances-form__label"
@@ -13,7 +13,7 @@
       :error-messages="errorMessages"
       :rules="labelRules"
       :disabled="pending || !!edit"
-    ></v-text-field>
+    />
     <v-text-field
       v-model="amount"
       class="manual-balances-form__amount"
@@ -21,12 +21,12 @@
       label="Amount"
       :disabled="pending"
       :rules="amountRules"
-    ></v-text-field>
+    />
     <tag-input
       v-model="tags"
       :disabled="pending"
       class="manual-balances-form__tags"
-    ></tag-input>
+    />
     <v-select
       v-model="location"
       class="manual-balances-form__location"

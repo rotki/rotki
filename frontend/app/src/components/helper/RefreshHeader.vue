@@ -8,7 +8,7 @@
         :refresh="refresh"
         :tooltip="`Refreshes the ${title.toLocaleLowerCase()} data`"
       />
-      <slot></slot>
+      <slot />
     </span>
   </h2>
 </template>

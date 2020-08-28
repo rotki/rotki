@@ -13,7 +13,7 @@
     :error-messages="errorMessages"
     @input="input"
     @click:append="revealed = !revealed"
-  ></v-text-field>
+  />
 </template>
 
 <script lang="ts">

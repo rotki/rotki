@@ -12,7 +12,7 @@
               <base-external-link
                 text="Rotki Premium"
                 :href="$interop.premiumURL"
-              ></base-external-link>
+              />
               website.
             </p>
             <v-text-field
@@ -25,7 +25,7 @@
               :error-messages="errorMessages"
               label="Rotki API Key"
               @click:append="showKey = !showKey"
-            ></v-text-field>
+            />
             <v-text-field
               v-model="apiSecret"
               class="premium-settings__fields__api-secret"
@@ -37,7 +37,7 @@
               :type="showSecret ? 'text' : 'password'"
               label="Rotki API Secret"
               @click:append="showSecret = !showSecret"
-            ></v-text-field>
+            />
             <div v-if="premium" class="premium-settings__premium-active">
               <v-icon color="success">fa-check-circle</v-icon>
               <div>Rotki Premium is active</div>
@@ -79,7 +79,7 @@
               class="premium-settings__sync"
               label="Allow data sync with Rotki Server"
               @change="onSyncChange()"
-            ></v-switch>
+            />
           </v-card-actions>
         </v-card>
       </v-col>
@@ -91,7 +91,7 @@
         message="Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again."
         @confirm="remove()"
         @cancel="confirmDeletePremium = false"
-      ></confirm-dialog>
+      />
     </v-row>
   </v-container>
 </template>

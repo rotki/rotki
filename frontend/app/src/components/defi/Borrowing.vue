@@ -26,7 +26,7 @@
                 :value="loanSummary(selectedProtocols).totalCollateralUsd"
                 show-currency="symbol"
                 fiat-currency="USD"
-              ></amount-display>
+              />
             </stat-card-column>
           </template>
           <template #second-col>
@@ -38,7 +38,7 @@
                 :value="loanSummary(selectedProtocols).totalDebt"
                 show-currency="symbol"
                 fiat-currency="USD"
-              ></amount-display>
+              />
             </stat-card-column>
           </template>
         </stat-card-wide>

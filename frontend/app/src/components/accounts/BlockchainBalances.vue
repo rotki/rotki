@@ -15,24 +15,26 @@
         @confirm="save()"
         @cancel="clearDialog()"
       >
-        <account-form ref="dialogChild" :edit="accountToEdit"></account-form>
+        <account-form ref="dialogChild" :edit="accountToEdit" />
       </big-dialog>
-      <asset-balances title="Blockchain Balances per Asset" :balances="totals">
-      </asset-balances>
-      <v-divider></v-divider>
+      <asset-balances
+        title="Blockchain Balances per Asset"
+        :balances="totals"
+      />
+      <v-divider />
       <account-balances
         title="ETH per account balances"
         blockchain="ETH"
         :balances="ethAccounts"
         @editAccount="edit($event)"
-      ></account-balances>
-      <v-divider></v-divider>
+      />
+      <v-divider />
       <account-balances
         title="BTC per account balances"
         blockchain="BTC"
         :balances="btcAccounts"
         @editAccount="edit($event)"
-      ></account-balances>
+      />
     </v-card-text>
   </v-card>
 </template>

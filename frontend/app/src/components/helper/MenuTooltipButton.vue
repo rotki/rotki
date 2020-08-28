@@ -8,7 +8,7 @@
         @click="click()"
         v-on="{ ...tooltip, ...onMenu }"
       >
-        <slot></slot>
+        <slot />
       </v-btn>
     </template>
     <span>{{ tooltip }}</span>

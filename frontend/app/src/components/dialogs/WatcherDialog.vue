@@ -26,19 +26,18 @@
                 outlined
                 label="Watcher Type"
                 required
-              >
-              </v-select>
+              />
             </v-col>
           </v-row>
           <v-row v-if="loadedWatchers.length > 0">
             <v-col cols="5">
-              <v-divider></v-divider>
+              <v-divider />
             </v-col>
             <v-col cols="2" class="pa-0 text-center">
               Edit watchers
             </v-col>
             <v-col cols="5">
-              <v-divider></v-divider>
+              <v-divider />
             </v-col>
           </v-row>
           <v-row v-for="(watcher, key) in loadedWatchers" :key="key">
@@ -54,8 +53,7 @@
                 label="Operation"
                 required
                 @input="loadedWatchers[key].args.op = $event"
-              >
-              </v-select>
+              />
             </v-col>
             <v-col cols="4">
               <v-text-field
@@ -68,7 +66,7 @@
                 dense
                 suffix="%"
                 @input="loadedWatchers[key].args.ratio = $event"
-              ></v-text-field>
+              />
             </v-col>
             <v-col cols="2" class="d-flex align-center justify-space-between">
               <v-btn small icon @click="editWatcher(loadedWatchers[key])">
@@ -90,13 +88,13 @@
           </v-row>
           <v-row>
             <v-col cols="5">
-              <v-divider></v-divider>
+              <v-divider />
             </v-col>
             <v-col cols="2" class="pa-0 text-center justify-center">
               Add watcher
             </v-col>
             <v-col cols="5">
-              <v-divider></v-divider>
+              <v-divider />
             </v-col>
           </v-row>
           <v-row>
@@ -110,8 +108,7 @@
                 :disabled="!watcherType"
                 label="Operation"
                 required
-              >
-              </v-select>
+              />
             </v-col>
             <v-col cols="4">
               <v-text-field
@@ -121,7 +118,7 @@
                 dense
                 outlined
                 suffix="%"
-              ></v-text-field>
+              />
             </v-col>
             <v-col cols="2" class="d-flex align-center justify-center">
               <v-btn

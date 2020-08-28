@@ -3,7 +3,7 @@
     <v-row>
       <v-col>
         <h1>API Keys</h1>
-        <tab-navigation :tab-contents="apiKeysTabs"></tab-navigation>
+        <tab-navigation :tab-contents="apiKeysTabs" />
       </v-col>
     </v-row>
   </v-container>

@@ -30,7 +30,7 @@
     <template #item="{ item }">
       <template>
         <div>
-          <tag-icon :tag="item"></tag-icon>
+          <tag-icon :tag="item" />
           <span class="tag-input__tag__description">
             {{ item.description }}
           </span>

@@ -26,22 +26,20 @@
             <template v-for="task in tasks">
               <v-list-item :key="task.id" class="progress-indicator__task">
                 <v-list-item-content>
-                  <v-list-item-title
-                    v-text="task.meta.description"
-                  ></v-list-item-title>
+                  <v-list-item-title v-text="task.meta.description" />
                   <v-progress-linear
                     v-if="task.type !== 'process_trade_history'"
                     indeterminate
                     class="progress-indicator__task__progress"
-                  ></v-progress-linear>
+                  />
                   <v-progress-linear
                     v-else
                     :value="progress"
                     class="progress-indicator__task__progress"
-                  ></v-progress-linear>
+                  />
                 </v-list-item-content>
               </v-list-item>
-              <v-divider :key="`task-${task.id}`"></v-divider>
+              <v-divider :key="`task-${task.id}`" />
             </template>
           </v-list>
         </v-col>

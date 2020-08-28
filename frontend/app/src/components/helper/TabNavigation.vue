@@ -27,7 +27,7 @@
         v-if="
           $route.path.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab
         "
-      ></router-view>
+      />
     </v-tab-item>
   </v-tabs>
 </template>

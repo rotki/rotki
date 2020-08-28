@@ -54,7 +54,7 @@
                 :key="tag"
                 class="mr-1"
                 :tag="tags[tag]"
-              ></tag-icon>
+              />
             </div>
           </div>
         </template>

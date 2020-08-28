@@ -40,7 +40,7 @@
       <span v-else class="text-caption">
         Add collateralization ratio watcher
       </span>
-      <premium-lock v-if="!premium" size="x-small"></premium-lock>
+      <premium-lock v-if="!premium" size="x-small" />
     </v-btn>
     <watcher-dialog
       v-if="isVault"

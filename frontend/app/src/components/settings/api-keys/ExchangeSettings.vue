@@ -10,8 +10,7 @@
             <base-external-link
               text="Usage Guide"
               :href="$interop.usageGuideURL + '#adding-an-exchange'"
-            >
-            </base-external-link>
+            />
             for more information.
           </p>
           <v-row class="exchange-settings__connected-exchanges">
@@ -19,7 +18,7 @@
               v-for="exchange in connectedExchanges"
               :key="exchange"
               :name="exchange"
-            ></exchange-badge>
+            />
           </v-row>
           <v-select
             v-model="selectedExchange"
@@ -46,7 +45,7 @@
             :disabled="isConnected"
             :type="showKey ? 'text' : 'password'"
             @click:append="showKey = !showKey"
-          ></v-text-field>
+          />
           <v-text-field
             v-model="apiSecret"
             :append-icon="showSecret ? 'fa-eye' : 'fa-eye-slash'"
@@ -56,7 +55,7 @@
             label="API Secret"
             :disabled="isConnected"
             @click:append="showSecret = !showSecret"
-          ></v-text-field>
+          />
           <v-text-field
             v-if="selectedExchange === 'coinbasepro'"
             v-model="passphrase"
@@ -67,7 +66,7 @@
             :disabled="isConnected"
             :type="showKey ? 'text' : 'password'"
             @click:append="showKey = !showKey"
-          ></v-text-field>
+          />
           <v-select
             v-if="selectedExchange === 'kraken'"
             v-model="selectedKrakenAccountType"
@@ -75,7 +74,7 @@
             :items="krakenAccountTypes"
             label="Select the type of your Kraken account"
             @change="onChangeKrakenAccountType"
-          ></v-select>
+          />
         </v-card-text>
         <v-card-actions>
           <v-btn
@@ -96,7 +95,7 @@
       message="Are you sure you want to delete the API key and secret from rotkehlchen? This action can not be undone and you will need to obtain the key and secret again from the exchange."
       @cancel="confirmation = false"
       @confirm="remove()"
-    ></confirm-dialog>
+    />
   </v-row>
 </template>
 

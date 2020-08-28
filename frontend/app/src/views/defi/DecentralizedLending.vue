@@ -1,5 +1,5 @@
 <template>
-  <lending></lending>
+  <lending />
 </template>
 
 <script lang="ts">

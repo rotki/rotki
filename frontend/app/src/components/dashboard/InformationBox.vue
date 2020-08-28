@@ -16,7 +16,7 @@
             show-currency="symbol"
             fiat-currency="USD"
             :value="amount"
-          ></amount-display>
+          />
         </span>
       </v-col>
     </v-row>

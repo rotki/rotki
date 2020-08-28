@@ -9,7 +9,7 @@
         :value="value"
         :loading="loading"
         show-currency="ticker"
-      ></amount-display>
+      />
     </slot>
   </div>
 </template>

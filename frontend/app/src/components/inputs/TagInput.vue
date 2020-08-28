@@ -29,11 +29,11 @@
       </template>
       <template #item="{ item }">
         <template v-if="typeof item !== 'object'">
-          <v-list-item-content v-text="item"></v-list-item-content>
+          <v-list-item-content v-text="item" />
         </template>
         <template v-else>
           <div>
-            <tag-icon :tag="item"></tag-icon>
+            <tag-icon :tag="item" />
             <span class="tag-input__tag__description">
               {{ item.description }}
             </span>
@@ -59,11 +59,7 @@
       class="tag-input__tag-manager"
       @input="manageTags = false"
     >
-      <tag-manager
-        v-if="!!manageTags"
-        dialog
-        @close="manageTags = false"
-      ></tag-manager>
+      <tag-manager v-if="!!manageTags" dialog @close="manageTags = false" />
     </v-dialog>
   </div>
 </template>

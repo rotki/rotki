@@ -6,7 +6,7 @@
     to="/accounts-balances/manual-balances"
   >
     <v-list-item-avatar tile class="manual-balance-box__icon">
-      <balance-location-icon :name="name"></balance-location-icon>
+      <balance-location-icon :name="name" />
     </v-list-item-avatar>
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
@@ -18,7 +18,7 @@
             show-currency="symbol"
             :fiat-currency="currency.ticker_symbol"
             :value="amount"
-          ></amount-display>
+          />
         </span>
       </v-list-item-title>
     </v-list-item-content>

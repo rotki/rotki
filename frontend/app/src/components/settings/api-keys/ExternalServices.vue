@@ -28,7 +28,7 @@
           tooltip="Deletes the Etherscan API key"
           @save="save('etherscan', $event)"
           @delete-key="deleteKey('etherscan')"
-        ></service-key>
+        />
       </v-col>
     </v-row>
     <v-row>
@@ -44,7 +44,7 @@
           tooltip="Deletes the CryptoCompare API key"
           @save="save('cryptocompare', $event)"
           @delete-key="deleteKey('cryptocompare')"
-        ></service-key>
+        />
       </v-col>
     </v-row>
     <v-row>
@@ -60,7 +60,7 @@
           tooltip="Deletes the Alethio API key"
           @save="save('alethio', $event)"
           @delete-key="deleteKey('alethio')"
-        ></service-key>
+        />
       </v-col>
     </v-row>
     <confirm-dialog
@@ -69,8 +69,7 @@
       :display="!!serviceToDelete"
       @confirm="confirmDelete"
       @cancel="serviceToDelete = ''"
-    >
-    </confirm-dialog>
+    />
   </v-container>
 </template>
 

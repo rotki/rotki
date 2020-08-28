@@ -11,7 +11,7 @@
         clipped
         app
       >
-        <div v-if="!mini" class="text-center app__logo"></div>
+        <div v-if="!mini" class="text-center app__logo" />
         <div v-else class="app__logo-mini">
           rotki
         </div>
@@ -51,7 +51,7 @@
         @close="notifications = false"
       />
       <v-main v-if="logged" class="fill-height">
-        <router-view></router-view>
+        <router-view />
       </v-main>
     </div>
     <message-dialog

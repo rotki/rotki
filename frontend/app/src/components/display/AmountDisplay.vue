@@ -11,7 +11,7 @@
         :show-currency="showCurrency"
         :currency="currency"
         :asset="asset"
-      ></amount-currency>
+      />
       <span
         v-if="fiatCurrency && fiatCurrency !== currency.ticker_symbol"
         class="amount-display__value"
@@ -75,7 +75,7 @@
         :show-currency="showCurrency"
         :currency="currency"
         :asset="asset"
-      ></amount-currency>
+      />
     </v-skeleton-loader>
   </div>
 </template>

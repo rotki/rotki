@@ -7,29 +7,23 @@
         :items="items"
         label="Choose blockchain"
         :disabled="accountOperation || loading || !!edit"
-      ></v-select>
+      />
       <v-text-field
         v-model="address"
         class="blockchain-balances__address"
         label="Account"
         :error-messages="errorMessages"
         :disabled="accountOperation || loading || !!edit"
-      ></v-text-field>
+      />
       <v-text-field
         v-model="label"
         class="blockchain-balances__label"
         label="Label"
         :disabled="accountOperation || loading"
-      ></v-text-field>
-      <tag-input
-        v-model="tags"
-        :disabled="accountOperation || loading"
-      ></tag-input>
+      />
+      <tag-input v-model="tags" :disabled="accountOperation || loading" />
       <div class="blockchain-balances--progress">
-        <v-progress-linear
-          v-if="accountOperation"
-          indeterminate
-        ></v-progress-linear>
+        <v-progress-linear v-if="accountOperation" indeterminate />
       </div>
     </v-col>
   </v-row>

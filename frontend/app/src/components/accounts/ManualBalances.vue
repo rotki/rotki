@@ -25,14 +25,9 @@
           @confirm="save()"
           @cancel="cancel()"
         >
-          <manual-balances-form
-            ref="dialogChild"
-            :edit="balanceToEdit"
-          ></manual-balances-form>
+          <manual-balances-form ref="dialogChild" :edit="balanceToEdit" />
         </big-dialog>
-        <manual-balances-list
-          @editBalance="edit($event)"
-        ></manual-balances-list>
+        <manual-balances-list @editBalance="edit($event)" />
       </v-card-text>
     </v-card>
   </div>
