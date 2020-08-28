@@ -311,6 +311,14 @@ class TaxableEvents():
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
+        skip_trade = (
+            not self.include_crypto2crypto and
+            not bought_asset.is_fiat() and
+            not paid_with_asset.is_fiat()
+        )
+        if skip_trade:
+            return
+
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
 
@@ -461,6 +469,13 @@ class TaxableEvents():
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
+        skip_trade = (
+            not self.include_crypto2crypto and
+            not selling_asset.is_fiat() and
+            not receiving_asset.is_fiat()
+        )
+        if skip_trade:
+            return
 
         if selling_asset not in self.events:
             self.events[selling_asset] = Events([], [])
