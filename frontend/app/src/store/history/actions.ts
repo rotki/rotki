@@ -2,12 +2,12 @@ import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { AssetMovement } from '@/services/balances/types';
 import {
   movementNumericKeys,
   tradeNumericKeys
 } from '@/services/history/const';
 import {
+  AssetMovement,
   NewTrade,
   Trade,
   TradeLocation,

@@ -20,9 +20,9 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import ClosedTrades from '@/components/trades/ClosedTrades.vue';
-import OpenTrades from '@/components/trades/OpenTrades.vue';
-import TradeLocationSelector from '@/components/trades/TradeLocationSelector.vue';
+import ClosedTrades from '@/components/history/ClosedTrades.vue';
+import OpenTrades from '@/components/history/OpenTrades.vue';
+import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import { Trade, TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';

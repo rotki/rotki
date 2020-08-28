@@ -29,3 +29,19 @@ export type TradeLocation =
   | 'ethereum'
   | 'bitcoin'
   | 'external';
+
+export type MovementCategory = 'deposit' | 'withdrawal';
+
+export interface AssetMovement {
+  readonly identifier: string;
+  readonly location: TradeLocation;
+  readonly category: MovementCategory;
+  readonly address: string;
+  readonly transactionId: string;
+  readonly timestamp: number;
+  readonly asset: string;
+  readonly amount: BigNumber;
+  readonly feeAsset: string;
+  readonly fee: BigNumber;
+  readonly link: string;
+}

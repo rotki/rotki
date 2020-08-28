@@ -22,7 +22,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import HashLink from '@/components/helper/HashLink.vue';
-import { AssetMovement } from '@/services/balances/types';
+import { AssetMovement } from '@/services/history/types';
 
 type ExplorerUrls = { readonly address: string; readonly transaction: string };
 

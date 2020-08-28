@@ -31,21 +31,21 @@ export default new Router({
     },
     {
       path: '/history',
-      component: () => import('../views/trades/History.vue'),
+      component: () => import('../views/history/History.vue'),
       children: [
         {
           path: '',
           name: 'trades',
           redirect: 'trades',
-          component: () => import('../views/trades/TradeHistory.vue')
+          component: () => import('../views/history/TradeHistory.vue')
         },
         {
           path: 'trades',
-          component: () => import('../views/trades/TradeHistory.vue')
+          component: () => import('../views/history/TradeHistory.vue')
         },
         {
           path: 'deposits-withdrawals',
-          component: () => import('../views/trades/DepositsWithdrawals.vue')
+          component: () => import('../views/history/DepositsWithdrawals.vue')
         }
       ]
     },

@@ -39,8 +39,8 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { tradeLocations } from '@/components/trades/consts';
-import LocationIcon from '@/components/trades/LocationIcon.vue';
+import { tradeLocations } from '@/components/history/consts';
+import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocation } from '@/services/history/types';
 
 @Component({

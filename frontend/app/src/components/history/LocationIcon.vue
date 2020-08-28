@@ -21,7 +21,7 @@
 </template>
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { TradeLocationData } from '@/components/trades/type';
+import { TradeLocationData } from '@/components/history/type';
 
 @Component({})
 export default class LocationIcon extends Vue {
