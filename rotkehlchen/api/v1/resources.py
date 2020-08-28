@@ -310,23 +310,28 @@ class BlockchainBalancesResource(BaseResource):
 
 class ManuallyTrackedBalancesResource(BaseResource):
 
+    get_schema = AsyncQueryArgumentSchema()
     edit_schema = ManuallyTrackedBalancesSchema()
     delete_schema = ManuallyTrackedBalancesDeleteSchema()
 
-    def get(self) -> Response:
-        return self.rest_api.get_manually_tracked_balances()
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_manually_tracked_balances(async_query)
 
     @use_kwargs(edit_schema, location='json')  # type: ignore
-    def put(self, balances: List[ManuallyTrackedBalance]) -> Response:
-        return self.rest_api.add_manually_tracked_balances(data=balances)
+    def put(self, async_query: bool, balances: List[ManuallyTrackedBalance]) -> Response:
+        return self.rest_api.add_manually_tracked_balances(async_query=async_query, data=balances)
 
     @use_kwargs(edit_schema, location='json')  # type: ignore
-    def patch(self, balances: List[ManuallyTrackedBalance]) -> Response:
-        return self.rest_api.edit_manually_tracked_balances(data=balances)
+    def patch(self, async_query: bool, balances: List[ManuallyTrackedBalance]) -> Response:
+        return self.rest_api.edit_manually_tracked_balances(async_query=async_query, data=balances)
 
     @use_kwargs(delete_schema, location='json')  # type: ignore
-    def delete(self, labels: List[str]) -> Response:
-        return self.rest_api.remove_manually_tracked_balances(labels=labels)
+    def delete(self, async_query: bool, labels: List[str]) -> Response:
+        return self.rest_api.remove_manually_tracked_balances(
+            async_query=async_query,
+            labels=labels,
+        )
 
 
 class TradesResource(BaseResource):

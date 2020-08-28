@@ -584,6 +584,17 @@ class FileField(fields.Field):
         return path
 
 
+class AsyncQueryArgumentSchema(Schema):
+    """A schema for getters that only have one argument enabling async query"""
+    async_query = fields.Boolean(missing=False)
+
+
+class AsyncQueryResetDBSchema(AsyncQueryArgumentSchema):
+    """A schema for getters that have 2 arguments.
+    One to enable async querying and another to force reset DB data by querying everytying again"""
+    reset_db_data = fields.Boolean(missing=False)
+
+
 class AsyncTasksQuerySchema(Schema):
     task_id = fields.Integer(strict=True, missing=None)
 
@@ -631,11 +642,11 @@ class ManuallyTrackedBalanceSchema(Schema):
         return ManuallyTrackedBalance(**data)
 
 
-class ManuallyTrackedBalancesSchema(Schema):
+class ManuallyTrackedBalancesSchema(AsyncQueryArgumentSchema):
     balances = fields.List(fields.Nested(ManuallyTrackedBalanceSchema), required=True)
 
 
-class ManuallyTrackedBalancesDeleteSchema(Schema):
+class ManuallyTrackedBalancesDeleteSchema(AsyncQueryArgumentSchema):
     labels = fields.List(fields.String(required=True), required=True)
 
 
@@ -1054,17 +1065,6 @@ class DataImportSchema(Schema):
 
 class FiatExchangeRatesSchema(Schema):
     currencies = DelimitedOrNormalList(FiatAssetField(), missing=None)
-
-
-class AsyncQueryArgumentSchema(Schema):
-    """A schema for getters that only have one argument enabling async query"""
-    async_query = fields.Boolean(missing=False)
-
-
-class AsyncQueryResetDBSchema(AsyncQueryArgumentSchema):
-    """A schema for getters that have 2 arguments.
-    One to enable async querying and another to force reset DB data by querying everytying again"""
-    reset_db_data = fields.Boolean(missing=False)
 
 
 class WatcherSchema(Schema):
