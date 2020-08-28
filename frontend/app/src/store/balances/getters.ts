@@ -225,15 +225,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
     return accounts;
   },
-  assetMovements: ({ assetMovements }) => {
-    return assetMovements.movements;
-  },
-  assetMovementsTotal: ({ assetMovements }) => {
-    return assetMovements.found;
-  },
-  assetMovementsLimit: ({ assetMovements }) => {
-    return assetMovements.limit;
-  },
+
   isEthereumToken: ({ supportedAssets }) => (asset: string) => {
     const match = supportedAssets.find(
       supportedAsset => supportedAsset.symbol === asset

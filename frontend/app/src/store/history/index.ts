@@ -1,5 +1,5 @@
 import { Module } from 'vuex';
-import { TradesState } from '@/store/trades/types';
+import { HistoryState } from '@/store/history/types';
 import { RotkehlchenState } from '@/store/types';
 import { actions } from './actions';
 import { getters } from './getters';
@@ -8,7 +8,7 @@ import { state } from './state';
 
 const namespaced: boolean = true;
 
-export const trades: Module<TradesState, RotkehlchenState> = {
+export const history: Module<HistoryState, RotkehlchenState> = {
   namespaced,
   mutations,
   actions,

@@ -123,14 +123,14 @@ import UpgradeRow from '@/views/trades/UpgradeRow.vue';
     DateDisplay
   },
   computed: {
-    ...mapGetters('balances', [
+    ...mapGetters('history', [
       'assetMovements',
       'assetMovementsTotal',
       'assetMovementsLimit'
     ])
   },
   methods: {
-    ...mapActions('balances', ['fetchMovements'])
+    ...mapActions('history', ['fetchMovements'])
   }
 })
 export default class DepositsWithdrawals extends Mixins(StatusMixin) {

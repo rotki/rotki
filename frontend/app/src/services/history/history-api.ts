@@ -3,12 +3,16 @@ import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { tradeNumericKeys } from '@/services/trades/const';
-import { NewTrade, Trade, TradeLocation } from '@/services/trades/types';
+import { tradeNumericKeys } from '@/services/history/const';
+import { NewTrade, Trade, TradeLocation } from '@/services/history/types';
 import { ActionResult, PendingTask } from '@/services/types-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import {
+  handleResponse,
+  validStatus,
+  validWithParamsSessionAndExternalService
+} from '@/services/utils';
 
-export class TradesApi {
+export class HistoryApi {
   private readonly axios: AxiosInstance;
   private readonly responseTransformer: AxiosTransformer[] = setupTransformer(
     tradeNumericKeys
@@ -61,6 +65,20 @@ export class TradesApi {
       .delete<ActionResult<boolean>>('/trades', {
         data: axiosSnakeCaseTransformer({ tradeId }),
         validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  async assetMovements(location?: TradeLocation): Promise<any> {
+    const params = {
+      asyncQuery: true,
+      location
+    };
+    return this.axios
+      .get<ActionResult<PendingTask>>('/asset_movements', {
+        params: axiosSnakeCaseTransformer(params),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: setupTransformer([])
       })
       .then(handleResponse);
   }

@@ -1,10 +1,4 @@
-import { AssetMovements, BalanceState } from '@/store/balances/types';
-
-export const defaultAssetMovements = (): AssetMovements => ({
-  found: 0,
-  limit: 0,
-  movements: []
-});
+import { BalanceState } from '@/store/balances/types';
 
 export const defaultState = (): BalanceState => ({
   eth: {},
@@ -17,8 +11,7 @@ export const defaultState = (): BalanceState => ({
   btcAccounts: {},
   supportedAssets: [],
   manualBalances: [],
-  manualBalanceByLocation: {},
-  assetMovements: defaultAssetMovements()
+  manualBalanceByLocation: {}
 });
 
 export const state: BalanceState = defaultState();
