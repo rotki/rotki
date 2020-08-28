@@ -1,6 +1,5 @@
 import { MutationTree } from 'vuex';
-import { AssetMovement } from '@/services/balances/types';
-import { Trade, TradeUpdate } from '@/services/history/types';
+import { AssetMovement, Trade, TradeUpdate } from '@/services/history/types';
 import { LimitedResponse } from '@/services/types-api';
 import { defaultHistoricState, defaultState } from '@/store/history/state';
 import { HistoryState } from '@/store/history/types';

@@ -104,13 +104,13 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
-import LocationDisplay from '@/components/trades/LocationDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import MovementLinks from '@/components/history/MovementLinks.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
-import { AssetMovement } from '@/services/balances/types';
+import { AssetMovement } from '@/services/history/types';
 import { Section } from '@/store/const';
-import MovementLinks from '@/views/trades/MovementLinks.vue';
-import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
 @Component({
   components: {

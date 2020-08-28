@@ -1,4 +1,4 @@
-import { TradeLocationData } from '@/components/trades/type';
+import { TradeLocationData } from '@/components/history/type';
 
 export const tradeLocations: TradeLocationData[] = [
   {

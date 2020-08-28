@@ -174,13 +174,13 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import OtcForm from '@/components/OtcForm.vue';
-import LocationDisplay from '@/components/trades/LocationDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Trade } from '@/services/history/types';
 import { Section } from '@/store/const';
-import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
 @Component({
   components: {

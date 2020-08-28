@@ -1,6 +1,5 @@
 import { TaskMeta } from '@/model/task';
-import { AssetMovement } from '@/services/balances/types';
-import { Trade, TradeLocation } from '@/services/history/types';
+import { AssetMovement, Trade, TradeLocation } from '@/services/history/types';
 
 export interface HistoricData<T> {
   readonly limit: number;
