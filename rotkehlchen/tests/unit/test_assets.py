@@ -80,7 +80,7 @@ def test_coingecko_identifiers_are_reachable():
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
-    coins_delisted_from_coingecko = ['FLUZ']
+    coins_delisted_from_coingecko = ['FLUZ', 'EBCH']
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
     for identifier, asset_data in AssetResolver().assets.items():
