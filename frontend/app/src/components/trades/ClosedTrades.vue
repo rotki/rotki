@@ -131,12 +131,12 @@
               </td>
             </template>
             <template
-              v-if="limit <= total && limit > 0"
+              v-if="tradesLimit <= tradesTotal && tradesLimit > 0"
               #body.append="{ headers }"
             >
               <upgrade-row
-                :limit="limit"
-                :total="total"
+                :limit="tradesLimit"
+                :total="tradesTotal"
                 :colspan="headers.length"
                 :label="$t('closed_trades.label')"
               />
@@ -169,7 +169,7 @@
 <script lang="ts">
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapState } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -178,7 +178,7 @@ import OtcForm from '@/components/OtcForm.vue';
 import LocationDisplay from '@/components/trades/LocationDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
-import { Trade } from '@/services/trades/types';
+import { Trade } from '@/services/history/types';
 import { Section } from '@/store/const';
 import UpgradeRow from '@/views/trades/UpgradeRow.vue';
 
@@ -193,10 +193,10 @@ import UpgradeRow from '@/views/trades/UpgradeRow.vue';
     BigDialog
   },
   computed: {
-    ...mapState('trades', ['total', 'limit'])
+    ...mapGetters('history', ['tradesTotal', 'tradesLimit'])
   },
   methods: {
-    ...mapActions('trades', ['deleteExternalTrade'])
+    ...mapActions('history', ['deleteExternalTrade'])
   }
 })
 export default class ClosedTrades extends Mixins(StatusMixin) {
@@ -240,8 +240,8 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   editableItem: Trade | null = null;
   tradeToDelete: Trade | null = null;
   confirmationMessage: string = '';
-  limit!: number;
-  total!: number;
+  tradesLimit!: number;
+  tradesTotal!: number;
   expanded = [];
 
   deleteExternalTrade!: (tradeId: string) => Promise<boolean>;

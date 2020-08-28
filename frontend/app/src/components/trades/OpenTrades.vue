@@ -20,7 +20,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { footerProps } from '@/config/datatable.common';
-import { Trade } from '@/services/trades/types';
+import { Trade } from '@/services/history/types';
 
 @Component({})
 export default class OpenTrades extends Vue {

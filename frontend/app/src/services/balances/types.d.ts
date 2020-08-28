@@ -1,6 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import { exchanges } from '@/data/defaults';
-import { TradeLocation } from '@/services/trades/types';
+import { TradeLocation } from '@/services/history/types';
 
 export type SupportedExchange = typeof exchanges[number];
 

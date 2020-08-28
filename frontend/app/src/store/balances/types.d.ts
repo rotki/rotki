@@ -4,19 +4,13 @@ import {
   EthBalances,
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
-import { AssetMovement, SupportedExchange } from '@/services/balances/types';
+import { SupportedExchange } from '@/services/balances/types';
 import { ManualBalance, SupportedAsset } from '@/services/types-model';
 import {
   AccountDataMap,
   ExchangeData,
   UsdToFiatExchangeRates
 } from '@/typing/types';
-
-export interface AssetMovements {
-  readonly limit: number;
-  readonly found: number;
-  readonly movements: AssetMovement[];
-}
 
 export interface BalanceState {
   eth: EthBalances;
@@ -30,5 +24,4 @@ export interface BalanceState {
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalance[];
   manualBalanceByLocation: ManualBalanceByLocation;
-  assetMovements: AssetMovements;
 }

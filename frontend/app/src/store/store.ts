@@ -5,12 +5,12 @@ import { api } from '@/services/rotkehlchen-api';
 import { balances } from '@/store/balances';
 import { Section, Status } from '@/store/const';
 import { defi } from '@/store/defi';
+import { history } from '@/store/history';
 import { notifications } from '@/store/notifications';
 import { reports } from '@/store/reports';
 import { session } from '@/store/session';
 import { settings } from '@/store/settings';
 import { tasks } from '@/store/tasks';
-import { trades } from '@/store/trades';
 import {
   Message,
   RotkehlchenState,
@@ -117,7 +117,7 @@ const store: StoreOptions<RotkehlchenState> = {
     balances,
     defi,
     tasks,
-    trades,
+    history,
     session,
     reports,
     settings

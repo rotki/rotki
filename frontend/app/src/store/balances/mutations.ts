@@ -1,9 +1,8 @@
 import { MutationTree } from 'vuex';
 import { Balances, EthBalances } from '@/model/blockchain-balances';
-import { AssetMovement, SupportedExchange } from '@/services/balances/types';
-import { LimitedResponse } from '@/services/types-api';
+import { SupportedExchange } from '@/services/balances/types';
 import { ManualBalance, SupportedAsset } from '@/services/types-model';
-import { defaultAssetMovements, defaultState } from '@/store/balances/state';
+import { defaultState } from '@/store/balances/state';
 import { BalanceState } from '@/store/balances/types';
 import {
   AccountDataMap,
@@ -63,19 +62,6 @@ export const mutations: MutationTree<BalanceState> = {
   },
   manualBalances(state: BalanceState, manualBalances: ManualBalance[]) {
     state.manualBalances = manualBalances;
-  },
-  updateMovements(
-    state: BalanceState,
-    movements: LimitedResponse<AssetMovement[]>
-  ) {
-    state.assetMovements = {
-      movements: [...state.assetMovements.movements, ...movements.entries],
-      limit: movements.entriesLimit,
-      found: movements.entriesFound
-    };
-  },
-  resetMovements(state: BalanceState) {
-    state.assetMovements = defaultAssetMovements();
   },
   reset(state: BalanceState) {
     Object.assign(state, defaultState());

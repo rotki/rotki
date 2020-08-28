@@ -3,7 +3,7 @@ import { HistoryPage } from '../pages/history-page';
 import { RotkiApp } from '../pages/rotki-app';
 import { OTCTrade } from '../support/types';
 
-describe('trades', () => {
+describe('history', () => {
   let username: string;
   let app: RotkiApp;
   let page: HistoryPage;

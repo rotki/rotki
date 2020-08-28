@@ -1,4 +1,4 @@
-import { TradeLocation } from '@/services/trades/types';
+import { TradeLocation } from '@/services/history/types';
 
 export type TradeLocationData = {
   readonly identifier: TradeLocation;

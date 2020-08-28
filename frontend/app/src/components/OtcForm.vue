@@ -92,7 +92,7 @@ import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { Trade, TradeType, NewTrade } from '@/services/trades/types';
+import { Trade, TradeType, NewTrade } from '@/services/history/types';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
@@ -100,7 +100,7 @@ import { bigNumberify, Zero } from '@/utils/bignumbers';
 @Component({
   components: { AssetSelect, DateTimePicker },
   methods: {
-    ...mapActions('trades', ['addExternalTrade', 'editExternalTrade'])
+    ...mapActions('history', ['addExternalTrade', 'editExternalTrade'])
   }
 })
 export default class OtcForm extends Vue {

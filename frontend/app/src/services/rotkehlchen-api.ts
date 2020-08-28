@@ -15,8 +15,8 @@ import { VersionCheck } from '@/model/version-check';
 import { setupTransformer } from '@/services/axios-tranformers';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { DefiApi } from '@/services/defi/defi-api';
+import { HistoryApi } from '@/services/history/history-api';
 import { SessionApi } from '@/services/session/session-api';
-import { TradesApi } from '@/services/trades/trades-api';
 import {
   ActionResult,
   ApiManualBalance,
@@ -59,7 +59,7 @@ export class RotkehlchenApi {
   readonly defi: DefiApi;
   readonly session: SessionApi;
   readonly balances: BalancesApi;
-  readonly trades: TradesApi;
+  readonly history: HistoryApi;
 
   constructor() {
     this.axios = axios.create({
@@ -69,7 +69,7 @@ export class RotkehlchenApi {
     this.defi = new DefiApi(this.axios);
     this.session = new SessionApi(this.axios);
     this.balances = new BalancesApi(this.axios);
-    this.trades = new TradesApi(this.axios);
+    this.history = new HistoryApi(this.axios);
   }
 
   checkIfLogged(username: string): Promise<boolean> {

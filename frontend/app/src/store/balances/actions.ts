@@ -1,29 +1,17 @@
 import { ActionTree } from 'vuex';
 import { currencies } from '@/data/currencies';
-import i18n from '@/i18n';
-import {
-  BlockchainMetadata,
-  createTask,
-  ExchangeMeta,
-  taskCompletion,
-  TaskMeta
-} from '@/model/task';
+import { BlockchainMetadata, createTask, ExchangeMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { AssetMovement } from '@/services/balances/types';
 import {
   convertManualBalances,
   convertSupportedAssets
 } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
-import { movementNumericKeys } from '@/services/trades/const';
-import { TradeLocation } from '@/services/trades/types';
-import { ApiManualBalance, LimitedResponse } from '@/services/types-api';
+import { ApiManualBalance } from '@/services/types-api';
 import { BalanceState } from '@/store/balances/types';
-import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { LocationRequestMeta } from '@/store/trades/types';
-import { RotkehlchenState, StatusPayload } from '@/store/types';
+import { RotkehlchenState } from '@/store/types';
 import { showError } from '@/store/utils';
 import { Blockchain, UsdToFiatExchangeRates } from '@/typing/types';
 import { toMap } from '@/utils/conversion';
@@ -321,79 +309,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } catch (e) {
       showError(`${e.message}`, 'Deleting Manual Balance');
     }
-  },
-
-  async fetchMovements(
-    {
-      commit,
-      state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
-    },
-    refresh: boolean = false
-  ): Promise<void> {
-    const taskType = TaskType.MOVEMENTS;
-    if (isTaskRunning(taskType)) {
-      return;
-    }
-
-    const currentStatus = status(Section.ASSET_MOVEMENT);
-
-    if (
-      currentStatus === Status.LOADING ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const payload: StatusPayload = {
-      section: Section.ASSET_MOVEMENT,
-      status: refresh ? Status.REFRESHING : Status.LOADING
-    };
-
-    commit('setStatus', payload, { root: true });
-
-    const { connectedExchanges: locations } = state;
-
-    const fetchLocation: (
-      location: TradeLocation
-    ) => Promise<void> = async location => {
-      const { taskId } = await api.balances.assetMovements(location);
-      const task = createTask<LocationRequestMeta>(taskId, taskType, {
-        description: i18n.tc('actions.asset_movements.task_description'),
-        ignoreResult: false,
-        location: location,
-        numericKeys: movementNumericKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<
-        LimitedResponse<AssetMovement[]>,
-        TaskMeta
-      >(taskType, `${taskId}`);
-      commit('updateMovements', result);
-    };
-
-    commit('resetMovements');
-
-    try {
-      await Promise.all(locations.map(fetchLocation));
-    } catch (e) {
-      notify(
-        i18n.tc('actions.asset_movements.error.description', undefined, {
-          error: e.message
-        }),
-        i18n.tc('actions.asset_movements.error.title'),
-        Severity.ERROR,
-        true
-      );
-    }
-
-    const loaded: StatusPayload = {
-      section: Section.ASSET_MOVEMENT,
-      status: Status.LOADED
-    };
-    commit('setStatus', loaded, { root: true });
   }
 };
 

@@ -7,7 +7,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { tradeLocations } from '@/components/trades/consts';
 import LocationIcon from '@/components/trades/LocationIcon.vue';
 import { TradeLocationData } from '@/components/trades/type';
-import { TradeLocation } from '@/services/trades/types';
+import { TradeLocation } from '@/services/history/types';
 import { assert } from '@/utils/assertions';
 
 @Component({

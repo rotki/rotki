@@ -2,22 +2,26 @@ import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { api } from '@/services/rotkehlchen-api';
-import { tradeNumericKeys } from '@/services/trades/const';
+import { AssetMovement } from '@/services/balances/types';
+import {
+  movementNumericKeys,
+  tradeNumericKeys
+} from '@/services/history/const';
 import {
   NewTrade,
   Trade,
   TradeLocation,
   TradeUpdate
-} from '@/services/trades/types';
+} from '@/services/history/types';
+import { api } from '@/services/rotkehlchen-api';
 import { LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
+import { LocationRequestMeta, HistoryState } from '@/store/history/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { LocationRequestMeta, TradesState } from '@/store/trades/types';
 import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 
-export const actions: ActionTree<TradesState, RotkehlchenState> = {
+export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async fetchTrades(
     {
       commit,
@@ -52,7 +56,7 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
     const fetchLocation: (
       location: TradeLocation
     ) => Promise<void> = async location => {
-      const { taskId } = await api.trades.trades(location);
+      const { taskId } = await api.history.trades(location);
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
         description: i18n.tc('actions.trades.task_description'),
         ignoreResult: false,
@@ -66,12 +70,10 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
         LimitedResponse<Trade[]>,
         TaskMeta
       >(taskType, `${taskId}`);
-      commit('appendTrades', result.entries);
-      commit('updateLimit', result.entriesLimit);
-      commit('updateTotal', result.entriesFound);
+      commit('appendTrades', result);
     };
 
-    commit('reset');
+    commit('resetTrades');
 
     try {
       await Promise.all(locations.map(fetchLocation));
@@ -97,7 +99,7 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
     let success = false;
     let message = '';
     try {
-      commit('addTrade', await api.trades.addExternalTrade(trade));
+      commit('addTrade', await api.history.addExternalTrade(trade));
       success = true;
     } catch (e) {
       message = e.message;
@@ -109,7 +111,7 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
     let success = false;
     let message = '';
     try {
-      const updatedTrade = await api.trades.editExternalTrade(trade);
+      const updatedTrade = await api.history.editExternalTrade(trade);
       const payload: TradeUpdate = {
         trade: updatedTrade,
         oldTradeId: trade.tradeId
@@ -129,7 +131,7 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
     let success = false;
     let message = '';
     try {
-      success = await api.trades.deleteExternalTrade(tradeId);
+      success = await api.history.deleteExternalTrade(tradeId);
       if (success) {
         commit('deleteTrade', tradeId);
       }
@@ -137,5 +139,77 @@ export const actions: ActionTree<TradesState, RotkehlchenState> = {
       message = e.message;
     }
     return { success, message };
+  },
+  async fetchMovements(
+    {
+      commit,
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
+      rootState: { balances }
+    },
+    refresh: boolean = false
+  ): Promise<void> {
+    const taskType = TaskType.MOVEMENTS;
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+
+    const currentStatus = status(Section.ASSET_MOVEMENT);
+
+    if (
+      currentStatus === Status.LOADING ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const payload: StatusPayload = {
+      section: Section.ASSET_MOVEMENT,
+      status: refresh ? Status.REFRESHING : Status.LOADING
+    };
+
+    commit('setStatus', payload, { root: true });
+
+    const { connectedExchanges: locations } = balances!;
+
+    const fetchLocation: (
+      location: TradeLocation
+    ) => Promise<void> = async location => {
+      const { taskId } = await api.history.assetMovements(location);
+      const task = createTask<LocationRequestMeta>(taskId, taskType, {
+        description: i18n.tc('actions.asset_movements.task_description'),
+        ignoreResult: false,
+        location: location,
+        numericKeys: movementNumericKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<
+        LimitedResponse<AssetMovement[]>,
+        TaskMeta
+      >(taskType, `${taskId}`);
+      commit('updateMovements', result);
+    };
+
+    commit('resetMovements');
+
+    try {
+      await Promise.all(locations.map(fetchLocation));
+    } catch (e) {
+      notify(
+        i18n.tc('actions.asset_movements.error.description', undefined, {
+          error: e.message
+        }),
+        i18n.tc('actions.asset_movements.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+
+    const loaded: StatusPayload = {
+      section: Section.ASSET_MOVEMENT,
+      status: Status.LOADED
+    };
+    commit('setStatus', loaded, { root: true });
   }
 };

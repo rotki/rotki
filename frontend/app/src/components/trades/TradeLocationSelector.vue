@@ -41,7 +41,7 @@
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { tradeLocations } from '@/components/trades/consts';
 import LocationIcon from '@/components/trades/LocationIcon.vue';
-import { TradeLocation } from '@/services/trades/types';
+import { TradeLocation } from '@/services/history/types';
 
 @Component({
   components: { LocationIcon }
