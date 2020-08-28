@@ -472,7 +472,7 @@ class TaxableEvents():
         skip_trade = (
             not self.include_crypto2crypto and
             not selling_asset.is_fiat() and
-            not receiving_asset.is_fiat()
+            receiving_asset and not receiving_asset.is_fiat()
         )
         if skip_trade:
             return
