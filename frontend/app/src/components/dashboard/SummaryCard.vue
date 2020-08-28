@@ -7,7 +7,7 @@
     <v-row no-gutters class="pa-3 secondary--text summary-card__header">
       <v-toolbar-title class="font-weight-medium text-capitalize">
         {{ name }} balances
-        <v-tooltip v-if="this.$slots.tooltip" bottom>
+        <v-tooltip v-if="this.$slots.tooltip" bottom max-width="300px">
           <template #activator="{ on }">
             <v-icon
               small
@@ -18,13 +18,13 @@
             </v-icon>
           </template>
           <div>
-            <slot name="tooltip"></slot>
+            <slot name="tooltip" />
           </div>
         </v-tooltip>
       </v-toolbar-title>
-      <v-spacer></v-spacer>
+      <v-spacer />
       <span>
-        <v-tooltip v-if="canRefresh" bottom>
+        <v-tooltip v-if="canRefresh" bottom max-width="300px">
           <template #activator="{ on }">
             <v-btn
               icon
@@ -44,7 +44,7 @@
       </span>
     </v-row>
     <v-list>
-      <slot></slot>
+      <slot />
     </v-list>
   </v-card>
 </template>

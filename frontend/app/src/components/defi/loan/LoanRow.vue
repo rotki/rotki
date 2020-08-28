@@ -7,7 +7,7 @@
       {{ title }}
     </div>
     <div>
-      <slot></slot>
+      <slot />
     </div>
   </div>
 </template>

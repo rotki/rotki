@@ -27,19 +27,18 @@
           Never
         </span>
       </v-row>
-      <v-divider></v-divider>
+      <v-divider />
       <v-row>
         <v-btn color="primary" outlined @click="refreshAllAndSave()">
           <v-icon left>fa fa-save</v-icon>force save
         </v-btn>
-        <v-tooltip bottom>
+        <v-tooltip bottom max-width="300px">
           <template #activator="{ on }">
             <v-icon class="ml-3" v-on="on">fa fa-info-circle</v-icon>
           </template>
           <div>
             This will force taking a snapshot of all your balances, ignoring any
-            cache.<br />
-            Use this sparingly as it may lead to you being rate-limited.
+            cache. Use this sparingly as it may lead to you being rate-limited.
           </div>
         </v-tooltip>
       </v-row>

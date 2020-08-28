@@ -30,7 +30,7 @@
     </v-row>
     <v-row>
       <v-col cols="6" offset="6">
-        <tag-filter v-model="onlyTags"></tag-filter>
+        <tag-filter v-model="onlyTags" />
       </v-col>
     </v-row>
     <v-data-table
@@ -75,19 +75,16 @@
                 :key="tag"
                 class="account-balances__tag"
                 :tag="tags[tag]"
-              ></tag-icon>
+              />
             </span>
           </v-col>
         </v-row>
       </template>
       <template #item.amount="{ item }">
-        <amount-display :value="item.amount"></amount-display>
+        <amount-display :value="item.amount" />
       </template>
       <template #item.usdValue="{ item }">
-        <amount-display
-          fiat-currency="USD"
-          :value="item.usdValue"
-        ></amount-display>
+        <amount-display fiat-currency="USD" :value="item.usdValue" />
       </template>
       <template #item.actions="{ item }">
         <span class="account-balances__actions">
@@ -115,23 +112,19 @@
           <td class="text-end">
             <amount-display
               :value="extendedBalances.map(val => val.amount) | balanceSum"
-            >
-            </amount-display>
+            />
           </td>
           <td class="text-end">
             <amount-display
               fiat-currency="USD"
               :value="extendedBalances.map(val => val.usdValue) | balanceSum"
-            >
-            </amount-display>
+            />
           </td>
         </tr>
       </template>
       <template #expanded-item="{ headers, item }">
         <td :colspan="headers.length" class="account-balances__expanded">
-          <account-asset-balances
-            :account="item.account"
-          ></account-asset-balances>
+          <account-asset-balances :account="item.account" />
         </td>
       </template>
       <template #item.expand="{ item }">
@@ -151,7 +144,7 @@
       :message="`Are you sure you want to delete ${toDeleteAccount}`"
       @cancel="toDeleteAccount = ''"
       @confirm="deleteAccount()"
-    ></confirm-dialog>
+    />
   </div>
 </template>
 

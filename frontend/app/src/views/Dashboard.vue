@@ -1,9 +1,9 @@
 <template>
   <v-container>
-    <base-page-header text="Dashboard"></base-page-header>
+    <base-page-header text="Dashboard" />
     <v-row>
       <v-col cols="12">
-        <overall-balances :is-loading="anyIsLoading"></overall-balances>
+        <overall-balances :is-loading="anyIsLoading" />
       </v-col>
     </v-row>
     <v-row class="mr--1" justify="center">
@@ -15,7 +15,7 @@
           @refresh="refreshBalance($event)"
         >
           <div slot="tooltip">
-            Aggregate value of all balances<br />in each configured exchange.
+            Aggregate value of all balances in each configured exchange.
           </div>
           <div v-if="exchanges.length < 1">
             <v-card-actions>
@@ -30,7 +30,7 @@
               :key="exchange.name"
               :name="exchange.name"
               :amount="exchange.total"
-            ></exchange-box>
+            />
           </div>
         </summary-card>
       </v-col>
@@ -42,7 +42,7 @@
           @refresh="refreshBalance($event)"
         >
           <div slot="tooltip">
-            Aggregate value of all configured<br />addresses in each blockchain.
+            Aggregate value of all configured addresses in each blockchain.
           </div>
           <div
             v-if="
@@ -62,7 +62,7 @@
               :key="protocol"
               :name="protocol"
               :amount="usdValue"
-            ></blockchain-balance-card-list>
+            />
           </div>
         </summary-card>
       </v-col>
@@ -91,7 +91,7 @@
               :key="location"
               :name="location"
               :amount="usdValue"
-            ></manual-balance-card-list>
+            />
           </div>
         </summary-card>
       </v-col>
@@ -103,7 +103,7 @@
             <v-toolbar-title class="font-weight-medium">
               balance per asset
             </v-toolbar-title>
-            <v-spacer></v-spacer>
+            <v-spacer />
             <v-text-field
               v-model="search"
               append-icon="mdi-magnify"
@@ -111,7 +111,7 @@
               class="pa-0 ma-0"
               single-line
               hide-details
-            ></v-text-field>
+            />
           </v-row>
           <v-data-table
             class="dashboard__balances"
@@ -127,22 +127,22 @@
               {{ currency.ticker_symbol }} value
             </template>
             <template #item.asset="{ item }">
-              <asset-details :asset="item.asset"></asset-details>
+              <asset-details :asset="item.asset" />
             </template>
             <template #item.amount="{ item }">
-              <amount-display :value="item.amount"></amount-display>
+              <amount-display :value="item.amount" />
             </template>
             <template #item.usdValue="{ item }">
               <amount-display
                 :fiat-currency="item.asset"
                 :amount="item.amount"
                 :value="item.usdValue"
-              ></amount-display>
+              />
             </template>
             <template #item.percentage="{ item }">
               <amount-display
                 :value="item.usdValue | percentage(total, floatingPrecision)"
-              ></amount-display>
+              />
             </template>
             <template #no-results>
               <span class="grey--text text--darken-2">
@@ -155,7 +155,7 @@
             >
               <tr class="dashboard__balances__total font-weight-medium">
                 <td>Total</td>
-                <td></td>
+                <td />
                 <td class="text-end">
                   <amount-display
                     :fiat-currency="currency.ticker_symbol"
@@ -167,7 +167,7 @@
                           floatingPrecision
                         )
                     "
-                  ></amount-display>
+                  />
                 </td>
               </tr>
             </template>

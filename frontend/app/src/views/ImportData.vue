@@ -31,7 +31,7 @@
               class="import-data__cointracking-info elevation-1"
               :src="require('../assets/images/import/cointracking_info.png')"
               @click="importData('cointracking.info')"
-            ></v-img>
+            />
           </v-col>
         </v-row>
         <v-row>
@@ -75,7 +75,7 @@
               <v-img
                 max-width="200"
                 :src="require('../assets/images/import/crypto_com.png')"
-              ></v-img>
+              />
             </div>
           </v-col>
         </v-row>

@@ -30,11 +30,7 @@
               >
                 Connecting to rotki backend
               </span>
-              <v-progress-circular
-                color="grey"
-                indeterminate
-                size="56"
-              ></v-progress-circular>
+              <v-progress-circular color="grey" indeterminate size="56" />
             </v-col>
           </v-row>
           <v-slide-y-transition>
@@ -44,7 +40,7 @@
               :sync-conflict="syncConflict"
               @login="login($event)"
               @new-account="accountCreation = true"
-            ></login>
+            />
           </v-slide-y-transition>
           <v-slide-y-transition>
             <create-account
@@ -52,7 +48,7 @@
               :displayed="accountCreation && connected"
               @cancel="accountCreation = false"
               @confirm="createAccount($event)"
-            ></create-account>
+            />
           </v-slide-y-transition>
         </v-card>
         <div class="account-management__privacy-notice">
@@ -102,7 +98,7 @@
             </v-row>
           </v-card-text>
           <v-card-actions>
-            <v-spacer></v-spacer>
+            <v-spacer />
             <v-btn
               color="primary"
               class="account-management__premium-dialog__buttons__cancel"

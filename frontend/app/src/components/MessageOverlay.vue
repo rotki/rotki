@@ -2,7 +2,7 @@
   <v-overlay v-if="visible" class="message-overlay">
     <v-card light max-width="500" class="mx-auto">
       <v-card-title class="message-overlay__title">
-        <slot name="title"></slot>
+        <slot name="title" />
       </v-card-title>
       <v-card-text>
         <v-row class="mx-auto text-justify">
@@ -12,12 +12,12 @@
             </v-icon>
           </v-col>
           <v-col cols="10">
-            <slot></slot>
+            <slot />
           </v-col>
         </v-row>
       </v-card-text>
       <v-card-actions>
-        <div class="flex-grow-1"></div>
+        <div class="flex-grow-1" />
         <v-btn
           v-if="action"
           text

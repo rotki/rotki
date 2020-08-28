@@ -10,7 +10,7 @@
               label="Start Date"
               limit-now
               :rules="startRules"
-            ></date-time-picker>
+            />
           </v-col>
         </v-row>
         <v-row>
@@ -20,7 +20,7 @@
               label="End Date"
               limit-now
               :rules="endRules"
-            ></date-time-picker>
+            />
           </v-col>
         </v-row>
         <v-alert v-model="invalidRange" type="error">

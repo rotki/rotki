@@ -18,7 +18,7 @@
             :disabled="!editMode"
             :label="label"
             @input="currentValue = $event"
-          ></revealable-input>
+          />
         </v-col>
         <v-col cols="auto">
           <v-tooltip top>

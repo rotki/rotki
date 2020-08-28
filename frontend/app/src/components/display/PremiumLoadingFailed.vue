@@ -6,7 +6,8 @@
       </span>
       <p class="mt-1">
         This might indicate a problem with the premium component service.
-        <br />
+      </p>
+      <p>
         Please try again later.
       </p>
       <p>If the problem persists open an issue in our issue tracker.</p>

@@ -3,7 +3,7 @@
     <v-row>
       <v-col>
         <h1>Settings</h1>
-        <tab-navigation :tab-contents="settingsTabs"></tab-navigation>
+        <tab-navigation :tab-contents="settingsTabs" />
       </v-col>
     </v-row>
   </v-container>

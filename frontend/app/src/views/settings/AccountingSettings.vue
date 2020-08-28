@@ -13,7 +13,7 @@
               :success-messages="settingsMessages['crypto2crypto'].success"
               :error-messages="settingsMessages['crypto2crypto'].error"
               @change="onCrypto2CryptoChange($event)"
-            ></v-switch>
+            />
             <v-switch
               v-model="gasCosts"
               class="accounting-settings__include-gas-costs"
@@ -22,7 +22,7 @@
               :error-messages="settingsMessages['gasCostChange'].error"
               color="primary"
               @change="onGasCostChange($event)"
-            ></v-switch>
+            />
             <v-switch
               v-model="taxFreePeriod"
               class="accounting-settings__taxfree-period"
@@ -31,7 +31,7 @@
               label="Is there a tax free period?"
               color="primary"
               @change="onTaxFreeChange($event)"
-            ></v-switch>
+            />
             <v-text-field
               v-model="taxFreeAfterPeriod"
               class="accounting-settings__taxfree-period-days"
@@ -42,8 +42,7 @@
               label="Tax free after how many days"
               type="number"
               @change="onTaxFreePeriodChange($event)"
-            >
-            </v-text-field>
+            />
           </v-card-text>
         </v-card>
       </v-col>
@@ -62,7 +61,7 @@
                   :error-messages="settingsMessages['addIgnoreAsset'].error"
                   hint="Click to see all assets and select one to ignore"
                   class="accounting-settings__asset-to-ignore"
-                ></asset-select>
+                />
               </v-col>
               <v-col cols="2">
                 <v-btn
@@ -87,7 +86,7 @@
                   :error-messages="settingsMessages['remIgnoreAsset'].error"
                   hint="Click to see all ignored assets and select one for removal"
                   class="accounting-settings__ignored-assets"
-                ></asset-select>
+                />
                 <div slot="append-outer">
                   <v-badge>
                     <template #badge>

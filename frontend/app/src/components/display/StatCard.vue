@@ -18,7 +18,7 @@
       <span v-if="!locked && loading">
         <v-progress-linear indeterminate color="primary" />
       </span>
-      <slot v-else-if="!locked"></slot>
+      <slot v-else-if="!locked" />
     </v-card-text>
   </v-card>
 </template>

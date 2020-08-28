@@ -1,7 +1,7 @@
 <template>
   <v-form ref="form" v-model="valid">
     <v-row>
-      <tag-icon class="tag-creator__preview" :tag="tag"></tag-icon>
+      <tag-icon class="tag-creator__preview" :tag="tag" />
       <v-tooltip bottom>
         <template #activator="{ on }">
           <v-btn
@@ -28,7 +28,7 @@
               :value="tag.name"
               :disabled="editMode"
               @input="changed({ name: $event })"
-            ></v-text-field>
+            />
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -38,7 +38,7 @@
               :value="tag.description"
               label="Description"
               @input="changed({ description: $event })"
-            ></v-text-field>
+            />
           </v-col>
         </v-row>
       </v-col>
@@ -61,7 +61,7 @@
               @update:color="
                 changed({ foreground_color: $event.hex.replace('#', '') })
               "
-            ></v-color-picker>
+            />
           </v-col>
         </v-row>
       </v-col>
@@ -82,7 +82,7 @@
               @update:color="
                 changed({ background_color: $event.hex.replace('#', '') })
               "
-            ></v-color-picker>
+            />
           </v-col>
         </v-row>
       </v-col>

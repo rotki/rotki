@@ -1,17 +1,14 @@
 <template>
   <stat-card class="loan-debt" title="Debt">
     <loan-row title="Outstanding debt">
-      <amount-display
-        :value="loan.debt.amount"
-        :asset="loan.asset"
-      ></amount-display>
+      <amount-display :value="loan.debt.amount" :asset="loan.asset" />
     </loan-row>
     <loan-row :medium="false">
       <amount-display
         :value="loan.debt.usdValue"
         show-currency="ticker"
         fiat-currency="USD"
-      ></amount-display>
+      />
     </loan-row>
     <v-divider v-if="isVault" class="my-4" />
     <loan-row
@@ -27,13 +24,13 @@
           v-if="loan.totalInterestOwed && !loan.totalInterestOwed.isNegative()"
           :value="loan.totalInterestOwed"
           asset="DAI"
-        ></amount-display>
+        />
         <amount-display
           v-else
           :loading="loan.totalInterestOwed === undefined"
           :value="'0.00'"
           asset="DAI"
-        ></amount-display>
+        />
       </div>
       <div v-else>
         <premium-lock />

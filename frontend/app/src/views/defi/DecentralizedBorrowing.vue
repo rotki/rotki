@@ -1,5 +1,5 @@
 <template>
-  <borrowing></borrowing>
+  <borrowing />
 </template>
 
 <script lang="ts">

@@ -9,10 +9,7 @@
       </div>
       <div class="loan-header__owner secondary--text text--lighten-2">
         Owned by:
-        <hash-link
-          :text="loan.owner"
-          class="d-inline font-weight-medium"
-        ></hash-link>
+        <hash-link :text="loan.owner" class="d-inline font-weight-medium" />
       </div>
     </v-col>
   </v-row>

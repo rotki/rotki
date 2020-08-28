@@ -9,7 +9,7 @@
             v-bind="{ ...attrs, ...$attrs }"
             v-on="{ ...on, ...$listeners }"
           >
-            <slot></slot>
+            <slot />
           </v-btn>
         </template>
         <span>{{ tooltip }}</span>

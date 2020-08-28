@@ -38,23 +38,23 @@
                 "
                 fiat-currency="USD"
                 show-currency="symbol"
-              ></amount-display>
+              />
             </stat-card-column>
           </template>
           <template #second-col>
             <stat-card-column>
               <template #title>
                 Effective Savings Rate
-                <v-tooltip bottom>
+                <v-tooltip bottom max-width="300px">
                   <template #activator="{ on }">
                     <v-icon small class="mb-3 ml-1" v-on="on">
                       fa fa-info-circle
                     </v-icon>
                   </template>
                   <div>
-                    The savings rate across all of the protocols in which<br />
-                    you are actively lending, weighted based on the<br />
-                    relative position in each protocol.
+                    The savings rate across all of the protocols in which you
+                    are actively lending, weighted based on the relative
+                    position in each protocol.
                   </div>
                 </v-tooltip>
               </template>
@@ -65,7 +65,7 @@
             <stat-card-column lock>
               <template #title>
                 Interest Earned
-                <premium-lock v-if="!premium" class="d-inline"></premium-lock>
+                <premium-lock v-if="!premium" class="d-inline" />
               </template>
               <amount-display
                 v-if="premium"
@@ -73,7 +73,7 @@
                 :value="totalUsdEarned(selectedProtocols, selectedAddresses)"
                 show-currency="symbol"
                 fiat-currency="USD"
-              ></amount-display>
+              />
             </stat-card-column>
           </template>
         </stat-card-wide>
@@ -103,14 +103,14 @@
     </v-row>
     <v-row class="loans__history">
       <v-col cols="12">
-        <premium-card v-if="!premium" title="History"></premium-card>
+        <premium-card v-if="!premium" title="History" />
         <lending-history
           v-else
           :loading="historyLoading"
           :history="lendingHistory(selectedProtocols, selectedAddresses)"
           :floating-precision="floatingPrecision"
           @open-link="openLink($event)"
-        ></lending-history>
+        />
       </v-col>
     </v-row>
   </div>

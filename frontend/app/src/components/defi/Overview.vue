@@ -19,7 +19,7 @@
       :value="summary.totalCollateralUsd"
     />
     <info-row title="Total debt" fiat :value="summary.totalDebtUsd" />
-    <v-divider class="my-4"></v-divider>
+    <v-divider class="my-4" />
     <h3 class="pb-2 d-flex flex-row justify-space-between">
       Lending
       <v-btn

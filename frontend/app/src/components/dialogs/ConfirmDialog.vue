@@ -22,7 +22,7 @@
       </v-row>
 
       <v-card-actions>
-        <v-spacer></v-spacer>
+        <v-spacer />
         <v-btn
           color="primary"
           depressed

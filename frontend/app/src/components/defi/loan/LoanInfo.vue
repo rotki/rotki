@@ -14,17 +14,14 @@
       </v-row>
       <v-row v-if="isVault" class="mt-6">
         <v-col cols="12">
-          <premium-card
-            v-if="!premium"
-            title="Borrowing History"
-          ></premium-card>
+          <premium-card v-if="!premium" title="Borrowing History" />
           <vault-events-list
             v-else
             :asset="loan.collateral.asset"
             :events="loan.events"
             :creation="loan.creationTs"
             @open-link="openLink($event)"
-          ></vault-events-list>
+          />
         </v-col>
       </v-row>
     </v-col>

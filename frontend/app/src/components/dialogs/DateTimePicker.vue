@@ -20,12 +20,12 @@
           @input="input($event)"
           @click:append="setNow()"
           v-on="on"
-        ></v-text-field>
+        />
       </template>
 
       <div class="menu-body">
-        <v-date-picker v-model="dateModel" :max="maxDate"></v-date-picker>
-        <v-time-picker v-model="timeModel" :max="maxTime"></v-time-picker>
+        <v-date-picker v-model="dateModel" :max="maxDate" />
+        <v-time-picker v-model="timeModel" :max="maxTime" />
       </div>
     </v-menu>
   </div>

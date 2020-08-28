@@ -2,8 +2,8 @@
   <v-card>
     <v-card-title>
       {{ title }}
-      <v-spacer></v-spacer>
-      <premium-lock></premium-lock>
+      <v-spacer />
+      <premium-lock />
     </v-card-title>
   </v-card>
 </template>

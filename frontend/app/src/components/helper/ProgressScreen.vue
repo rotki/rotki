@@ -21,15 +21,14 @@
           height="16"
           color="primary"
           :value="progress"
-        >
-        </v-progress-linear>
+        />
         <div v-else class="progress-screen__progress-indeterminate">
           <v-progress-circular
             rounded
             indeterminate
             :size="70"
             color="primary"
-          ></v-progress-circular>
+          />
         </div>
       </v-col>
     </v-row>
@@ -37,12 +36,12 @@
       <p
         class="text-center font-weight-light progress-screen__progress__description"
       >
-        <slot name="message"></slot>
+        <slot name="message" />
       </p>
     </v-row>
     <v-row align="center" justify="center">
       <v-col cols="4">
-        <v-divider></v-divider>
+        <v-divider />
       </v-col>
     </v-row>
     <v-row
@@ -51,7 +50,7 @@
       class="progress-screen__progress__warning"
     >
       <div class="font-weight-light text-subtitle-2">
-        <slot></slot>
+        <slot />
       </div>
     </v-row>
   </v-col>

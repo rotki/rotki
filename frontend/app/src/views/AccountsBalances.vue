@@ -1,7 +1,7 @@
 <template>
   <v-container class="accounts-balances">
-    <base-page-header text="Accounts & Balances"></base-page-header>
-    <tab-navigation :tab-contents="accountsBalancesTabs"></tab-navigation>
+    <base-page-header text="Accounts & Balances" />
+    <tab-navigation :tab-contents="accountsBalancesTabs" />
   </v-container>
 </template>
 

@@ -4,10 +4,10 @@
       class="title font-weight-regular"
       :class="lock ? 'd-flex justify-space-between' : ''"
     >
-      <slot name="title"></slot>
+      <slot name="title" />
     </dt>
     <dd class="primary--text text-h5 font-weight-bold">
-      <slot></slot>
+      <slot />
     </dd>
   </dl>
 </template>

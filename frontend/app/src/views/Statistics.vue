@@ -7,19 +7,18 @@
         </div>
       </div>
       <div v-if="!premium">
-        No premium subscription detected. Statistics are only available to
-        premium users. <br />
+        <p>
+          No premium subscription detected. Statistics are only available to
+          premium users.
+        </p>
         To get a premium subscription please visit our
-        <base-external-link
-          text="website."
-          :href="$interop.premiumURL"
-        ></base-external-link>
+        <base-external-link text="website." :href="$interop.premiumURL" />
       </div>
       <div v-else>
         <premium-statistics
           :service="$api"
           :floating-precision="floatingPrecision"
-        ></premium-statistics>
+        />
       </div>
     </div>
   </v-container>

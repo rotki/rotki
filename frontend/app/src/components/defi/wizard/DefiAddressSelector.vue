@@ -21,7 +21,7 @@
           </span>
         </v-stepper-step>
 
-        <v-divider v-if="n !== steps" :key="n"></v-divider>
+        <v-divider v-if="n !== steps" :key="n" />
       </template>
     </v-stepper-header>
 

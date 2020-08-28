@@ -54,7 +54,7 @@
                     show-currency="symbol"
                     fiat-currency="USD"
                     :value="exchangeBalance(item)"
-                  ></amount-display>
+                  />
                 </span>
               </div>
             </template>
@@ -82,7 +82,7 @@
                     show-currency="symbol"
                     fiat-currency="USD"
                     :value="exchangeBalance(item)"
-                  ></amount-display>
+                  />
                 </span>
               </div>
             </template>
@@ -120,7 +120,7 @@
                   show-currency="symbol"
                   fiat-currency="USD"
                   :value="exchangeBalance(exchange)"
-                ></amount-display>
+                />
               </div>
             </v-tab>
           </v-tabs>
@@ -129,7 +129,7 @@
           <asset-balances
             v-if="exchange"
             :balances="exchangeBalances(exchange)"
-          ></asset-balances>
+          />
           <div v-else class="pa-4">
             Select an exchange to view asset details.
           </div>

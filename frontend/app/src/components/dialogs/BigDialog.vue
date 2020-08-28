@@ -17,11 +17,11 @@
       <div class="big-dialog__content">
         <v-row align="center" class="mx-0 big-dialog__body">
           <v-col cols="12">
-            <slot></slot>
+            <slot />
           </v-col>
         </v-row>
         <v-card-actions class="px-6">
-          <v-spacer></v-spacer>
+          <v-spacer />
           <v-btn
             color="primary"
             depressed

@@ -1,5 +1,5 @@
 <template>
-  <a href="#" @click="openLink()"><slot></slot></a>
+  <a href="#" @click="openLink()"><slot /></a>
 </template>
 
 <script lang="ts">

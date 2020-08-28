@@ -17,13 +17,13 @@
               class="user-security-settings__fields__current-password"
               label="Current Password"
               :rules="passwordRules"
-            ></revealable-input>
+            />
             <revealable-input
               v-model="newPassword"
               class="user-security-settings__fields__new-password"
               label="New Password"
               :rules="passwordRules"
-            ></revealable-input>
+            />
             <revealable-input
               v-model="newPasswordConfirm"
               class="user-security-settings__fields__new-password-confirm"
@@ -31,7 +31,7 @@
               icon="fa-repeat"
               :rules="passwordConfirmRules"
               :error-messages="errorMessages"
-            ></revealable-input>
+            />
           </v-card-text>
           <v-card-actions>
             <v-btn

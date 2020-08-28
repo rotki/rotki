@@ -19,7 +19,7 @@
                   floatingPrecision
                 )
             "
-          ></amount-display>
+          />
         </div>
       </v-col>
     </v-row>

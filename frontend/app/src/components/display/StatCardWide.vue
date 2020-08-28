@@ -6,7 +6,7 @@
         cols="12"
         :sm="colsSize[cols]"
       >
-        <slot name="first-col"></slot>
+        <slot name="first-col" />
       </v-col>
       <v-col
         class="stat-card-wide__second-col d-flex"
@@ -16,14 +16,11 @@
         cols="12"
         :sm="colsSize[cols]"
       >
-        <v-divider :vertical="$vuetify.breakpoint.smAndUp"></v-divider>
+        <v-divider :vertical="$vuetify.breakpoint.smAndUp" />
         <div class="stat-card-wide__second-col__content pa-6 flex-grow-1">
-          <slot name="second-col"></slot>
+          <slot name="second-col" />
         </div>
-        <v-divider
-          v-if="cols > 2"
-          :vertical="$vuetify.breakpoint.smAndUp"
-        ></v-divider>
+        <v-divider v-if="cols > 2" :vertical="$vuetify.breakpoint.smAndUp" />
       </v-col>
       <v-col
         v-if="cols > 2"
@@ -31,7 +28,7 @@
         cols="12"
         :sm="colsSize[cols]"
       >
-        <slot name="third-col"></slot>
+        <slot name="third-col" />
       </v-col>
       <v-col
         v-if="cols > 3"
@@ -39,12 +36,12 @@
         cols="12"
         :sm="colsSize[cols]"
       >
-        <slot name="fourth-col"></slot>
+        <slot name="fourth-col" />
       </v-col>
     </v-row>
     <v-row v-else>
       <v-col cols="12" class="pa-6 text-right">
-        <premium-lock></premium-lock>
+        <premium-lock />
       </v-col>
     </v-row>
   </v-card>
