@@ -271,7 +271,8 @@ app.on('ready', async () => {
         args.startsWith('https://rotki.readthedocs.io/') ||
         args.startsWith('https://github.com/rotki/rotki/') ||
         args.startsWith('https://etherscan.io/') ||
-        args.startsWith('https://blockstream.info/')
+        args.startsWith('https://blockstream.info/') ||
+        args.startsWith('https://blockscout.com/')
       )
     ) {
       console.error(`Error: Requested to open untrusted URL: ${args} `);
