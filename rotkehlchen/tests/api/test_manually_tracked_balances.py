@@ -10,8 +10,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
+    wait_for_async_task,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -115,8 +117,10 @@ def _populate_initial_balances(api_server) -> List[Dict[str, Any]]:
     return balances
 
 
+@pytest.mark.parametrize('async_query', [False, True])
 def test_add_and_query_manually_tracked_balances(
         rotkehlchen_api_server,
+        async_query,
 ):
     """Test that adding and querying manually tracked balances via the API works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -125,12 +129,16 @@ def test_add_and_query_manually_tracked_balances(
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        ),
+        ), json={'async_query': async_query},
     )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert data['result']['balances'] == [], 'In the beginning we should have no entries'
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
+
+    assert result['balances'] == [], 'In the beginning we should have no entries'
 
     balances = _populate_initial_balances(rotkehlchen_api_server)
 
@@ -139,9 +147,14 @@ def test_add_and_query_manually_tracked_balances(
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        ),
+        ), json={'async_query': async_query},
     )
-    result = assert_proper_response_with_result(response)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
     assert_balances_match(expected_balances=balances, returned_balances=result['balances'])
 
     now = ts_now()
@@ -151,9 +164,15 @@ def test_add_and_query_manually_tracked_balances(
         api_url_for(
             rotkehlchen_api_server,
             "allbalancesresource",
-        ),
+        ), json={'async_query': async_query},
     )
-    result = assert_proper_response_with_result(response)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
+
     assert result['BTC']['amount'] == '1.425'
     assert result['XMR']['amount'] == '50.315'
     assert result['BNB']['amount'] == '155'
@@ -163,7 +182,8 @@ def test_add_and_query_manually_tracked_balances(
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{'CYFM': FVal(0)}])
-def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
+@pytest.mark.parametrize('async_query', [False, True])
+def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server, async_query):
     """Test that adding a manually tracked balance of an asset for which we cant
     query a price is handled properly both in the adding and querying part
 
@@ -180,21 +200,32 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        ), json={'balances': balances},
+        ), json={'async_query': async_query, 'balances': balances},
     )
-    result = assert_proper_response_with_result(response)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
     assert_balances_match(
         expected_balances=balances,
         returned_balances=result['balances'],
         expect_found_price=False,
     )
+
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        ),
+        ), json={'async_query': async_query},
     )
-    result = assert_proper_response_with_result(response)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
     assert_balances_match(
         expected_balances=balances,
         returned_balances=result['balances'],
@@ -202,8 +233,10 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('async_query', [False, True])
 def test_edit_manually_tracked_balances(
         rotkehlchen_api_server,
+        async_query,
 ):
     """Test that editing manually tracked balances via the API works fine"""
     _populate_tags(rotkehlchen_api_server)
@@ -219,9 +252,14 @@ def test_edit_manually_tracked_balances(
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        ), json={'balances': balances_to_edit},
+        ), json={'async_query': async_query, 'balances': balances_to_edit},
     )
-    result = assert_proper_response_with_result(response)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
     expected_balances = balances_to_edit + balances[2:]
     assert_balances_match(
         expected_balances=expected_balances,
@@ -233,9 +271,14 @@ def test_edit_manually_tracked_balances(
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        ),
+        ), json={'async_query': async_query},
     )
-    result = assert_proper_response_with_result(response)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
@@ -536,7 +579,8 @@ def test_add_edit_unknown_tags(rotkehlchen_api_server):
     )
 
 
-def test_delete_manually_tracked_balances(rotkehlchen_api_server):
+@pytest.mark.parametrize('async_query', [False, True])
+def test_delete_manually_tracked_balances(rotkehlchen_api_server, async_query):
     """Test that deleting manually tracked balances via the API works fine"""
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
@@ -547,9 +591,14 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        ), json={'labels': labels_to_delete},
+        ), json={'async_query': async_query, 'labels': labels_to_delete},
     )
-    result = assert_proper_response_with_result(response)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
     expected_balances = balances[1:2]
     assert_balances_match(
         expected_balances=expected_balances,
@@ -561,9 +610,14 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "manuallytrackedbalancesresource",
-        ),
+        ), json={'async_query': async_query},
     )
-    result = assert_proper_response_with_result(response)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],

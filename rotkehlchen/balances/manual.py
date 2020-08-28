@@ -90,6 +90,16 @@ def edit_manually_tracked_balances(db: 'DBHandler', data: List[ManuallyTrackedBa
     db.edit_manually_tracked_balances(data)
 
 
+def remove_manually_tracked_balances(db: 'DBHandler', labels: List[str]) -> None:
+    """Edits manually tracked balances
+
+    May raise:
+    - InputError if the given list is empty or if
+    any of the labels to remove do not exist in the DB.
+    """
+    db.remove_manually_tracked_balances(labels)
+
+
 def account_for_manually_tracked_balances(
         db: 'DBHandler',
         balances: Dict[str, Any],

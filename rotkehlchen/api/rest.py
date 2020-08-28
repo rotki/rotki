@@ -5,7 +5,7 @@ import traceback
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, overload
 
 import gevent
 from flask import Response, make_response
@@ -21,6 +21,7 @@ from rotkehlchen.balances.manual import (
     add_manually_tracked_balances,
     edit_manually_tracked_balances,
     get_manually_tracked_balances,
+    remove_manually_tracked_balances,
 )
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -68,6 +69,10 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
+
 OK_RESULT = {'result': True, 'message': ''}
 
 
@@ -79,8 +84,12 @@ def _wrap_in_result(result: Any, message: str) -> Dict[str, Any]:
     return {'result': result, 'message': message}
 
 
-def wrap_in_fail_result(message: str) -> Dict[str, Any]:
-    return {'result': None, 'message': message}
+def wrap_in_fail_result(message: str, status_code: Optional[HTTPStatus] = None) -> Dict[str, Any]:
+    result: Dict[str, Any] = {'result': None, 'message': message}
+    if status_code:
+        result['status_code'] = status_code
+
+    return result
 
 
 def api_response(
@@ -1207,57 +1216,107 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
-    def get_manually_tracked_balances(self) -> Response:
-        try:
-            balances = {'balances': get_manually_tracked_balances(db=self.rotkehlchen.data.db)}
-        except RemoteError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
+    def _get_manually_tracked_balances(self) -> Dict[str, Any]:
+        balances = process_result(
+            {'balances': get_manually_tracked_balances(db=self.rotkehlchen.data.db)},
 
-        result_dict = _wrap_in_ok_result(process_result(balances))
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        )
+        return _wrap_in_ok_result(balances)
+
+    @overload
+    def _modify_manually_tracked_balances(  # pylint: disable=unused-argument, no-self-use
+            self,
+            function: Callable[['DBHandler', List[ManuallyTrackedBalance]], None],
+            data_or_labels: List[ManuallyTrackedBalance],
+    ) -> Dict[str, Any]:
+        ...
+
+    @overload
+    def _modify_manually_tracked_balances(  # pylint: disable=unused-argument, no-self-use
+            self,
+            function: Callable[['DBHandler', List[str]], None],
+            data_or_labels: List[str],
+    ) -> Dict[str, Any]:
+        ...
+
+    def _modify_manually_tracked_balances(
+            self,
+            function: Union[
+                Callable[['DBHandler', List[ManuallyTrackedBalance]], None],
+                Callable[['DBHandler', List[str]], None],
+            ],
+            data_or_labels: Union[List[ManuallyTrackedBalance], List[str]],
+    ) -> Dict[str, Any]:
+        try:
+            function(self.rotkehlchen.data.db, data_or_labels)  # type: ignore
+        except InputError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
+        except TagConstraintError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        return self._get_manually_tracked_balances()
+
+    @require_loggedin_user()
+    def get_manually_tracked_balances(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_manually_tracked_balances')
+
+        result = self._get_manually_tracked_balances()
+        return api_response(result, status_code=HTTPStatus.OK)
+
+    def _manually_tracked_balances_api_query(
+            self,
+            async_query: bool,
+            function: Union[
+                Callable[['DBHandler', List[ManuallyTrackedBalance]], None],
+                Callable[['DBHandler', List[str]], None],
+            ],
+            data_or_labels: Union[List[ManuallyTrackedBalance], List[str]],
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_modify_manually_tracked_balances',
+                function=function,
+                data_or_labels=data_or_labels,
+            )
+        result = self._modify_manually_tracked_balances(function, data_or_labels)  # type: ignore
+        return api_response(result, status_code=result.get('status_code', HTTPStatus.OK))
 
     @require_loggedin_user()
     def add_manually_tracked_balances(
             self,
+            async_query: bool,
             data: List[ManuallyTrackedBalance],
     ) -> Response:
-        try:
-            add_manually_tracked_balances(self.rotkehlchen.data.db, data)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
-        except TagConstraintError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
-
-        return self.get_manually_tracked_balances()
+        return self._manually_tracked_balances_api_query(
+            async_query=async_query,
+            function=add_manually_tracked_balances,
+            data_or_labels=data,
+        )
 
     @require_loggedin_user()
     def edit_manually_tracked_balances(
             self,
+            async_query: bool,
             data: List[ManuallyTrackedBalance],
     ) -> Response:
-
-        try:
-            edit_manually_tracked_balances(self.rotkehlchen.data.db, data)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
-        except TagConstraintError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
-
-        return self.get_manually_tracked_balances()
+        return self._manually_tracked_balances_api_query(
+            async_query=async_query,
+            function=edit_manually_tracked_balances,
+            data_or_labels=data,
+        )
 
     @require_loggedin_user()
     def remove_manually_tracked_balances(
             self,
+            async_query: bool,
             labels: List[str],
     ) -> Response:
-
-        try:
-            self.rotkehlchen.data.db.remove_manually_tracked_balances(labels)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
-
-        return self.get_manually_tracked_balances()
+        return self._manually_tracked_balances_api_query(
+            async_query=async_query,
+            function=remove_manually_tracked_balances,
+            data_or_labels=labels,
+        )
 
     @require_loggedin_user()
     def get_ignored_assets(self) -> Response:

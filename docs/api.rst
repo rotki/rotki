@@ -3539,6 +3539,9 @@ Getting manually tracked balances
 ====================================
 .. http:get:: /api/(version)/balances/manual/
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
    Doing a GET on the manually tracked balances endpoint will return all the manually tracked balance accounts from the database.
 
    **Example Request**:
@@ -3586,13 +3589,14 @@ Getting manually tracked balances
    :statuscode 200: Balances succesfully queried
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
-   :statuscode 502: Error occured with some external service query such as Cryptocompare. Check message for details.
 
 Adding manually tracked balances
 ====================================
 
 .. http:put:: /api/(version)/balances/manual/
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a PUT on the the manually tracked balances endpoint you can add a balance for an asset that Rotki can't automatically detect, along with a label identifying it for you and any number of tags.
 
@@ -3673,6 +3677,9 @@ Editing manually tracked balances
 
 .. http:patch:: /api/(version)/balances/manual
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
    Doing a PATCH on the the manual balances endpoint allows you to edit a number of manually tracked balances by label.
 
    **Example Request**:
@@ -3742,6 +3749,9 @@ Deleting manually tracked balances
 ======================================
 
 .. http:delete:: /api/(version)/balances/manual/
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a DELETE on the the manual balances endpoint with a list of labels to of manually tracked balances will remove these balances from the database for the current user.
     If one of the given labels to remove is invalid the entire request will fail.
