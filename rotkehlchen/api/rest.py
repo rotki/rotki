@@ -1264,24 +1264,6 @@ class RestAPI():
         result = self._get_manually_tracked_balances()
         return api_response(result, status_code=HTTPStatus.OK)
 
-    # @overload
-    # def _manually_tracked_balances_api_query(
-    #         self,
-    #         async_query: bool,
-    #         function: Callable[['DBHandler', List[ManuallyTrackedBalance]], None],
-    #         data_or_labels: List[ManuallyTrackedBalance],
-    # ) -> Response:
-    #     ...
-
-    # @overload
-    # def _manually_tracked_balances_api_query(
-    #         self,
-    #         async_query: bool,
-    #         function: Callable[['DBHandler', List[str]], None],
-    #         data_or_labels: List[str],
-    # ) -> Response:
-    #     ...
-
     def _manually_tracked_balances_api_query(
             self,
             async_query: bool,
@@ -1298,7 +1280,7 @@ class RestAPI():
                 data_or_labels=data_or_labels,
             )
         result = self._modify_manually_tracked_balances(function, data_or_labels)  # type: ignore
-        return api_response(result, status_code=HTTPStatus.OK)
+        return api_response(result, status_code=result.get('status_code', HTTPStatus.OK))
 
     @require_loggedin_user()
     def add_manually_tracked_balances(
