@@ -5,7 +5,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { TaxReportState } from '@/store/reports/state';
-import { Message, RotkehlchenState } from '@/store/store';
+import { Message, RotkehlchenState } from '@/store/types';
 import { TaxReportEvent } from '@/typing/types';
 
 export const actions: ActionTree<TaxReportState, RotkehlchenState> = {

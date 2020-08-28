@@ -1,6 +1,6 @@
 import { GetterTree } from 'vuex';
 import { TaxReportState } from '@/store/reports/state';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 
 export const getters: GetterTree<TaxReportState, RotkehlchenState> = {
   progress: (state: TaxReportState) => {

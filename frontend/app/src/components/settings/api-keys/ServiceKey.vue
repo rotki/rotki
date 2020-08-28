@@ -32,7 +32,7 @@
                 v-on="on"
                 @click="deleteKey()"
               >
-                <v-icon>fa-trash</v-icon>
+                <v-icon>mdi-delete</v-icon>
               </v-btn>
             </template>
             <span>

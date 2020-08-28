@@ -267,10 +267,11 @@ app.on('ready', async () => {
   ipcMain.on('OPEN_URL', (event, args) => {
     if (
       !(
-        args.startsWith('https://rotki.com') ||
+        args.startsWith('https://rotki.com/') ||
         args.startsWith('https://rotki.readthedocs.io/') ||
         args.startsWith('https://github.com/rotki/rotki/') ||
-        args.startsWith('https://etherscan.io/')
+        args.startsWith('https://etherscan.io/') ||
+        args.startsWith('https://blockstream.info/')
       )
     ) {
       console.error(`Error: Requested to open untrusted URL: ${args} `);

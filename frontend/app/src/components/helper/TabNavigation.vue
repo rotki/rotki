@@ -8,11 +8,12 @@
     class="tab-navigation__tabs py-6"
   >
     <v-tab
-      v-for="tab in tabContents"
+      v-for="tab in visibleTabs"
+      v-show="visibleTabs.length > 1"
       :key="tab.name"
       :to="tab.routeTo"
       class="tab-navigation__tabs__tab"
-      :class="tab.routeTo.toLowerCase().replace('/', '').replace(/\//g, '__')"
+      :class="getClass(tab.routeTo)"
     >
       {{ tab.name }}
     </v-tab>
@@ -35,8 +36,9 @@
 import { Component, Vue, Prop } from 'vue-property-decorator';
 
 export interface TabContent {
-  name: string;
-  routeTo: string;
+  readonly name: string;
+  readonly routeTo: string;
+  readonly hidden?: boolean;
 }
 
 @Component({})
@@ -44,6 +46,14 @@ export default class TabNavigation extends Vue {
   @Prop({ required: true, type: Array })
   tabContents!: TabContent[];
   selectedTab: string = '';
+
+  get visibleTabs(): TabContent[] {
+    return this.tabContents.filter(t => !t.hidden);
+  }
+
+  getClass(route: string): string {
+    return route.toLowerCase().replace('/', '').replace(/\//g, '__');
+  }
 }
 </script>
 

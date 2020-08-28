@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature: `1085` Users can now view their exchange trades, along with there deposit and withdraw actions on the connected exchanges.
 * :bug: `1321` CSV export formulas have now been fixed and should properly calculate profit/loss per different action type.
 * :feature:`-` Add support for New Zealand Dollar (NZD) as a fiat currency
 * :feature:`-` Add support for Brazilian Real (BRL) as a fiat currency

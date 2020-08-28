@@ -126,6 +126,8 @@ export default class Notification extends Vue {
     font-size: 13px;
     color: rgb(0, 0, 0, 0.6);
     min-height: 60px;
+    max-height: 60px;
+    overflow-y: auto;
   }
 
   &__dismiss {

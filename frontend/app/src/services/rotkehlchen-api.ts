@@ -1,9 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import {
   AccountState,
-  ActionResult,
   ApiAccountData,
-  AsyncQuery,
   DBSettings,
   ExternalServiceKeys
 } from '@/model/action-result';
@@ -13,14 +11,17 @@ import { Messages } from '@/model/messages';
 import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result';
 import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
-import { StoredTrade, Trade } from '@/model/stored-trade';
 import { VersionCheck } from '@/model/version-check';
+import { setupTransformer } from '@/services/axios-tranformers';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { DefiApi } from '@/services/defi/defi-api';
 import { SessionApi } from '@/services/session/session-api';
+import { TradesApi } from '@/services/trades/trades-api';
 import {
+  ActionResult,
   ApiManualBalance,
   ApiManualBalances,
+  AsyncQuery,
   SupportedAssets,
   TaskNotFoundError
 } from '@/services/types-api';
@@ -58,6 +59,7 @@ export class RotkehlchenApi {
   readonly defi: DefiApi;
   readonly session: SessionApi;
   readonly balances: BalancesApi;
+  readonly trades: TradesApi;
 
   constructor() {
     this.axios = axios.create({
@@ -67,6 +69,7 @@ export class RotkehlchenApi {
     this.defi = new DefiApi(this.axios);
     this.session = new SessionApi(this.axios);
     this.balances = new BalancesApi(this.axios);
+    this.trades = new TradesApi(this.axios);
   }
 
   checkIfLogged(username: string): Promise<boolean> {
@@ -138,26 +141,6 @@ export class RotkehlchenApi {
           validateStatus: validAuthorizedStatus
         }
       )
-      .then(handleResponse);
-  }
-
-  deleteExternalTrade(id: string): Promise<boolean> {
-    return this.axios
-      .delete<ActionResult<boolean>>('/trades', {
-        data: {
-          trade_id: id
-        },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
-  queryExternalTrades(): Promise<StoredTrade[]> {
-    return this.axios
-      .get<ActionResult<StoredTrade[]>>('/trades', {
-        params: { location: 'external' },
-        validateStatus: validStatus
-      })
       .then(handleResponse);
   }
 
@@ -244,10 +227,18 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryTaskResult<T>(id: number): Promise<ActionResult<T>> {
+  queryTaskResult<T>(
+    id: number,
+    numericKeys?: string[]
+  ): Promise<ActionResult<T>> {
+    const transformer = numericKeys
+      ? setupTransformer(numericKeys)
+      : this.axios.defaults.transformResponse;
+
     return this.axios
       .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`, {
-        validateStatus: validTaskStatus
+        validateStatus: validTaskStatus,
+        transformResponse: transformer
       })
       .then(response => {
         if (response.status === 404) {
@@ -570,34 +561,6 @@ export class RotkehlchenApi {
         },
         validateStatus: validStatus
       })
-      .then(handleResponse);
-  }
-
-  addExternalTrade(trade: Trade): Promise<StoredTrade[]> {
-    return this.axios
-      .put<ActionResult<StoredTrade[]>>(
-        '/trades',
-        {
-          ...trade
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
-  }
-
-  editExternalTrade(trade: StoredTrade): Promise<StoredTrade[]> {
-    return this.axios
-      .patch<ActionResult<StoredTrade[]>>(
-        '/trades',
-        {
-          ...trade
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
       .then(handleResponse);
   }
 

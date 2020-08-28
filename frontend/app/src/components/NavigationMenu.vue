@@ -59,59 +59,55 @@ export default class NavigationMenu extends Vue {
   navItems = [
     {
       type: 'item',
-      text: 'Dashboard',
+      text: this.$tc('navigation_menu.dashboard'),
       route: '/dashboard',
       class: 'dashboard',
       icon: 'fa-dashboard'
     },
     {
       type: 'item',
-      text: 'Accounts & Balances',
+      text: this.$tc('navigation_menu.accounts_balances'),
       route: '/accounts-balances',
       class: 'accounts-balances',
       icon: 'fa-briefcase'
     },
     {
       type: 'item',
-      text: 'API Keys',
+      text: this.$tc('navigation_menu.api_keys'),
       route: '/settings/api-keys/rotki-premium',
       class: 'settings__api-keys',
       icon: 'fa-key'
     },
-    { type: 'item', text: 'Import Data', route: '/import', icon: 'fa-upload' },
     {
-      type: 'group',
-      text: 'Trades',
-      route: '',
-      icon: 'fa-exchange',
-      class: 'trades',
-      items: [
-        {
-          type: 'item',
-          text: 'OTC Trades',
-          route: '/otc-trades',
-          class: 'otc-trades',
-          icon: 'fa-exchange'
-        }
-      ]
+      type: 'item',
+      text: this.$tc('navigation_menu.import_data'),
+      route: '/import',
+      icon: 'fa-upload'
     },
     {
       type: 'item',
-      text: 'DeFi',
+      text: this.$tc('navigation_menu.history'),
+      route: '/history',
+      class: 'history',
+      icon: 'mdi-history'
+    },
+    {
+      type: 'item',
+      text: this.$tc('navigation_menu.defi'),
       route: '/defi/overview',
       icon: 'fa-line-chart',
       class: 'defi'
     },
     {
       type: 'item',
-      text: 'Statistics',
+      text: this.$tc('navigation_menu.statistics'),
       route: '/statistics',
       class: 'statistics',
       icon: 'fa-bar-chart'
     },
     {
       type: 'item',
-      text: 'Tax Report',
+      text: this.$tc('navigation_menu.tax_report'),
       route: '/tax-report',
       class: 'tax-report',
       icon: 'fa-calculator'

@@ -132,7 +132,7 @@ import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
 import Login from '@/components/account-management/Login.vue';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 import { Credentials, UnlockPayload } from '@/typing/types';
 
 @Component({

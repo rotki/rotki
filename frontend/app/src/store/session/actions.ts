@@ -19,8 +19,7 @@ import {
   SessionState
 } from '@/store/session/types';
 import { loadFrontendSettings } from '@/store/settings/utils';
-import { Message, RotkehlchenState } from '@/store/store';
-import { ActionStatus } from '@/store/types';
+import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
 import {
   SettingsUpdate,
@@ -149,6 +148,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('defi/reset', {}, { root: true });
       commit('tasks/reset', {}, { root: true });
       commit('settings/reset', {}, { root: true });
+      commit('reset', {}, { root: true });
     } catch (e) {
       showError(e.message, 'Logout failed');
     }

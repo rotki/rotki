@@ -107,7 +107,7 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import { exchanges } from '@/data/defaults';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 
 const { mapState } = createNamespacedHelpers('balances');
 const { mapGetters } = createNamespacedHelpers('session');

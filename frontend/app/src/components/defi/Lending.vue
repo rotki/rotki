@@ -134,7 +134,7 @@ import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
-import { Status } from '@/store/defi/status';
+import { Status } from '@/store/const';
 import { DefiBalance, DefiLendingHistory } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
 import { LendingHistory } from '@/utils/premium';

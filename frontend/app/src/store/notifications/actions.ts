@@ -4,7 +4,7 @@ import { Severity } from '@/store/notifications/consts';
 import { NotificationState } from '@/store/notifications/state';
 import { NotificationPayload } from '@/store/notifications/types';
 import { createNotification } from '@/store/notifications/utils';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
   consume({ commit, getters }): any {

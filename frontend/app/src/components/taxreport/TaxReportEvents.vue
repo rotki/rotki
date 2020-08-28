@@ -4,9 +4,13 @@
       <v-card>
         <v-card-title>Events</v-card-title>
         <v-card-text>
-          <v-data-table :headers="headers" :items="events">
+          <v-data-table
+            :headers="headers"
+            :items="events"
+            :footer-props="footerProps"
+          >
             <template #item.time="{ item }">
-              {{ item.time | formatDate(dateDisplayFormat) }}
+              <date-display :timestamp="item.time" />
             </template>
             <template #header.paidInProfitCurrency>
               Paid in {{ currency }}
@@ -57,15 +61,17 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import { footerProps } from '@/config/datatable.common';
 import { EventEntry } from '@/model/trade-history-types';
 
 @Component({
   components: {
+    DateDisplay,
     AmountDisplay
   },
   computed: {
     ...mapState('reports', ['currency', 'events']),
-    ...mapGetters('session', ['dateDisplayFormat']),
     ...mapGetters('balances', ['exchangeRate'])
   }
 })
@@ -73,7 +79,6 @@ export default class TaxReportEvents extends Vue {
   events!: EventEntry[];
   currency!: string;
   exchangeRate!: (currency: string) => number;
-  dateDisplayFormat!: string;
 
   headers = [
     { text: 'Type', value: 'type' },
@@ -97,5 +102,7 @@ export default class TaxReportEvents extends Vue {
     { text: 'Time', value: 'time' },
     { text: 'Virtual?', value: 'isVirtual', align: 'center' }
   ];
+
+  footerProps = footerProps;
 }
 </script>

@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { ActionResult } from '@/model/action-result';
+import { ActionResult } from '@/services/types-api';
 
 export function handleResponse<T>(response: AxiosResponse<ActionResult<T>>): T {
   const { result, message } = response.data;

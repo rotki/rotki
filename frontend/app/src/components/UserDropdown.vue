@@ -21,7 +21,7 @@
             {{ username }}
           </v-list-item-title>
         </v-list-item>
-        <v-divider class="mx-4"></v-divider>
+        <v-divider class="mx-4" />
         <v-list-item
           key="settings"
           class="user-dropdown__settings"
@@ -30,7 +30,9 @@
           <v-list-item-avatar>
             <v-icon color="primary">fa fa-gear</v-icon>
           </v-list-item-avatar>
-          <v-list-item-title>Settings</v-list-item-title>
+          <v-list-item-title>
+            {{ $t('user_dropdown.settings') }}
+          </v-list-item-title>
         </v-list-item>
         <v-list-item
           key="privacy-mode"
@@ -41,9 +43,11 @@
             <v-icon v-if="privacyMode" color="primary">fa-eye-slash</v-icon>
             <v-icon v-else color="primary">fa-eye</v-icon>
           </v-list-item-avatar>
-          <v-list-item-title>Toggle Privacy Mode</v-list-item-title>
+          <v-list-item-title>
+            {{ $t('user_dropdown.toggle_privacy') }}
+          </v-list-item-title>
         </v-list-item>
-        <v-divider class="mx-4"></v-divider>
+        <v-divider class="mx-4" />
         <v-list-item
           key="logout"
           class="user-dropdown__logout"
@@ -52,28 +56,27 @@
           <v-list-item-avatar>
             <v-icon color="primary">fa fa-sign-out</v-icon>
           </v-list-item-avatar>
-          <v-list-item-title>Logout</v-list-item-title>
+          <v-list-item-title>
+            {{ $t('user_dropdown.logout') }}
+          </v-list-item-title>
         </v-list-item>
       </v-list>
     </v-menu>
     <confirm-dialog
       :display="confirmLogout"
-      title="Confirmation Required"
-      message="Are you sure you want to log out of your current rotki session?"
+      :title="$t('user_dropdown.confirmation.title')"
+      :message="$t('user_dropdown.confirmation.message')"
       @confirm="logout()"
       @cancel="confirmLogout = false"
-    ></confirm-dialog>
+    />
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-
-const { mapState } = createNamespacedHelpers('session');
-const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
@@ -81,8 +84,7 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
     MenuTooltipButton
   },
   computed: {
-    ...mapState(['privacyMode']),
-    ...mapSessionState(['username'])
+    ...mapState('session', ['privacyMode', 'username'])
   }
 })
 export default class UserDropdown extends Vue {

@@ -51,5 +51,171 @@
       "non_empty_key": "The API key cannot be empty",
       "non_empty_secret": "The API secret cannot be empty"
     }
+  },
+  "open_trades": {
+    "title": "Open Orders",
+    "header": {
+      "location": "Location",
+      "action": "Action",
+      "pair": "Pair",
+      "rate": "Rate",
+      "amount": "Amount",
+      "fee": "Fee",
+      "fee_currency": "Fee Currency"
+    }
+  },
+  "closed_trades": {
+    "title":  "Closed Orders",
+    "headers": {
+      "location": "Location",
+      "action": "Action",
+      "pair": "Pair",
+      "rate": "Rate",
+      "amount": "Amount",
+      "fee": "Fee",
+      "timestamp": "Date"
+    },
+    "details": {
+      "title": "Trade Details",
+      "notes": "Notes",
+      "note_data": "Trade has no notes",
+      "link_data": "Trade has no link",
+      "link": "Link"
+    },
+    "dialog": {
+      "save": "Save",
+      "add": {
+        "title": "Add External Trade"
+      },
+      "edit": {
+        "title": "Edit External Trade",
+        "subtitle": "Edit an existing trade"
+      }
+    },
+    "confirmation": {
+      "title": "Delete Trade",
+      "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}"
+    },
+    "label": "trades",
+    "refresh_tooltip": "Refresh your trades"
+  },
+  "trade_location_selector": {
+    "selection-none": "Showing results across all locations",
+    "selection-single": "Showing results for {location}",
+    "label": "Filter location"
+  },
+  "deposits_withdrawals": {
+    "title": "Deposits & Withdrawals",
+    "headers": {
+      "location": "Location",
+      "action": "Action",
+      "asset": "Asset",
+      "amount": "Amount",
+      "fee": "Fee",
+      "timestamp": "Date"
+    },
+    "label": "asset movements",
+    "loading": "Please wait while your asset movements are getting loaded...",
+    "refresh_tooltip": "Refresh your deposits & withdrawals",
+    "details": {
+      "title": "Details",
+      "no_details": "No details found."
+    },
+    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
+  },
+  "history": {
+    "header": "History",
+    "tabs": {
+      "trades": "Trades",
+      "deposits_withdrawals": "Deposits & Withdrawals"
+    }
+  },
+  "upgrade_row": {
+    "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
+    "rotki_premium": "rotki Premium"
+  },
+  "otc_form": {
+    "date": {
+      "hint": "Time the trade took place",
+      "label": "Time"
+    },
+    "trade_type": {
+      "label": "Trade type",
+      "buy": "Buy",
+      "sell": "Sell"
+    },
+    "pair": {
+      "label": "Pair",
+      "hint": "Pair for the trade. BASECURRENCY_QUOTECURRENCY"
+    },
+    "amount": {
+      "label": "Amount",
+      "hint": "Amount bought/sold"
+    },
+    "rate": {
+      "label": "Rate",
+      "hint": "Rate of the trade"
+    },
+    "fee": {
+      "label": "Fee",
+      "hint": "Fee if any of the trade that occurred"
+    },
+    "fee_currency": {
+      "label": "Fee Currency"
+    },
+    "link": {
+      "label": "Link",
+      "hint": "[Optional] A link to the trade. e.g. in an explorer"
+    },
+    "notes": {
+      "label": "Additional notes",
+      "hint": "[Optional] Additional notes to store for the trade"
+    },
+    "validation": {
+      "non_empty_fee": "The fee currency cannot be empty"
+    }
+  },
+  "user_dropdown": {
+    "settings": "Settings",
+    "toggle_privacy": "Toggle Privacy Mode",
+    "logout": "Logout",
+    "confirmation": {
+      "message": "Are you sure you want to log out of your current rotki session?",
+      "title": "Confirmation Required"
+    }
+  },
+  "actions": {
+    "asset_movements": {
+      "task_description": "Querying asset movements",
+      "error": {
+        "description": "Failed: {error}",
+        "title": "Asset movement query"
+      }
+    },
+    "trades" : {
+      "task_description": "Querying Trades",
+      "error": {
+        "description": "Failed: {error}",
+        "title": "Trades query"
+      }
+    }
+  },
+  "navigation_menu": {
+    "dashboard": "Dashboard",
+    "accounts_balances": "Accounts & Balances",
+    "api_keys": "API Keys",
+    "import_data": "Import Data",
+    "history": "History",
+    "defi": "DeFi",
+    "statistics": "Statistics",
+    "tax_report": "Tax Report"
+  },
+  "trade_history": {
+    "loading": "Please wait while your trades are getting loaded...",
+    "loading_subtitle": "The loading of trades might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
+  },
+  "movement_links": {
+    "address": "Address:",
+    "transaction": "TX:"
   }
 }

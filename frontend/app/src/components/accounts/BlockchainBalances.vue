@@ -4,7 +4,7 @@
     <v-card-text>
       <v-btn absolute fab top right dark color="primary" @click="newAccount()">
         <v-icon>
-          fa fa-plus
+          mdi-plus
         </v-icon>
       </v-btn>
       <big-dialog

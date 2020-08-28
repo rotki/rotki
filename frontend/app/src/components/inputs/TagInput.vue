@@ -49,7 +49,7 @@
           :disabled="disabled"
           @click="manageTags = true"
         >
-          <v-icon>fa-edit</v-icon>
+          <v-icon>mdi-pencil</v-icon>
         </v-btn>
       </template>
     </v-autocomplete>

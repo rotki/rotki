@@ -33,7 +33,6 @@
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
 import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
 import LoanCollateral from '@/components/defi/loan/LoanCollateral.vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
@@ -51,14 +50,9 @@ import { VaultEventsList } from '@/utils/premium';
     LoanLiquidation,
     PremiumCard,
     VaultEventsList
-  },
-  computed: {
-    ...mapGetters('session', ['dateDisplayFormat'])
   }
 })
 export default class LoanInfo extends Mixins(PremiumMixin, LoanDisplayMixin) {
-  dateDisplayFormat!: string;
-
   openLink(url: string) {
     this.$interop.openUrl(url);
   }

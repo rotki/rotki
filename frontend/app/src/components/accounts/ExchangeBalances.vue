@@ -12,7 +12,7 @@
         to="/settings/api-keys/exchanges"
       >
         <v-icon>
-          fa fa-plus
+          mdi-plus
         </v-icon>
       </v-btn>
       <v-row

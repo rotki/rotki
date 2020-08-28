@@ -1,4 +1,5 @@
-import store, { Message } from '@/store/store';
+import store from '@/store/store';
+import { Message } from '@/store/types';
 
 export function showError(description: string, title?: string) {
   const message = {

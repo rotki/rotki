@@ -79,7 +79,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { ExternalServiceKeys } from '@/model/action-result';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 
 @Component({

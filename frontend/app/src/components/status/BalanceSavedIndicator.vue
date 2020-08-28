@@ -22,9 +22,7 @@
         Balances last saved
       </v-row>
       <v-row class="text--secondary">
-        <span v-if="lastBalanceSave">
-          {{ lastBalanceSave | formatDate(dateDisplayFormat) }}
-        </span>
+        <date-display v-if="lastBalanceSave" :timestamp="lastBalanceSave" />
         <span v-else>
           Never
         </span>
@@ -51,20 +49,20 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { AllBalancePayload } from '@/store/balances/actions';
 
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { MenuTooltipButton },
+  components: { DateDisplay, MenuTooltipButton },
   computed: {
-    ...mapGetters(['lastBalanceSave', 'dateDisplayFormat'])
+    ...mapGetters(['lastBalanceSave'])
   }
 })
 export default class BalanceSavedIndicator extends Vue {
   lastBalanceSave!: number;
-  dateDisplayFormat!: string;
 
   refreshAllAndSave() {
     this.$store.dispatch('balances/fetchBalances', {

@@ -88,7 +88,7 @@ import '@/services/task-manager';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import ErrorScreen from '@/ErrorScreen.vue';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 
 @Component({
   components: {

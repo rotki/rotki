@@ -8,7 +8,7 @@ import {
   MakerDAOVaultEventType,
   SupportedDefiProtocols
 } from '@/services/defi/types';
-import { Status } from '@/store/defi/status';
+import { Status } from '@/store/const';
 
 export interface DefiState {
   status: Status;

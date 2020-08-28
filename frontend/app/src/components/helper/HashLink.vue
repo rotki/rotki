@@ -1,6 +1,9 @@
 <template>
   <div>
-    <span :class="privacyMode ? 'blur-content' : ''">
+    <span v-if="fullAddress" :class="privacyMode ? 'blur-content' : null">
+      {{ text }}
+    </span>
+    <span v-else :class="privacyMode ? 'blur-content' : null">
       {{ text | truncateAddress }}
     </span>
     <v-btn
@@ -16,6 +19,7 @@
       </v-icon>
     </v-btn>
     <v-btn
+      v-if="!!baseUrl"
       x-small
       icon
       width="20px"
@@ -47,7 +51,9 @@ export default class HashLink extends Vue {
     type: String,
     default: 'https://etherscan.io/address/'
   })
-  baseUrl!: string;
+  baseUrl!: string | null;
+  @Prop({ required: false, type: Boolean, default: false })
+  fullAddress!: boolean;
 
   privacyMode!: boolean;
 

@@ -3,7 +3,7 @@ import sortBy from 'lodash/sortBy';
 import { GetterTree } from 'vuex';
 import { truncateAddress } from '@/filters';
 import { SupportedDefiProtocols } from '@/services/defi/types';
-import { Status } from '@/store/defi/status';
+import { Status } from '@/store/const';
 import {
   AaveLoan,
   DefiBalance,
@@ -14,7 +14,7 @@ import {
   LoanSummary,
   MakerDAOVaultModel
 } from '@/store/defi/types';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 import { Writeable } from '@/types';
 import { DefiAccount } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';

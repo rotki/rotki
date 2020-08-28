@@ -47,7 +47,7 @@
                       v-on="on"
                       @click="confirmationType = 'single'"
                     >
-                      <v-icon>fa-trash</v-icon>
+                      <v-icon>mdi-delete</v-icon>
                     </v-btn>
                   </template>
                   <span>Purge cached data for the selected exchange</span>

@@ -1,18 +1,18 @@
 import { Guid } from '../../common/guid';
-import { OtcPage } from '../pages/otc-page';
+import { HistoryPage } from '../pages/history-page';
 import { RotkiApp } from '../pages/rotki-app';
 import { OTCTrade } from '../support/types';
 
-describe('otc trades', () => {
+describe('trades', () => {
   let username: string;
   let app: RotkiApp;
-  let page: OtcPage;
+  let page: HistoryPage;
   let otcData: OTCTrade[];
 
   before(() => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
-    page = new OtcPage();
+    page = new HistoryPage();
     app.visit();
     app.createAccount(username);
     cy.fixture('otc').then(otc => {
@@ -24,12 +24,10 @@ describe('otc trades', () => {
     app.logout();
   });
 
-  it('add two trades', () => {
+  it('add two external trades', () => {
     page.visit();
     page.addTrade(otcData[0]);
-    page.confirmSuccess();
     page.addTrade(otcData[1]);
-    page.confirmSuccess();
   });
 
   it('displays two trades', () => {
@@ -38,16 +36,15 @@ describe('otc trades', () => {
     page.tradeIsVisible(1, otcData[1]);
   });
 
-  it('edit trade', () => {
+  it('edit external trade', () => {
     page.editTrade(0, '123.2');
-    page.confirmSuccess();
     page.tradeIsVisible(0, {
       ...otcData[0],
       amount: '123.2'
     });
   });
 
-  it('delete trade', () => {
+  it('delete external trade', () => {
     page.deleteTrade(0);
     page.confirmDelete();
     page.visibleEntries(1);

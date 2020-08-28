@@ -1,29 +1,10 @@
-import {
-  AssetBalances,
-  Balances,
-  EthBalances,
-  ManualBalanceByLocation
-} from '@/model/blockchain-balances';
-import { ManualBalance, SupportedAsset } from '@/services/types-model';
-import {
-  AccountDataMap,
-  ExchangeData,
-  UsdToFiatExchangeRates
-} from '@/typing/types';
+import { AssetMovements, BalanceState } from '@/store/balances/types';
 
-export interface BalanceState {
-  eth: EthBalances;
-  btc: Balances;
-  totals: AssetBalances;
-  usdToFiatExchangeRates: UsdToFiatExchangeRates;
-  connectedExchanges: string[];
-  exchangeBalances: ExchangeData;
-  ethAccounts: AccountDataMap;
-  btcAccounts: AccountDataMap;
-  supportedAssets: SupportedAsset[];
-  manualBalances: ManualBalance[];
-  manualBalanceByLocation: ManualBalanceByLocation;
-}
+export const defaultAssetMovements = (): AssetMovements => ({
+  found: 0,
+  limit: 0,
+  movements: []
+});
 
 export const defaultState = (): BalanceState => ({
   eth: {},
@@ -36,7 +17,8 @@ export const defaultState = (): BalanceState => ({
   btcAccounts: {},
   supportedAssets: [],
   manualBalances: [],
-  manualBalanceByLocation: {}
+  manualBalanceByLocation: {},
+  assetMovements: defaultAssetMovements()
 });
 
 export const state: BalanceState = defaultState();

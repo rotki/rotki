@@ -1,5 +1,5 @@
 import { Module } from 'vuex';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 import { actions } from './actions';
 import { getters } from './getters';
 import { mutations } from './mutations';

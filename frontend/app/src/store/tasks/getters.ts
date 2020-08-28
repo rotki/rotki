@@ -3,8 +3,8 @@ import toArray from 'lodash/toArray';
 import { GetterTree } from 'vuex';
 import { Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { RotkehlchenState } from '@/store/store';
 import { TaskState } from '@/store/tasks/state';
+import { RotkehlchenState } from '@/store/types';
 
 export type TaskGetters = {
   isTaskRunning: (type: TaskType) => boolean;

@@ -106,7 +106,7 @@
             <v-spacer></v-spacer>
             <v-text-field
               v-model="search"
-              append-icon="fa-search"
+              append-icon="mdi-magnify"
               label="Search"
               class="pa-0 ma-0"
               single-line
@@ -121,6 +121,7 @@
             :loading="anyIsLoading"
             sort-by="usdValue"
             sort-desc
+            :footer-props="footerProps"
           >
             <template #header.usdValue>
               {{ currency.ticker_symbol }} value
@@ -189,6 +190,7 @@ import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import SummaryCard from '@/components/dashboard/SummaryCard.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import { footerProps } from '@/config/datatable.common';
 
 import {
   AssetBalance,
@@ -250,6 +252,8 @@ export default class Dashboard extends Vue {
   manualBalanceByLocation!: ManualBalanceByLocation;
 
   zero: BigNumber = Zero;
+
+  footerProps = footerProps;
 
   get blockchainTotals(): BlockchainBalances {
     const ethereumTotal = this.ethAccounts.reduce(

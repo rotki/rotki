@@ -41,7 +41,7 @@
 </template>
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { Version } from '@/store/store';
+import { Version } from '@/store/types';
 
 @Component({})
 export default class MessageOverlay extends Vue {

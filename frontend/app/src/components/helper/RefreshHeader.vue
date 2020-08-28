@@ -3,22 +3,11 @@
     {{ title }}
 
     <span>
-      <v-tooltip top>
-        <template #activator="{ on, attrs }">
-          <v-btn
-            text
-            fab
-            depressed
-            :disabled="loading"
-            v-bind="attrs"
-            @click="refresh()"
-            v-on="on"
-          >
-            <v-icon color="primary">fa-refresh</v-icon>
-          </v-btn>
-        </template>
-        <span>Refreshes the {{ title.toLocaleLowerCase() }} data</span>
-      </v-tooltip>
+      <refresh-button
+        :loading="loading"
+        :refresh="refresh"
+        :tooltip="`Refreshes the ${title.toLocaleLowerCase()} data`"
+      />
       <slot></slot>
     </span>
   </h2>
@@ -26,8 +15,11 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 
-@Component({})
+@Component({
+  components: { RefreshButton }
+})
 export default class RefreshHeader extends Vue {
   @Prop({ required: true, type: String })
   title!: string;
@@ -39,5 +31,3 @@ export default class RefreshHeader extends Vue {
   refresh() {}
 }
 </script>
-
-<style scoped></style>

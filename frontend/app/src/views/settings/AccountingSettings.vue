@@ -121,7 +121,7 @@
 import { Component } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import { Message } from '@/store/store';
+import { Message } from '@/store/types';
 import { AccountingSettings } from '@/typing/types';
 import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 

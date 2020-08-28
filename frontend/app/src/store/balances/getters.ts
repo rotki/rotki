@@ -10,8 +10,8 @@ import {
   ManualBalancesByLocation,
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
-import { BalanceState } from '@/store/balances/state';
-import { RotkehlchenState } from '@/store/store';
+import { BalanceState } from '@/store/balances/types';
+import { RotkehlchenState } from '@/store/types';
 import { Blockchain, GeneralAccount } from '@/typing/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
@@ -224,5 +224,23 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }
 
     return accounts;
+  },
+  assetMovements: ({ assetMovements }) => {
+    return assetMovements.movements;
+  },
+  assetMovementsTotal: ({ assetMovements }) => {
+    return assetMovements.found;
+  },
+  assetMovementsLimit: ({ assetMovements }) => {
+    return assetMovements.limit;
+  },
+  isEthereumToken: ({ supportedAssets }) => (asset: string) => {
+    const match = supportedAssets.find(
+      supportedAsset => supportedAsset.symbol === asset
+    );
+    if (match) {
+      return match.type === 'ethereum token';
+    }
+    return false;
   }
 };

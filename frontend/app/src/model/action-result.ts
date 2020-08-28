@@ -1,11 +1,6 @@
 import { SupportedModules } from '@/services/session/types';
 import { GeneralSettings } from '@/typing/types';
 
-export interface ActionResult<T> {
-  readonly result: T;
-  readonly message: string;
-}
-
 export interface AccountState {
   readonly premium: boolean;
   readonly settings: DBSettings;
@@ -36,10 +31,6 @@ export interface DBSettings {
   readonly kraken_account_type: string;
   readonly active_modules: SupportedModules[];
   readonly frontend_settings: string;
-}
-
-export interface AsyncQuery {
-  readonly task_id: number;
 }
 
 export interface ApiKey {

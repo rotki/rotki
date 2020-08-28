@@ -30,9 +30,24 @@ export default new Router({
       component: () => import('../views/TaxReport.vue')
     },
     {
-      path: '/otc-trades',
-      name: 'otc-trades',
-      component: () => import('../views/OtcTrades.vue')
+      path: '/history',
+      component: () => import('../views/trades/History.vue'),
+      children: [
+        {
+          path: '',
+          name: 'trades',
+          redirect: 'trades',
+          component: () => import('../views/trades/TradeHistory.vue')
+        },
+        {
+          path: 'trades',
+          component: () => import('../views/trades/TradeHistory.vue')
+        },
+        {
+          path: 'deposits-withdrawals',
+          component: () => import('../views/trades/DepositsWithdrawals.vue')
+        }
+      ]
     },
     {
       path: '/settings',

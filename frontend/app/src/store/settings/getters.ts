@@ -1,6 +1,6 @@
 import { GetterTree } from 'vuex';
 import { SettingsState } from '@/store/settings/types';
-import { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/types';
 
 export type SettingsGetters = {};
 

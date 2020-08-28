@@ -6,7 +6,7 @@
     class="tag-filter"
     small-chips
     label="Filter by tag(s)"
-    prepend-inner-icon="fa-search"
+    prepend-inner-icon="mdi-magnify"
     item-text="name"
     :menu-props="{ closeOnContentClick: true }"
     item-value="name"
@@ -39,7 +39,7 @@
     </template>
     <template #append-outer>
       <v-btn icon text class="tag-filter__clear" @click="input([])">
-        <v-icon>fa-times</v-icon>
+        <v-icon>mdi-close</v-icon>
       </v-btn>
     </template>
   </v-autocomplete>
