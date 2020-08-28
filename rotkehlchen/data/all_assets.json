@@ -1334,6 +1334,15 @@
         "symbol": "BLUE",
         "type": "ethereum token"
     },
+    "BLY": {
+        "coingecko": "blocery",
+        "ethereum_address": "0xf8aD7dFe656188A23e89da09506Adf7ad9290D5d",
+        "ethereum_token_decimals": 18,
+        "name": "Blocery Token",
+        "started": 1593069593,
+        "symbol": "BLY",
+        "type": "ethereum token"
+    },
     "BLZ": {
         "coingecko": "bluzelle",
         "ethereum_address": "0x5732046A883704404F284Ce41FfADd5b007FD668",
@@ -1405,6 +1414,20 @@
         "started": 1558051200,
         "symbol": "BNBBULL",
         "type": "ethereum token"
+    },
+    "BNBDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token BNBDOWN",
+        "started": 1596585600,
+        "symbol": "BNBDOWN",
+        "type": "own chain"
+    },
+    "BNBUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token BNBUP",
+        "started": 1596585600,
+        "symbol": "BNBUP",
+        "type": "own chain"
     },
     "BNC": {
         "coingecko": "bnoincoin",
@@ -2206,6 +2229,15 @@
         "symbol": "CGA",
         "type": "own chain"
     },
+    "CGT": {
+        "coingecko": "cache-gold",
+        "ethereum_address": "0xF5238462E7235c7B62811567E63Dd17d12C2EAA0",
+        "ethereum_token_decimals": 8,
+        "name": "CACHE Gold",
+        "started": 1581937395,
+        "symbol": "CGT",
+        "type": "ethereum token"
+    },
     "CGLD": {
         "coingecko": "",
         "name": "Celo Gold",
@@ -2416,6 +2448,13 @@
         "started": 1519823488,
         "symbol": "CNN",
         "type": "ethereum token"
+    },
+    "CNS": {
+        "coingecko": "centric-cash",
+        "name": "Centric",
+        "started": 1595980800,
+        "symbol": "CNS",
+        "type": "tron token"
     },
     "CNTM": {
         "coingecko": "connectome",
@@ -2685,6 +2724,15 @@
         "name": "Crypterium",
         "started": 1506556800,
         "symbol": "CRPT",
+        "type": "ethereum token"
+    },
+    "CRV": {
+        "coingecko": "curve-dao-token",
+        "ethereum_address": "0xD533a949740bb3306d119CC777fa900bA034cd52",
+        "ethereum_token_decimals": 18,
+        "name": "Curve DAO Token",
+        "started": 1597270648,
+        "symbol": "CRV",
         "type": "ethereum token"
     },
     "CRW": {
@@ -3111,6 +3159,15 @@
         "symbol": "DEX",
         "type": "ethereum token"
     },
+    "DEXT": {
+        "coingecko": "idextools",
+        "ethereum_address": "0x26CE25148832C04f3d7F26F32478a9fe55197166",
+        "ethereum_token_decimals": 18,
+        "name": "DEXTools",
+        "started": 1592511275,
+        "symbol": "DEXT",
+        "type": "ethereum token"
+    },
     "DGB": {
         "coingecko": "digibyte",
         "name": "DigiByte",
@@ -3255,6 +3312,15 @@
         "symbol": "DMD",
         "type": "own chain"
     },
+    "DMG": {
+        "coingecko": "dmm-governance",
+        "ethereum_address": "0xEd91879919B71bB6905f23af0A68d231EcF87b14",
+        "ethereum_token_decimals": 18,
+        "name": "DMM: Governance",
+        "started": 1589826789,
+        "symbol": "DMG",
+        "type": "ethereum token"
+    },
     "DMT": {
         "coingecko": "dmarket",
         "ethereum_address": "0x2ccbFF3A042c68716Ed2a2Cb0c544A9f1d1935E1",
@@ -3321,6 +3387,15 @@
         "started": 1590451200,
         "symbol": "DOT",
         "type": "own chain"
+    },
+    "DOS": {
+        "coingecko": "dos-network",
+        "ethereum_address": "0x0A913beaD80F321E7Ac35285Ee10d9d922659cB7",
+        "ethereum_token_decimals": 18,
+        "name": "DOS Network Token",
+        "started": 1595509748,
+        "symbol": "DOS",
+        "type": "ethereum token"
     },
     "DOV": {
         "coingecko": "dovu",
@@ -4716,6 +4791,15 @@
         "started": 1482624000,
         "symbol": "GBYTE",
         "type": "own chain"
+    },
+    "GEEQ": {
+        "coingecko": "geeq",
+        "ethereum_address": "0x6B9f031D718dDed0d681c20cB754F97b3BB81b78",
+        "ethereum_token_decimals": 18,
+        "name": "Geeq",
+        "started": 1596492862,
+        "symbol": "GEEQ",
+        "type": "ethereum token"
     },
     "GEM": {
         "coingecko": "gems-2",
@@ -6518,6 +6602,15 @@
         "symbol": "MCAP",
         "type": "ethereum token"
     },
+    "MCB": {
+        "coingecko": "mcdex",
+        "ethereum_address": "0x4e352cF164E64ADCBad318C3a1e222E9EBa4Ce42",
+        "ethereum_token_decimals": 18,
+        "name": "MCDEX Token",
+        "started": 1593849744,
+        "symbol": "MCB",
+        "type": "ethereum token"
+    },
     "MCI": {
         "active": false,
         "coingecko": "",
@@ -7486,6 +7579,16 @@
         "symbol": "NXC",
         "type": "ethereum token"
     },
+    "NXM": {
+        "cryptocompare": "WNXM",
+        "coingecko": "nxm",
+        "ethereum_address": "0xd7c49CEE7E9188cCa6AD8FF264C1DA2e69D4Cf3B",
+        "ethereum_token_decimals": 18,
+        "name": "Nexus Mutual",
+        "started": 1558611941,
+        "symbol": "NXM",
+        "type": "ethereum token"
+    },
     "NXS": {
         "coingecko": "nexus",
         "name": "Nexus",
@@ -7594,6 +7697,15 @@
         "name": "OneLedger",
         "started": 1528848000,
         "symbol": "OLT",
+        "type": "ethereum token"
+    },
+    "OM": {
+        "coingecko": "mantra-dao",
+        "ethereum_address": "0x2baEcDf43734F22FD5c152DB08E3C27233F0c7d2",
+        "ethereum_token_decimals": 18,
+        "name": "Mantra DAO",
+        "started": 1597508166,
+        "symbol": "OM",
         "type": "ethereum token"
     },
     "OMG": {
@@ -7933,6 +8045,15 @@
         "name": "Perlin",
         "started": 1566604800,
         "symbol": "PERL",
+        "type": "ethereum token"
+    },
+    "PERX": {
+        "coingecko": "peerex-network",
+        "ethereum_address": "0x3C6ff50c9Ec362efa359317009428d52115fe643",
+        "ethereum_token_decimals": 9,
+        "name": "PeerEx Network",
+        "started": 1596548338,
+        "symbol": "PERX",
         "type": "ethereum token"
     },
     "PFR": {
@@ -8335,6 +8456,15 @@
         "name": "Purpose",
         "started": 1517011200,
         "symbol": "PRPS",
+        "type": "ethereum token"
+    },
+    "PRQ": {
+        "coingecko": "parsiq",
+        "ethereum_address": "0xFE2786D7D1cCAb8B015f6Ef7392F67d778f8d8D7",
+        "ethereum_token_decimals": 18,
+        "name": "Parsiq Token",
+        "started": 1569095115,
+        "symbol": "PRQ",
         "type": "ethereum token"
     },
     "PST": {
@@ -8942,6 +9072,15 @@
         "symbol": "RPL",
         "type": "ethereum token"
     },
+    "RSR": {
+        "coingecko": "reserve-rights-token",
+        "ethereum_address": "0x8762db106B2c2A0bccB3A80d1Ed41273552616E8",
+        "ethereum_token_decimals": 18,
+        "name": "Reserve Rights",
+        "started": 1558074046,
+        "symbol": "RSR",
+        "type": "ethereum token"
+    },
     "RTB": {
         "active": true,
         "coingecko": "",
@@ -9053,12 +9192,30 @@
         "symbol": "SAN",
         "type": "ethereum token"
     },
+    "SAND": {
+        "coingecko": "the-sandbox",
+        "ethereum_address": "0x3845badAde8e6dFF049820680d1F14bD3903a5d0",
+        "ethereum_token_decimals": 18,
+        "name": "The Sandbox",
+        "started": 1572367723,
+        "symbol": "SAND",
+        "type": "ethereum token"
+    },
     "SBD": {
         "coingecko": "steem-dollars",
         "name": "Steem Dollars",
         "started": 1464998400,
         "symbol": "SBD",
         "type": "own chain"
+    },
+    "SBREE": {
+        "coingecko": "cbdao",
+        "ethereum_address": "0x25377ddb16c79C93B0CBf46809C8dE8765f03FCd",
+        "ethereum_token_decimals": 18,
+        "name": "Synthetic CBDAO",
+        "started": 1594985474,
+        "symbol": "SBREE",
+        "type": "ethereum token"
     },
     "SC": {
         "coingecko": "siacoin",
@@ -9118,6 +9275,15 @@
         "name": "Sense",
         "started": 1502928000,
         "symbol": "SENSE",
+        "type": "ethereum token"
+    },
+    "SENSO": {
+        "coingecko": "senso",
+        "ethereum_address": "0xBa6DB13aeAE3607D400DDFFD675aa4e88ECc9a69",
+        "ethereum_token_decimals": 18,
+        "name": "Sensorium",
+        "started": 1568223216,
+        "symbol": "SENSO",
         "type": "ethereum token"
     },
     "SENT": {
@@ -9969,6 +10135,13 @@
         "symbol": "SWT",
         "type": "ethereum token"
     },
+    "SWINGBY": {
+        "coingecko": "swingby",
+        "name": "Swingby",
+        "started": 1595548800,
+        "symbol": "SWINGBY",
+        "type": "binance token"
+    },
     "SXC": {
         "coingecko": "sxc",
         "name": "Sexcoin",
@@ -10449,6 +10622,15 @@
         "name": "TrakInvest",
         "started": 1513361766,
         "symbol": "TRAK",
+        "type": "ethereum token"
+    },
+    "TRB": {
+        "coingecko": "tellor",
+        "ethereum_address": "0x0Ba45A8b5d5575935B8158a88C631E9F9C95a2e5",
+        "ethereum_token_decimals": 18,
+        "name": "Tellor Tributes",
+        "started": 1564671864,
+        "symbol": "TRB",
         "type": "ethereum token"
     },
     "TRCT": {
@@ -11345,6 +11527,15 @@
         "symbol": "WMK",
         "type": "ethereum token"
     },
+    "WNXM": {
+        "coingecko": "wrapped-nxm",
+        "ethereum_address": "0x0d438F3b5175Bebc262bF23753C1E53d03432bDE",
+        "ethereum_token_decimals": 18,
+        "name": "Wrapped Nexus Mutual ",
+        "started": 1593733266,
+        "symbol": "wNXM",
+        "type": "ethereum token"
+    },
     "WOLF": {
         "active": false,
         "coingecko": "",
@@ -11739,6 +11930,20 @@
         "started": 1576627200,
         "symbol": "XTP",
         "type": "ethereum token"
+    },
+    "XTZDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token XTZDOWN",
+        "started": 1596585600,
+        "symbol": "XTZDOWN",
+        "type": "own chain"
+    },
+    "XTZUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token XTZUP",
+        "started": 1596585600,
+        "symbol": "XTZUP",
+        "type": "own chain"
     },
     "XTZ": {
         "coingecko": "tezos",

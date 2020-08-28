@@ -20,7 +20,31 @@ Changelog
   - `Serum (SRM) <https://coinmarketcap.com/currencies/serum/>`__
   - `Orion Protocol (ORN) <https://www.coingecko.com/en/coins/orion-protocol>`__
   - `Polkadot (DOT) <https://coinmarketcap.com/currencies/polkadot-new/>`__
+  - `Curve DAO Token (CRV) <https://www.coingecko.com/en/coins/curve-dao-token>`__
   - `DIAToken (DIA) <https://coinmarketcap.com/currencies/dia-data/>`__
+  - `Binance leveraged token BNBDOWN (BNBDOWN) <https://www.cryptocompare.com/coins/bnbdown/>`__
+  - `Binance leveraged token BNBUP (BNBUP) <https://www.cryptocompare.com/coins/bnbup/>`__
+  - `Binance leveraged token XTZDOWN (XTZDOWN) <https://www.cryptocompare.com/coins/xtzdown/>`__
+  - `Binance leveraged token XTZUP (XTZUP) <https://www.cryptocompare.com/coins/xtzup/>`__
+  - `Reserve Rights (RSR) <https://www.coingecko.com/en/coins/reserve-rights-token>`__
+  - `The Sandbox (SAND) <https://www.coingecko.com/en/coins/sand>`__
+  - `Tellor Tributes (TRB) <https://www.coingecko.com/en/coins/tellor>`__
+  - `Nexus Mutual (NXM) <https://www.coingecko.com/en/coins/nxm>`__
+  - `Wrapped Nexus Mutual (wNXM) <https://www.coingecko.com/en/coins/wrapped-nxm>`__
+  - `Blocery Token (BLY) <https://www.coingecko.com/en/coins/blocery>`__
+  - `DEXTools (DEXT) <https://www.coingecko.com/en/coins/dextools>`__
+  - `DMM: Governance Token (DMG) <https://www.coingecko.com/en/coins/dmm-governance>`__
+  - `DOS Network Token (DOS) <https://www.coingecko.com/en/coins/dos-network>`__
+  - `Geeq (GEEQ) <https://www.coingecko.com/en/coins/geeq>`__
+  - `MCDext Token (MCB) <https://www.coingecko.com/en/coins/mcdex>`__
+  - `Mantra DAO (OM) <https://www.coingecko.com/en/coins/mantra-dao>`__
+  - `PeerEx Network (PERX) <https://www.coingecko.com/en/coins/peerex-network>`__
+  - `Parsiq Token (PRQ) <https://www.coingecko.com/en/coins/parsiq>`__
+  - `Synthetic CBDAO (SBREE) <https://www.coingecko.com/en/coins/cbdao>`__
+  - `Swingby (SWINGBY) <https://www.coingecko.com/en/coins/swingby>`__
+  - `Cache Gold Token (CGT) <https://www.coingecko.com/en/coins/cache-gold>`__
+  - `Centric (CNS) <https://www.coingecko.com/en/coins/centric>`__
+  - `Sensorium (SENSO) <https://www.coingecko.com/en/coins/senso>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.

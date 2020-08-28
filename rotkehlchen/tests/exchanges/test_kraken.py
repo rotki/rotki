@@ -27,6 +27,8 @@ def test_coverage_of_kraken_balances(kraken):
     expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)).union({'BSV'})
     # Ignore the staking assets from the got assets
     got_assets.remove('XTZ.S')
+    got_assets.remove('DOT.S')
+    got_assets.remove('ATOM.S')
     got_assets.remove('EUR.M')
     got_assets.remove('USD.M')
     got_assets.remove('XBT.M')

@@ -44,6 +44,7 @@ RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
 # No special case needed for cETH. Cryptocompare maps it correctly
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
+    Asset('BLY'): Asset('USDT'),
     Asset('cDAI'): A_DAI,
     Asset('cBAT'): Asset('BAT'),
     Asset('cREP'): Asset('REP'),
@@ -54,18 +55,30 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('cZRX'): Asset('ZRX'),
     Asset('ADADOWN'): Asset('USDT'),
     Asset('ADAUP'): Asset('USDT'),
+    Asset('BNBDOWN'): Asset('USDT'),
+    Asset('BNBUP'): Asset('USDT'),
     Asset('BTCDOWN'): Asset('USDT'),
     Asset('BTCUP'): Asset('USDT'),
     Asset('ETHDOWN'): Asset('USDT'),
     Asset('ETHUP'): Asset('USDT'),
+    Asset('DEXT'): Asset('USDT'),
+    Asset('DOS'): Asset('USDT'),
+    Asset('GEEQ'): Asset('USDT'),
     Asset('LINKDOWN'): Asset('USDT'),
     Asset('LINKUP'): Asset('USDT'),
+    Asset('XTZDOWN'): Asset('USDT'),
+    Asset('XTZUP'): Asset('USDT'),
     Asset('STAKE'): Asset('USDT'),
+    Asset('MCB'): Asset('USDT'),
+    Asset('TRB'): Asset('USDT'),
     Asset('YFI'): Asset('USDT'),
     Asset('YAM'): Asset('USDT'),
     Asset('DEC-2'): Asset('USDT'),
     Asset('ORN'): Asset('USDT'),
+    Asset('PERX'): Asset('USDT'),
+    Asset('PRQ'): Asset('USDT'),
     Asset('RING'): Asset('USDT'),
+    Asset('SBREE'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

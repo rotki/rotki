@@ -18,6 +18,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # Only info is here: https://bitcointalk.org/index.php?topic=632818.0
     # No price info in cryptocompare or paprika. So we don't support it.
     'AXIS',
+    'APH',
     # This was yet another shortlived coin whose announcement is here:
     # https://bitcointalk.org/index.php?topic=843495 and coinmarketcap:
     # https://coinmarketcap.com/currencies/snowballs/.
@@ -326,6 +327,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # in cryptocompare but they have no price
     'BVOL',
     'IBVOL',
+    'XDOT',  # old polkadot before the split
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -397,6 +399,10 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Ecochain. As of 22/07/2020 no data found outside of Bittrex for this token.
     # All ECOC data refer to a different coin called EcoCoin
     'ECOC',
+    # As of 28/08/2020 the following assets don't have prices listed anywhere
+    'FME',
+    'INX',
+    'MFA',
 )
 
 
