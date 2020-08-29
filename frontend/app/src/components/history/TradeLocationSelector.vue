@@ -41,6 +41,7 @@
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
+import { TradeLocationData } from '@/components/history/type';
 import { TradeLocation } from '@/services/history/types';
 
 @Component({
@@ -49,7 +50,7 @@ import { TradeLocation } from '@/services/history/types';
 export default class TradeLocationSelector extends Vue {
   readonly tradeLocations = tradeLocations;
 
-  get locations(): TradeLocation[] {
+  get locations(): TradeLocationData[] {
     return this.showExternal
       ? tradeLocations
       : tradeLocations.filter(location => location.identifier !== 'external');

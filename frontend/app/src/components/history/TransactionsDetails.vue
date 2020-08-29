@@ -72,7 +72,6 @@ export default class TransactionDetails extends Vue {
 
 .transaction-details {
   &__data {
-    @extend .themed-scrollbar;
     background-color: var(--v-rotki-light-grey-lighten1);
     border: var(--v-rotki-light-grey-darken1) solid thin;
     border-radius: 4px;
@@ -81,6 +80,7 @@ export default class TransactionDetails extends Vue {
     height: 80px;
     padding: 16px;
     font-size: 14px;
+    @extend .themed-scrollbar;
   }
 }
 </style>

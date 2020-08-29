@@ -144,8 +144,9 @@ export default class Transactions extends Mixins(StatusMixin) {
   }
 
   get visibleTransactions(): EthTransactionWithFee[] {
-    const selectedTransactions = this.account
-      ? this.transactions.filter(tx => tx.fromAddress === this.account.address)
+    const account = this.account;
+    const selectedTransactions = account
+      ? this.transactions.filter(tx => tx.fromAddress === account.address)
       : this.transactions;
     return selectedTransactions.map(value => ({
       ...value,
