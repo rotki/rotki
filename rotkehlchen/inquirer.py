@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Optional
 import requests
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
 from rotkehlchen.errors import PriceQueryUnsupportedAsset, RemoteError, UnableToDecryptRemoteData
@@ -19,6 +20,7 @@ from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 
 logger = logging.getLogger(__name__)
@@ -58,6 +60,7 @@ class Inquirer():
     _cached_forex_data: Dict
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
+    _ethereum: Optional['EthereumManager'] = None
 
     def __new__(
             cls,
@@ -86,12 +89,24 @@ class Inquirer():
         return Inquirer.__instance
 
     @staticmethod
+    def inject_ethereum(ethereum: 'EthereumManager') -> None:
+        Inquirer()._ethereum = ethereum
+
+    @staticmethod
     def find_usd_price(asset: Asset) -> Price:
         """Returns the current USD price of the asset
 
         May raise:
         - RemoteError if the cryptocompare query has a problem
         """
+        if asset.identifier in ('yyDAI+yUSDC+yUSDT+yTUSD', 'yDAI+yUSDC+yUSDT+yTUSD'):
+            ethereum = Inquirer()._ethereum
+            assert ethereum, 'Inquirer should never be called before the injection of ethereum'
+            usd_price = handle_defi_price_query(Inquirer()._ethereum, asset.identifier)
+            if not usd_price:
+                return Price(ZERO)
+            return Price(usd_price)
+
         try:
             result = Inquirer()._cryptocompare.query_endpoint_price(
                 from_asset=asset,

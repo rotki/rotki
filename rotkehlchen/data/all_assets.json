@@ -12530,5 +12530,23 @@
         "started": 1569466541,
         "symbol": "sUSD",
         "type": "ethereum token"
+    },
+    "yDAI+yUSDC+yUSDT+yTUSD": {
+        "coingecko": "lp-ycurve",
+        "ethereum_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
+        "started": 1581620573,
+        "symbol": "yDAI+yUSDC+yUSDT+yTUSD",
+        "type": "ethereum token"
+    },
+    "yyDAI+yUSDC+yUSDT+yTUSD": {
+        "coingecko": "yvault-lp-ycurve",
+        "ethereum_address": "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD ",
+        "started": 1596091760,
+        "symbol": "yyDAI+yUSDC+yUSDT+yTUSD",
+        "type": "ethereum token"
     }
 }
