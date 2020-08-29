@@ -26,7 +26,7 @@
         {{ $t('transaction_details.gas_price') }}
       </v-col>
       <v-col cols="10">
-        <amount-display :value="toEth(transaction.gasPrice)" asset="ETH" />
+        <amount-display :value="toGwei(transaction.gasPrice)" asset="Gwei" />
       </v-col>
     </v-row>
     <v-divider />
@@ -54,16 +54,19 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { default as BigNumber } from 'bignumber.js';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import { EthTransaction } from '@/services/history/types';
-import { toEth } from '@/utils/calculation';
+import { toUnit, Unit } from '@/utils/calculation';
 
 @Component({})
 export default class TransactionDetails extends Vue {
   @Prop({ required: true })
   transaction!: EthTransaction;
 
-  toEth = toEth;
+  toGwei(value: BigNumber) {
+    return toUnit(value, Unit.GWEI);
+  }
 }
 </script>
 

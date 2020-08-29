@@ -26,7 +26,7 @@
               show-expand
               single-expand
               :expanded="expanded"
-              item-key="txHash"
+              item-key="key"
               sort-by="timestamp"
               sort-desc
               :page.sync="page"
@@ -38,12 +38,22 @@
                   :text="item.txHash"
                   base-url="https://etherscan.io/tx/"
                 />
+                <v-chip
+                  v-if="item.gasPrice.lt(0)"
+                  small
+                  text-color="white"
+                  color="accent"
+                  class="mb-1 mt-1"
+                >
+                  {{ $t('transaction_details.internal_transaction') }}
+                </v-chip>
               </template>
               <template #item.fromAddress="{ item }">
                 <hash-link :text="item.fromAddress" />
               </template>
               <template #item.toAddress="{ item }">
-                <hash-link :text="item.toAddress" />
+                <hash-link v-if="item.toAddress" :text="item.toAddress" />
+                <span v-else>-</span>
               </template>
               <template #item.timestamp="{ item }">
                 <date-display :timestamp="item.timestamp" />
@@ -52,7 +62,7 @@
                 <amount-display :value="toEth(item.value)" asset="ETH" />
               </template>
               <template #item.gasFee="{ item }">
-                <amount-display :value="gasFee(item)" asset="ETH" />
+                <amount-display :value="item.gasFee" asset="ETH" />
               </template>
               <template
                 v-if="
@@ -95,12 +105,10 @@ import TransactionDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
-import { EthTransaction } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { EthTransactionWithFee } from '@/store/history/types';
 import { GeneralAccount } from '@/typing/types';
-import { toEth } from '@/utils/calculation';
-
-type EthTransactionWithFee = EthTransaction & { gasFee: BigNumber };
+import { toUnit, Unit } from '@/utils/calculation';
 
 @Component({
   components: {
@@ -128,10 +136,9 @@ export default class Transactions extends Mixins(StatusMixin) {
   footerProps = footerProps;
   expanded = [];
   section = Section.TX;
-  transactions!: EthTransaction[];
+  transactions!: EthTransactionWithFee[];
   transactionsTotal!: number;
   transactionsLimit!: number;
-  toEth = toEth;
   page: number = 1;
 
   account: GeneralAccount | null = null;
@@ -145,17 +152,9 @@ export default class Transactions extends Mixins(StatusMixin) {
 
   get visibleTransactions(): EthTransactionWithFee[] {
     const account = this.account;
-    const selectedTransactions = account
+    return account
       ? this.transactions.filter(tx => tx.fromAddress === account.address)
       : this.transactions;
-    return selectedTransactions.map(value => ({
-      ...value,
-      gasFee: this.gasFee(value)
-    }));
-  }
-
-  gasFee(item: EthTransaction): BigNumber {
-    return toEth(item.gasPrice.multipliedBy(item.gasUsed));
   }
 
   readonly headers: DataTableHeader[] = [
@@ -195,6 +194,10 @@ export default class Transactions extends Mixins(StatusMixin) {
 
   mounted() {
     this.fetchTransactions(false);
+  }
+
+  toEth(value: BigNumber): BigNumber {
+    return toUnit(value, Unit.ETH);
   }
 }
 </script>

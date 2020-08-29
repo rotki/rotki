@@ -1,3 +1,4 @@
+import { default as BigNumber } from 'bignumber.js';
 import { TaskMeta } from '@/model/task';
 import {
   AssetMovement,
@@ -31,3 +32,8 @@ export interface LocationRequestMeta extends TaskMeta {
 export interface AccountRequestMeta extends TaskMeta {
   readonly address: string;
 }
+
+export type EthTransactionWithFee = EthTransaction & {
+  readonly gasFee: BigNumber;
+  readonly key: string;
+};

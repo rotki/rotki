@@ -248,7 +248,8 @@
     "gas": "Gas Limit",
     "gas_price": "Gas Price",
     "gas_used": "Gas Used",
-    "input_data": "Input Data"
+    "input_data": "Input Data",
+    "internal_transaction": "Internal"
   },
   "hash_link": {
     "copy": "Copy to clipboard",

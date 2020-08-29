@@ -8,10 +8,16 @@ export function assetSum(balances: { [asset: string]: Balance }) {
   }, Zero);
 }
 
-export function toEth(value: BigNumber): BigNumber {
+export enum Unit {
+  GWEI,
+  ETH
+}
+
+export function toUnit(value: BigNumber, unit: Unit = Unit.ETH): BigNumber {
   if (value.isZero()) {
     return value;
   }
 
-  return value.div(new BigNumber('10').pow(18));
+  const pow = unit === Unit.ETH ? 18 : 9;
+  return value.div(new BigNumber('10').pow(pow));
 }
