@@ -47,6 +47,7 @@ Changelog
   - `Cache Gold Token (CGT) <https://www.coingecko.com/en/coins/cache-gold>`__
   - `Centric (CNS) <https://www.coingecko.com/en/coins/centric>`__
   - `Sensorium (SENSO) <https://www.coingecko.com/en/coins/senso>`__
+  - `Aave interest bearing YFI (aYFI) <https://etherscan.io/tx/0x259efe3b78bda8cf736a4afb30654d2e365cb42dc2cbe1fa8c64137673d848fd>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.

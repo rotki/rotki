@@ -12421,6 +12421,16 @@
         "symbol": "aWBTC",
         "type": "ethereum token"
     },
+    "aYFI": {
+        "coingecko": "",
+        "cryptocompare": "YFI",
+        "ethereum_address": "0x12e51E77DAAA58aA0E9247db7510Ea4B46F9bEAd",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing YFI",
+        "started": 1598605878,
+        "symbol": "aYFI",
+        "type": "ethereum token"
+    },
     "aZRX": {
         "coingecko": "aave-zrx",
         "cryptocompare": "ZRX",

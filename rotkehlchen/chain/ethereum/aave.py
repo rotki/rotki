@@ -37,6 +37,7 @@ MAX_BLOCKTIME_CACHE_AAVE = 250  # 55 mins with 13 secs avg block time
 
 ATOKEN_TO_DEPLOYED_BLOCK = {
     'aETH': 9241088,
+    'aENJ': 10471941,
     'aDAI': 9241063,
     'aUSDC': 9241071,
     'aSUSD': 9241077,
@@ -50,8 +51,10 @@ ATOKEN_TO_DEPLOYED_BLOCK = {
     'aMANA': 9241110,
     'aMKR': 9241106,
     'aREP': 9241100,
+    'aREN': 10472062,
     'aSNX': 9241118,
     'aWBTC': 9241225,
+    'aYFI': 10748286,
     'aZRX': 9241114,
 }
 ATOKENS_LIST = [EthereumToken(x) for x in ATOKEN_TO_DEPLOYED_BLOCK]
