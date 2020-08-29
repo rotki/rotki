@@ -19,9 +19,9 @@ import { api } from '@/services/rotkehlchen-api';
 import { LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
-  LocationRequestMeta,
+  AccountRequestMeta,
   HistoryState,
-  AccountRequestMeta
+  LocationRequestMeta
 } from '@/store/history/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -41,20 +41,29 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       return;
     }
 
-    const currentStatus = status(Section.TRADES);
+    const section = Section.TRADES;
+    const currentStatus = status(section);
 
     if (
       currentStatus === Status.LOADING ||
+      currentStatus === Status.PARTIALLY_LOADED ||
       (currentStatus === Status.LOADED && !refresh)
     ) {
       return;
     }
 
-    const loadingPayload: StatusPayload = {
-      section: Section.TRADES,
-      status: refresh ? Status.REFRESHING : Status.LOADING
+    const setStatus: (newStatus: Status) => void = newStatus => {
+      if (status(section) === newStatus) {
+        return;
+      }
+      const payload: StatusPayload = {
+        section: section,
+        status: newStatus
+      };
+      commit('setStatus', payload, { root: true });
     };
-    commit('setStatus', loadingPayload, { root: true });
+
+    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
     const { connectedExchanges } = balances!;
     const locations: TradeLocation[] = [...connectedExchanges, 'external'];
@@ -77,28 +86,33 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         TaskMeta
       >(taskType, `${taskId}`);
       commit('appendTrades', result);
+      setStatus(Status.PARTIALLY_LOADED);
     };
 
     commit('resetTrades');
 
-    try {
-      await Promise.all(locations.map(fetchLocation));
-    } catch (e) {
+    const onError: (location: TradeLocation, message: string) => void = (
+      location,
+      message
+    ) => {
       notify(
         i18n.tc('actions.trades.error.description', undefined, {
-          error: e.message
+          location,
+          error: message
         }),
         i18n.tc('actions.trades.error.title'),
         Severity.ERROR,
         true
       );
-    }
-
-    const loadedPayload: StatusPayload = {
-      section: Section.TRADES,
-      status: Status.LOADED
     };
-    commit('setStatus', loadedPayload, { root: true });
+
+    await Promise.all(
+      locations.map(location =>
+        fetchLocation(location).catch(e => onError(location, e))
+      )
+    );
+
+    setStatus(Status.LOADED);
   },
 
   async addExternalTrade({ commit }, trade: NewTrade): Promise<ActionStatus> {
@@ -159,21 +173,29 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       return;
     }
 
-    const currentStatus = status(Section.ASSET_MOVEMENT);
+    const section = Section.ASSET_MOVEMENT;
+    const currentStatus = status(section);
 
     if (
       currentStatus === Status.LOADING ||
+      currentStatus === Status.PARTIALLY_LOADED ||
       (currentStatus === Status.LOADED && !refresh)
     ) {
       return;
     }
 
-    const payload: StatusPayload = {
-      section: Section.ASSET_MOVEMENT,
-      status: refresh ? Status.REFRESHING : Status.LOADING
+    const setStatus: (newStatus: Status) => void = newStatus => {
+      if (status(section) === newStatus) {
+        return;
+      }
+      const payload: StatusPayload = {
+        section: section,
+        status: newStatus
+      };
+      commit('setStatus', payload, { root: true });
     };
 
-    commit('setStatus', payload, { root: true });
+    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
     const { connectedExchanges: locations } = balances!;
 
@@ -195,28 +217,33 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         TaskMeta
       >(taskType, `${taskId}`);
       commit('updateMovements', result);
+      setStatus(Status.PARTIALLY_LOADED);
     };
 
     commit('resetMovements');
 
-    try {
-      await Promise.all(locations.map(fetchLocation));
-    } catch (e) {
+    const onError: (location: TradeLocation, message: string) => void = (
+      location,
+      message
+    ) => {
       notify(
         i18n.tc('actions.asset_movements.error.description', undefined, {
-          error: e.message
+          location,
+          error: message
         }),
         i18n.tc('actions.asset_movements.error.title'),
         Severity.ERROR,
         true
       );
-    }
-
-    const loaded: StatusPayload = {
-      section: Section.ASSET_MOVEMENT,
-      status: Status.LOADED
     };
-    commit('setStatus', loaded, { root: true });
+
+    await Promise.all(
+      locations.map(location =>
+        fetchLocation(location).catch(e => onError(location, e.message))
+      )
+    );
+
+    setStatus(Status.LOADED);
   },
 
   async fetchTransactions(
@@ -232,7 +259,8 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       return;
     }
 
-    const currentStatus = status(Section.TX);
+    const section = Section.TX;
+    const currentStatus = status(section);
 
     if (
       currentStatus === Status.LOADING ||
@@ -241,13 +269,18 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     ) {
       return;
     }
-
-    const payload: StatusPayload = {
-      section: Section.TX,
-      status: refresh ? Status.REFRESHING : Status.LOADING
+    const setStatus: (newStatus: Status) => void = newStatus => {
+      if (status(section) === newStatus) {
+        return;
+      }
+      const payload: StatusPayload = {
+        section: section,
+        status: newStatus
+      };
+      commit('setStatus', payload, { root: true });
     };
 
-    commit('setStatus', payload, { root: true });
+    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
     const { ethAccounts } = balances!;
     const addresses = Object.keys(ethAccounts);
@@ -274,27 +307,32 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         AccountRequestMeta
       >(taskType, `${taskId}`);
       commit('updateTransactions', result);
+      setStatus(Status.PARTIALLY_LOADED);
     };
 
     commit('resetTransactions');
 
-    try {
-      await Promise.all(addresses.map(fetchAddress));
-    } catch (e) {
+    const onError: (address: string, message: string) => void = (
+      address,
+      message
+    ) => {
       notify(
         i18n.tc('actions.transactions.error.description', undefined, {
-          error: e.message
+          error: message,
+          address
         }),
         i18n.tc('actions.transactions.error.title'),
         Severity.ERROR,
         true
       );
-    }
-
-    const loaded: StatusPayload = {
-      section: Section.TX,
-      status: Status.LOADED
     };
-    commit('setStatus', loaded, { root: true });
+
+    await Promise.all(
+      addresses.map(address =>
+        fetchAddress(address).catch(e => onError(address, e.message))
+      )
+    );
+
+    setStatus(Status.LOADED);
   }
 };

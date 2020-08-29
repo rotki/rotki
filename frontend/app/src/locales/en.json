@@ -189,21 +189,21 @@
     "asset_movements": {
       "task_description": "Querying asset movements",
       "error": {
-        "description": "Failed: {error}",
+        "description": "Failed query for {location}: {error}",
         "title": "Asset movement query"
       }
     },
     "trades" : {
       "task_description": "Querying Trades",
       "error": {
-        "description": "Failed: {error}",
+        "description": "Failed query for {location}: {error}",
         "title": "Trades query"
       }
     },
     "transactions": {
       "task_description": "Querying Ethereum Transactions for {address}",
       "error": {
-        "description": "Failed: {error}",
+        "description": "Failed query for {address}: {error}",
         "title": "Ethereum Transactions Query"
       }
     }
