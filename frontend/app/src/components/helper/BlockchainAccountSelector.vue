@@ -72,7 +72,7 @@ import { mapGetters, mapState } from 'vuex';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 
-import { GeneralAccount, Tags } from '@/typing/types';
+import { Blockchain, GeneralAccount, Tags } from '@/typing/types';
 
 @Component({
   components: { AccountDisplay, TagIcon },
@@ -94,10 +94,19 @@ export default class BlockchainAccountSelector extends Vue {
   multiple!: boolean;
   @Prop({ required: true })
   value!: GeneralAccount[] | GeneralAccount | null;
+  @Prop({ required: false, type: Array, default: () => [] })
+  chains!: Blockchain[];
 
   accounts!: GeneralAccount[];
   tags!: Tags;
   search: string = '';
+
+  get selectableAccounts(): GeneralAccount[] {
+    if (this.chains.length === 0) {
+      return this.accounts;
+    }
+    return this.accounts.filter(account => this.chains.includes(account.chain));
+  }
 
   get hintText(): string {
     if (Array.isArray(this.value)) {
@@ -113,11 +122,11 @@ export default class BlockchainAccountSelector extends Vue {
 
   get displayedAccounts(): GeneralAccount[] {
     if (this.usableAddresses.length > 0) {
-      return this.accounts.filter(({ address }) =>
+      return this.selectableAccounts.filter(({ address }) =>
         this.usableAddresses.includes(address)
       );
     }
-    return this.accounts;
+    return this.selectableAccounts;
   }
 
   filter(item: GeneralAccount, queryText: string) {

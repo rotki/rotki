@@ -5,7 +5,7 @@
         <div class="mx-4 py-2">
           <v-autocomplete
             :value="value"
-            :items="tradeLocations"
+            :items="locations"
             hide-details
             hide-selected
             hide-no-data
@@ -49,6 +49,12 @@ import { TradeLocation } from '@/services/history/types';
 export default class TradeLocationSelector extends Vue {
   readonly tradeLocations = tradeLocations;
 
+  get locations(): TradeLocation[] {
+    return this.showExternal
+      ? tradeLocations
+      : tradeLocations.filter(location => location.identifier !== 'external');
+  }
+
   get name(): string {
     return (
       this.tradeLocations.find(location => location.identifier === this.value)
@@ -58,6 +64,9 @@ export default class TradeLocationSelector extends Vue {
 
   @Prop({ required: true })
   value!: TradeLocation;
+
+  @Prop({ required: false, type: Boolean, default: false })
+  showExternal!: boolean;
 
   @Emit()
   input(_value: TradeLocation) {}

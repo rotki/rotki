@@ -6,6 +6,7 @@
     {{ $t('transactions.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
+    <blockchain-account-selector v-model="account" hint :chains="['ETH']" />
     <v-row>
       <v-col cols="12">
         <v-card>
@@ -28,6 +29,7 @@
               item-key="txHash"
               sort-by="timestamp"
               sort-desc
+              :page.sync="page"
               :footer-props="footerProps"
               :loading="refreshing"
             >
@@ -81,10 +83,11 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Mixins } from 'vue-property-decorator';
+import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -94,12 +97,14 @@ import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { EthTransaction } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { GeneralAccount } from '@/typing/types';
 import { toEth } from '@/utils/calculation';
 
 type EthTransactionWithFee = EthTransaction & { gasFee: BigNumber };
 
 @Component({
   components: {
+    BlockchainAccountSelector,
     TransactionDetails,
     UpgradeRow,
     DateDisplay,
@@ -127,9 +132,22 @@ export default class Transactions extends Mixins(StatusMixin) {
   transactionsTotal!: number;
   transactionsLimit!: number;
   toEth = toEth;
+  page: number = 1;
+
+  account: GeneralAccount | null = null;
+
+  @Watch('account')
+  onSelectionChange(account: GeneralAccount | null) {
+    if (account) {
+      this.page = 1;
+    }
+  }
 
   get visibleTransactions(): EthTransactionWithFee[] {
-    return this.transactions.map(value => ({
+    const selectedTransactions = this.account
+      ? this.transactions.filter(tx => tx.fromAddress === this.account.address)
+      : this.transactions;
+    return selectedTransactions.map(value => ({
       ...value,
       gasFee: this.gasFee(value)
     }));

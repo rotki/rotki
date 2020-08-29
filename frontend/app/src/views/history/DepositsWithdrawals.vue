@@ -6,6 +6,7 @@
     {{ $t('deposits_withdrawals.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
+    <trade-location-selector v-model="location" />
     <v-row>
       <v-col cols="12">
         <v-card>
@@ -21,13 +22,14 @@
           <v-card-text>
             <v-data-table
               :headers="headers"
-              :items="assetMovements"
+              :items="movements"
               show-expand
               single-expand
               :expanded="expanded"
               item-key="identifier"
               sort-by="timestamp"
               sort-desc
+              :page.sync="page"
               :footer-props="footerProps"
               :loading="refreshing"
             >
@@ -97,7 +99,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -106,14 +108,17 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import MovementLinks from '@/components/history/MovementLinks.vue';
+import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
+import { SupportedExchange } from '@/services/balances/types';
 import { AssetMovement } from '@/services/history/types';
 import { Section } from '@/store/const';
 
 @Component({
   components: {
+    TradeLocationSelector,
     MovementLinks,
     RefreshButton,
     ProgressScreen,
@@ -168,6 +173,23 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
   assetMovements!: AssetMovement[];
   assetMovementsTotal!: number;
   assetMovementsLimit!: number;
+  page: number = 1;
+
+  location: SupportedExchange | null = null;
+
+  @Watch('location')
+  onLocationChange() {
+    if (!location) {
+      return;
+    }
+    this.page = 1;
+  }
+
+  get movements(): AssetMovement[] {
+    return this.location
+      ? this.assetMovements.filter(value => value.location === this.location)
+      : this.assetMovements;
+  }
 
   footerProps = footerProps;
   section = Section.ASSET_MOVEMENT;
