@@ -187,17 +187,17 @@
   },
   "actions": {
     "asset_movements": {
-      "task_description": "Querying asset movements",
+      "task_description": "Querying deposits & withdrawals for {exchange}",
       "error": {
-        "description": "Failed query for {location}: {error}",
-        "title": "Asset movement query"
+        "description": "Failed query for {exchange}: {error}",
+        "title": "Deposits & withdrawals for {exchange}"
       }
     },
     "trades" : {
-      "task_description": "Querying Trades",
+      "task_description": "Querying Trades for {exchange}",
       "error": {
-        "description": "Failed query for {location}: {error}",
-        "title": "Trades query"
+        "description": "Failed query for {exchange}: {error}",
+        "title": "Trades for {exchange}"
       }
     },
     "transactions": {
