@@ -72,6 +72,15 @@ class EthTransactions(LockableQueryObject):
         # add new transactions to the DB
         if new_transactions != []:
             self.database.add_ethereum_transactions(new_transactions, from_etherscan=True)
+            # And since at least for now the increasingly negative nonce for the internal
+            # transactions happens only in the DB writing, requery the entire batch from
+            # the DB to get the updated transactions
+            transactions = self.database.get_ethereum_transactions(
+                from_ts=start_ts,
+                to_ts=end_ts,
+                address=address,
+            )
+
         # and also set the last queried timestamps for the address
         ranges.update_used_query_range(
             location_string=f'ethtxs_{address}',
@@ -79,8 +88,6 @@ class EthTransactions(LockableQueryObject):
             end_ts=end_ts,
             ranges_to_query=ranges_to_query,
         )
-        # finally append them to the already returned DB transactions
-        transactions.extend(new_transactions)
 
         if with_limit:
             transactions_queried_so_far = sum(x for _, x in self.tx_per_address.items())
