@@ -7,9 +7,10 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.constants.ethereum import ZERION_ABI
+from rotkehlchen.constants.ethereum import ZERION_ABI, EthereumConstants
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Price
@@ -20,6 +21,8 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
+CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
 
 def _is_symbol_non_standard(symbol: str) -> bool:
     """ignore some non standard asset symbols like Curve finance and Pool together"""
@@ -148,6 +151,18 @@ class Zerion():
         decimals = metadata[3]
         normalized_value = token_normalized_value(balance_value, decimals)
         token_symbol = metadata[2]
+        token_address = to_checksum_address(metadata[0])
+        token_name = metadata[1]
+
+        special_handling = self.handle_protocols(
+            token_symbol=token_symbol,
+            balance=balance_value,
+            normalized_balance=normalized_value,
+            token_address=token_address,
+            token_name=token_name,
+        )
+        if special_handling:
+            return special_handling
 
         try:
             asset = Asset(token_symbol)
@@ -161,9 +176,67 @@ class Zerion():
 
         usd_value = normalized_value * usd_price
         defi_balance = DefiBalance(
-            token_address=to_checksum_address(metadata[0]),
-            token_name=metadata[1],
+            token_address=token_address,
+            token_name=token_name,
             token_symbol=token_symbol,
             balance=Balance(amount=normalized_value, usd_value=usd_value),
         )
         return defi_balance
+
+    def _handle_ycrv_vault(
+            self,
+            balance: FVal,
+            normalized_balance: FVal,
+    ) -> FVal:
+        virtual_price = self.ethereum.call_contract(
+            contract_address=CURVEFI_YSWAP.address,
+            abi=CURVEFI_YSWAP.abi,
+            method_name='get_virtual_price',
+            arguments=[],
+        )
+        price_per_full_share = self.ethereum.call_contract(
+            contract_address=YEARN_YCRV_VAULT.address,
+            abi=YEARN_YCRV_VAULT.abi,
+            method_name='getPricePerFullShare',
+            arguments=[],
+        )
+
+        usd_value = (virtual_price * price_per_full_share * normalized_balance) / 10 ** 36
+        return usd_value
+
+    def _handle_ycurve(
+            self,
+            balance: FVal,
+            normalized_balance: FVal,
+    ) -> FVal:
+        virtual_price = self.ethereum.call_contract(
+            contract_address=CURVEFI_YSWAP.address,
+            abi=CURVEFI_YSWAP.abi,
+            method_name='get_virtual_price',
+            arguments=[],
+        )
+        usd_value = (virtual_price * normalized_balance) / 10 ** 18
+        return usd_value
+
+    def handle_protocols(
+            self,
+            token_symbol: str,
+            balance: FVal,
+            normalized_balance: FVal,
+            token_address: str,
+            token_name: str,
+    ) -> Optional[DefiBalance]:
+        """Special handling for price for token/protocols which are easier to do onchain"""
+        if token_symbol == 'yyDAI+yUSDC+yUSDT+yTUSD':
+            usd_value = self._handle_ycrv_vault(balance, normalized_balance)
+        elif token_symbol == 'yDAI+yUSDC+yUSDT+yTUSD':
+            usd_value = self._handle_ycurve(balance, normalized_balance)
+        else:
+            return None
+
+        return DefiBalance(
+            token_address=to_checksum_address(token_address),
+            token_name=token_name,
+            token_symbol=token_symbol,
+            balance=Balance(amount=normalized_balance, usd_value=usd_value),
+        )
