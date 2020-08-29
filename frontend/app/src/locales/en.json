@@ -127,7 +127,8 @@
     "header": "History",
     "tabs": {
       "trades": "Trades",
-      "deposits_withdrawals": "Deposits & Withdrawals"
+      "deposits_withdrawals": "Deposits & Withdrawals",
+      "transactions": "Ethereum Transactions"
     }
   },
   "upgrade_row": {
@@ -198,6 +199,13 @@
         "description": "Failed: {error}",
         "title": "Trades query"
       }
+    },
+    "transactions": {
+      "task_description": "Querying Ethereum Transactions for {address}",
+      "error": {
+        "description": "Failed: {error}",
+        "title": "Ethereum Transactions Query"
+      }
     }
   },
   "navigation_menu": {
@@ -217,5 +225,33 @@
   "movement_links": {
     "address": "Address:",
     "transaction": "TX:"
+  },
+  "transactions": {
+    "loading": "Please wait while your transactions are getting loaded...",
+    "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
+    "title": "Ethereum Transactions",
+    "refresh_tooltip": "Refresh your ethereum transactions",
+    "headers": {
+      "txhash": "Tx hash",
+      "block": "Block",
+      "timestamp": "Date",
+      "from_address": "From",
+      "to_address": "To",
+      "value": "Value",
+      "gas_fee": "Fee"
+    },
+    "label": "transactions"
+  },
+  "transaction_details": {
+    "title": "Transaction details",
+    "nonce": "Nonce",
+    "gas": "Gas Limit",
+    "gas_price": "Gas Price",
+    "gas_used": "Gas Used",
+    "input_data": "Input Data"
+  },
+  "hash_link": {
+    "copy": "Copy to clipboard",
+    "open_link": "Open to external block explorer"
   }
 }

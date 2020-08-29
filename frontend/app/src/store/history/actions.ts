@@ -1,10 +1,12 @@
+import { Transaction } from 'electron';
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import {
   movementNumericKeys,
-  tradeNumericKeys
+  tradeNumericKeys,
+  transactionNumericKeys
 } from '@/services/history/const';
 import {
   AssetMovement,
@@ -16,7 +18,11 @@ import {
 import { api } from '@/services/rotkehlchen-api';
 import { LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
-import { LocationRequestMeta, HistoryState } from '@/store/history/types';
+import {
+  LocationRequestMeta,
+  HistoryState,
+  AccountRequestMeta
+} from '@/store/history/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
@@ -208,6 +214,85 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const loaded: StatusPayload = {
       section: Section.ASSET_MOVEMENT,
+      status: Status.LOADED
+    };
+    commit('setStatus', loaded, { root: true });
+  },
+
+  async fetchTransactions(
+    {
+      commit,
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
+      rootState: { balances }
+    },
+    refresh: boolean = false
+  ): Promise<void> {
+    const taskType = TaskType.TX;
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+
+    const currentStatus = status(Section.TX);
+
+    if (
+      currentStatus === Status.LOADING ||
+      currentStatus === Status.PARTIALLY_LOADED ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const payload: StatusPayload = {
+      section: Section.TX,
+      status: refresh ? Status.REFRESHING : Status.LOADING
+    };
+
+    commit('setStatus', payload, { root: true });
+
+    const { ethAccounts } = balances!;
+    const addresses = Object.keys(ethAccounts);
+
+    const fetchAddress: (address: string) => Promise<void> = async address => {
+      const { taskId } = await api.history.ethTransactions(address);
+      const task = createTask<AccountRequestMeta>(taskId, taskType, {
+        description: i18n.tc(
+          'actions.transactions.task_description',
+          undefined,
+          {
+            address
+          }
+        ),
+        ignoreResult: false,
+        address: address,
+        numericKeys: transactionNumericKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<
+        LimitedResponse<Transaction[]>,
+        AccountRequestMeta
+      >(taskType, `${taskId}`);
+      commit('updateTransactions', result);
+    };
+
+    commit('resetTransactions');
+
+    try {
+      await Promise.all(addresses.map(fetchAddress));
+    } catch (e) {
+      notify(
+        i18n.tc('actions.transactions.error.description', undefined, {
+          error: e.message
+        }),
+        i18n.tc('actions.transactions.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+
+    const loaded: StatusPayload = {
+      section: Section.TX,
       status: Status.LOADED
     };
     commit('setStatus', loaded, { root: true });

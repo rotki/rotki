@@ -8,7 +8,8 @@ export const defaultHistoricState = <T>(): HistoricData<T> => ({
 
 export const defaultState = (): HistoryState => ({
   trades: defaultHistoricState(),
-  assetMovements: defaultHistoricState()
+  assetMovements: defaultHistoricState(),
+  transactions: defaultHistoricState()
 });
 
 export const state: HistoryState = defaultState();

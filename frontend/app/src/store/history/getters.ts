@@ -20,5 +20,14 @@ export const getters: GetterTree<HistoryState, RotkehlchenState> = {
   },
   tradesLimit: ({ trades }) => {
     return trades.limit;
+  },
+  transactions: ({ transactions }) => {
+    return transactions.data;
+  },
+  transactionsTotal: ({ transactions }) => {
+    return transactions.found;
+  },
+  transactionsLimit: ({ transactions }) => {
+    return transactions.limit;
   }
 };

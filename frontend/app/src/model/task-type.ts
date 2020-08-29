@@ -13,5 +13,6 @@ export enum TaskType {
   AAVE_HISTORY = 'aave_history',
   DEFI_BALANCES = 'defi_balances',
   TRADES = 'trades',
-  MOVEMENTS = 'movements'
+  MOVEMENTS = 'movements',
+  TX = 'tx'
 }

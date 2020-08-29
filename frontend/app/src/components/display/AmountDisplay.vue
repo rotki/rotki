@@ -4,6 +4,7 @@
       :loading="loading"
       min-width="60"
       max-width="70"
+      class="d-flex flex-row align-baseline"
       type="text"
     >
       <amount-currency
@@ -46,7 +47,7 @@
             | formatPrice(
               thousandSeparator,
               decimalSeparator,
-              floatingPrecision,
+              integer ? 0 : floatingPrecision,
               BIGNUMBER_ROUND_UP
             )
         }}
@@ -67,11 +68,12 @@
           }}
         </span>
         <span v-else class="amount-display__full-value">
-          {{ renderValue }}
+          {{ renderValue.toFormat(renderValue.decimalPlaces()) }}
         </span>
       </v-tooltip>
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'after'"
+        class="ml-2"
         :show-currency="showCurrency"
         :currency="currency"
         :asset="asset"
@@ -128,6 +130,9 @@ export default class AmountDisplay extends Vue {
   showCurrency!: string;
   @Prop({ required: false, default: '' })
   asset!: string;
+  @Prop({ required: false, type: Boolean, default: false })
+  integer!: boolean;
+
   currency!: Currency;
   privacyMode!: boolean;
   scrambleData!: boolean;
@@ -138,7 +143,7 @@ export default class AmountDisplay extends Vue {
   BIGNUMBER_ROUND_DOWN = BigNumber.ROUND_DOWN;
   BIGNUMBER_ROUND_UP = BigNumber.ROUND_UP;
 
-  get renderValue() {
+  get renderValue(): BigNumber {
     const multiplier = [10, 100, 1000];
     let valueToRender;
 

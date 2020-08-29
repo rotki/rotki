@@ -11,6 +11,7 @@ import {
   validStatus,
   validWithParamsSessionAndExternalService
 } from '@/services/utils';
+import { assert } from '@/utils/assertions';
 
 export class HistoryApi {
   private readonly axios: AxiosInstance;
@@ -80,6 +81,20 @@ export class HistoryApi {
         validateStatus: validWithParamsSessionAndExternalService,
         transformResponse: setupTransformer([])
       })
+      .then(handleResponse);
+  }
+
+  async ethTransactions(address: string): Promise<PendingTask> {
+    assert(address.length > 0);
+    return this.axios
+      .get<ActionResult<PendingTask>>(
+        `/blockchains/ETH/transactions/${address}`,
+        {
+          params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+          validateStatus: validWithParamsSessionAndExternalService,
+          transformResponse: setupTransformer([])
+        }
+      )
       .then(handleResponse);
   }
 }
