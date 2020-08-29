@@ -1,4 +1,6 @@
 import { TradeLocationData } from '@/components/history/type';
+import { TradeLocation } from '@/services/history/types';
+import { assert } from '@/utils/assertions';
 
 export const tradeLocations: TradeLocationData[] = [
   {
@@ -46,3 +48,9 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'External'
   }
 ];
+
+export const exchangeName: (location: TradeLocation) => string = location => {
+  const exchange = tradeLocations.find(tl => tl.identifier === location);
+  assert(exchange);
+  return exchange.name;
+};

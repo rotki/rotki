@@ -1,5 +1,6 @@
 import { Transaction } from 'electron';
 import { ActionTree } from 'vuex';
+import { exchangeName } from '@/components/history/consts';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
@@ -73,7 +74,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     ) => Promise<void> = async location => {
       const { taskId } = await api.history.trades(location);
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
-        description: i18n.tc('actions.trades.task_description'),
+        description: i18n.tc('actions.trades.task_description', undefined, {
+          exchange: exchangeName(location)
+        }),
         ignoreResult: false,
         location: location,
         numericKeys: tradeNumericKeys
@@ -95,12 +98,15 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       location,
       message
     ) => {
+      const exchange = exchangeName(location);
       notify(
         i18n.tc('actions.trades.error.description', undefined, {
-          location,
+          exchange,
           error: message
         }),
-        i18n.tc('actions.trades.error.title'),
+        i18n.tc('actions.trades.error.title', undefined, {
+          exchange
+        }),
         Severity.ERROR,
         true
       );
@@ -204,7 +210,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     ) => Promise<void> = async location => {
       const { taskId } = await api.history.assetMovements(location);
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
-        description: i18n.tc('actions.asset_movements.task_description'),
+        description: i18n.tc(
+          'actions.asset_movements.task_description',
+          undefined,
+          {
+            exchange: exchangeName(location)
+          }
+        ),
         ignoreResult: false,
         location: location,
         numericKeys: movementNumericKeys
@@ -226,12 +238,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       location,
       message
     ) => {
+      const exchange = exchangeName(location);
       notify(
         i18n.tc('actions.asset_movements.error.description', undefined, {
-          location,
+          exchange,
           error: message
         }),
-        i18n.tc('actions.asset_movements.error.title'),
+        i18n.tc('actions.asset_movements.error.title', undefined, { exchange }),
         Severity.ERROR,
         true
       );
