@@ -55,6 +55,7 @@
           </template>
           <template #item.usdValue="{ item }">
             <amount-display
+              show-currency="symbol"
               :amount="item.amount"
               :fiat-currency="item.asset"
               :value="item.usdValue"
@@ -90,6 +91,7 @@
               <td />
               <td class="text-end">
                 <amount-display
+                  show-currency="symbol"
                   class="manual-balances-list__amount"
                   :fiat-currency="currency.ticker_symbol"
                   :value="
