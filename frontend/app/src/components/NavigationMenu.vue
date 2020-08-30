@@ -49,6 +49,16 @@
 import { Component, Vue, Prop } from 'vue-property-decorator';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 
+type NavItem = {
+  readonly type: 'item' | 'group';
+  readonly text: string;
+  readonly route: string;
+  readonly class?: string;
+  readonly icon: string;
+};
+
+type GroupNavItem = NavItem & { items?: NavItem[] };
+
 @Component({
   components: { NavigationMenuItem }
 })
@@ -56,7 +66,7 @@ export default class NavigationMenu extends Vue {
   @Prop({ required: false, default: false })
   showTooltips!: boolean;
 
-  navItems = [
+  readonly navItems: GroupNavItem[] = [
     {
       type: 'item',
       text: this.$tc('navigation_menu.dashboard'),
@@ -85,11 +95,34 @@ export default class NavigationMenu extends Vue {
       icon: 'fa-upload'
     },
     {
-      type: 'item',
+      type: 'group',
       text: this.$tc('navigation_menu.history'),
       route: '/history',
       class: 'history',
-      icon: 'mdi-history'
+      icon: 'mdi-history',
+      items: [
+        {
+          type: 'item',
+          text: this.$tc('navigation_menu.history_sub.trades'),
+          route: '/history/trades',
+          icon: 'mdi-shuffle-variant',
+          class: 'history-trades'
+        },
+        {
+          type: 'item',
+          text: this.$tc('navigation_menu.history_sub.deposits_withdrawals'),
+          route: '/history/deposits-withdrawals',
+          icon: 'mdi-bank-transfer',
+          class: 'deposits-withdrawals'
+        },
+        {
+          type: 'item',
+          text: this.$tc('navigation_menu.history_sub.ethereum_transactions'),
+          route: '/history/transactions',
+          icon: 'mdi-swap-horizontal',
+          class: 'eth-transactions'
+        }
+      ]
     },
     {
       type: 'item',

@@ -214,6 +214,11 @@
     "api_keys": "API Keys",
     "import_data": "Import Data",
     "history": "History",
+    "history_sub": {
+      "trades": "Trades",
+      "deposits_withdrawals": "Deposits & Withdrawals",
+      "ethereum_transactions": "Ethereum Transactions"
+    },
     "defi": "DeFi",
     "statistics": "Statistics",
     "tax_report": "Tax Report"
