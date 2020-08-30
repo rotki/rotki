@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
 CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
+CURVEFI_PAXSWAP = EthereumConstants().contract('CURVEFI_PAXSWAP')
 YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')
 YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
 
@@ -42,6 +43,17 @@ def _handle_ycurve(ethereum: 'EthereumManager') -> FVal:
     return usd_value
 
 
+def _handle_paxcurve(ethereum: 'EthereumManager') -> FVal:
+    virtual_price = ethereum.call_contract(
+        contract_address=CURVEFI_PAXSWAP.address,
+        abi=CURVEFI_PAXSWAP.abi,
+        method_name='get_virtual_price',
+        arguments=[],
+    )
+    usd_value = FVal(virtual_price) / (10 ** 18)
+    return usd_value
+
+
 def handle_underlying_price_yearn_vault(
         ethereum: 'EthereumManager',
         underlying_asset_price: Price,
@@ -55,16 +67,6 @@ def handle_underlying_price_yearn_vault(
     )
     usd_value = FVal(underlying_asset_price * price_per_full_share) / 10 ** 18
     return usd_value
-
-# def _handle_yyfi_vault(ethereum: 'EthereumManager', underlying_asset_price: Price) -> FVal:
-#     price_per_full_share = ethereum.call_contract(
-#         contract_address=YEARN_YFI_VAULT.address,
-#         abi=YEARN_YFI_VAULT.abi,
-#         method_name='getPricePerFullShare',
-#         arguments=[],
-#     )
-#     usd_value = FVal(underlying_asset_price * price_per_full_share) / 10 ** 18
-#     return usd_value
 
 
 def handle_defi_price_query(
@@ -83,6 +85,8 @@ def handle_defi_price_query(
         usd_value = _handle_ycrv_vault(ethereum)
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yTUSD':
         usd_value = _handle_ycurve(ethereum)
+    elif token_symbol == 'ypaxCrv':
+        usd_value = _handle_paxcurve(ethereum)
     elif token_symbol == 'yYFI':
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(

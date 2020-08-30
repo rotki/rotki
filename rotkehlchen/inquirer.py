@@ -29,6 +29,7 @@ log = RotkehlchenLogsAdapter(logger)
 SPECIAL_SYMBOLS = (
     'yyDAI+yUSDC+yUSDT+yTUSD',
     'yDAI+yUSDC+yUSDT+yTUSD',
+    'ypaxCrv',
     'yYFI',
     'yUSDT',
 )
