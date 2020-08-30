@@ -187,21 +187,30 @@
   },
   "actions": {
     "asset_movements": {
-      "task_description": "Querying deposits & withdrawals for {exchange}",
+      "task" : {
+        "title": "Deposits & withdrawals",
+        "description": "Retrieving deposits & withdrawals for {exchange}"
+      },
       "error": {
         "description": "Failed query for {exchange}: {error}",
         "title": "Deposits & withdrawals for {exchange}"
       }
     },
     "trades" : {
-      "task_description": "Querying Trades for {exchange}",
+      "task": {
+        "title": "Trades",
+        "description": "Retrieving trades for {exchange}"
+      },
       "error": {
         "description": "Failed query for {exchange}: {error}",
         "title": "Trades for {exchange}"
       }
     },
     "transactions": {
-      "task_description": "Querying Ethereum Transactions for {address}",
+      "task": {
+        "title": "Ethereum Transactions",
+        "description": "Retrieving txns for {address}"
+      },
       "error": {
         "description": "Failed query for {address}: {error}",
         "title": "Ethereum Transactions Query"

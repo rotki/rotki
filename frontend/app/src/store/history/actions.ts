@@ -74,7 +74,8 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     ) => Promise<void> = async location => {
       const { taskId } = await api.history.trades(location);
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
-        description: i18n.tc('actions.trades.task_description', undefined, {
+        title: i18n.tc('actions.trades.task.title'),
+        description: i18n.tc('actions.trades.task.description', undefined, {
           exchange: exchangeName(location)
         }),
         ignoreResult: false,
@@ -210,8 +211,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     ) => Promise<void> = async location => {
       const { taskId } = await api.history.assetMovements(location);
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
+        title: i18n.tc('actions.asset_movements.task.title'),
         description: i18n.tc(
-          'actions.asset_movements.task_description',
+          'actions.asset_movements.task.description',
           undefined,
           {
             exchange: exchangeName(location)
@@ -301,8 +303,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     const fetchAddress: (address: string) => Promise<void> = async address => {
       const { taskId } = await api.history.ethTransactions(address);
       const task = createTask<AccountRequestMeta>(taskId, taskType, {
+        title: i18n.tc('actions.transactions.task.title'),
         description: i18n.tc(
-          'actions.transactions.task_description',
+          'actions.transactions.task.description',
           undefined,
           {
             address

@@ -67,15 +67,10 @@ export class TaskManager {
     meta: BlockchainMetadata
   ) {
     const { result, message } = data;
-    const { description, blockchain } = meta;
+    const { title, blockchain } = meta;
 
     if (message) {
-      notify(
-        `Operation failed due to ${message}`,
-        description,
-        Severity.ERROR,
-        true
-      );
+      notify(`Operation failed due to ${message}`, title, Severity.ERROR, true);
       return;
     }
     const { per_account, totals } = result;
@@ -183,7 +178,7 @@ export class TaskManager {
       handler(result, task.meta);
     } catch (e) {
       notify(
-        `An error occurred while processing task [${task.id}] '${task.meta.description}': ${e}`,
+        `An error occurred while processing task [${task.id}] '${task.meta.title}': ${e}`,
         'Task processing failed',
         Severity.ERROR,
         true

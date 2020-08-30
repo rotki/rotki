@@ -32,7 +32,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const result = await api.queryBalancesAsync(ignoreCache, saveData);
       const task = createTask(result.task_id, TaskType.QUERY_BALANCES, {
-        description: `Query All Balances`,
+        title: `Query All Balances`,
         ignoreResult: true
       });
 
@@ -63,7 +63,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       .then(result => {
         const meta: ExchangeMeta = {
           name,
-          description: `Query ${name} Balances`,
+          title: `Query ${name} Balances`,
           ignoreResult: false
         };
 
@@ -130,7 +130,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
       const task = createTask(result.task_id, taskType, {
         blockchain,
-        description: `Query ${blockchain || 'Blockchain'} Balances`,
+        title: `Query ${blockchain || 'Blockchain'} Balances`,
         ignoreResult: false
       } as BlockchainMetadata);
       commit('tasks/add', task, { root: true });
@@ -175,7 +175,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const { task_id } = await api.removeBlockchainAccount(blockchain, address);
 
     const task = createTask(task_id, TaskType.ADD_ACCOUNT, {
-      description: `Remove ${blockchain} account ${address}`,
+      title: `Remove ${blockchain} account ${address}`,
       blockchain
     } as BlockchainMetadata);
 
@@ -187,7 +187,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const { address, blockchain } = payload;
     const { task_id } = await api.addBlockchainAccount(payload);
     const task = createTask(task_id, TaskType.ADD_ACCOUNT, {
-      description: `Adding ${blockchain} account ${address}`,
+      title: `Adding ${blockchain} account ${address}`,
       blockchain
     } as BlockchainMetadata);
 
