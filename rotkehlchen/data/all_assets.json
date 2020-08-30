@@ -12531,6 +12531,15 @@
         "symbol": "sUSD",
         "type": "ethereum token"
     },
+    "yUSDT": {
+        "coingecko": "tether",
+        "ethereum_address": "0x2f08119C6f07c006695E079AAFc638b8789FAf18",
+        "ethereum_token_decimals": 6,
+        "name": "yearn Tether USD",
+        "started": 1597318993,
+        "symbol": "yUSDT",
+        "type": "ethereum token"
+    },
     "yDAI+yUSDC+yUSDT+yTUSD": {
         "coingecko": "lp-ycurve",
         "ethereum_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
