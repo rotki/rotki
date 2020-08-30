@@ -1615,16 +1615,33 @@ class DBHandler:
 
     def delete_data_for_ethereum_address(self, address: ChecksumEthAddress) -> None:
         """Deletes all ethereum related data from the DB for a single ethereum address"""
+        other_eth_accounts = self.get_blockchain_accounts().eth
+        if address in other_eth_accounts:
+            other_eth_accounts.remove(address)
+
         cursor = self.conn.cursor()
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="ethtxs_{address}";')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
-
-        cursor.execute(
-            f'DELETE FROM ethereum_transactions WHERE '
-            f'(from_address="{address}" OR to_address="{address}");',
-        )
         cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
+
+        # For transactions we need to delete all transactions where the address
+        # appears in either from or to, BUT no other tracked address is in
+        # from or to of the DB entry
+        questionmarks = '?' * len(other_eth_accounts)
+        # IN operator support in python sqlite is terrible :(
+        # https://stackoverflow.com/questions/31473451/sqlite3-in-clause
+        cursor.execute(
+            f'DELETE FROM ethereum_transactions WHERE '
+            f'from_address="{address}" AND to_address NOT IN ({",".join(questionmarks)});',
+            other_eth_accounts,
+        )
+        cursor.execute(
+            f'DELETE FROM ethereum_transactions WHERE '
+            f'to_address="{address}" AND from_address NOT IN ({",".join(questionmarks)});',
+            other_eth_accounts,
+        )
+
         self.conn.commit()
         self.update_last_write()
 

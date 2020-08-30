@@ -407,7 +407,7 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=1,
-    ), EthereumTransaction(
+    ), EthereumTransaction(  # should remain after deletining account[0]
         tx_hash=b'3',
         timestamp=0,
         block_number=0,
@@ -419,6 +419,30 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=55,
+    ), EthereumTransaction(  # should remain after deletining account[0]
+        tx_hash=b'4',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[1],
+        to_address=ethereum_accounts[0],
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=0,
+    ), EthereumTransaction(  # should remain after deletining account[0]
+        tx_hash=b'5',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[0],
+        to_address=ethereum_accounts[1],
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=0,
     )]
     db.add_ethereum_transactions(transactions, from_etherscan=True)
     # Also make sure to update query ranges so as not to query etherscan at all
@@ -446,7 +470,7 @@ def test_query_transactions_removed_address(
         ), json={'accounts': [ethereum_accounts[0]]})
     assert_proper_response_with_result(response)
 
-    # Check that only the 1 remanining transaction from the other account is returned
+    # Check that only the 3 remanining transactions from the other account is returned
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -454,5 +478,5 @@ def test_query_transactions_removed_address(
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert len(result['entries']) == 1
-    assert result['entries_found'] == 1
+    assert len(result['entries']) == 3
+    assert result['entries_found'] == 3
