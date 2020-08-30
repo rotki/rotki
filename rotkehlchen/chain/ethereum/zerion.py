@@ -8,11 +8,11 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.constants.ethereum import ZERION_ABI, EthereumConstants
+from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
@@ -21,9 +21,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 log = logging.getLogger(__name__)
-
-YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
-CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
 
 
 def _is_symbol_non_standard(symbol: str) -> bool:
@@ -192,9 +189,9 @@ class Zerion():
             token_name: str,
     ) -> Optional[DefiBalance]:
         """Special handling for price for token/protocols which are easier to do onchain"""
-
-        usd_price = handle_defi_price_query(self.ethereum, token_symbol)
-        if not usd_price:
+        underlying_asset_price = get_underlying_asset_price(token_symbol)
+        usd_price = handle_defi_price_query(self.ethereum, token_symbol, underlying_asset_price)
+        if usd_price is None:
             return None
 
         return DefiBalance(

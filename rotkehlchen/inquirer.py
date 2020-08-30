@@ -10,7 +10,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
+from rotkehlchen.constants.assets import A_USD, A_YFI, FIAT_CURRENCIES
 from rotkehlchen.errors import PriceQueryUnsupportedAsset, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -25,6 +25,26 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+SPECIAL_SYMBOLS = (
+    'yyDAI+yUSDC+yUSDT+yTUSD',
+    'yDAI+yUSDC+yUSDT+yTUSD',
+    'yYFI',
+)
+
+
+def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
+    """Gets the underlying asset price for token symbol, if any
+
+
+    This function is neither in inquirer.py or chain/ethereum/defi.py
+    due to recursive import problems
+    """
+    price = None
+    if token_symbol == 'yYFI':
+        price = Inquirer().find_usd_price(A_YFI)
+
+    return price
 
 
 def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
@@ -99,12 +119,18 @@ class Inquirer():
         May raise:
         - RemoteError if the cryptocompare query has a problem
         """
-        if asset.identifier in ('yyDAI+yUSDC+yUSDT+yTUSD', 'yDAI+yUSDC+yUSDT+yTUSD'):
+        if asset.identifier in SPECIAL_SYMBOLS:
             ethereum = Inquirer()._ethereum
             assert ethereum, 'Inquirer should never be called before the injection of ethereum'
-            usd_price = handle_defi_price_query(Inquirer()._ethereum, asset.identifier)
-            if not usd_price:
+            underlying_asset_price = get_underlying_asset_price(asset.identifier)
+            usd_price = handle_defi_price_query(
+                ethereum=ethereum,
+                token_symbol=asset.identifier,
+                underlying_asset_price=underlying_asset_price,
+            )
+            if usd_price is None:
                 return Price(ZERO)
+
             return Price(usd_price)
 
         try:

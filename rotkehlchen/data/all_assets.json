@@ -12548,5 +12548,14 @@
         "started": 1596091760,
         "symbol": "yyDAI+yUSDC+yUSDT+yTUSD",
         "type": "ethereum token"
+    },
+    "yYFI": {
+        "coingecko": "yearn-finance",
+        "ethereum_address": "0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
+        "ethereum_token_decimals": 18,
+        "name": "yearn yearn.finance",
+        "started": 1597845648,
+        "symbol": "yYFI",
+        "type": "ethereum token"
     }
 }
