@@ -16,12 +16,20 @@ export default class StatusMixin extends Vue {
   get loading(): boolean {
     assert(this.section !== Section.NONE);
     const status = this.status(this.section);
-    return !(status === Status.LOADED || status === Status.REFRESHING);
+    return !(
+      status === Status.LOADED ||
+      status === Status.PARTIALLY_LOADED ||
+      status === Status.REFRESHING
+    );
   }
 
   get refreshing(): boolean {
     assert(this.section !== Section.NONE);
     const status = this.status(this.section);
-    return status === Status.LOADING || status === Status.REFRESHING;
+    return (
+      status === Status.LOADING ||
+      status === Status.REFRESHING ||
+      status === Status.PARTIALLY_LOADED
+    );
   }
 }

@@ -14,7 +14,7 @@
     <v-card outlined class="error-screen__message mt-3">
       <v-card-title>
         There is a problem with the backend. <v-spacer />
-        <v-tooltip top="">
+        <v-tooltip top>
           <template #activator="{ on, attrs }">
             <v-btn v-bind="attrs" icon v-on="on" @click="copy()">
               <v-icon>fa-copy</v-icon>
@@ -62,7 +62,7 @@ export default class ErrorScreen extends Vue {
 </script>
 
 <style scoped lang="scss">
-@import '@/scss/scroll';
+@import '~@/scss/scroll';
 
 .error-screen {
   background-color: white;

@@ -24,6 +24,10 @@ export default class History extends Vue {
     {
       name: this.$tc('history.tabs.deposits_withdrawals'),
       routeTo: '/history/deposits-withdrawals'
+    },
+    {
+      name: this.$tc('history.tabs.transactions'),
+      routeTo: '/history/transactions'
     }
   ];
 }

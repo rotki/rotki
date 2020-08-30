@@ -1,5 +1,10 @@
 import { MutationTree } from 'vuex';
-import { AssetMovement, Trade, TradeUpdate } from '@/services/history/types';
+import {
+  AssetMovement,
+  EthTransaction,
+  Trade,
+  TradeUpdate
+} from '@/services/history/types';
 import { LimitedResponse } from '@/services/types-api';
 import { defaultHistoricState, defaultState } from '@/store/history/state';
 import { HistoryState } from '@/store/history/types';
@@ -56,6 +61,21 @@ export const mutations: MutationTree<HistoryState> = {
   },
   resetMovements(state: HistoryState) {
     state.assetMovements = defaultHistoricState();
+  },
+
+  updateTransactions(
+    state: HistoryState,
+    transactions: LimitedResponse<EthTransaction[]>
+  ) {
+    state.transactions = {
+      data: [...state.transactions.data, ...transactions.entries],
+      limit: transactions.entriesLimit,
+      found: transactions.entriesFound
+    };
+  },
+
+  resetTransactions(state: HistoryState) {
+    state.transactions = defaultHistoricState();
   },
 
   reset(state: HistoryState) {

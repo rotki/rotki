@@ -46,6 +46,10 @@ export default new Router({
         {
           path: 'deposits-withdrawals',
           component: () => import('../views/history/DepositsWithdrawals.vue')
+        },
+        {
+          path: 'transactions',
+          component: () => import('../views/history/Transactions.vue')
         }
       ]
     },

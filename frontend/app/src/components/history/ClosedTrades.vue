@@ -37,6 +37,7 @@
             :footer-props="footerProps"
             class="closed-trades"
             item-key="tradeId"
+            :page.sync="page"
             :loading="refreshing"
           >
             <template #item.location="{ item }">
@@ -167,7 +168,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -243,6 +244,7 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   tradesLimit!: number;
   tradesTotal!: number;
   expanded = [];
+  page: number = 1;
 
   deleteExternalTrade!: (tradeId: string) => Promise<boolean>;
   section = Section.TRADES;
@@ -252,6 +254,13 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
 
   @Prop({ required: true })
   data!: Trade[];
+
+  @Watch('data')
+  onDataUpdate(newData: Trade[], oldData?: Trade[]) {
+    if (oldData && newData.length < oldData.length) {
+      this.page = 1;
+    }
+  }
 
   newExternalTrade() {
     this.dialogTitle = this.$tc('closed_trades.dialog.add.title');

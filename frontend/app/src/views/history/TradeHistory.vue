@@ -6,7 +6,7 @@
     {{ $t('trade_history.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
-    <trade-location-selector v-model="selectedLocation" />
+    <trade-location-selector v-model="selectedLocation" show-external />
     <open-trades v-if="preview" :data="openTrades" />
     <closed-trades
       class="mt-8"

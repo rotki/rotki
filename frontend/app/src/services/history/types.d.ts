@@ -45,3 +45,17 @@ export interface AssetMovement {
   readonly fee: BigNumber;
   readonly link: string;
 }
+
+export interface EthTransaction {
+  readonly txHash: string;
+  readonly timestamp: number;
+  readonly blockNumber: number;
+  readonly fromAddress: string;
+  readonly toAddress: string;
+  readonly value: BigNumber;
+  readonly gas: BigNumber;
+  readonly gasPrice: BigNumber;
+  readonly gasUsed: BigNumber;
+  readonly inputData: string;
+  readonly nonce: number;
+}

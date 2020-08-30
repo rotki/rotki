@@ -5,7 +5,7 @@
         <div class="mx-4 py-2">
           <v-autocomplete
             :value="value"
-            :items="tradeLocations"
+            :items="locations"
             hide-details
             hide-selected
             hide-no-data
@@ -41,6 +41,7 @@
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
+import { TradeLocationData } from '@/components/history/type';
 import { TradeLocation } from '@/services/history/types';
 
 @Component({
@@ -48,6 +49,12 @@ import { TradeLocation } from '@/services/history/types';
 })
 export default class TradeLocationSelector extends Vue {
   readonly tradeLocations = tradeLocations;
+
+  get locations(): TradeLocationData[] {
+    return this.showExternal
+      ? tradeLocations
+      : tradeLocations.filter(location => location.identifier !== 'external');
+  }
 
   get name(): string {
     return (
@@ -58,6 +65,9 @@ export default class TradeLocationSelector extends Vue {
 
   @Prop({ required: true })
   value!: TradeLocation;
+
+  @Prop({ required: false, type: Boolean, default: false })
+  showExternal!: boolean;
 
   @Emit()
   input(_value: TradeLocation) {}
