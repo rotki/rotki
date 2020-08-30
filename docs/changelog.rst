@@ -51,7 +51,8 @@ Changelog
   - `Centric (CNS) <https://www.coingecko.com/en/coins/centric>`__
   - `Sensorium (SENSO) <https://www.coingecko.com/en/coins/senso>`__
   - `Aave interest bearing YFI (aYFI) <https://etherscan.io/tx/0x259efe3b78bda8cf736a4afb30654d2e365cb42dc2cbe1fa8c64137673d848fd>`__
-  - `Amplefort (AMPL) <https://www.coingecko.com/en/coins/ampleforth>`__
+  - `Ampleforth (AMPL) <https://www.coingecko.com/en/coins/ampleforth>`__
+  - `YFII.finance (YFII) <https://www.coingecko.com/en/coins/dfi-money>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.

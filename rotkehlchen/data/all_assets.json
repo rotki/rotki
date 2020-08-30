@@ -12065,6 +12065,15 @@
         "symbol": "YFI",
         "type": "ethereum token"
     },
+    "YFII": {
+        "coingecko": "yfii-finance",
+        "ethereum_address": "0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83",
+        "ethereum_token_decimals": 18,
+        "name": "YFII.finance",
+        "started": 1595768700,
+        "symbol": "YFII",
+        "type": "ethereum token"
+    },
     "YOU": {
         "active": true,
         "coingecko": "you-chain",
