@@ -6429,9 +6429,9 @@
     },
     "LRC": {
         "coingecko": "loopring",
-        "ethereum_address": "0xEF68e7C694F40c8202821eDF525dE3782458639f",
+        "ethereum_address": "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD",
         "ethereum_token_decimals": 18,
-        "name": "Loopring",
+        "name": "LoopringCoin V2",
         "started": 1500422400,
         "symbol": "LRC",
         "type": "ethereum token"
@@ -12029,7 +12029,7 @@
         "type": "ethereum token"
     },
     "YAMv2": {
-        "coingecko": "yamv2",
+        "coingecko": "yam-v2",
         "ethereum_address": "0xAba8cAc6866B83Ae4eec97DD07ED254282f6aD8A",
         "ethereum_token_decimals": 24,
         "name": "YAMv2",
