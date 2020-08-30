@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -15,6 +16,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import EthereumTransaction
 
 EXPECTED_AFB7_TXS = [{
@@ -369,3 +371,88 @@ def test_query_transactions_from_to_address(
             result = assert_proper_response_with_result(response)
             assert len(result['entries']) == expected_entries[address]
             assert result['entries_found'] == 3
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_query_transactions_removed_address(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    """Make sure that if an address is removed so are the transactions from the DB"""
+    start_ts = 0
+    end_ts = 1598453214
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    transactions = [EthereumTransaction(
+        tx_hash=b'1',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[0],
+        to_address=make_ethereum_address(),
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=0,
+    ), EthereumTransaction(
+        tx_hash=b'2',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[0],
+        to_address=make_ethereum_address(),
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    ), EthereumTransaction(
+        tx_hash=b'3',
+        timestamp=0,
+        block_number=0,
+        from_address=make_ethereum_address(),
+        to_address=ethereum_accounts[1],
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=55,
+    )]
+    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    # Also make sure to update query ranges so as not to query etherscan at all
+    for address in ethereum_accounts:
+        DBQueryRanges(db).update_used_query_range(
+            location_string=f'ethtxs_{address}',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=[],
+        )
+
+    # Now remove the first account (do the mocking to not query etherscan for balances)
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=[],
+        eth_balances=['10000', '10000'],
+    )
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json={'accounts': [ethereum_accounts[0]]})
+    assert_proper_response_with_result(response)
+
+    # Check that only the 1 remanining transaction from the other account is returned
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries_found'] == 1

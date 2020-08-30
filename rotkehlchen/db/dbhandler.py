@@ -740,6 +740,7 @@ class DBHandler:
         self.update_last_write()
 
     def purge_ethereum_transaction_data(self) -> None:
+        """Deletes all ethereum transaction related data from the DB"""
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
@@ -881,12 +882,11 @@ class DBHandler:
                 f'f{blockchain.value} accounts that do not exist',
             )
 
-        # Also remove saved details (tokens detected) if it's ethereum and if any exist
+        # Also remove all ethereum address details saved in the D
         if blockchain == SupportedBlockchain.ETHEREUM:
-            cursor.executemany(
-                'DELETE FROM ethereum_accounts_details WHERE '
-                'account = ?;', account_tuples,
-            )
+
+            for address in accounts:
+                self.delete_data_for_ethereum_address(address)  # type: ignore
 
         self.conn.commit()
         self.update_last_write()
@@ -1612,6 +1612,21 @@ class DBHandler:
             ethereum_transactions.append(tx)
 
         return ethereum_transactions
+
+    def delete_data_for_ethereum_address(self, address: ChecksumEthAddress) -> None:
+        """Deletes all ethereum related data from the DB for a single ethereum address"""
+        cursor = self.conn.cursor()
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name="ethtxs_{address}";')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
+
+        cursor.execute(
+            f'DELETE FROM ethereum_transactions WHERE '
+            f'(from_address="{address}" OR to_address="{address}");',
+        )
+        cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
+        cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
+        self.conn.commit()
+        self.update_last_write()
 
     def add_trades(self, trades: List[Trade]) -> None:
         trade_tuples: List[Tuple[Any, ...]] = []
