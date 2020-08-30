@@ -184,6 +184,36 @@ def test_query_transactions(rotkehlchen_api_server, async_query):
     assert result['entries'] == EXPECTED_AFB7_TXS[2:4][::-1]
 
 
+@pytest.mark.parametrize('ethereum_accounts', [['0xe62193Bc1c340EF2205C0Bd71691Fad5e5072253']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_over_10k_transactions(rotkehlchen_api_server):
+    """Test that querying for an address with over 10k transactions works
+
+    This test uses real etherscan queries and an address that we found that has > 10k transactions.
+
+    Etherscan has a limit for 1k transactions per query and we need to make
+    sure that we properly pull all data by using pagination
+    """
+    expected_at_least = 16097  # 30/08/2020
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) >= expected_at_least
+    assert result['entries_found'] >= expected_at_least
+    assert result['entries_limit'] == -1
+
+    # Also check some entries in the list that we know of to see that they exist
+    rresult = result['entries'][::-1]
+    assert rresult[1]['tx_hash'] == '0xec72748b8b784380ff6fcca9b897d649a0992eaa63b6c025ecbec885f64d2ac9'  # noqa: E501
+    assert rresult[1]['nonce'] == 0
+    assert rresult[11201]['tx_hash'] == '0x28bbfec0ea9f9822e15e7a1b009b302d49da14a05c33a8a2b60347229382baaa'  # noqa: E501
+    assert rresult[11201]['nonce'] == 11161
+
+
 def test_query_transactions_errors(rotkehlchen_api_server):
     # Malformed address
     response = requests.get(
