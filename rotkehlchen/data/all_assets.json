@@ -12611,5 +12611,32 @@
         "started": 1597845648,
         "symbol": "yYFI",
         "type": "ethereum token"
+    },
+    "crvRenWBTC": {
+        "coingecko": "lp-renbtc-curve",
+        "ethereum_address": "0x49849C98ae39Fff122806C06791Fa73784FB3675",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi renBTC/wBTC",
+        "started": 1590630368,
+        "symbol": "crvRenWBTC",
+        "type": "ethereum token"
+    },
+    "crvRenWSBTC": {
+        "coingecko": "lp-renbtc-curve",
+        "ethereum_address": "0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi renBTC/wBTC/sBTC",
+        "started": 1592306956,
+        "symbol": "crvRenWSBTC",
+        "type": "ethereum token"
+    },
+    "ycrvRenWSBTC": {
+        "coingecko": "lp-renbtc-curve",
+        "ethereum_address": "0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Curve.fi renBTC/wBTC/sBTC",
+        "started": 1598421792,
+        "symbol": "ycrvRenWSBTC",
+        "type": "ethereum token"
     }
 }
