@@ -12639,6 +12639,15 @@
         "symbol": "yUSDC",
         "type": "ethereum token"
     },
+    "yTUSD": {
+        "coingecko": "true-usd",
+        "ethereum_address": "0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a",
+        "ethereum_token_decimals": 18,
+        "name": "yearn TrueUSD",
+        "started": 1596678980,
+        "symbol": "yTUSD",
+        "type": "ethereum token"
+    },
     "yYFI": {
         "coingecko": "yearn-finance",
         "ethereum_address": "0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
