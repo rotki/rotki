@@ -21,6 +21,7 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `YAM (YAM) <https://coinmarketcap.com/currencies/yam/>`__
+  - `YAMv2 (YAMv2) <https://www.coingecko.com/en/coins/yam-v2>`__
   - `Serum (SRM) <https://coinmarketcap.com/currencies/serum/>`__
   - `Orion Protocol (ORN) <https://www.coingecko.com/en/coins/orion-protocol>`__
   - `Polkadot (DOT) <https://coinmarketcap.com/currencies/polkadot-new/>`__

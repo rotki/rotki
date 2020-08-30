@@ -12028,6 +12028,15 @@
         "symbol": "YAM",
         "type": "ethereum token"
     },
+    "YAMv2": {
+        "coingecko": "yamv2",
+        "ethereum_address": "0xAba8cAc6866B83Ae4eec97DD07ED254282f6aD8A",
+        "ethereum_token_decimals": 24,
+        "name": "YAMv2",
+        "started": 1597849378,
+        "symbol": "YAMv2",
+        "type": "ethereum token"
+    },
     "YEE": {
         "coingecko": "yee",
         "ethereum_address": "0x922105fAd8153F516bCfB829f56DC097a0E1D705",
