@@ -7649,7 +7649,7 @@
     },
     "OCEAN": {
         "coingecko": "ocean-protocol",
-        "ethereum_address": "0x985dd3D42De1e256d09e1c10F112bCCB8015AD41",
+        "ethereum_address": "0x7AFeBBB46fDb47ed17b22ed075Cde2447694fB9e",
         "ethereum_token_decimals": 18,
         "name": "OceanToken",
         "started": 1556037118,
