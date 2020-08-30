@@ -12540,6 +12540,15 @@
         "symbol": "sUSD",
         "type": "ethereum token"
     },
+    "yaLINK": {
+        "coingecko": "aave-link",
+        "ethereum_address": "0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Aave Interest bearing LINK",
+        "started": 1596628700,
+        "symbol": "yaLINK",
+        "type": "ethereum token"
+    },
     "yDAI+yUSDC+yUSDT+yBUSD": {
         "coingecko": "lp-bcurve",
         "ethereum_address": "0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B",

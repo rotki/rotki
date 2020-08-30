@@ -10,7 +10,15 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_DAI, A_USD, A_USDC, A_USDT, A_YFI, FIAT_CURRENCIES
+from rotkehlchen.constants.assets import (
+    A_ALINK,
+    A_DAI,
+    A_USD,
+    A_USDC,
+    A_USDT,
+    A_YFI,
+    FIAT_CURRENCIES,
+)
 from rotkehlchen.errors import PriceQueryUnsupportedAsset, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -35,6 +43,7 @@ SPECIAL_SYMBOLS = (
     'ypaxCrv',
     'crvRenWBTC',
     'crvRenWSBTC',
+    'yaLINK',
     'yDAI',
     'yYFI',
     'yUSDT',
@@ -50,7 +59,9 @@ def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
     due to recursive import problems
     """
     price = None
-    if token_symbol == 'yDAI':
+    if token_symbol == 'yaLINK':
+        price = Inquirer().find_usd_price(A_ALINK)
+    elif token_symbol == 'yDAI':
         price = Inquirer().find_usd_price(A_DAI)
     elif token_symbol == 'yYFI':
         price = Inquirer().find_usd_price(A_YFI)

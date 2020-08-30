@@ -13,6 +13,7 @@ CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
 CURVEFI_PAXSWAP = EthereumConstants().contract('CURVEFI_PAXSWAP')
 YEARN_DAI_VAULT = EthereumConstants().contract('YEARN_DAI_VAULT')
 YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')
+YEARN_ALINK_VAULT = EthereumConstants().contract('YEARN_ALINK_VAULT')
 YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
 YEARN_USDC_VAULT = EthereumConstants().contract('YEARN_USDC_VAULT')
 CURVEFI_BUSDSWAP = EthereumConstants().contract('CURVEFI_BUSDSWAP')
@@ -109,6 +110,13 @@ def handle_defi_price_query(
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_SRENSWAP)
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yBUSD':
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP)
+    elif token_symbol == 'yaLINK':
+        assert underlying_asset_price
+        usd_value = handle_underlying_price_yearn_vault(
+            ethereum=ethereum,
+            underlying_asset_price=underlying_asset_price,
+            contract=YEARN_ALINK_VAULT,
+        )
     elif token_symbol == 'yDAI':
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
