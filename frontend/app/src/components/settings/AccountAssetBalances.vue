@@ -24,7 +24,11 @@
           <amount-display :value="item.amount" />
         </template>
         <template #item.usdValue="{ item }">
-          <amount-display fiat-currency="USD" :value="item.usdValue" />
+          <amount-display
+            fiat-currency="USD"
+            :value="item.usdValue"
+            show-currency="symbol"
+          />
         </template>
       </v-data-table>
     </v-col>

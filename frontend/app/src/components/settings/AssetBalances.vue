@@ -22,7 +22,11 @@
         <amount-display :value="item.amount" />
       </template>
       <template #item.usdValue="{ item }">
-        <amount-display fiat-currency="USD" :value="item.usdValue" />
+        <amount-display
+          fiat-currency="USD"
+          :value="item.usdValue"
+          show-currency="symbol"
+        />
       </template>
       <template v-if="balances.length > 0" #body.append>
         <tr class="asset-balances__total">
@@ -31,6 +35,7 @@
           <td class="text-end">
             <amount-display
               fiat-currency="USD"
+              show-currency="symbol"
               :value="balances.map(val => val.usdValue) | balanceSum"
             />
           </td>

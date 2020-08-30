@@ -20,7 +20,11 @@
       <amount-display :value="item.balance.amount" />
     </template>
     <template #item.balance.usdValue="{ item }">
-      <amount-display fiat-currency="USD" :value="item.balance.usdValue" />
+      <amount-display
+        fiat-currency="USD"
+        :value="item.balance.usdValue"
+        show-currency="symbol"
+      />
     </template>
     <template #item.apy="{ item }">
       {{ item.effectiveInterestRate ? item.effectiveInterestRate : '-' }}
@@ -64,9 +68,13 @@ export default class LendingAssetTable extends Vue {
     { text: 'Asset', value: 'asset' },
     { text: 'Protocol', value: 'protocol' },
     { text: 'Address', value: 'address' },
-    { text: 'Amount', value: 'balance.amount' },
-    { text: 'USD Value', value: 'balance.usdValue' },
-    { text: 'Effective Interest Rate', value: 'effectiveInterestRate' }
+    { text: 'Amount', value: 'balance.amount', align: 'end' },
+    { text: 'USD Value', value: 'balance.usdValue', align: 'end' },
+    {
+      text: 'Effective Interest Rate',
+      value: 'effectiveInterestRate',
+      align: 'end'
+    }
   ];
 }
 </script>

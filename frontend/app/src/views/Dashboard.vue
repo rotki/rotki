@@ -134,6 +134,7 @@
             </template>
             <template #item.usdValue="{ item }">
               <amount-display
+                show-currency="symbol"
                 :fiat-currency="item.asset"
                 :amount="item.amount"
                 :value="item.usdValue"
@@ -167,6 +168,7 @@
                           floatingPrecision
                         )
                     "
+                    show-currency="symbol"
                   />
                 </td>
               </tr>
