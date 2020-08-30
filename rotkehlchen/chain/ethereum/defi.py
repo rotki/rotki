@@ -11,39 +11,27 @@ if TYPE_CHECKING:
 YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
 CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
 CURVEFI_PAXSWAP = EthereumConstants().contract('CURVEFI_PAXSWAP')
+YEARN_DAI_VAULT = EthereumConstants().contract('YEARN_DAI_VAULT')
 YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')
 YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
 CURVEFI_BUSDSWAP = EthereumConstants().contract('CURVEFI_BUSDSWAP')
 YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 
 
-def _handle_ycrv_vault(ethereum: 'EthereumManager') -> FVal:
+def _handle_yearn_curve_vault(
+        ethereum: 'EthereumManager',
+        curve_contract: EthereumContract,
+        yearn_contract: EthereumContract,
+) -> FVal:
     virtual_price = ethereum.call_contract(
-        contract_address=CURVEFI_YSWAP.address,
-        abi=CURVEFI_YSWAP.abi,
+        contract_address=curve_contract.address,
+        abi=curve_contract.abi,
         method_name='get_virtual_price',
         arguments=[],
     )
     price_per_full_share = ethereum.call_contract(
-        contract_address=YEARN_YCRV_VAULT.address,
-        abi=YEARN_YCRV_VAULT.abi,
-        method_name='getPricePerFullShare',
-        arguments=[],
-    )
-    usd_value = FVal(virtual_price * price_per_full_share) / 10 ** 36
-    return usd_value
-
-
-def _handle_ybusd_vault(ethereum: 'EthereumManager') -> FVal:
-    virtual_price = ethereum.call_contract(
-        contract_address=CURVEFI_BUSDSWAP.address,
-        abi=CURVEFI_BUSDSWAP.abi,
-        method_name='get_virtual_price',
-        arguments=[],
-    )
-    price_per_full_share = ethereum.call_contract(
-        contract_address=YEARN_BCURVE_VAULT.address,
-        abi=YEARN_BCURVE_VAULT.abi,
+        contract_address=yearn_contract.address,
+        abi=yearn_contract.abi,
         method_name='getPricePerFullShare',
         arguments=[],
     )
@@ -90,15 +78,30 @@ def handle_defi_price_query(
     and rotkehlchen/chain/ethereum/defi
     """
     if token_symbol == 'yyDAI+yUSDC+yUSDT+yTUSD':
-        usd_value = _handle_ycrv_vault(ethereum)
+        usd_value = _handle_yearn_curve_vault(
+            ethereum=ethereum,
+            curve_contract=CURVEFI_YSWAP,
+            yearn_contract=YEARN_YCRV_VAULT,
+        )
     elif token_symbol == 'yyDAI+yUSDC+yUSDT+yBUSD':
-        usd_value = _handle_ybusd_vault(ethereum)
+        usd_value = _handle_yearn_curve_vault(
+            ethereum=ethereum,
+            curve_contract=CURVEFI_BUSDSWAP,
+            yearn_contract=YEARN_BCURVE_VAULT,
+        )
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yTUSD':
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_YSWAP)
     elif token_symbol == 'ypaxCrv':
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_PAXSWAP)
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yBUSD':
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP)
+    elif token_symbol == 'yDAI':
+        assert underlying_asset_price
+        usd_value = handle_underlying_price_yearn_vault(
+            ethereum=ethereum,
+            underlying_asset_price=underlying_asset_price,
+            contract=YEARN_DAI_VAULT,
+        )
     elif token_symbol == 'yYFI':
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
