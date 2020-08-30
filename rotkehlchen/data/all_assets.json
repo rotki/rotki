@@ -12603,6 +12603,15 @@
         "symbol": "yDAI",
         "type": "ethereum token"
     },
+    "yUSDC": {
+        "coingecko": "usd-coin",
+        "ethereum_address": "0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e",
+        "ethereum_token_decimals": 6,
+        "name": "yearn USD//C",
+        "started": 1595721600,
+        "symbol": "yUSDC",
+        "type": "ethereum token"
+    },
     "yYFI": {
         "coingecko": "yearn-finance",
         "ethereum_address": "0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
