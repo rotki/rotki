@@ -208,10 +208,13 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
 
     # Also check some entries in the list that we know of to see that they exist
     rresult = result['entries'][::-1]
+
     assert rresult[1]['tx_hash'] == '0xec72748b8b784380ff6fcca9b897d649a0992eaa63b6c025ecbec885f64d2ac9'  # noqa: E501
     assert rresult[1]['nonce'] == 0
     assert rresult[11201]['tx_hash'] == '0x28bbfec0ea9f9822e15e7a1b009b302d49da14a05c33a8a2b60347229382baaa'  # noqa: E501
     assert rresult[11201]['nonce'] == 11161
+    assert rresult[16172]['tx_hash'] == '0xda2f5da4eb9de14c2a581a34ad973f824b207eafbf5e9733906989055f9975e0'  # noqa: E501
+    assert rresult[16172]['nonce'] == 16111
 
 
 def test_query_transactions_errors(rotkehlchen_api_server):
