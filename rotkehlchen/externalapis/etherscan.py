@@ -19,6 +19,8 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
+ETHERSCAN_TX_QUERY_LIMIT = 10000
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -292,7 +294,7 @@ class Etherscan(ExternalServiceWithApiKey):
         - RemoteError due to self._query(). Also if the returned result
         is not in the expected format
         """
-        options = {'address': str(account)}
+        options = {'address': str(account), 'sort': 'asc'}
         if from_ts is not None:
             from_block = self.get_blocknumber_by_time(from_ts)
             options['startBlock'] = str(from_block)
@@ -301,16 +303,26 @@ class Etherscan(ExternalServiceWithApiKey):
             options['endBlock'] = str(to_block)
         action: Literal['txlistinternal', 'txlist'] = 'txlistinternal' if internal else 'txlist'
 
-        result = self._query(module='account', action=action, options=options)
         transactions = []
-        for entry in result:
-            try:
-                tx = deserialize_transaction_from_etherscan(data=entry, internal=internal)
-            except DeserializationError as e:
-                self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
-                continue
+        while True:
+            result = self._query(module='account', action=action, options=options)
+            for entry in result:
+                try:
+                    tx = deserialize_transaction_from_etherscan(data=entry, internal=internal)
+                except DeserializationError as e:
+                    self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
+                    continue
 
-            transactions.append(tx)
+                transactions.append(tx)
+
+            if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
+                break
+            # else we hit the limit. Query once more with startBlock being the last
+            # block we got. There may be duplicate entries if there are more than one
+            # transactions for that last block but they should be filtered
+            # out when we input all of these in the DB
+            last_block = result[-1]['blockNumber']
+            options['startBlock'] = last_block
 
         return transactions
 

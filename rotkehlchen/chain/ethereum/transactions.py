@@ -14,7 +14,7 @@ from rotkehlchen.utils.interfaces import LockableQueryObject, protect_with_lock
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-FREE_ETH_TX_LIMIT = 500
+FREE_ETH_TX_LIMIT = 250
 
 
 class EthTransactions(LockableQueryObject):

@@ -9244,7 +9244,7 @@
         "type": "ethereum token"
     },
     "SDC": {
-        "coingecko": "sixdomainchain",
+        "coingecko": "",
         "name": "ShadowCash",
         "started": 1403049600,
         "symbol": "SDC",

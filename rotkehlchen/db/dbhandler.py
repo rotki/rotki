@@ -740,6 +740,7 @@ class DBHandler:
         self.update_last_write()
 
     def purge_ethereum_transaction_data(self) -> None:
+        """Deletes all ethereum transaction related data from the DB"""
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
@@ -881,12 +882,11 @@ class DBHandler:
                 f'f{blockchain.value} accounts that do not exist',
             )
 
-        # Also remove saved details (tokens detected) if it's ethereum and if any exist
+        # Also remove all ethereum address details saved in the D
         if blockchain == SupportedBlockchain.ETHEREUM:
-            cursor.executemany(
-                'DELETE FROM ethereum_accounts_details WHERE '
-                'account = ?;', account_tuples,
-            )
+
+            for address in accounts:
+                self.delete_data_for_ethereum_address(address)  # type: ignore
 
         self.conn.commit()
         self.update_last_write()
@@ -1582,7 +1582,7 @@ class DBHandler:
               nonce FROM ethereum_transactions
         """
         if address is not None:
-            query += f'WHERE from_address="{address}" '
+            query += f'WHERE (from_address="{address}" OR to_address="{address}") '
         query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
@@ -1612,6 +1612,38 @@ class DBHandler:
             ethereum_transactions.append(tx)
 
         return ethereum_transactions
+
+    def delete_data_for_ethereum_address(self, address: ChecksumEthAddress) -> None:
+        """Deletes all ethereum related data from the DB for a single ethereum address"""
+        other_eth_accounts = self.get_blockchain_accounts().eth
+        if address in other_eth_accounts:
+            other_eth_accounts.remove(address)
+
+        cursor = self.conn.cursor()
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name="ethtxs_{address}";')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
+        cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
+        cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
+
+        # For transactions we need to delete all transactions where the address
+        # appears in either from or to, BUT no other tracked address is in
+        # from or to of the DB entry
+        questionmarks = '?' * len(other_eth_accounts)
+        # IN operator support in python sqlite is terrible :(
+        # https://stackoverflow.com/questions/31473451/sqlite3-in-clause
+        cursor.execute(
+            f'DELETE FROM ethereum_transactions WHERE '
+            f'from_address="{address}" AND to_address NOT IN ({",".join(questionmarks)});',
+            other_eth_accounts,
+        )
+        cursor.execute(
+            f'DELETE FROM ethereum_transactions WHERE '
+            f'to_address="{address}" AND from_address NOT IN ({",".join(questionmarks)});',
+            other_eth_accounts,
+        )
+
+        self.conn.commit()
+        self.update_last_write()
 
     def add_trades(self, trades: List[Trade]) -> None:
         trade_tuples: List[Tuple[Any, ...]] = []

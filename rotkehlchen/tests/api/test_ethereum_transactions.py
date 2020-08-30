@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -15,6 +16,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import EthereumTransaction
 
 EXPECTED_AFB7_TXS = [{
@@ -179,7 +181,40 @@ def test_query_transactions(rotkehlchen_api_server, async_query):
 
         assert mock_call.call_count == 0
 
-    assert result['entries'] == EXPECTED_AFB7_TXS[2:-2]
+    assert result['entries'] == EXPECTED_AFB7_TXS[2:4][::-1]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xe62193Bc1c340EF2205C0Bd71691Fad5e5072253']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_over_10k_transactions(rotkehlchen_api_server):
+    """Test that querying for an address with over 10k transactions works
+
+    This test uses real etherscan queries and an address that we found that has > 10k transactions.
+
+    Etherscan has a limit for 1k transactions per query and we need to make
+    sure that we properly pull all data by using pagination
+    """
+    expected_at_least = 16097  # 30/08/2020
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) >= expected_at_least
+    assert result['entries_found'] >= expected_at_least
+    assert result['entries_limit'] == -1
+
+    # Also check some entries in the list that we know of to see that they exist
+    rresult = result['entries'][::-1]
+
+    assert rresult[1]['tx_hash'] == '0xec72748b8b784380ff6fcca9b897d649a0992eaa63b6c025ecbec885f64d2ac9'  # noqa: E501
+    assert rresult[1]['nonce'] == 0
+    assert rresult[11201]['tx_hash'] == '0x28bbfec0ea9f9822e15e7a1b009b302d49da14a05c33a8a2b60347229382baaa'  # noqa: E501
+    assert rresult[11201]['nonce'] == 11161
+    assert rresult[16172]['tx_hash'] == '0xda2f5da4eb9de14c2a581a34ad973f824b207eafbf5e9733906989055f9975e0'  # noqa: E501
+    assert rresult[16172]['nonce'] == 16111
 
 
 def test_query_transactions_errors(rotkehlchen_api_server):
@@ -297,3 +332,184 @@ def test_query_transactions_over_limit(
                 assert len(result['entries']) == free_expected_entries[idx]
                 assert result['entries_found'] == all_transactions_num
                 assert result['entries_limit'] == FREE_ETH_TX_LIMIT
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_query_transactions_from_to_address(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    """Make sure that if a transaction is just being sent to an address it's also returned."""
+    start_ts = 0
+    end_ts = 1598453214
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    transactions = [EthereumTransaction(
+        tx_hash=b'1',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[0],
+        to_address=make_ethereum_address(),
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=0,
+    ), EthereumTransaction(
+        tx_hash=b'2',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[0],
+        to_address=ethereum_accounts[1],
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    ), EthereumTransaction(
+        tx_hash=b'3',
+        timestamp=0,
+        block_number=0,
+        from_address=make_ethereum_address(),
+        to_address=ethereum_accounts[0],
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=55,
+    )]
+    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    # Also make sure to update query ranges so as not to query etherscan at all
+    for address in ethereum_accounts:
+        DBQueryRanges(db).update_used_query_range(
+            location_string=f'ethtxs_{address}',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=[],
+        )
+
+    expected_entries = {ethereum_accounts[0]: 3, ethereum_accounts[1]: 1}
+    # Check that we get all transactions correctly even if we query two times
+    for _ in range(2):
+        for address in ethereum_accounts:
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'ethereumtransactionsresource',
+                ), json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'address': address},
+            )
+            result = assert_proper_response_with_result(response)
+            assert len(result['entries']) == expected_entries[address]
+            assert result['entries_found'] == 3
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_query_transactions_removed_address(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    """Make sure that if an address is removed so are the transactions from the DB"""
+    start_ts = 0
+    end_ts = 1598453214
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    transactions = [EthereumTransaction(
+        tx_hash=b'1',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[0],
+        to_address=make_ethereum_address(),
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=0,
+    ), EthereumTransaction(
+        tx_hash=b'2',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[0],
+        to_address=make_ethereum_address(),
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    ), EthereumTransaction(  # should remain after deletining account[0]
+        tx_hash=b'3',
+        timestamp=0,
+        block_number=0,
+        from_address=make_ethereum_address(),
+        to_address=ethereum_accounts[1],
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=55,
+    ), EthereumTransaction(  # should remain after deletining account[0]
+        tx_hash=b'4',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[1],
+        to_address=ethereum_accounts[0],
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=0,
+    ), EthereumTransaction(  # should remain after deletining account[0]
+        tx_hash=b'5',
+        timestamp=0,
+        block_number=0,
+        from_address=ethereum_accounts[0],
+        to_address=ethereum_accounts[1],
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=0,
+    )]
+    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    # Also make sure to update query ranges so as not to query etherscan at all
+    for address in ethereum_accounts:
+        DBQueryRanges(db).update_used_query_range(
+            location_string=f'ethtxs_{address}',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=[],
+        )
+
+    # Now remove the first account (do the mocking to not query etherscan for balances)
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=[],
+        eth_balances=['10000', '10000'],
+    )
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json={'accounts': [ethereum_accounts[0]]})
+    assert_proper_response_with_result(response)
+
+    # Check that only the 3 remanining transactions from the other account is returned
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 3
+    assert result['entries_found'] == 3
