@@ -9,7 +9,8 @@ export interface Task<T extends TaskMeta> {
 }
 
 export interface TaskMeta {
-  readonly description: string;
+  readonly title: string;
+  readonly description?: string;
   readonly ignoreResult: boolean;
   readonly numericKeys?: string[];
 }

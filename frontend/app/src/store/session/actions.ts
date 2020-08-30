@@ -141,14 +141,17 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       await api.logout(state.username);
       monitor.stop();
-      commit('session/reset', {}, { root: true });
-      commit('notifications/reset', {}, { root: true });
-      commit('reports/reset', {}, { root: true });
-      commit('balances/reset', {}, { root: true });
-      commit('defi/reset', {}, { root: true });
-      commit('tasks/reset', {}, { root: true });
-      commit('settings/reset', {}, { root: true });
-      commit('reset', {}, { root: true });
+      const opts = { root: true };
+      const payload = {};
+      commit('session/reset', payload, opts);
+      commit('notifications/reset', payload, opts);
+      commit('reports/reset', payload, opts);
+      commit('balances/reset', payload, opts);
+      commit('defi/reset', payload, opts);
+      commit('tasks/reset', payload, opts);
+      commit('settings/reset', payload, opts);
+      commit('history/reset', payload, opts);
+      commit('reset', payload, opts);
     } catch (e) {
       showError(e.message, 'Logout failed');
     }

@@ -35,7 +35,7 @@ describe('AssetBalances.vue', () => {
       type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
       meta: {
         ignoreResult: false,
-        description: 'test'
+        title: 'test'
       }
     };
     store.commit('tasks/add', payload);

@@ -15,7 +15,7 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
       const result = await api.processTradeHistoryAsync(start, end);
       commit('reportPeriod', { start, end });
       const task = createTask(result.task_id, TaskType.TRADE_HISTORY, {
-        description: 'Create tax report',
+        title: 'Create tax report',
         ignoreResult: false
       });
       commit('tasks/add', task, { root: true });

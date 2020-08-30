@@ -26,7 +26,12 @@
             <template v-for="task in tasks">
               <v-list-item :key="task.id" class="progress-indicator__task">
                 <v-list-item-content>
-                  <v-list-item-title v-text="task.meta.description" />
+                  <v-list-item-title v-text="task.meta.title" />
+                  <v-list-item-subtitle
+                    v-if="task.meta.description"
+                    class="mt-1"
+                    v-text="task.meta.description"
+                  />
                   <v-progress-linear
                     v-if="task.type !== 'process_trade_history'"
                     indeterminate
@@ -78,7 +83,7 @@ export default class ProgressIndicator extends Vue {
 <style scoped lang="scss">
 .progress-indicator {
   &__details {
-    width: 300px;
+    width: 350px;
     height: 350px;
     background-color: white;
   }

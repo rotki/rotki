@@ -39,7 +39,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     try {
       const { task_id } = await api.defi.dsrBalance();
       const task = createTask(task_id, taskType, {
-        description: `Fetching DSR Balances`,
+        title: `Fetching DSR Balances`,
         ignoreResult: false
       });
       commit('tasks/add', task, { root: true });
@@ -70,7 +70,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     try {
       const { task_id } = await api.defi.dsrHistory();
       const task = createTask(task_id, taskType, {
-        description: `Fetching DSR History`,
+        title: `Fetching DSR History`,
         ignoreResult: false
       });
       commit('tasks/add', task, { root: true });
@@ -100,7 +100,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     try {
       const { task_id } = await api.defi.makerDAOVaults();
       const task = createTask(task_id, taskType, {
-        description: `Fetching MakerDAO Vaults`,
+        title: `Fetching MakerDAO Vaults`,
         ignoreResult: false
       });
 
@@ -128,7 +128,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     try {
       const { task_id } = await api.defi.makerDAOVaultDetails();
       const task = createTask(task_id, TaskType.MAKERDAO_VAULT_DETAILS, {
-        description: `Fetching MakerDAO Vault Details`,
+        title: `Fetching MakerDAO Vault Details`,
         ignoreResult: false
       });
 
@@ -156,7 +156,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     try {
       const { task_id } = await api.defi.fetchAaveBalances();
       const task = createTask(task_id, taskType, {
-        description: `Fetching Aave balances`,
+        title: `Fetching Aave balances`,
         ignoreResult: false
       });
 
@@ -188,7 +188,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     try {
       const { task_id } = await api.defi.fetchAaveHistory(reset);
       const task = createTask(task_id, taskType, {
-        description: `Fetching Aave history`,
+        title: `Fetching Aave history`,
         ignoreResult: false
       });
 
@@ -217,7 +217,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     try {
       const { task_id } = await api.defi.fetchAllDefi();
       const task = createTask(task_id, taskType, {
-        description: `Fetching Defi Balances`,
+        title: `Fetching Defi Balances`,
         ignoreResult: false
       });
 
