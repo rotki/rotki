@@ -12531,6 +12531,15 @@
         "symbol": "sUSD",
         "type": "ethereum token"
     },
+    "yDAI+yUSDC+yUSDT+yBUSD": {
+        "coingecko": "lp-bcurve",
+        "ethereum_address": "0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
+        "started": 1582828578,
+        "symbol": "yDAI+yUSDC+yUSDT+yBUSD",
+        "type": "ethereum token"
+    },
     "yDAI+yUSDC+yUSDT+yTUSD": {
         "coingecko": "curve-fi-ydai-yusdc-yusdt-ytusd",
         "ethereum_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
@@ -12558,11 +12567,20 @@
         "symbol": "yUSDT",
         "type": "ethereum token"
     },
+    "yyDAI+yUSDC+yUSDT+yBUSD": {
+        "coingecko": "lp-bcurve",
+        "ethereum_address": "0x2994529C0652D127b7842094103715ec5299bBed",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
+        "started": 1598095312,
+        "symbol": "yyDAI+yUSDC+yUSDT+yBUSD",
+        "type": "ethereum token"
+    },
     "yyDAI+yUSDC+yUSDT+yTUSD": {
         "coingecko": "yvault-lp-ycurve",
         "ethereum_address": "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
         "ethereum_token_decimals": 18,
-        "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD ",
+        "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
         "started": 1596091760,
         "symbol": "yyDAI+yUSDC+yUSDT+yTUSD",
         "type": "ethereum token"

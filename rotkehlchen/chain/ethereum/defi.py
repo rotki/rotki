@@ -13,6 +13,8 @@ CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
 CURVEFI_PAXSWAP = EthereumConstants().contract('CURVEFI_PAXSWAP')
 YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')
 YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
+CURVEFI_BUSDSWAP = EthereumConstants().contract('CURVEFI_BUSDSWAP')
+YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 
 
 def _handle_ycrv_vault(ethereum: 'EthereumManager') -> FVal:
@@ -32,21 +34,27 @@ def _handle_ycrv_vault(ethereum: 'EthereumManager') -> FVal:
     return usd_value
 
 
-def _handle_ycurve(ethereum: 'EthereumManager') -> FVal:
+def _handle_ybusd_vault(ethereum: 'EthereumManager') -> FVal:
     virtual_price = ethereum.call_contract(
-        contract_address=CURVEFI_YSWAP.address,
-        abi=CURVEFI_YSWAP.abi,
+        contract_address=CURVEFI_BUSDSWAP.address,
+        abi=CURVEFI_BUSDSWAP.abi,
         method_name='get_virtual_price',
         arguments=[],
     )
-    usd_value = FVal(virtual_price) / (10 ** 18)
+    price_per_full_share = ethereum.call_contract(
+        contract_address=YEARN_BCURVE_VAULT.address,
+        abi=YEARN_BCURVE_VAULT.abi,
+        method_name='getPricePerFullShare',
+        arguments=[],
+    )
+    usd_value = FVal(virtual_price * price_per_full_share) / 10 ** 36
     return usd_value
 
 
-def _handle_paxcurve(ethereum: 'EthereumManager') -> FVal:
+def _handle_curvepool_price(ethereum: 'EthereumManager', contract: EthereumContract) -> FVal:
     virtual_price = ethereum.call_contract(
-        contract_address=CURVEFI_PAXSWAP.address,
-        abi=CURVEFI_PAXSWAP.abi,
+        contract_address=contract.address,
+        abi=contract.abi,
         method_name='get_virtual_price',
         arguments=[],
     )
@@ -83,10 +91,14 @@ def handle_defi_price_query(
     """
     if token_symbol == 'yyDAI+yUSDC+yUSDT+yTUSD':
         usd_value = _handle_ycrv_vault(ethereum)
+    elif token_symbol == 'yyDAI+yUSDC+yUSDT+yBUSD':
+        usd_value = _handle_ybusd_vault(ethereum)
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yTUSD':
-        usd_value = _handle_ycurve(ethereum)
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_YSWAP)
     elif token_symbol == 'ypaxCrv':
-        usd_value = _handle_paxcurve(ethereum)
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_PAXSWAP)
+    elif token_symbol == 'yDAI+yUSDC+yUSDT+yBUSD':
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP)
     elif token_symbol == 'yYFI':
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(

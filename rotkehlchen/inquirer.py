@@ -19,15 +19,17 @@ from rotkehlchen.utils.misc import request_get_dict, retry_calls, timestamp_to_d
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 if TYPE_CHECKING:
-    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 SPECIAL_SYMBOLS = (
+    'yyDAI+yUSDC+yUSDT+yBUSD',
     'yyDAI+yUSDC+yUSDT+yTUSD',
+    'yDAI+yUSDC+yUSDT+yBUSD',
     'yDAI+yUSDC+yUSDT+yTUSD',
     'ypaxCrv',
     'yYFI',
