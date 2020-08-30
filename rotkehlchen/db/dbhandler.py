@@ -1582,7 +1582,7 @@ class DBHandler:
               nonce FROM ethereum_transactions
         """
         if address is not None:
-            query += f'WHERE from_address="{address}" OR to_address="{address}"'
+            query += f'WHERE (from_address="{address}" OR to_address="{address}") '
         query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 

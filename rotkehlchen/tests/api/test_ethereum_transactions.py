@@ -179,7 +179,7 @@ def test_query_transactions(rotkehlchen_api_server, async_query):
 
         assert mock_call.call_count == 0
 
-    assert result['entries'] == EXPECTED_AFB7_TXS[2:-2]
+    assert result['entries'] == EXPECTED_AFB7_TXS[2:4][::-1]
 
 
 def test_query_transactions_errors(rotkehlchen_api_server):
