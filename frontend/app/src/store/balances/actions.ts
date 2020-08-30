@@ -1,13 +1,18 @@
 import { ActionTree } from 'vuex';
 import { currencies } from '@/data/currencies';
-import { BlockchainMetadata, createTask, ExchangeMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
+import i18n from '@/i18n';
 import {
-  convertManualBalances,
-  convertSupportedAssets
-} from '@/services/converters';
+  BlockchainMetadata,
+  createTask,
+  ExchangeMeta,
+  taskCompletion,
+  TaskMeta
+} from '@/model/task';
+import { TaskType } from '@/model/task-type';
+import { ManualBalance, ManualBalances } from '@/services/balances/types';
+import { convertSupportedAssets } from '@/services/converters';
+import { manualBalanceKeys } from '@/services/history/const';
 import { api } from '@/services/rotkehlchen-api';
-import { ApiManualBalance } from '@/services/types-api';
 import { BalanceState } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -266,8 +271,21 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async fetchManualBalances({ commit }) {
     try {
-      const manualBalances = await api.manualBalances();
-      commit('manualBalances', convertManualBalances(manualBalances));
+      const taskType = TaskType.MANUAL_BALANCES;
+      const { taskId } = await api.balances.manualBalances();
+      const task = createTask<TaskMeta>(taskId, taskType, {
+        title: i18n.tc('actions.manual_balances.task.title'),
+        ignoreResult: false,
+        numericKeys: manualBalanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<ManualBalances, TaskMeta>(
+        taskType
+      );
+
+      commit('manualBalances', result.balances);
     } catch (e) {
       notify(
         `Failed: ${e}`,
@@ -278,11 +296,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async addManualBalance({ commit }, balance: ApiManualBalance) {
+  async addManualBalance({ commit }, balance: ManualBalance) {
     let result = false;
     try {
-      const manualBalances = await api.addManualBalances([balance]);
-      commit('manualBalances', convertManualBalances(manualBalances));
+      const { balances } = await api.balances.addManualBalances([balance]);
+      commit('manualBalances', balances);
       result = true;
     } catch (e) {
       showError(`${e.message}`, 'Adding Manual Balance');
@@ -290,11 +308,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     return result;
   },
 
-  async editManualBalance({ commit }, balance: ApiManualBalance) {
+  async editManualBalance({ commit }, balance: ManualBalance) {
     let result = false;
     try {
-      const manualBalances = await api.editManualBalances([balance]);
-      commit('manualBalances', convertManualBalances(manualBalances));
+      const { balances } = await api.balances.editManualBalances([balance]);
+      commit('manualBalances', balances);
       result = true;
     } catch (e) {
       showError(`${e.message}`, 'Editing Manual Balance');
@@ -304,8 +322,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async deleteManualBalance({ commit }, label: string) {
     try {
-      const manualBalances = await api.deleteManualBalances([label]);
-      commit('manualBalances', convertManualBalances(manualBalances));
+      const { balances } = await api.balances.deleteManualBalances([label]);
+      commit('manualBalances', balances);
     } catch (e) {
       showError(`${e.message}`, 'Deleting Manual Balance');
     }

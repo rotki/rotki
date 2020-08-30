@@ -4,8 +4,11 @@ import {
   EthBalances,
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
-import { SupportedExchange } from '@/services/balances/types';
-import { ManualBalance, SupportedAsset } from '@/services/types-model';
+import {
+  ManualBalanceWithValue,
+  SupportedExchange
+} from '@/services/balances/types';
+import { SupportedAsset } from '@/services/types-model';
 import {
   AccountDataMap,
   ExchangeData,
@@ -22,6 +25,6 @@ export interface BalanceState {
   ethAccounts: AccountDataMap;
   btcAccounts: AccountDataMap;
   supportedAssets: SupportedAsset[];
-  manualBalances: ManualBalance[];
+  manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: ManualBalanceByLocation;
 }

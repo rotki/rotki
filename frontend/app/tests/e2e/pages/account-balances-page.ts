@@ -1,9 +1,17 @@
 import { capitalize } from '@/filters';
-import { ApiManualBalance } from '../../../src/services/types-api';
-import { bigNumberify, Zero } from '../../../src/utils/bignumbers';
+import { Location } from '@/services/types-common';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 
-function formatAmount(amount: ApiManualBalance['amount']) {
+function formatAmount(amount: string) {
   return bigNumberify(amount).toFormat(2);
+}
+
+export interface FixtureManualBalance {
+  readonly asset: string;
+  readonly label: string;
+  readonly amount: string;
+  readonly location: Location;
+  readonly tags: string[];
 }
 
 export class AccountBalancesPage {
@@ -12,7 +20,7 @@ export class AccountBalancesPage {
     cy.get('.navigation__accounts-balances').click();
   }
 
-  addBalance(balances: ApiManualBalance) {
+  addBalance(balances: FixtureManualBalance) {
     cy.get('.manual-balances-form__asset').type(balances.asset);
     cy.get(`#asset-${balances.asset.toLocaleLowerCase()}`).click();
     cy.get('.manual-balances-form__label').type(balances.label);
@@ -32,7 +40,7 @@ export class AccountBalancesPage {
       .should('have.length', visible + 1);
   }
 
-  balanceShouldMatch(balances: ApiManualBalance[]) {
+  balanceShouldMatch(balances: FixtureManualBalance[]) {
     let i = 0;
     for (const balance of balances) {
       cy.get('.manual-balances-list tbody').find('tr').eq(i).as('row');
@@ -45,7 +53,7 @@ export class AccountBalancesPage {
     }
   }
 
-  balanceShouldNotMatch(balances: ApiManualBalance[]) {
+  balanceShouldNotMatch(balances: FixtureManualBalance[]) {
     let i = 0;
     for (const balance of balances) {
       cy.get('.manual-balances-list tbody').find('tr').eq(i).as('row');
@@ -58,7 +66,7 @@ export class AccountBalancesPage {
     }
   }
 
-  isVisible(position: number, balance: ApiManualBalance) {
+  isVisible(position: number, balance: FixtureManualBalance) {
     cy.get('.manual-balances-list tbody').find('tr').eq(position).as('row');
 
     cy.get('@row')

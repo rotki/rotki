@@ -186,6 +186,11 @@
     }
   },
   "actions": {
+    "manual_balances":  {
+      "task": {
+        "title": "Retrieving manual balances"
+      }
+    },
     "asset_movements": {
       "task" : {
         "title": "Deposits & withdrawals",
@@ -268,5 +273,10 @@
   "hash_link": {
     "copy": "Copy to clipboard",
     "open_link": "Open to external block explorer"
+  },
+  "manual_balances_list": {
+    "refresh": {
+      "tooltip": "Refresh the manual balances"
+    }
   }
 }

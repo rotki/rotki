@@ -1,19 +1,5 @@
-import { ApiManualBalances, SupportedAssets } from '@/services/types-api';
-import { ManualBalance, SupportedAsset } from '@/services/types-model';
-import { bigNumberify } from '@/utils/bignumbers';
-
-export function convertManualBalances(
-  manualBalances: ApiManualBalances
-): ManualBalance[] {
-  return manualBalances.balances.map(value => ({
-    amount: bigNumberify(value.amount),
-    asset: value.asset,
-    label: value.label,
-    location: value.location,
-    tags: value.tags,
-    usdValue: bigNumberify(value.usd_value)
-  }));
-}
+import { SupportedAssets } from '@/services/types-api';
+import { SupportedAsset } from '@/services/types-model';
 
 export function convertSupportedAssets(
   supportedAssets: SupportedAssets

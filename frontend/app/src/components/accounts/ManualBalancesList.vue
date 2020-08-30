@@ -1,13 +1,19 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="6" offset="6">
+      <v-col cols="6" offset="6" class="d-flex flex-row align-center">
         <tag-filter v-model="onlyTags" />
+        <refresh-button
+          :loading="loading"
+          :tooltip="$t('manual_balances_list.refresh.tooltip')"
+          @refresh="refresh()"
+        />
       </v-col>
     </v-row>
     <v-row>
       <v-col cols="12">
         <v-data-table
+          :loading="loading"
           :headers="headers"
           :items="visibleBalances"
           class="manual-balances-list"
@@ -114,28 +120,24 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { footerProps } from '@/config/datatable.common';
 import { Currency } from '@/model/currency';
-import { ManualBalance } from '@/services/types-model';
+import {
+  ManualBalance,
+  ManualBalanceWithValue
+} from '@/services/balances/types';
 import { Tags } from '@/typing/types';
-
-const {
-  mapState: mapSessionState,
-  mapGetters: mapSessionGetters
-} = createNamespacedHelpers('session');
-const {
-  mapState: mapBalanceState,
-  mapGetters: mapBalanceGetters
-} = createNamespacedHelpers('balances');
 
 @Component({
   components: {
+    RefreshButton,
     AmountDisplay,
     AssetDetails,
     ConfirmDialog,
@@ -143,16 +145,20 @@ const {
     TagFilter
   },
   computed: {
-    ...mapBalanceState(['manualBalances']),
-    ...mapSessionState(['tags']),
-    ...mapSessionGetters(['floatingPrecision', 'currency']),
-    ...mapBalanceGetters(['exchangeRate'])
+    ...mapState('balances', ['manualBalances']),
+    ...mapState('session', ['tags']),
+    ...mapGetters('session', ['floatingPrecision', 'currency']),
+    ...mapGetters('balances', ['exchangeRate'])
+  },
+  methods: {
+    ...mapActions('balances', ['fetchManualBalances'])
   }
 })
 export default class ManualBalancesList extends Vue {
   labelToDelete = '';
   onlyTags: string[] = [];
   edited: ManualBalance | null = null;
+  fetchManualBalances!: () => Promise<void>;
 
   headers = [
     { text: 'Label', value: 'label' },
@@ -163,11 +169,12 @@ export default class ManualBalancesList extends Vue {
     { text: 'Actions', value: 'actions', sortable: false, width: '50' }
   ];
 
-  manualBalances!: ManualBalance[];
+  manualBalances!: ManualBalanceWithValue[];
   tags!: Tags;
   currency!: Currency;
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
+  loading: boolean = false;
 
   footerProps = footerProps;
 
@@ -181,6 +188,12 @@ export default class ManualBalancesList extends Vue {
         return this.onlyTags.every(tag => balance.tags.includes(tag));
       }
     });
+  }
+
+  async refresh() {
+    this.loading = true;
+    await this.fetchManualBalances();
+    this.loading = false;
   }
 
   editBalance(balance: ManualBalance) {

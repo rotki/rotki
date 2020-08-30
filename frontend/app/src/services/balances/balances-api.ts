@@ -1,7 +1,21 @@
 import { AxiosInstance } from 'axios';
-import { SupportedExchange } from '@/services/balances/types';
-import { ActionResult } from '@/services/types-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import {
+  axiosSnakeCaseTransformer,
+  setupTransformer
+} from '@/services/axios-tranformers';
+import {
+  ManualBalance,
+  ManualBalances,
+  SupportedExchange
+} from '@/services/balances/types';
+import { manualBalanceKeys } from '@/services/history/const';
+import { ActionResult, PendingTask } from '@/services/types-api';
+import {
+  handleResponse,
+  validStatus,
+  validWithParamsSessionAndExternalService,
+  validWithSessionAndExternalService
+} from '@/services/utils';
 
 export class BalancesApi {
   private readonly axios: AxiosInstance;
@@ -21,6 +35,56 @@ export class BalancesApi {
     return this.axios
       .delete<ActionResult<boolean>>(`/blockchains/ETH/transactions`, {
         validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  async manualBalances(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('balances/manual', {
+        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+        transformResponse: setupTransformer([]),
+        validateStatus: validWithSessionAndExternalService
+      })
+      .then(handleResponse);
+  }
+
+  async addManualBalances(balances: ManualBalance[]): Promise<ManualBalances> {
+    return this.axios
+      .put<ActionResult<ManualBalances>>(
+        'balances/manual',
+        {
+          balances
+        },
+        {
+          transformResponse: setupTransformer(manualBalanceKeys),
+          validateStatus: validWithParamsSessionAndExternalService
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async editManualBalances(balances: ManualBalance[]): Promise<ManualBalances> {
+    return this.axios
+      .patch<ActionResult<ManualBalances>>(
+        'balances/manual',
+        {
+          balances
+        },
+        {
+          transformResponse: setupTransformer(manualBalanceKeys),
+          validateStatus: validWithParamsSessionAndExternalService
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async deleteManualBalances(labels: string[]): Promise<ManualBalances> {
+    return this.axios
+      .delete<ActionResult<ManualBalances>>('balances/manual', {
+        data: { labels },
+        transformResponse: setupTransformer(manualBalanceKeys),
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
