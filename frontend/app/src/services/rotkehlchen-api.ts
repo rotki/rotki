@@ -19,8 +19,6 @@ import { HistoryApi } from '@/services/history/history-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
   ActionResult,
-  ApiManualBalance,
-  ApiManualBalances,
   AsyncQuery,
   SupportedAssets,
   TaskNotFoundError
@@ -679,55 +677,6 @@ export class RotkehlchenApi {
     return this.axios
       .get<ActionResult<SupportedAssets>>('assets/all', {
         validateStatus: validWithSessionAndExternalService
-      })
-      .then(handleResponse);
-  }
-
-  async manualBalances(): Promise<ApiManualBalances> {
-    return this.axios
-      .get<ActionResult<ApiManualBalances>>('balances/manual', {
-        validateStatus: validWithSessionAndExternalService
-      })
-      .then(handleResponse);
-  }
-
-  async addManualBalances(
-    balances: ApiManualBalance[]
-  ): Promise<ApiManualBalances> {
-    return this.axios
-      .put<ActionResult<ApiManualBalances>>(
-        'balances/manual',
-        {
-          balances
-        },
-        {
-          validateStatus: validWithParamsSessionAndExternalService
-        }
-      )
-      .then(handleResponse);
-  }
-
-  async editManualBalances(
-    balances: ApiManualBalance[]
-  ): Promise<ApiManualBalances> {
-    return this.axios
-      .patch<ActionResult<ApiManualBalances>>(
-        'balances/manual',
-        {
-          balances
-        },
-        {
-          validateStatus: validWithParamsSessionAndExternalService
-        }
-      )
-      .then(handleResponse);
-  }
-
-  async deleteManualBalances(labels: string[]): Promise<ApiManualBalances> {
-    return this.axios
-      .delete<ActionResult<ApiManualBalances>>('balances/manual', {
-        data: { labels },
-        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }

@@ -5,6 +5,7 @@ import ManualBalancesList from '@/components/accounts/ManualBalancesList.vue';
 import { findCurrency } from '@/data/converters';
 import { currencies } from '@/data/currencies';
 import store from '@/store/store';
+import '../../i18n';
 
 Vue.use(Vuetify);
 

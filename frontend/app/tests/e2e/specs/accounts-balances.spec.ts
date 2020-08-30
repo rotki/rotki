@@ -1,8 +1,10 @@
 import { default as BigNumber } from 'bignumber.js';
-import { ApiManualBalance } from '@/services/types-api';
 import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
-import { AccountBalancesPage } from '../pages/account-balances-page';
+import {
+  AccountBalancesPage,
+  FixtureManualBalance
+} from '../pages/account-balances-page';
 import { DashboardPage } from '../pages/dashboard-page';
 import { GeneralSettingsPage } from '../pages/general-settings-page';
 import { RotkiApp } from '../pages/rotki-app';
@@ -33,7 +35,7 @@ describe('Accounts', () => {
   });
 
   describe('manual balances', () => {
-    let manualBalances: ApiManualBalance[];
+    let manualBalances: FixtureManualBalance[];
     before(() => {
       cy.fixture('manual-balances').then(balances => {
         manualBalances = balances;

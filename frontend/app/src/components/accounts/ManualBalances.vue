@@ -38,7 +38,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import ManualBalancesForm from '@/components/accounts/ManualBalancesForm.vue';
 import ManualBalancesList from '@/components/accounts/ManualBalancesList.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { ManualBalance } from '@/services/types-model';
+import { ManualBalance } from '@/services/balances/types';
 
 @Component({
   components: {

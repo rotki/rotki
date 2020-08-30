@@ -48,8 +48,8 @@ import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
+import { ManualBalance } from '@/services/balances/types';
 import { Location } from '@/services/types-common';
-import { ManualBalance } from '@/services/types-model';
 
 @Component({
   components: { TagInput, AssetSelect },

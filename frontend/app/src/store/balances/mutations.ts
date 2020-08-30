@@ -1,7 +1,10 @@
 import { MutationTree } from 'vuex';
 import { Balances, EthBalances } from '@/model/blockchain-balances';
-import { SupportedExchange } from '@/services/balances/types';
-import { ManualBalance, SupportedAsset } from '@/services/types-model';
+import {
+  ManualBalanceWithValue,
+  SupportedExchange
+} from '@/services/balances/types';
+import { SupportedAsset } from '@/services/types-model';
 import { defaultState } from '@/store/balances/state';
 import { BalanceState } from '@/store/balances/types';
 import {
@@ -60,7 +63,10 @@ export const mutations: MutationTree<BalanceState> = {
   supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {
     state.supportedAssets = supportedAssets;
   },
-  manualBalances(state: BalanceState, manualBalances: ManualBalance[]) {
+  manualBalances(
+    state: BalanceState,
+    manualBalances: ManualBalanceWithValue[]
+  ) {
     state.manualBalances = manualBalances;
   },
   reset(state: BalanceState) {

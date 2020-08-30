@@ -61,9 +61,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       await dispatch('balances/fetchSupportedAssets', null, {
         root: true
       });
-      await dispatch('balances/fetchManualBalances', null, {
-        root: true
-      });
 
       await dispatch('start', {
         settings
@@ -74,20 +71,24 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       });
 
       monitor.start();
-
-      await dispatch(
-        'balances/fetch',
-        {
-          create,
-          exchanges
-        },
-        {
-          root: true
-        }
-      );
-
       commit('tags', await api.getTags());
       commit('login', { username, newAccount: create });
+      const fetchBalances = [
+        dispatch('balances/fetchManualBalances', null, {
+          root: true
+        }),
+        dispatch(
+          'balances/fetch',
+          {
+            newUser: create,
+            exchanges
+          },
+          {
+            root: true
+          }
+        )
+      ];
+      await Promise.all(fetchBalances);
     } catch (e) {
       if (e instanceof SyncConflictError) {
         commit('syncConflict', e.message);
