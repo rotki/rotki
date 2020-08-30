@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature: `1092` Users can now refresh their manual balance entries.
 * :feature: `1031` Users can now view their ethereum transactions in the history page.
 * :bug: `1393` When users set the "crypto to crypto trades" setting off, they will no longer see the USD equivalent part of crypto to crypto buys in the tax report history.
 * :feature: `1085` Users can now view their exchange trades, along with there deposit and withdraw actions on the connected exchanges.
