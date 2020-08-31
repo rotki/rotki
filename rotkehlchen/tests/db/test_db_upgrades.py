@@ -27,6 +27,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
+from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -955,8 +956,54 @@ def test_upgrade_db_15_to_16(user_data_dir):
     # Test that the only remaining query ranges are the non-asset movements ones
     assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges;').fetchone()[0] == 2
 
-    # # Finally also make sure that we have updated to the target version
+    # Finally also make sure that we have updated to the target version
     assert db.get_version() == 16
+
+
+def test_upgrade_db_16_to_17(user_data_dir):
+    """Test upgrading the DB from version 16 to version 17.
+
+    Deletes all transactions from the DB and recreates the table
+    to include from_adddress in primary key
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v16_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=17,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    assert cursor.execute('SELECT COUNT(*) FROM ethereum_transactions;').fetchone()[0] == 0
+    # Test that query ranges also get cleared
+    assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges;').fetchone()[0] == 0
+
+    # Test that entering same tx hash, from nonce but different from/to is allowed
+    from_addr = make_ethereum_address()
+    to_addr = make_ethereum_address()
+    query = """
+    INSERT INTO ethereum_transactions(
+    tx_hash,
+    timestamp,
+    block_number,
+    from_address,
+    to_address,
+    value,
+    gas,
+    gas_price,
+    gas_used,
+    input_data,
+    nonce)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+    cursor.executemany(query, [
+        (b'1', 1, 1, from_addr, to_addr, 1, 1, 1, 1, b'', 1),
+        (b'1', 1, 1, to_addr, from_addr, 1, 1, 1, 1, b'', 1),
+    ])
+    assert cursor.execute('SELECT COUNT(*) FROM ethereum_transactions;').fetchone()[0] == 2
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 17
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
