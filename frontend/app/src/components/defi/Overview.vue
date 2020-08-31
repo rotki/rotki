@@ -81,7 +81,7 @@
             Protocol asset details
           </v-card-subtitle>
           <v-card-text class="overview__details">
-            <div v-for="asset in summary.assets" :key="asset.tokenAddress">
+            <div v-for="(asset, index) in assets" :key="index">
               <defi-asset :asset="asset" />
               <v-divider />
             </div>
@@ -97,7 +97,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import DefiAsset from '@/components/defi/DefiAsset.vue';
 import InfoRow from '@/components/defi/display/InfoRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { DefiProtocolSummary } from '@/store/defi/types';
+import { DefiProtocolSummary, DefiAsset as Asset } from '@/store/defi/types';
 
 @Component({
   components: { DefiAsset, StatCard, InfoRow }
@@ -107,6 +107,17 @@ export default class Overview extends Vue {
   summary!: DefiProtocolSummary;
 
   details: boolean = false;
+
+  get assets(): Asset[] {
+    return this.summary.assets.sort(
+      ({ balance: { usdValue } }, { balance: { usdValue: otherUsdValue } }) => {
+        if (usdValue.eq(otherUsdValue)) {
+          return 0;
+        }
+        return usdValue.gt(otherUsdValue) ? -1 : 1;
+      }
+    );
+  }
 
   get icon(): string {
     const protocol = this.summary.protocol;
