@@ -16,13 +16,14 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { DefiAsset as Asset } from '@/store/defi/types';
 
 @Component({
   components: { AmountDisplay, CryptoIcon }
 })
 export default class DefiAsset extends Vue {
   @Prop({ required: true })
-  asset!: DefiAsset;
+  asset!: Asset;
 }
 </script>
 <style scoped lang="scss">

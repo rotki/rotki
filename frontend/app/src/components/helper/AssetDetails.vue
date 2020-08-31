@@ -1,10 +1,6 @@
 <template>
   <span class="asset-details">
-    <crypto-icon
-      size="26px"
-      class="asset-details__icon"
-      :symbol="details.symbol"
-    />
+    <crypto-icon size="26px" class="asset-details__icon" :symbol="asset" />
     <span class="asset-details__details">
       <span class="asset-details__details__symbol">
         {{ details.symbol }}
@@ -18,16 +14,14 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import { SupportedAsset } from '@/services/types-model';
-
-const { mapGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: { CryptoIcon },
   computed: {
-    ...mapGetters(['assetInfo'])
+    ...mapGetters('balances', ['assetInfo'])
   }
 })
 export default class AssetDetails extends Vue {
