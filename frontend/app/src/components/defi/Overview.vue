@@ -131,6 +131,7 @@ export default class Overview extends Vue {
 
 <style scoped lang="scss">
 @import '~@/scss/scroll';
+
 .overview {
   min-height: 250px;
   min-width: 300px;

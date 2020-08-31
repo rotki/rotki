@@ -18,14 +18,7 @@
           {{ currency.ticker_symbol }} value
         </template>
         <template #item.asset="{ item }">
-          <span class="account-asset-balances__balance__asset">
-            <crypto-icon
-              size="26px"
-              class="account-asset-balances__balance__asset__icon"
-              :symbol="item.asset"
-            />
-            {{ item.asset }}
-          </span>
+          <asset-details :asset="item.asset" />
         </template>
         <template #item.amount="{ item }">
           <amount-display :value="item.amount" />
@@ -40,23 +33,18 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
-import CryptoIcon from '@/components/CryptoIcon.vue';
+import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
 import { AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 
-const { mapGetters } = createNamespacedHelpers('balances');
-const { mapGetters: mapSessionGetters } = createNamespacedHelpers('session');
-const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
-
 @Component({
-  components: { AmountDisplay, CryptoIcon },
+  components: { AmountDisplay },
   computed: {
-    ...mapGetters(['accountAssets']),
-    ...mapSessionGetters(['floatingPrecision', 'currency']),
-    ...mapBalancesGetters(['exchangeRate'])
+    ...mapGetters('balances', ['accountAssets']),
+    ...mapGetters('session', ['floatingPrecision', 'currency']),
+    ...mapGetters('balances', ['exchangeRate'])
   }
 })
 export default class AccountAssetBalances extends Vue {
