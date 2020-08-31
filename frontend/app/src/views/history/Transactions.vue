@@ -153,8 +153,26 @@ export default class Transactions extends Mixins(StatusMixin) {
   get visibleTransactions(): EthTransactionWithFee[] {
     const account = this.account;
     return account
-      ? this.transactions.filter(tx => tx.fromAddress === account.address)
-      : this.transactions;
+      ? this.transactions
+          .filter(
+            ({ fromAddress, toAddress }) =>
+              fromAddress === account.address || toAddress === account.address
+          )
+          .reduce((acc, tx) => {
+            const index = acc.findIndex(({ txHash }) => txHash === tx.txHash);
+            if (index >= 0) {
+              if (acc[index].fromAddress !== account.address) {
+                acc[index] = tx;
+              }
+            } else {
+              acc.push(tx);
+            }
+            return acc;
+          }, new Array<EthTransactionWithFee>())
+      : this.transactions.filter(
+          (tx, index, array) =>
+            array.findIndex(tx2 => tx2.txHash === tx.txHash) === index
+        );
   }
 
   readonly headers: DataTableHeader[] = [

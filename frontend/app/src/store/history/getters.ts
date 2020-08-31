@@ -26,7 +26,7 @@ export const getters: GetterTree<HistoryState, RotkehlchenState> = {
     return transactions.data.map(value => ({
       ...value,
       gasFee: toUnit(value.gasPrice.multipliedBy(value.gasUsed), Unit.ETH),
-      key: `${value.txHash}_${value.nonce}`
+      key: `${value.txHash}${value.nonce}${value.fromAddress}`
     }));
   },
   transactionsTotal: ({ transactions }) => {

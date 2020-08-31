@@ -48,7 +48,7 @@
           @click="openLink()"
         >
           <v-icon x-small>
-            mdi-link-variant
+            mdi-launch
           </v-icon>
         </v-btn>
       </template>
