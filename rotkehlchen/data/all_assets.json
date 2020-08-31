@@ -12657,6 +12657,15 @@
         "symbol": "yYFI",
         "type": "ethereum token"
     },
+    "crvPlain3andSUSD": {
+        "coingecko": "lp-scurve",
+        "ethereum_address": "0xC25a3A3b969415c80451098fa907EC722572917F",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi DAI/USDC/USDT/sUSD",
+        "started": 1587348347,
+        "symbol": "crvPlain3andSUSD",
+        "type": "ethereum token"
+    },
     "crvRenWBTC": {
         "coingecko": "lp-renbtc-curve",
         "ethereum_address": "0x49849C98ae39Fff122806C06791Fa73784FB3675",

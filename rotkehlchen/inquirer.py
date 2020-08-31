@@ -44,6 +44,7 @@ SPECIAL_SYMBOLS = (
     'ypaxCrv',
     'crvRenWBTC',
     'crvRenWSBTC',
+    'crvPlain3andSUSD',
     'yaLINK',
     'yDAI',
     'yYFI',

@@ -22,6 +22,7 @@ YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 CURVEFI_RENSWAP = EthereumConstants().contract('CURVEFI_RENSWAP')
 CURVEFI_SRENSWAP = EthereumConstants().contract('CURVEFI_SRENSWAP')
 YEARN_SRENCURVE_VAULT = EthereumConstants().contract('YEARN_SRENCURVE_VAULT')
+CURVEFI_SUSDV2SWAP = EthereumConstants().contract('CURVEFI_SUSDV2SWAP')
 
 
 def _handle_yearn_curve_vault(
@@ -109,6 +110,8 @@ def handle_defi_price_query(
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_RENSWAP)
     elif token_symbol == 'crvRenWSBTC':
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_SRENSWAP)
+    elif token_symbol == 'crvPlain3andSUSD':
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_SUSDV2SWAP)
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yBUSD':
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP)
     elif token_symbol == 'yaLINK':
