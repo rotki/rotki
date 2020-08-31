@@ -14,14 +14,7 @@
       </span>
     </template>
     <template #item.protocol="{ item }">
-      <span>
-        <v-img
-          width="55px"
-          contain
-          max-height="24px"
-          :src="require(`@/assets/images/defi/${item.protocol}.svg`)"
-        />
-      </span>
+      <defi-protocol-icon :protocol="item.protocol" />
     </template>
     <template #item.balance.amount="{ item }">
       <amount-display :value="item.balance.amount" />
@@ -45,6 +38,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
+import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import { footerProps } from '@/config/datatable.common';
@@ -52,7 +46,7 @@ import { Currency } from '@/model/currency';
 import { DefiBalance } from '@/store/defi/types';
 
 @Component({
-  components: { HashLink, AmountDisplay, CryptoIcon },
+  components: { DefiProtocolIcon, HashLink, AmountDisplay, CryptoIcon },
   computed: {
     ...mapGetters('session', ['currency'])
   }
@@ -76,5 +70,3 @@ export default class LendingAssetTable extends Vue {
   ];
 }
 </script>
-
-<style scoped></style>

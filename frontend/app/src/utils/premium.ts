@@ -2,8 +2,11 @@ import Chart from 'chart.js';
 import moment from 'moment';
 import Vue, { VueConstructor } from 'vue';
 import Vuex from 'vuex';
+import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import HashLink from '@/components/helper/HashLink.vue';
 import { api } from '@/services/rotkehlchen-api';
 
 export const setupPremium = () => {
@@ -12,10 +15,15 @@ export const setupPremium = () => {
   window.Vue.use(Vuex);
   window.moment = moment;
   window.rotki = {
-    useHostComponents: true
+    useHostComponents: true,
+    version: 1
   };
   // Globally registered components are also provided to the premium components.
   Vue.component('AmountDisplay', AmountDisplay);
+  // version: 1
+  Vue.component('HashLink', HashLink);
+  Vue.component('AssetDetails', AssetDetails);
+  Vue.component('DefiProtocolIcon', DefiProtocolIcon);
 };
 
 function findComponents(): string[] {
@@ -96,6 +104,7 @@ declare global {
     moment: typeof moment;
     rotki: {
       useHostComponents: boolean;
+      version: number;
     };
   }
 }

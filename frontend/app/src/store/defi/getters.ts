@@ -495,7 +495,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       const { totalCollateralUsd, totalDebt } = loanSummary(filter);
       summary['makerdao'] = {
         protocol: {
-          name: 'makerdao',
+          name: 'MakerDAO',
           icon: ''
         },
         assets: [],

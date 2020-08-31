@@ -1,6 +1,9 @@
 <template>
   <stat-card v-if="!summary.balanceUsd" :protocol-icon="icon" class="overview">
-    <h3 class="pb-2 d-flex flex-row justify-space-between">
+    <h3 class="pb-2">
+      {{ summary.protocol.name }}
+    </h3>
+    <h4 class="pb-2 d-flex flex-row justify-space-between">
       Borrowing
       <v-btn
         v-if="summary.borrowingUrl"
@@ -12,7 +15,7 @@
       >
         <v-icon>fa-external-link-square</v-icon>
       </v-btn>
-    </h3>
+    </h4>
     <info-row
       title="Total collateral"
       fiat
@@ -20,7 +23,7 @@
     />
     <info-row title="Total debt" fiat :value="summary.totalDebtUsd" />
     <v-divider class="my-4" />
-    <h3 class="pb-2 d-flex flex-row justify-space-between">
+    <h4 class="pb-2 d-flex flex-row justify-space-between">
       Lending
       <v-btn
         v-if="summary.lendingUrl"
@@ -32,7 +35,7 @@
       >
         <v-icon>fa-external-link-square</v-icon>
       </v-btn>
-    </h3>
+    </h4>
     <info-row
       title="Total deposit"
       fiat
@@ -110,7 +113,7 @@ export default class Overview extends Vue {
     if (protocol.icon) {
       return `https://${protocol.icon}`;
     }
-    return require(`@/assets/images/defi/${protocol.name}.svg`);
+    return require(`@/assets/images/defi/${protocol.name.toLocaleLowerCase()}.svg`);
   }
 }
 </script>
