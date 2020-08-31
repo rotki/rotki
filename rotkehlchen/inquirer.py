@@ -13,6 +13,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK,
     A_DAI,
+    A_ETH,
     A_TUSD,
     A_USD,
     A_USDC,
@@ -47,6 +48,7 @@ SPECIAL_SYMBOLS = (
     'crvPlain3andSUSD',
     'yaLINK',
     'yDAI',
+    'yETH',
     'yYFI',
     'yUSDT',
     'yUSDC',
@@ -66,6 +68,8 @@ def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_ALINK)
     elif token_symbol == 'yDAI':
         price = Inquirer().find_usd_price(A_DAI)
+    elif token_symbol == 'yETH':
+        price = Inquirer().find_usd_price(A_ETH)
     elif token_symbol == 'yYFI':
         price = Inquirer().find_usd_price(A_YFI)
     elif token_symbol == 'yUSDT':
