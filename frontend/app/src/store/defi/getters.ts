@@ -485,7 +485,25 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         if (entry.balanceType === 'Asset') {
           const previousBalance = summary[protocol].balanceUsd ?? Zero;
           summary[protocol].balanceUsd = previousBalance.plus(balance.usdValue);
-          summary[protocol].assets.push(entry.baseBalance);
+          const assetIndex = summary[protocol].assets.findIndex(
+            asset => asset.tokenAddress === entry.baseBalance.tokenAddress
+          );
+          if (assetIndex >= 0) {
+            const { usdValue, amount } = entry.baseBalance.balance;
+            const asset = summary[protocol].assets[assetIndex];
+            const usdValueSum = usdValue.plus(asset.balance.usdValue);
+            const amountSum = amount.plus(asset.balance.amount);
+
+            summary[protocol].assets[assetIndex] = {
+              ...asset,
+              balance: {
+                usdValue: usdValueSum,
+                amount: amountSum
+              }
+            };
+          } else {
+            summary[protocol].assets.push(entry.baseBalance);
+          }
         }
       }
     }

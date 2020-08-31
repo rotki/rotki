@@ -130,12 +130,14 @@ export default class Overview extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '~@/scss/scroll';
 .overview {
   min-height: 250px;
   min-width: 300px;
 
   &__details {
     height: 300px;
+    @extend .themed-scrollbar;
   }
 }
 </style>
