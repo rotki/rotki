@@ -132,16 +132,16 @@ def handle_defi_price_query(
     elif token_symbol == 'yETH':
         assert underlying_asset_price
         # special handling since at the time of writing final yeth address was not known
-        yeth_addres = ethereum.call_contract(
+        yeth_address = ethereum.call_contract(
             contract_address=YEARN_CONTROLLER.address,
             abi=YEARN_CONTROLLER.abi,
             method_name='vaults',
             arguments=['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'],  # address of WETH
         )
-        if yeth_addres == '0x0000000000000000000000000000000000000000':
+        if yeth_address == '0x0000000000000000000000000000000000000000':
             return None
         price_per_full_share = ethereum.call_contract(
-            contract_address=yeth_addres,
+            contract_address=yeth_address,
             abi=YEARN_YFI_VAULT.abi,  # any vault abi for the priceperfullshare
             method_name='getPricePerFullShare',
             arguments=[],
