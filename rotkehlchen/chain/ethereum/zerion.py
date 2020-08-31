@@ -6,11 +6,13 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
-from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
@@ -148,6 +150,17 @@ class Zerion():
         decimals = metadata[3]
         normalized_value = token_normalized_value(balance_value, decimals)
         token_symbol = metadata[2]
+        token_address = to_checksum_address(metadata[0])
+        token_name = metadata[1]
+
+        special_handling = self.handle_protocols(
+            token_symbol=token_symbol,
+            normalized_balance=normalized_value,
+            token_address=token_address,
+            token_name=token_name,
+        )
+        if special_handling:
+            return special_handling
 
         try:
             asset = Asset(token_symbol)
@@ -161,9 +174,29 @@ class Zerion():
 
         usd_value = normalized_value * usd_price
         defi_balance = DefiBalance(
-            token_address=to_checksum_address(metadata[0]),
-            token_name=metadata[1],
+            token_address=token_address,
+            token_name=token_name,
             token_symbol=token_symbol,
             balance=Balance(amount=normalized_value, usd_value=usd_value),
         )
         return defi_balance
+
+    def handle_protocols(
+            self,
+            token_symbol: str,
+            normalized_balance: FVal,
+            token_address: str,
+            token_name: str,
+    ) -> Optional[DefiBalance]:
+        """Special handling for price for token/protocols which are easier to do onchain"""
+        underlying_asset_price = get_underlying_asset_price(token_symbol)
+        usd_price = handle_defi_price_query(self.ethereum, token_symbol, underlying_asset_price)
+        if usd_price is None:
+            return None
+
+        return DefiBalance(
+            token_address=to_checksum_address(token_address),
+            token_name=token_name,
+            token_symbol=token_symbol,
+            balance=Balance(amount=normalized_balance, usd_value=normalized_balance * usd_price),
+        )

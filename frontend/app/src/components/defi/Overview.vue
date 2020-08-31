@@ -41,7 +41,7 @@
   </stat-card>
   <stat-card v-else :protocol-icon="icon" class="overview">
     <h3 class="pb-2">
-      {{ summary.tokenInfo.tokenName }}
+      {{ summary.protocol.name }}
     </h3>
     <info-row title="Balance" fiat :value="summary.balanceUsd" />
     <v-divider class="my-4" />
@@ -71,7 +71,7 @@
               contain
             />
             <span class="ml-2">
-              {{ summary.tokenInfo.tokenName }}
+              {{ summary.protocol.name }}
             </span>
           </v-card-title>
           <v-card-subtitle>

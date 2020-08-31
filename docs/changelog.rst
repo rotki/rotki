@@ -4,6 +4,8 @@ Changelog
 
 * :feature: `1092` Users can now refresh their manual balance entries.
 * :feature: `1031` Users can now view their ethereum transactions in the history page.
+* :feature: `1378` Support new OCEAN protocol token after token swap
+* :feature: `1336` Balance of any of the user accounts in either yearn finance vaults or curve finance pools should now be auto-detected and displayed both in the dashboard and in the DeFi overview.
 * :bug: `1393` When users set the "crypto to crypto trades" setting off, they will no longer see the USD equivalent part of crypto to crypto buys in the tax report history.
 * :feature: `1085` Users can now view their exchange trades, along with there deposit and withdraw actions on the connected exchanges.
 * :bug: `1321` CSV export formulas have now been fixed and should properly calculate profit/loss per different action type.
@@ -21,6 +23,7 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `YAM (YAM) <https://coinmarketcap.com/currencies/yam/>`__
+  - `YAMv2 (YAMv2) <https://www.coingecko.com/en/coins/yam-v2>`__
   - `Serum (SRM) <https://coinmarketcap.com/currencies/serum/>`__
   - `Orion Protocol (ORN) <https://www.coingecko.com/en/coins/orion-protocol>`__
   - `Polkadot (DOT) <https://coinmarketcap.com/currencies/polkadot-new/>`__
@@ -50,6 +53,8 @@ Changelog
   - `Centric (CNS) <https://www.coingecko.com/en/coins/centric>`__
   - `Sensorium (SENSO) <https://www.coingecko.com/en/coins/senso>`__
   - `Aave interest bearing YFI (aYFI) <https://etherscan.io/tx/0x259efe3b78bda8cf736a4afb30654d2e365cb42dc2cbe1fa8c64137673d848fd>`__
+  - `Ampleforth (AMPL) <https://www.coingecko.com/en/coins/ampleforth>`__
+  - `YFII.finance (YFII) <https://www.coingecko.com/en/coins/dfi-money>`__
 
 * :release:`1.6.2 <2020-08-11>`
 * :bug: `1311` When user logs out the app bar is no longer visible.

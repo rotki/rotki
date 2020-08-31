@@ -42,7 +42,6 @@ PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
-# No special case needed for cETH. Cryptocompare maps it correctly
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('BLY'): Asset('USDT'),
     Asset('cDAI'): A_DAI,
@@ -79,6 +78,8 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('PRQ'): Asset('USDT'),
     Asset('RING'): Asset('USDT'),
     Asset('SBREE'): Asset('USDT'),
+    Asset('YFII'): Asset('USDT'),
+    Asset('BZRX'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

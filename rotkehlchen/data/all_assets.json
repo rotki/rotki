@@ -450,6 +450,15 @@
         "symbol": "AMP",
         "type": "omni token"
     },
+    "AMPL": {
+        "coingecko": "ampleforth",
+        "ethereum_address": "0xD46bA6D942050d489DBd938a2C909A5d5039A161",
+        "ethereum_token_decimals": 9,
+        "name": "Ampleforth",
+        "started": 1560475588,
+        "symbol": "AMPL",
+        "type": "ethereum token"
+    },
     "ANKR": {
         "coingecko": "ankr",
         "ethereum_address": "0x8290333ceF9e6D528dD5618Fb97a76f268f3EDD4",
@@ -6420,9 +6429,9 @@
     },
     "LRC": {
         "coingecko": "loopring",
-        "ethereum_address": "0xEF68e7C694F40c8202821eDF525dE3782458639f",
+        "ethereum_address": "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD",
         "ethereum_token_decimals": 18,
-        "name": "Loopring",
+        "name": "LoopringCoin V2",
         "started": 1500422400,
         "symbol": "LRC",
         "type": "ethereum token"
@@ -7640,7 +7649,7 @@
     },
     "OCEAN": {
         "coingecko": "ocean-protocol",
-        "ethereum_address": "0x985dd3D42De1e256d09e1c10F112bCCB8015AD41",
+        "ethereum_address": "0x7AFeBBB46fDb47ed17b22ed075Cde2447694fB9e",
         "ethereum_token_decimals": 18,
         "name": "OceanToken",
         "started": 1556037118,
@@ -12019,6 +12028,15 @@
         "symbol": "YAM",
         "type": "ethereum token"
     },
+    "YAMv2": {
+        "coingecko": "yam-v2",
+        "ethereum_address": "0xAba8cAc6866B83Ae4eec97DD07ED254282f6aD8A",
+        "ethereum_token_decimals": 24,
+        "name": "YAMv2",
+        "started": 1597849378,
+        "symbol": "YAMv2",
+        "type": "ethereum token"
+    },
     "YEE": {
         "coingecko": "yee",
         "ethereum_address": "0x922105fAd8153F516bCfB829f56DC097a0E1D705",
@@ -12045,6 +12063,15 @@
         "name": "yearn.finance",
         "started": 1594972885,
         "symbol": "YFI",
+        "type": "ethereum token"
+    },
+    "YFII": {
+        "coingecko": "yfii-finance",
+        "ethereum_address": "0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83",
+        "ethereum_token_decimals": 18,
+        "name": "YFII.finance",
+        "started": 1595768700,
+        "symbol": "YFII",
         "type": "ethereum token"
     },
     "YOU": {
@@ -12529,6 +12556,132 @@
         "name": "Synth sUSD",
         "started": 1569466541,
         "symbol": "sUSD",
+        "type": "ethereum token"
+    },
+    "yaLINK": {
+        "coingecko": "aave-link",
+        "ethereum_address": "0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Aave Interest bearing LINK",
+        "started": 1596628700,
+        "symbol": "yaLINK",
+        "type": "ethereum token"
+    },
+    "yDAI+yUSDC+yUSDT+yBUSD": {
+        "coingecko": "lp-bcurve",
+        "ethereum_address": "0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
+        "started": 1582828578,
+        "symbol": "yDAI+yUSDC+yUSDT+yBUSD",
+        "type": "ethereum token"
+    },
+    "yDAI+yUSDC+yUSDT+yTUSD": {
+        "coingecko": "curve-fi-ydai-yusdc-yusdt-ytusd",
+        "ethereum_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
+        "started": 1581620573,
+        "symbol": "yDAI+yUSDC+yUSDT+yTUSD",
+        "type": "ethereum token"
+    },
+    "ypaxCrv ": {
+        "coingecko": "lp-paxcurve",
+        "ethereum_address": "0xD905e2eaeBe188fc92179b6350807D8bd91Db0D8",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi DAI/USDC/USDT/PAX",
+        "started": 1589148107,
+        "symbol": "ypaxCrv",
+        "type": "ethereum token"
+    },
+    "yUSDT": {
+        "coingecko": "tether",
+        "ethereum_address": "0x2f08119C6f07c006695E079AAFc638b8789FAf18",
+        "ethereum_token_decimals": 6,
+        "name": "yearn Tether USD",
+        "started": 1597318993,
+        "symbol": "yUSDT",
+        "type": "ethereum token"
+    },
+    "yyDAI+yUSDC+yUSDT+yBUSD": {
+        "coingecko": "lp-bcurve",
+        "ethereum_address": "0x2994529C0652D127b7842094103715ec5299bBed",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
+        "started": 1598095312,
+        "symbol": "yyDAI+yUSDC+yUSDT+yBUSD",
+        "type": "ethereum token"
+    },
+    "yyDAI+yUSDC+yUSDT+yTUSD": {
+        "coingecko": "yvault-lp-ycurve",
+        "ethereum_address": "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
+        "started": 1596091760,
+        "symbol": "yyDAI+yUSDC+yUSDT+yTUSD",
+        "type": "ethereum token"
+    },
+    "yDAI": {
+        "coingecko": "dai",
+        "ethereum_address": "0xACd43E627e64355f1861cEC6d3a6688B31a6F952",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Dai Stablecoin",
+        "started": 1597301808,
+        "symbol": "yDAI",
+        "type": "ethereum token"
+    },
+    "yUSDC": {
+        "coingecko": "usd-coin",
+        "ethereum_address": "0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e",
+        "ethereum_token_decimals": 6,
+        "name": "yearn USD//C",
+        "started": 1595721600,
+        "symbol": "yUSDC",
+        "type": "ethereum token"
+    },
+    "yTUSD": {
+        "coingecko": "true-usd",
+        "ethereum_address": "0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a",
+        "ethereum_token_decimals": 18,
+        "name": "yearn TrueUSD",
+        "started": 1596678980,
+        "symbol": "yTUSD",
+        "type": "ethereum token"
+    },
+    "yYFI": {
+        "coingecko": "yearn-finance",
+        "ethereum_address": "0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
+        "ethereum_token_decimals": 18,
+        "name": "yearn yearn.finance",
+        "started": 1597845648,
+        "symbol": "yYFI",
+        "type": "ethereum token"
+    },
+    "crvRenWBTC": {
+        "coingecko": "lp-renbtc-curve",
+        "ethereum_address": "0x49849C98ae39Fff122806C06791Fa73784FB3675",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi renBTC/wBTC",
+        "started": 1590630368,
+        "symbol": "crvRenWBTC",
+        "type": "ethereum token"
+    },
+    "crvRenWSBTC": {
+        "coingecko": "lp-renbtc-curve",
+        "ethereum_address": "0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi renBTC/wBTC/sBTC",
+        "started": 1592306956,
+        "symbol": "crvRenWSBTC",
+        "type": "ethereum token"
+    },
+    "ycrvRenWSBTC": {
+        "coingecko": "lp-renbtc-curve",
+        "ethereum_address": "0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Curve.fi renBTC/wBTC/sBTC",
+        "started": 1598421792,
+        "symbol": "ycrvRenWSBTC",
         "type": "ethereum token"
     }
 }

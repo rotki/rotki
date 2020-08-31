@@ -8,8 +8,18 @@ from typing import TYPE_CHECKING, Dict, Iterable, Optional
 import requests
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
+from rotkehlchen.constants.assets import (
+    A_ALINK,
+    A_DAI,
+    A_TUSD,
+    A_USD,
+    A_USDC,
+    A_USDT,
+    A_YFI,
+    FIAT_CURRENCIES,
+)
 from rotkehlchen.errors import PriceQueryUnsupportedAsset, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -18,11 +28,53 @@ from rotkehlchen.utils.misc import request_get_dict, retry_calls, timestamp_to_d
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+SPECIAL_SYMBOLS = (
+    'yyDAI+yUSDC+yUSDT+yBUSD',
+    'yyDAI+yUSDC+yUSDT+yTUSD',
+    'yDAI+yUSDC+yUSDT+yBUSD',
+    'yDAI+yUSDC+yUSDT+yTUSD',
+    'ycrvRenWSBTC'
+    'ypaxCrv',
+    'crvRenWBTC',
+    'crvRenWSBTC',
+    'yaLINK',
+    'yDAI',
+    'yYFI',
+    'yUSDT',
+    'yUSDC',
+    'yTUSD',
+)
+
+
+def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
+    """Gets the underlying asset price for token symbol, if any
+
+
+    This function is neither in inquirer.py or chain/ethereum/defi.py
+    due to recursive import problems
+    """
+    price = None
+    if token_symbol == 'yaLINK':
+        price = Inquirer().find_usd_price(A_ALINK)
+    elif token_symbol == 'yDAI':
+        price = Inquirer().find_usd_price(A_DAI)
+    elif token_symbol == 'yYFI':
+        price = Inquirer().find_usd_price(A_YFI)
+    elif token_symbol == 'yUSDT':
+        price = Inquirer().find_usd_price(A_USDT)
+    elif token_symbol == 'yUSDC':
+        price = Inquirer().find_usd_price(A_USDC)
+    elif token_symbol == 'yTUSD':
+        price = Inquirer().find_usd_price(A_TUSD)
+
+    return price
 
 
 def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
@@ -58,6 +110,7 @@ class Inquirer():
     _cached_forex_data: Dict
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
+    _ethereum: Optional['EthereumManager'] = None
 
     def __new__(
             cls,
@@ -86,12 +139,30 @@ class Inquirer():
         return Inquirer.__instance
 
     @staticmethod
+    def inject_ethereum(ethereum: 'EthereumManager') -> None:
+        Inquirer()._ethereum = ethereum
+
+    @staticmethod
     def find_usd_price(asset: Asset) -> Price:
         """Returns the current USD price of the asset
 
         May raise:
         - RemoteError if the cryptocompare query has a problem
         """
+        if asset.identifier in SPECIAL_SYMBOLS:
+            ethereum = Inquirer()._ethereum
+            assert ethereum, 'Inquirer should never be called before the injection of ethereum'
+            underlying_asset_price = get_underlying_asset_price(asset.identifier)
+            usd_price = handle_defi_price_query(
+                ethereum=ethereum,
+                token_symbol=asset.identifier,
+                underlying_asset_price=underlying_asset_price,
+            )
+            if usd_price is None:
+                return Price(ZERO)
+
+            return Price(usd_price)
+
         try:
             result = Inquirer()._cryptocompare.query_endpoint_price(
                 from_asset=asset,

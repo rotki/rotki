@@ -234,6 +234,7 @@ class Rotkehlchen():
             greenlet_manager=self.greenlet_manager,
             connect_at_start=ETHEREUM_NODES_TO_CONNECT_AT_START,
         )
+        Inquirer().inject_ethereum(ethereum_manager)
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             ethereum_manager=ethereum_manager,
