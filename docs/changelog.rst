@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.7.0 <2020-09-01>`
 * :feature:`1092` Users can now refresh their manual balance entries.
 * :feature:`1031` Users can now view their ethereum transactions in the history page.
 * :feature:`1378` Support new OCEAN protocol token after token swap
