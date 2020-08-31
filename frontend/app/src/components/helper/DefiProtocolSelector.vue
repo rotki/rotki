@@ -17,27 +17,11 @@
         class="defi-protocol-selector"
         @input="input"
       >
-        <template #selection="data">
-          <span>
-            <v-img
-              width="26px"
-              contain
-              position="left"
-              max-height="24px"
-              :src="data.item.icon"
-            />
-          </span>
+        <template #selection="{ attrs, item }">
+          <defi-protocol-details v-bind="attrs" :item="item" />
         </template>
-        <template #item="data">
-          <span v-bind="data.attrs">
-            <v-img
-              width="26px"
-              contain
-              position="left"
-              max-height="24px"
-              :src="data.item.icon"
-            />
-          </span>
+        <template #item="{ attrs, item }">
+          <defi-protocol-details v-bind="attrs" :item="item" />
         </template>
       </v-autocomplete>
     </div>
@@ -51,6 +35,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator';
+import DefiProtocolDetails from '@/components/helper/DefiProtocolDetails.vue';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 
 export interface Protocol {
@@ -59,7 +44,9 @@ export interface Protocol {
   identifier: SupportedDefiProtocols;
 }
 
-@Component({})
+@Component({
+  components: { DefiProtocolDetails }
+})
 export default class DefiProtocolSelector extends Vue {
   @Prop({ required: true })
   value!: SupportedDefiProtocols | null;
@@ -83,5 +70,3 @@ export default class DefiProtocolSelector extends Vue {
   input(_selectedProtocols: SupportedDefiProtocols | null) {}
 }
 </script>
-
-<style scoped lang="scss"></style>
