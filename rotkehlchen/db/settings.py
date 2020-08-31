@@ -10,7 +10,7 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 16
+ROTKEHLCHEN_DB_VERSION = 17
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
