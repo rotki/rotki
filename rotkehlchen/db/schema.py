@@ -231,7 +231,7 @@ CREATE TABLE IF NOT EXISTS ethereum_transactions (
     nonce INTEGER,
     /* we determine uniqueness for ethereum internal transactions by using an
     increasingly negative number */
-    PRIMARY KEY (tx_hash, input_data, nonce)
+    PRIMARY KEY (tx_hash, nonce, from_address)
 );
 """
 
