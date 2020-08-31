@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -120,7 +120,7 @@ class EthTransactions(LockableQueryObject):
         - RemoteError if etherscan is used and there is a problem with reaching it or
         with parsing the response.
         """
-        transactions: List[EthereumTransaction] = []
+        transactions_set: Set[EthereumTransaction] = set()
 
         if address is not None:
             accounts = [address]
@@ -128,12 +128,14 @@ class EthTransactions(LockableQueryObject):
             accounts = self.database.get_blockchain_accounts().eth
 
         for address in accounts:
-            transactions.extend(self._single_address_query_transactions(
+            new_transactions = self._single_address_query_transactions(
                 address=address,
                 start_ts=from_ts,
                 end_ts=to_ts,
                 with_limit=with_limit,
-            ))
+            )
+            transactions_set.update(set(new_transactions))
 
+        transactions = list(transactions_set)
         transactions.sort(key=lambda tx: tx.timestamp, reverse=recent_first)
         return transactions

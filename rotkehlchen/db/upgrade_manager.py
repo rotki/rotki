@@ -18,6 +18,7 @@ from rotkehlchen.db.upgrades.v12_v13 import upgrade_v12_to_v13
 from rotkehlchen.db.upgrades.v13_v14 import upgrade_v13_to_v14
 from rotkehlchen.db.upgrades.v14_v15 import upgrade_v14_to_v15
 from rotkehlchen.db.upgrades.v15_v16 import upgrade_v15_to_v16
+from rotkehlchen.db.upgrades.v16_v17 import upgrade_v16_to_v17
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -132,6 +133,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=15,
         function=upgrade_v15_to_v16,
+    ),
+    UpgradeRecord(
+        from_version=16,
+        function=upgrade_v16_to_v17,
     ),
 ]
 

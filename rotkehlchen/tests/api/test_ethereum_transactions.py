@@ -7,6 +7,7 @@ import requests
 
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -513,3 +514,73 @@ def test_query_transactions_removed_address(
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 3
     assert result['entries_found'] == 3
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_transaction_same_hash_same_nonce_two_tracked_accounts(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    """Make sure that if we track two addresses and they send one transaction
+    to each other it's not counted as duplicate in the DB but is returned
+    every by both addresses"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    def mock_etherscan_transaction_response(etherscan: Etherscan, eth_accounts):
+        def mocked_request_dict(url, *_args, **_kwargs):
+
+            addr1_tx = f"""{{"blockNumber":"1","timeStamp":"1","hash":"0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[0]}","to":"{eth_accounts[1]}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
+            addr2_txs = f"""{addr1_tx}, {{"blockNumber":"2","timeStamp":"2","hash":"0x1c81f54c29ff0226f835cd0a2a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"1","blockHash":"0xd1cabad2adab0b56ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[1]}","to":"{make_ethereum_address()}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
+            if '=txlistinternal&' in url:
+                # don't return any internal transactions
+                payload = '{"status":"1","message":"OK","result":[]}'
+            elif '=txlist&' in url:
+                if eth_accounts[0] in url:
+                    tx_str = addr1_tx
+                elif eth_accounts[1] in url:
+                    tx_str = addr2_txs
+                else:
+                    raise AssertionError(
+                        'Requested etherscan transactions for unknown address in tests',
+                    )
+                payload = f'{{"status":"1","message":"OK","result":[{tx_str}]}}'
+            elif '=getblocknobytime&' in url:
+                # we don't really care about this so just return whatever
+                payload = '{"status":"1","message":"OK","result": "1"}'
+
+            return MockResponse(200, payload)
+
+        return patch.object(etherscan.session, 'get', wraps=mocked_request_dict)
+
+    with mock_etherscan_transaction_response(rotki.etherscan, ethereum_accounts):
+        # Check that we get transaction both when we query all accounts and each one individually
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'ethereumtransactionsresource',
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) == 2
+        assert result['entries_found'] == 2
+
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'per_address_ethereum_transactions_resource',
+                address=ethereum_accounts[0],
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) == 1
+        assert result['entries_found'] == 2
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'per_address_ethereum_transactions_resource',
+                address=ethereum_accounts[1],
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) == 2
+        assert result['entries_found'] == 2

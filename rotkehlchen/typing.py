@@ -162,6 +162,18 @@ class EthereumTransaction(NamedTuple):
         result['gas_used'] = str(result['gas_used'])
         return result
 
+    def __hash__(self) -> int:
+        return hash(self.tx_hash.hex() + self.from_address + str(self.nonce))
+
+    def __eq__(self, other: Any) -> bool:
+        if other is None:
+            return False
+
+        if not isinstance(other, EthereumTransaction):
+            return False
+
+        return hash(self) == hash(other)
+
 
 class SupportedBlockchain(Enum):
     """These are the blockchains for which account tracking is supported """
