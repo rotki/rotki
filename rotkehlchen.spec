@@ -88,7 +88,7 @@ a = Entrypoint(
         ('rotkehlchen/data/eth_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.json', 'rotkehlchen/data'),
-        ('rotkehlchen/data/all_assets.md5', 'rotkehlchen/data'),
+        ('rotkehlchen/data/all_assets.meta', 'rotkehlchen/data'),
     ],
     excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'packaging'],
 )
