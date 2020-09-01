@@ -1006,7 +1006,7 @@ Purging locally saved data for exchanges
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": True, "message": "" }
+      { "result": true, "message": "" }
 
    :statuscode 200: Data succesfully purged.
    :statuscode 400: Provided JSON is in some way malformed
@@ -1037,7 +1037,7 @@ Purging locally saved ethereum transactions
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": True, "message": "" }
+      { "result": true, "message": "" }
 
    :statuscode 200: Data succesfully purged.
    :statuscode 400: Provided JSON is in some way malformed
@@ -2210,8 +2210,8 @@ Querying asset movements
    :resjsonarr string fee_asset: The asset in which ``fee`` is denominated in
    :resjsonarr string fee: The fee that was paid, if anything, for this deposit/withdrawal
    :resjsonarr string link: Optional unique exchange identifier for the deposit/withdrawal
-:resjson int entries_found: The amount of deposit/withdrawals found for the user. That disregards the filter and shows all asset movements found.
-:resjson int entries_limit: The movements query limit for the account tier of the user. If unlimited then -1 is returned.
+   :resjson int entries_found: The amount of deposit/withdrawals found for the user. That disregards the filter and shows all asset movements found.
+   :resjson int entries_limit: The movements query limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Deposits/withdrawals are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.
@@ -3230,7 +3230,7 @@ Getting Aave historical data
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Get addresses to query per protocol
-==================================
+=======================================
 
 .. http:get:: /api/(version)/queried_addresses/
 
@@ -3307,7 +3307,7 @@ Add address to query per protocol
    :statuscode 500: Internal Rotki error
 
 Remove an address to query per protocol
-==================================
+=========================================
 
 .. http:delete:: /api/(version)/queried_addresses/
 
