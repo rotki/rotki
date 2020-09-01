@@ -9,6 +9,19 @@ function ipcAction(message: string, title: string) {
   });
 }
 
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+type DebugSettings = { vuex: boolean };
+let debugSettings: DebugSettings | undefined = isDevelopment
+  ? ipcRenderer.sendSync('GET_DEBUG')
+  : undefined;
+
+if (isDevelopment) {
+  ipcRenderer.on('DEBUG_SETTINGS', (event, args) => {
+    debugSettings = args;
+  });
+}
+
 contextBridge.exposeInMainWorld('interop', {
   openUrl: (url: string) => ipcRenderer.send('OPEN_URL', url),
   closeApp: () => ipcRenderer.send('CLOSE_APP'),
@@ -21,5 +34,10 @@ contextBridge.exposeInMainWorld('interop', {
       callback(args);
       ipcRenderer.send('ack', 1);
     });
-  }
+  },
+  debugSettings: isDevelopment
+    ? (): DebugSettings | undefined => {
+        return debugSettings;
+      }
+    : undefined
 });

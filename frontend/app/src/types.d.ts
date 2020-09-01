@@ -1,3 +1,5 @@
+export type DebugSettings = { vuex: boolean };
+
 export interface Interop {
   openUrl(url: string): Promise<void>;
   closeApp(): void;
@@ -5,6 +7,8 @@ export interface Interop {
   openFile(title: string): Promise<undefined | string>;
   openDirectory(title: string): Promise<undefined | string>;
   premiumUserLoggedIn(premiumUser: boolean): Promise<undefined | boolean>;
+  monitorDebugSettings(): void;
+  debugSettings?(): DebugSettings | undefined;
 }
 
 declare global {

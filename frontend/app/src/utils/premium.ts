@@ -8,6 +8,7 @@ import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue'
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import { api } from '@/services/rotkehlchen-api';
+import { DebugSettings } from '@/types';
 
 export const setupPremium = () => {
   window.Vue = Vue;
@@ -105,6 +106,7 @@ declare global {
     rotki: {
       useHostComponents: boolean;
       version: number;
+      debug?: DebugSettings;
     };
   }
 }
