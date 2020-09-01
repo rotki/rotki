@@ -12,6 +12,7 @@ YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
 CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
 CURVEFI_PAXSWAP = EthereumConstants().contract('CURVEFI_PAXSWAP')
 YEARN_DAI_VAULT = EthereumConstants().contract('YEARN_DAI_VAULT')
+YEARN_WETH_VAULT = EthereumConstants().contract('YEARN_WETH_VAULT')
 YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')
 YEARN_ALINK_VAULT = EthereumConstants().contract('YEARN_ALINK_VAULT')
 YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
@@ -129,25 +130,13 @@ def handle_defi_price_query(
             underlying_asset_price=underlying_asset_price,
             contract=YEARN_DAI_VAULT,
         )
-    elif token_symbol == 'yETH':
+    elif token_symbol == 'yWETH':
         assert underlying_asset_price
-        # special handling since at the time of writing final yeth address was not known
-        yeth_address = ethereum.call_contract(
-            contract_address=YEARN_CONTROLLER.address,
-            abi=YEARN_CONTROLLER.abi,
-            method_name='vaults',
-            arguments=['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'],  # address of WETH
+        usd_value = handle_underlying_price_yearn_vault(
+            ethereum=ethereum,
+            underlying_asset_price=underlying_asset_price,
+            contract=YEARN_WETH_VAULT,
         )
-        if yeth_address == '0x0000000000000000000000000000000000000000':
-            return None
-        price_per_full_share = ethereum.call_contract(
-            contract_address=yeth_address,
-            abi=YEARN_YFI_VAULT.abi,  # any vault abi for the priceperfullshare
-            method_name='getPricePerFullShare',
-            arguments=[],
-        )
-        usd_value = FVal(underlying_asset_price * price_per_full_share) / 10 ** 18
-        return usd_value
     elif token_symbol == 'yYFI':
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(

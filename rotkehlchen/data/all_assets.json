@@ -12657,6 +12657,15 @@
         "symbol": "yYFI",
         "type": "ethereum token"
     },
+    "yWETH": {
+        "coingecko": "weth",
+        "ethereum_address": "0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Wrapped Ether",
+        "started": 1598952738,
+        "symbol": "yWETH",
+        "type": "ethereum token"
+    },
     "crvPlain3andSUSD": {
         "coingecko": "lp-scurve",
         "ethereum_address": "0xC25a3A3b969415c80451098fa907EC722572917F",

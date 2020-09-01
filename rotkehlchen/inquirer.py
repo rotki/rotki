@@ -48,7 +48,7 @@ SPECIAL_SYMBOLS = (
     'crvPlain3andSUSD',
     'yaLINK',
     'yDAI',
-    'yETH',
+    'yWETH',
     'yYFI',
     'yUSDT',
     'yUSDC',
@@ -68,7 +68,7 @@ def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_ALINK)
     elif token_symbol == 'yDAI':
         price = Inquirer().find_usd_price(A_DAI)
-    elif token_symbol == 'yETH':
+    elif token_symbol == 'yWETH':
         price = Inquirer().find_usd_price(A_ETH)
     elif token_symbol == 'yYFI':
         price = Inquirer().find_usd_price(A_YFI)
