@@ -20,3 +20,4 @@ webargs==6.0.0
 #constraints
 setuptools==41.0.1  # constraint required by pyinstaller==3.5.0
 eth-utils==1.8.4  # constraint required by web3==5.3.0
+rlp==1.2.0  # constraint required by eth-rlp 0.1.2  rlp<2,>=0.6.0
