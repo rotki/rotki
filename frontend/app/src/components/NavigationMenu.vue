@@ -39,6 +39,11 @@
               />
             </v-list-item>
           </v-list-group>
+          <v-divider
+            v-else-if="navItem.type === 'divider'"
+            :key="i"
+            class="mb-2"
+          />
         </template>
       </v-list-item-group>
     </v-list>
@@ -50,11 +55,11 @@ import { Component, Vue, Prop } from 'vue-property-decorator';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 
 type NavItem = {
-  readonly type: 'item' | 'group';
-  readonly text: string;
-  readonly route: string;
+  readonly type: 'item' | 'group' | 'divider';
+  readonly text?: string;
+  readonly route?: string;
   readonly class?: string;
-  readonly icon: string;
+  readonly icon?: string;
 };
 
 type GroupNavItem = NavItem & { items?: NavItem[] };
@@ -72,27 +77,14 @@ export default class NavigationMenu extends Vue {
       text: this.$tc('navigation_menu.dashboard'),
       route: '/dashboard',
       class: 'dashboard',
-      icon: 'fa-dashboard'
+      icon: 'mdi-monitor-dashboard'
     },
     {
       type: 'item',
       text: this.$tc('navigation_menu.accounts_balances'),
       route: '/accounts-balances',
       class: 'accounts-balances',
-      icon: 'fa-briefcase'
-    },
-    {
-      type: 'item',
-      text: this.$tc('navigation_menu.api_keys'),
-      route: '/settings/api-keys/rotki-premium',
-      class: 'settings__api-keys',
-      icon: 'fa-key'
-    },
-    {
-      type: 'item',
-      text: this.$tc('navigation_menu.import_data'),
-      route: '/import',
-      icon: 'fa-upload'
+      icon: 'mdi-briefcase-variant'
     },
     {
       type: 'group',
@@ -119,7 +111,7 @@ export default class NavigationMenu extends Vue {
           type: 'item',
           text: this.$tc('navigation_menu.history_sub.ethereum_transactions'),
           route: '/history/transactions',
-          icon: 'mdi-swap-horizontal',
+          icon: 'mdi-swap-horizontal-bold',
           class: 'eth-transactions'
         }
       ]
@@ -128,7 +120,7 @@ export default class NavigationMenu extends Vue {
       type: 'item',
       text: this.$tc('navigation_menu.defi'),
       route: '/defi/overview',
-      icon: 'fa-line-chart',
+      icon: 'mdi-finance',
       class: 'defi'
     },
     {
@@ -136,14 +128,30 @@ export default class NavigationMenu extends Vue {
       text: this.$tc('navigation_menu.statistics'),
       route: '/statistics',
       class: 'statistics',
-      icon: 'fa-bar-chart'
+      icon: 'mdi-chart-bar'
     },
     {
       type: 'item',
       text: this.$tc('navigation_menu.tax_report'),
       route: '/tax-report',
       class: 'tax-report',
-      icon: 'fa-calculator'
+      icon: 'mdi-calculator'
+    },
+    {
+      type: 'divider'
+    },
+    {
+      type: 'item',
+      text: this.$tc('navigation_menu.api_keys'),
+      route: '/settings/api-keys/rotki-premium',
+      class: 'settings__api-keys',
+      icon: 'mdi-key-chain-variant'
+    },
+    {
+      type: 'item',
+      text: this.$tc('navigation_menu.import_data'),
+      route: '/import',
+      icon: 'mdi-database-import'
     }
   ];
 }
