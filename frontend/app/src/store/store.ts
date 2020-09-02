@@ -4,6 +4,7 @@ import { VersionCheck } from '@/model/version-check';
 import { api } from '@/services/rotkehlchen-api';
 import { balances } from '@/store/balances';
 import { Section, Status } from '@/store/const';
+import { storePlugins } from '@/store/debug';
 import { defi } from '@/store/defi';
 import { history } from '@/store/history';
 import { notifications } from '@/store/notifications';
@@ -121,6 +122,7 @@ const store: StoreOptions<RotkehlchenState> = {
     session,
     reports,
     settings
-  }
+  },
+  plugins: storePlugins()
 };
 export default new Vuex.Store(store);

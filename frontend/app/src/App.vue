@@ -88,6 +88,7 @@ import '@/services/task-manager';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import ErrorScreen from '@/ErrorScreen.vue';
+import { monitor } from '@/services/monitoring';
 import { Message } from '@/store/types';
 
 @Component({
@@ -166,12 +167,16 @@ export default class App extends Vue {
     this.$interop.onError((backendOutput: string) => {
       this.startupError = backendOutput;
     });
+
+    if (process.env.NODE_ENV === 'development' && this.logged) {
+      monitor.start();
+    }
   }
 }
 </script>
 
 <style scoped lang="scss">
-@import '@/scss/scroll';
+@import '~@/scss/scroll';
 
 .v-navigation-drawer {
   &--fixed {

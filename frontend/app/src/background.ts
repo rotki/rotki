@@ -7,7 +7,8 @@ import {
   ipcMain,
   shell,
   dialog,
-  MenuItemConstructorOptions
+  MenuItemConstructorOptions,
+  MenuItem
 } from 'electron';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import windowStateKeeper from 'electron-window-state';
@@ -44,6 +45,10 @@ protocol.registerSchemesAsPrivileged([
     privileges: { standard: true, secure: true, supportFetchAPI: true }
   }
 ]);
+
+const debugSettings = {
+  vuex: false
+};
 
 const defaultMenuTemplate: any[] = [
   // On a mac we want to show a "Rotki" menu item in the app bar
@@ -154,7 +159,27 @@ const defaultMenuTemplate: any[] = [
   },
   {
     type: 'separator'
-  }
+  },
+
+  ...(isDevelopment
+    ? [
+        {
+          label: '&Debug',
+          submenu: [
+            {
+              label: 'Persist vuex state',
+              type: 'checkbox',
+              checked: debugSettings.vuex,
+              click: async (item: MenuItem, browserWindow: BrowserWindow) => {
+                debugSettings.vuex = item.checked;
+                browserWindow.webContents.send('DEBUG_SETTINGS', debugSettings);
+                browserWindow.reload();
+              }
+            }
+          ]
+        }
+      ]
+    : [])
 ];
 
 function createWindow() {
@@ -193,7 +218,6 @@ function createWindow() {
 
   const menuTemplate: MenuItemConstructorOptions[] = defaultMenuTemplate as MenuItemConstructorOptions[];
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
-
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
 
@@ -227,6 +251,11 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString());
     }
   }
+
+  ipcMain.on('GET_DEBUG', event => {
+    event.returnValue = debugSettings;
+  });
+
   ipcMain.on('PREMIUM_USER_LOGGED_IN', (event, args) => {
     const getRotkiPremiumButton = {
       label: '&Get Rotki Premium',
@@ -256,12 +285,13 @@ app.on('ready', async () => {
     // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
     // (see https://github.com/electron/electron/issues/8703). TODO: if we move the menu to the render
     // process we can make this a lot cleaner.
-    if (args === false) {
-      const newMenuTemplate = defaultMenuTemplate.concat(getRotkiPremiumButton);
-      Menu.setApplicationMenu(Menu.buildFromTemplate(newMenuTemplate));
-    } else {
-      Menu.setApplicationMenu(Menu.buildFromTemplate(defaultMenuTemplate));
-    }
+
+    const menuTemplate =
+      args === false
+        ? defaultMenuTemplate.concat(getRotkiPremiumButton)
+        : defaultMenuTemplate;
+
+    Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
   });
   ipcMain.on('CLOSE_APP', async () => await closeApp());
   ipcMain.on('OPEN_URL', (event, args) => {
