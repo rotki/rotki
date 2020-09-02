@@ -54,15 +54,19 @@
 import { Component, Vue, Prop } from 'vue-property-decorator';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 
-type NavItem = {
-  readonly type: 'item' | 'group' | 'divider';
-  readonly text?: string;
-  readonly route?: string;
+type NavItemDetails = {
+  readonly text: string;
+  readonly route: string;
   readonly class?: string;
-  readonly icon?: string;
+  readonly icon: string;
 };
 
-type GroupNavItem = NavItem & { items?: NavItem[] };
+type NavItem = { readonly type: 'item' } & NavItemDetails;
+type NavGroupItem = {
+  readonly type: 'group';
+} & NavItemDetails & { items: NavItem[] };
+type DividerItem = { readonly type: 'divider' };
+type MenuItem = NavItem | NavGroupItem | DividerItem;
 
 @Component({
   components: { NavigationMenuItem }
@@ -71,7 +75,7 @@ export default class NavigationMenu extends Vue {
   @Prop({ required: false, default: false })
   showTooltips!: boolean;
 
-  readonly navItems: GroupNavItem[] = [
+  readonly navItems: MenuItem[] = [
     {
       type: 'item',
       text: this.$tc('navigation_menu.dashboard'),
