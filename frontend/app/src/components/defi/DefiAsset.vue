@@ -8,7 +8,7 @@
         :value="asset.balance.amount"
         class="defi-asset__amount font-weight-medium"
       />
-      <amount-display :value="asset.balance.usdValue" show-currency="ticker" />
+      <amount-display :value="asset.balance.usdValue" fiat-currency="USD" />
     </div>
   </div>
 </template>
@@ -29,7 +29,7 @@ export default class DefiAsset extends Vue {
 <style scoped lang="scss">
 .defi-asset {
   &__amount {
-    margin-right: 26px;
+    margin-right: 14px;
   }
 }
 </style>

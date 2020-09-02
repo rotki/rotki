@@ -8,9 +8,9 @@
     </loan-row>
     <loan-row :medium="!isVault" :title="isVault ? '' : 'Locked up collateral'">
       <amount-display
+        class="loan-collateral__usd-value"
         :value="loan.collateral.usdValue"
         fiat-currency="USD"
-        show-currency="ticker"
       />
     </loan-row>
     <v-divider class="my-4" />
@@ -112,6 +112,10 @@ export default class LoanCollateral extends Mixins(
 .loan-collateral {
   &__watcher {
     border-radius: 15px;
+  }
+
+  &__usd-value {
+    margin-right: 18px;
   }
 
   &__watcher-button {

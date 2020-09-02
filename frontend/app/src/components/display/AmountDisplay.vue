@@ -9,7 +9,7 @@
     >
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'before'"
-        :show-currency="showCurrency"
+        :show-currency="shownCurrency"
         :currency="currency"
         :asset="asset"
       />
@@ -74,7 +74,7 @@
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'after'"
         class="ml-2"
-        :show-currency="showCurrency"
+        :show-currency="shownCurrency"
         :currency="currency"
         :asset="asset"
       />
@@ -85,30 +85,28 @@
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { Currency } from '@/model/currency';
 import { GeneralSettings } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 
-const { mapGetters, mapState } = createNamespacedHelpers('session');
-
-const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
+type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
 
 @Component({
   components: {
     AmountCurrency
   },
   computed: {
-    ...mapGetters([
+    ...mapGetters('session', [
       'floatingPrecision',
       'currency',
       'thousandSeparator',
       'decimalSeparator',
       'currencyLocation'
     ]),
-    ...mapState(['privacyMode', 'scrambleData']),
-    ...mapBalancesGetters(['exchangeRate'])
+    ...mapState('session', ['privacyMode', 'scrambleData']),
+    ...mapGetters('balances', ['exchangeRate'])
   }
 })
 export default class AmountDisplay extends Vue {
@@ -127,7 +125,7 @@ export default class AmountDisplay extends Vue {
       return ['none', 'ticker', 'symbol', 'name'].indexOf(showCurrency) > -1;
     }
   })
-  showCurrency!: string;
+  showCurrency!: ShownCurrency;
   @Prop({ required: false, default: '' })
   asset!: string;
   @Prop({ required: false, type: Boolean, default: false })
@@ -142,6 +140,12 @@ export default class AmountDisplay extends Vue {
   currencyLocation!: GeneralSettings['currencyLocation'];
   BIGNUMBER_ROUND_DOWN = BigNumber.ROUND_DOWN;
   BIGNUMBER_ROUND_UP = BigNumber.ROUND_UP;
+
+  get shownCurrency(): ShownCurrency {
+    return this.showCurrency === 'none' && !!this.fiatCurrency
+      ? 'symbol'
+      : this.showCurrency;
+  }
 
   get renderValue(): BigNumber {
     const multiplier = [10, 100, 1000];
