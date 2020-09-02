@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`1415` The navigation drawer has been re-ordered for better usability (the most-used pages have been floated up, and least-used moved to the bottom), and its icons have been updated to use Material Design Icons.
+  
 * :feature:`-` Added support for the following tokens:
 
   - `SushiToken (SUSHI) <https://www.coingecko.com/en/coins/sushi>`__
