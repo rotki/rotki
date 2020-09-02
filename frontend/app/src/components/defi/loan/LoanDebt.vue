@@ -5,8 +5,8 @@
     </loan-row>
     <loan-row :medium="false">
       <amount-display
+        class="loan-debt__usd-value"
         :value="loan.debt.usdValue"
-        show-currency="ticker"
         fiat-currency="USD"
       />
     </loan-row>
@@ -52,3 +52,11 @@ import PremiumMixin from '@/mixins/premium-mixin';
 })
 export default class LoanDebt extends Mixins(PremiumMixin, LoanDisplayMixin) {}
 </script>
+
+<style scoped lang="scss">
+.loan-debt {
+  &__usd-value {
+    margin-right: 14px;
+  }
+}
+</style>

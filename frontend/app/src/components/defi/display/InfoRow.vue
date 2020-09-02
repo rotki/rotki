@@ -8,7 +8,7 @@
         :fiat-currency="fiat ? 'USD' : null"
         :value="value"
         :loading="loading"
-        show-currency="ticker"
+        :show-currency="fiat ? 'none' : 'ticker'"
       />
     </slot>
   </div>

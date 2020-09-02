@@ -37,8 +37,8 @@
             </loan-row>
             <loan-row :medium="false">
               <amount-display
+                class="liquidation__collateral__usd-value"
                 :value="loan.totalLiquidated.usdValue"
-                show-currency="ticker"
                 fiat-currency="USD"
               />
             </loan-row>
@@ -52,7 +52,7 @@
               :value="
                 loan.totalLiquidated.usdValue.plus(loan.totalInterestOwed)
               "
-              show-currency="ticker"
+              class="liquidation__total__usd-value"
               fiat-currency="USD"
             />
           </loan-row>
@@ -90,6 +90,18 @@ export default class LoanLiquidation extends Mixins(
   height: 100%;
   display: flex;
   flex-direction: column;
+
+  &__collateral {
+    &__usd-value {
+      margin-right: 20px;
+    }
+  }
+
+  &__total {
+    &__usd-value {
+      margin-right: 20px;
+    }
+  }
 
   &__upper {
     min-height: 100px;
