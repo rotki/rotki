@@ -154,6 +154,13 @@ const defaultMenuTemplate: any[] = [
         click: async () => {
           await shell.openPath(app.getPath('logs'));
         }
+      },
+      { type: 'separator' },
+      {
+        label: 'Clear Cache',
+        click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
+          await browserWindow.webContents.session.clearCache();
+        }
       }
     ]
   },
