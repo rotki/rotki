@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :feature:`-` Added support for the following tokens:
+
+  - `SushiToken (SUSHI) <https://www.coingecko.com/en/coins/sushi>`__
+
 * :release:`1.7.0 <2020-09-01>`
 * :feature:`1092` Users can now refresh their manual balance entries.
 * :feature:`1031` Users can now view their ethereum transactions in the history page.
