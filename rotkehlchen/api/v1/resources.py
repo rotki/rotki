@@ -833,6 +833,24 @@ class AaveHistoryResource(BaseResource):
         return self.rest_api.get_aave_history(async_query, reset_db_data)
 
 
+class CompoundBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_compound_balances(async_query)
+
+
+class CompoundHistoryResource(BaseResource):
+
+    get_schema = AsyncQueryResetDBSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool, reset_db_data: bool) -> Response:
+        return self.rest_api.get_compound_history(async_query, reset_db_data)
+
+
 class WatchersResource(BaseResource):
 
     put_schema = WatchersAddSchema

@@ -3074,7 +3074,8 @@ Getting Aave balances
                               "amount": "590.21",
                               "usd_value": "146.076975"
                           },
-                          "apy": "0.53%"
+                          "variable_apr": "7.46%"
+                          "stable_apr": "9.03%"
                       }
                   }
               },
@@ -3228,6 +3229,95 @@ Getting Aave historical data
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or aave module is not activated.
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+Getting Compound balances
+========================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/compound/balances
+
+   Doing a GET on the compound balances resource will return the balances that the user has locked in Compound for lending and borrowing along with their current APYs. The APYs are return in a string percentage with 2 decimals of precision. If for some reason APY can't be queried ``null``is returned.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/compound/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+	          "rewards": {
+		      "COMP": {
+		          "balance" :{
+			      "amount": "3.5",
+			      "usd_value": "892.5",
+			  }
+		      }
+		  },
+                  "lending": {
+                      "DAI": {
+                          "balance": {
+                              "amount": "350.0",
+                              "usd_value": "351.21"
+                          },
+                          "apy": "3.51%"
+                      },
+                      "WBTC": {
+                          "balance": {
+                              "amount": "1",
+                              "usd_value": "9500"
+                          },
+                          "apy": null,
+                      },
+                  },
+                  "borrowing": {
+                      "ETH": {
+                          "balance": {
+                              "amount": "10",
+                              "usd_value": "3450"
+                          },
+                          "apr": "7.46%"
+                      }
+                  }
+              },
+              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+                  "lending": {},
+                  "borrowing": {
+                      "BAT": {
+                          "balance": {
+                              "amount": "560",
+                              "usd_value": "156.8"
+                          },
+                          "apr": "7.46%"
+                      }
+                  }
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of all accounts that currently have compound balance to the balances and APY data for each account for lending and borrowing. Each key is an asset and its values are the current balance and the APY in %
+
+   :statuscode 200: Compound balances succesfully queried.
+   :statuscode 409: User is not logged in. Or compound module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
 Get addresses to query per protocol
 =======================================

@@ -7,7 +7,7 @@ from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import AVAILABLE_MODULES, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 ROTKEHLCHEN_DB_VERSION = 17
@@ -26,7 +26,7 @@ DEFAULT_DECIMAL_SEPARATOR = '.'
 DEFAULT_CURRENCY_LOCATION = 'after'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
-DEFAULT_ACTIVE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave']
+DEFAULT_ACTIVE_MODULES = AVAILABLE_MODULES
 
 
 class DBSettings(NamedTuple):

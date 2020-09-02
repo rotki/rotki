@@ -113,3 +113,4 @@ AAVE_LENDING_POOL = EthereumConstants().contract('AAVE_LENDING_POOL')
 
 ATOKEN_ABI = EthereumConstants.abi('ATOKEN')
 ZERION_ABI = EthereumConstants.abi('ZERION_ADAPTER')
+CTOKEN_ABI = EthereumConstants.abi('CTOKEN')

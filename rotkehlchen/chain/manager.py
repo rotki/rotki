@@ -12,6 +12,7 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.aave import Aave
+from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances, Zerion
@@ -183,6 +184,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
+                elif given_module == 'compound':
+                    self.eth_modules['compound'] = Compound(
+                        ethereum_manager=ethereum_manager,
+                        database=self.database,
+                        premium=premium,
+                        msg_aggregator=msg_aggregator,
+                    )
                 else:
                     log.error(f'Unrecognized module value {given_module} given. Skipping...')
 
@@ -254,6 +262,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
     @property
     def aave(self) -> Optional[Aave]:
         module = self.eth_modules.get('aave', None)
+        if not module:
+            return None
+
+        return module  # type: ignore
+
+    @property
+    def compound(self) -> Optional[Compound]:
+        module = self.eth_modules.get('compound', None)
         if not module:
             return None
 
