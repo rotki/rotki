@@ -66,7 +66,7 @@ class Compound(EthereumModule):
             log.error(f'Could not query cToken {address} for supply/borrow rate: {str(e)}')
             return None
 
-        apy = (((FVal(rate) / ETH_MANTISSA * BLOCKS_PER_DAY) + 1) ** (DAYS_PER_YEAR - 1) - 1) * 100  # noqa: E501
+        apy = ((FVal(rate) / ETH_MANTISSA * BLOCKS_PER_DAY) + 1) ** (DAYS_PER_YEAR - 1) - 1  # noqa: E501
         return apy
 
     def get_balances(
