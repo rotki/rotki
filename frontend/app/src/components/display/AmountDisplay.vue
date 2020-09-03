@@ -13,62 +13,20 @@
         :currency="currency"
         :asset="asset"
       />
-      <span
-        v-if="fiatCurrency && fiatCurrency !== currency.ticker_symbol"
-        class="amount-display__value"
+      <v-tooltip
+        top
+        open-delay="400ms"
+        :disabled="
+          !!fiatCurrency || renderValue.decimalPlaces() <= floatingPrecision
+        "
       >
-        {{
-          renderValue
-            | calculatePrice(exchangeRate(currency.ticker_symbol))
-            | formatPrice(
-              thousandSeparator,
-              decimalSeparator,
-              floatingPrecision
-            )
-        }}
-      </span>
-      <span
-        v-else-if="fiatCurrency === currency.ticker_symbol"
-        class="amount-display__value"
-      >
-        {{
-          renderValue
-            | formatPrice(
-              thousandSeparator,
-              decimalSeparator,
-              floatingPrecision,
-              BIGNUMBER_ROUND_DOWN
-            )
-        }}
-      </span>
-      <span v-else class="amount-display__value">
-        {{
-          renderValue
-            | formatPrice(
-              thousandSeparator,
-              decimalSeparator,
-              integer ? 0 : floatingPrecision,
-              BIGNUMBER_ROUND_UP
-            )
-        }}
-      </span>
-      <v-tooltip v-if="!fiatCurrency" top>
-        <template #activator="{ on }">
-          <span
-            v-if="renderValue.decimalPlaces() > floatingPrecision"
-            class="amount-display__asterisk"
-            v-on="on"
-          >
-            *
+        <template #activator="{ on, attrs }">
+          <span class="amount-display__value" v-bind="attrs" v-on="on">
+            {{ formattedValue }}
           </span>
         </template>
-        <span v-if="fiatCurrency" class="amount-display__full-value">
-          {{
-            renderValue | calculatePrice(exchangeRate(currency.ticker_symbol))
-          }}
-        </span>
-        <span v-else class="amount-display__full-value">
-          {{ renderValue.toFormat(renderValue.decimalPlaces()) }}
+        <span class="amount-display__full-value">
+          {{ fullValue }}
         </span>
       </v-tooltip>
       <amount-currency
@@ -87,6 +45,7 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
+import { displayAmountFormatter } from '@/data/amount_formatter';
 import { Currency } from '@/model/currency';
 import { GeneralSettings } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -138,8 +97,7 @@ export default class AmountDisplay extends Vue {
   thousandSeparator!: string;
   decimalSeparator!: string;
   currencyLocation!: GeneralSettings['currencyLocation'];
-  BIGNUMBER_ROUND_DOWN = BigNumber.ROUND_DOWN;
-  BIGNUMBER_ROUND_UP = BigNumber.ROUND_UP;
+  exchangeRate!: (currency: string) => number;
 
   get shownCurrency(): ShownCurrency {
     return this.showCurrency === 'none' && !!this.fiatCurrency
@@ -169,6 +127,52 @@ export default class AmountDisplay extends Vue {
       return bigNumberify(valueToRender);
     }
     return valueToRender;
+  }
+
+  get convertFiat(): boolean {
+    const { ticker_symbol } = this.currency;
+    return !!this.fiatCurrency && this.fiatCurrency !== ticker_symbol;
+  }
+
+  get formattedValue(): string {
+    return this.formatPrice(this.renderValue);
+  }
+
+  get fullValue(): string {
+    return this.convertFiat
+      ? this.convertPrice(this.renderValue).toFormat(2)
+      : this.renderValue.toFormat(this.renderValue.decimalPlaces());
+  }
+
+  private convertPrice(value: BigNumber): BigNumber {
+    const { ticker_symbol } = this.currency;
+    const rate = bigNumberify(this.exchangeRate(ticker_symbol));
+    return value.multipliedBy(rate);
+  }
+
+  formatPrice(value: BigNumber): string {
+    const { ticker_symbol } = this.currency;
+    const roundDown = this.fiatCurrency === ticker_symbol;
+    const floatingPrecision = this.integer ? 0 : this.floatingPrecision;
+
+    let rounding: BigNumber.RoundingMode | undefined = undefined;
+    if (roundDown) {
+      rounding = BigNumber.ROUND_DOWN;
+    } else if (!this.convertFiat) {
+      rounding = BigNumber.ROUND_UP;
+    }
+
+    const price = this.convertFiat ? this.convertPrice(value) : value;
+
+    return price.isNaN()
+      ? '-'
+      : displayAmountFormatter.format(
+          price,
+          floatingPrecision,
+          this.thousandSeparator,
+          this.decimalSeparator,
+          rounding
+        );
   }
 }
 </script>
