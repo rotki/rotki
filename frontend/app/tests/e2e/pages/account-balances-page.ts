@@ -79,20 +79,6 @@ export class AccountBalancesPage {
 
     cy.get('.manual-balances-list thead').scrollIntoView();
 
-    if (bigNumberify(balance.amount).decimalPlaces() > 2) {
-      cy.get('@row')
-        .find('.manual-balances-list__amount')
-        .find('.amount-display__asterisk')
-        .should('be.visible');
-
-      cy.get('@row')
-        .find('.manual-balances-list__amount')
-        .find('.amount-display__asterisk')
-        .trigger('mouseenter');
-
-      cy.get('.amount-display__full-value').should('be.visible');
-    }
-
     cy.get('@row')
       .find('.manual-balances-list__location')
       .should('contain', capitalize(balance.location));

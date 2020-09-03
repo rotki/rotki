@@ -20,7 +20,15 @@ function createWrapper(
   return mount(AmountDisplay, {
     store,
     vuetify,
-    stubs: ['v-tooltip'],
+    stubs: {
+      VTooltip: {
+        template:
+          '<span><slot name="activator"/><slot v-if="!disabled"/></span>',
+        props: {
+          disabled: { type: Boolean }
+        }
+      }
+    },
     propsData: {
       value,
       fiatCurrency,

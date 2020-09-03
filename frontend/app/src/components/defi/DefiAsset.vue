@@ -29,7 +29,7 @@ export default class DefiAsset extends Vue {
 <style scoped lang="scss">
 .defi-asset {
   &__amount {
-    margin-right: 14px;
+    margin-right: 19px;
   }
 }
 </style>
