@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1430` Users can now delete manual balance entries where the label is an empty string.
 * :feature:`1199` Users can now see the currency symbol next to the value for fiat currencies displayed in the UI.
 * :feature:`1415` The navigation drawer has been re-ordered for better usability (the most-used pages have been floated up, and least-used moved to the bottom), and its icons have been updated to use Material Design Icons.
 

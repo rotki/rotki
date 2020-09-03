@@ -110,11 +110,11 @@
       </v-col>
     </v-row>
     <confirm-dialog
-      v-if="labelToDelete"
-      :display="!!labelToDelete"
+      v-if="labelToDelete !== null"
+      display
       title="Delete manually tracked balance"
       message="Are you sure you want to delete this entry?"
-      @cancel="labelToDelete = ''"
+      @cancel="labelToDelete = null"
       @confirm="deleteLabel()"
     />
   </v-container>
@@ -157,7 +157,7 @@ import { Tags } from '@/typing/types';
   }
 })
 export default class ManualBalancesList extends Vue {
-  labelToDelete = '';
+  labelToDelete: string | null = null;
   onlyTags: string[] = [];
   edited: ManualBalance | null = null;
   fetchManualBalances!: () => Promise<void>;
@@ -208,7 +208,7 @@ export default class ManualBalancesList extends Vue {
       'balances/deleteManualBalance',
       this.labelToDelete
     );
-    this.labelToDelete = '';
+    this.labelToDelete = null;
   }
 }
 </script>
