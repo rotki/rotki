@@ -11,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import BalanceType, ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.interfaces import EthereumModule
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -27,14 +28,14 @@ class CompoundBalance(NamedTuple):
     balance: Balance
     apy: Optional[FVal]
 
-    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
+    def serialize(self) -> Dict[str, Union[Optional[str], Dict[str, str]]]:
         return {
             'balance': self.balance.serialize(),
             'apy': self.apy.to_percentage(precision=2) if self.apy else None,
         }
 
 
-class Compound():
+class Compound(EthereumModule):
     """Compound integration module
 
     https://compound.finance/docs#guides
@@ -98,6 +99,14 @@ class Compound():
                     )
                     continue
 
+                if entry.token_address == A_COMP.ethereum_address:
+                    rewards_map[A_COMP] = CompoundBalance(
+                        balance_type=BalanceType.ASSET,
+                        balance=entry.balance,
+                        apy=None,
+                    )
+                    continue
+
                 if balance_entry.balance_type == 'Asset':
                     lending_map[asset.identifier] = CompoundBalance(
                         balance_type=BalanceType.ASSET,
@@ -105,10 +114,19 @@ class Compound():
                         apy=self._get_apy(entry.token_address, supply=True),
                     )
                 else:  # 'Debt'
+                    try:
+                        ctoken = EthereumToken('c' + entry.token_symbol)
+                    except UnknownAsset:
+                        log.error(
+                            f'Encountered unknown asset {entry.token_symbol} in '
+                            f'compound while figuring out cToken. Skipping',
+                        )
+                        continue
+
                     borrowing_map[asset.identifier] = CompoundBalance(
                         balance_type=BalanceType.DEBT,
                         balance=entry.balance,
-                        apy=self._get_apy(entry.token_address, supply=False),
+                        apy=self._get_apy(ctoken.ethereum_address, supply=False),
                     )
 
             if lending_map == {} and borrowing_map == {} and rewards_map == {}:

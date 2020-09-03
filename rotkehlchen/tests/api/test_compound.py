@@ -7,14 +7,13 @@ import requests
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
-    assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
-TEST_ACC1 = '0x9F3E24155Aa0331f9Cc0fCb37b3FBa1dbCf33fd9'
+TEST_ACC1 = '0x65304d6aff5096472519ca86a6a1fea31cb47Ced'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
