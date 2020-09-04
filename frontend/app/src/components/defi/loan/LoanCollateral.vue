@@ -2,14 +2,14 @@
   <stat-card title="Collateral">
     <loan-row v-if="isVault" title="Locked up collateral">
       <amount-display
+        :asset-padding="assetPadding"
         :value="loan.collateral.amount"
         :asset="loan.collateral.asset"
       />
     </loan-row>
     <loan-row :medium="!isVault" :title="isVault ? '' : 'Locked up collateral'">
       <amount-display
-        :class="!isVault ? 'loan-collateral__usd-value--single' : null"
-        class="loan-collateral__usd-value"
+        :asset-padding="assetPadding"
         :value="loan.collateral.usdValue"
         fiat-currency="USD"
       />
@@ -84,6 +84,10 @@ export default class LoanCollateral extends Mixins(
   watcherVaultId: string | null = null;
   loanWatchers!: Watcher<WatcherType>[];
 
+  get assetPadding(): number {
+    return this.isVault ? 4 : 0;
+  }
+
   get watchers(): Watcher<WatcherType>[] {
     if (!this.loan) {
       return [];
@@ -113,14 +117,6 @@ export default class LoanCollateral extends Mixins(
 .loan-collateral {
   &__watcher {
     border-radius: 15px;
-  }
-
-  &__usd-value {
-    margin-right: 18px;
-
-    &--single {
-      margin-right: 0 !important;
-    }
   }
 
   &__watcher-button {

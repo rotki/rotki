@@ -1,17 +1,30 @@
 <template>
   <fragment>
-    <span v-if="showCurrency === 'ticker'" class="amount-currency">
+    <span
+      v-if="showCurrency === 'ticker'"
+      class="amount-currency"
+      :style="assetStyle"
+    >
       {{ currency.ticker_symbol }}
     </span>
-    <span v-else-if="showCurrency === 'symbol'" class="amount-currency">
+    <span
+      v-else-if="showCurrency === 'symbol'"
+      class="amount-currency"
+      :style="assetStyle"
+    >
       {{ currency.unicode_symbol }}
     </span>
-    <span v-else-if="showCurrency === 'name'" class="amount-currency">
+    <span
+      v-else-if="showCurrency === 'name'"
+      class="amount-currency"
+      :style="assetStyle"
+    >
       {{ currency.name }}
     </span>
-    <span v-else-if="!!asset" class="amount-currency">
+    <span v-else-if="!!asset" class="amount-currency" :style="assetStyle">
       {{ asset }}
     </span>
+    <span v-else class="amount-currency" :style="assetStyle" />
   </fragment>
 </template>
 
@@ -36,6 +49,23 @@ export default class AmountCurrency extends Vue {
   showCurrency!: string;
   @Prop({ required: false, default: '' })
   asset!: string;
+  @Prop({
+    required: false,
+    type: Number,
+    default: 0,
+    validator: chars => chars >= 0 && chars <= 5
+  })
+  assetPadding!: number;
+
+  get assetStyle(): { [key: string]: string } {
+    if (!this.assetPadding) {
+      return {};
+    }
+    return {
+      width: `${this.assetPadding * 9}px`,
+      'text-align': 'start'
+    };
+  }
 }
 </script>
 

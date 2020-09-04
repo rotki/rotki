@@ -32,6 +32,7 @@
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'after'"
         class="ml-2"
+        :asset-padding="assetPadding"
         :show-currency="shownCurrency"
         :currency="currency"
         :asset="asset"
@@ -89,6 +90,13 @@ export default class AmountDisplay extends Vue {
   asset!: string;
   @Prop({ required: false, type: Boolean, default: false })
   integer!: boolean;
+  @Prop({
+    required: false,
+    type: Number,
+    default: 0,
+    validator: chars => chars >= 0 && chars <= 5
+  })
+  assetPadding!: number;
 
   currency!: Currency;
   privacyMode!: boolean;
@@ -139,9 +147,7 @@ export default class AmountDisplay extends Vue {
   }
 
   get fullValue(): string {
-    return this.convertFiat
-      ? this.convertPrice(this.renderValue).toFormat(2)
-      : this.renderValue.toFormat(this.renderValue.decimalPlaces());
+    return this.renderValue.toFormat(this.renderValue.decimalPlaces());
   }
 
   private convertPrice(value: BigNumber): BigNumber {
@@ -185,27 +191,8 @@ export default class AmountDisplay extends Vue {
     display: inline-block;
   }
 
-  &__asterisk {
-    position: relative;
-    top: -0.2em;
-    font-weight: 500;
-    font-size: 0.8em;
-
-    &:hover {
-      cursor: pointer;
-    }
-  }
-}
-
-td {
-  &.text-end {
-    .amount-display {
-      &__asterisk {
-        float: right;
-        margin-right: -0.6em;
-        top: -0.2em;
-      }
-    }
+  &:hover {
+    cursor: pointer;
   }
 }
 

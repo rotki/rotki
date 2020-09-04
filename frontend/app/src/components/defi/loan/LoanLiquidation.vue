@@ -2,11 +2,7 @@
   <stat-card title="Liquidation" class="liquidation">
     <div class="liquidation__upper pb-5">
       <loan-row title="Liquidation price">
-        <amount-display
-          fiat-currency="USD"
-          show-currency="ticker"
-          :value="loan.liquidationPrice"
-        />
+        <amount-display fiat-currency="USD" :value="loan.liquidationPrice" />
       </loan-row>
       <v-divider class="my-4" />
       <loan-row title="Minimum ratio" :medium="false">
@@ -31,28 +27,33 @@
           <div class="liquidation-events__content__liquidated-collateral mb-2">
             <loan-row title="Liquidated collateral">
               <amount-display
+                :asset-padding="assetPadding"
                 :value="loan.totalLiquidated.amount"
                 :asset="loan.collateral.asset"
               />
             </loan-row>
             <loan-row :medium="false">
               <amount-display
-                class="liquidation__collateral__usd-value"
+                :asset-padding="assetPadding"
                 :value="loan.totalLiquidated.usdValue"
                 fiat-currency="USD"
               />
             </loan-row>
           </div>
           <loan-row title="Outstanding debt at liquidation">
-            <amount-display :value="loan.totalInterestOwed" asset="DAI" />
+            <amount-display
+              :asset-padding="assetPadding"
+              :value="loan.totalInterestOwed"
+              asset="DAI"
+            />
           </loan-row>
           <v-divider class="my-4" />
           <loan-row title="Total value lost">
             <amount-display
+              :asset-padding="assetPadding"
               :value="
                 loan.totalLiquidated.usdValue.plus(loan.totalInterestOwed)
               "
-              class="liquidation__total__usd-value"
               fiat-currency="USD"
             />
           </loan-row>
@@ -82,7 +83,9 @@ import PremiumMixin from '@/mixins/premium-mixin';
 export default class LoanLiquidation extends Mixins(
   PremiumMixin,
   LoanDisplayMixin
-) {}
+) {
+  readonly assetPadding: number = 3;
+}
 </script>
 
 <style lang="scss" scoped>
@@ -90,18 +93,6 @@ export default class LoanLiquidation extends Mixins(
   height: 100%;
   display: flex;
   flex-direction: column;
-
-  &__collateral {
-    &__usd-value {
-      margin-right: 20px;
-    }
-  }
-
-  &__total {
-    &__usd-value {
-      margin-right: 20px;
-    }
-  }
 
   &__upper {
     min-height: 100px;
