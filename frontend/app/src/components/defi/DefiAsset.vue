@@ -5,10 +5,15 @@
     <v-spacer />
     <div class="d-flex flex-column align-end">
       <amount-display
+        :asset-padding="assetPadding"
         :value="asset.balance.amount"
         class="defi-asset__amount font-weight-medium"
       />
-      <amount-display :value="asset.balance.usdValue" fiat-currency="USD" />
+      <amount-display
+        :asset-padding="assetPadding"
+        :value="asset.balance.usdValue"
+        fiat-currency="USD"
+      />
     </div>
   </div>
 </template>
@@ -24,12 +29,7 @@ import { DefiAsset as Asset } from '@/store/defi/types';
 export default class DefiAsset extends Vue {
   @Prop({ required: true })
   asset!: Asset;
+
+  readonly assetPadding: number = 1;
 }
 </script>
-<style scoped lang="scss">
-.defi-asset {
-  &__amount {
-    margin-right: 19px;
-  }
-}
-</style>

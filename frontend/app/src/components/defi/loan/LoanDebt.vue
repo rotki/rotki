@@ -1,10 +1,15 @@
 <template>
   <stat-card class="loan-debt" title="Debt">
     <loan-row title="Outstanding debt">
-      <amount-display :value="loan.debt.amount" :asset="loan.asset" />
+      <amount-display
+        :asset-padding="assetPadding"
+        :value="loan.debt.amount"
+        :asset="loan.asset"
+      />
     </loan-row>
     <loan-row :medium="false">
       <amount-display
+        :asset-padding="assetPadding"
         class="loan-debt__usd-value"
         :value="loan.debt.usdValue"
         fiat-currency="USD"
@@ -22,11 +27,13 @@
       <div v-if="premium">
         <amount-display
           v-if="loan.totalInterestOwed && !loan.totalInterestOwed.isNegative()"
+          :asset-padding="assetPadding"
           :value="loan.totalInterestOwed"
           asset="DAI"
         />
         <amount-display
           v-else
+          :asset-padding="assetPadding"
           :loading="loan.totalInterestOwed === undefined"
           :value="'0.00'"
           asset="DAI"
@@ -50,13 +57,7 @@ import PremiumMixin from '@/mixins/premium-mixin';
 @Component({
   components: { LoanRow, AmountDisplay, PremiumLock, StatCard }
 })
-export default class LoanDebt extends Mixins(PremiumMixin, LoanDisplayMixin) {}
-</script>
-
-<style scoped lang="scss">
-.loan-debt {
-  &__usd-value {
-    margin-right: 14px;
-  }
+export default class LoanDebt extends Mixins(PremiumMixin, LoanDisplayMixin) {
+  readonly assetPadding: number = 4;
 }
-</style>
+</script>
