@@ -23,7 +23,7 @@
             </v-btn>
           </template>
           <span>
-            Refreshes the {{ blockchain }} balances ignoring any cached entries
+            {{ $t('account_balances.refresh_tooltip', { blockchain }) }}
           </span>
         </v-tooltip>
       </v-col>
@@ -37,7 +37,7 @@
       :headers="headers"
       :items="extendedBalances"
       :loading="accountOperation || isLoading"
-      loading-text="Please wait while Rotki queries the blockchain..."
+      :loading-text="$t('account_balances.data_table.loading')"
       single-expand
       item-key="account"
       :expanded.sync="expanded"
@@ -46,29 +46,23 @@
       sort-desc
     >
       <template v-if="blockchain === 'ETH'" #header.usdValue>
-        Total {{ currency.ticker_symbol }} value of account's assets
+        {{
+          $t('account_balances.headers.usd-value-eth', {
+            symbol: currency.ticker_symbol
+          })
+        }}
       </template>
       <template v-else #header.usdValue>
-        {{ currency.ticker_symbol }} value
+        {{
+          $t('account_balances.headers.usd-value', {
+            symbol: currency.ticker_symbol
+          })
+        }}
       </template>
       <template #item.identifier="{ item }">
         <v-row>
           <v-col cols="12" class="account-balances__account">
-            <v-tooltip top>
-              <template #activator="{ on }">
-                <span class="account-balances__account__address" v-on="on">
-                  <v-chip label outlined>
-                    <span v-if="item.identifier !== item.account" class="pr-1">
-                      {{ item.identifier }} |
-                    </span>
-                    <span :class="privacyMode ? 'blur-content' : ''">
-                      {{ item.account | truncateAddress }}
-                    </span>
-                  </v-chip>
-                </span>
-              </template>
-              <span> {{ item.account }} </span>
-            </v-tooltip>
+            <labeled-address-display :account="item" />
             <span v-if="item.tags">
               <tag-icon
                 v-for="tag in item.tags"
@@ -112,7 +106,7 @@
       </template>
       <template v-if="balances.length > 0" #body.append>
         <tr class="account-balances__total">
-          <td>Total</td>
+          <td>{{ $t('account_balances.total') }}</td>
           <td class="text-end">
             <amount-display
               :value="extendedBalances.map(val => val.amount) | balanceSum"
@@ -145,8 +139,10 @@
     </v-data-table>
     <confirm-dialog
       :display="toDeleteAccount !== ''"
-      title="Account delete"
-      :message="`Are you sure you want to delete ${toDeleteAccount}`"
+      :title="$t('account_balances.confirm_delete.title')"
+      :message="
+        $t('account_balances.confirm_delete.description', { toDeleteAccount })
+      "
       @cancel="toDeleteAccount = ''"
       @confirm="deleteAccount()"
     />
@@ -155,9 +151,10 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
@@ -168,12 +165,9 @@ import { TaskType } from '@/model/task-type';
 import { BlockchainBalancePayload } from '@/store/balances/actions';
 import { Account, Blockchain, Tags } from '@/typing/types';
 
-const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
-const { mapGetters, mapState } = createNamespacedHelpers('session');
-const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
-
 @Component({
   components: {
+    LabeledAddressDisplay,
     AmountDisplay,
     TagFilter,
     TagIcon,
@@ -181,10 +175,10 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
     ConfirmDialog
   },
   computed: {
-    ...mapTaskGetters(['isTaskRunning']),
-    ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapState(['privacyMode', 'tags']),
-    ...mapBalancesGetters([
+    ...mapGetters('tasks', ['isTaskRunning']),
+    ...mapGetters('session', ['floatingPrecision', 'currency']),
+    ...mapState('session', ['tags']),
+    ...mapGetters('balances', [
       'exchangeRate',
       'hasTokens',
       'accountTags',
@@ -203,7 +197,6 @@ export default class AccountBalances extends Vue {
   editedAccount = '';
   onlyTags: string[] = [];
   expanded = [];
-  privacyMode!: boolean;
 
   isTaskRunning!: (type: TaskType) => boolean;
   accountTags!: (blockchain: Blockchain, address: string) => string[];
@@ -229,10 +222,19 @@ export default class AccountBalances extends Vue {
   pending = false;
 
   headers = [
-    { text: 'Account', value: 'identifier' },
+    { text: this.$tc('account_balances.headers.account'), value: 'identifier' },
     { text: this.blockchain, value: 'amount', align: 'end' },
-    { text: 'USD Value', value: 'usdValue', align: 'end' },
-    { text: 'Actions', value: 'actions', sortable: false, width: '50' },
+    {
+      text: this.$tc('account_balances.headers.usd-value-default'),
+      value: 'usdValue',
+      align: 'end'
+    },
+    {
+      text: this.$tc('account_balances.headers.actions'),
+      value: 'actions',
+      sortable: false,
+      width: '50'
+    },
     { text: '', value: 'expand', align: 'end', sortable: false }
   ];
 
@@ -306,12 +308,6 @@ export default class AccountBalances extends Vue {
   &__account {
     display: flex;
     flex-direction: column;
-
-    &__address {
-      font-weight: 500;
-      padding-top: 6px;
-      padding-bottom: 6px;
-    }
   }
 
   &__actions {
@@ -331,9 +327,5 @@ export default class AccountBalances extends Vue {
     margin-right: 8px;
     margin-bottom: 2px;
   }
-}
-
-.blur-content {
-  filter: blur(0.75em);
 }
 </style>

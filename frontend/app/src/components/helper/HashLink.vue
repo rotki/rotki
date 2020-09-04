@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex flex-row">
     <span v-if="fullAddress" :class="privacyMode ? 'blur-content' : null">
-      {{ text }}
+      {{ displayText }}
     </span>
     <v-tooltip v-else top open-delay="400">
       <template #activator="{ on, attrs }">
@@ -10,10 +10,10 @@
           v-bind="attrs"
           v-on="on"
         >
-          {{ text | truncateAddress }}
+          {{ displayText | truncateAddress }}
         </span>
       </template>
-      <span> {{ text }} </span>
+      <span> {{ displayText }} </span>
     </v-tooltip>
     <v-tooltip top open-delay="600">
       <template #activator="{ on, attrs }">
@@ -58,15 +58,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
+import ScrambleMixin from '@/mixins/scramble-mixin';
+import { randomHex } from '@/typing/utils';
 
 @Component({
   computed: {
     ...mapState('session', ['privacyMode'])
   }
 })
-export default class HashLink extends Vue {
+export default class HashLink extends Mixins(ScrambleMixin) {
   @Prop({ required: true, type: String })
   text!: string;
   @Prop({
@@ -77,6 +79,14 @@ export default class HashLink extends Vue {
   baseUrl!: string | null;
   @Prop({ required: false, type: Boolean, default: false })
   fullAddress!: boolean;
+
+  get displayText(): string {
+    if (!this.scrambleData) {
+      return this.text;
+    }
+    const length = this.baseUrl && this.baseUrl.includes('tx') ? 64 : 40;
+    return randomHex(length);
+  }
 
   privacyMode!: boolean;
 
