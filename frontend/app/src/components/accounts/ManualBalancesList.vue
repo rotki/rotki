@@ -26,6 +26,7 @@
               <v-col
                 cols="12"
                 class="font-weight-medium manual-balances-list__label"
+                :class="!item.tags ? 'pt-0' : ''"
               >
                 {{ item.label }}
               </v-col>
@@ -42,7 +43,11 @@
             </v-row>
           </template>
           <template #header.usdValue>
-            {{ currency.ticker_symbol }} Value
+            {{
+              $t('manual_balances_list.data_table.profit_currency_header', {
+                currencyTicker: currency.ticker_symbol
+              })
+            }}
           </template>
           <template #item.asset="{ item }">
             <asset-details :asset="item.asset" />
@@ -112,8 +117,8 @@
     <confirm-dialog
       v-if="labelToDelete !== null"
       display
-      title="Delete manually tracked balance"
-      message="Are you sure you want to delete this entry?"
+      :title="$t('manual_balances_list.delete_dialog.title')"
+      :message="$t('manual_balances_list.delete_dialog.message')"
       @cancel="labelToDelete = null"
       @confirm="deleteLabel()"
     />

@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-card class="manual-balances mt-8">
-      <v-card-title>Manually Tracked Balances</v-card-title>
+      <v-card-title>{{ $t('manual_balances.title') }}</v-card-title>
       <v-card-text>
         <v-btn
           absolute
@@ -21,6 +21,8 @@
           :display="openDialog"
           :title="dialogTitle"
           :subtitle="dialogSubtitle"
+          :action-disabled="dialogDisabled"
+          :loading="dialogLoading"
           primary-action="Save"
           @confirm="save()"
           @cancel="cancel()"
@@ -52,6 +54,8 @@ export default class ManualBalances extends Vue {
   dialogTitle: string = '';
   dialogSubtitle: string = '';
   openDialog: boolean = false;
+  dialogDisabled: boolean = false;
+  dialogLoading: boolean = false;
 
   newBalance() {
     this.dialogTitle = 'Add Manual Balance';
@@ -67,11 +71,17 @@ export default class ManualBalances extends Vue {
   }
 
   async save() {
+    this.dialogDisabled = true;
+    this.dialogLoading = true;
+
     interface dataForm extends Vue {
       save(): Promise<boolean>;
     }
     const form = this.$refs.dialogChild as dataForm;
     const success = await form.save();
+    this.dialogDisabled = false;
+    this.dialogLoading = false;
+
     if (!success) {
       return;
     }
