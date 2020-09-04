@@ -1,11 +1,5 @@
 <template>
   <v-form ref="form" v-model="valid" class="manual-balances-form">
-    <asset-select
-      v-model="asset"
-      class="manual-balances-form__asset"
-      :rules="assetRules"
-      :disabled="pending"
-    />
     <v-text-field
       v-model="label"
       class="manual-balances-form__label"
@@ -13,6 +7,12 @@
       :error-messages="errorMessages"
       :rules="labelRules"
       :disabled="pending || !!edit"
+    />
+    <asset-select
+      v-model="asset"
+      class="manual-balances-form__asset"
+      :rules="assetRules"
+      :disabled="pending"
     />
     <v-text-field
       v-model="amount"

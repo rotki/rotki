@@ -384,9 +384,19 @@
     "copy": "Copy to clipboard",
     "open_link": "Open in external block explorer"
   },
+  "manual_balances": {
+    "title": "Manually Tracked Balances"
+  },
   "manual_balances_list": {
     "refresh": {
       "tooltip": "Refresh manual balances"
+    },
+    "data_table": {
+      "profit_currency_header": "{currencyTicker} Value"
+    },
+    "delete_dialog": {
+      "title": "Delete manually tracked balance",
+      "message": "Are you sure you want to delete this entry?"
     }
   },
   "labeled_address_display": {

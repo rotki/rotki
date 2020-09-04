@@ -21,6 +21,7 @@
           </v-col>
         </v-row>
         <v-card-actions class="px-6">
+          <v-progress-linear v-if="loading" indeterminate class="mx-4" />
           <v-spacer />
           <v-btn
             color="primary"
@@ -34,6 +35,7 @@
           </v-btn>
           <v-btn
             :color="confirmTypeProps[confirmType].color"
+            :disabled="actionDisabled"
             depressed
             class="big-dialog__buttons__confirm"
             @click="confirm()"
@@ -57,6 +59,10 @@ export default class BigDialog extends Vue {
   subtitle!: string;
   @Prop({ type: Boolean, required: true })
   display!: boolean;
+  @Prop({ type: Boolean, required: false, default: false })
+  loading!: boolean;
+  @Prop({ type: Boolean, required: false, default: false })
+  actionDisabled!: boolean;
   @Prop({ type: String, required: false, default: 'Confirm' })
   primaryAction!: string;
   @Prop({ type: String, required: false, default: 'Cancel' })
