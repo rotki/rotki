@@ -1,14 +1,12 @@
 <template>
   <progress-screen v-if="loading">
-    <template #message>
-      Please wait while your vaults are getting loaded...
-    </template>
+    <template #message>{{ $t('borrowing.loading') }}</template>
   </progress-screen>
   <div v-else>
     <v-row>
       <v-col cols="12">
         <refresh-header
-          title="Collateralized Loans"
+          :title="$t('borrowing.header')"
           :loading="refreshing"
           @refresh="refresh()"
         />
@@ -20,7 +18,7 @@
           <template #first-col>
             <stat-card-column>
               <template #title>
-                Total collateral locked
+                {{ $t('borrowing.total_collateral_locked') }}
               </template>
               <amount-display
                 :value="loanSummary(selectedProtocols).totalCollateralUsd"
@@ -32,7 +30,7 @@
           <template #second-col>
             <stat-card-column>
               <template #title>
-                Total outstanding debt
+                {{ $t('borrowing.total_outstanding_debt') }}
               </template>
               <amount-display
                 :value="loanSummary(selectedProtocols).totalDebt"
@@ -51,7 +49,7 @@
             <v-autocomplete
               v-model="selection"
               class="borrowing__vault-selection"
-              label="Select Loan"
+              :label="$t('borrowing.select_loan')"
               chips
               item-key="identifier"
               :items="loans(selectedProtocols)"
@@ -61,32 +59,14 @@
               :open-on-clear="false"
             >
               <template #selection="{item}">
-                <v-img
-                  aspect-ratio="1"
-                  contain
-                  position="left"
-                  max-width="26px"
-                  max-height="24px"
-                  :src="require(`@/assets/images/defi/${item.protocol}.svg`)"
-                />
-                <span class="ml-3">{{ item.identifier }}</span>
+                <defi-selector-item :item="item" />
               </template>
               <template #item="{item}">
-                <v-img
-                  aspect-ratio="1"
-                  contain
-                  position="left"
-                  max-width="26px"
-                  max-height="24px"
-                  :src="require(`@/assets/images/defi/${item.protocol}.svg`)"
-                />
-                <span class="ml-3">{{ item.identifier }}</span>
+                <defi-selector-item :item="item" />
               </template>
             </v-autocomplete>
           </div>
-          <v-card-text>
-            Please select a loan to see information
-          </v-card-text>
+          <v-card-text>{{ $t('borrowing.select_loan_hint') }}</v-card-text>
         </v-card>
       </v-col>
       <v-col cols="6">
@@ -100,6 +80,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
+import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
 import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
@@ -125,6 +106,7 @@ import {
     ...mapActions('defi', ['fetchBorrowingHistory', 'fetchBorrowing'])
   },
   components: {
+    DefiSelectorItem,
     DefiProtocolSelector,
     RefreshHeader,
     StatCardColumn,
@@ -177,5 +159,3 @@ export default class Borrowing extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

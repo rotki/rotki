@@ -278,5 +278,42 @@
     "refresh": {
       "tooltip": "Refresh the manual balances"
     }
+  },
+  "labeled_address_display": {
+    "identifier": "{identifier} |"
+  },
+  "defi_selector_item": {
+    "vault": "Maker Vault"
+  },
+  "loan_header": {
+    "owned_by": "Owned by:",
+    "aave_loan": "Aave Loan ({asset})",
+    "maker_vault": "Maker Vault #{identifier} ({collateralType})"
+  },
+  "borrowing": {
+    "loading": "Please wait while your vaults are getting loaded...",
+    "header": "Collateralized Loans",
+    "total_collateral_locked": "Total collateral locked",
+    "total_outstanding_debt": "Total outstanding debt",
+    "select_loan": "Select Loan",
+    "select_loan_hint": "Please select a loan to see information"
+  },
+  "account_balances": {
+    "refresh_tooltip": "Refreshes the {blockchain} balances ignoring any cached entries",
+    "data_table": {
+      "loading": "Please wait while rotki queries the blockchain..."
+    },
+    "headers": {
+      "account": "Account",
+      "actions": "Actions",
+      "usd-value-eth": "Total {symbol} value of account's assets",
+      "usd-value": "{symbol} value",
+      "usd-value-default": "USD value"
+    },
+    "total": "Total",
+    "confirm_delete": {
+      "title": "Account delete",
+      "description": "Are you sure you want to delete {toDeleteAccount}"
+    }
   }
 }

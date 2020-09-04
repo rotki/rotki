@@ -5,25 +5,34 @@
     </v-avatar>
     <span class="font-weight-bold mr-1">{{ account.label }}</span>
     <span :class="privacyMode ? 'blur-content' : ''">
-      ({{ account.address | truncateAddress }})
+      ({{ address | truncateAddress }})
     </span>
   </span>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
+import ScrambleMixin from '@/mixins/scramble-mixin';
 import { GeneralAccount } from '@/typing/types';
+import { randomHex } from '@/typing/utils';
 
 @Component({
   components: { CryptoIcon },
   computed: { ...mapState('session', ['privacyMode']) }
 })
-export default class AccountDisplay extends Vue {
+export default class AccountDisplay extends Mixins(ScrambleMixin) {
   @Prop({ required: true })
   account!: GeneralAccount;
   privacyMode!: boolean;
+
+  get address(): string {
+    if (!this.scrambleData) {
+      return this.account.address;
+    }
+    return randomHex();
+  }
 }
 </script>
 
