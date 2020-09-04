@@ -1078,7 +1078,7 @@
         "type": "own chain"
     },
     "BEAR": {
-        "coingecko": "voytek-bear-coin",
+        "coingecko": "",
         "ethereum_address": "0x016ee7373248a80BDe1fD6bAA001311d233b3CFa",
         "ethereum_token_decimals": 18,
         "name": "3X Short Bitcoin Token",
@@ -1855,7 +1855,7 @@
         "type": "exchange specific"
     },
     "BULL": {
-        "coingecko": "buysell",
+        "coingecko": "",
         "ethereum_address": "0x016ee7373248a80BDe1fD6bAA001311d233b3CFa",
         "ethereum_token_decimals": 18,
         "name": "3X Long Bitcoin Token",
@@ -3988,7 +3988,7 @@
         "type": "ethereum token"
     },
     "ERD": {
-        "coingecko": "elrond",
+        "coingecko": "elrond-erd",
         "name": "Elrond",
         "started": 1552694400,
         "symbol": "ERD",
@@ -8935,7 +8935,7 @@
     },
     "RIC": {
         "active": false,
-        "coingecko": "target-2022-set",
+        "coingecko": "riecoin",
         "ended": 1533340800,
         "name": "Riecoin",
         "started": 1392076800,

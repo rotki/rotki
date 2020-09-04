@@ -1,4 +1,5 @@
 import json
+import warnings as test_warnings
 from pathlib import Path
 
 import pytest
@@ -80,7 +81,16 @@ def test_coingecko_identifiers_are_reachable():
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
-    coins_delisted_from_coingecko = ['FLUZ', 'EBCH', 'GOLOS', 'NPER', 'BLN', 'PIX', 'MTC-2']
+    coins_delisted_from_coingecko = [
+        'FLUZ',
+        'EBCH',
+        'GOLOS',
+        'NPER',
+        'BLN',
+        'PIX',
+        'MTC-2',
+        'LKY',
+    ]
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
     for identifier, asset_data in AssetResolver().assets.items():
@@ -95,6 +105,7 @@ def test_coingecko_identifiers_are_reachable():
         if asset_type == AssetType.FIAT:
             continue
 
+        found = True
         coingecko_str = asset_data.get('coingecko', None)
         msg = f'Asset {identifier} does not have a coingecko entry'
         assert coingecko_str is not None, msg
@@ -115,13 +126,14 @@ def test_coingecko_identifiers_are_reachable():
         if len(suggestions) != 0:
             for s in suggestions:
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
-        assert found, msg
+        if not found:
+            test_warnings.warn(UserWarning(msg))
 
 
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '71bca7ce7141ec560b1912623b8c3347', 'version': 10}
+    last_meta = {'md5': '54a3d4ddac60932806255527105864a2', 'version': 11}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
