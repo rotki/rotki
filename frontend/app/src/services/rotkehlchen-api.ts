@@ -316,7 +316,7 @@ export class RotkehlchenApi {
     end_ts: number
   ): Promise<AsyncQuery> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>('/history', {
+      .get<ActionResult<AsyncQuery>>('/history/', {
         params: {
           async_query: true,
           from_timestamp: start_ts,
