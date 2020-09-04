@@ -14,7 +14,19 @@
       </span>
     </template>
     <template #item.protocol="{ item }">
-      <defi-protocol-icon :protocol="item.protocol" />
+      <div class="d-flex flex-row lending-asset-table__protocol__">
+        <defi-protocol-icon
+          :protocol="item.protocol"
+          class="lending-asset-table__protocol__icon"
+        />
+        <span class="lending-asset-table__protocol__name align-self-center">
+          {{
+            item.protocol === 'makerdao'
+              ? 'MakerDAO DSR'
+              : item.protocol | capitalize
+          }}
+        </span>
+      </div>
     </template>
     <template #item.balance.amount="{ item }">
       <amount-display :value="item.balance.amount" />
