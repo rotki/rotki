@@ -169,7 +169,7 @@ jobs:
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash) -F backend
   test-integration:
-    needs: [lint-frontend, test-backend]
+    needs: [lint-frontend]
     env:
       CI: true
       FILTER: '[ui tests]'
