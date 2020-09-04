@@ -27,7 +27,7 @@
   },
   "helpers": {
     "refresh_header": {
-      "tooltip": "Refresh the {title} data"
+      "tooltip": "Refresh {title} data"
     }
   },
   "login": {
@@ -102,7 +102,7 @@
       "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}"
     },
     "label": "trades",
-    "refresh_tooltip": "Refresh your trades"
+    "refresh_tooltip": "Refresh trades"
   },
   "trade_location_selector": {
     "selection-none": "Showing results across all locations",
@@ -121,7 +121,7 @@
     },
     "label": "asset movements",
     "loading": "Please wait while your asset movements are getting loaded...",
-    "refresh_tooltip": "Refresh your deposits & withdrawals",
+    "refresh_tooltip": "Refresh deposits & withdrawals",
     "details": {
       "title": "Details",
       "no_details": "No details found."
@@ -268,7 +268,7 @@
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
     "title": "Ethereum Transactions",
-    "refresh_tooltip": "Refresh your ethereum transactions",
+    "refresh_tooltip": "Refresh ethereum transactions",
     "headers": {
       "txhash": "Tx hash",
       "block": "Block",
@@ -291,11 +291,11 @@
   },
   "hash_link": {
     "copy": "Copy to clipboard",
-    "open_link": "Open to external block explorer"
+    "open_link": "Open in external block explorer"
   },
   "manual_balances_list": {
     "refresh": {
-      "tooltip": "Refresh the manual balances"
+      "tooltip": "Refresh manual balances"
     }
   },
   "labeled_address_display": {

@@ -6,7 +6,6 @@
     bordered
     class="overview"
   >
-    {{ iconExists }}
     <span
       class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
     >

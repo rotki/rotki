@@ -1,12 +1,11 @@
 <template>
-  <span>
-    <v-img
-      width="55px"
-      contain
-      max-height="24px"
-      :src="require(`@/assets/images/defi/${protocol}.svg`)"
-    />
-  </span>
+  <v-img
+    contain
+    max-width="24px"
+    max-height="24"
+    class="mr-3"
+    :src="require(`@/assets/images/defi/${protocol}.svg`)"
+  />
 </template>
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
