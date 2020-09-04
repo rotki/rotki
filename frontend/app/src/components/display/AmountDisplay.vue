@@ -143,20 +143,20 @@ export default class AmountDisplay extends Vue {
   }
 
   get formattedValue(): string {
-    return this.formatPrice(this.renderValue);
+    return this.formatValue(this.renderValue);
   }
 
   get fullValue(): string {
     return this.renderValue.toFormat(this.renderValue.decimalPlaces());
   }
 
-  private convertPrice(value: BigNumber): BigNumber {
+  private convertValue(value: BigNumber): BigNumber {
     const { ticker_symbol } = this.currency;
     const rate = bigNumberify(this.exchangeRate(ticker_symbol));
     return value.multipliedBy(rate);
   }
 
-  formatPrice(value: BigNumber): string {
+  formatValue(value: BigNumber): string {
     const { ticker_symbol } = this.currency;
     const roundDown = this.fiatCurrency === ticker_symbol;
     const floatingPrecision = this.integer ? 0 : this.floatingPrecision;
@@ -168,7 +168,7 @@ export default class AmountDisplay extends Vue {
       rounding = BigNumber.ROUND_UP;
     }
 
-    const price = this.convertFiat ? this.convertPrice(value) : value;
+    const price = this.convertFiat ? this.convertValue(value) : value;
 
     return price.isNaN()
       ? '-'
