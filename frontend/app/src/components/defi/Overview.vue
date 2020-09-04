@@ -21,13 +21,12 @@
       </v-btn>
     </span>
     <info-row
-      title="Total collateral"
+      :title="$t('overview.stat_card.content.labels.total_collateral')"
       fiat
       :value="summary.totalCollateralUsd"
     />
     <info-row
-      title="Total debt"
-      :loading="loading"
+      :title="$t('overview.stat_card.content.labels.total_debt')"
       fiat
       :value="summary.totalDebtUsd"
     />
@@ -45,7 +44,7 @@
       </v-btn>
     </h4>
     <info-row
-      title="Total deposit"
+      :title="$t('overview.stat_card.content.labels.total_deposited')"
       fiat
       :value="summary.totalLendingDepositUsd"
     />
@@ -57,12 +56,11 @@
     :protocol-icon="icon"
     class="overview"
   >
-    <span class="text-subtitle-1 font-weig$tht-bold pb-2">
+    <span class="text-subtitle-1 font-weight-bold pb-2">
       {{ summary.tokenInfo.tokenName }}
     </span>
     <info-row
-      title="Balance"
-      :loading="loading"
+      :title="$t('overview.stat_card.content.labels.balance')"
       fiat
       :value="summary.balanceUsd"
     />
@@ -130,16 +128,13 @@ export default class Overview extends Vue {
 
   get icon(): string {
     // until we can check whether a file exists locally, let's make a whitelist of protocols where we prefer our own icon
-    const protocolWhitelist: string[] = ['aave', 'makerdao', 'compound'];
-
-    const isWhitelisted: boolean =
-      protocolWhitelist.findIndex(
-        protocol => protocol == this.summary.protocol.name.toLowerCase()
-      ) > -1
-        ? true
-        : false;
-
+    const protocolWhitelist: string[] = ['aave', 'makerdao', 'compound']; // TODO: Use the DEFI_PROTOCOLS constant from services/defi/types once we finalize Compound module
     const protocol = this.summary.protocol;
+
+    const isWhitelisted: boolean = protocolWhitelist.includes(
+      protocol.name.toLowerCase()
+    );
+
     if (protocol.icon && !isWhitelisted) {
       return `https://${protocol.icon}`;
     }
