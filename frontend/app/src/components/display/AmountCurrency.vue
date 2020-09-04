@@ -62,7 +62,7 @@ export default class AmountCurrency extends Vue {
       return {};
     }
     return {
-      width: `${this.assetPadding * 9}px`,
+      width: `${this.assetPadding + 1}ch`,
       'text-align': 'start'
     };
   }
