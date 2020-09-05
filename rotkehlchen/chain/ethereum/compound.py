@@ -26,7 +26,9 @@ DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
 A_COMP = EthereumToken('COMP')
 
-EVENTS_QUERY_PREFIX = """{graph_event_name} (where: {{blockTime_lte: $end_ts, blockTime_gte: $start_ts, {addr_position}: $address}}) {{
+
+LEND_EVENTS_QUERY_PREFIX = """{graph_event_name}
+(where: {{blockTime_lte: $end_ts, blockTime_gte: $start_ts, {addr_position}: $address}}) {{
     id
     amount
     to
@@ -36,6 +38,19 @@ EVENTS_QUERY_PREFIX = """{graph_event_name} (where: {{blockTime_lte: $end_ts, bl
     cTokenSymbol
     underlyingAmount
 }}}}"""
+
+
+BORROW_EVENTS_QUERY_PREFIX = """{graph_event_name}
+ (where: {{blockTime_lte: $end_ts, blockTime_gte: $start_ts, borrower: $address}}) {{
+    id
+    amount
+    borrower
+    blockNumber
+    blockTime
+    underlyingSymbol
+    {payer_or_empty}
+}}}}"""
+
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +98,24 @@ def _get_txhash_and_logidx(identifier: str) -> Optional[Tuple[str, int]]:
         return None
 
     return result[0], log_index
+
+
+def _get_params(
+        from_ts: Timestamp,
+        to_ts: Timestamp,
+        address: ChecksumEthAddress,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    param_types = {
+        '$start_ts': 'Int!',
+        '$end_ts': 'Int!',
+        '$address': 'Bytes!',
+    }
+    param_values = {
+        'start_ts': from_ts,
+        'end_ts': to_ts,
+        'address': address,
+    }
+    return param_types, param_values
 
 
 class Compound(EthereumModule):
@@ -191,23 +224,132 @@ class Compound(EthereumModule):
 
         return compound_balances
 
-    def _get_events(
+    def _get_borrow_events(
+            self,
+            event_type: Literal['borrow', 'repay'],
+            address: ChecksumEthAddress,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> List[CompoundEvent]:
+        param_types, param_values = _get_params(from_ts, to_ts, address)
+        if event_type == 'borrow':
+            graph_event_name = 'borrowEvents'
+            payer_or_empty = ''
+        elif event_type == 'repay':
+            graph_event_name = 'repayEvents'
+            payer_or_empty = 'payer'
+
+        result = self.graph.query(
+            querystr=BORROW_EVENTS_QUERY_PREFIX.format(
+                graph_event_name=graph_event_name,
+                payer_or_empty=payer_or_empty,
+            ),
+            param_types=param_types,
+            param_values=param_values,
+        )
+
+        events = []
+        for entry in result[graph_event_name]:
+            if event_type == 'repay' and entry['borrower'] != entry['payer']:
+                continue  # skip repay event. It's actually a liquidation
+
+            underlying_symbol = entry['underlyingSymbol']
+            try:
+                underlying_asset = Asset(underlying_symbol)
+            except UnknownAsset:
+                log.error(
+                    f'Found unexpected token symbol {underlying_symbol} during '
+                    f'graph query. Skipping.',
+                )
+                continue
+            usd_price = Inquirer().find_usd_price(underlying_asset)
+            amount = FVal(entry['amount'])
+            parse_result = _get_txhash_and_logidx(entry['id'])
+
+            events.append(CompoundEvent(
+                event_type=event_type,
+                block_number=entry['blockNumber'],
+                timestamp=entry['blockTime'],
+                asset=underlying_asset,
+                value=Balance(amount=amount, usd_value=amount * usd_price),
+                to_asset=None,
+                to_value=None,
+                tx_hash=parse_result[0],
+                log_index=parse_result[1],
+            ))
+
+        return events
+
+    def _get_liquidation_events(
+            self,
+            address: ChecksumEthAddress,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> List[CompoundEvent]:
+        param_types, param_values = _get_params(from_ts, to_ts, address)
+        result = self.graph.query(
+            querystr="""liquidationEvents (where: {blockTime_lte: $end_ts, blockTime_gte: $start_ts, from: $address}) {
+    id
+    amount
+    from
+    blockNumber
+    blockTime
+    cTokenSymbol
+    underlyingSymbol
+    underlyingRepayAmount
+}}""",
+            param_types=param_types,
+            param_values=param_values,
+        )
+
+        events = []
+        for entry in result['liquidationEvents']:
+            ctoken_symbol = entry['cTokenSymbol']
+            try:
+                ctoken_asset = Asset(ctoken_symbol)
+            except UnknownAsset:
+                log.error(
+                    f'Found unexpected cTokenSymbol {ctoken_symbol} during graph query. Skipping.')
+                continue
+            underlying_symbol = entry['underlyingSymbol']
+            try:
+                underlying_asset = Asset(underlying_symbol)
+            except UnknownAsset:
+                log.error(
+                    f'Found unexpected token symbol {underlying_symbol} during '
+                    f'graph query. Skipping.',
+                )
+                continue
+            # Amount/value of underlying asset paid by liquidator
+            underlying_amount = FVal(entry['amount'])
+            underlying_usd_value = underlying_amount * Inquirer().find_usd_price(underlying_asset)
+            # Amount/value of ctoken_asset lost to the liquidator
+            amount = FVal(entry['amount'])
+            usd_value = amount * Inquirer().find_usd_price(ctoken_asset)
+            parse_result = _get_txhash_and_logidx(entry['id'])
+
+            events.append(CompoundEvent(
+                event_type='liquidation',
+                block_number=entry['blockNumber'],
+                timestamp=entry['blockTime'],
+                asset=underlying_asset,
+                value=Balance(amount=underlying_amount, usd_value=underlying_usd_value),
+                to_asset=ctoken_asset,
+                to_value=Balance(amount=amount, usd_value=usd_value),
+                tx_hash=parse_result[0],
+                log_index=parse_result[1],
+            ))
+
+        return events
+
+    def _get_lend_events(
             self,
             event_type: Literal['mint', 'redeem'],
             address: ChecksumEthAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
-        param_types = {
-            '$start_ts': 'Int!',
-            '$end_ts': 'Int!',
-            '$address': 'Bytes!',
-        }
-        param_values = {
-            'start_ts': from_ts,
-            'end_ts': to_ts,
-            'address': address,
-        }
+        param_types, param_values = _get_params(from_ts, to_ts, address)
         if event_type == 'mint':
             graph_event_name = 'mintEvents'
             addr_position = 'to'
@@ -216,7 +358,7 @@ class Compound(EthereumModule):
             addr_position = 'from'
 
         result = self.graph.query(
-            querystr=EVENTS_QUERY_PREFIX.format(
+            querystr=LEND_EVENTS_QUERY_PREFIX.format(
                 graph_event_name=graph_event_name,
                 addr_position=addr_position,
             ),
@@ -286,8 +428,13 @@ class Compound(EthereumModule):
         to_ts = ts_now()
         history = {}
         for address in addresses:
-            events = self._get_events('mint', address, from_ts, to_ts)
-            events.extend(self._get_events('redeem', address, from_ts, to_ts))
+            events = self._get_lend_events('mint', address, from_ts, to_ts)
+            events.extend(self._get_lend_events('redeem', address, from_ts, to_ts))
+            events.extend(self._get_borrow_events('borrow', address, from_ts, to_ts))
+            events.extend(self._get_borrow_events('repay', address, from_ts, to_ts))
+            events.extend(self._get_liquidation_events(address, from_ts, to_ts))
+
+            events.sort(key=lambda x: x.timestamp)
             history[address] = events
 
         return history
