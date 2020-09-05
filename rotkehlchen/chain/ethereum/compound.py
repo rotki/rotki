@@ -26,7 +26,7 @@ DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
 A_COMP = EthereumToken('COMP')
 
-EVENTS_QUERY_PREFIX = """(where: {blockTime_lte: $end_ts, blockTime_gte: $start_ts, to: $address}) {
+EVENTS_QUERY_PREFIX = """{graph_event_name} (where: {{blockTime_lte: $end_ts, blockTime_gte: $start_ts, {addr_position}: $address}}) {{
     id
     amount
     to
@@ -35,7 +35,7 @@ EVENTS_QUERY_PREFIX = """(where: {blockTime_lte: $end_ts, blockTime_gte: $start_
     blockTime
     cTokenSymbol
     underlyingAmount
-}}"""
+}}}}"""
 
 log = logging.getLogger(__name__)
 
@@ -191,8 +191,9 @@ class Compound(EthereumModule):
 
         return compound_balances
 
-    def _get_mint_events(
+    def _get_events(
             self,
+            event_type: Literal['mint', 'redeem'],
             address: ChecksumEthAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
@@ -207,108 +208,69 @@ class Compound(EthereumModule):
             'end_ts': to_ts,
             'address': address,
         }
+        if event_type == 'mint':
+            graph_event_name = 'mintEvents'
+            addr_position = 'to'
+        elif event_type == 'redeem':
+            graph_event_name = 'redeemEvents'
+            addr_position = 'from'
+
         result = self.graph.query(
-            querystr='mintEvents ' + EVENTS_QUERY_PREFIX,
+            querystr=EVENTS_QUERY_PREFIX.format(
+                graph_event_name=graph_event_name,
+                addr_position=addr_position,
+            ),
             param_types=param_types,
             param_values=param_values,
         )
+
         events = []
-        for entry in result['mintEvents']:
+        for entry in result[graph_event_name]:
             ctoken_symbol = entry['cTokenSymbol']
             try:
-                minted_asset = Asset(ctoken_symbol)
+                ctoken_asset = Asset(ctoken_symbol)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected cTokenSymbol {ctoken_symbol} during graph query. Skipping.')
                 continue
 
-            deposited_symbol = ctoken_symbol[1:]
+            underlying_symbol = ctoken_symbol[1:]
             try:
-                deposited_asset = Asset(deposited_symbol)
+                underlying_asset = Asset(underlying_symbol)
             except UnknownAsset:
                 log.error(
-                    f'Found unexpected deposited symbol {deposited_symbol} during '
+                    f'Found unexpected token symbol {underlying_symbol} during '
                     f'graph query. Skipping.',
                 )
                 continue
-            usd_price = Inquirer().find_usd_price(deposited_asset)
+            usd_price = Inquirer().find_usd_price(underlying_asset)
             underlying_amount = FVal(entry['underlyingAmount'])
             usd_value = underlying_amount * usd_price
             parse_result = _get_txhash_and_logidx(entry['id'])
             if parse_result is None:
                 log.error(f'Found unprocessable mint id from the graph {entry["id"]}. Skipping')
                 continue
+            amount = FVal(entry['amount'])
+
+            if event_type == 'mint':
+                from_value = Balance(amount=underlying_amount, usd_value=usd_value)
+                to_value = Balance(amount=amount, usd_value=usd_value)
+                from_asset = underlying_asset
+                to_asset = ctoken_asset
+            else:
+                from_value = Balance(amount=amount, usd_value=usd_value)
+                to_value = Balance(amount=underlying_amount, usd_value=usd_value)
+                from_asset = ctoken_asset
+                to_asset = underlying_asset
 
             events.append(CompoundEvent(
-                event_type='mint',
+                event_type=event_type,
                 block_number=entry['blockNumber'],
                 timestamp=entry['blockTime'],
-                asset=deposited_asset,
-                value=Balance(amount=underlying_amount, usd_value=usd_value),
-                to_asset=minted_asset,
-                to_value=Balance(amount=FVal(entry['amount']), usd_value=usd_value),
-                tx_hash=parse_result[0],
-                log_index=parse_result[1],
-            ))
-
-        return events
-
-    def _get_redeem_events(
-            self,
-            address: ChecksumEthAddress,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-    ) -> List[CompoundEvent]:
-        param_types = {
-            '$start_ts': 'Int!',
-            '$end_ts': 'Int!',
-            '$address': 'Bytes!',
-        }
-        param_values = {
-            'start_ts': from_ts,
-            'end_ts': to_ts,
-            'address': address,
-        }
-        result = self.graph.query(
-            querystr='redeemEvents ' + EVENTS_QUERY_PREFIX,
-            param_types=param_types,
-            param_values=param_values,
-        )
-        events = []
-        for entry in result['redeemEvents']:
-            ctoken_symbol = entry['cTokenSymbol']
-            try:
-                returning_asset = Asset(ctoken_symbol)
-            except UnknownAsset:
-                log.error(
-                    f'Found unexpected cTokenSymbol {ctoken_symbol} during graph query. Skipping.')
-                continue
-
-            redeemed_symbol = ctoken_symbol[1:]
-            try:
-                redeemed_asset = Asset(redeemed_symbol)
-            except UnknownAsset:
-                log.error(
-                    f'Found unexpected redeemed symbol {redeemed_symbol} during '
-                    f'graph query. Skipping.',
-                )
-                continue
-            usd_price = Inquirer().find_usd_price(redeemed_asset)
-            underlying_amount = FVal(entry['underlyingAmount'])
-            usd_value = underlying_amount * usd_price
-            parse_result = _get_txhash_and_logidx(entry['id'])
-            if parse_result is None:
-                log.error(f'Found unprocessable mint id from the graph {entry["id"]}. Skipping')
-                continue
-
-            events.append(CompoundEvent(
-                event_type='redeem',
-                block_number=entry['blockNumber'],
-                timestamp=entry['blockTime'],
-                asset=returning_asset,
-                value=Balance(amount=FVal(entry['amount']), usd_value=usd_value),
-                to_asset=redeemed_asset,
-                to_value=Balance(amount=underlying_amount, usd_value=usd_value),
+                asset=from_asset,
+                value=from_value,
+                to_asset=to_asset,
+                to_value=to_value,
                 tx_hash=parse_result[0],
                 log_index=parse_result[1],
             ))
@@ -324,8 +286,8 @@ class Compound(EthereumModule):
         to_ts = ts_now()
         history = {}
         for address in addresses:
-            events = self._get_mint_events(address, from_ts, to_ts)
-            events.extend(self._get_redeem_events(address, from_ts, to_ts))
+            events = self._get_events('mint', address, from_ts, to_ts)
+            events.extend(self._get_events('redeem', address, from_ts, to_ts))
             history[address] = events
 
         return history
