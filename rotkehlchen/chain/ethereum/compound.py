@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
+from eth_utils import to_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
@@ -35,6 +36,7 @@ A_COMP = EthereumToken('COMP')
 
 COMPTROLLER_PROXY = EthereumConstants().contract('COMPTROLLER_PROXY')
 COMPTROLLER_ABI = EthereumConstants.abi('COMPTROLLER_IMPLEMENTATION')
+COMP_DEPLOYED_BLOCK = 9601359
 
 
 LEND_EVENTS_QUERY_PREFIX = """{graph_event_name}
@@ -147,11 +149,11 @@ class Compound(EthereumModule):
         self.premium = premium
         self.msg_aggregator = msg_aggregator
         self.graph = Graph('https://api.thegraph.com/subgraphs/name/graphprotocol/compound-v2')
-        self.comptroller_address = self.ethereum.call_contract(
+        self.comptroller_address = to_checksum_address(self.ethereum.call_contract(
             contract_address=COMPTROLLER_PROXY.address,
             abi=COMPTROLLER_PROXY.abi,
             method_name='comptrollerImplementation',
-        )
+        ))
 
     def _get_apy(self, address: ChecksumEthAddress, supply: bool) -> Optional[FVal]:
         method_name = 'supplyRatePerBlock' if supply else 'borrowRatePerBlock'
@@ -456,7 +458,7 @@ class Compound(EthereumModule):
     ) -> List[CompoundEvent]:
         self.ethereum.etherscan.get_blocknumber_by_time(from_ts)
         from_block = max(
-            COMPTROLLER_PROXY.deployed_block,
+            COMP_DEPLOYED_BLOCK,
             self.ethereum.etherscan.get_blocknumber_by_time(from_ts),
         )
         argument_filters = {
@@ -471,10 +473,11 @@ class Compound(EthereumModule):
             from_block=from_block,
             to_block=self.ethereum.etherscan.get_blocknumber_by_time(to_ts),
         )
+
         events = []
         for event in comp_events:
             timestamp = self.ethereum.get_event_timestamp(event)
-            amount = hex_or_bytes_to_int(event['topics'][2])
+            amount = token_normalized_value(hex_or_bytes_to_int(event['data']), A_COMP.decimals)
             usd_price = query_usd_price_zero_if_error(
                 asset=A_COMP,
                 time=timestamp,
@@ -487,7 +490,7 @@ class Compound(EthereumModule):
                 block_number=deserialize_blocknumber(event['blockNumber']),
                 timestamp=timestamp,
                 asset=A_COMP,
-                value=Balance(FVal(amount), amount * usd_price),
+                value=Balance(amount, amount * usd_price),
                 to_asset=None,
                 to_value=None,
                 tx_hash=event['transactionHash'],
@@ -504,20 +507,21 @@ class Compound(EthereumModule):
         assets: Dict[ChecksumEthAddress, Dict[Asset, Balance]] = defaultdict(
             lambda: defaultdict(Balance),
         )
-        # assets: Dict[Asset, Balance] = defaultdict(Balance)
+
         addresses = set()
         for event in events:
-            if event == 'mint':
+            if event.event_type == 'mint':
                 assets[event.address][event.asset] -= event.value
                 addresses.add(event.address)
-            elif event == 'redeem':
+            elif event.event_type == 'redeem':
                 assert event.to_asset, 'redeem events should have a to_asset'
                 assets[event.address][event.to_asset] += event.to_value
                 addresses.add(event.address)
-            elif event == 'comp':
+            elif event.event_type == 'comp':
                 assets[event.address][A_COMP] += event.value
                 addresses.add(event.address)
 
+        # __import__("pdb").set_trace()
         for address, asset_entry in assets.items():
             for asset, _ in asset_entry.items():
                 ctoken_symbol = 'c' + asset.identifier
@@ -566,17 +570,17 @@ class Compound(EthereumModule):
             self,
             addresses: List[ChecksumEthAddress],
             reset_db_data: bool,  # pylint: disable=unused-argument
-            from_ts: Timestamp,
-            to_ts: Timestamp,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
         history: Dict[str, Any] = {}
         for address in addresses:
-            events = self._get_lend_events('mint', address, from_ts, to_ts)
-            events.extend(self._get_lend_events('redeem', address, from_ts, to_ts))
-            events.extend(self._get_borrow_events('borrow', address, from_ts, to_ts))
-            events.extend(self._get_borrow_events('repay', address, from_ts, to_ts))
-            events.extend(self._get_liquidation_events(address, from_ts, to_ts))
-            events.extend(self._get_comp_events(address, from_ts, to_ts))
+            events = self._get_lend_events('mint', address, from_timestamp, to_timestamp)
+            events.extend(self._get_lend_events('redeem', address, from_timestamp, to_timestamp))
+            events.extend(self._get_borrow_events('borrow', address, from_timestamp, to_timestamp))
+            events.extend(self._get_borrow_events('repay', address, from_timestamp, to_timestamp))
+            events.extend(self._get_liquidation_events(address, from_timestamp, to_timestamp))
+            events.extend(self._get_comp_events(address, from_timestamp, to_timestamp))
             events.sort(key=lambda x: x.timestamp)
             history[address] = {'events': events}
 

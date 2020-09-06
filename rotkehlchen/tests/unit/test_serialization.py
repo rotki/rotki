@@ -114,7 +114,7 @@ def test_deserialize_location(database):
 def test_deserialize_int_from_hex_or_int():
     # Etherscan can return logIndex 0x if it's the 0th log in the hash
     # https://etherscan.io/tx/0x6f1370cd9fa19d550031a30290b062dd3b56f44caf6344c05545ef15428de7ef
-    assert deserialize_int_from_hex_or_int("0x") == 0
-    assert deserialize_int_from_hex_or_int("0x1") == 1
-    assert deserialize_int_from_hex_or_int("0x33") == 51
-    assert deserialize_int_from_hex_or_int(66) == 66
+    assert deserialize_int_from_hex_or_int("0x", 'whatever') == 0
+    assert deserialize_int_from_hex_or_int("0x1", 'whatever') == 1
+    assert deserialize_int_from_hex_or_int("0x33", 'whatever') == 51
+    assert deserialize_int_from_hex_or_int(66, 'whatever') == 66
