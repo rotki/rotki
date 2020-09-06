@@ -3149,7 +3149,8 @@ Getting Aave historical data
 		      },
                       "block_number": 9128160,
                       "timestamp": 1582706553,
-                      "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289"
+                      "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+		      "log_index": 1
                   }, {
                       "event_type": "interest",
 		      "asset": "DAI",
@@ -3159,7 +3160,8 @@ Getting Aave historical data
 		      },
                       "block_number": 9129165,
                       "timestamp": 1582806553,
-                      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
+                      "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443",
+		      "log_index": 1
                   }, {
                       "event_type": "withdrawal",
 		      "asset": "DAI",
@@ -3169,7 +3171,8 @@ Getting Aave historical data
 		      },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
-                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756"
+                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756",
+		      "log_index": 1
                   }, {
                       "event_type": "deposit",
 		      "asset": "ZRX",
@@ -3179,7 +3182,8 @@ Getting Aave historical data
 		      },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
-                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a755"
+                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a755",
+		      "log_index": 1
                   }],
                   "total_earned": {
 		      "DAI": {
@@ -3202,7 +3206,8 @@ Getting Aave historical data
 		      },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
-                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a755"
+                      "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a755",
+		      "log_index": 1
                   }],
                   "total_earned": {
 		      "BAT": {
@@ -3224,6 +3229,7 @@ Getting Aave historical data
    :resjsonarr int timestamp: The unix timestamp at which the event occured.
    :resjsonarr int block_number: The block number at which the event occured.
    :resjsonarr int tx_hash: The transaction hash of the event.
+   :resjsonarr int log_index: The log_index of the event
 
    :statuscode 200: Aave history succesfully queried.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or aave module is not activated.
