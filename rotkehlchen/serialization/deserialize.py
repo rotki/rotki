@@ -493,6 +493,9 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
     if isinstance(symbol, int):
         result = symbol
     elif isinstance(symbol, str):
+        if symbol == '0x':
+            return 0
+
         try:
             result = int(symbol, 16)
         except ValueError:
