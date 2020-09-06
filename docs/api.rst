@@ -3319,6 +3319,186 @@ Getting Compound balances
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
+Getting compound historical data
+==================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/compound/history
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the compound balances history resource will return all compound events for all addresses who are tracked for compound.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/compound/history HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool reset_db_data: Boolean denoting whether all compound event data saved in the DB are going to be deleted and rewritten after this query. False by default.
+   :reqjson int from_timestamp: Timestamp from which to query compound historical data. If not given 0 is implied.
+   :reqjson int to_timestamp: Timestamp until which to query compound historical data. If not given current timestamp is implied.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "events": [{
+	          "event_type": "mint",
+		  "address": 0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056,
+		  "block_number": 1,
+		  "timestamp": 2,
+		  "asset": "DAI",
+		  "value": {
+		      "amount": "10.5",
+		      "usd_value": "10.86"
+		  },
+		  "to_asset": "cDAI",
+		  "to_value": {
+		      "amount": "165.21",
+		      "usd_value": "10.86"
+		  },
+		  "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+		  "log_index": 1
+	      }, {
+	          "event_type": "redeem",
+		  "address": 0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056,
+		  "block_number": 1,
+		  "timestamp": 2,
+		  "asset": "cDAI",
+		  "value": {
+		      "amount": "165.21",
+		      "usd_value": "12.25"
+		  },
+		  "to_asset": "DAI",
+		  "to_value": {
+		      "amount": "12.01",
+		      "usd_value": "12.25"
+		  },
+		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+		  "log_index": 1
+	      }, {
+	          "event_type": "borrow",
+		  "address": 0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237,
+		  "block_number": 1,
+		  "timestamp": 2,
+		  "asset": "ZRX",
+		  "value": {
+		      "amount": "10",
+		      "usd_value": "4.5"
+		  },
+		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+		  "log_index": 1
+	      }, {
+	          "event_type": "repay",
+		  "address": 0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237,
+		  "block_number": 1,
+		  "timestamp": 2,
+		  "asset": "ZRX",
+		  "value": {
+		      "amount": "10.5",
+		      "usd_value": "4.8"
+		  },
+		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+		  "log_index": 1
+	      }, {
+	          "event_type": "liquidation",
+		  "address": 0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237,
+		  "block_number": 1,
+		  "timestamp": 2,
+		  "asset": "ETH",
+		  "value": {
+		      "amount": "0.00005",
+		      "usd_value": "0.09"
+		  },
+		  "to_asset": "ZRX",
+		  "to_value": {
+		      "amount": "10",
+		      "usd_value": "4.5"
+		  }
+		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+		  "log_index": 1
+	      }, {
+	          "event_type": "comp",
+		  "address": 0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237,
+		  "block_number": 1,
+		  "timestamp": 2,
+		  "asset": "COMP",
+		  "value": {
+		      "amount": "1.01",
+		      "usd_value": "195"
+		  },
+		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+		  "log_index": 1
+	      }],
+	      "earned": {
+                  "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+		      "COMP": {
+			      "amount": "3.5",
+			      "usd_value": "892.5",
+			  },
+		       "DAI": {
+			      "amount": "250",
+			      "usd_value": "261.1",
+		      }
+		  },
+                  "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+		      "COMP": {
+		          "amount": "0.55",
+			  "usd_value": "86.1"
+		      },
+		  }
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object events: A list of mint/redeem/borrow/repay/liquidation/comp events for Compound
+   :resjsonarr string event_type: The type of the compound event. Can be:
+       - ``"mint"``: if depositing a token which mints a cToken equivalent.
+       - ``"redeem"``: if redeeming a cToken for the underlying normal equivalent
+       - ``"borrow"``: if you are borrowing an asset from compound
+       - ``"repay"``: if you are repaying an asset borrowed from compound
+       - ``"liquidation"``: if your borrowing position got liquidated
+       - ``"comp"``: if this is a comp earning reward
+   :resjsonarr string address: The address of the account involved in the event
+   :resjsonarr int timestamp: The unix timestamp at which the event occured.
+   :resjsonarr int block_number: The block number at which the event occured.
+   :resjsonarr string asset: The asset involved in the event.
+       - For ``"mint"`` events this is the underlying asset.
+       - For ``"redeem"`` events this is the cToken.
+       - For ``"borrow"`` and ``"repay"`` events this is the borrowed asset
+       - For ``"liquidation"`` events this is the asset paid by the liquidator.
+   :resjsonarr string value: The value of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr string to_asset: [Optional] The target asset involved in the event.
+       - For ``"mint"`` events this is the cToken.
+       - For ``"redeem"`` events this is the underlying asset.
+       - For ``"borrow"`` and ``"repay"`` this is missing.
+       - For ``"liquidation"`` events this is asset lost to the liquidator.
+   :resjsonarr string to_value: The value of the ``to_asset`` for the event. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr int tx_hash: The transaction hash of the event.
+   :resjsonarr int log_index: The log index of the event.
+   :resjson object earned: A mapping of addresses to mappings of totals assets earned over the given period.
+
+   :statuscode 200: Compound history succesfully queried.
+   :statuscode 409: User is not logged in. Or compound module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+
 Get addresses to query per protocol
 =======================================
 
