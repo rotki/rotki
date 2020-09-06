@@ -19,8 +19,8 @@ from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.chain.manager import ChainManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -196,12 +196,19 @@ class TradesHistorian():
             mapping = aave.get_history(
                 addresses=self.chain_manager.queried_addresses_for_module('aave'),
                 reset_db_data=False,
+                from_timestamp=start_ts,
+                to_timestamp=end_ts,
             )
 
             now = ts_now()
             for _, aave_history in mapping.items():
                 total_amount_per_token: Dict[Asset, FVal] = defaultdict(FVal)
                 for event in aave_history.events:
+                    if event.timestamp < start_ts:
+                        continue
+                    if event.timestamp > end_ts:
+                        break
+
                     if event.event_type == 'interest':
                         defi_events.append(DefiEvent(
                             timestamp=event.timestamp,

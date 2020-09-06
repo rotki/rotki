@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import BalanceType, ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_now
+from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -469,7 +469,7 @@ class Compound(EthereumModule):
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,
-            # to_block=to_block,
+            to_block=self.ethereum.etherscan.get_blocknumber_by_time(to_ts),
         )
         events = []
         for event in comp_events:
@@ -565,10 +565,10 @@ class Compound(EthereumModule):
     def get_history(
             self,
             addresses: List[ChecksumEthAddress],
-            reset_db_data: bool,
+            reset_db_data: bool,  # pylint: disable=unused-argument
+            from_ts: Timestamp,
+            to_ts: Timestamp,
     ) -> Dict[str, Any]:
-        from_ts = Timestamp(0)
-        to_ts = ts_now()
         history: Dict[str, Any] = {}
         for address in addresses:
             events = self._get_lend_events('mint', address, from_ts, to_ts)

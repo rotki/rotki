@@ -81,12 +81,12 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveBorrowingBalance,
             AaveEvent,
             CompoundBalance,
-            CompoundEvent,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (
             DBSettings,
             EthTokenInfo,
+            CompoundEvent,
             VersionCheckResult,
             DBSettings,
             DSRCurrentBalances,

@@ -13,8 +13,8 @@ from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
+    AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
-    AsyncQueryResetDBSchema,
     AsyncTasksQuerySchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
@@ -826,11 +826,22 @@ class AaveBalancesResource(BaseResource):
 
 class AaveHistoryResource(BaseResource):
 
-    get_schema = AsyncQueryResetDBSchema()
+    get_schema = AsyncHistoricalQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
-    def get(self, async_query: bool, reset_db_data: bool) -> Response:
-        return self.rest_api.get_aave_history(async_query, reset_db_data)
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_aave_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
 
 
 class CompoundBalancesResource(BaseResource):
@@ -844,11 +855,22 @@ class CompoundBalancesResource(BaseResource):
 
 class CompoundHistoryResource(BaseResource):
 
-    get_schema = AsyncQueryResetDBSchema()
+    get_schema = AsyncHistoricalQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
-    def get(self, async_query: bool, reset_db_data: bool) -> Response:
-        return self.rest_api.get_compound_history(async_query, reset_db_data)
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_compound_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
 
 
 class WatchersResource(BaseResource):

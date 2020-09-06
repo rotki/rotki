@@ -589,10 +589,12 @@ class AsyncQueryArgumentSchema(Schema):
     async_query = fields.Boolean(missing=False)
 
 
-class AsyncQueryResetDBSchema(AsyncQueryArgumentSchema):
+class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema):
     """A schema for getters that have 2 arguments.
     One to enable async querying and another to force reset DB data by querying everytying again"""
     reset_db_data = fields.Boolean(missing=False)
+    from_timestamp = TimestampField(missing=Timestamp(0))
+    to_timestamp = TimestampField(missing=ts_now)
 
 
 class AsyncTasksQuerySchema(Schema):

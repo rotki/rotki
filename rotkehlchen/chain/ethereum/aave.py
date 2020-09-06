@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_blocknumber,
     deserialize_int_from_hex_or_int,
 )
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -224,6 +224,8 @@ class Aave(EthereumModule):
             self,
             addresses: List[ChecksumEthAddress],
             reset_db_data: bool,
+            from_timestamp: Timestamp,  # pylint: disable=unused-argument
+            to_timestamp: Timestamp,  # pylint: disable=unused-argument
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         """Detects aave historical data for the given addresses"""
         result = {}
