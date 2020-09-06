@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from typing_extensions import Literal
@@ -6,17 +7,23 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances
-from rotkehlchen.constants.ethereum import CTOKEN_ABI
+from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.serialization.deserialize import (
+    deserialize_blocknumber,
+    deserialize_int_from_hex_or_int,
+)
 from rotkehlchen.typing import BalanceType, ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -25,6 +32,9 @@ BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
 A_COMP = EthereumToken('COMP')
+
+COMPTROLLER_PROXY = EthereumConstants().contract('COMPTROLLER_PROXY')
+COMPTROLLER_ABI = EthereumConstants.abi('COMPTROLLER_IMPLEMENTATION')
 
 
 LEND_EVENTS_QUERY_PREFIX = """{graph_event_name}
@@ -68,7 +78,8 @@ class CompoundBalance(NamedTuple):
 
 
 class CompoundEvent(NamedTuple):
-    event_type: Literal['mint', 'redeem', 'borrow', 'repay', 'liquidation']
+    event_type: Literal['mint', 'redeem', 'borrow', 'repay', 'liquidation', 'comp']
+    address: ChecksumEthAddress
     block_number: int
     timestamp: int
     asset: Asset
@@ -136,6 +147,11 @@ class Compound(EthereumModule):
         self.premium = premium
         self.msg_aggregator = msg_aggregator
         self.graph = Graph('https://api.thegraph.com/subgraphs/name/graphprotocol/compound-v2')
+        self.comptroller_address = self.ethereum.call_contract(
+            contract_address=COMPTROLLER_PROXY.address,
+            abi=COMPTROLLER_PROXY.abi,
+            method_name='comptrollerImplementation',
+        )
 
     def _get_apy(self, address: ChecksumEthAddress, supply: bool) -> Optional[FVal]:
         method_name = 'supplyRatePerBlock' if supply else 'borrowRatePerBlock'
@@ -265,9 +281,15 @@ class Compound(EthereumModule):
             usd_price = Inquirer().find_usd_price(underlying_asset)
             amount = FVal(entry['amount'])
             parse_result = _get_txhash_and_logidx(entry['id'])
+            if parse_result is None:
+                log.error(
+                    f'Found unprocessable borrow/repay id from the graph {entry["id"]}. Skipping',
+                )
+                continue
 
             events.append(CompoundEvent(
                 event_type=event_type,
+                address=address,
                 block_number=entry['blockNumber'],
                 timestamp=entry['blockTime'],
                 asset=underlying_asset,
@@ -327,9 +349,15 @@ class Compound(EthereumModule):
             amount = FVal(entry['amount'])
             usd_value = amount * Inquirer().find_usd_price(ctoken_asset)
             parse_result = _get_txhash_and_logidx(entry['id'])
+            if parse_result is None:
+                log.error(
+                    f'Found unprocessable liquidation id from the graph {entry["id"]}. Skipping',
+                )
+                continue
 
             events.append(CompoundEvent(
                 event_type='liquidation',
+                address=address,
                 block_number=entry['blockNumber'],
                 timestamp=entry['blockTime'],
                 asset=underlying_asset,
@@ -399,7 +427,7 @@ class Compound(EthereumModule):
                 to_value = Balance(amount=amount, usd_value=usd_value)
                 from_asset = underlying_asset
                 to_asset = ctoken_asset
-            else:
+            else:  # redeem
                 from_value = Balance(amount=amount, usd_value=usd_value)
                 to_value = Balance(amount=underlying_amount, usd_value=usd_value)
                 from_asset = ctoken_asset
@@ -407,6 +435,7 @@ class Compound(EthereumModule):
 
             events.append(CompoundEvent(
                 event_type=event_type,
+                address=address,
                 block_number=entry['blockNumber'],
                 timestamp=entry['blockTime'],
                 asset=from_asset,
@@ -419,23 +448,140 @@ class Compound(EthereumModule):
 
         return events
 
+    def _get_comp_events(
+            self,
+            address: ChecksumEthAddress,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> List[CompoundEvent]:
+        self.ethereum.etherscan.get_blocknumber_by_time(from_ts)
+        from_block = max(
+            COMPTROLLER_PROXY.deployed_block,
+            self.ethereum.etherscan.get_blocknumber_by_time(from_ts),
+        )
+        argument_filters = {
+            'from': COMPTROLLER_PROXY.address,
+            'to': address,
+        }
+        comp_events = self.ethereum.get_logs(
+            contract_address=A_COMP.ethereum_address,
+            abi=ERC20TOKEN_ABI,
+            event_name='Transfer',
+            argument_filters=argument_filters,
+            from_block=from_block,
+            # to_block=to_block,
+        )
+        events = []
+        for event in comp_events:
+            timestamp = self.ethereum.get_event_timestamp(event)
+            amount = hex_or_bytes_to_int(event['topics'][2])
+            usd_price = query_usd_price_zero_if_error(
+                asset=A_COMP,
+                time=timestamp,
+                location='comp_claim',
+                msg_aggregator=self.msg_aggregator,
+            )
+            events.append(CompoundEvent(
+                event_type='comp',
+                address=address,
+                block_number=deserialize_blocknumber(event['blockNumber']),
+                timestamp=timestamp,
+                asset=A_COMP,
+                value=Balance(FVal(amount), amount * usd_price),
+                to_asset=None,
+                to_value=None,
+                tx_hash=event['transactionHash'],
+                log_index=deserialize_int_from_hex_or_int(event['logIndex'], 'comp log index'),
+            ))
+
+        return events
+
+    def _process_events(
+            self,
+            events: List[CompoundEvent],
+    ) -> Dict[ChecksumEthAddress, Dict[Asset, Balance]]:
+        """Processes all events and returns a dictionary of earned balances totals"""
+        assets: Dict[ChecksumEthAddress, Dict[Asset, Balance]] = defaultdict(
+            lambda: defaultdict(Balance),
+        )
+        # assets: Dict[Asset, Balance] = defaultdict(Balance)
+        addresses = set()
+        for event in events:
+            if event == 'mint':
+                assets[event.address][event.asset] -= event.value
+                addresses.add(event.address)
+            elif event == 'redeem':
+                assert event.to_asset, 'redeem events should have a to_asset'
+                assets[event.address][event.to_asset] += event.to_value
+                addresses.add(event.address)
+            elif event == 'comp':
+                assets[event.address][A_COMP] += event.value
+                addresses.add(event.address)
+
+        for address, asset_entry in assets.items():
+            for asset, _ in asset_entry.items():
+                ctoken_symbol = 'c' + asset.identifier
+                try:
+                    ctoken = EthereumToken(ctoken_symbol)
+                except UnknownAsset:
+                    log.error(
+                        f'Found unknown cTokenSymbol {ctoken_symbol} during graph query. Skipping',
+                    )
+                balance = self.ethereum.call_contract(
+                    contract_address=ctoken.ethereum_address,
+                    abi=CTOKEN_ABI,
+                    method_name='balanceOf',
+                    arguments=[address],
+                )
+                if balance == 0:
+                    continue
+
+                ctoken_usd_price = Inquirer().find_usd_price(ctoken)
+                asset_usd_price = Inquirer().find_usd_price(asset)
+                if ctoken_usd_price == 0 or asset_usd_price == 0:
+                    self.msg_aggregator.add_warning(
+                        f'Could not find price for {asset} or its cToken during compound query',
+                    )
+                    continue
+
+                # convert ctoken balance to asset balance with current price
+                asset_balance = FVal(balance) * ctoken_usd_price / asset_usd_price
+                # and now add it to what user has in compound with current price
+                assets[address][asset] += Balance(asset_balance, balance * ctoken_usd_price)
+
+        comp_usd_price = Inquirer().find_usd_price(A_COMP)
+        for address in addresses:
+            unclaimed_comp = self.ethereum.call_contract(
+                contract_address=self.comptroller_address,
+                abi=COMPTROLLER_ABI,
+                method_name='compAccrued',
+                arguments=[address],
+            )
+            amount = token_normalized_value(unclaimed_comp, A_COMP.decimals)
+            assets[address][A_COMP] += Balance(amount, amount * comp_usd_price)
+
+        return assets
+
     def get_history(
             self,
             addresses: List[ChecksumEthAddress],
             reset_db_data: bool,
-    ) -> Dict[ChecksumEthAddress, List[CompoundEvent]]:
+    ) -> Dict[str, Any]:
         from_ts = Timestamp(0)
         to_ts = ts_now()
-        history = {}
+        history: Dict[str, Any] = {}
         for address in addresses:
             events = self._get_lend_events('mint', address, from_ts, to_ts)
             events.extend(self._get_lend_events('redeem', address, from_ts, to_ts))
             events.extend(self._get_borrow_events('borrow', address, from_ts, to_ts))
             events.extend(self._get_borrow_events('repay', address, from_ts, to_ts))
             events.extend(self._get_liquidation_events(address, from_ts, to_ts))
-
+            events.extend(self._get_comp_events(address, from_ts, to_ts))
             events.sort(key=lambda x: x.timestamp)
-            history[address] = events
+            history[address] = {'events': events}
+
+        earned_assets_mapping = self._process_events(events)
+        history['earned'] = earned_assets_mapping
 
         return history
 

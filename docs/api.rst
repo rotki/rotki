@@ -3231,7 +3231,7 @@ Getting Aave historical data
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Getting Compound balances
-========================
+==============================
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/compound/balances
 

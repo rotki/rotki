@@ -57,6 +57,13 @@ class Balance:
             usd_value=self.usd_value + other.usd_value,
         )
 
+    def __sub__(self, other: Any) -> 'Balance':
+        other = _evaluate_balance_input(other, 'addition')
+        return Balance(
+            amount=self.amount - other.amount,
+            usd_value=self.usd_value - other.usd_value,
+        )
+
 
 def _evaluate_balance_input(other: Any, operation: str) -> Balance:
     transformed_input = other
