@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
@@ -57,6 +57,12 @@ class DefiProtocolBalances(NamedTuple):
     base_balance: DefiBalance
     underlying_balances: List[DefiBalance]
 
+
+# Type of the argument given to functions that need the defi balances
+GIVEN_DEFI_BALANCES = Union[
+    Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
+    Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
+]
 
 # last known zerion adapter address
 ZERION_ADAPTER_ADDRESS = deserialize_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')

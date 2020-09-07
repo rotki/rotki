@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from gevent.lock import Semaphore
 
@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.makerdao.common import RAY
 from rotkehlchen.chain.ethereum.structures import AaveEvent
-from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances
+from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
 from rotkehlchen.constants.ethereum import (
     AAVE_ETH_RESERVE_ADDRESS,
     AAVE_LENDING_POOL,
@@ -147,20 +147,14 @@ class Aave(EthereumModule):
 
     def get_balances(
             self,
-            given_defi_balances: Union[
-                Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
-                Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
-            ],
+            given_defi_balances: GIVEN_DEFI_BALANCES,
     ) -> Dict[ChecksumEthAddress, AaveBalances]:
         with self.balances_lock:
             return self._get_balances(given_defi_balances)
 
     def _get_balances(
             self,
-            given_defi_balances: Union[
-                Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
-                Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
-            ],
+            given_defi_balances: GIVEN_DEFI_BALANCES,
     ) -> Dict[ChecksumEthAddress, AaveBalances]:
         """Retrieves the aave balances
 

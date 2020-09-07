@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from eth_utils import to_checksum_address
 from typing_extensions import Literal
@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances
+from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
@@ -173,10 +173,7 @@ class Compound(EthereumModule):
 
     def get_balances(
             self,
-            given_defi_balances: Union[
-                Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
-                Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
-            ],
+            given_defi_balances: GIVEN_DEFI_BALANCES,
     ) -> Dict[ChecksumEthAddress, Dict]:
         compound_balances = {}
         if isinstance(given_defi_balances, dict):
@@ -502,11 +499,14 @@ class Compound(EthereumModule):
     def _process_events(
             self,
             events: List[CompoundEvent],
+            given_defi_balances: GIVEN_DEFI_BALANCES,
     ) -> Dict[ChecksumEthAddress, Dict[Asset, Balance]]:
         """Processes all events and returns a dictionary of earned balances totals"""
         assets: Dict[ChecksumEthAddress, Dict[Asset, Balance]] = defaultdict(
             lambda: defaultdict(Balance),
         )
+
+        balances = self.get_balances(given_defi_balances)
 
         addresses = set()
         for event in events:
@@ -517,57 +517,31 @@ class Compound(EthereumModule):
                 assert event.to_asset, 'redeem events should have a to_asset'
                 assets[event.address][event.to_asset] += event.to_value
                 addresses.add(event.address)
+            elif event.event_type == 'borrow':
+                assets[event.address][event.asset] += event.value
+                addresses.add(event.address)
+            elif event.event_type == 'repay':
+                assets[event.address][event.asset] -= event.value
+                addresses.add(event.address)
             elif event.event_type == 'comp':
                 assets[event.address][A_COMP] += event.value
                 addresses.add(event.address)
 
-        # __import__("pdb").set_trace()
-        for address, asset_entry in assets.items():
-            for asset, _ in asset_entry.items():
-                ctoken_symbol = 'c' + asset.identifier
-                try:
-                    ctoken = EthereumToken(ctoken_symbol)
-                except UnknownAsset:
-                    log.error(
-                        f'Found unknown cTokenSymbol {ctoken_symbol} during graph query. Skipping',
-                    )
-                balance = self.ethereum.call_contract(
-                    contract_address=ctoken.ethereum_address,
-                    abi=CTOKEN_ABI,
-                    method_name='balanceOf',
-                    arguments=[address],
-                )
-                if balance == 0:
-                    continue
+        for address, bentry in balances.items():
+            for asset, entry in bentry['lending'].items():
+                assets[address][asset] += entry.balance
 
-                ctoken_usd_price = Inquirer().find_usd_price(ctoken)
-                asset_usd_price = Inquirer().find_usd_price(asset)
-                if ctoken_usd_price == 0 or asset_usd_price == 0:
-                    self.msg_aggregator.add_warning(
-                        f'Could not find price for {asset} or its cToken during compound query',
-                    )
-                    continue
+            for asset, entry in bentry['borrowing'].items():
+                assets[address][asset] -= entry.balance
 
-                # convert ctoken balance to asset balance with current price
-                asset_balance = FVal(balance) * ctoken_usd_price / asset_usd_price
-                # and now add it to what user has in compound with current price
-                assets[address][asset] += Balance(asset_balance, balance * ctoken_usd_price)
-
-        comp_usd_price = Inquirer().find_usd_price(A_COMP)
-        for address in addresses:
-            unclaimed_comp = self.ethereum.call_contract(
-                contract_address=self.comptroller_address,
-                abi=COMPTROLLER_ABI,
-                method_name='compAccrued',
-                arguments=[address],
-            )
-            amount = token_normalized_value(unclaimed_comp, A_COMP.decimals)
-            assets[address][A_COMP] += Balance(amount, amount * comp_usd_price)
+            for asset, entry in bentry['rewards'].items():
+                assets[address][asset] += entry.balance
 
         return assets
 
     def get_history(
             self,
+            given_defi_balances: GIVEN_DEFI_BALANCES,
             addresses: List[ChecksumEthAddress],
             reset_db_data: bool,  # pylint: disable=unused-argument
             from_timestamp: Timestamp,
@@ -584,8 +558,8 @@ class Compound(EthereumModule):
             events.sort(key=lambda x: x.timestamp)
             history[address] = {'events': events}
 
-        earned_assets_mapping = self._process_events(events)
-        history['earned'] = earned_assets_mapping
+        earned_assets_mapping = self._process_events(events, given_defi_balances)
+        history['profit_and_loss'] = earned_assets_mapping
 
         return history
 
