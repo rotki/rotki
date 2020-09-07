@@ -209,9 +209,19 @@ class Compound(EthereumModule):
                     continue
 
                 if balance_entry.balance_type == 'Asset':
-                    lending_map[asset.identifier] = CompoundBalance(
+                    # Get the underlying balance
+                    underlying_symbol = balance_entry.underlying_balances[0].token_symbol
+                    try:
+                        underlying_asset = Asset(underlying_symbol)
+                    except UnknownAsset:
+                        log.error(
+                            f'Encountered unknown asset {underlying_symbol} in compound. Skipping',
+                        )
+                        continue
+
+                    lending_map[underlying_asset.identifier] = CompoundBalance(
                         balance_type=BalanceType.ASSET,
-                        balance=entry.balance,
+                        balance=balance_entry.underlying_balances[0].balance,
                         apy=self._get_apy(entry.token_address, supply=True),
                     )
                 else:  # 'Debt'
