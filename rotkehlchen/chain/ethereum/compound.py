@@ -29,6 +29,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_int
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
+ADDRESS_TO_ASSETS = Dict[ChecksumEthAddress, Dict[Asset, Balance]]
 BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
@@ -500,11 +501,11 @@ class Compound(EthereumModule):
             self,
             events: List[CompoundEvent],
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Dict[ChecksumEthAddress, Dict[Asset, Balance]]:
+    ) -> Tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
         """Processes all events and returns a dictionary of earned balances totals"""
-        assets: Dict[ChecksumEthAddress, Dict[Asset, Balance]] = defaultdict(
-            lambda: defaultdict(Balance),
-        )
+        assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
+        loss_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
+        rewards_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
 
         balances = self.get_balances(given_defi_balances)
         for event in events:
@@ -514,26 +515,26 @@ class Compound(EthereumModule):
                 assert event.to_asset, 'redeem events should have a to_asset'
                 assets[event.address][event.to_asset] += event.to_value
             elif event.event_type == 'borrow':
-                assets[event.address][event.asset] += event.value
+                loss_assets[event.address][event.asset] -= event.value
             elif event.event_type == 'repay':
-                assets[event.address][event.asset] -= event.value
+                loss_assets[event.address][event.asset] += event.value
             elif event.event_type == 'liquidation':
                 assert event.to_asset, 'liquidation events should have a to_asset'
-                assets[event.address][event.to_asset] -= event.to_value
+                loss_assets[event.address][event.to_asset] += event.to_value
             elif event.event_type == 'comp':
-                assets[event.address][A_COMP] += event.value
+                rewards_assets[event.address][A_COMP] += event.value
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():
                 assets[address][asset] += entry.balance
 
             for asset, entry in bentry['borrowing'].items():
-                assets[address][asset] -= entry.balance
+                loss_assets[address][asset] += entry.balance
 
             for asset, entry in bentry['rewards'].items():
-                assets[address][asset] += entry.balance
+                rewards_assets[address][asset] += entry.balance
 
-        return assets
+        return assets, loss_assets, rewards_assets
 
     def get_history(
             self,
@@ -554,8 +555,10 @@ class Compound(EthereumModule):
             events.sort(key=lambda x: x.timestamp)
             history[address] = {'events': events}
 
-        earned_assets_mapping = self._process_events(events, given_defi_balances)
-        history['profit_and_loss'] = earned_assets_mapping
+        profit, loss, rewards = self._process_events(events, given_defi_balances)
+        history['interest_profit'] = profit
+        history['debt_loss'] = loss
+        history['rewards'] = rewards
 
         return history
 

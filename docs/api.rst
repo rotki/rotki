@@ -3451,7 +3451,7 @@ Getting compound historical data
 		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
 		  "log_index": 1
 	      }],
-	      "profit_and_loss": {
+	      "interest_profit": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
 		      "COMP": {
 			      "amount": "3.5",
@@ -3463,16 +3463,28 @@ Getting compound historical data
 		      }
 		  },
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-		      "COMP": {
+		      "ZRX": {
 		          "amount": "0.55",
 			  "usd_value": "86.1"
-		      },
-		       "ETH": {
-			      "amount": "-0.1",
-			      "usd_value": "-30.5",
 		      }
 		  }
-              }
+	       },
+	       "debt_loss": {
+                  "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+		       "ETH": {
+			      "amount": "0.1",
+			      "usd_value": "30.5",
+		      }
+		  }
+	       },
+	       "rewards": {
+                  "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+		      "COMP": {
+			      "amount": "3.5",
+			      "usd_value": "892.5",
+			  },
+	          }
+	       }
           },
           "message": ""
       }
@@ -3499,10 +3511,12 @@ Getting compound historical data
        - For ``"redeem"`` events this is the underlying asset.
        - For ``"borrow"`` and ``"repay"`` this is missing.
        - For ``"liquidation"`` events this is asset lost to the liquidator.
-   :resjsonarr string to_value: The value of the ``to_asset`` for the event. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr string to_value: [Optional] The value of the ``to_asset`` for the event. The rate is the asset/USD rate at the events's timestamp.
    :resjsonarr int tx_hash: The transaction hash of the event.
    :resjsonarr int log_index: The log index of the event.
-   :resjson object profit_and_loss: A mapping of addresses to mappings of totals assets earned or lost over the given period.
+   :resjson object interest_profit: A mapping of addresses to mappings of totals assets earned from lending over a given period
+   :resjson object debt_loss: A mapping of addresses to mappings of totals assets lost over a given period.
+   :resjson object rewards: A mapping of addresses to mappings of totals assets (only COMP atm) gained as a reward for using Compound over a given period.
 
    :statuscode 200: Compound history succesfully queried.
    :statuscode 409: User is not logged in. Or compound module is not activated.
