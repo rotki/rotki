@@ -89,6 +89,7 @@ class CompoundEvent(NamedTuple):
     value: Balance
     to_asset: Optional[Asset]
     to_value: Optional[Balance]
+    realized_pnl: Optional[Balance]
     tx_hash: str
     log_index: int  # only used to identify uniqueness
 
@@ -296,6 +297,7 @@ class Compound(EthereumModule):
                 value=Balance(amount=amount, usd_value=amount * usd_price),
                 to_asset=None,
                 to_value=None,
+                realized_pnl=None,
                 tx_hash=parse_result[0],
                 log_index=parse_result[1],
             ))
@@ -364,6 +366,7 @@ class Compound(EthereumModule):
                 value=Balance(amount=underlying_amount, usd_value=underlying_usd_value),
                 to_asset=ctoken_asset,
                 to_value=Balance(amount=amount, usd_value=usd_value),
+                realized_pnl=None,
                 tx_hash=parse_result[0],
                 log_index=parse_result[1],
             ))
@@ -442,6 +445,7 @@ class Compound(EthereumModule):
                 value=from_value,
                 to_asset=to_asset,
                 to_value=to_value,
+                realized_pnl=None,
                 tx_hash=parse_result[0],
                 log_index=parse_result[1],
             ))
@@ -491,6 +495,7 @@ class Compound(EthereumModule):
                 value=Balance(amount, amount * usd_price),
                 to_asset=None,
                 to_value=None,
+                realized_pnl=None,
                 tx_hash=event['transactionHash'],
                 log_index=deserialize_int_from_hex_or_int(event['logIndex'], 'comp log index'),
             ))
@@ -513,16 +518,24 @@ class Compound(EthereumModule):
                 assets[event.address][event.asset] -= event.value
             elif event.event_type == 'redeem':
                 assert event.to_asset, 'redeem events should have a to_asset'
+                e_profit = assets[event.address][event.to_asset] + event.to_value
+                profit = e_profit if e_profit.amount >= 0 else None  # not realized profit yet
                 assets[event.address][event.to_asset] += event.to_value
+                event._replace(realized_pnl=profit)  # TODO: maybe not named tuple?
             elif event.event_type == 'borrow':
                 loss_assets[event.address][event.asset] -= event.value
             elif event.event_type == 'repay':
+                e_loss = assets[event.address][event.asset] + event.value
+                loss = e_loss if e_loss.amount >= 0 else None  # not realized loss yet
                 loss_assets[event.address][event.asset] += event.value
+                event._replace(realized_pnl=loss)  # TODO: maybe not named tuple?
             elif event.event_type == 'liquidation':
                 assert event.to_asset, 'liquidation events should have a to_asset'
                 loss_assets[event.address][event.to_asset] += event.to_value
+                event._replace(realized_pnl=event.to_value)  # TODO: maybe not named tuple?
             elif event.event_type == 'comp':
                 rewards_assets[event.address][A_COMP] += event.value
+                event._replace(realized_pnl=event.value)  # TODO: maybe not named tuple?
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():

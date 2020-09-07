@@ -11,24 +11,38 @@ from rotkehlchen.typing import Timestamp
 
 class DefiEventType(Enum):
     DSR_LOAN_GAIN = 0
-    MAKERDAO_VAULT_DEPOSIT = 1
-    MAKERDAO_VAULT_WITHDRAWAL = 2
-    MAKERDAO_VAULT_LOSS = 3
-    AAVE_LOAN_INTEREST = 4
+    MAKERDAO_VAULT_LOSS = 1
+    AAVE_LOAN_INTEREST = 2
+    COMPOUND_LOAN_INTEREST = 3
+    COMPOUND_DEBT_REPAY = 4
+    COMPOUND_LIQUIDATION = 5
+    COMPOUND_REWARDS = 6
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_LOAN_GAIN:
             return "DSR loan gain"
-        elif self == DefiEventType.MAKERDAO_VAULT_DEPOSIT:
-            return "Makerdao vault deposit"
-        elif self == DefiEventType.MAKERDAO_VAULT_WITHDRAWAL:
-            return "Makerdao vault withdrawal"
         elif self == DefiEventType.MAKERDAO_VAULT_LOSS:
             return "Makerdao vault loss"
         elif self == DefiEventType.AAVE_LOAN_INTEREST:
             return "Aave loan interest"
+        elif self == DefiEventType.COMPOUND_LOAN_INTEREST:
+            return "Compound loan interest"
+        elif self == DefiEventType.COMPOUND_DEBT_REPAY:
+            return "Compound debt repayment"
+        elif self == DefiEventType.COMPOUND_LIQUIDATION:
+            return "Compound liquidation"
+        elif self == DefiEventType.COMPOUND_REWARDS:
+            return "Compound rewards"
 
         raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
+
+    def is_profitable(self) -> bool:
+        return self in (
+            DefiEventType.DSR_LOAN_GAIN,
+            DefiEventType.AAVE_LOAN_INTEREST,
+            DefiEventType.COMPOUND_LOAN_INTEREST,
+            DefiEventType.COMPOUND_REWARDS,
+        )
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -37,6 +51,9 @@ class DefiEvent:
     event_type: DefiEventType
     asset: Asset
     amount: FVal
+
+    def is_profitable(self) -> bool:
+        return self.event_type.is_profitable()
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

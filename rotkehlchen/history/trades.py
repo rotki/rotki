@@ -190,6 +190,48 @@ class TradesHistorian():
                         amount=detail.total_liquidated.usd_value + detail.total_interest_owed,
                     ))
 
+        # include compound events
+        if self.chain_manager.compound and has_premium:
+            compound_history = self.chain_manager.compound.get_history(
+                given_defi_balances=self.chain_manager.defi_balances,
+                addresses=self.chain_manager.queried_addresses_for_module('compound'),
+                reset_db_data=False,
+                from_timestamp=start_ts,
+                to_timestamp=end_ts,
+            )
+            for event in compound_history['events']:
+                if event.realized_pnl.amount == ZERO:
+                    continue  # skip events with no realized profit/loss
+
+                if event.event_type == 'redeem':
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_LOAN_INTEREST,
+                        asset=event.to_asset,
+                        amount=event.realized_pnl.amount,
+                    ))
+                elif event.event_type == 'repay':
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_DEBT_REPAY,
+                        asset=event.asset,
+                        amount=event.realized_pnl.amount,
+                    ))
+                elif event.event_type == 'liquidation':
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_LIQUIDATION,
+                        asset=event.to_asset,
+                        amount=event.realized_pnl.amount,
+                    ))
+                elif event.event_type == 'comp':
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_REWARDS,
+                        asset=event.asset,
+                        amount=event.realized_pnl.amount,
+                    ))
+
         # include aave lending events
         aave = self.chain_manager.aave
         if aave is not None and has_premium:

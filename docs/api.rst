@@ -3395,6 +3395,10 @@ Getting compound historical data
 		      "amount": "12.01",
 		      "usd_value": "12.25"
 		  },
+		  "realized_pnl": {
+		      "amount": "1",
+		      "usd_value": "1.15"
+		  },
 		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
 		  "log_index": 1
 	      }, {
@@ -3419,6 +3423,10 @@ Getting compound historical data
 		      "amount": "10.5",
 		      "usd_value": "4.8"
 		  },
+		  "realized_pnl": {
+		      "amount": "0.5",
+		      "usd_value": "0.8"
+		  },
 		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
 		  "log_index": 1
 	      }, {
@@ -3436,6 +3444,10 @@ Getting compound historical data
 		      "amount": "10",
 		      "usd_value": "4.5"
 		  }
+		  "realized_pnl": {
+		      "amount": "10",
+		      "usd_value": "4.5"
+		  },
 		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
 		  "log_index": 1
 	      }, {
@@ -3445,6 +3457,10 @@ Getting compound historical data
 		  "timestamp": 2,
 		  "asset": "COMP",
 		  "value": {
+		      "amount": "1.01",
+		      "usd_value": "195"
+		  },
+		  "realized_pnl": {
 		      "amount": "1.01",
 		      "usd_value": "195"
 		  },
@@ -3505,13 +3521,20 @@ Getting compound historical data
        - For ``"redeem"`` events this is the cToken.
        - For ``"borrow"`` and ``"repay"`` events this is the borrowed asset
        - For ``"liquidation"`` events this is the asset paid by the liquidator.
-   :resjsonarr string value: The value of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
+       - For ``"comp"`` events this the COMP token.
+   :resjsonarr object value: The value of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
    :resjsonarr string to_asset: [Optional] The target asset involved in the event.
        - For ``"mint"`` events this is the cToken.
        - For ``"redeem"`` events this is the underlying asset.
        - For ``"borrow"`` and ``"repay"`` this is missing.
        - For ``"liquidation"`` events this is asset lost to the liquidator.
-   :resjsonarr string to_value: [Optional] The value of the ``to_asset`` for the event. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr object to_value: [Optional] The value of the ``to_asset`` for the event. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr object realized_pnl: [Optional]. Realized profit/loss at this event if any.
+       - For ``"redeem"`` events this can be the realized profit from compound interest at this event.
+       - For ``"repay"`` events this can be the realized loss from compound debt up to this point.
+       - For ``"liquidation"`` events this is the loss from liquidation in the liquidation asset.
+       - For ``"comp"`` events this is the gain in COMP.
+
    :resjsonarr int tx_hash: The transaction hash of the event.
    :resjsonarr int log_index: The log index of the event.
    :resjson object interest_profit: A mapping of addresses to mappings of totals assets earned from lending over a given period
