@@ -507,25 +507,21 @@ class Compound(EthereumModule):
         )
 
         balances = self.get_balances(given_defi_balances)
-
-        addresses = set()
         for event in events:
             if event.event_type == 'mint':
                 assets[event.address][event.asset] -= event.value
-                addresses.add(event.address)
             elif event.event_type == 'redeem':
                 assert event.to_asset, 'redeem events should have a to_asset'
                 assets[event.address][event.to_asset] += event.to_value
-                addresses.add(event.address)
             elif event.event_type == 'borrow':
                 assets[event.address][event.asset] += event.value
-                addresses.add(event.address)
             elif event.event_type == 'repay':
                 assets[event.address][event.asset] -= event.value
-                addresses.add(event.address)
+            elif event.event_type == 'liquidation':
+                assert event.to_asset, 'liquidation events should have a to_asset'
+                assets[event.address][event.to_asset] -= event.to_value
             elif event.event_type == 'comp':
                 assets[event.address][A_COMP] += event.value
-                addresses.add(event.address)
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():
