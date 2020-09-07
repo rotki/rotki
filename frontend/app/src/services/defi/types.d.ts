@@ -1,13 +1,6 @@
-import { ApiBalance } from '@/model/blockchain-balances';
-import { COMPOUND_EVENT_TYPES, DEFI_PROTOCOLS } from '@/services/defi/consts';
-import { Balance, HasBalance } from '@/services/types-api';
-
-export interface ApiDSRBalances {
-  readonly current_dsr: string;
-  readonly balances: {
-    readonly [account: string]: ApiBalance;
-  };
-}
+import { default as BigNumber } from 'bignumber.js';
+import { DEFI_PROTOCOLS } from '@/services/defi/consts';
+import { Balance } from '@/services/types-api';
 
 export type DSRMovementType = 'withdrawal' | 'deposit';
 export type MakerDAOVaultEventType =
@@ -22,181 +15,15 @@ export type DefiBalanceType = 'Asset' | 'Debt';
 
 export type SupportedDefiProtocols = typeof DEFI_PROTOCOLS[number];
 
-export interface ApiDSRMovement {
-  readonly movement_type: DSRMovementType;
-  readonly gain_so_far: ApiBalance;
-  readonly value: ApiBalance;
-  readonly block_number: number;
-  readonly timestamp: number;
-  readonly tx_hash: string;
-}
-
-export interface ApiDSRHistory {
-  readonly [address: string]: {
-    gain_so_far: ApiBalance;
-    movements: ApiDSRMovement[];
-  };
-}
-
 export interface ApiMakerDAOVault {
   readonly identifier: number;
-  readonly collateral_type: string;
+  readonly collateralType: string;
   readonly owner: string;
-  readonly collateral_asset: CollateralAssetType;
-  readonly collateral: ApiBalance;
-  readonly debt: ApiBalance;
-  readonly collateralization_ratio: string | null;
-  readonly liquidation_ratio: string;
-  readonly liquidation_price: string;
-  readonly stability_fee: string;
-}
-
-export interface ApiMakerDAOVaultDetails {
-  readonly identifier: number;
-  readonly creation_ts: number;
-  readonly total_interest_owed: string;
-  readonly total_liquidated: ApiBalance;
-  readonly events: ApiMakerDAOVaultEvent[];
-}
-
-export interface ApiMakerDAOVaultEvent {
-  readonly event_type: MakerDAOVaultEventType;
-  readonly value: ApiBalance;
-  readonly timestamp: number;
-  readonly tx_hash: string;
-}
-
-export interface ApiAaveAsset {
-  readonly balance: ApiBalance;
-}
-
-export interface ApiAaveBorrowingAsset extends ApiAaveAsset {
-  readonly stable_apr: string;
-  readonly variable_apr: string;
-}
-
-export interface ApiAaveLendingAsset extends ApiAaveAsset {
-  readonly apy: string;
-}
-
-export interface ApiAaveBorrowing {
-  readonly [asset: string]: ApiAaveBorrowingAsset;
-}
-
-export interface ApiAaveLending {
-  readonly [asset: string]: ApiAaveLendingAsset;
-}
-
-interface ApiAaveBalance {
-  readonly lending: ApiAaveLending;
-  readonly borrowing: ApiAaveBorrowing;
-}
-
-export interface ApiAaveBalances {
-  readonly [address: string]: ApiAaveBalance;
-}
-
-export interface ApiAaveHistoryEvents {
-  event_type: AaveEventType;
-  asset: string;
-  value: ApiBalance;
-  block_number: number;
-  timestamp: number;
-  tx_hash: string;
-}
-
-export interface ApiAaveHistoryTotalEarned {
-  readonly [asset: string]: ApiBalance;
-}
-
-export interface ApiAaveAccountHistory {
-  readonly events: ApiAaveHistoryEvents[];
-  readonly total_earned: ApiAaveHistoryTotalEarned;
-}
-
-export interface ApiAaveHistory {
-  readonly [address: string]: ApiAaveAccountHistory;
-}
-
-export interface ApiDefiProtocolInfo {
-  readonly name: string;
-  readonly icon: string;
-}
-
-export interface ApiDefiAsset {
-  readonly token_address: string;
-  readonly token_name: string;
-  readonly token_symbol: string;
-  readonly balance: ApiBalance;
-}
-
-export interface ApiDefiProtocolData {
-  readonly protocol: ApiDefiProtocolInfo;
-  readonly balance_type: DefiBalanceType;
-  readonly base_balance: ApiDefiAsset;
-  readonly underlying_balances: ApiDefiAsset[];
-}
-
-export interface ApiAllDefiProtocols {
-  readonly [asset: string]: ApiDefiProtocolData[];
-}
-
-interface CompoundReward extends HasBalance {}
-
-interface CompoundRewards {
-  readonly [asset: string]: CompoundReward;
-}
-
-interface CompoundLending extends HasBalance {
-  readonly apy: string;
-}
-
-interface CompoundLendingEntries {
-  readonly [asset: string]: CompoundLending;
-}
-
-interface CompoundBorrowing extends HasBalance {
-  readonly apr: string;
-}
-
-interface CompoundBorrowingEntries {
-  readonly [asset: string]: CompoundBorrowing;
-}
-
-interface CompoundBalance {
-  readonly rewards: CompoundRewards;
-  readonly lending: CompoundLendingEntries;
-  readonly borrowing: CompoundBorrowingEntries;
-}
-
-export interface CompoundBalances {
-  readonly [address: string]: CompoundBalance;
-}
-
-export type CompoundEventType = typeof COMPOUND_EVENT_TYPES[number];
-
-interface CompoundEvent {
-  readonly eventType: CompoundEventType;
-  readonly address: string;
-  readonly blockNumber: number;
-  readonly timestamp: number;
-  readonly asset: string;
-  readonly toAsset?: string;
-  readonly value: Balance;
-  readonly toValue?: Balance;
-  readonly txHash: string;
-  readonly logIndex: number;
-}
-
-interface AssetProfitAndLoss {
-  readonly [asset: string]: Balance;
-}
-
-interface CompoundProfitAndLoss {
-  readonly [address: string]: AssetProfitAndLoss;
-}
-
-export interface CompoundHistory {
-  readonly events: CompoundEvent[];
-  readonly profitAndLoss: CompoundProfitAndLoss;
+  readonly collateralAsset: CollateralAssetType;
+  readonly collateral: Balance;
+  readonly debt: Balance;
+  readonly collateralizationRatio: string | null;
+  readonly liquidationRatio: string;
+  readonly liquidationPrice: BigNumber | null;
+  readonly stabilityFee: string;
 }

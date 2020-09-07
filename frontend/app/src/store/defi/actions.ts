@@ -3,29 +3,23 @@ import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
+import { dsrKeys, vaultDetailsKeys, vaultKeys } from '@/services/defi/consts';
+import { ApiMakerDAOVault } from '@/services/defi/types';
+import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
-  ApiAaveBalances,
-  ApiAaveHistory,
-  ApiAllDefiProtocols,
-  ApiDSRBalances,
-  ApiDSRHistory,
-  ApiMakerDAOVault,
-  ApiMakerDAOVaultDetails,
   CompoundBalances,
   CompoundHistory
-} from '@/services/defi/types';
+} from '@/services/defi/types/compound';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
+import { convertMakerDAOVaults } from '@/store/defi/converters';
 import {
-  convertAaveBalances,
-  convertAaveHistory,
-  convertAllDefiProtocols,
-  convertDSRBalances,
-  convertDSRHistory,
-  convertMakerDAOVaults,
-  convertVaultDetails
-} from '@/store/defi/converters';
-import { DefiState } from '@/store/defi/types';
+  AllDefiProtocols,
+  DefiState,
+  DSRBalances,
+  DSRHistory,
+  MakerDAOVaultDetails
+} from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
@@ -52,13 +46,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { task_id } = await api.defi.dsrBalance();
       const task = createTask(task_id, taskType, {
         title: `Fetching DSR Balances`,
-        ignoreResult: false
+        ignoreResult: false,
+        numericKeys: dsrKeys
       });
       commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<ApiDSRBalances, TaskMeta>(
-        taskType
-      );
-      commit('dsrBalances', convertDSRBalances(result));
+      const { result } = await taskCompletion<DSRBalances, TaskMeta>(taskType);
+      commit('dsrBalances', result);
     } catch (e) {
       notify(
         `There was an issue while fetching DSR Balances: ${e.message}`,
@@ -83,13 +76,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { task_id } = await api.defi.dsrHistory();
       const task = createTask(task_id, taskType, {
         title: `Fetching DSR History`,
-        ignoreResult: false
+        ignoreResult: false,
+        numericKeys: balanceKeys
       });
       commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<ApiDSRHistory, TaskMeta>(
-        taskType
-      );
-      commit('dsrHistory', convertDSRHistory(result));
+      const { result } = await taskCompletion<DSRHistory, TaskMeta>(taskType);
+      commit('dsrHistory', result);
     } catch (e) {
       notify(
         `There was an issue while fetching DSR History: ${e.message}`,
@@ -113,7 +105,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { task_id } = await api.defi.makerDAOVaults();
       const task = createTask(task_id, taskType, {
         title: `Fetching MakerDAO Vaults`,
-        ignoreResult: false
+        ignoreResult: false,
+        numericKeys: vaultKeys
       });
 
       commit('tasks/add', task, { root: true });
@@ -141,17 +134,17 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { task_id } = await api.defi.makerDAOVaultDetails();
       const task = createTask(task_id, TaskType.MAKERDAO_VAULT_DETAILS, {
         title: `Fetching MakerDAO Vault Details`,
-        ignoreResult: false
+        ignoreResult: false,
+        numericKeys: vaultDetailsKeys
       });
 
       commit('tasks/add', task, { root: true });
 
-      const { result: makerDAOVaultDetails } = await taskCompletion<
-        ApiMakerDAOVaultDetails[],
-        TaskMeta
-      >(TaskType.MAKERDAO_VAULT_DETAILS);
+      const { result } = await taskCompletion<MakerDAOVaultDetails[], TaskMeta>(
+        TaskType.MAKERDAO_VAULT_DETAILS
+      );
 
-      commit('makerDAOVaultDetails', convertVaultDetails(makerDAOVaultDetails));
+      commit('makerDAOVaultDetails', result);
     } catch (e) {
       notify(`${e.message}`, 'MakerDAO Vault details', Severity.ERROR, true);
     }
@@ -169,16 +162,15 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { task_id } = await api.defi.fetchAaveBalances();
       const task = createTask(task_id, taskType, {
         title: `Fetching Aave balances`,
-        ignoreResult: false
+        ignoreResult: false,
+        numericKeys: balanceKeys
       });
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<ApiAaveBalances, TaskMeta>(
-        taskType
-      );
+      const { result } = await taskCompletion<AaveBalances, TaskMeta>(taskType);
 
-      commit('aaveBalances', convertAaveBalances(result));
+      commit('aaveBalances', result);
     } catch (e) {
       notify(`${e.message}`, 'Fetching Aave Balances', Severity.ERROR, true);
     }
@@ -201,16 +193,15 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { task_id } = await api.defi.fetchAaveHistory(reset);
       const task = createTask(task_id, taskType, {
         title: `Fetching Aave history`,
-        ignoreResult: false
+        ignoreResult: false,
+        numericKeys: balanceKeys
       });
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<ApiAaveHistory, TaskMeta>(
-        taskType
-      );
+      const { result } = await taskCompletion<AaveHistory, TaskMeta>(taskType);
 
-      commit('aaveHistory', convertAaveHistory(result));
+      commit('aaveHistory', result);
     } catch (e) {
       notify(`${e.message}`, 'Fetching Aave History', Severity.ERROR, true);
     }
@@ -230,15 +221,16 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { task_id } = await api.defi.fetchAllDefi();
       const task = createTask(task_id, taskType, {
         title: `Fetching Defi Balances`,
-        ignoreResult: false
+        ignoreResult: false,
+        numericKeys: balanceKeys
       });
 
       commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<ApiAllDefiProtocols, TaskMeta>(
+      const { result } = await taskCompletion<AllDefiProtocols, TaskMeta>(
         taskType
       );
 
-      commit('allDefiProtocols', convertAllDefiProtocols(result));
+      commit('allDefiProtocols', result);
     } catch (e) {
       notify(`${e.message}`, 'Fetching Defi Balances', Severity.ERROR, true);
     }

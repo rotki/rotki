@@ -1,10 +1,9 @@
 import { MutationTree } from 'vuex';
-import { CompoundBalances } from '@/services/defi/types';
+import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
+import { CompoundBalances } from '@/services/defi/types/compound';
 import { Status } from '@/store/const';
 import { defaultState } from '@/store/defi/state';
 import {
-  AaveBalances,
-  AaveHistory,
   AllDefiProtocols,
   DefiState,
   DSRBalances,

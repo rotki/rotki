@@ -2,13 +2,20 @@ import { default as BigNumber } from 'bignumber.js';
 import {
   AaveEventType,
   CollateralAssetType,
-  CompoundBalances,
-  CompoundHistory,
   DefiBalanceType,
   DSRMovementType,
   MakerDAOVaultEventType,
   SupportedDefiProtocols
 } from '@/services/defi/types';
+import {
+  AaveBalances,
+  AaveBorrowingRates,
+  AaveHistory
+} from '@/services/defi/types/aave';
+import {
+  CompoundBalances,
+  CompoundHistory
+} from '@/services/defi/types/compound';
 import { Balance, HasBalance } from '@/services/types-api';
 import { Status } from '@/store/const';
 
@@ -39,8 +46,7 @@ export interface DSRBalances {
 }
 
 export interface DSRHistoryItem {
-  readonly gainSoFar: BigNumber;
-  readonly gainSoFarUsdValue: BigNumber;
+  readonly gainSoFar: Balance;
   readonly movements: DSRMovement[];
 }
 
@@ -51,7 +57,7 @@ export interface DSRHistory {
 export interface DSRMovement {
   readonly movementType: DSRMovementType;
   readonly gainSoFar: Balance;
-  readonly balance: Balance;
+  readonly value: Balance;
   readonly blockNumber: number;
   readonly timestamp: number;
   readonly txHash: string;
@@ -80,8 +86,7 @@ export interface MakerDAOVaultDetails {
 
 export interface MakerDAOVaultEvent {
   readonly eventType: MakerDAOVaultEventType;
-  readonly amount: BigNumber;
-  readonly amountUsdValue: BigNumber;
+  readonly value: Balance;
   readonly timestamp: number;
   readonly txHash: string;
 }
@@ -94,12 +99,6 @@ export interface LoanSummary {
   readonly totalCollateralUsd: BigNumber;
   readonly totalDebt: BigNumber;
 }
-export interface AaveBorrowingRates {
-  readonly stableApr: string;
-  readonly variableApr: string;
-}
-
-export interface AaveBorrowingAsset extends HasBalance, AaveBorrowingRates {}
 
 export interface CollateralizedLoan<T extends CollateralAssetType | string>
   extends DefiLoan {
@@ -113,49 +112,6 @@ export interface AaveLoan
 
 export interface CompoundLoan extends CollateralizedLoan<string> {
   readonly apr: string;
-}
-
-export interface AaveLendingAsset extends HasBalance {
-  readonly apy: string;
-}
-
-export interface AaveBorrowing {
-  readonly [asset: string]: AaveBorrowingAsset;
-}
-
-export interface AaveLending {
-  readonly [asset: string]: AaveLendingAsset;
-}
-
-interface AaveBalance {
-  readonly lending: AaveLending;
-  readonly borrowing: AaveBorrowing;
-}
-
-export interface AaveBalances {
-  readonly [address: string]: AaveBalance;
-}
-
-export interface AaveHistoryEvents {
-  eventType: AaveEventType;
-  asset: string;
-  value: Balance;
-  blockNumber: number;
-  timestamp: number;
-  txHash: string;
-}
-
-export interface AaveHistoryTotalEarned {
-  readonly [asset: string]: Balance;
-}
-
-export interface AaveAccountHistory {
-  readonly events: AaveHistoryEvents[];
-  readonly totalEarned: AaveHistoryTotalEarned;
-}
-
-export interface AaveHistory {
-  readonly [address: string]: AaveAccountHistory;
 }
 
 export interface DefiBalance extends HasBalance {

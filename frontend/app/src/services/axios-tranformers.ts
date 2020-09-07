@@ -1,7 +1,7 @@
 import { AxiosTransformer } from 'axios';
 import { default as BigNumber } from 'bignumber.js';
 
-const isNumber = /^-?\d+(\.\d+)?$/;
+const isNumber = /^-?\d+(\.\d+)?(E-\d{0,2})?$/;
 
 const createReviver = (
   numericKeys: string[]

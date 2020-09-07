@@ -81,7 +81,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         if (!allAddresses && !addresses.includes(address)) {
           continue;
         }
-        total = total.plus(dsrHistory[address].gainSoFarUsdValue);
+        total = total.plus(dsrHistory[address].gainSoFar.usdValue);
       }
     }
 
@@ -478,7 +478,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
             protocol: 'makerdao',
             address,
             asset: 'DAI',
-            value: movement.balance,
+            value: movement.value,
             blockNumber: movement.blockNumber,
             timestamp: movement.timestamp,
             txHash: movement.txHash,
