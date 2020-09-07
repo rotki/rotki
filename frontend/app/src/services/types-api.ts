@@ -1,3 +1,5 @@
+import { BigNumber } from 'bignumber.js';
+
 export interface ApiSupportedAsset {
   readonly active?: boolean;
   readonly ended?: number;
@@ -30,4 +32,24 @@ export interface AsyncQuery {
 
 export interface PendingTask {
   readonly taskId: number;
+}
+
+export interface Messages {
+  readonly warnings: string[];
+  readonly errors: string[];
+}
+
+export interface LocationData {
+  readonly time: number;
+  readonly location: string;
+  readonly usd_value: string;
+}
+
+export interface Balance {
+  readonly amount: BigNumber;
+  readonly usdValue: BigNumber;
+}
+
+export interface HasBalance {
+  readonly balance: Balance;
 }

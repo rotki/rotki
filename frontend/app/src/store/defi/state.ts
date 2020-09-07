@@ -16,7 +16,12 @@ export const defaultState = (): DefiState => ({
   makerDAOVaultDetails: [],
   aaveBalances: {},
   aaveHistory: {},
-  allProtocols: {}
+  allProtocols: {},
+  compoundBalances: {},
+  compoundHistory: {
+    events: [],
+    profitAndLoss: {}
+  }
 });
 
 export const state: DefiState = defaultState();

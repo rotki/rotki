@@ -1,4 +1,5 @@
 import { BigNumber } from 'bignumber.js';
+import { Balance } from '@/services/types-api';
 
 export interface BlockchainBalances {
   readonly per_account: {
@@ -33,11 +34,6 @@ export interface EthBalance {
 
 export interface EthBalances {
   [account: string]: EthBalance;
-}
-
-export interface Balance {
-  readonly amount: BigNumber;
-  readonly usdValue: BigNumber;
 }
 
 export interface Balances {

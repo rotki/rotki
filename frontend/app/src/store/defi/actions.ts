@@ -1,6 +1,8 @@
 import { ActionTree } from 'vuex';
+import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
+import { balanceKeys } from '@/services/consts';
 import {
   ApiAaveBalances,
   ApiAaveHistory,
@@ -8,10 +10,12 @@ import {
   ApiDSRBalances,
   ApiDSRHistory,
   ApiMakerDAOVault,
-  ApiMakerDAOVaultDetails
+  ApiMakerDAOVaultDetails,
+  CompoundBalances,
+  CompoundHistory
 } from '@/services/defi/types';
 import { api } from '@/services/rotkehlchen-api';
-import { Status } from '@/store/const';
+import { Section, Status } from '@/store/const';
 import {
   convertAaveBalances,
   convertAaveHistory,
@@ -25,6 +29,14 @@ import { DefiState } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
+
+function isLoading(status: Status): boolean {
+  return (
+    status === Status.LOADING ||
+    status === Status.PARTIALLY_LOADED ||
+    status == Status.REFRESHING
+  );
+}
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
   async fetchDSRBalances({
@@ -262,6 +274,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       await dispatch('fetchMakerDAOVaults');
     }
 
+    await dispatch('fetchCompoundBalances');
+
     commit('status', Status.LOADED);
   },
 
@@ -286,6 +300,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     if (activeModules.includes('aave')) {
       await dispatch('fetchAaveBalances');
     }
+
+    await dispatch('fetchCompoundBalances');
 
     commit('status', Status.LOADED);
   },
@@ -339,6 +355,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       await dispatch('fetchMakerDAOVaults');
     }
 
+    await dispatch('fetchCompoundBalances');
+
     commit('status', Status.LOADED);
   },
 
@@ -366,5 +384,70 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     commit('borrowingHistoryStatus', Status.LOADED);
+  },
+
+  async fetchCompoundBalances(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const currentStatus = status(Section.DEFI_COMPOUND_BALANCES);
+    const { activeModules } = session!.generalSettings;
+
+    if (
+      !activeModules.includes('compound') ||
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const taskType = TaskType.DEFI_COMPOUND_BALANCES;
+    const { taskId } = await api.defi.fetchCompoundBalances();
+    const task = createTask(taskId, taskType, {
+      title: i18n.tc('actions.defi.compound.task.title'),
+      ignoreResult: false,
+      numericKeys: balanceKeys
+    });
+
+    commit('tasks/add', task, { root: true });
+
+    const { result } = await taskCompletion<CompoundBalances, TaskMeta>(
+      taskType
+    );
+
+    commit('compoundBalances', result);
+  },
+
+  async fetchCompoundHistory(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const currentStatus = status(Section.DEFI_COMPOUND_HISTORY);
+    const { activeModules } = session!.generalSettings;
+
+    if (
+      !session?.premium ||
+      !activeModules.includes('compound') ||
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const taskType = TaskType.DEFI_COMPOUND_HISTORY;
+    const { taskId } = await api.defi.fetchCompoundHistory();
+    const task = createTask(taskId, taskType, {
+      title: i18n.tc('actions.defi.compound_history.task.title'),
+      ignoreResult: false,
+      numericKeys: balanceKeys
+    });
+
+    commit('tasks/add', task, { root: true });
+
+    const { result } = await taskCompletion<CompoundHistory, TaskMeta>(
+      taskType
+    );
+
+    commit('compoundHistory', result);
   }
 };

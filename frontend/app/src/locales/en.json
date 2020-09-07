@@ -247,6 +247,18 @@
         "description": "Failed query for {address}: {error}",
         "title": "Ethereum Transactions Query"
       }
+    },
+    "defi": {
+      "compound": {
+        "task": {
+          "title": "Retrieving Compound balances"
+        }
+      },
+      "compound_history": {
+        "task": {
+          "title": "Retrieving Compound history"
+        }
+      }
     }
   },
   "navigation_menu": {

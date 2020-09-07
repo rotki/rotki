@@ -10,8 +10,8 @@ import {
 } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { ManualBalance, ManualBalances } from '@/services/balances/types';
+import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
-import { manualBalanceKeys } from '@/services/history/const';
 import { api } from '@/services/rotkehlchen-api';
 import { BalanceState } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
@@ -276,7 +276,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const task = createTask<TaskMeta>(taskId, taskType, {
         title: i18n.tc('actions.manual_balances.task.title'),
         ignoreResult: false,
-        numericKeys: manualBalanceKeys
+        numericKeys: balanceKeys
       });
 
       commit('tasks/add', task, { root: true });

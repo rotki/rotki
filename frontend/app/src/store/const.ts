@@ -10,5 +10,7 @@ export enum Section {
   NONE = 'none',
   ASSET_MOVEMENT = 'asset_movement',
   TRADES = 'trades',
-  TX = 'tx'
+  TX = 'tx',
+  DEFI_COMPOUND_BALANCES = 'defi_compound_balances',
+  DEFI_COMPOUND_HISTORY = 'defi_compound_history'
 }

@@ -88,7 +88,8 @@ import StatCardWide from '@/components/display/StatCardWide.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
+import { DEFI_PROTOCOLS } from '@/services/defi/consts';
+import { SupportedDefiProtocols } from '@/services/defi/types';
 import { Status } from '@/store/const';
 import {
   AaveLoan,

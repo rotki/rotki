@@ -1,13 +1,15 @@
 import { default as BigNumber } from 'bignumber.js';
-import { Balance } from '@/model/blockchain-balances';
 import {
   AaveEventType,
   CollateralAssetType,
+  CompoundBalances,
+  CompoundHistory,
   DefiBalanceType,
   DSRMovementType,
   MakerDAOVaultEventType,
   SupportedDefiProtocols
 } from '@/services/defi/types';
+import { Balance, HasBalance } from '@/services/types-api';
 import { Status } from '@/store/const';
 
 export interface DefiState {
@@ -22,6 +24,8 @@ export interface DefiState {
   aaveBalances: AaveBalances;
   aaveHistory: AaveHistory;
   allProtocols: AllDefiProtocols;
+  compoundBalances: CompoundBalances;
+  compoundHistory: CompoundHistory;
 }
 
 export interface DSRBalances {
@@ -90,32 +94,28 @@ export interface LoanSummary {
   readonly totalCollateralUsd: BigNumber;
   readonly totalDebt: BigNumber;
 }
-
-export interface BaseDefiAsset {
-  readonly balance: Balance;
-}
-
 export interface AaveBorrowingRates {
   readonly stableApr: string;
   readonly variableApr: string;
 }
 
-export interface AaveBorrowingAsset extends BaseDefiAsset, AaveBorrowingRates {}
+export interface AaveBorrowingAsset extends HasBalance, AaveBorrowingRates {}
 
 export interface CollateralizedLoan<T extends CollateralAssetType | string>
   extends DefiLoan {
-  readonly owner: string;
   readonly collateral: Collateral<T>;
   readonly debt: Balance;
 }
 
 export interface AaveLoan
   extends AaveBorrowingRates,
-    CollateralizedLoan<string> {
-  readonly owner: string;
+    CollateralizedLoan<string> {}
+
+export interface CompoundLoan extends CollateralizedLoan<string> {
+  readonly apr: string;
 }
 
-export interface AaveLendingAsset extends BaseDefiAsset {
+export interface AaveLendingAsset extends HasBalance {
   readonly apy: string;
 }
 
@@ -158,7 +158,7 @@ export interface AaveHistory {
   readonly [address: string]: AaveAccountHistory;
 }
 
-export interface DefiBalance extends BaseDefiAsset {
+export interface DefiBalance extends HasBalance {
   readonly address: string;
   readonly asset: string;
   readonly protocol: SupportedDefiProtocols;
@@ -172,6 +172,7 @@ interface MakerDAOLendingHistoryExtras {
 export interface LendingHistoryExtras {
   readonly aave: {};
   readonly makerdao: MakerDAOLendingHistoryExtras;
+  readonly compound: {};
 }
 
 export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
@@ -216,7 +217,7 @@ export interface DefiProtocolSummary {
   readonly totalLendingDepositUsd: BigNumber;
 }
 
-export interface DefiAsset extends BaseDefiAsset {
+export interface DefiAsset extends HasBalance {
   readonly tokenAddress: string;
   readonly tokenName: string;
   readonly tokenSymbol: string;

@@ -1,5 +1,9 @@
 import { AxiosInstance } from 'axios';
-import { ActionResult, AsyncQuery } from '@/services/types-api';
+import {
+  axiosSnakeCaseTransformer,
+  setupTransformer
+} from '@/services/axios-tranformers';
+import { ActionResult, AsyncQuery, PendingTask } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
   handleResponse
@@ -20,9 +24,7 @@ export class DefiApi {
           params: {
             async_query: true
           },
-          validateStatus: function (status: number) {
-            return status === 200 || status === 409 || status == 502;
-          }
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -36,9 +38,7 @@ export class DefiApi {
           params: {
             async_query: true
           },
-          validateStatus: function (status: number) {
-            return status === 200 || status === 409 || status == 502;
-          }
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -103,6 +103,32 @@ export class DefiApi {
           async_query: true
         }
       })
+      .then(handleResponse);
+  }
+
+  async fetchCompoundBalances(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>(
+        '/blockchains/ETH/modules/compound/balances',
+        {
+          validateStatus: validWithSessionAndExternalService,
+          params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+          transformResponse: setupTransformer([])
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async fetchCompoundHistory(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>(
+        '/blockchains/ETH/modules/compound/history',
+        {
+          validateStatus: validWithSessionAndExternalService,
+          params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+          transformResponse: setupTransformer([])
+        }
+      )
       .then(handleResponse);
   }
 }

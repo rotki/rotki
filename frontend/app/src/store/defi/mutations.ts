@@ -1,4 +1,5 @@
 import { MutationTree } from 'vuex';
+import { CompoundBalances } from '@/services/defi/types';
 import { Status } from '@/store/const';
 import { defaultState } from '@/store/defi/state';
 import {
@@ -48,6 +49,9 @@ export const mutations: MutationTree<DefiState> = {
   },
   allDefiProtocols(state: DefiState, allProtocols: AllDefiProtocols) {
     state.allProtocols = allProtocols;
+  },
+  compoundBalances(state: DefiState, balances: CompoundBalances) {
+    state.compoundBalances = balances;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

@@ -1,4 +1,6 @@
 import { ApiBalance } from '@/model/blockchain-balances';
+import { COMPOUND_EVENT_TYPES, DEFI_PROTOCOLS } from '@/services/defi/consts';
+import { Balance, HasBalance } from '@/services/types-api';
 
 export interface ApiDSRBalances {
   readonly current_dsr: string;
@@ -18,7 +20,6 @@ export type AaveEventType = 'deposit' | 'interest' | 'withdrawal';
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
 export type DefiBalanceType = 'Asset' | 'Debt';
 
-export const DEFI_PROTOCOLS = ['aave', 'makerdao'] as const;
 export type SupportedDefiProtocols = typeof DEFI_PROTOCOLS[number];
 
 export interface ApiDSRMovement {
@@ -138,4 +139,64 @@ export interface ApiDefiProtocolData {
 
 export interface ApiAllDefiProtocols {
   readonly [asset: string]: ApiDefiProtocolData[];
+}
+
+interface CompoundReward extends HasBalance {}
+
+interface CompoundRewards {
+  readonly [asset: string]: CompoundReward;
+}
+
+interface CompoundLending extends HasBalance {
+  readonly apy: string;
+}
+
+interface CompoundLendingEntries {
+  readonly [asset: string]: CompoundLending;
+}
+
+interface CompoundBorrowing extends HasBalance {
+  readonly apr: string;
+}
+
+interface CompoundBorrowingEntries {
+  readonly [asset: string]: CompoundBorrowing;
+}
+
+interface CompoundBalance {
+  readonly rewards: CompoundRewards;
+  readonly lending: CompoundLendingEntries;
+  readonly borrowing: CompoundBorrowingEntries;
+}
+
+export interface CompoundBalances {
+  readonly [address: string]: CompoundBalance;
+}
+
+export type CompoundEventType = typeof COMPOUND_EVENT_TYPES[number];
+
+interface CompoundEvent {
+  readonly eventType: CompoundEventType;
+  readonly address: string;
+  readonly blockNumber: number;
+  readonly timestamp: number;
+  readonly asset: string;
+  readonly toAsset?: string;
+  readonly value: Balance;
+  readonly toValue?: Balance;
+  readonly txHash: string;
+  readonly logIndex: number;
+}
+
+interface AssetProfitAndLoss {
+  readonly [asset: string]: Balance;
+}
+
+interface CompoundProfitAndLoss {
+  readonly [address: string]: AssetProfitAndLoss;
+}
+
+export interface CompoundHistory {
+  readonly events: CompoundEvent[];
+  readonly profitAndLoss: CompoundProfitAndLoss;
 }

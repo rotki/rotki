@@ -15,5 +15,7 @@ export enum TaskType {
   TRADES = 'trades',
   MOVEMENTS = 'movements',
   TX = 'tx',
-  MANUAL_BALANCES = 'manual_balances'
+  MANUAL_BALANCES = 'manual_balances',
+  DEFI_COMPOUND_BALANCES = 'defi_compound_balances',
+  DEFI_COMPOUND_HISTORY = 'defi_compound_history'
 }

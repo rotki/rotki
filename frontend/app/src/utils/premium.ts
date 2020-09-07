@@ -86,10 +86,6 @@ export const PremiumStatistics = (): Promise<VueConstructor> => {
   return load('PremiumStatistics');
 };
 
-export const DsrMovementHistory = (): Promise<VueConstructor> => {
-  return load('DsrMovementHistory');
-};
-
 export const VaultEventsList = (): Promise<VueConstructor> => {
   return load('VaultEventsList');
 };

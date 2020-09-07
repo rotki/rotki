@@ -61,6 +61,11 @@ export default class DefiProtocolSelector extends Vue {
       identifier: 'makerdao',
       name: 'MakerDAO',
       icon: require('@/assets/images/defi/makerdao.svg')
+    },
+    {
+      identifier: 'compound',
+      name: 'Compound',
+      icon: require('@/assets/images/defi/makerdao.svg')
     }
   ];
 

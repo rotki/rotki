@@ -15,5 +15,10 @@ export const DEFI_MODULES: Module[] = [
     identifier: 'makerdao_dsr',
     name: 'MakerDAO DSR',
     icon: require('@/assets/images/defi/makerdao.svg')
+  },
+  {
+    identifier: 'compound',
+    name: 'Compound',
+    icon: require('@/assets/images/defi/makerdao.svg')
   }
 ];

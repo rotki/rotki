@@ -89,5 +89,3 @@ export default class DefiModuleSelector extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

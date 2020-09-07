@@ -6,8 +6,6 @@ import {
   ExternalServiceKeys
 } from '@/model/action-result';
 import { DBAssetBalance } from '@/model/db-asset-balance';
-import { LocationData } from '@/model/location-data';
-import { Messages } from '@/model/messages';
 import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result';
 import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
@@ -20,6 +18,8 @@ import { SessionApi } from '@/services/session/session-api';
 import {
   ActionResult,
   AsyncQuery,
+  LocationData,
+  Messages,
   SupportedAssets,
   TaskNotFoundError
 } from '@/services/types-api';

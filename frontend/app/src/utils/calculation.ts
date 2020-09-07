@@ -1,5 +1,5 @@
 import { default as BigNumber } from 'bignumber.js';
-import { Balance } from '@/model/blockchain-balances';
+import { Balance } from '@/services/types-api';
 import { Zero } from '@/utils/bignumbers';
 
 export function assetSum(balances: { [asset: string]: Balance }) {

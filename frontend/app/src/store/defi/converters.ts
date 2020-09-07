@@ -1,5 +1,5 @@
 import { default as BigNumber } from 'bignumber.js';
-import { ApiBalance, Balance } from '@/model/blockchain-balances';
+import { ApiBalance } from '@/model/blockchain-balances';
 import {
   ApiAaveBalances,
   ApiAaveBorrowingAsset,
@@ -14,6 +14,7 @@ import {
   ApiMakerDAOVaultDetails,
   ApiMakerDAOVaultEvent
 } from '@/services/defi/types';
+import { Balance } from '@/services/types-api';
 import {
   AaveBalances,
   AaveBorrowing,
