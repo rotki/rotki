@@ -15,7 +15,6 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import (
     deserialize_blocknumber,
@@ -289,7 +288,13 @@ class Compound(EthereumModule):
                     f'graph query. Skipping.',
                 )
                 continue
-            usd_price = Inquirer().find_usd_price(underlying_asset)
+            timestamp = entry['blockTime']
+            usd_price = query_usd_price_zero_if_error(
+                asset=underlying_asset,
+                time=timestamp,
+                location=f'compound {event_type}',
+                msg_aggregator=self.msg_aggregator,
+            )
             amount = FVal(entry['amount'])
             parse_result = _get_txhash_and_logidx(entry['id'])
             if parse_result is None:
@@ -302,7 +307,7 @@ class Compound(EthereumModule):
                 event_type=event_type,
                 address=address,
                 block_number=entry['blockNumber'],
-                timestamp=entry['blockTime'],
+                timestamp=timestamp,
                 asset=underlying_asset,
                 value=Balance(amount=amount, usd_value=amount * usd_price),
                 to_asset=None,
@@ -354,12 +359,25 @@ class Compound(EthereumModule):
                     f'graph query. Skipping.',
                 )
                 continue
+            timestamp = entry['blockTime']
             # Amount/value of underlying asset paid by liquidator
-            underlying_amount = FVal(entry['amount'])
-            underlying_usd_value = underlying_amount * Inquirer().find_usd_price(underlying_asset)
+            underlying_amount = FVal(entry['underlyingRepayAmount'])
+            underlying_usd_price = query_usd_price_zero_if_error(
+                asset=underlying_asset,
+                time=timestamp,
+                location='compound liquidation underlying asset',
+                msg_aggregator=self.msg_aggregator,
+            )
+            underlying_usd_value = underlying_amount * underlying_usd_price
             # Amount/value of ctoken_asset lost to the liquidator
             amount = FVal(entry['amount'])
-            usd_value = amount * Inquirer().find_usd_price(ctoken_asset)
+            usd_price = query_usd_price_zero_if_error(
+                asset=ctoken_asset,
+                time=timestamp,
+                location='compound liquidation ctoken asset',
+                msg_aggregator=self.msg_aggregator,
+            )
+            usd_value = amount * usd_price
             parse_result = _get_txhash_and_logidx(entry['id'])
             if parse_result is None:
                 log.error(
@@ -367,16 +385,17 @@ class Compound(EthereumModule):
                 )
                 continue
 
+            value = Balance(amount=amount, usd_value=usd_value)
             events.append(CompoundEvent(
                 event_type='liquidation',
                 address=address,
                 block_number=entry['blockNumber'],
-                timestamp=entry['blockTime'],
+                timestamp=timestamp,
                 asset=underlying_asset,
                 value=Balance(amount=underlying_amount, usd_value=underlying_usd_value),
                 to_asset=ctoken_asset,
-                to_value=Balance(amount=amount, usd_value=usd_value),
-                realized_pnl=None,
+                to_value=value,
+                realized_pnl=value,
                 tx_hash=parse_result[0],
                 log_index=parse_result[1],
             ))
@@ -426,7 +445,13 @@ class Compound(EthereumModule):
                     f'graph query. Skipping.',
                 )
                 continue
-            usd_price = Inquirer().find_usd_price(underlying_asset)
+            timestamp = entry['blockTime']
+            usd_price = query_usd_price_zero_if_error(
+                asset=underlying_asset,
+                time=timestamp,
+                location=f'compound {event_type}',
+                msg_aggregator=self.msg_aggregator,
+            )
             underlying_amount = FVal(entry['underlyingAmount'])
             usd_value = underlying_amount * usd_price
             parse_result = _get_txhash_and_logidx(entry['id'])
@@ -450,7 +475,7 @@ class Compound(EthereumModule):
                 event_type=event_type,
                 address=address,
                 block_number=entry['blockNumber'],
-                timestamp=entry['blockTime'],
+                timestamp=timestamp,
                 asset=from_asset,
                 value=from_value,
                 to_asset=to_asset,
@@ -496,16 +521,17 @@ class Compound(EthereumModule):
                 location='comp_claim',
                 msg_aggregator=self.msg_aggregator,
             )
+            value = Balance(amount, amount * usd_price)
             events.append(CompoundEvent(
                 event_type='comp',
                 address=address,
                 block_number=deserialize_blocknumber(event['blockNumber']),
                 timestamp=timestamp,
                 asset=A_COMP,
-                value=Balance(amount, amount * usd_price),
+                value=value,
                 to_asset=None,
                 to_value=None,
-                realized_pnl=None,
+                realized_pnl=value,
                 tx_hash=event['transactionHash'],
                 log_index=deserialize_int_from_hex_or_int(event['logIndex'], 'comp log index'),
             ))
@@ -523,7 +549,8 @@ class Compound(EthereumModule):
         rewards_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
 
         balances = self.get_balances(given_defi_balances)
-        for event in events:
+
+        for idx, event in enumerate(events):
             if event.event_type == 'mint':
                 assets[event.address][event.asset] -= event.value
             elif event.event_type == 'redeem':
@@ -531,24 +558,24 @@ class Compound(EthereumModule):
                 e_profit = assets[event.address][event.to_asset] + event.to_value
                 profit = e_profit if e_profit.amount >= 0 else None  # not realized profit yet
                 assets[event.address][event.to_asset] += event.to_value
-                event._replace(realized_pnl=profit)  # TODO: maybe not named tuple?
+                events[idx] = event._replace(realized_pnl=profit)  # TODO: maybe not named tuple?
+
             elif event.event_type == 'borrow':
                 loss_assets[event.address][event.asset] -= event.value
             elif event.event_type == 'repay':
-                e_loss = assets[event.address][event.asset] + event.value
+                e_loss = loss_assets[event.address][event.asset] + event.value
                 loss = e_loss if e_loss.amount >= 0 else None  # not realized loss yet
                 loss_assets[event.address][event.asset] += event.value
-                event._replace(realized_pnl=loss)  # TODO: maybe not named tuple?
+                events[idx] = event._replace(realized_pnl=loss)  # TODO: maybe not named tuple?
             elif event.event_type == 'liquidation':
                 assert event.to_asset, 'liquidation events should have a to_asset'
                 loss_assets[event.address][event.to_asset] += event.to_value
-                event._replace(realized_pnl=event.to_value)  # TODO: maybe not named tuple?
             elif event.event_type == 'comp':
                 rewards_assets[event.address][A_COMP] += event.value
-                event._replace(realized_pnl=event.value)  # TODO: maybe not named tuple?
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():
+                # get the underlying
                 assets[address][asset] += entry.balance
 
             for asset, entry in bentry['borrowing'].items():
@@ -567,17 +594,21 @@ class Compound(EthereumModule):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
+        """May raise:
+        - RemoteError due to the graph query failure or etherscan
+        """
         history: Dict[str, Any] = {}
+        events: List[CompoundEvent] = []
         for address in addresses:
-            events = self._get_lend_events('mint', address, from_timestamp, to_timestamp)
+            events.extend(self._get_lend_events('mint', address, from_timestamp, to_timestamp))
             events.extend(self._get_lend_events('redeem', address, from_timestamp, to_timestamp))
             events.extend(self._get_borrow_events('borrow', address, from_timestamp, to_timestamp))
             events.extend(self._get_borrow_events('repay', address, from_timestamp, to_timestamp))
             events.extend(self._get_liquidation_events(address, from_timestamp, to_timestamp))
             events.extend(self._get_comp_events(address, from_timestamp, to_timestamp))
-            events.sort(key=lambda x: x.timestamp)
-            history[address] = {'events': events}
 
+        events.sort(key=lambda x: x.timestamp)
+        history['events'] = events
         profit, loss, rewards = self._process_events(events, given_defi_balances)
         history['interest_profit'] = profit
         history['debt_loss'] = loss

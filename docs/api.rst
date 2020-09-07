@@ -3530,9 +3530,9 @@ Getting compound historical data
        - For ``"liquidation"`` events this is asset lost to the liquidator.
    :resjsonarr object to_value: [Optional] The value of the ``to_asset`` for the event. The rate is the asset/USD rate at the events's timestamp.
    :resjsonarr object realized_pnl: [Optional]. Realized profit/loss at this event if any.
-       - For ``"redeem"`` events this can be the realized profit from compound interest at this event.
-       - For ``"repay"`` events this can be the realized loss from compound debt up to this point.
-       - For ``"liquidation"`` events this is the loss from liquidation in the liquidation asset.
+       - For ``"redeem"`` events this can be the realized profit from compound interest at this event. Amount is for the normal token.
+       - For ``"repay"`` events this can be the realized loss from compound debt up to this point. Amount is for the borrowed asset.
+       - For ``"liquidation"`` events this is the loss from liquidation in the liquidation asset. The loss is in the cToken used as colllateral.
        - For ``"comp"`` events this is the gain in COMP.
 
    :resjsonarr int tx_hash: The transaction hash of the event.

@@ -1580,7 +1580,12 @@ class RestAPI():
             async_query=async_query,
             module='compound',
             method='get_history',
-            query_specific_balances_before=None,
+            # We need to query defi balances before since defi_balances must be populated
+            query_specific_balances_before=['defi'],
+            # Giving the defi balances as a lambda function here so that they
+            # are retrieved only after we are sure the defi balances have been
+            # queried.
+            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('compound'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,

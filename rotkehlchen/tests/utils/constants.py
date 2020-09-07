@@ -13,6 +13,8 @@ A_BAT = EthereumToken('BAT')
 A_WBTC = EthereumToken('WBTC')
 A_USDC = EthereumToken('USDC')
 A_ADAI = Asset('aDAI')
+A_CDAI = Asset('cDAI')
+A_CUSDC = Asset('cUSDC')
 
 A_DOGE = Asset('DOGE')
 A_LTC = Asset('LTC')
