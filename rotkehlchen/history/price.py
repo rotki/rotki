@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import NoPriceForGivenTimestamp, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -32,10 +32,10 @@ def query_usd_price_or_use_default(
             to_asset=A_USD,
             timestamp=time,
         )
-    except RemoteError:
+    except (RemoteError, NoPriceForGivenTimestamp):
         log.error(
-            f'Could not query usd price for {asset.identifier} when processing '
-            f'{location}. Assuming price of ${str(default_value)}',
+            f'Could not query usd price for {asset.identifier} and time {time}'
+            f'when processing {location}. Assuming price of ${str(default_value)}',
         )
         usd_price = Price(default_value)
 
@@ -54,10 +54,10 @@ def query_usd_price_zero_if_error(
             to_asset=A_USD,
             timestamp=time,
         )
-    except RemoteError:
+    except (RemoteError, NoPriceForGivenTimestamp):
         msg_aggregator.add_error(
-            f'Could not query usd price for {asset.identifier} when processing '
-            f'{location}. Using zero price',
+            f'Could not query usd price for {asset.identifier} and time {time}'
+            f'when processing {location}. Using zero price',
         )
         usd_price = Price(ZERO)
 
