@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from copy import deepcopy
 from http import HTTPStatus
 from typing import Any, Dict, List
@@ -15,6 +16,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -117,13 +119,16 @@ def _populate_initial_balances(api_server) -> List[Dict[str, Any]]:
     return balances
 
 
-@pytest.mark.parametrize('async_query', [False, True])
+@pytest.mark.parametrize('async_query', [True, False])
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_add_and_query_manually_tracked_balances(
         rotkehlchen_api_server,
+        ethereum_accounts,
         async_query,
 ):
     """Test that adding and querying manually tracked balances via the API works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
     _populate_tags(rotkehlchen_api_server)
     response = requests.get(
         api_url_for(
@@ -160,25 +165,27 @@ def test_add_and_query_manually_tracked_balances(
     now = ts_now()
     # Also now test for https://github.com/rotki/rotki/issues/942 by querying for all balances
     # causing all balances to be saved and making sure the manual balances also got saved
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "allbalancesresource",
-        ), json={'async_query': async_query},
-    )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-        result = outcome['result']
-    else:
-        result = assert_proper_response_with_result(response)
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                "allbalancesresource",
+            ), json={'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
 
     assert result['BTC']['amount'] == '1.425'
     assert result['XMR']['amount'] == '50.315'
     assert result['BNB']['amount'] == '155'
     # Check DB to make sure a save happened
     assert rotki.data.db.get_last_balance_save_time() >= now
-    assert set(rotki.data.db.query_owned_assets()) == {'BTC', 'XMR', 'BNB', 'ETH'}
+    assert set(rotki.data.db.query_owned_assets()) == {'BTC', 'XMR', 'BNB', 'ETH', 'RDN'}
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{'CYFM': FVal(0)}])
