@@ -200,7 +200,7 @@ class TradesHistorian():
                 to_timestamp=end_ts,
             )
             for event in compound_history['events']:
-                if event.realized_pnl.amount == ZERO:
+                if event.event_type != 'liquidation' and event.realized_pnl.amount == ZERO:
                     continue  # skip events with no realized profit/loss
 
                 if event.event_type == 'redeem':
@@ -220,9 +220,15 @@ class TradesHistorian():
                 elif event.event_type == 'liquidation':
                     defi_events.append(DefiEvent(
                         timestamp=event.timestamp,
-                        event_type=DefiEventType.COMPOUND_LIQUIDATION,
+                        event_type=DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID,
+                        asset=event.asset,
+                        amount=event.value.amount,
+                    ))
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_LIQUIDATION_COLLATERAL_LOST,
                         asset=event.to_asset,
-                        amount=event.realized_pnl.amount,
+                        amount=event.to_value.amount,
                     ))
                 elif event.event_type == 'comp':
                     defi_events.append(DefiEvent(

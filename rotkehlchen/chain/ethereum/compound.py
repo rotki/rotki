@@ -363,24 +363,24 @@ class Compound(EthereumModule):
             timestamp = entry['blockTime']
             # Amount/value of underlying asset paid by liquidator
             # Essentially liquidator covers part of the debt of the user
-            underlying_amount = FVal(entry['underlyingRepayAmount'])
+            debt_amount = FVal(entry['underlyingRepayAmount'])
             underlying_usd_price = query_usd_price_zero_if_error(
                 asset=underlying_asset,
                 time=timestamp,
                 location='compound liquidation underlying asset',
                 msg_aggregator=self.msg_aggregator,
             )
-            underlying_usd_value = underlying_amount * underlying_usd_price
+            debt_usd_value = debt_amount * underlying_usd_price
             # Amount/value of ctoken_asset lost to the liquidator
             # This is what the liquidator gains at a discount
-            amount = FVal(entry['amount'])
-            usd_price = query_usd_price_zero_if_error(
+            liquidated_amount = FVal(entry['amount'])
+            liquidated_usd_price = query_usd_price_zero_if_error(
                 asset=ctoken_asset,
                 time=timestamp,
                 location='compound liquidation ctoken asset',
                 msg_aggregator=self.msg_aggregator,
             )
-            usd_value = amount * usd_price
+            liquidated_usd_value = liquidated_amount * liquidated_usd_price
             parse_result = _get_txhash_and_logidx(entry['id'])
             if parse_result is None:
                 log.error(
@@ -388,17 +388,18 @@ class Compound(EthereumModule):
                 )
                 continue
 
-            value = Balance(amount=amount, usd_value=usd_value)
+            gained_value = Balance(amount=debt_amount, usd_value=debt_usd_value)
+            lost_value = Balance(amount=liquidated_amount, usd_value=liquidated_usd_value)
             events.append(CompoundEvent(
                 event_type='liquidation',
                 address=address,
                 block_number=entry['blockNumber'],
                 timestamp=timestamp,
                 asset=underlying_asset,
-                value=Balance(amount=underlying_amount, usd_value=underlying_usd_value),
+                value=gained_value,
                 to_asset=ctoken_asset,
-                to_value=value,
-                realized_pnl=value,
+                to_value=lost_value,
+                realized_pnl=None,
                 tx_hash=parse_result[0],
                 log_index=parse_result[1],
             ))

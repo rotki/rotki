@@ -205,7 +205,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     value=Balance(amount=FVal('0.005450929782112544'), usd_value=FVal('0.77179714784931510496')),
     to_asset=A_CUSDC,
     to_value=Balance(amount=FVal('38.40932319'), usd_value=FVal('0.8069798802219')),
-    realized_pnl=Balance(amount=FVal('38.40932319'), usd_value=FVal('0.8069798802219')),
+    realized_pnl=None,
     tx_hash='0x1b4827a2fd4d6fcbf10bdd1a6c845c1a5f294ca39c60c90610b2a4d9fa5f6a33',
     log_index=15,
 ), CompoundEvent(
@@ -229,7 +229,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     value=Balance(amount=FVal('0.003050579405059551'), usd_value=FVal('0.43193153796238182609')),
     to_asset=A_CUSDC,
     to_value=Balance(amount=FVal('22.13273963'), usd_value=FVal('0.4650088596263')),
-    realized_pnl=Balance(amount=FVal('22.13273963'), usd_value=FVal('0.4650088596263')),
+    realized_pnl=None,
     tx_hash='0x82806e5f41c31a85c89b0ce096d784002d867df9d7f2d67bf07d47407e1a1225',
     log_index=67,
 ), CompoundEvent(
@@ -253,7 +253,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     value=Balance(amount=FVal('0.00168867571834735'), usd_value=FVal('0.2898780738115061010')),
     to_asset=A_CUSDC,
     to_value=Balance(amount=FVal('13.06078395'), usd_value=FVal('0.2745376786290')),
-    realized_pnl=Balance(amount=FVal('13.06078395'), usd_value=FVal('0.2745376786290')),
+    realized_pnl=None,
     tx_hash='0x160c0e6db0df5ea0c1cc9b1b31bd90c842ef793c9b2ab496efdc62bdd80eeb52',
     log_index=35,
 ), CompoundEvent(
@@ -301,7 +301,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     value=Balance(amount=FVal('0.0005'), usd_value=FVal('0.107075')),
     to_asset=A_CUSDC,
     to_value=Balance(amount=FVal('5.48471654'), usd_value=FVal('0.1152887416708')),
-    realized_pnl=Balance(amount=FVal('5.48471654'), usd_value=FVal('0.1152887416708')),
+    realized_pnl=None,
     tx_hash='0x02356347600dc86ba35effba30207277b022b05f5573f4dd66ba667c6656b3f3',
     log_index=75,
 ), CompoundEvent(
@@ -313,7 +313,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     value=Balance(amount=FVal('0.00053619065955'), usd_value=FVal('0.1126322099450730')),
     to_asset=A_CUSDC,
     to_value=Balance(amount=FVal('5.88169987'), usd_value=FVal('0.1236333312674')),
-    realized_pnl=Balance(amount=FVal('5.88169987'), usd_value=FVal('0.1236333312674')),
+    realized_pnl=None,
     tx_hash='0xaa15bf91ae1db6f981cf72372cbb497bc51cfb750a7e61fdb18719756741c734',
     log_index=70,
 )]
@@ -324,7 +324,7 @@ EXPECTED_EVENTS = [CompoundEvent(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [mocked_current_prices])
-# @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the compound histoy endpoint works. Uses real data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

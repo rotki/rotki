@@ -15,8 +15,9 @@ class DefiEventType(Enum):
     AAVE_LOAN_INTEREST = 2
     COMPOUND_LOAN_INTEREST = 3
     COMPOUND_DEBT_REPAY = 4
-    COMPOUND_LIQUIDATION = 5
-    COMPOUND_REWARDS = 6
+    COMPOUND_LIQUIDATION_DEBT_REPAID = 5
+    COMPOUND_LIQUIDATION_COLLATERAL_LOST = 6
+    COMPOUND_REWARDS = 7
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_LOAN_GAIN:
@@ -29,8 +30,10 @@ class DefiEventType(Enum):
             return "Compound loan interest"
         elif self == DefiEventType.COMPOUND_DEBT_REPAY:
             return "Compound debt repayment"
-        elif self == DefiEventType.COMPOUND_LIQUIDATION:
-            return "Compound liquidation"
+        elif self == DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID:
+            return "Compound liquidation debt repayment"
+        elif self == DefiEventType.COMPOUND_LIQUIDATION_COLLATERAL_LOST:
+            return "Compound liquidation collateral lost"
         elif self == DefiEventType.COMPOUND_REWARDS:
             return "Compound rewards"
 
@@ -42,6 +45,7 @@ class DefiEventType(Enum):
             DefiEventType.AAVE_LOAN_INTEREST,
             DefiEventType.COMPOUND_LOAN_INTEREST,
             DefiEventType.COMPOUND_REWARDS,
+            DefiEventType.COMPOUND_DEBT_REPAY,
         )
 
 

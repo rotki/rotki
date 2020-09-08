@@ -3444,10 +3444,7 @@ Getting compound historical data
 		      "amount": "10",
 		      "usd_value": "4.5"
 		  }
-		  "realized_pnl": {
-		      "amount": "10",
-		      "usd_value": "4.5"
-		  },
+		  "realized_pnl": null,
 		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
 		  "log_index": 1
 	      }, {
@@ -3520,7 +3517,7 @@ Getting compound historical data
        - For ``"mint"`` events this is the underlying asset.
        - For ``"redeem"`` events this is the cToken.
        - For ``"borrow"`` and ``"repay"`` events this is the borrowed asset
-       - For ``"liquidation"`` events this is the asset paid by the liquidator.
+       - For ``"liquidation"`` events this is the part of the debt that was repaid by the liquidator.
        - For ``"comp"`` events this the COMP token.
    :resjsonarr object value: The value of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
    :resjsonarr string to_asset: [Optional] The target asset involved in the event.
@@ -3532,7 +3529,6 @@ Getting compound historical data
    :resjsonarr object realized_pnl: [Optional]. Realized profit/loss at this event if any.
        - For ``"redeem"`` events this can be the realized profit from compound interest at this event. Amount is for the normal token.
        - For ``"repay"`` events this can be the realized loss from compound debt up to this point. Amount is for the borrowed asset.
-       - For ``"liquidation"`` events this is the loss from liquidation in the liquidation asset. The loss is in the cToken used as colllateral.
        - For ``"comp"`` events this is the gain in COMP.
 
    :resjsonarr int tx_hash: The transaction hash of the event.
