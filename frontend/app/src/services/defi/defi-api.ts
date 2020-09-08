@@ -1,9 +1,9 @@
-import { AxiosInstance } from 'axios';
+import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { ActionResult, AsyncQuery, PendingTask } from '@/services/types-api';
+import { ActionResult, PendingTask } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
   handleResponse
@@ -11,97 +11,109 @@ import {
 
 export class DefiApi {
   private readonly axios: AxiosInstance;
+  private readonly baseTransformer: AxiosTransformer[];
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
+    this.baseTransformer = setupTransformer();
   }
 
-  async dsrBalance(): Promise<AsyncQuery> {
+  async dsrBalance(): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>(
+      .get<ActionResult<PendingTask>>(
         'blockchains/ETH/modules/makerdao/dsrbalance',
         {
-          params: {
-            async_query: true
-          },
-          validateStatus: validWithSessionAndExternalService
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true
+          }),
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: this.baseTransformer
         }
       )
       .then(handleResponse);
   }
 
-  async dsrHistory(): Promise<AsyncQuery> {
+  async dsrHistory(): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>(
+      .get<ActionResult<PendingTask>>(
         'blockchains/ETH/modules/makerdao/dsrhistory',
         {
-          params: {
-            async_query: true
-          },
-          validateStatus: validWithSessionAndExternalService
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true
+          }),
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: this.baseTransformer
         }
       )
       .then(handleResponse);
   }
 
-  async makerDAOVaults(): Promise<AsyncQuery> {
+  async makerDAOVaults(): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>(
+      .get<ActionResult<PendingTask>>(
         'blockchains/ETH/modules/makerdao/vaults',
         {
           validateStatus: validWithSessionAndExternalService,
-          params: {
-            async_query: true
-          }
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true
+          }),
+          transformResponse: this.baseTransformer
         }
       )
       .then(handleResponse);
   }
 
-  async makerDAOVaultDetails(): Promise<AsyncQuery> {
+  async makerDAOVaultDetails(): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>(
+      .get<ActionResult<PendingTask>>(
         '/blockchains/ETH/modules/makerdao/vaultdetails',
         {
           validateStatus: validWithSessionAndExternalService,
-          params: {
-            async_query: true
-          }
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true
+          }),
+          transformResponse: this.baseTransformer
         }
       )
       .then(handleResponse);
   }
 
-  async fetchAaveBalances(): Promise<AsyncQuery> {
+  async fetchAaveBalances(): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>('/blockchains/ETH/modules/aave/balances', {
-        validateStatus: validWithSessionAndExternalService,
-        params: {
-          async_query: true
+      .get<ActionResult<PendingTask>>(
+        '/blockchains/ETH/modules/aave/balances',
+        {
+          validateStatus: validWithSessionAndExternalService,
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true
+          }),
+          transformResponse: this.baseTransformer
         }
+      )
+      .then(handleResponse);
+  }
+
+  async fetchAaveHistory(reset?: boolean): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/blockchains/ETH/modules/aave/history', {
+        validateStatus: validWithSessionAndExternalService,
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          resetDbData: reset
+        }),
+        transformResponse: this.baseTransformer
       })
       .then(handleResponse);
   }
 
-  async fetchAaveHistory(reset?: boolean): Promise<AsyncQuery> {
+  async fetchAllDefi(): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>('/blockchains/ETH/modules/aave/history', {
+      .get<ActionResult<PendingTask>>('/blockchains/ETH/defi', {
         validateStatus: validWithSessionAndExternalService,
-        params: {
-          async_query: true,
-          reset_db_data: reset
-        }
-      })
-      .then(handleResponse);
-  }
-
-  async fetchAllDefi(): Promise<AsyncQuery> {
-    return this.axios
-      .get<ActionResult<AsyncQuery>>('/blockchains/ETH/defi', {
-        validateStatus: validWithSessionAndExternalService,
-        params: {
-          async_query: true
-        }
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true
+        }),
+        transformResponse: this.baseTransformer
       })
       .then(handleResponse);
   }
@@ -113,7 +125,7 @@ export class DefiApi {
         {
           validateStatus: validWithSessionAndExternalService,
           params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-          transformResponse: setupTransformer([])
+          transformResponse: this.baseTransformer
         }
       )
       .then(handleResponse);
@@ -126,7 +138,7 @@ export class DefiApi {
         {
           validateStatus: validWithSessionAndExternalService,
           params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-          transformResponse: setupTransformer([])
+          transformResponse: this.baseTransformer
         }
       )
       .then(handleResponse);

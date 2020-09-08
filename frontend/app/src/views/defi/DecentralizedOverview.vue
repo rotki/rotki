@@ -28,12 +28,13 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { Component, Mixins } from 'vue-property-decorator';
+import { mapActions, mapGetters } from 'vuex';
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { Status } from '@/store/const';
+import StatusMixin from '@/mixins/status-mixin';
+import { Section } from '@/store/const';
 import { DefiProtocolSummary } from '@/store/defi/types';
 
 @Component({
@@ -43,28 +44,16 @@ import { DefiProtocolSummary } from '@/store/defi/types';
     RefreshHeader
   },
   computed: {
-    ...mapState('defi', ['status', 'defiStatus']),
     ...mapGetters('defi', ['defiOverview'])
   },
   methods: {
     ...mapActions('defi', ['fetchAllDefi'])
   }
 })
-export default class DecentralizedOverview extends Vue {
-  status!: Status;
-  defiStatus!: Status;
+export default class DecentralizedOverview extends Mixins(StatusMixin) {
   fetchAllDefi!: (refresh: boolean) => Promise<void>;
   defiOverview!: DefiProtocolSummary[];
-
-  get refreshing(): boolean {
-    return this.status !== Status.LOADED;
-  }
-
-  get loading(): boolean {
-    return (
-      this.defiStatus !== Status.LOADED && this.defiStatus !== Status.REFRESHING
-    );
-  }
+  section = Section.DEFI_OVERVIEW;
 
   async refresh() {
     await this.fetchAllDefi(true);

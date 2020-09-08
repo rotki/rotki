@@ -249,14 +249,85 @@
       }
     },
     "defi": {
+      "balances": {
+        "task": {
+          "title": "Querying DeFi balances"
+        },
+        "error": {
+          "title": "DeFi Balances",
+          "description": "Failed to retrieve DeFi balances: {error}"
+        }
+      },
       "compound": {
         "task": {
-          "title": "Retrieving Compound balances"
+          "title": "Querying Compound balances"
+        },
+        "error": {
+          "title": "Compound Balances",
+          "description": "Failed to retrieve Compound balances: {error}"
         }
       },
       "compound_history": {
         "task": {
-          "title": "Retrieving Compound history"
+          "title": "Querying Compound history"
+        },
+        "error": {
+          "title": "Compound History",
+          "description": "Failed to retrieve Compound history: {error}"
+        }
+      },
+      "dsr_balances": {
+        "task": {
+          "title": "Querying DSR Balances"
+        },
+        "error": {
+          "title": "DSR Balances",
+          "description": "Failed to retrieve DSR balances: ${error}"
+        }
+      },
+      "dsr_history": {
+        "task": {
+          "title": "Querying DSR History"
+        },
+        "error": {
+          "title": "DSR History",
+          "description": "Failed to retrieve DSR history: ${error}"
+        }
+      },
+      "makerdao_vaults": {
+        "task": {
+          "title": "Querying MakerDAO Vaults"
+        },
+        "error": {
+          "title": "MakerDAO Vaults",
+          "description": "Failed to retrieve MakerDAO Vaults: ${error}"
+        }
+      },
+      "makerdao_vault_details": {
+        "task": {
+          "title": "Querying MakerDAO Vault details"
+        },
+        "error": {
+          "title": "MakerDAO Vault details",
+          "description": "Failed to retrieve MakerDAO Vault details: ${error}"
+        }
+      },
+      "aave_balances": {
+        "task": {
+          "title": "Querying Aave balances"
+        },
+        "error": {
+          "title": "Aave balances",
+          "description": "Failed to retrieve Aave balances: ${error}"
+        }
+      },
+      "aave_history": {
+        "task": {
+          "title": "Querying Aave history"
+        },
+        "error": {
+          "title": "Aave history",
+          "description": "Failed to retrieve Aave history: ${error}"
         }
       }
     }

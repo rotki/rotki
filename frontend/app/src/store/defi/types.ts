@@ -17,13 +17,8 @@ import {
   CompoundHistory
 } from '@/services/defi/types/compound';
 import { Balance, HasBalance } from '@/services/types-api';
-import { Status } from '@/store/const';
 
 export interface DefiState {
-  status: Status;
-  defiStatus: Status;
-  lendingHistoryStatus: Status;
-  borrowingHistoryStatus: Status;
   dsrHistory: DSRHistory;
   dsrBalances: DSRBalances;
   makerDAOVaults: MakerDAOVault[];

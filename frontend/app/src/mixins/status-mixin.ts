@@ -11,11 +11,36 @@ import { assert } from '@/utils/assertions';
 export default class StatusMixin extends Vue {
   // The default value of the mixing. Implementers are required to set that.
   section: Section = Section.NONE;
+  secondSection: Section = Section.NONE;
   status!: (section: Section) => Status;
 
   get loading(): boolean {
-    assert(this.section !== Section.NONE);
-    const status = this.status(this.section);
+    return this.isLoading(this.section);
+  }
+
+  get refreshing(): boolean {
+    return this.isRefreshing(this.section);
+  }
+
+  get secondaryLoading(): boolean {
+    return this.isLoading(this.secondSection);
+  }
+
+  get secondaryRefreshing(): boolean {
+    return this.isRefreshing(this.secondSection);
+  }
+
+  get anyLoading(): boolean {
+    return this.loading || this.secondaryLoading;
+  }
+
+  get anyRefreshing(): boolean {
+    return this.refreshing || this.secondaryRefreshing;
+  }
+
+  private isLoading(section: Section): boolean {
+    assert(section !== Section.NONE);
+    const status = this.status(section);
     return !(
       status === Status.LOADED ||
       status === Status.PARTIALLY_LOADED ||
@@ -23,9 +48,9 @@ export default class StatusMixin extends Vue {
     );
   }
 
-  get refreshing(): boolean {
-    assert(this.section !== Section.NONE);
-    const status = this.status(this.section);
+  private isRefreshing(section: Section): boolean {
+    assert(section !== Section.NONE);
+    const status = this.status(section);
     return (
       status === Status.LOADING ||
       status === Status.REFRESHING ||

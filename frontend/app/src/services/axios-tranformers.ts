@@ -80,9 +80,6 @@ export const setupJsonTransformer: (
   };
 };
 
-export const setupTransformer: (
-  numericKeys: string[]
-) => AxiosTransformer[] = numericKeys => [
-  setupJsonTransformer(numericKeys),
-  axiosCamelCaseTransformer
-];
+export function setupTransformer(numericKeys: string[] = []) {
+  return [setupJsonTransformer(numericKeys), axiosCamelCaseTransformer];
+}

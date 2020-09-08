@@ -79,7 +79,7 @@ export class HistoryApi {
       .get<ActionResult<PendingTask>>('/asset_movements', {
         params: axiosSnakeCaseTransformer(params),
         validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: setupTransformer([])
+        transformResponse: setupTransformer()
       })
       .then(handleResponse);
   }
@@ -92,7 +92,7 @@ export class HistoryApi {
         {
           params: axiosSnakeCaseTransformer({ asyncQuery: true }),
           validateStatus: validWithParamsSessionAndExternalService,
-          transformResponse: setupTransformer([])
+          transformResponse: setupTransformer()
         }
       )
       .then(handleResponse);

@@ -43,7 +43,7 @@ export class BalancesApi {
     return this.axios
       .get<ActionResult<PendingTask>>('balances/manual', {
         params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        transformResponse: setupTransformer([]),
+        transformResponse: setupTransformer(),
         validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);

@@ -1,5 +1,5 @@
 <template>
-  <progress-screen v-if="initialLoading">
+  <progress-screen v-if="loading">
     <template #message>
       Please wait while your balances are getting loaded...
     </template>
@@ -8,12 +8,12 @@
     <v-row>
       <v-col>
         <refresh-header
-          :loading="allLoading"
+          :loading="anyRefreshing"
           title="Lending"
           @refresh="refresh()"
         >
           <confirmable-reset
-            :loading="allLoading"
+            :loading="anyRefreshing"
             tooltip="Refreshes the data overwriting cached Aave historical entries"
             @reset="reset()"
           >
@@ -69,7 +69,7 @@
               </template>
               <amount-display
                 v-if="premium"
-                :loading="initialHistoryLoading"
+                :loading="secondaryLoading"
                 :value="totalUsdEarned(selectedProtocols, selectedAddresses)"
                 show-currency="symbol"
                 fiat-currency="USD"
@@ -95,7 +95,7 @@
       <v-col>
         <stat-card title="Assets">
           <lending-asset-table
-            :loading="loading"
+            :loading="refreshing"
             :assets="lendingBalances(selectedProtocols, selectedAddresses)"
           />
         </stat-card>
@@ -106,7 +106,7 @@
         <premium-card v-if="!premium" title="History" />
         <lending-history
           v-else
-          :loading="historyLoading"
+          :loading="secondaryRefreshing"
           :history="lendingHistory(selectedProtocols, selectedAddresses)"
           :floating-precision="floatingPrecision"
           @open-link="openLink($event)"
@@ -119,7 +119,7 @@
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
-import { Vue } from 'vue-property-decorator';
+import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -133,10 +133,11 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
+import StatusMixin from '@/mixins/status-mixin';
 import { DEFI_PROTOCOLS } from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
-import { Status } from '@/store/const';
-import { DefiBalance, DefiLendingHistory } from '@/store/defi/types';
+import { Section } from '@/store/const';
+import { DefiBalance } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
 import { LendingHistory } from '@/utils/premium';
 
@@ -159,7 +160,6 @@ import { LendingHistory } from '@/utils/premium';
   computed: {
     ...mapState('session', ['premium']),
     ...mapGetters('session', ['floatingPrecision']),
-    ...mapState('defi', ['lendingHistoryStatus', 'status']),
     ...mapGetters('defi', [
       'totalUsdEarned',
       'totalLendingDeposit',
@@ -170,10 +170,10 @@ import { LendingHistory } from '@/utils/premium';
     ])
   },
   methods: {
-    ...mapActions('defi', ['fetchLendingHistory', 'fetchLending'])
+    ...mapActions('defi', ['fetchLending'])
   }
 })
-export default class Lending extends Vue {
+export default class Lending extends Mixins(StatusMixin) {
   premium!: boolean;
   floatingPrecision!: number;
   selectedAccount: Account | null = null;
@@ -195,17 +195,17 @@ export default class Lending extends Vue {
     refresh?: boolean;
     reset?: boolean;
   }) => Promise<void>;
-  fetchLending!: (refresh: boolean) => Promise<void>;
-  lendingHistoryStatus!: Status;
-  status!: Status;
-  lendingHistory!: (
-    protocols: SupportedDefiProtocols[],
-    addresses: string[]
-  ) => DefiLendingHistory<SupportedDefiProtocols>[];
+  fetchLending!: (payload?: {
+    refresh?: boolean;
+    reset?: boolean;
+  }) => Promise<void>;
   totalUsdEarned!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => BigNumber;
+
+  section = Section.DEFI_LENDING;
+  secondSection = Section.DEFI_LENDING_HISTORY;
 
   get selectedAddresses(): string[] {
     return this.selectedAccount ? [this.selectedAccount.address] : [];
@@ -218,15 +218,11 @@ export default class Lending extends Vue {
   }
 
   async refresh() {
-    await this.fetchLending(true);
-    await this.fetchLendingHistory({
-      refresh: true
-    });
+    await this.fetchLending({ refresh: true });
   }
 
   async reset() {
-    await this.fetchLending(true);
-    await this.fetchLendingHistory({
+    await this.fetchLending({
       refresh: true,
       reset: true
     });
@@ -240,37 +236,11 @@ export default class Lending extends Vue {
     if (protocolIndex >= 0) {
       this.protocol = DEFI_PROTOCOLS[protocolIndex];
     }
-    await this.fetchLendingHistory();
+    await this.fetchLending();
   }
 
   get selectedProtocols(): SupportedDefiProtocols[] {
     return this.protocol ? [this.protocol] : [];
-  }
-
-  get initialLoading(): boolean {
-    return this.status !== Status.LOADED && this.status !== Status.REFRESHING;
-  }
-
-  get loading(): boolean {
-    return this.status !== Status.LOADED;
-  }
-
-  get allLoading(): boolean {
-    return (
-      this.status !== Status.LOADED ||
-      this.lendingHistoryStatus !== Status.LOADED
-    );
-  }
-
-  get initialHistoryLoading(): boolean {
-    return (
-      this.lendingHistoryStatus !== Status.LOADED &&
-      this.lendingHistoryStatus !== Status.REFRESHING
-    );
-  }
-
-  get historyLoading(): boolean {
-    return this.lendingHistoryStatus !== Status.LOADED;
   }
 
   openLink(url: string) {
