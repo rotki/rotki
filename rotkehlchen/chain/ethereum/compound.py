@@ -621,12 +621,15 @@ class Compound(EthereumModule):
         history: Dict[str, Any] = {}
         events: List[CompoundEvent] = []
         for address in addresses:
-            events.extend(self._get_lend_events('mint', address, from_timestamp, to_timestamp))
-            events.extend(self._get_lend_events('redeem', address, from_timestamp, to_timestamp))
-            events.extend(self._get_borrow_events('borrow', address, from_timestamp, to_timestamp))
-            events.extend(self._get_borrow_events('repay', address, from_timestamp, to_timestamp))
-            events.extend(self._get_liquidation_events(address, from_timestamp, to_timestamp))
-            events.extend(self._get_comp_events(address, from_timestamp, to_timestamp))
+            user_events = self._get_lend_events('mint', address, from_timestamp, to_timestamp)
+            user_events.extend(self._get_lend_events('redeem', address, from_timestamp, to_timestamp))  # noqa: E501
+            user_events.extend(self._get_borrow_events('borrow', address, from_timestamp, to_timestamp))  # noqa: E501
+            user_events.extend(self._get_borrow_events('repay', address, from_timestamp, to_timestamp))  # noqa: E501
+            user_events.extend(self._get_liquidation_events(address, from_timestamp, to_timestamp))
+            if len(user_events) != 0:
+                # query comp events only if any other event has happened
+                user_events.extend(self._get_comp_events(address, from_timestamp, to_timestamp))
+                events.extend(user_events)
 
         events.sort(key=lambda x: x.timestamp)
         history['events'] = events
