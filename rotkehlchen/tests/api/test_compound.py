@@ -1,6 +1,7 @@
 import random
 import warnings as test_warnings
 from contextlib import ExitStack
+from http import HTTPStatus
 from typing import Any, Dict
 
 import pytest
@@ -14,6 +15,7 @@ from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
     wait_for_async_task,
@@ -77,6 +79,29 @@ def test_query_compound_balances(rotkehlchen_api_server, ethereum_accounts, asyn
     if len(rewards) != 0:
         assert len(rewards) == 1
         assert 'COMP' in rewards
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
+def test_query_compound_balances_module_not_activated(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
+
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "compoundbalancesresource",
+        ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='compound module is not activated',
+        status_code=HTTPStatus.CONFLICT,
+    )
 
 
 mocked_historical_prices: Dict[str, Any] = {
@@ -532,3 +557,17 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
     assert FVal(rewards_0['COMP']['amount']) > FVal('0.000036')
     rewards_1 = result['rewards']['0xF59D4937BF1305856C3a267bB07791507a3377Ee']
     assert FVal(rewards_1['COMP']['amount']) > FVal('0.003613')
+
+
+@pytest.mark.parametrize('ethereum_modules', [['compound']])
+@pytest.mark.parametrize('start_with_valid_premium', [False])
+def test_query_compound_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "compoundhistoryresource",
+    ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='Currently logged in user testuser does not have a premium subscription',
+        status_code=HTTPStatus.CONFLICT,
+    )

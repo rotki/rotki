@@ -576,6 +576,7 @@ class Compound(EthereumModule):
             elif event.event_type == 'borrow':
                 loss_assets[event.address][event.asset] -= event.value
             elif event.event_type == 'repay':
+                assert event.to_asset, 'repay events should have a to_asset'
                 e_loss = (
                     loss_assets[event.address][event.asset] +
                     event.value -
@@ -583,7 +584,7 @@ class Compound(EthereumModule):
                 )
                 loss = e_loss if e_loss.amount >= 0 else None  # not realized loss yet
                 if loss:
-                    loss_so_far[event.address][event.to_asset]
+                    loss_so_far[event.address][event.to_asset] += loss
                 loss_assets[event.address][event.asset] += event.value
                 events[idx] = event._replace(realized_pnl=loss)  # TODO: maybe not named tuple?
             elif event.event_type == 'liquidation':
