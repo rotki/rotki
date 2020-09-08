@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.compound import CompoundEvent
+from rotkehlchen.chain.ethereum.compound import A_COMP, CompoundEvent
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -86,6 +86,13 @@ mocked_historical_prices: Dict[str, Any] = {
             1587601131: FVal('1.016'),
             1587766729: FVal('1.016'),
             1582378248: FVal('1.026'),
+            1597288823: FVal('1.018'),
+            1598038125: FVal('1.006'),
+            1597954197: FVal('1.005'),
+            1597369409: FVal('1.008'),
+            1597452580: FVal('1.011'),
+            1598138282: FVal('1.003'),
+            1597982781: FVal('1.006'),
         },
     },
     'cUSDC': {
@@ -115,20 +122,23 @@ mocked_historical_prices: Dict[str, Any] = {
             1588464109: FVal('210.06'),
         },
     },
+    'COMP': {
+        'USD': {
+            1597452580: FVal('196.9'),
+        },
+    },
 }
 mocked_current_prices: Dict[str, Any] = {}
 
 
-
 TEST_ACCOUNTS = [
     # For mint/redeem
-    # '0xCa248E880Da1b0D24fe71D338c4ed04f1faF3b9E',
     '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
     # For borrowing/liquidations
     '0xC440f3C87DC4B6843CABc413916220D4f4FeD117',
+    # For mint/redeem + comp
+    '0xF59D4937BF1305856C3a267bB07791507a3377Ee',
 ]
-
-
 
 EXPECTED_EVENTS = [CompoundEvent(
     event_type='mint',
@@ -316,6 +326,147 @@ EXPECTED_EVENTS = [CompoundEvent(
     realized_pnl=None,
     tx_hash='0xaa15bf91ae1db6f981cf72372cbb497bc51cfb750a7e61fdb18719756741c734',
     log_index=70,
+), CompoundEvent(
+    event_type='mint',
+    address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
+    block_number=10649153,
+    timestamp=1597288823,
+    asset=A_DAI,
+    value=Balance(
+        amount=FVal('738.31900592'),
+        usd_value=FVal('751.60874802656'),
+    ),
+    to_asset=A_CDAI,
+    to_value=Balance(amount=FVal('35867.06208787'), usd_value=FVal('751.60874802656')),
+    realized_pnl=None,
+    tx_hash='0x02fcd49e347d72736d97c7fd7b592c74066b278c1e1d921222f1dcf57c6c733b',
+    log_index=216,
+), CompoundEvent(
+    event_type='mint',
+    address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
+    block_number=10655225,
+    timestamp=1597369409,
+    asset=A_DAI,
+    value=Balance(
+        amount=FVal('1155.06093'),
+        usd_value=FVal('1164.30141744'),
+    ),
+    to_asset=A_CDAI,
+    to_value=Balance(amount=FVal('56104.69550574'), usd_value=FVal('1164.30141744')),
+    realized_pnl=None,
+    tx_hash='0xd867ff816645d72ce230969eba06c3be262b55a9ddc2a542ddd936f2d95abb42',
+    log_index=37,
+), CompoundEvent(
+    event_type='redeem',
+    address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
+    block_number=10661485,
+    timestamp=1597452580,
+    asset=A_CDAI,
+    value=Balance(
+        amount=FVal('91971.75759361'),
+        usd_value=FVal('1914.508668506095318289145'),
+    ),
+    to_asset=A_DAI,
+    to_value=Balance(
+        amount=FVal('1893.678208215722372195'),
+        usd_value=FVal('1914.508668506095318289145'),
+    ),
+    realized_pnl=Balance(
+        amount=FVal('0.298272295722372195'),
+        usd_value=FVal('-1.401496960464681710855'),
+    ),
+    tx_hash='0x2bbb296ebf1d94ad28d54c446cb23709b3463c4a43d8b5b8438ff39b2b985e1c',
+    log_index=33,
+), CompoundEvent(
+    event_type='comp',
+    address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
+    block_number=10661485,
+    timestamp=1597452580,
+    asset=A_COMP,
+    value=Balance(
+        amount=FVal('0.002931620367040859'),
+        usd_value=FVal('0.5772360502703451371'),
+    ),
+    to_asset=None,
+    to_value=None,
+    realized_pnl=Balance(
+        amount=FVal('0.002931620367040859'),
+        usd_value=FVal('0.5772360502703451371'),
+    ),
+    tx_hash='0x2bbb296ebf1d94ad28d54c446cb23709b3463c4a43d8b5b8438ff39b2b985e1c',
+    log_index=25,
+), CompoundEvent(
+    event_type='mint',
+    address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
+    block_number=10699185,
+    timestamp=1597954197,
+    asset=A_DAI,
+    value=Balance(
+        amount=FVal('1164.9182'),
+        usd_value=FVal('1170.7427910'),
+    ),
+    to_asset=A_CDAI,
+    to_value=Balance(amount=FVal('56547.38087342'), usd_value=FVal('1170.7427910')),
+    realized_pnl=None,
+    tx_hash='0xb79ca0cf277596d707333127bc470d8dc81c796feee480e68f523263605fcd7c',
+    log_index=50,
+), CompoundEvent(
+    event_type='redeem',
+    address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
+    block_number=10701348,
+    timestamp=1597982781,
+    asset=A_CDAI,
+    value=Balance(
+        amount=FVal('56547.38087342'),
+        usd_value=FVal('1171.943202171921841981350'),
+    ),
+    to_asset=A_DAI,
+    to_value=Balance(
+        amount=FVal('1164.953481284216542725'),
+        usd_value=FVal('1171.943202171921841981350'),
+    ),
+    realized_pnl=Balance(
+        amount=FVal('0.035281284216542725'),
+        usd_value=FVal('1.200411171921841981350'),
+    ),
+    tx_hash='0xa931709c3f2e6a53c0cfe7e65a9b73d1e6cfe2f6a1dec907578c443d66130cb6',
+    log_index=69,
+), CompoundEvent(
+    event_type='mint',
+    address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
+    block_number=10705474,
+    timestamp=1598038125,
+    asset=A_DAI,
+    value=Balance(
+        amount=FVal('157.51085'),
+        usd_value=FVal('158.45591510'),
+    ),
+    to_asset=A_CDAI,
+    to_value=Balance(amount=FVal('7645.20779168'), usd_value=FVal('158.45591510')),
+    realized_pnl=None,
+    tx_hash='0x7c9126e0a13ec76af3f79b431f37deb26acdc9a0e0c7b24e82aae159f50fc8e2',
+    log_index=38,
+), CompoundEvent(
+    event_type='redeem',
+    address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
+    block_number=10712981,
+    timestamp=1598138282,
+    asset=A_CDAI,
+    value=Balance(
+        amount=FVal('7645.20779168'),
+        usd_value=FVal('158.000066488385791637265'),
+    ),
+    to_asset=A_DAI,
+    to_value=Balance(
+        amount=FVal('157.527484036276960755'),
+        usd_value=FVal('158.000066488385791637265'),
+    ),
+    realized_pnl=Balance(
+        amount=FVal('0.016634036276960755'),
+        usd_value=FVal('-0.455848611614208362735'),
+    ),
+    tx_hash='0x667f4eb9952ffdb5141741fecb8a798f207b02adc480bb8063b055c4b10ad1dd',
+    log_index=38,
 )]
 
 
@@ -331,6 +482,8 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,
+        eth_balances=['1000000', '2000000', '33000030003'],
+        token_balances={},
         btc_accounts=None,
         original_queries=['zerion'],
     )
@@ -355,6 +508,27 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
             result = assert_proper_response_with_result(response)
 
     assert len(result) == 4
+
     expected_events = process_result_list(EXPECTED_EVENTS)
-    # Check only 14 first events
-    assert result['events'][:14] == expected_events
+    # Check only 22 first events, since this is how many there were in the time of
+    # the writing of the test
+    assert result['events'][:22] == expected_events
+
+    # Check interest profit mappings
+    profit_0 = result['interest_profit']['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']
+    assert FVal(profit_0['DAI']['amount']) > FVal(9)
+    profit_1 = result['interest_profit']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
+    assert FVal(profit_1['USDC']['amount']) > FVal(2)
+    profit_2 = result['interest_profit']['0xF59D4937BF1305856C3a267bB07791507a3377Ee']
+    assert FVal(profit_2['DAI']['amount']) > FVal('0.3')
+
+    # Check debt loss mappings
+    debt_0 = result['debt_loss']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
+    assert FVal(debt_0['ETH']['amount']) > FVal('0.000012')
+    assert FVal(debt_0['cUSDC']['amount']) > FVal('84')
+
+    # Check rewards mappings
+    rewards_0 = result['rewards']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
+    assert FVal(rewards_0['COMP']['amount']) > FVal('0.000036')
+    rewards_1 = result['rewards']['0xF59D4937BF1305856C3a267bB07791507a3377Ee']
+    assert FVal(rewards_1['COMP']['amount']) > FVal('0.003613')
