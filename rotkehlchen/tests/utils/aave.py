@@ -155,7 +155,7 @@ expected_aave_test_events = [
         block_number=10440633,
         timestamp=Timestamp(1594502373),
         tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
-        log_index=0,
+        log_index=104,
     ), AaveEvent(
         event_type='interest',
         asset=A_ADAI,
@@ -166,6 +166,6 @@ expected_aave_test_events = [
         block_number=10440633,
         timestamp=Timestamp(1594502373),
         tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
-        log_index=0,
+        log_index=100,
     ),
 ]

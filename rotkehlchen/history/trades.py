@@ -19,8 +19,8 @@ from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.chain.manager import ChainManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -190,18 +190,73 @@ class TradesHistorian():
                         amount=detail.total_liquidated.usd_value + detail.total_interest_owed,
                     ))
 
+        # include compound events
+        if self.chain_manager.compound and has_premium:
+            compound_history = self.chain_manager.compound.get_history(
+                given_defi_balances=self.chain_manager.defi_balances,
+                addresses=self.chain_manager.queried_addresses_for_module('compound'),
+                reset_db_data=False,
+                from_timestamp=start_ts,
+                to_timestamp=end_ts,
+            )
+            for event in compound_history['events']:
+                if event.event_type != 'liquidation' and event.realized_pnl.amount == ZERO:
+                    continue  # skip events with no realized profit/loss
+
+                if event.event_type == 'redeem':
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_LOAN_INTEREST,
+                        asset=event.to_asset,
+                        amount=event.realized_pnl.amount,
+                    ))
+                elif event.event_type == 'repay':
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_DEBT_REPAY,
+                        asset=event.asset,
+                        amount=event.realized_pnl.amount,
+                    ))
+                elif event.event_type == 'liquidation':
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID,
+                        asset=event.asset,
+                        amount=event.value.amount,
+                    ))
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_LIQUIDATION_COLLATERAL_LOST,
+                        asset=event.to_asset,
+                        amount=event.to_value.amount,
+                    ))
+                elif event.event_type == 'comp':
+                    defi_events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        event_type=DefiEventType.COMPOUND_REWARDS,
+                        asset=event.asset,
+                        amount=event.realized_pnl.amount,
+                    ))
+
         # include aave lending events
         aave = self.chain_manager.aave
         if aave is not None and has_premium:
             mapping = aave.get_history(
                 addresses=self.chain_manager.queried_addresses_for_module('aave'),
                 reset_db_data=False,
+                from_timestamp=start_ts,
+                to_timestamp=end_ts,
             )
 
             now = ts_now()
             for _, aave_history in mapping.items():
                 total_amount_per_token: Dict[Asset, FVal] = defaultdict(FVal)
                 for event in aave_history.events:
+                    if event.timestamp < start_ts:
+                        continue
+                    if event.timestamp > end_ts:
+                        break
+
                     if event.event_type == 'interest':
                         defi_events.append(DefiEvent(
                             timestamp=event.timestamp,

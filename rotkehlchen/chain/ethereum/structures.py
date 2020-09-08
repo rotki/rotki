@@ -1,6 +1,6 @@
 """Ethereum/defi protocol structures that need to be accessed from multiple places"""
 
-from typing import Any, Dict, NamedTuple
+from typing import NamedTuple
 
 from typing_extensions import Literal
 
@@ -21,8 +21,3 @@ class AaveEvent(NamedTuple):
     timestamp: Timestamp
     tx_hash: str
     log_index: int  # only used to identify uniqueness
-
-    def serialize(self) -> Dict[str, Any]:
-        serialized = self._asdict()  # pylint: disable=no-member
-        del serialized['log_index']
-        return serialized

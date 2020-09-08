@@ -4,7 +4,11 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tra
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_location, deserialize_trade_type
+from rotkehlchen.serialization.deserialize import (
+    deserialize_int_from_hex_or_int,
+    deserialize_location,
+    deserialize_trade_type,
+)
 from rotkehlchen.typing import Location, TradeType
 from rotkehlchen.utils.serialization import (
     pretty_json_dumps,
@@ -105,3 +109,12 @@ def test_deserialize_location(database):
     balances = database.get_manually_tracked_balances()
     for data in Location:
         assert data in (x.location for x in balances)
+
+
+def test_deserialize_int_from_hex_or_int():
+    # Etherscan can return logIndex 0x if it's the 0th log in the hash
+    # https://etherscan.io/tx/0x6f1370cd9fa19d550031a30290b062dd3b56f44caf6344c05545ef15428de7ef
+    assert deserialize_int_from_hex_or_int("0x", 'whatever') == 0
+    assert deserialize_int_from_hex_or_int("0x1", 'whatever') == 1
+    assert deserialize_int_from_hex_or_int("0x33", 'whatever') == 51
+    assert deserialize_int_from_hex_or_int(66, 'whatever') == 66

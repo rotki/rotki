@@ -1535,7 +1535,13 @@ class RestAPI():
         )
 
     @require_premium_user(active_check=False)
-    def get_aave_history(self, async_query: bool, reset_db_data: bool) -> Response:
+    def get_aave_history(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
             module='aave',
@@ -1543,6 +1549,47 @@ class RestAPI():
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('aave'),
             reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+    @require_loggedin_user()
+    def get_compound_balances(self, async_query: bool) -> Response:
+        # Once that has ran we can be sure that defi_balances mapping is populated
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module='compound',
+            method='get_balances',
+            # We need to query defi balances before since defi_balances must be populated
+            query_specific_balances_before=['defi'],
+            # Giving the defi balances as a lambda function here so that they
+            # are retrieved only after we are sure the defi balances have been
+            # queried.
+            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+        )
+
+    @require_premium_user(active_check=False)
+    def get_compound_history(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module='compound',
+            method='get_history',
+            # We need to query defi balances before since defi_balances must be populated
+            query_specific_balances_before=['defi'],
+            # Giving the defi balances as a lambda function here so that they
+            # are retrieved only after we are sure the defi balances have been
+            # queried.
+            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('compound'),
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
         )
 
     def _watcher_query(

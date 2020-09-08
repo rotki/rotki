@@ -3,15 +3,17 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 import gevent
 import requests
+from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.aave import Aave
+from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances, Zerion
@@ -159,7 +161,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Per asset total balances
         self.totals: Totals = defaultdict(Balance)
         # TODO: Perhaps turn this mapping into a typed dict?
-        self.eth_modules: Dict[str, EthereumModule] = {}
+        self.eth_modules: Dict[str, Union[EthereumModule, Literal['loading']]] = {}
         if eth_modules:
             for given_module in eth_modules:
                 if given_module == 'makerdao_dsr':
@@ -183,12 +185,20 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
+                elif given_module == 'compound':
+                    self.eth_modules['compound'] = 'loading'
+                    # Since Compound initialization needs a few networkd calls we do it async
+                    greenlet_manager.spawn_and_track(
+                        task_name='Initialize Compound object',
+                        method=self._initialize_compound,
+                        premium=premium,
+                    )
                 else:
                     log.error(f'Unrecognized module value {given_module} given. Skipping...')
 
         self.greenlet_manager = greenlet_manager
 
-        for name, module in self.eth_modules.items():
+        for name, module in self.iterate_modules():
             self.greenlet_manager.spawn_and_track(
                 task_name=f'startup of {name}',
                 method=module.on_startup,
@@ -203,6 +213,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     def _initialize_zerion(self) -> None:
         self.zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
+
+    def _initialize_compound(self, premium: Optional[Premium]) -> None:
+        self.eth_modules['compound'] = Compound(
+            ethereum_manager=self.ethereum,
+            database=self.database,
+            premium=premium,
+            msg_aggregator=self.msg_aggregator,
+        )
 
     def get_zerion(self) -> Zerion:
         """Returns the initialized zerion. If it's not ready it waits for 5 seconds
@@ -235,6 +253,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if vaults:
             vaults.premium = None
 
+    def iterate_modules(self) -> Iterator[Tuple[str, EthereumModule]]:
+        for name, module in self.eth_modules.items():
+            if module == 'loading':
+                continue
+
+            yield name, module
+
     @property
     def makerdao_dsr(self) -> Optional[MakerDAODSR]:
         module = self.eth_modules.get('makerdao_dsr', None)
@@ -257,6 +282,23 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
+        return module  # type: ignore
+
+    @property
+    def compound(self) -> Optional[Compound]:
+        module = self.eth_modules.get('compound', None)
+        if not module:
+            return None
+
+        if module == 'loading':
+            # Keep trying out with a timeout of 10 seconds unitl initialization finishes
+            with gevent.Timeout(10):
+                while True:
+                    module = self.eth_modules.get('compound', None)
+                    if module == 'loading':
+                        gevent.sleep(0.5)
+                    else:
+                        return module  # type: ignore
         return module  # type: ignore
 
     def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEthAddress]:
@@ -622,7 +664,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 else:  # remove
                     self.defi_balances.pop(address, None)
                 # For each module run the corresponding callback for the address
-                for _, module in self.eth_modules.items():
+                for _, module in self.iterate_modules():
                     if append_or_remove == 'append':
                         module.on_account_addition(address)
                     else:  # remove

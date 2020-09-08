@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Optional, Tuple
 
-from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
@@ -884,11 +884,9 @@ class TaxableEvents():
         )
         rate = self.get_rate_in_profit_currency(event.asset, event.timestamp)
         profit_loss = event.amount * rate
-        if event.event_type in (DefiEventType.DSR_LOAN_GAIN, DefiEventType.AAVE_LOAN_INTEREST):
+        if event.is_profitable():
             self.defi_profit_loss += profit_loss
-        elif event.event_type == DefiEventType.MAKERDAO_VAULT_LOSS:
-            self.defi_profit_loss -= profit_loss
         else:
-            raise NotImplementedError('Not implemented Defi event encountered at accounting')
+            self.defi_profit_loss -= profit_loss
 
         self.csv_exporter.add_defi_event(event=event, profit_loss_in_profit_currency=profit_loss)

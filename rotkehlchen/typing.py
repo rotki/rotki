@@ -7,8 +7,8 @@ from typing_extensions import Literal
 
 from rotkehlchen.fval import FVal
 
-ModuleName = Literal['makerdao_dsr', 'makerdao_vaults', 'aave']
-AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave']
+ModuleName = Literal['makerdao_dsr', 'makerdao_vaults', 'aave', 'compound']
+AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave', 'compound']
 
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
@@ -387,3 +387,19 @@ class BlockchainAccountData(NamedTuple):
     address: BlockchainAddress
     label: Optional[str] = None
     tags: Optional[List[str]] = None
+
+
+class BalanceType(Enum):
+    """The type of balance. Asset for lending balances and Debt for borrowing"""
+    ASSET = 1
+    DEBT = 2
+
+    def __str__(self) -> str:
+        if self == BalanceType.ASSET:
+            return 'asset'
+        elif self == BalanceType.DEBT:
+            return 'debt'
+
+        raise RuntimeError(
+            f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
+        )
