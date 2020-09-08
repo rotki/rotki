@@ -1,3 +1,4 @@
+import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from typing import Any, Dict
@@ -285,9 +286,9 @@ EXPECTED_EVENTS = [CompoundEvent(
         amount=FVal('1275.966355872567998472'),
         usd_value=FVal('1296.381817566529086447552'),
     ),
-    realized_pnl=Balance(  # TODO: This realized PnL does not seem right. Investigate
-        amount=FVal('9.092289208644229003'),
-        usd_value=FVal('63.119117678573813807108'),
+    realized_pnl=Balance(
+        amount=FVal('0.138844949516514997'),
+        usd_value=FVal('0.141066468708779236952'),
     ),
     tx_hash='0x63ec8370b29e3ddad6d59f09a161023b5bc0524eb5ca6c4473a5242f40e2129f',
     log_index=115,
@@ -333,10 +334,9 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
         btc_accounts=None,
         original_queries=['zerion'],
     )
-    # Since this test is slow we don't run both async and sync in the same test run
+    # Since this test can be a bit slow we don't run both async and sync in the same test run
     # Instead we randomly choose one. Eventually both cases will be covered.
-    async_query = False
-    # async_query = random.choice([True, False])
+    async_query = random.choice([True, False])
 
     with ExitStack() as stack:
         # patch ethereum/etherscan to not autodetect tokens

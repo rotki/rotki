@@ -548,6 +548,9 @@ class Compound(EthereumModule):
         loss_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
         rewards_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
 
+        profit_so_far: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
+        loss_so_far: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
+
         balances = self.get_balances(given_defi_balances)
 
         for idx, event in enumerate(events):
@@ -555,16 +558,28 @@ class Compound(EthereumModule):
                 assets[event.address][event.asset] -= event.value
             elif event.event_type == 'redeem':
                 assert event.to_asset, 'redeem events should have a to_asset'
-                e_profit = assets[event.address][event.to_asset] + event.to_value
+                e_profit = (
+                    assets[event.address][event.to_asset] +
+                    event.to_value -
+                    profit_so_far[event.address][event.to_asset]
+                )
                 profit = e_profit if e_profit.amount >= 0 else None  # not realized profit yet
+                if profit:
+                    profit_so_far[event.address][event.to_asset] += profit
                 assets[event.address][event.to_asset] += event.to_value
                 events[idx] = event._replace(realized_pnl=profit)  # TODO: maybe not named tuple?
 
             elif event.event_type == 'borrow':
                 loss_assets[event.address][event.asset] -= event.value
             elif event.event_type == 'repay':
-                e_loss = loss_assets[event.address][event.asset] + event.value
+                e_loss = (
+                    loss_assets[event.address][event.asset] +
+                    event.value -
+                    loss_so_far[event.address][event.to_asset]
+                )
                 loss = e_loss if e_loss.amount >= 0 else None  # not realized loss yet
+                if loss:
+                    loss_so_far[event.address][event.to_asset]
                 loss_assets[event.address][event.asset] += event.value
                 events[idx] = event._replace(realized_pnl=loss)  # TODO: maybe not named tuple?
             elif event.event_type == 'liquidation':
