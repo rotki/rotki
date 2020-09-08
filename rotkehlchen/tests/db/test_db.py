@@ -5,7 +5,6 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
-from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -206,7 +205,7 @@ def test_writing_fetching_data(data_dir, username):
         '0x80B369799104a47e98A553f3329812a44A7FaCDc',
     }
     # Add existing account should fail
-    with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
+    with pytest.raises(InputError):  # pylint: disable=no-member
         data.db.add_blockchain_accounts(
             SupportedBlockchain.ETHEREUM,
             [BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],

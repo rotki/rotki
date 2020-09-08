@@ -806,9 +806,16 @@ class DBHandler:
             entry.label,
         ) for entry in account_data]
         cursor = self.conn.cursor()
-        cursor.executemany(
-            'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES (?, ?, ?)', tuples,
-        )
+        try:
+            cursor.executemany(
+                'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES (?, ?, ?)',
+                tuples,
+            )
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            raise InputError(
+                f'Blockchain account/s {[x.address for x in account_data]} already exist',
+            )
+
         insert_tag_mappings(cursor=cursor, data=account_data, object_reference_key='address')
 
         self.conn.commit()
