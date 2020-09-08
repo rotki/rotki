@@ -325,6 +325,7 @@ class Compound(EthereumModule):
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
+        """https://compound.finance/docs/ctokens#liquidate-borrow"""
         param_types, param_values = _get_params(from_ts, to_ts, address)
         result = self.graph.query(
             querystr="""liquidationEvents (where: {blockTime_lte: $end_ts, blockTime_gte: $start_ts, from: $address}) {
@@ -361,6 +362,7 @@ class Compound(EthereumModule):
                 continue
             timestamp = entry['blockTime']
             # Amount/value of underlying asset paid by liquidator
+            # Essentially liquidator covers part of the debt of the user
             underlying_amount = FVal(entry['underlyingRepayAmount'])
             underlying_usd_price = query_usd_price_zero_if_error(
                 asset=underlying_asset,
@@ -370,6 +372,7 @@ class Compound(EthereumModule):
             )
             underlying_usd_value = underlying_amount * underlying_usd_price
             # Amount/value of ctoken_asset lost to the liquidator
+            # This is what the liquidator gains at a discount
             amount = FVal(entry['amount'])
             usd_price = query_usd_price_zero_if_error(
                 asset=ctoken_asset,
@@ -584,6 +587,9 @@ class Compound(EthereumModule):
                 events[idx] = event._replace(realized_pnl=loss)  # TODO: maybe not named tuple?
             elif event.event_type == 'liquidation':
                 assert event.to_asset, 'liquidation events should have a to_asset'
+                # Liquidator covers part of the borrowed amount
+                loss_assets[event.address][event.asset] += event.value
+                # Liquidator receives discounted to_asset
                 loss_assets[event.address][event.to_asset] += event.to_value
             elif event.event_type == 'comp':
                 rewards_assets[event.address][A_COMP] += event.value
