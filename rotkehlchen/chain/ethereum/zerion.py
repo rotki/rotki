@@ -8,6 +8,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
@@ -26,8 +27,6 @@ log = logging.getLogger(__name__)
 def _is_symbol_non_standard(symbol: str) -> bool:
     """ignore some non standard asset symbols like Curve finance and Pool together"""
     if '+' in symbol:
-        return True
-    if symbol == 'PLT':
         return True
 
     return False
@@ -63,6 +62,38 @@ GIVEN_DEFI_BALANCES = Union[
     Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
     Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
 ]
+
+
+def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[DefiBalance]:
+    """Special handling for pooltogether
+
+    https://github.com/rotki/rotki/issues/1429
+    """
+    if 'DAI' in token_name:
+        dai_price = Inquirer.find_usd_price(A_DAI)
+        return DefiBalance(
+            token_address=to_checksum_address('0x49d716DFe60b37379010A75329ae09428f17118d'),
+            token_name='Pool Together DAI token',
+            token_symbol='plDAI',
+            balance=Balance(
+                amount=normalized_balance,
+                usd_value=normalized_balance * dai_price,
+            ),
+        )
+    elif 'USDC' in token_name:
+        usdc_price = Inquirer.find_usd_price(A_USDC)
+        return DefiBalance(
+            token_address=to_checksum_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
+            token_name='Pool Together USDC token',
+            token_symbol='plUSDC',
+            balance=Balance(
+                amount=normalized_balance,
+                usd_value=normalized_balance * usdc_price,
+            ),
+        )
+
+    return None
+
 
 # last known zerion adapter address
 ZERION_ADAPTER_ADDRESS = deserialize_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
@@ -129,9 +160,9 @@ class Zerion():
                 balance_type = adapter_balance[0][1]  # can be either 'Asset' or 'Debt'
                 for balances in adapter_balance[1]:
                     underlying_balances = []
-                    base_balance = self._get_single_balance(balances[0])
+                    base_balance = self._get_single_balance(protocol.name, balances[0])
                     for balance in balances[1]:
-                        defi_balance = self._get_single_balance(balance)
+                        defi_balance = self._get_single_balance(protocol.name, balance)
                         underlying_balances.append(defi_balance)
 
                     if base_balance.balance.usd_value == ZERO:
@@ -150,7 +181,11 @@ class Zerion():
 
         return protocol_balances
 
-    def _get_single_balance(self, entry: Tuple[Tuple[str, str, str, int], int]) -> DefiBalance:
+    def _get_single_balance(
+            self,
+            protocol_name: str,
+            entry: Tuple[Tuple[str, str, str, int], int],
+    ) -> DefiBalance:
         metadata = entry[0]
         balance_value = entry[1]
         decimals = metadata[3]
@@ -160,6 +195,7 @@ class Zerion():
         token_name = metadata[1]
 
         special_handling = self.handle_protocols(
+            protocol_name=protocol_name,
             token_symbol=token_symbol,
             normalized_balance=normalized_value,
             token_address=token_address,
@@ -189,12 +225,20 @@ class Zerion():
 
     def handle_protocols(
             self,
+            protocol_name: str,
             token_symbol: str,
             normalized_balance: FVal,
             token_address: str,
             token_name: str,
     ) -> Optional[DefiBalance]:
-        """Special handling for price for token/protocols which are easier to do onchain"""
+        """Special handling for price for token/protocols which are easier to do onchain
+        or need some kind of special treatment.
+        """
+        if protocol_name == 'PoolTogether':
+            result = _handle_pooltogether(normalized_balance, token_name)
+            if result is not None:
+                return result
+
         underlying_asset_price = get_underlying_asset_price(token_symbol)
         usd_price = handle_defi_price_query(self.ethereum, token_symbol, underlying_asset_price)
         if usd_price is None:
