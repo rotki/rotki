@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1429` Pool together's plDAI and plUSDC are now correctly shown in the DeFi overview page.
 * :bug:`1423` Fiat amounts in protocols details in the DeFi Overview are now correctly converted to the user's profit currency.
 * :bug:`1430` Users can now delete manual balance entries where the label is an empty string.
 * :feature:`1199` Users can now see the currency symbol next to the value for fiat currencies displayed in the UI.
