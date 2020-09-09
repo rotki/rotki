@@ -158,6 +158,15 @@ export default new Router({
           component: () => import('../views/defi/DecentralizedBorrowing.vue')
         }
       ]
-    }
+    },
+    ...(process.env.NODE_ENV === 'development'
+      ? [
+          {
+            path: '/playground',
+            name: 'playground',
+            component: () => import('../views/dev/Playground.vue')
+          }
+        ]
+      : [])
   ]
 });

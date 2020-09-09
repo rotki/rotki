@@ -15,7 +15,9 @@ export const defaultState = (): DefiState => ({
   compoundBalances: {},
   compoundHistory: {
     events: [],
-    profitAndLoss: {}
+    debtLoss: {},
+    interestProfit: {},
+    rewards: {}
   }
 });
 

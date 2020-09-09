@@ -30,12 +30,13 @@ export interface AaveBalances {
 }
 
 interface AaveHistoryEvents {
-  eventType: AaveEventType;
-  asset: string;
-  value: Balance;
-  blockNumber: number;
-  timestamp: number;
-  txHash: string;
+  readonly eventType: AaveEventType;
+  readonly asset: string;
+  readonly value: Balance;
+  readonly blockNumber: number;
+  readonly timestamp: number;
+  readonly txHash: string;
+  readonly logIndex: number;
 }
 
 interface AaveHistoryTotalEarned {

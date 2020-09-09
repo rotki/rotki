@@ -1,5 +1,5 @@
 <template>
-  <v-app id="rotki">
+  <v-app v-if="!isPlayground" id="rotki">
     <div v-show="logged" class="app__content rotki-light-grey">
       <notification-popup />
       <v-navigation-drawer
@@ -68,6 +68,11 @@
         @login-complete="completeLogin(true)"
       />
     </v-fade-transition>
+  </v-app>
+  <v-app v-else id="rotki">
+    <v-main>
+      <router-view />
+    </v-main>
   </v-app>
 </template>
 
@@ -171,6 +176,13 @@ export default class App extends Vue {
     if (process.env.NODE_ENV === 'development' && this.logged) {
       monitor.start();
     }
+  }
+
+  get isPlayground(): boolean {
+    return (
+      process.env.NODE_ENV === 'development' &&
+      this.$route.name === 'playground'
+    );
   }
 }
 </script>

@@ -19,6 +19,6 @@ export const DEFI_MODULES: Module[] = [
   {
     identifier: 'compound',
     name: 'Compound',
-    icon: require('@/assets/images/defi/makerdao.svg')
+    icon: require('@/assets/images/defi/compound.svg')
   }
 ];

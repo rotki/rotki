@@ -2,8 +2,11 @@ import Chart from 'chart.js';
 import moment from 'moment';
 import Vue, { VueConstructor } from 'vue';
 import Vuex from 'vuex';
+import CryptoIcon from '@/components/CryptoIcon.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
+import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HashLink from '@/components/helper/HashLink.vue';
@@ -17,7 +20,7 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 1
+    version: 2
   };
   // Globally registered components are also provided to the premium components.
   Vue.component('AmountDisplay', AmountDisplay);
@@ -25,6 +28,10 @@ export const setupPremium = () => {
   Vue.component('HashLink', HashLink);
   Vue.component('AssetDetails', AssetDetails);
   Vue.component('DefiProtocolIcon', DefiProtocolIcon);
+  // version: 2
+  Vue.component('AssetMovementDisplay', AssetMovementDisplay);
+  Vue.component('EventTypeDisplay', EventTypeDisplay);
+  Vue.component('CryptoIcon', CryptoIcon);
 };
 
 function findComponents(): string[] {

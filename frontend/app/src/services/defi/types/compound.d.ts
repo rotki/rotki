@@ -8,7 +8,7 @@ interface CompoundRewards {
 }
 
 interface CompoundLending extends HasBalance {
-  readonly apy: string;
+  readonly apy: string | null;
 }
 
 interface CompoundLendingEntries {
@@ -33,7 +33,7 @@ export interface CompoundBalances {
   readonly [address: string]: CompoundBalance;
 }
 
-type CompoundEventType = typeof COMPOUND_EVENT_TYPES[number];
+export type CompoundEventType = typeof COMPOUND_EVENT_TYPES[number];
 
 interface CompoundEvent {
   readonly eventType: CompoundEventType;
@@ -44,6 +44,7 @@ interface CompoundEvent {
   readonly toAsset?: string;
   readonly value: Balance;
   readonly toValue?: Balance;
+  readonly realizedPnl?: Balance;
   readonly txHash: string;
   readonly logIndex: number;
 }
@@ -58,5 +59,7 @@ interface CompoundProfitAndLoss {
 
 export interface CompoundHistory {
   readonly events: CompoundEvent[];
-  readonly profitAndLoss: CompoundProfitAndLoss;
+  readonly interestProfit: CompoundProfitAndLoss;
+  readonly debtLoss: CompoundProfitAndLoss;
+  readonly rewards: CompoundProfitAndLoss;
 }

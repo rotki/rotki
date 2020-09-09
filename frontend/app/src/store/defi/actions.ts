@@ -406,8 +406,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const section = Section.DEFI_LENDING;
     const premiumSection = Section.DEFI_LENDING_HISTORY;
     const currentStatus = status(section);
-    const refresh = payload?.refresh ?? false;
-    const reset = payload?.reset ?? false;
+    const refresh = payload?.refresh;
+    const reset = payload?.reset;
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 

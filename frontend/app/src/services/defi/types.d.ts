@@ -1,5 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import { DEFI_PROTOCOLS } from '@/services/defi/consts';
+import { CompoundEventType } from '@/services/defi/types/compound';
 import { Balance } from '@/services/types-api';
 
 export type DSRMovementType = 'withdrawal' | 'deposit';
@@ -14,6 +15,8 @@ export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
 export type DefiBalanceType = 'Asset' | 'Debt';
 
 export type SupportedDefiProtocols = typeof DEFI_PROTOCOLS[number];
+
+export type EventType = DSRMovementType | AaveEventType | CompoundEventType;
 
 export interface ApiMakerDAOVault {
   readonly identifier: number;
