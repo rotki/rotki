@@ -3542,6 +3542,57 @@ Getting compound historical data
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
+
+Getting yearn finance vaults historical data
+==========================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaults/history
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the yearn finance vaults history resource will return all yearn vault related events for addresses that have utilized yearn finance vaults.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/yearn/vaults/history HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool reset_db_data: Boolean denoting whether all yearn event data saved in the DB are going to be deleted and rewritten after this query. False by default.
+   :reqjson int from_timestamp: Timestamp from which to query yearn vaults historical data. If not given 0 is implied.
+   :reqjson int to_timestamp: Timestamp until which to query yearn vaults historical data. If not given current timestamp is implied.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "events": []
+          },
+          "message": ""
+      }
+
+   :resjson object events: A list of yearn vault events
+
+   :statuscode 200: Yearn vaults history succesfully queried.
+   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 Get addresses to query per protocol
 =======================================
 

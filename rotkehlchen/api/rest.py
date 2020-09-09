@@ -1592,6 +1592,25 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
+    @require_premium_user(active_check=False)
+    def get_yearn_vaults_history(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module='yearn_vaults',
+            method='get_history',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('compound'),
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
     def _watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
