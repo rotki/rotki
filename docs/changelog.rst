@@ -15,6 +15,7 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `SushiToken (SUSHI) <https://www.coingecko.com/en/coins/sushi>`__
+  - `Trustlines Network Token (TLN) <https://www.coingecko.com/en/coins/trustline-network>`__
 
 * :release:`1.7.0 <2020-09-01>`
 * :feature:`1092` Users can now refresh their manual balance entries.

@@ -43,6 +43,7 @@ PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
+    Asset('TLN'): Asset('WETH'),
     Asset('BLY'): Asset('USDT'),
     Asset('cDAI'): A_DAI,
     Asset('cBAT'): Asset('BAT'),

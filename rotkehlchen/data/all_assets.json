@@ -10531,6 +10531,15 @@
         "symbol": "TKS",
         "type": "waves token"
     },
+    "TLN": {
+        "coingecko": "trustline-network",
+        "ethereum_address": "0x679131F591B4f369acB8cd8c51E68596806c3916",
+        "ethereum_token_decimals": 18,
+        "name": "Trustlines Network Token",
+        "started": 1573731681,
+        "symbol": "TLN",
+        "type": "ethereum token"
+    },
     "TMT": {
         "coingecko": "traxia",
         "ethereum_address": "0x3209f98BeBF0149B769ce26D71F7aEA8E435EfEa",
