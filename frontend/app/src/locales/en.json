@@ -425,5 +425,17 @@
       "title": "Account delete",
       "description": "Are you sure you want to delete {toDeleteAccount}"
     }
+  },
+  "lending": {
+    "loading": "Please wait while your balances are getting loaded...",
+    "title": "Lending",
+    "reset_confirm": "This action will overwrite any Aave history cached entries in the DB and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
+    "reset_tooltip": "Refreshes the data overwriting cached Aave historical entries",
+    "currently_deposited": "Currently Deposited",
+    "effective_interest_rate": "Effective Savings Rate",
+    "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
+    "interest_earned": "Interest Earned",
+    "assets": "Assets",
+    "history": "History"
   }
 }

@@ -6,6 +6,7 @@ import CryptoIcon from '@/components/CryptoIcon.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -32,12 +33,18 @@ export const setupPremium = () => {
   Vue.component('AssetMovementDisplay', AssetMovementDisplay);
   Vue.component('EventTypeDisplay', EventTypeDisplay);
   Vue.component('CryptoIcon', CryptoIcon);
+  Vue.component('BalanceDisplay', BalanceDisplay);
 };
 
 function findComponents(): string[] {
   return Object.getOwnPropertyNames(window).filter(value =>
     value.startsWith('PremiumComponents')
   );
+}
+
+if (process.env.NODE_ENV === 'development') {
+  // @ts-ignore
+  findComponents().forEach(component => (window[component] = undefined));
 }
 
 async function loadComponents(): Promise<string[]> {
@@ -99,6 +106,10 @@ export const VaultEventsList = (): Promise<VueConstructor> => {
 
 export const LendingHistory = (): Promise<VueConstructor> => {
   return load('LendingHistory');
+};
+
+export const CompoundLendingDetails = (): Promise<VueConstructor> => {
+  return load('CompoundLendingDetails');
 };
 
 declare global {

@@ -1,25 +1,21 @@
 <template>
   <progress-screen v-if="loading">
-    <template #message>
-      Please wait while your balances are getting loaded...
-    </template>
+    <template #message>{{ $t('lending.loading') }}</template>
   </progress-screen>
   <div v-else>
     <v-row>
       <v-col>
         <refresh-header
           :loading="anyRefreshing"
-          title="Lending"
+          :title="$t('lending.title')"
           @refresh="refresh()"
         >
           <confirmable-reset
             :loading="anyRefreshing"
-            tooltip="Refreshes the data overwriting cached Aave historical entries"
+            :tooltip="$t('lending.reset_tooltip')"
             @reset="reset()"
           >
-            This action will overwrite any Aave history cached entries in the DB
-            and will fetch everything again. Depending on the number of accounts
-            it may take a long time. Are you sure you want to continue?
+            {{ $t('lending.reset_confirm') }}
           </confirmable-reset>
         </refresh-header>
       </v-col>
@@ -30,7 +26,7 @@
           <template #first-col>
             <stat-card-column>
               <template #title>
-                Currently Deposited
+                {{ $t('lending.currently_deposited') }}
               </template>
               <amount-display
                 :value="
@@ -44,18 +40,14 @@
           <template #second-col>
             <stat-card-column>
               <template #title>
-                Effective Savings Rate
+                {{ $t('lending.effective_interest_rate') }}
                 <v-tooltip bottom max-width="300px">
                   <template #activator="{ on }">
                     <v-icon small class="mb-3 ml-1" v-on="on">
                       fa fa-info-circle
                     </v-icon>
                   </template>
-                  <div>
-                    The savings rate across all of the protocols in which you
-                    are actively lending, weighted based on the relative
-                    position in each protocol.
-                  </div>
+                  <div>{{ $t('lending.effective_interest_rate_tooltip') }}</div>
                 </v-tooltip>
               </template>
               {{ effectiveInterestRate(selectedProtocols, selectedAddresses) }}
@@ -64,7 +56,7 @@
           <template #third-col>
             <stat-card-column lock>
               <template #title>
-                Interest Earned
+                {{ $t('lending.interest_earned') }}
                 <premium-lock v-if="!premium" class="d-inline" />
               </template>
               <amount-display
@@ -93,7 +85,7 @@
     </v-row>
     <v-row>
       <v-col>
-        <stat-card title="Assets">
+        <stat-card :title="$t('lending.assets')">
           <lending-asset-table
             :loading="refreshing"
             :assets="lendingBalances(selectedProtocols, selectedAddresses)"
@@ -101,9 +93,13 @@
         </stat-card>
       </v-col>
     </v-row>
+    <compound-lending-details
+      v-if="isCompound"
+      :addresses="selectedAddresses"
+    />
     <v-row class="loans__history">
       <v-col cols="12">
-        <premium-card v-if="!premium" title="History" />
+        <premium-card v-if="!premium" :title="$t('lending.history')" />
         <lending-history
           v-else
           :loading="secondaryRefreshing"
@@ -139,10 +135,11 @@ import { SupportedDefiProtocols } from '@/services/defi/types';
 import { Section } from '@/store/const';
 import { DefiBalance } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
-import { LendingHistory } from '@/utils/premium';
+import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
 
 @Component({
   components: {
+    CompoundLendingDetails,
     ConfirmableReset,
     RefreshHeader,
     LendingAssetTable,
@@ -214,6 +211,13 @@ export default class Lending extends Mixins(StatusMixin) {
   get defiAddresses(): string[] {
     return this.defiAccounts(this.selectedProtocols).map(
       ({ address }) => address
+    );
+  }
+
+  get isCompound(): boolean {
+    return (
+      this.selectedProtocols.length === 1 &&
+      this.selectedProtocols.includes('compound')
     );
   }
 

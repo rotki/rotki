@@ -7,6 +7,7 @@ import { Section, Status } from '@/store/const';
 import {
   AaveLoan,
   CompoundLoan,
+  CompoundProfitLossModel,
   DefiBalance,
   DefiLendingHistory,
   DefiLoan,
@@ -15,7 +16,7 @@ import {
   LoanSummary,
   MakerDAOVaultModel
 } from '@/store/defi/types';
-import { balanceUsdValueSum } from '@/store/defi/utils';
+import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import { RotkehlchenState } from '@/store/types';
 import { Writeable } from '@/types';
 import { DefiAccount } from '@/typing/types';
@@ -57,6 +58,9 @@ export interface DefiGetters {
     addresses: string[]
   ) => DefiLendingHistory<SupportedDefiProtocols>[];
   defiOverview: DefiProtocolSummary[];
+  compoundRewards: CompoundProfitLossModel[];
+  compoundInterestProfit: CompoundProfitLossModel[];
+  compoundDebtLoss: CompoundProfitLossModel[];
 }
 
 type GettersDefinition = {
@@ -678,5 +682,17 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     }
 
     return sortBy(Object.values(summary), 'protocol.name');
+  },
+
+  compoundRewards: ({ compoundHistory }): CompoundProfitLossModel[] => {
+    return toProfitLossModel(compoundHistory.rewards);
+  },
+
+  compoundInterestProfit: ({ compoundHistory }): CompoundProfitLossModel[] => {
+    return toProfitLossModel(compoundHistory.interestProfit);
+  },
+
+  compoundDebtLoss: ({ compoundHistory }): CompoundProfitLossModel[] => {
+    return toProfitLossModel(compoundHistory.debtLoss);
   }
 };

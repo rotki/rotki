@@ -193,3 +193,9 @@ interface DefiProtocolData {
 export interface AllDefiProtocols {
   readonly [asset: string]: DefiProtocolData[];
 }
+
+export interface CompoundProfitLossModel {
+  readonly address: string;
+  readonly asset: string;
+  readonly value: Balance;
+}
