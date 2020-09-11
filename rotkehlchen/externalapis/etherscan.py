@@ -107,7 +107,7 @@ class Etherscan(ExternalServiceWithApiKey):
     def _query(  # pylint: disable=no-self-use
             self,
             module: str,
-            action: Literal['eth_getBlockByNumber'],
+            action: Literal['eth_getBlockByNumber', 'eth_getTransactionReceipt'],
             options: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         ...
@@ -361,6 +361,19 @@ class Etherscan(ExternalServiceWithApiKey):
         an unexpected response is returned
         """
         result = self._query(module='proxy', action='eth_getCode', options={'address': account})
+        return result
+
+    def get_transaction_receipt(self, tx_hash: str) -> Dict[str, Any]:
+        """Gets the receipt for the given transaction hash
+
+        May raise:
+        - RemoteError due to self._query().
+        """
+        result = self._query(
+            module='proxy',
+            action='eth_getTransactionReceipt',
+            options={'txhash': tx_hash},
+        )
         return result
 
     def eth_call(
