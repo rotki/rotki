@@ -22,6 +22,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_CDAI, A_CUSDC, A_USDC
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.typing import Timestamp
 
 TEST_ACC1 = '0x65304d6aff5096472519ca86a6a1fea31cb47Ced'
 
@@ -171,7 +172,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='mint',
     address=deserialize_ethereum_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
     block_number=9443573,
-    timestamp=1581184577,
+    timestamp=Timestamp(1581184577),
     asset=A_DAI,
     value=Balance(amount=FVal('2988.4343'), usd_value=FVal('3012.3417744')),
     to_asset=A_CDAI,
@@ -183,7 +184,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='redeem',
     address=deserialize_ethereum_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
     block_number=9533397,
-    timestamp=1582378248,
+    timestamp=Timestamp(1582378248),
     asset=A_CDAI,
     value=Balance(amount=FVal('148015.6966153'), usd_value=FVal('3075.319825609865034570156')),
     to_asset=A_DAI,
@@ -193,7 +194,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     ),
     realized_pnl=Balance(
         amount=FVal('8.953444259127714006'),
-        usd_value=FVal('62.978051209865034570156'),
+        usd_value=FVal('9.186233809865034570156'),
     ),
     tx_hash='0xd88138b22ef340f9ce572408b8cef10ea8df91768aee5205d5edbdb6fca76665',
     log_index=178,
@@ -201,7 +202,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='redeem',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9772026,
-    timestamp=1585558039,
+    timestamp=Timestamp(1585558039),
     asset=A_CUSDC,
     value=Balance(amount=FVal('95.18807265'), usd_value=FVal('2')),
     to_asset=A_USDC,
@@ -213,7 +214,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='borrow',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9772043,
-    timestamp=1585558230,
+    timestamp=Timestamp(1585558230),
     asset=A_ETH,
     value=Balance(amount=FVal('0.0108'), usd_value=FVal('1.428948')),
     to_asset=None,
@@ -225,7 +226,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='borrow',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9785337,
-    timestamp=1585735112,
+    timestamp=Timestamp(1585735112),
     asset=A_ETH,
     value=Balance(amount=FVal('0.0001'), usd_value=FVal('0.013605')),
     to_asset=None,
@@ -237,7 +238,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='liquidation',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9789509,
-    timestamp=1585790265,
+    timestamp=Timestamp(1585790265),
     asset=A_ETH,
     value=Balance(amount=FVal('0.005450929782112544'), usd_value=FVal('0.77179714784931510496')),
     to_asset=A_CUSDC,
@@ -249,7 +250,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='borrow',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9791832,
-    timestamp=1585820470,
+    timestamp=Timestamp(1585820470),
     asset=A_ETH,
     value=Balance(amount=FVal('0.00065'), usd_value=FVal('0.0920335')),
     to_asset=None,
@@ -261,7 +262,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='liquidation',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9793584,
-    timestamp=1585844643,
+    timestamp=Timestamp(1585844643),
     asset=A_ETH,
     value=Balance(amount=FVal('0.003050579405059551'), usd_value=FVal('0.43193153796238182609')),
     to_asset=A_CUSDC,
@@ -273,7 +274,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='borrow',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9798001,
-    timestamp=1585903297,
+    timestamp=Timestamp(1585903297),
     asset=A_ETH,
     value=Balance(amount=FVal('0.000326'), usd_value=FVal('0.04611270')),
     to_asset=None,
@@ -285,7 +286,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='liquidation',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9817257,
-    timestamp=1586159213,
+    timestamp=Timestamp(1586159213),
     asset=A_ETH,
     value=Balance(amount=FVal('0.00168867571834735'), usd_value=FVal('0.2898780738115061010')),
     to_asset=A_CUSDC,
@@ -297,7 +298,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='mint',
     address=deserialize_ethereum_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
     block_number=9925459,
-    timestamp=1587601131,
+    timestamp=Timestamp(1587601131),
     asset=A_DAI,
     value=Balance(
         amount=FVal('1275.827510923051483475'),
@@ -312,7 +313,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='redeem',
     address=deserialize_ethereum_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
     block_number=9937855,
-    timestamp=1587766729,
+    timestamp=Timestamp(1587766729),
     asset=A_CDAI,
     value=Balance(
         amount=FVal('62413.91974005'),
@@ -333,7 +334,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='liquidation',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9989623,
-    timestamp=1588459991,
+    timestamp=Timestamp(1588459991),
     asset=A_ETH,
     value=Balance(amount=FVal('0.0005'), usd_value=FVal('0.107075')),
     to_asset=A_CUSDC,
@@ -345,7 +346,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='liquidation',
     address=deserialize_ethereum_address('0xC440f3C87DC4B6843CABc413916220D4f4FeD117'),
     block_number=9989922,
-    timestamp=1588464109,
+    timestamp=Timestamp(1588464109),
     asset=A_ETH,
     value=Balance(amount=FVal('0.00053619065955'), usd_value=FVal('0.1126322099450730')),
     to_asset=A_CUSDC,
@@ -357,7 +358,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='mint',
     address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
     block_number=10649153,
-    timestamp=1597288823,
+    timestamp=Timestamp(1597288823),
     asset=A_DAI,
     value=Balance(
         amount=FVal('738.31900592'),
@@ -372,7 +373,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='mint',
     address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
     block_number=10655225,
-    timestamp=1597369409,
+    timestamp=Timestamp(1597369409),
     asset=A_DAI,
     value=Balance(
         amount=FVal('1155.06093'),
@@ -387,7 +388,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='redeem',
     address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
     block_number=10661485,
-    timestamp=1597452580,
+    timestamp=Timestamp(1597452580),
     asset=A_CDAI,
     value=Balance(
         amount=FVal('91971.75759361'),
@@ -400,7 +401,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     ),
     realized_pnl=Balance(
         amount=FVal('0.298272295722372195'),
-        usd_value=FVal('-1.401496960464681710855'),
+        usd_value=FVal('0.301553290975318289145'),
     ),
     tx_hash='0x2bbb296ebf1d94ad28d54c446cb23709b3463c4a43d8b5b8438ff39b2b985e1c',
     log_index=33,
@@ -408,7 +409,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='comp',
     address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
     block_number=10661485,
-    timestamp=1597452580,
+    timestamp=Timestamp(1597452580),
     asset=A_COMP,
     value=Balance(
         amount=FVal('0.002931620367040859'),
@@ -426,7 +427,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='mint',
     address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
     block_number=10699185,
-    timestamp=1597954197,
+    timestamp=Timestamp(1597954197),
     asset=A_DAI,
     value=Balance(
         amount=FVal('1164.9182'),
@@ -441,7 +442,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='redeem',
     address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
     block_number=10701348,
-    timestamp=1597982781,
+    timestamp=Timestamp(1597982781),
     asset=A_CDAI,
     value=Balance(
         amount=FVal('56547.38087342'),
@@ -454,7 +455,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     ),
     realized_pnl=Balance(
         amount=FVal('0.035281284216542725'),
-        usd_value=FVal('1.200411171921841981350'),
+        usd_value=FVal('0.035492971921841981350'),
     ),
     tx_hash='0xa931709c3f2e6a53c0cfe7e65a9b73d1e6cfe2f6a1dec907578c443d66130cb6',
     log_index=69,
@@ -462,7 +463,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='mint',
     address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
     block_number=10705474,
-    timestamp=1598038125,
+    timestamp=Timestamp(1598038125),
     asset=A_DAI,
     value=Balance(
         amount=FVal('157.51085'),
@@ -477,7 +478,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     event_type='redeem',
     address=deserialize_ethereum_address('0xF59D4937BF1305856C3a267bB07791507a3377Ee'),
     block_number=10712981,
-    timestamp=1598138282,
+    timestamp=Timestamp(1598138282),
     asset=A_CDAI,
     value=Balance(
         amount=FVal('7645.20779168'),
@@ -490,7 +491,7 @@ EXPECTED_EVENTS = [CompoundEvent(
     ),
     realized_pnl=Balance(
         amount=FVal('0.016634036276960755'),
-        usd_value=FVal('-0.455848611614208362735'),
+        usd_value=FVal('0.016683938385791637265'),
     ),
     tx_hash='0x667f4eb9952ffdb5141741fecb8a798f207b02adc480bb8063b055c4b10ad1dd',
     log_index=38,
@@ -504,7 +505,7 @@ EXPECTED_EVENTS = [CompoundEvent(
 @pytest.mark.parametrize('mocked_current_prices', [mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
-    """Check querying the compound histoy endpoint works. Uses real data"""
+    """Check querying the compound history endpoint works. Uses real data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
         rotki,
@@ -535,7 +536,6 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
             result = assert_proper_response_with_result(response)
 
     assert len(result) == 4
-
     expected_events = process_result_list(EXPECTED_EVENTS)
     # Check only 22 first events, since this is how many there were in the time of
     # the writing of the test. Also don't check events for one of the addresses

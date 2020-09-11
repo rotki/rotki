@@ -79,7 +79,7 @@ class Balance:
         )
 
     def __sub__(self, other: Any) -> 'Balance':
-        other = _evaluate_balance_input(other, 'addition')
+        other = _evaluate_balance_input(other, 'subtraction')
         return Balance(
             amount=self.amount - other.amount,
             usd_value=self.usd_value - other.usd_value,
