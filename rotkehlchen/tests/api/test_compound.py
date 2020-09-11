@@ -163,6 +163,8 @@ TEST_ACCOUNTS = [
     '0xC440f3C87DC4B6843CABc413916220D4f4FeD117',
     # For mint/redeem + comp
     '0xF59D4937BF1305856C3a267bB07791507a3377Ee',
+    # For repay
+    '0x65304d6aff5096472519ca86a6a1fea31cb47Ced',
 ]
 
 EXPECTED_EVENTS = [CompoundEvent(
@@ -507,7 +509,7 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,
-        eth_balances=['1000000', '2000000', '33000030003'],
+        eth_balances=['1000000', '2000000', '33000030003', '42323213'],
         token_balances={},
         btc_accounts=None,
         original_queries=['zerion'],
@@ -536,8 +538,20 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
 
     expected_events = process_result_list(EXPECTED_EVENTS)
     # Check only 22 first events, since this is how many there were in the time of
-    # the writing of the test
-    assert result['events'][:22] == expected_events
+    # the writing of the test. Also don't check events for one of the addresses
+    # as it's added later, has many events and it's only to see we handle repay correctly
+    to_check_events = [
+        x for x in result['events'] if x['address'] != '0x65304d6aff5096472519ca86a6a1fea31cb47Ced'
+    ]
+    assert to_check_events[:22] == expected_events
+    # Check one repay event
+    other_events = [
+        x for x in result['events'] if x['address'] == '0x65304d6aff5096472519ca86a6a1fea31cb47Ced'
+    ]
+    assert other_events[12]['event_type'] == 'repay'
+    expected_hash = '0x48a3e2ef8a746383deac34d74f2f0ea0451b2047701fbed4b9d769a782888eea'
+    assert other_events[12]['tx_hash'] == expected_hash
+    assert other_events[12]['value']['amount'] == '0.55064402'
 
     # Check interest profit mappings
     profit_0 = result['interest_profit']['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']
