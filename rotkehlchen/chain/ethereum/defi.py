@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.year.vaults import (
+from rotkehlchen.constants.ethereum import (
     YEARN_ALINK_VAULT,
     YEARN_BCURVE_VAULT,
     YEARN_DAI_VAULT,
@@ -12,8 +12,9 @@ from rotkehlchen.chain.ethereum.year.vaults import (
     YEARN_WETH_VAULT,
     YEARN_YCRV_VAULT,
     YEARN_YFI_VAULT,
+    EthereumConstants,
+    EthereumContract,
 )
-from rotkehlchen.constants.ethereum import EthereumConstants, EthereumContract
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Price

@@ -37,10 +37,6 @@ log = RotkehlchenLogsAdapter(logger)
 DEFAULT_ETH_RPC_TIMEOUT = 10
 
 
-def address_to_bytes32(address: ChecksumEthAddress) -> str:
-    return '0x' + 24 * '0' + address.lower()[2:]
-
-
 def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
     """ Validate that the ethereum node is synchronized
             within 20 blocks of latest block
@@ -516,6 +512,28 @@ class EthereumManager():
         if len(output_data) == 1:
             return output_data[0]
         return output_data
+
+    def _get_transaction_receipt(
+            self,
+            web3: Optional[Web3],
+            tx_hash: str,
+    ) -> Dict[str, Any]:
+        if web3 is None:
+            return self.etherscan.get_transaction_receipt(tx_hash)
+
+        # ignoring type here since at runtime TxReceipt Type is equal to a Dict
+        return web3.eth.getTransactionReceipt(tx_hash)  # type: ignore
+
+    def get_transaction_receipt(
+            self,
+            tx_hash: str,
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Dict[str, Any]:
+        return self.query(
+            method=self._get_transaction_receipt,
+            call_order=call_order if call_order is not None else self.default_call_order(),
+            tx_hash=tx_hash,
+        )
 
     def call_contract(
             self,

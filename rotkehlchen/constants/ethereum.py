@@ -106,6 +106,17 @@ MAKERDAO_ZRX_A_JOIN = EthereumConstants().contract('MAKERDAO_ZRX_A_JOIN')
 MAKERDAO_CAT = EthereumConstants().contract('MAKERDAO_CAT')
 MAKERDAO_JUG = EthereumConstants().contract('MAKERDAO_JUG')
 
+YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
+YEARN_DAI_VAULT = EthereumConstants().contract('YEARN_DAI_VAULT')
+YEARN_WETH_VAULT = EthereumConstants().contract('YEARN_WETH_VAULT')
+YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')
+YEARN_ALINK_VAULT = EthereumConstants().contract('YEARN_ALINK_VAULT')
+YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
+YEARN_USDC_VAULT = EthereumConstants().contract('YEARN_USDC_VAULT')
+YEARN_TUSD_VAULT = EthereumConstants().contract('YEARN_TUSD_VAULT')
+YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
+YEARN_SRENCURVE_VAULT = EthereumConstants().contract('YEARN_SRENCURVE_VAULT')
+
 ETH_SCAN = EthereumConstants().contract('ETH_SCAN')
 
 
