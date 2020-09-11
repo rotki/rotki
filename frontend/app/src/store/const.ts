@@ -26,3 +26,20 @@ export enum Section {
   DEFI_MAKERDAO_VAULT_DETAILS = 'defi_makerdao_vault_details',
   DEFI_MAKERDAO_VAULTS = 'defi_makerdao_vaults'
 }
+
+export const defiSections: Section[] = [
+  Section.DEFI_COMPOUND_BALANCES,
+  Section.DEFI_COMPOUND_HISTORY,
+  Section.DEFI_OVERVIEW,
+  Section.DEFI_AAVE_BALANCES,
+  Section.DEFI_AAVE_HISTORY,
+  Section.DEFI_BORROWING_HISTORY,
+  Section.DEFI_LENDING,
+  Section.DEFI_LENDING_HISTORY,
+  Section.DEFI_BORROWING,
+  Section.DEFI_BALANCES,
+  Section.DEFI_DRS_BALANCES,
+  Section.DEFI_DSR_HISTORY,
+  Section.DEFI_MAKERDAO_VAULT_DETAILS,
+  Section.DEFI_MAKERDAO_VAULTS
+];

@@ -175,7 +175,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async removeAccount({ commit }, payload: BlockchainAccountPayload) {
+  async removeAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
     const { address, blockchain } = payload;
     const { task_id } = await api.removeBlockchainAccount(blockchain, address);
 
@@ -186,9 +186,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     commit('tasks/add', task, { root: true });
     commit('defi/reset', undefined, { root: true });
+    await dispatch('resetDefiStatus', {}, { root: true });
   },
 
-  async addAccount({ commit }, payload: BlockchainAccountPayload) {
+  async addAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
     const { address, blockchain } = payload;
     const { task_id } = await api.addBlockchainAccount(payload);
     const task = createTask(task_id, TaskType.ADD_ACCOUNT, {
@@ -198,6 +199,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     commit('tasks/add', task, { root: true });
     commit('defi/reset', undefined, { root: true });
+    await dispatch('resetDefiStatus', {}, { root: true });
   },
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
