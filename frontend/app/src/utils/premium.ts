@@ -112,6 +112,10 @@ export const CompoundLendingDetails = (): Promise<VueConstructor> => {
   return load('CompoundLendingDetails');
 };
 
+export const CompoundBorrowingDetails = (): Promise<VueConstructor> => {
+  return load('CompoundBorrowingDetails');
+};
+
 declare global {
   interface Window {
     Vue: any;

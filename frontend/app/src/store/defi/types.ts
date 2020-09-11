@@ -14,6 +14,7 @@ import {
 } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
+  CompoundEvent,
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
@@ -105,8 +106,11 @@ export interface AaveLoan
   extends AaveBorrowingRates,
     CollateralizedLoan<string> {}
 
+type IdedCompoundEvent = CompoundEvent & { id: string };
+
 export interface CompoundLoan extends CollateralizedLoan<string> {
   readonly apr: string;
+  readonly events: IdedCompoundEvent[];
 }
 
 export interface DefiBalance extends HasBalance {

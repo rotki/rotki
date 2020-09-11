@@ -24,6 +24,16 @@
           />
         </v-col>
       </v-row>
+      <v-row v-if="isCompound">
+        <v-col cols="12">
+          <premium-card v-if="!premium" title="Compound History" />
+          <compound-borrowing-details
+            v-else
+            :events="loan.events"
+            :owner="loan.owner"
+          />
+        </v-col>
+      </v-row>
     </v-col>
   </v-row>
 </template>
@@ -37,10 +47,11 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LoanLiquidation from '@/components/defi/loan/LoanLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
-import { VaultEventsList } from '@/utils/premium';
+import { CompoundBorrowingDetails, VaultEventsList } from '@/utils/premium';
 
 @Component({
   components: {
+    CompoundBorrowingDetails,
     LoanCollateral,
     LoanDebt,
     LoanHeader,

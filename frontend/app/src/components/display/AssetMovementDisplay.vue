@@ -1,10 +1,32 @@
 <template>
-  <v-row align="center" justify="end" no-gutters class="grow">
-    <balance-display :asset="movement.asset" :value="movement.value" />
-    <v-col sm="12" md="auto" cols="12" class="mr-2">
-      <v-icon>mdi-chevron-right</v-icon>
+  <v-row
+    align="center"
+    justify="end"
+    no-gutters
+    :class="
+      $vuetify.breakpoint.mdAndUp && !$vuetify.breakpoint.mobile
+        ? 'asset-movement-display--row'
+        : null
+    "
+  >
+    <v-col cols="auto">
+      <balance-display
+        :asset="movement.asset"
+        :value="movement.value"
+        :class="gainLoss ? 'asset-movement-display--gain' : null"
+      />
     </v-col>
-    <balance-display :asset="movement.toAsset" :value="movement.toValue" />
+    <v-col v-if="!gainLoss" sm="12" md="auto" cols="12">
+      <v-icon v-if="$vuetify.breakpoint.mdAndUp">mdi-chevron-right</v-icon>
+      <v-icon v-else>mdi-chevron-down</v-icon>
+    </v-col>
+    <v-col cols="auto">
+      <balance-display
+        :asset="movement.toAsset"
+        :value="movement.toValue"
+        :class="gainLoss ? 'asset-movement-display--loss' : null"
+      />
+    </v-col>
   </v-row>
 </template>
 
@@ -17,7 +39,25 @@ import { AssetMovement } from '@/components/display/types';
   components: { BalanceDisplay }
 })
 export default class AssetMovementDisplay extends Vue {
-  @Prop({ required: true })
+  @Prop({ required: true, type: Object })
   movement!: AssetMovement;
+  @Prop({ required: false, type: Boolean, default: false })
+  gainLoss!: boolean;
 }
 </script>
+
+<style scoped lang="scss">
+.asset-movement-display {
+  &--gain {
+    color: #8bc34a !important;
+  }
+
+  &--loss {
+    color: #ff5722 !important;
+  }
+
+  &--row {
+    min-width: 380px;
+  }
+}
+</style>

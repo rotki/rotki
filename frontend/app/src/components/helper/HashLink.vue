@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex flex-row">
+  <div class="d-flex flex-row shrink">
     <span v-if="fullAddress" :class="privacyMode ? 'blur-content' : null">
       {{ displayText }}
     </span>
@@ -22,8 +22,8 @@
           icon
           v-bind="attrs"
           width="20px"
-          color="red"
-          class="primary--text grey lighten-4 ml-2"
+          color="primary"
+          class="grey lighten-4 ml-2"
           v-on="on"
           @click="copyText(text)"
         >
@@ -42,8 +42,8 @@
           icon
           v-bind="attrs"
           width="20px"
-          color="red"
-          class="primary--text grey lighten-4 ml-1 mr-2"
+          color="primary"
+          class="grey lighten-4 ml-1"
           v-on="on"
           @click="openLink()"
         >

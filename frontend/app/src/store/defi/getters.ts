@@ -219,7 +219,8 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       makerDAOVaults,
       makerDAOVaultDetails,
       aaveBalances,
-      compoundBalances
+      compoundBalances,
+      compoundHistory: { events }
     }: DefiState,
     { loans }
   ) => (
@@ -296,7 +297,11 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           asset: '',
           amount: Zero,
           usdValue: collateralUsd
-        }
+        },
+        events: events
+          .filter(event => event.address === owner)
+          .filter(event => !['mint', 'redeem'].includes(event.eventType))
+          .map(value => ({ ...value, id: `${value.txHash}${value.logIndex}` }))
       } as CompoundLoan;
     }
 

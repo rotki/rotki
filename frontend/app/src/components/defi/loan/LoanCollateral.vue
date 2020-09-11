@@ -18,11 +18,14 @@
     <loan-row v-if="isVault" title="Current ratio" class="mb-2">
       {{ loan.collateralizationRatio | optional }}
     </loan-row>
-    <loan-row v-if="!isVault" title="Stable APR" class="mb-2">
+    <loan-row v-if="isAave" title="Stable APR" class="mb-2">
       {{ loan.stableApr | optional }}
     </loan-row>
-    <loan-row v-if="!isVault" title="Variable APR">
+    <loan-row v-if="isAave" title="Variable APR">
       {{ loan.variableApr | optional }}
+    </loan-row>
+    <loan-row v-if="isCompound" title="APR">
+      {{ loan.apr | optional }}
     </loan-row>
     <v-btn
       v-if="isVault"

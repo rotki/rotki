@@ -1,19 +1,31 @@
 <template>
-  <div class="defi-protocol-icon d-flex flex-row">
-    <v-img
-      v-if="mode === 'icon' || mode === 'both'"
-      contain
-      max-width="24px"
-      max-height="24"
-      class="defi-protocol-icon__image mr-3"
-      :src="require(`@/assets/images/defi/${protocol}.svg`)"
-    />
-    <span
-      v-if="mode === 'label' || mode === 'both'"
-      class="defi-protocol-icon__label align-self-center"
-    >
-      {{ protocol === 'makerdao' ? 'MakerDAO DSR' : protocol | capitalize }}
-    </span>
+  <div
+    class="defi-protocol-icon d-flex flex-row align-center shrink"
+    :class="mode === 'icon' ? 'defi-protocol-icon--icon' : null"
+  >
+    <v-tooltip top :disabled="mode !== 'icon'" open-delay="300ms">
+      <template #activator="{ on, attrs }">
+        <v-img
+          v-if="mode === 'icon' || mode === 'both'"
+          contain
+          v-bind="attrs"
+          max-width="24px"
+          max-height="24"
+          class="defi-protocol-icon__image mr-2"
+          :src="require(`@/assets/images/defi/${protocol}.svg`)"
+          v-on="on"
+        />
+        <span
+          v-if="mode === 'label' || mode === 'both'"
+          class="defi-protocol-icon__label text--secondary"
+        >
+          {{ protocol === 'makerdao' ? 'MakerDAO DSR' : protocol | capitalize }}
+        </span>
+      </template>
+      <span>
+        {{ protocol === 'makerdao' ? 'MakerDAO DSR' : protocol | capitalize }}
+      </span>
+    </v-tooltip>
   </div>
 </template>
 <script lang="ts">
@@ -28,3 +40,15 @@ export default class DefiProtocolIcon extends Vue {
   mode!: 'icon' | 'label' | 'both';
 }
 </script>
+
+<style lang="scss" scoped>
+.defi-protocol-icon {
+  &--icon {
+    max-width: 30px;
+  }
+
+  &__label {
+    font-size: 12px;
+  }
+}
+</style>

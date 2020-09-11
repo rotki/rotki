@@ -1,7 +1,7 @@
 <template>
   <v-row no-gutters align="center">
     <v-col cols="auto" class="font-weight-medium">
-      {{ eventType | capitalize }}
+      {{ event | capitalize }}
     </v-col>
   </v-row>
 </template>
@@ -14,6 +14,13 @@ import { EventType } from '@/services/defi/types';
 export default class EventTypeDisplay extends Vue {
   @Prop({ required: true })
   eventType!: EventType;
+
+  get event(): string {
+    if (this.eventType === 'comp') {
+      return `comp claimed`;
+    }
+    return this.eventType;
+  }
 }
 </script>
 
