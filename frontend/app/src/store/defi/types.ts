@@ -14,7 +14,6 @@ import {
 } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
-  CompoundEvent,
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
@@ -60,11 +59,13 @@ interface DSRMovement {
   readonly txHash: string;
 }
 
-interface Collateral<T extends CollateralAssetType | string> extends Balance {
+export interface Collateral<T extends CollateralAssetType | string>
+  extends Balance {
   readonly asset: T;
 }
 
-export interface MakerDAOVault extends CollateralizedLoan<CollateralAssetType> {
+export interface MakerDAOVault
+  extends CollateralizedLoan<Collateral<CollateralAssetType>> {
   readonly collateralType: string;
   readonly collateralizationRatio?: string;
   readonly stabilityFee: string;
@@ -96,22 +97,18 @@ export interface LoanSummary {
   readonly totalDebt: BigNumber;
 }
 
-interface CollateralizedLoan<T extends CollateralAssetType | string>
-  extends DefiLoan {
-  readonly collateral: Collateral<T>;
+export interface CollateralizedLoan<
+  C extends
+    | Collateral<CollateralAssetType | string>
+    | Collateral<CollateralAssetType | string>[]
+> extends DefiLoan {
+  readonly collateral: C;
   readonly debt: Balance;
 }
 
 export interface AaveLoan
   extends AaveBorrowingRates,
-    CollateralizedLoan<string> {}
-
-type IdedCompoundEvent = CompoundEvent & { id: string };
-
-export interface CompoundLoan extends CollateralizedLoan<string> {
-  readonly apr: string;
-  readonly events: IdedCompoundEvent[];
-}
+    CollateralizedLoan<Collateral<string>[]> {}
 
 export interface DefiBalance extends HasBalance {
   readonly address: string;

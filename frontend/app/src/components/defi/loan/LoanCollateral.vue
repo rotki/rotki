@@ -1,31 +1,62 @@
 <template>
-  <stat-card title="Collateral">
-    <loan-row v-if="isVault" title="Locked up collateral">
+  <stat-card :title="$t('loan_collateral.title')">
+    <loan-row v-if="isVault" :title="$t('loan_collateral.locked_collateral')">
       <amount-display
         :asset-padding="assetPadding"
         :value="loan.collateral.amount"
         :asset="loan.collateral.asset"
       />
     </loan-row>
-    <loan-row :medium="!isVault" :title="isVault ? '' : 'Locked up collateral'">
+    <loan-row
+      :medium="!isVault"
+      :title="isVault ? '' : $t('loan_collateral.locked_collateral')"
+    >
       <amount-display
         :asset-padding="assetPadding"
-        :value="loan.collateral.usdValue"
+        :value="isVault ? loan.collateral.usdValue : totalCollateralUsd"
         fiat-currency="USD"
       />
     </loan-row>
     <v-divider class="my-4" />
-    <loan-row v-if="isVault" title="Current ratio" class="mb-2">
+    <loan-row
+      v-if="(isAave || isCompound) && loan.collateral.length > 0"
+      :title="$t('loan_collateral.per_asset')"
+    >
+      <div class="loan-collateral__collateral" />
+      <v-row
+        v-for="collateral in loan.collateral"
+        :key="collateral.asset"
+        no-gutters
+      >
+        <v-col>
+          <balance-display
+            :asset="collateral.asset"
+            :value="collateral"
+            :min-width="18"
+          />
+        </v-col>
+      </v-row>
+    </loan-row>
+    <v-divider v-if="isAave || isCompound" class="my-4" />
+    <loan-row
+      v-if="isVault"
+      :title="$t('loan_collateral.current_ratio')"
+      class="mb-2"
+    >
       {{ loan.collateralizationRatio | optional }}
     </loan-row>
-    <loan-row v-if="isAave" title="Stable APR" class="mb-2">
+    <loan-row
+      v-if="isAave"
+      :title="$t('loan_collateral.stable_apr')"
+      class="mb-2"
+    >
       {{ loan.stableApr | optional }}
     </loan-row>
-    <loan-row v-if="isAave" title="Variable APR">
+    <loan-row v-if="isAave" :title="$t('loan_collateral.variable_apr')">
       {{ loan.variableApr | optional }}
     </loan-row>
-    <loan-row v-if="isCompound" title="APR">
-      {{ loan.apr | optional }}
+    <loan-row v-if="isCompound" :title="$t('loan_collateral.apy')">
+      {{ loan.apy | optional }}
     </loan-row>
     <v-btn
       v-if="isVault"
@@ -39,27 +70,32 @@
     >
       <v-icon x-small left>fa fa-bell-o</v-icon>
       <span v-if="watchers.length > 0" class="text-caption">
-        Edit {{ watchers.length }} collateralization watcher(s)
+        {{
+          $tc('loan_collateral.watchers.edit', watchers.length, {
+            n: watchers.length
+          })
+        }}
       </span>
       <span v-else class="text-caption">
-        Add collateralization ratio watcher
+        {{ $t('loan_collateral.watchers.add') }}
       </span>
       <premium-lock v-if="!premium" size="x-small" />
     </v-btn>
     <watcher-dialog
       v-if="isVault"
       :display="showWatcherDialog"
-      title="Collateralization watchers"
+      :title="$t('loan_collateral.watchers.dialog.title')"
       :message="watcherMessage"
       :watcher-content-id="watcherVaultId"
       :existing-watchers="watchers"
       preselect-watcher-type="makervault_collateralization_ratio"
-      watcher-value-label="Collateralization Ratio"
+      :watcher-value-label="$t('loan_collateral.watchers.dialog.label')"
       @cancel="showWatcherDialog = false"
     />
   </stat-card>
 </template>
 <script lang="ts">
+import { default as BigNumber } from 'bignumber.js';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
@@ -70,7 +106,8 @@ import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import { Watcher, WatcherType } from '@/services/session/types';
-import { MakerDAOVaultModel } from '@/store/defi/types';
+import { Collateral, MakerDAOVaultModel } from '@/store/defi/types';
+import { Zero } from '@/utils/bignumbers';
 
 @Component({
   components: { WatcherDialog, LoanRow, AmountDisplay, PremiumLock, StatCard },
@@ -87,9 +124,15 @@ export default class LoanCollateral extends Mixins(
   watcherVaultId: string | null = null;
   loanWatchers!: Watcher<WatcherType>[];
 
-  get assetPadding(): number {
-    return this.isVault ? 4 : 0;
+  get totalCollateralUsd(): BigNumber {
+    return this.loan
+      ? (this.loan.collateral as Collateral<string>[])
+          .map(({ usdValue }) => usdValue)
+          .reduce((sum, value) => sum.plus(value), Zero)
+      : Zero;
   }
+
+  readonly assetPadding: number = 5;
 
   get watchers(): Watcher<WatcherType>[] {
     if (!this.loan) {
@@ -117,9 +160,18 @@ export default class LoanCollateral extends Mixins(
 </script>
 
 <style scoped lang="scss">
+@import '~@/scss/scroll';
+
 .loan-collateral {
   &__watcher {
     border-radius: 15px;
+  }
+
+  &__collateral {
+    max-height: 200px;
+    overflow-y: scroll;
+
+    @extend .themed-scrollbar;
   }
 
   &__watcher-button {

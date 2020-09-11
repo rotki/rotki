@@ -398,7 +398,8 @@
   "loan_header": {
     "owned_by": "Owned by:",
     "aave_loan": "Aave Loan ({asset})",
-    "maker_vault": "Maker Vault #{identifier} ({collateralType})"
+    "maker_vault": "Maker Vault #{identifier} ({collateralType})",
+    "compound_loan": "Compound Loan ({asset})"
   },
   "borrowing": {
     "loading": "Please wait while your vaults are getting loaded...",
@@ -437,5 +438,22 @@
     "interest_earned": "Interest Earned",
     "assets": "Assets",
     "history": "History"
+  },
+  "loan_collateral": {
+    "per_asset": "Collateral Assets",
+    "title": "Collateral",
+    "locked_collateral": "Locked up collateral",
+    "current_ratio": "Current ratio",
+    "stable_apr": "Stable APR",
+    "variable_apr": "Variable APR",
+    "apy": "APY",
+    "watchers": {
+      "edit": "Edit {n} collateralization watcher | Edit {n} collateralization watchers",
+      "add": "Add collateralization ratio watcher",
+      "dialog": {
+        "title": "Collateralization watchers",
+        "label": "Collateralization Ratio"
+      }
+    }
   }
 }

@@ -3298,7 +3298,7 @@ Getting Compound balances
                               "amount": "10",
                               "usd_value": "3450"
                           },
-                          "apr": "7.46%"
+                          "apy": "7.46%"
                       }
                   }
               },
@@ -3310,7 +3310,7 @@ Getting Compound balances
                               "amount": "560",
                               "usd_value": "156.8"
                           },
-                          "apr": "7.46%"
+                          "apy": "7.46%"
                       }
                   }
               }

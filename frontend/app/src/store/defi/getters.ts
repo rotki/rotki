@@ -3,10 +3,10 @@ import sortBy from 'lodash/sortBy';
 import { GetterTree } from 'vuex';
 import { truncateAddress } from '@/filters';
 import { SupportedDefiProtocols } from '@/services/defi/types';
+import { CompoundLoan } from '@/services/defi/types/compound';
 import { Section, Status } from '@/store/const';
 import {
   AaveLoan,
-  CompoundLoan,
   CompoundProfitLossModel,
   DefiBalance,
   DefiLendingHistory,
@@ -256,7 +256,6 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       const asset = loan.asset ?? '';
       const { borrowing, lending } = aaveBalances[owner];
       const selectedLoan = borrowing[asset];
-      const collateralUsd = balanceUsdValueSum(Object.values(lending));
 
       return {
         asset,
@@ -269,11 +268,10 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           amount: selectedLoan.balance.amount,
           usdValue: selectedLoan.balance.usdValue
         },
-        collateral: {
-          asset: '',
-          amount: Zero,
-          usdValue: collateralUsd
-        }
+        collateral: Object.keys(lending).map(asset => ({
+          asset,
+          ...lending[asset].balance
+        }))
       } as AaveLoan;
     }
 
@@ -282,22 +280,20 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       const asset = loan.asset ?? '';
       const { borrowing, lending } = compoundBalances[owner];
       const selectedLoan = borrowing[asset];
-      const collateralUsd = balanceUsdValueSum(Object.values(lending));
 
       return {
         asset,
         owner,
         protocol: loan.protocol,
         identifier: loan.identifier,
-        apr: selectedLoan.apr,
+        apy: selectedLoan.apy,
         debt: {
           ...selectedLoan.balance
         },
-        collateral: {
-          asset: '',
-          amount: Zero,
-          usdValue: collateralUsd
-        },
+        collateral: Object.keys(lending).map(asset => ({
+          asset,
+          ...lending[asset].balance
+        })),
         events: events
           .filter(event => event.address === owner)
           .filter(event => !['mint', 'redeem'].includes(event.eventType))

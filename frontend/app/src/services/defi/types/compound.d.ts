@@ -1,5 +1,6 @@
 import { COMPOUND_EVENT_TYPES } from '@/services/defi/consts';
 import { Balance, HasBalance } from '@/services/types-api';
+import { Collateral, CollateralizedLoan } from '@/store/defi/types';
 
 interface CompoundReward extends HasBalance {}
 
@@ -16,7 +17,7 @@ interface CompoundLendingEntries {
 }
 
 interface CompoundBorrowing extends HasBalance {
-  readonly apr: string;
+  readonly apy: string;
 }
 
 interface CompoundBorrowingEntries {
@@ -62,4 +63,11 @@ export interface CompoundHistory {
   readonly interestProfit: CompoundProfitAndLoss;
   readonly debtLoss: CompoundProfitAndLoss;
   readonly rewards: CompoundProfitAndLoss;
+}
+
+type IdedCompoundEvent = CompoundEvent & { id: string };
+
+export interface CompoundLoan extends CollateralizedLoan<Collateral<string>[]> {
+  readonly apy: string;
+  readonly events: IdedCompoundEvent[];
 }

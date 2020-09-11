@@ -224,7 +224,8 @@ export default class AccountManagement extends Vue {
 </script>
 
 <style scoped lang="scss">
-@import '@/scss/scroll';
+@import '~@/scss/scroll';
+
 @keyframes scrollLarge {
   0% {
     transform: rotate(-13deg) translateY(0);

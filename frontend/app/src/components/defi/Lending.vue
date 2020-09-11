@@ -72,14 +72,14 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <blockchain-account-selector
           v-model="selectedAccount"
           hint
           :usable-accounts="defiAccounts(selectedProtocols)"
         />
       </v-col>
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>

@@ -115,13 +115,13 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       commit('dsrHistory', result);
     } catch (e) {
       const message = i18n.tc(
-        'actions.defi.dsr_balances.error.description',
+        'actions.defi.dsr_history.error.description',
         undefined,
         {
           error: e.message
         }
       );
-      const title = i18n.tc('actions.defi.dsr_balances.error.title');
+      const title = i18n.tc('actions.defi.dsr_history.error.title');
       notify(message, title, Severity.ERROR, true);
     }
     setStatus(Status.LOADED, section, status, commit);

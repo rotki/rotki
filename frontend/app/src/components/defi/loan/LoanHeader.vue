@@ -1,7 +1,7 @@
 <template>
   <v-row>
     <v-col class="loan-header">
-      <div v-if="loan.protocol === 'makerdao'" class="loan-header__identifier">
+      <div v-if="isVault" class="loan-header__identifier">
         {{
           $t('loan_header.maker_vault', {
             identifier: scrambleData ? '-' : loan.identifier,
@@ -9,8 +9,11 @@
           })
         }}
       </div>
-      <div v-else class="loan-header__identifier">
+      <div v-if="isAave" class="loan-header__identifier">
         {{ $t('loan_header.aave_loan', { asset: loan.asset }) }}
+      </div>
+      <div v-if="isCompound" class="loan-header__identifier">
+        {{ $t('loan_header.compound_loan', { asset: loan.asset }) }}
       </div>
       <div class="loan-header__owner secondary--text text--lighten-2">
         {{ $t('loan_header.owned_by') }}

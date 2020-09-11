@@ -1,5 +1,6 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { AaveLoan, CompoundLoan, MakerDAOVaultModel } from '@/store/defi/types';
+import { CompoundLoan } from '@/services/defi/types/compound';
+import { AaveLoan, MakerDAOVaultModel } from '@/store/defi/types';
 
 @Component({})
 export default class LoanDisplayMixin extends Vue {

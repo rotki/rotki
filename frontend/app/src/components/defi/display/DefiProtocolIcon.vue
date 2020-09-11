@@ -1,7 +1,7 @@
 <template>
   <div
-    class="defi-protocol-icon d-flex flex-row align-center shrink"
-    :class="mode === 'icon' ? 'defi-protocol-icon--icon' : null"
+    class="defi-protocol-icon d-flex flex-row align-center"
+    :class="mode === 'icon' ? 'justify-center' : null"
   >
     <v-tooltip top :disabled="mode !== 'icon'" open-delay="300ms">
       <template #activator="{ on, attrs }">

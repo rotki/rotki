@@ -16,8 +16,23 @@
         :class="gainLoss ? 'asset-movement-display--gain' : null"
       />
     </v-col>
-    <v-col v-if="!gainLoss" sm="12" md="auto" cols="12">
-      <v-icon v-if="$vuetify.breakpoint.mdAndUp">mdi-chevron-right</v-icon>
+    <v-col
+      v-if="!gainLoss"
+      sm="12"
+      :md="$vuetify.breakpoint.mobile ? '12' : 'auto'"
+      cols="12"
+      :class="
+        $vuetify.breakpoint.mdAndUp && !$vuetify.breakpoint.mobile
+          ? 'mr-6'
+          : null
+      "
+    >
+      <v-icon
+        v-if="$vuetify.breakpoint.mdAndUp && !$vuetify.breakpoint.mobile"
+        color="grey"
+      >
+        mdi-chevron-right
+      </v-icon>
       <v-icon v-else>mdi-chevron-down</v-icon>
     </v-col>
     <v-col cols="auto">

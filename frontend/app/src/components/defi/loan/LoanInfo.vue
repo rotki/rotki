@@ -5,11 +5,12 @@
       <v-row>
         <v-col cols="12" md="6">
           <loan-collateral :loan="loan" />
-          <loan-debt v-if="isVault" :loan="loan" class="mt-5" />
         </v-col>
-        <v-col cols="12" md="6">
-          <loan-debt v-if="!isVault" :loan="loan" />
-          <loan-liquidation v-if="isVault" :loan="loan" />
+        <v-col v-if="isVault" cols="12" md="6">
+          <loan-liquidation :loan="loan" />
+        </v-col>
+        <v-col cols="12" :md="isVault ? 12 : 6">
+          <loan-debt :loan="loan" />
         </v-col>
       </v-row>
       <v-row v-if="isVault" class="mt-6">
@@ -24,7 +25,7 @@
           />
         </v-col>
       </v-row>
-      <v-row v-if="isCompound">
+      <v-row v-if="isCompound" no-gutters>
         <v-col cols="12">
           <premium-card v-if="!premium" title="Compound History" />
           <compound-borrowing-details
