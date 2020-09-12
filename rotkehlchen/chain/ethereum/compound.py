@@ -83,7 +83,7 @@ class CompoundEvent(NamedTuple):
     event_type: Literal['mint', 'redeem', 'borrow', 'repay', 'liquidation', 'comp']
     address: ChecksumEthAddress
     block_number: int
-    timestamp: int
+    timestamp: Timestamp
     asset: Asset
     value: Balance
     to_asset: Optional[Asset]
@@ -562,52 +562,74 @@ class Compound(EthereumModule):
                 assets[event.address][event.asset] -= event.value
             elif event.event_type == 'redeem':
                 assert event.to_asset, 'redeem events should have a to_asset'
-                e_profit = (
-                    assets[event.address][event.to_asset] +
-                    event.to_value -
-                    profit_so_far[event.address][event.to_asset]
+                assert event.to_value, 'redeem events should have a to_value'
+                profit_amount = (
+                    assets[event.address][event.to_asset].amount +
+                    event.to_value.amount -
+                    profit_so_far[event.address][event.to_asset].amount
                 )
-                profit = e_profit if e_profit.amount >= 0 else None  # not realized profit yet
-                if profit:
+                profit: Optional[Balance]
+                if profit_amount >= 0:
+                    usd_price = query_usd_price_zero_if_error(
+                        asset=event.to_asset,
+                        time=event.timestamp,
+                        location='comp redeem event processing',
+                        msg_aggregator=self.msg_aggregator,
+                    )
+                    profit = Balance(profit_amount, profit_amount * usd_price)
                     profit_so_far[event.address][event.to_asset] += profit
+                else:
+                    profit = None
+
                 assets[event.address][event.to_asset] += event.to_value
                 events[idx] = event._replace(realized_pnl=profit)  # TODO: maybe not named tuple?
 
             elif event.event_type == 'borrow':
                 loss_assets[event.address][event.asset] -= event.value
             elif event.event_type == 'repay':
-                assert event.to_asset, 'repay events should have a to_asset'
-                e_loss = (
-                    loss_assets[event.address][event.asset] +
-                    event.value -
-                    loss_so_far[event.address][event.to_asset]
+                loss_amount = (
+                    loss_assets[event.address][event.asset].amount +
+                    event.value.amount -
+                    loss_so_far[event.address][event.asset].amount
                 )
-                loss = e_loss if e_loss.amount >= 0 else None  # not realized loss yet
-                if loss:
-                    loss_so_far[event.address][event.to_asset] += loss
+                loss: Optional[Balance]
+                if loss_amount >= 0:
+                    usd_price = query_usd_price_zero_if_error(
+                        asset=event.asset,
+                        time=event.timestamp,
+                        location='comp repay event processing',
+                        msg_aggregator=self.msg_aggregator,
+                    )
+                    loss = Balance(loss_amount, loss_amount * usd_price)
+                    loss_so_far[event.address][event.asset] += loss
+                else:
+                    loss = None
+
                 loss_assets[event.address][event.asset] += event.value
                 events[idx] = event._replace(realized_pnl=loss)  # TODO: maybe not named tuple?
             elif event.event_type == 'liquidation':
                 assert event.to_asset, 'liquidation events should have a to_asset'
                 # Liquidator covers part of the borrowed amount
                 loss_assets[event.address][event.asset] += event.value
+                loss_so_far[event.address][event.asset] += event.value
                 # Liquidator receives discounted to_asset
                 loss_assets[event.address][event.to_asset] += event.to_value
+                loss_so_far[event.address][event.to_asset] += event.to_value
             elif event.event_type == 'comp':
                 rewards_assets[event.address][A_COMP] += event.value
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():
                 # get the underlying
-                assets[address][asset] += entry.balance
+                profit_so_far[address][asset] += entry.balance
 
             for asset, entry in bentry['borrowing'].items():
-                loss_assets[address][asset] += entry.balance
+                loss_so_far[address][asset] += entry.balance
 
             for asset, entry in bentry['rewards'].items():
                 rewards_assets[address][asset] += entry.balance
 
-        return assets, loss_assets, rewards_assets
+        return profit_so_far, loss_so_far, rewards_assets
 
     def get_history(
             self,
