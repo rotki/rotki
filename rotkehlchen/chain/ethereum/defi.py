@@ -31,6 +31,7 @@ def _handle_yearn_curve_vault(
         ethereum: 'EthereumManager',
         curve_contract: EthereumContract,
         yearn_contract: EthereumContract,
+        div_decimals: int,
 ) -> FVal:
     virtual_price = ethereum.call_contract(
         contract_address=curve_contract.address,
@@ -44,7 +45,7 @@ def _handle_yearn_curve_vault(
         method_name='getPricePerFullShare',
         arguments=[],
     )
-    usd_value = FVal(virtual_price * price_per_full_share) / 10 ** 36
+    usd_value = FVal(virtual_price * price_per_full_share) / 10 ** div_decimals
     return usd_value
 
 
@@ -91,18 +92,21 @@ def handle_defi_price_query(
             ethereum=ethereum,
             curve_contract=CURVEFI_YSWAP,
             yearn_contract=YEARN_YCRV_VAULT,
+            div_decimals=36,
         )
     elif token_symbol == 'yyDAI+yUSDC+yUSDT+yBUSD':
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
             curve_contract=CURVEFI_BUSDSWAP,
             yearn_contract=YEARN_BCURVE_VAULT,
+            div_decimals=36,
         )
     elif token_symbol == 'ycrvRenWSBTC':
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
             curve_contract=CURVEFI_SRENSWAP,
             yearn_contract=YEARN_SRENCURVE_VAULT,
+            div_decimals=32,
         )
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yTUSD':
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_YSWAP)
