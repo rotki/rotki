@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import unicode_literals  # isort:skip
 
 import logging
 from json.decoder import JSONDecodeError
@@ -41,7 +41,7 @@ SPECIAL_SYMBOLS = (
     'yyDAI+yUSDC+yUSDT+yTUSD',
     'yDAI+yUSDC+yUSDT+yBUSD',
     'yDAI+yUSDC+yUSDT+yTUSD',
-    'ycrvRenWSBTC'
+    'ycrvRenWSBTC',
     'ypaxCrv',
     'crvRenWBTC',
     'crvRenWSBTC',
