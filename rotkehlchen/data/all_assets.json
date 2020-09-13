@@ -12594,7 +12594,7 @@
         "symbol": "yDAI+yUSDC+yUSDT+yTUSD",
         "type": "ethereum token"
     },
-    "ypaxCrv ": {
+    "ypaxCrv": {
         "coingecko": "lp-paxcurve",
         "ethereum_address": "0xD905e2eaeBe188fc92179b6350807D8bd91Db0D8",
         "ethereum_token_decimals": 18,

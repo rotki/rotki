@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK,
+    A_BTC,
     A_DAI,
     A_ETH,
     A_TUSD,
@@ -78,6 +79,8 @@ def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_USDC)
     elif token_symbol == 'yTUSD':
         price = Inquirer().find_usd_price(A_TUSD)
+    elif token_symbol in ('ycrvRenWSBTC', 'crvRenWBTC', 'crvRenWSBTC'):
+        price = Inquirer().find_usd_price(A_BTC)
 
     return price
 

@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, Optional
 
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.ethereum import EthereumConstants, EthereumContract
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Price
 
@@ -32,7 +34,25 @@ def _handle_yearn_curve_vault(
         curve_contract: EthereumContract,
         yearn_contract: EthereumContract,
         div_decimals: int,
+        asset_price: FVal,
 ) -> FVal:
+    """The price of a yearn curve vault is
+    asset_price * (pool.get_virtual_price / 10 ^ pool_decimals) *
+    (vault.getPricePerFullShare / 10 ^ vault_decimals)
+
+    asset_price is the asset price of the pool token.
+    Normally for pools of stablecoins such as ycrv pool one should take
+    (dai_weight * dai_price +
+    usdc_weight * usdc_price +
+    usdt_weight * usdt_price +
+    tusd_weight * tusd_price)
+
+    And weights change all the time.
+
+    It's safe to assume value of 1 for such pools at the moment. For a BTC
+    pool you should follow the same approach with the weights and average or
+    just take the current price of BTC. Same for other assets.
+    """
     virtual_price = ethereum.call_contract(
         contract_address=curve_contract.address,
         abi=curve_contract.abi,
@@ -46,32 +66,57 @@ def _handle_yearn_curve_vault(
         arguments=[],
     )
     usd_value = FVal(virtual_price * price_per_full_share) / 10 ** div_decimals
-    return usd_value
+    return usd_value * asset_price
 
 
-def _handle_curvepool_price(ethereum: 'EthereumManager', contract: EthereumContract) -> FVal:
+def _handle_curvepool_price(
+        ethereum: 'EthereumManager',
+        contract: EthereumContract,
+        div_decimals: int,
+        asset_price: FVal,
+) -> FVal:
+    """The price of a curve pool token is
+    asset_price * (pool.get_virtual_price / 10 ^ pool_decimals)
+
+    asset_price is the asset price of the pool token.
+    Normally for pools of stablecoins such as ycrv pool one should take
+    (dai_weight * dai_price +
+    usdc_weight * usdc_price +
+    usdt_weight * usdt_price +
+    tusd_weight * tusd_price)
+
+    And weights change all the time.
+
+    It's safe to assume value of 1 for such pools at the moment. For a BTC
+    pool you should follow the same approach with the weights and average or
+    just take the current price of BTC. Same for other assets.
+    """
     virtual_price = ethereum.call_contract(
         contract_address=contract.address,
         abi=contract.abi,
         method_name='get_virtual_price',
         arguments=[],
     )
-    usd_value = FVal(virtual_price) / (10 ** 18)
+    usd_value = (asset_price * FVal(virtual_price)) / (10 ** div_decimals)
     return usd_value
 
 
 def handle_underlying_price_yearn_vault(
         ethereum: 'EthereumManager',
-        underlying_asset_price: Price,
         contract: EthereumContract,
+        div_decimals: int,
+        asset_price: Price,
 ) -> FVal:
+    # TODO This needs to change. Either make it constant for all vaults of this type
+    # or understand why yUSDC and yUSDT which have 6 decimals don't work correctly
+    div_decimals = 18
     price_per_full_share = ethereum.call_contract(
         contract_address=contract.address,
         abi=contract.abi,
         method_name='getPricePerFullShare',
         arguments=[],
     )
-    usd_value = FVal(underlying_asset_price * price_per_full_share) / 10 ** 18
+    usd_value = FVal(asset_price * price_per_full_share) / 10 ** div_decimals
     return usd_value
 
 
@@ -93,6 +138,7 @@ def handle_defi_price_query(
             curve_contract=CURVEFI_YSWAP,
             yearn_contract=YEARN_YCRV_VAULT,
             div_decimals=36,
+            asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
     elif token_symbol == 'yyDAI+yUSDC+yUSDT+yBUSD':
         usd_value = _handle_yearn_curve_vault(
@@ -100,74 +146,109 @@ def handle_defi_price_query(
             curve_contract=CURVEFI_BUSDSWAP,
             yearn_contract=YEARN_BCURVE_VAULT,
             div_decimals=36,
+            asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
     elif token_symbol == 'ycrvRenWSBTC':
+        assert underlying_asset_price
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
             curve_contract=CURVEFI_SRENSWAP,
             yearn_contract=YEARN_SRENCURVE_VAULT,
-            div_decimals=32,
+            div_decimals=36,
+            asset_price=underlying_asset_price,
         )
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yTUSD':
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_YSWAP)
+        token = EthereumToken(token_symbol)
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_YSWAP, token.decimals, ONE)
     elif token_symbol == 'ypaxCrv':
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_PAXSWAP)
+        token = EthereumToken(token_symbol)
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_PAXSWAP, token.decimals, ONE)
     elif token_symbol == 'crvRenWBTC':
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_RENSWAP)
+        assert underlying_asset_price
+        token = EthereumToken(token_symbol)
+        usd_value = _handle_curvepool_price(
+            ethereum=ethereum,
+            contract=CURVEFI_RENSWAP,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
+        )
     elif token_symbol == 'crvRenWSBTC':
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_SRENSWAP)
+        assert underlying_asset_price
+        token = EthereumToken(token_symbol)
+        usd_value = _handle_curvepool_price(
+            ethereum=ethereum,
+            contract=CURVEFI_SRENSWAP,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
+        )
     elif token_symbol == 'crvPlain3andSUSD':
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_SUSDV2SWAP)
+        token = EthereumToken(token_symbol)
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_SUSDV2SWAP, token.decimals, ONE)
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yBUSD':
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP)
+        token = EthereumToken(token_symbol)
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP, token.decimals, ONE)
     elif token_symbol == 'yaLINK':
         assert underlying_asset_price
+        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            underlying_asset_price=underlying_asset_price,
             contract=YEARN_ALINK_VAULT,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
         )
     elif token_symbol == 'yDAI':
         assert underlying_asset_price
+        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            underlying_asset_price=underlying_asset_price,
             contract=YEARN_DAI_VAULT,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
         )
     elif token_symbol == 'yWETH':
         assert underlying_asset_price
+        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            underlying_asset_price=underlying_asset_price,
             contract=YEARN_WETH_VAULT,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
         )
     elif token_symbol == 'yYFI':
         assert underlying_asset_price
+        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            underlying_asset_price=underlying_asset_price,
             contract=YEARN_YFI_VAULT,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
         )
     elif token_symbol == 'yUSDT':
         assert underlying_asset_price
+        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            underlying_asset_price=underlying_asset_price,
             contract=YEARN_USDT_VAULT,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
         )
     elif token_symbol == 'yUSDC':
         assert underlying_asset_price
+        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            underlying_asset_price=underlying_asset_price,
             contract=YEARN_USDC_VAULT,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
         )
     elif token_symbol == 'yTUSD':
         assert underlying_asset_price
+        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            underlying_asset_price=underlying_asset_price,
             contract=YEARN_TUSD_VAULT,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
         )
     else:
         return None
