@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1462` ycrvRenWSBTC vault token should now properly appear in the dashboard and have its price calculated correctly.
 * :bug:`1429` Pool together's plDAI and plUSDC are now correctly shown in the DeFi overview page.
 * :bug:`1423` Fiat amounts in protocols details in the DeFi Overview are now correctly converted to the user's profit currency.
 * :bug:`1430` Users can now delete manual balance entries where the label is an empty string.

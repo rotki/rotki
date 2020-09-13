@@ -14,6 +14,7 @@ EV_MARGIN_CLOSE = EventType('margin_position_close')
 EV_DEFI = EventType('defi_event')
 
 ZERO = FVal(0)
+ONE = FVal(1)
 
 
 # API URLS

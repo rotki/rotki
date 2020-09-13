@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import unicode_literals  # isort:skip
 
 import logging
 from json.decoder import JSONDecodeError
@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK,
+    A_BTC,
     A_DAI,
     A_ETH,
     A_TUSD,
@@ -41,7 +42,7 @@ SPECIAL_SYMBOLS = (
     'yyDAI+yUSDC+yUSDT+yTUSD',
     'yDAI+yUSDC+yUSDT+yBUSD',
     'yDAI+yUSDC+yUSDT+yTUSD',
-    'ycrvRenWSBTC'
+    'ycrvRenWSBTC',
     'ypaxCrv',
     'crvRenWBTC',
     'crvRenWSBTC',
@@ -78,6 +79,8 @@ def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_USDC)
     elif token_symbol == 'yTUSD':
         price = Inquirer().find_usd_price(A_TUSD)
+    elif token_symbol in ('ycrvRenWSBTC', 'crvRenWBTC', 'crvRenWSBTC'):
+        price = Inquirer().find_usd_price(A_BTC)
 
     return price
 
