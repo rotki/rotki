@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from typing_extensions import Literal
 
@@ -21,6 +21,7 @@ from rotkehlchen.constants.ethereum import (
     ZERO_ADDRESS,
     EthereumContract,
 )
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import SPECIAL_SYMBOLS, Inquirer
 from rotkehlchen.premium.premium import Premium
@@ -31,7 +32,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import address_to_bytes32, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import address_to_bytes32, hex_or_bytes_to_int, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -66,15 +67,60 @@ YEARN_VAULTS = [
         underlying_token=EthereumToken('yDAI+yUSDC+yUSDT+yTUSD'),
         token=EthereumToken('yyDAI+yUSDC+yUSDT+yTUSD'),
     ),
-    # YEARN_DAI_VAULT,
-    # YEARN_WETH_VAULT,
-    # YEARN_YFI_VAULT,
-    # YEARN_ALINK_VAULT,
-    # YEARN_USDT_VAULT,
-    # YEARN_USDC_VAULT,
-    # YEARN_TUSD_VAULT,
-    # YEARN_BCURVE_VAULT,
-    # YEARN_SRENCURVE_VAULT,
+    YearnVault(
+        name='YDAI Vault',
+        contract=YEARN_DAI_VAULT,
+        underlying_token=EthereumToken('DAI'),
+        token=EthereumToken('yDAI'),
+    ),
+    YearnVault(
+        name='YWETH Vault',
+        contract=YEARN_WETH_VAULT,
+        underlying_token=EthereumToken('WETH'),
+        token=EthereumToken('yWETH'),
+    ),
+    YearnVault(
+        name='YYFI Vault',
+        contract=YEARN_YFI_VAULT,
+        underlying_token=EthereumToken('YFI'),
+        token=EthereumToken('yYFI'),
+    ),
+    YearnVault(
+        name='YALINK Vault',
+        contract=YEARN_ALINK_VAULT,
+        underlying_token=EthereumToken('aLINK'),
+        token=EthereumToken('yaLINK'),
+    ),
+    YearnVault(
+        name='YUSDT Vault',
+        contract=YEARN_USDT_VAULT,
+        underlying_token=EthereumToken('USDT'),
+        token=EthereumToken('yUSDT'),
+    ),
+    YearnVault(
+        name='YUSDC Vault',
+        contract=YEARN_USDC_VAULT,
+        underlying_token=EthereumToken('USDC'),
+        token=EthereumToken('yUSDC'),
+    ),
+    YearnVault(
+        name='YTUSD Vault',
+        contract=YEARN_TUSD_VAULT,
+        underlying_token=EthereumToken('TUSD'),
+        token=EthereumToken('yTUSD'),
+    ),
+    YearnVault(
+        name='YBCURVE Vault',
+        contract=YEARN_BCURVE_VAULT,
+        underlying_token=EthereumToken('yDAI+yUSDC+yUSDT+yBUSD'),
+        token=EthereumToken('yyDAI+yUSDC+yUSDT+yBUSD'),
+    ),
+    YearnVault(
+        name='YSRENCURVE Vault',
+        contract=YEARN_SRENCURVE_VAULT,
+        underlying_token=EthereumToken('crvRenWSBTC'),
+        token=EthereumToken('ycrvRenWSBTC'),
+    ),
 ]
 
 
@@ -82,7 +128,7 @@ YEARN_VAULTS = [
 class YearnVaultEvent:
     event_type: Literal['deposit', 'withdraw']
     block_number: int
-    timestamp: int
+    timestamp: Timestamp
     from_asset: Asset
     from_value: Balance
     to_asset: Asset
@@ -90,6 +136,22 @@ class YearnVaultEvent:
     realized_pnl: Optional[Balance]
     tx_hash: str
     log_index: int
+
+    def serialize(self) -> Dict[str, Any]:
+        # Would have been nice to have a customizable asdict() for dataclasses
+        # This way we could have avoided manual work with the Asset object serialization
+        return {
+            'event_type': self.event_type,
+            'block_number': self.block_number,
+            'timestamp': self.timestamp,
+            'from_asset': self.from_asset.serialize(),
+            'from_value': self.from_value.serialize(),
+            'to_asset': self.to_asset.serialize(),
+            'to_value': self.to_value.serialize(),
+            'realized_pnl': self.realized_pnl.serialize() if self.realized_pnl else None,
+            'tx_hash': self.tx_hash,
+            'log_index': self.log_index,
+        }
 
 
 class YearnVaultHistory(NamedTuple):
@@ -121,24 +183,6 @@ def get_usd_price_zero_if_error(
         location=location,
         msg_aggregator=msg_aggregator,
     )
-
-
-def _process_vault_events(events: List[YearnVaultEvent]) -> Balance:
-    """Process the events for a single vault and returns total profit/loss after all events"""
-    total = Balance()
-    profit_so_far = Balance()
-    for event in events:
-        if event.event_type == 'deposit':
-            total -= event.from_value
-        else:  # withdraws
-            e_profit = total + event.to_value - profit_so_far
-            profit = e_profit if e_profit.amount >= 0 else None  # not realized profit yet
-            if profit:
-                profit_so_far += profit
-            event.realized_pnl = profit
-            total += event.to_value
-
-    return total
 
 
 class YearnVaults(EthereumModule):
@@ -319,6 +363,32 @@ class YearnVaults(EthereumModule):
 
         return events
 
+    def _process_vault_events(self, events: List[YearnVaultEvent]) -> Balance:
+        """Process the events for a single vault and returns total profit/loss after all events"""
+        total = Balance()
+        profit_so_far = Balance()
+        for event in events:
+            if event.event_type == 'deposit':
+                total -= event.from_value
+            else:  # withdraws
+                profit_amount = total.amount + event.to_value.amount - profit_so_far.amount
+                profit: Optional[Balance]
+                if profit_amount >= 0:
+                    usd_price = get_usd_price_zero_if_error(
+                        asset=event.to_asset,
+                        time=event.timestamp,
+                        location='yearn vault event processing',
+                        msg_aggregator=self.msg_aggregator,
+                    )
+                    profit = Balance(profit_amount, profit_amount * usd_price)
+                else:
+                    profit = None
+
+                event.realized_pnl = profit
+                total += event.to_value
+
+        return total
+
     def get_vault_history(
             self,
             defi_balances: List['DefiProtocolBalances'],
@@ -331,7 +401,7 @@ class YearnVaults(EthereumModule):
         events = self._get_vault_deposit_events(vault, address, from_block, to_block)
         events.extend(self._get_vault_withdraw_events(vault, address, from_block, to_block))
         events.sort(key=lambda x: x.timestamp)
-        total_pnl = _process_vault_events(events)
+        total_pnl = self._process_vault_events(events)
 
         current_balance = None
         for balance in defi_balances:
@@ -344,6 +414,16 @@ class YearnVaults(EthereumModule):
                 total_pnl += current_balance
                 break
 
+        # Due to the way we calculate usd prices for vaults we need to get the current
+        # usd price of the actual pnl amount at this point
+        if total_pnl.amount != ZERO:
+            usd_price = get_usd_price_zero_if_error(
+                asset=vault.underlying_token,
+                time=ts_now(),
+                location='yearn vault history',
+                msg_aggregator=self.msg_aggregator,
+            )
+            total_pnl.usd_value = usd_price * total_pnl.amount
         return YearnVaultHistory(events=events, profit_loss=total_pnl)
 
     def get_history(

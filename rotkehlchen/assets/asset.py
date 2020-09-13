@@ -184,6 +184,9 @@ class Asset():
         object.__setattr__(self, 'cryptocompare', data.cryptocompare)
         object.__setattr__(self, 'coingecko', data.coingecko)
 
+    def serialize(self) -> str:
+        return self.identifier
+
     def is_fiat(self) -> bool:
         return self.asset_type == AssetType.FIAT
 
