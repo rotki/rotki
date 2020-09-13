@@ -231,8 +231,12 @@ class YearnVaults(EthereumModule):
             )
             mint_amount = None
             for log in tx_receipt['logs']:
-                log_index = deserialize_int_from_hex_or_int(log['logIndex'], 'yearn log index')
-                if log_index == deposit_index + 1:
+                found_event = (
+                    log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' and  # noqa: E501
+                    log['topics'][1] == address_to_bytes32(ZERO_ADDRESS) and
+                    log['topics'][2] == address_to_bytes32(address)
+                )
+                if found_event:
                     # found the mint log
                     mint_amount = token_normalized_value(
                         hex_or_bytes_to_int(log['data']),
@@ -313,8 +317,8 @@ class YearnVaults(EthereumModule):
             for log in tx_receipt['logs']:
                 found_event = (
                     log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' and  # noqa: E501
-                    log['topics'][1] == address_to_bytes32(address) and  # noqa: E501
-                    log['topics'][2] == ZERO_ADDRESS  # noqa: E501
+                    log['topics'][1] == address_to_bytes32(address) and
+                    log['topics'][2] == address_to_bytes32(ZERO_ADDRESS)
                 )
                 if found_event:
                     # found the burn log
@@ -326,7 +330,7 @@ class YearnVaults(EthereumModule):
             if burn_amount is None:
                 self.msg_aggregator.add_error(
                     f'Ignoring yearn withdraw event with tx_hash {tx_hash} and log index '
-                    f'{withdraw_index} due to inability to find corresponding mint event',
+                    f'{withdraw_index} due to inability to find corresponding burn event',
                 )
                 continue
 
@@ -396,9 +400,12 @@ class YearnVaults(EthereumModule):
             address: ChecksumEthAddress,
             from_block: int,
             to_block: int,
-    ) -> YearnVaultHistory:
+    ) -> Optional[YearnVaultHistory]:
         from_block = max(from_block, vault.contract.deployed_block)
         events = self._get_vault_deposit_events(vault, address, from_block, to_block)
+        if len(events) == 0:
+            return None
+
         events.extend(self._get_vault_withdraw_events(vault, address, from_block, to_block))
         events.sort(key=lambda x: x.timestamp)
         total_pnl = self._process_vault_events(events)
@@ -452,7 +459,8 @@ class YearnVaults(EthereumModule):
                     from_block=from_block,
                     to_block=to_block,
                 )
-                history[address][vault.name] = vault_history
+                if vault_history:
+                    history[address][vault.name] = vault_history
 
             if len(history[address]) == 0:
                 del history[address]

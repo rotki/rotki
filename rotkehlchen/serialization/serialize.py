@@ -81,7 +81,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveLendingBalance,
             AaveBorrowingBalance,
             CompoundBalance,
-            Asset,
             YearnVaultEvent,
     )):
         return process_result(entry.serialize())
