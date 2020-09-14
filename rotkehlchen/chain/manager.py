@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
+from rotkehlchen.chain.ethereum.yearn import YearnVaults
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances, Zerion
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -193,6 +194,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         method=self._initialize_compound,
                         premium=premium,
                     )
+                elif given_module == 'yearn_vaults':
+                    self.eth_modules['yearn_vaults'] = YearnVaults(
+                        ethereum_manager=ethereum_manager,
+                        database=self.database,
+                        premium=premium,
+                        msg_aggregator=msg_aggregator,
+                    )
                 else:
                     log.error(f'Unrecognized module value {given_module} given. Skipping...')
 
@@ -299,6 +307,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         gevent.sleep(0.5)
                     else:
                         return module  # type: ignore
+        return module  # type: ignore
+
+    @property
+    def yearn_vaults(self) -> Optional[YearnVaults]:
+        module = self.eth_modules.get('yearn_vaults', None)
+        if not module:
+            return None
+
         return module  # type: ignore
 
     def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEthAddress]:

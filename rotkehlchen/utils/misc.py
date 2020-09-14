@@ -392,6 +392,10 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
     return ChecksumEthAddress(to_checksum_address('0x' + hexstr[26:]))
 
 
+def address_to_bytes32(address: ChecksumEthAddress) -> str:
+    return '0x' + 24 * '0' + address.lower()[2:]
+
+
 T = TypeVar('T')
 
 

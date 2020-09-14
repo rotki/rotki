@@ -20,6 +20,7 @@ from rotkehlchen.chain.ethereum.makerdao.vaults import (
     VaultEvent,
     VaultEventType,
 )
+from rotkehlchen.chain.ethereum.yearn.vaults import YearnVaultEvent, YearnVaultHistory
 from rotkehlchen.chain.ethereum.zerion import DefiBalance, DefiProtocol, DefiProtocolBalances
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
@@ -80,6 +81,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveLendingBalance,
             AaveBorrowingBalance,
             CompoundBalance,
+            YearnVaultEvent,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (
@@ -97,6 +99,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveHistory,
             DefiBalance,
             DefiProtocolBalances,
+            YearnVaultHistory,
     )):
         return process_result(entry._asdict())
     elif isinstance(entry, tuple):

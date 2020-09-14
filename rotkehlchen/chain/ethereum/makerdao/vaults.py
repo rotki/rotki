@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.makerdao.common import (
     WAD,
     MakerDAOCommon,
 )
-from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
+from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import (
@@ -43,7 +43,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_now
+from rotkehlchen.utils.misc import address_to_bytes32, hex_or_bytes_to_int, ts_now
 
 log = logging.getLogger(__name__)
 

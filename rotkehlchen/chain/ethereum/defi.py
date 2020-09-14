@@ -1,7 +1,20 @@
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.constants.ethereum import EthereumConstants, EthereumContract
+from rotkehlchen.constants.ethereum import (
+    YEARN_ALINK_VAULT,
+    YEARN_BCURVE_VAULT,
+    YEARN_DAI_VAULT,
+    YEARN_SRENCURVE_VAULT,
+    YEARN_TUSD_VAULT,
+    YEARN_USDC_VAULT,
+    YEARN_USDT_VAULT,
+    YEARN_WETH_VAULT,
+    YEARN_YCRV_VAULT,
+    YEARN_YFI_VAULT,
+    EthereumConstants,
+    EthereumContract,
+)
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Price
@@ -10,21 +23,11 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 
-YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
 CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
 CURVEFI_PAXSWAP = EthereumConstants().contract('CURVEFI_PAXSWAP')
-YEARN_DAI_VAULT = EthereumConstants().contract('YEARN_DAI_VAULT')
-YEARN_WETH_VAULT = EthereumConstants().contract('YEARN_WETH_VAULT')
-YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')
-YEARN_ALINK_VAULT = EthereumConstants().contract('YEARN_ALINK_VAULT')
-YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
-YEARN_USDC_VAULT = EthereumConstants().contract('YEARN_USDC_VAULT')
-YEARN_TUSD_VAULT = EthereumConstants().contract('YEARN_TUSD_VAULT')
 CURVEFI_BUSDSWAP = EthereumConstants().contract('CURVEFI_BUSDSWAP')
-YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 CURVEFI_RENSWAP = EthereumConstants().contract('CURVEFI_RENSWAP')
 CURVEFI_SRENSWAP = EthereumConstants().contract('CURVEFI_SRENSWAP')
-YEARN_SRENCURVE_VAULT = EthereumConstants().contract('YEARN_SRENCURVE_VAULT')
 CURVEFI_SUSDV2SWAP = EthereumConstants().contract('CURVEFI_SUSDV2SWAP')
 YEARN_CONTROLLER = EthereumConstants().contract('YEARN_CONTROLLER')
 

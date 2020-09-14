@@ -61,6 +61,7 @@ from rotkehlchen.api.v1.resources import (
     UsersResource,
     VersionResource,
     WatchersResource,
+    YearnVaultsHistoryResource,
     create_blueprint,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -134,6 +135,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/aave/history', AaveHistoryResource),
     ('/blockchains/ETH/modules/compound/balances', CompoundBalancesResource),
     ('/blockchains/ETH/modules/compound/history', CompoundHistoryResource),
+    ('/blockchains/ETH/modules/yearn/vaults/history', YearnVaultsHistoryResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/assets', OwnedAssetsResource),
     ('/assets/all', AllAssetsResource),
