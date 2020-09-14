@@ -21,13 +21,17 @@
           :display="openDialog"
           :title="dialogTitle"
           :subtitle="dialogSubtitle"
-          :action-disabled="dialogDisabled"
+          :action-disabled="dialogDisabled || !valid"
           :loading="dialogLoading"
           primary-action="Save"
           @confirm="save()"
           @cancel="cancel()"
         >
-          <manual-balances-form ref="dialogChild" :edit="balanceToEdit" />
+          <manual-balances-form
+            ref="dialogChild"
+            v-model="valid"
+            :edit="balanceToEdit"
+          />
         </big-dialog>
         <manual-balances-list @editBalance="edit($event)" />
       </v-card-text>
@@ -56,6 +60,7 @@ export default class ManualBalances extends Vue {
   openDialog: boolean = false;
   dialogDisabled: boolean = false;
   dialogLoading: boolean = false;
+  valid: boolean = false;
 
   newBalance() {
     this.dialogTitle = 'Add Manual Balance';
