@@ -64,11 +64,11 @@ export default class AssetMovementDisplay extends Vue {
 <style scoped lang="scss">
 .asset-movement-display {
   &--gain {
-    color: #8bc34a !important;
+    color: #4caf50 !important;
   }
 
   &--loss {
-    color: #ff5722 !important;
+    color: #d32f2f !important;
   }
 
   &--row {
