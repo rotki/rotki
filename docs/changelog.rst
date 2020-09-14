@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`804` Users can now track borrowing from Compound in the DeFi borrowing page.
+* :feature:`597` Users can now track the interest earned by Compound loans in the DeFi lending page.
 * :bug:`1462` ycrvRenWSBTC vault token should now properly appear in the dashboard and have its price calculated correctly.
 * :bug:`1429` Pool together's plDAI and plUSDC are now correctly shown in the DeFi overview page.
 * :bug:`1423` Fiat amounts in protocols details in the DeFi Overview are now correctly converted to the user's profit currency.
