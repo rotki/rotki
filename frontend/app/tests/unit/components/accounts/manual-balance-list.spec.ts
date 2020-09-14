@@ -26,11 +26,11 @@ describe('ManualBalanceList.vue', () => {
   });
 
   test('currency header is properly updated', async () => {
-    expect(wrapper.find('th:nth-child(4)').text()).toMatch('USD Value');
+    expect(wrapper.find('th:nth-child(4)').text()).toContain('USD');
     store.commit('session/generalSettings', {
       selectedCurrency: findCurrency(currencies[1].ticker_symbol)
     });
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('th:nth-child(4)').text()).toMatch('EUR Value');
+    expect(wrapper.find('th:nth-child(4)').text()).toContain('EUR');
   });
 });
