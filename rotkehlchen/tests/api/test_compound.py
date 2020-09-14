@@ -563,8 +563,8 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
 
     # Check debt loss mappings
     debt_0 = result['debt_loss']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
-    assert FVal(debt_0['ETH']['amount']) > FVal('0.00066203007')
     assert FVal(debt_0['cUSDC']['amount']) > FVal('84')
+    assert FVal(debt_0['ETH']['amount']) > FVal('0.000012422')
 
     # Check liquidation profit mappings
     lprofit_0 = result['liquidation_profit']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']

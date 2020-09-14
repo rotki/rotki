@@ -11,10 +11,12 @@ from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import (
     deserialize_blocknumber,
@@ -621,11 +623,18 @@ class Compound(EthereumModule):
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():
-                # get the underlying
                 profit_so_far[address][asset] += entry.balance
 
             for asset, entry in bentry['borrowing'].items():
-                loss_so_far[address][asset] += entry.balance
+                remaining = entry.balance + loss_assets[address][asset]
+                if remaining.amount < ZERO:
+                    continue
+                loss_so_far[address][asset] += remaining
+                if loss_so_far[address][asset].usd_value < ZERO:
+                    amount = loss_so_far[address][asset].amount
+                    loss_so_far[address][asset] = Balance(
+                        amount=amount, usd_value=amount * Inquirer().find_usd_price(Asset(asset)),
+                    )
 
             for asset, entry in bentry['rewards'].items():
                 rewards_assets[address][asset] += entry.balance
