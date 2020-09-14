@@ -455,5 +455,13 @@
         "label": "Collateralization Ratio"
       }
     }
+  },
+  "lending_asset_table": {
+    "headers": {
+      "usd_value": "{currency} value",
+      "asset": "Asset",
+      "amount": "Amount",
+      "effective_interest_rate": "Effective Interest Rate"
+    }
   }
 }

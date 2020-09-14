@@ -7,6 +7,7 @@ import { CompoundLoan } from '@/services/defi/types/compound';
 import { Section, Status } from '@/store/const';
 import {
   AaveLoan,
+  BaseDefiBalance,
   CompoundProfitLossModel,
   DefiBalance,
   DefiLendingHistory,
@@ -49,6 +50,10 @@ export interface DefiGetters {
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => string;
+  aggregatedLendingBalances: (
+    protocols: SupportedDefiProtocols[],
+    addresses: string[]
+  ) => BaseDefiBalance[];
   lendingBalances: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -389,6 +394,64 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     return lendingBalances(protocols, addresses)
       .map(value => value.balance.usdValue)
       .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
+  },
+
+  aggregatedLendingBalances: (_, { lendingBalances }) => (
+    protocols: SupportedDefiProtocols[],
+    addresses: string[]
+  ): BaseDefiBalance[] => {
+    const balances = lendingBalances(protocols, addresses).reduce(
+      (grouped, { address, protocol, ...baseBalance }) => {
+        const { asset } = baseBalance;
+        if (!grouped[asset]) {
+          grouped[asset] = [baseBalance];
+        } else {
+          grouped[asset].push(baseBalance);
+        }
+
+        return grouped;
+      },
+      {} as { [asset: string]: BaseDefiBalance[] }
+    );
+
+    const aggregated: BaseDefiBalance[] = [];
+
+    for (const asset in balances) {
+      const { weight, amount, usdValue } = balances[asset]
+        .map(({ effectiveInterestRate, balance: { usdValue, amount } }) => {
+          return {
+            weight: usdValue.multipliedBy(parseFloat(effectiveInterestRate)),
+            usdValue,
+            amount
+          };
+        })
+        .reduce(
+          (sum, current) => ({
+            weight: sum.weight.plus(current.weight),
+            usdValue: sum.usdValue.plus(current.usdValue),
+            amount: sum.amount.plus(current.amount)
+          }),
+          {
+            weight: Zero,
+            usdValue: Zero,
+            amount: Zero
+          }
+        );
+
+      const effectiveInterestRate = weight.div(usdValue);
+
+      aggregated.push({
+        asset,
+        balance: {
+          amount,
+          usdValue
+        },
+        effectiveInterestRate: effectiveInterestRate.isNaN()
+          ? '0.00%'
+          : `${effectiveInterestRate.toFormat(2)}%`
+      });
+    }
+    return aggregated;
   },
 
   lendingBalances: ({

@@ -110,11 +110,14 @@ export interface AaveLoan
   extends AaveBorrowingRates,
     CollateralizedLoan<Collateral<string>[]> {}
 
-export interface DefiBalance extends HasBalance {
+export interface DefiBalance extends BaseDefiBalance {
   readonly address: string;
-  readonly asset: string;
   readonly protocol: SupportedDefiProtocols;
+}
+
+export interface BaseDefiBalance extends HasBalance {
   readonly effectiveInterestRate: string;
+  readonly asset: string;
 }
 
 interface MakerDAOLendingHistoryExtras {

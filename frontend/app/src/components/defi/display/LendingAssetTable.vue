@@ -13,9 +13,6 @@
         {{ item.asset }}
       </span>
     </template>
-    <template #item.protocol="{ item }">
-      <defi-protocol-icon :protocol="item.protocol" />
-    </template>
     <template #item.balance.amount="{ item }">
       <amount-display :value="item.balance.amount" />
     </template>
@@ -29,28 +26,28 @@
     <template #item.apy="{ item }">
       {{ item.effectiveInterestRate ? item.effectiveInterestRate : '-' }}
     </template>
-    <template #item.address="{item}">
-      <hash-link :text="item.address" class="d-inline font-weight-medium" />
-    </template>
     <template #header.balance.usdValue>
-      {{ currency.ticker_symbol }} Value
+      {{
+        $t('lending_asset_table.headers.usd_value', {
+          currency: currency.ticker_symbol
+        })
+      }}
     </template>
   </v-data-table>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
-import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import { footerProps } from '@/config/datatable.common';
 import { Currency } from '@/model/currency';
 import { DefiBalance } from '@/store/defi/types';
 
 @Component({
-  components: { DefiProtocolIcon, HashLink, AmountDisplay, CryptoIcon },
+  components: { AmountDisplay, CryptoIcon },
   computed: {
     ...mapGetters('session', ['currency'])
   }
@@ -62,16 +59,18 @@ export default class LendingAssetTable extends Vue {
   loading!: boolean;
   currency!: Currency;
 
-  footerProps = footerProps;
+  readonly footerProps = footerProps;
 
-  headers = [
-    { text: 'Asset', value: 'asset' },
-    { text: 'Protocol', value: 'protocol' },
-    { text: 'Address', value: 'address' },
-    { text: 'Amount', value: 'balance.amount', align: 'end' },
-    { text: 'USD Value', value: 'balance.usdValue', align: 'end' },
+  readonly headers: DataTableHeader[] = [
+    { text: this.$tc('lending_asset_table.headers.asset'), value: 'asset' },
     {
-      text: 'Effective Interest Rate',
+      text: this.$tc('lending_asset_table.headers.amount'),
+      value: 'balance.amount',
+      align: 'end'
+    },
+    { text: '', value: 'balance.usdValue', align: 'end' },
+    {
+      text: this.$tc('lending_asset_table.headers.effective_interest_rate'),
       value: 'effectiveInterestRate',
       align: 'end'
     }

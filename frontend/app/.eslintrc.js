@@ -55,7 +55,7 @@ module.exports = {
       {
         vars: 'all',
         args: 'after-used',
-        ignoreRestSiblings: false,
+        ignoreRestSiblings: true,
         argsIgnorePattern: '^_'
       }
     ],

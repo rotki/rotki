@@ -88,7 +88,9 @@
         <stat-card :title="$t('lending.assets')">
           <lending-asset-table
             :loading="refreshing"
-            :assets="lendingBalances(selectedProtocols, selectedAddresses)"
+            :assets="
+              aggregatedLendingBalances(selectedProtocols, selectedAddresses)
+            "
           />
         </stat-card>
       </v-col>
@@ -133,7 +135,7 @@ import StatusMixin from '@/mixins/status-mixin';
 import { DEFI_PROTOCOLS } from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { Section } from '@/store/const';
-import { DefiBalance } from '@/store/defi/types';
+import { BaseDefiBalance } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
 import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
 
@@ -162,7 +164,7 @@ import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
       'totalLendingDeposit',
       'defiAccounts',
       'effectiveInterestRate',
-      'lendingBalances',
+      'aggregatedLendingBalances',
       'lendingHistory'
     ])
   },
@@ -179,10 +181,10 @@ export default class Lending extends Mixins(StatusMixin) {
     addresses: string[]
   ) => BigNumber;
   defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
-  lendingBalances!: (
+  aggregatedLendingBalances!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
-  ) => DefiBalance[];
+  ) => BaseDefiBalance[];
   effectiveInterestRate!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
