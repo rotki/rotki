@@ -546,7 +546,7 @@ class Compound(EthereumModule):
             self,
             events: List[CompoundEvent],
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
+    ) -> Tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
         """Processes all events and returns a dictionary of earned balances totals"""
         assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
         loss_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
@@ -554,6 +554,7 @@ class Compound(EthereumModule):
 
         profit_so_far: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
         loss_so_far: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
+        liquidation_profit: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
 
         balances = self.get_balances(given_defi_balances)
 
@@ -611,7 +612,7 @@ class Compound(EthereumModule):
                 assert event.to_asset, 'liquidation events should have a to_asset'
                 # Liquidator covers part of the borrowed amount
                 loss_assets[event.address][event.asset] += event.value
-                loss_so_far[event.address][event.asset] += event.value
+                liquidation_profit[event.address][event.asset] += event.value
                 # Liquidator receives discounted to_asset
                 loss_assets[event.address][event.to_asset] += event.to_value
                 loss_so_far[event.address][event.to_asset] += event.to_value
@@ -629,7 +630,7 @@ class Compound(EthereumModule):
             for asset, entry in bentry['rewards'].items():
                 rewards_assets[address][asset] += entry.balance
 
-        return profit_so_far, loss_so_far, rewards_assets
+        return profit_so_far, loss_so_far, liquidation_profit, rewards_assets
 
     def get_history(
             self,
@@ -657,8 +658,9 @@ class Compound(EthereumModule):
 
         events.sort(key=lambda x: x.timestamp)
         history['events'] = events
-        profit, loss, rewards = self._process_events(events, given_defi_balances)
+        profit, loss, liquidation, rewards = self._process_events(events, given_defi_balances)
         history['interest_profit'] = profit
+        history['liquidation_profit'] = liquidation
         history['debt_loss'] = loss
         history['rewards'] = rewards
 

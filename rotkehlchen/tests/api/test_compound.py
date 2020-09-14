@@ -535,7 +535,7 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
         else:
             result = assert_proper_response_with_result(response)
 
-    assert len(result) == 4
+    assert len(result) == 5
     expected_events = process_result_list(EXPECTED_EVENTS)
     # Check only 22 first events, since this is how many there were in the time of
     # the writing of the test. Also don't check events for one of the addresses
@@ -563,8 +563,12 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
 
     # Check debt loss mappings
     debt_0 = result['debt_loss']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
-    assert FVal(debt_0['ETH']['amount']) > FVal('0.000012')
+    assert FVal(debt_0['ETH']['amount']) > FVal('0.00066203007')
     assert FVal(debt_0['cUSDC']['amount']) > FVal('84')
+
+    # Check liquidation profit mappings
+    lprofit_0 = result['liquidation_profit']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
+    assert FVal(lprofit_0['ETH']['amount']) > FVal('0.000012')
 
     # Check rewards mappings
     rewards_0 = result['rewards']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
