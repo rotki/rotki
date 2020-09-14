@@ -297,7 +297,8 @@ class EthereumManager():
 
             try:
                 result = method(web3, **kwargs)
-            except (RemoteError, BlockchainQueryError, requests.exceptions.HTTPError):
+            except (RemoteError, BlockchainQueryError, requests.exceptions.HTTPError) as e:
+                log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
                 # Catch all possible errors here and just try next node call
                 continue
 
@@ -305,7 +306,7 @@ class EthereumManager():
 
         # no node in the call order list was succesfully queried
         raise RemoteError(
-            f'Failed to query {str(callable)} after trying the following '
+            f'Failed to query {str(method)} after trying the following '
             f'nodes: {[str(x) for x in call_order]}',
         )
 
