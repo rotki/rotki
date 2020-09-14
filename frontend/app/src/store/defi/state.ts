@@ -17,7 +17,8 @@ export const defaultState = (): DefiState => ({
     events: [],
     debtLoss: {},
     interestProfit: {},
-    rewards: {}
+    rewards: {},
+    liquidationProfit: {}
   }
 });
 

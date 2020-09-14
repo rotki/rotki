@@ -4,10 +4,12 @@ import { GetterTree } from 'vuex';
 import { truncateAddress } from '@/filters';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { CompoundLoan } from '@/services/defi/types/compound';
+import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
   AaveLoan,
   BaseDefiBalance,
+  Collateral,
   CompoundProfitLossModel,
   DefiBalance,
   DefiLendingHistory,
@@ -160,9 +162,12 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     return accounts;
   },
 
-  loans: ({ aaveBalances, makerDAOVaults, compoundBalances }: DefiState) => (
-    protocols: SupportedDefiProtocols[]
-  ): DefiLoan[] => {
+  loans: ({
+    aaveBalances,
+    makerDAOVaults,
+    compoundBalances,
+    compoundHistory: { events }
+  }: DefiState) => (protocols: SupportedDefiProtocols[]): DefiLoan[] => {
     const loans: DefiLoan[] = [];
     const showAll = protocols.length === 0;
 
@@ -198,22 +203,40 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     }
 
     if (showAll || protocols.includes('compound')) {
+      const assetAddressPair = events
+        .filter(
+          ({ eventType }) => !['mint', 'redeem', 'comp'].includes(eventType)
+        )
+        .map(({ asset, address }) => ({ asset, address }));
+
       for (const address of Object.keys(compoundBalances)) {
         const { borrowing } = compoundBalances[address];
         const assets = Object.keys(borrowing);
+
         if (assets.length === 0) {
           continue;
         }
 
         for (const asset of assets) {
+          assetAddressPair.push({ asset, address });
+        }
+      }
+      assetAddressPair
+        .filter(
+          (value, index, array) =>
+            array.findIndex(
+              ({ address, asset }) =>
+                value.asset === asset && value.address === address
+            ) === index
+        )
+        .forEach(({ address, asset }) => {
           loans.push({
             identifier: `${asset} - ${truncateAddress(address, 6)}`,
             protocol: 'compound',
             owner: address,
             asset
           });
-        }
-      }
+        });
     }
 
     return sortBy(loans, 'identifier');
@@ -283,25 +306,37 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     if (loan.protocol === 'compound') {
       const owner = loan.owner ?? '';
       const asset = loan.asset ?? '';
-      const { borrowing, lending } = compoundBalances[owner];
-      const selectedLoan = borrowing[asset];
+
+      let apy: string = '0%';
+      let debt: Balance = { amount: Zero, usdValue: Zero };
+      let collateral: Collateral<string>[] = [];
+
+      if (compoundBalances[owner]) {
+        const { borrowing, lending } = compoundBalances[owner];
+        const selectedLoan = borrowing[asset];
+
+        if (selectedLoan) {
+          apy = selectedLoan.apy;
+          debt = selectedLoan.balance;
+          collateral = Object.keys(lending).map(asset => ({
+            asset,
+            ...lending[asset].balance
+          }));
+        }
+      }
 
       return {
         asset,
         owner,
         protocol: loan.protocol,
         identifier: loan.identifier,
-        apy: selectedLoan.apy,
-        debt: {
-          ...selectedLoan.balance
-        },
-        collateral: Object.keys(lending).map(asset => ({
-          asset,
-          ...lending[asset].balance
-        })),
+        apy,
+        debt,
+        collateral,
         events: events
-          .filter(event => event.address === owner)
-          .filter(event => !['mint', 'redeem'].includes(event.eventType))
+          .filter(event => event.asset === asset || event.eventType === 'comp')
+          .filter(({ address }) => address === owner)
+          .filter(({ eventType }) => !['mint', 'redeem'].includes(eventType))
           .map(value => ({ ...value, id: `${value.txHash}${value.logIndex}` }))
       } as CompoundLoan;
     }
@@ -758,5 +793,11 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
   compoundDebtLoss: ({ compoundHistory }): CompoundProfitLossModel[] => {
     return toProfitLossModel(compoundHistory.debtLoss);
+  },
+
+  compoundLiquidationProfit: ({
+    compoundHistory
+  }): CompoundProfitLossModel[] => {
+    return toProfitLossModel(compoundHistory.liquidationProfit);
   }
 };

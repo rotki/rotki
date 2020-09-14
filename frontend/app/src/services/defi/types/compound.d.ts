@@ -63,6 +63,7 @@ export interface CompoundHistory {
   readonly interestProfit: CompoundProfitAndLoss;
   readonly debtLoss: CompoundProfitAndLoss;
   readonly rewards: CompoundProfitAndLoss;
+  readonly liquidationProfit: CompoundProfitAndLoss;
 }
 
 type IdedCompoundEvent = CompoundEvent & { id: string };

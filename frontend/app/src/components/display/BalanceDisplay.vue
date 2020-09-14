@@ -1,7 +1,11 @@
 <template>
   <div
     class="d-flex flex-row balance_display shrink"
-    :class="noJustify ? null : 'justify-end'"
+    :class="{
+      'justify-end': !noJustify,
+      'balance-display--gain': mode === 'gain',
+      'balance-display--loss': mode === 'loss'
+    }"
   >
     <crypto-icon v-if="!noIcon" :symbol="asset" size="24px" class="mr-1" />
     <div
@@ -40,7 +44,21 @@ export default class BalanceDisplay extends Vue {
   minWidth!: number;
   @Prop({ required: false, type: Boolean, default: false })
   noJustify!: boolean;
+  @Prop({ required: false, type: String, default: '' })
+  mode!: 'gain' | 'loss' | '';
 
   readonly assetPadding: number = 5;
 }
 </script>
+
+<style scoped lang="scss">
+.balance-display {
+  &--gain {
+    color: #4caf50 !important;
+  }
+
+  &--loss {
+    color: #d32f2f !important;
+  }
+}
+</style>

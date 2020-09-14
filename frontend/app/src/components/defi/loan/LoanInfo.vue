@@ -32,6 +32,7 @@
             v-else
             :events="loan.events"
             :owner="loan.owner"
+            :asset="loan.asset"
           />
         </v-col>
       </v-row>

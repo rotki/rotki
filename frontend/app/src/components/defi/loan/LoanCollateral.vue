@@ -37,7 +37,10 @@
         </v-col>
       </v-row>
     </loan-row>
-    <v-divider v-if="isAave || isCompound" class="my-4" />
+    <v-divider
+      v-if="(isAave || isCompound) && loan.collateral.length > 0"
+      class="my-4"
+    />
     <loan-row
       v-if="isVault"
       :title="$t('loan_collateral.current_ratio')"

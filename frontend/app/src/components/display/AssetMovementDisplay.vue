@@ -13,7 +13,7 @@
       <balance-display
         :asset="movement.asset"
         :value="movement.value"
-        :class="gainLoss ? 'asset-movement-display--gain' : null"
+        :mode="gainLoss ? 'gain' : null"
       />
     </v-col>
     <v-col
@@ -39,7 +39,7 @@
       <balance-display
         :asset="movement.toAsset"
         :value="movement.toValue"
-        :class="gainLoss ? 'asset-movement-display--loss' : null"
+        :mode="gainLoss ? 'loss' : null"
       />
     </v-col>
   </v-row>
@@ -63,14 +63,6 @@ export default class AssetMovementDisplay extends Vue {
 
 <style scoped lang="scss">
 .asset-movement-display {
-  &--gain {
-    color: #4caf50 !important;
-  }
-
-  &--loss {
-    color: #d32f2f !important;
-  }
-
   &--row {
     min-width: 380px;
   }
