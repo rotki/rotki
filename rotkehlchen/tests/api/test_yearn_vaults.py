@@ -155,7 +155,7 @@ EXPECTED_HISTORY = {
             from_value=Balance(amount=FVal('139131.4007'), usd_value=ONE),
             to_asset=EthereumToken('yDAI+yUSDC+yUSDT+yTUSD'),
             to_value=Balance(amount=FVal('151404.504263158140919021'), usd_value=ONE),
-            realized_pnl=Balance(amount=FVal('2412.822506778234883006'), usd_value=ONE),
+            realized_pnl=Balance(amount=FVal('107.362363158140919021'), usd_value=ONE),
             tx_hash='0x9a1c9fb76bce709ba23f91aedbb460e3933fd498a12bfcb70e45b6b4d45d8d7a',
             log_index=167,
         ), YearnVaultEvent(

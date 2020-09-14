@@ -385,6 +385,7 @@ class YearnVaults(EthereumModule):
                         msg_aggregator=self.msg_aggregator,
                     )
                     profit = Balance(profit_amount, profit_amount * usd_price)
+                    profit_so_far += profit
                 else:
                     profit = None
 
