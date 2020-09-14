@@ -12,6 +12,7 @@ from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
+from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACTIVE_MODULES,
     DEFAULT_ANONYMIZED_LOGS,
@@ -1036,3 +1037,31 @@ def test_get_external_service_credentials(database):
         credentials = database.get_external_service_credentials(service)
         assert credentials.service == service
         assert credentials.api_key == f'{service.name.lower()}_key'
+
+
+def test_remove_queried_address_on_account_remove(data_dir, username):
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+
+    data.db.add_blockchain_accounts(
+        SupportedBlockchain.ETHEREUM,
+        [
+            BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+        ],
+    )
+
+    queried_addresses = QueriedAddresses(data.db)
+    queried_addresses.add_queried_address_for_module(
+        'makerdao_vaults',
+        '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+    )
+    addresses = queried_addresses.get_queried_addresses_for_module('makerdao_vaults')
+    assert '0xd36029d76af6fE4A356528e4Dc66B2C18123597D' in addresses
+
+    data.db.remove_blockchain_accounts(
+        SupportedBlockchain.ETHEREUM,
+        ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
+    )
+    addresses = queried_addresses.get_queried_addresses_for_module('makerdao_vaults')
+    assert not addresses

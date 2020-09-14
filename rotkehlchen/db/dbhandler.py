@@ -1631,6 +1631,10 @@ class DBHandler:
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
         cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
+        cursor.execute(
+            'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
+            (address,),
+        )
 
         # For transactions we need to delete all transactions where the address
         # appears in either from or to, BUT no other tracked address is in
