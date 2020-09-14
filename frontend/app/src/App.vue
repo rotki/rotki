@@ -69,11 +69,7 @@
       />
     </v-fade-transition>
   </v-app>
-  <v-app v-else id="rotki">
-    <v-main>
-      <router-view />
-    </v-main>
-  </v-app>
+  <dev-app v-else />
 </template>
 
 <script lang="ts">
@@ -92,12 +88,14 @@ import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import '@/services/task-manager';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
+import DevApp from '@/DevApp.vue';
 import ErrorScreen from '@/ErrorScreen.vue';
 import { monitor } from '@/services/monitoring';
 import { Message } from '@/store/types';
 
 @Component({
   components: {
+    DevApp,
     NotificationPopup,
     NotificationSidebar,
     ErrorScreen,
