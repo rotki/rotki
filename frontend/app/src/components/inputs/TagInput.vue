@@ -6,7 +6,7 @@
       :items="tags"
       class="tag-input"
       small-chips
-      label="Tags"
+      :label="label"
       item-text="name"
       :menu-props="{ closeOnContentClick: true }"
       item-value="name"
@@ -84,6 +84,8 @@ export default class TagInput extends Vue {
   value!: string[];
   @Prop({ required: false, default: false, type: Boolean })
   disabled!: boolean;
+  @Prop({ required: false, type: String, default: 'Tags' })
+  label!: string;
   tags!: Tag[];
   manageTags: boolean = false;
 

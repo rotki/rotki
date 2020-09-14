@@ -1,29 +1,32 @@
 <template>
-  <v-form ref="form" v-model="valid" class="manual-balances-form">
+  <v-form ref="form" :value="valid" class="manual-balances-form" @input="input">
     <v-text-field
       v-model="label"
       class="manual-balances-form__label"
-      label="Label"
+      :label="$t('manual_balances_form.fields.label')"
       :error-messages="errorMessages"
       :rules="labelRules"
       :disabled="pending || !!edit"
     />
     <asset-select
       v-model="asset"
+      :label="$t('manual_balances_form.fields.asset')"
       class="manual-balances-form__asset"
       :rules="assetRules"
       :disabled="pending"
     />
     <v-text-field
       v-model="amount"
+      :label="$t('manual_balances_form.fields.amount')"
       class="manual-balances-form__amount"
       type="number"
-      label="Amount"
+      autocomplete="off"
       :disabled="pending"
       :rules="amountRules"
     />
     <tag-input
       v-model="tags"
+      :label="$t('manual_balances_form.fields.tags')"
       :disabled="pending"
       class="manual-balances-form__tags"
     />
@@ -31,7 +34,7 @@
       v-model="location"
       class="manual-balances-form__location"
       :disabled="pending"
-      label="Location"
+      :label="$t('manual_balances_form.fields.location')"
       :items="locations"
     >
       <template #item="{ item, attrs, on }">
@@ -60,6 +63,8 @@ import { Location } from '@/services/types-common';
 export default class ManualBalancesForm extends Vue {
   @Prop({ required: false, default: null })
   edit!: ManualBalance | null;
+  @Prop({ required: true, type: Boolean })
+  value!: boolean;
 
   @Watch('edit', { immediate: true })
   onEdit(balance: ManualBalance | null) {
@@ -84,7 +89,9 @@ export default class ManualBalancesForm extends Vue {
       if (this.errorMessages.length > 0) {
         return;
       }
-      this.errorMessages.push(`Label ${label} already exists`);
+      this.errorMessages.push(
+        this.$tc('manual_balances_form.validation.label_exists', 0, { label })
+      );
     } else {
       this.errorMessages.pop();
     }
@@ -106,14 +113,23 @@ export default class ManualBalancesForm extends Vue {
     return Object.values(Location);
   }
 
-  readonly amountRules = [(v: string) => !!v || 'The amount cannot be empty'];
-  readonly assetRules = [(v: string) => !!v || 'The asset cannot be empty'];
-  readonly labelRules = [(v: string) => !!v || 'The label cannot be empty'];
+  readonly amountRules = [
+    (v: string) => !!v || this.$t('manual_balances_form.validation.amount')
+  ];
+  readonly assetRules = [
+    (v: string) => !!v || this.$t('manual_balances_form.validation.asset')
+  ];
+  readonly labelRules = [
+    (v: string) => !!v || this.$t('manual_balances_form.validation.label_empty')
+  ];
 
   @Emit()
   clear() {
     this.reset();
   }
+
+  @Emit()
+  input(_valid: boolean) {}
 
   private reset() {
     (this.$refs?.form as any)?.reset();

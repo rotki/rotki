@@ -473,5 +473,20 @@
       "amount": "Amount",
       "effective_interest_rate": "Effective Interest Rate"
     }
+  },
+  "manual_balances_form": {
+    "fields": {
+      "label": "Label",
+      "asset": "Asset",
+      "amount": "Amount",
+      "location": "Location",
+      "tags": "Tags"
+    },
+    "validation": {
+      "label_exists": "Label {label} already exists",
+      "amount": "The amount cannot be empty",
+      "asset": "The asset cannot be empty",
+      "label_empty": "The label cannot be empty"
+    }
   }
 }
