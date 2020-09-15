@@ -133,7 +133,7 @@ def process_result(result: Any) -> Dict[Any, Any]:
     """
     processed_result = _process_entry(result)
     assert isinstance(processed_result, (Dict, AttributeDict))
-    return processed_result
+    return processed_result  # type: ignore
 
 
 def process_result_list(result: List[Any]) -> List[Any]:

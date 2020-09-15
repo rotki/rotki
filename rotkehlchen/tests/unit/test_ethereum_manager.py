@@ -2,6 +2,7 @@ import gevent
 import pytest
 
 from rotkehlchen.chain.ethereum.manager import NodeName
+from rotkehlchen.constants.ethereum import YEARN_YCRV_VAULT
 from rotkehlchen.tests.utils.ethereum import ETHEREUM_TEST_PARAMETERS
 
 
@@ -27,7 +28,7 @@ def test_get_transaction_receipt(ethereum_manager, call_order):
             continue
     result = ethereum_manager.get_transaction_receipt(
         '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89',
-        call_order=call_order
+        call_order=call_order,
     )
     block_hash = '0x6f3a7838a8788c3371b88df170c3643d19bad896c915a7368681292882b6ad61'
 
@@ -60,7 +61,32 @@ def test_use_open_nodes(ethereum_manager, call_order):
         continue
     result = ethereum_manager.get_transaction_receipt(
         '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89',
-        call_order=call_order
+        call_order=call_order,
     )
     block_hash = '0x6f3a7838a8788c3371b88df170c3643d19bad896c915a7368681292882b6ad61'
     assert result['blockHash'] == block_hash
+
+
+@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
+def test_call_contract(ethereum_manager, call_order):
+    # Wait until all nodes are connected
+    if NodeName.OWN in call_order:
+        while NodeName.OWN not in ethereum_manager.web3_mapping:
+            gevent.sleep(2)
+            continue
+
+    result = ethereum_manager.call_contract(
+        contract_address=YEARN_YCRV_VAULT.address,
+        abi=YEARN_YCRV_VAULT.abi,
+        method_name='symbol',
+        call_order=call_order,
+    )
+    assert result == 'yyDAI+yUSDC+yUSDT+yTUSD'
+    result = ethereum_manager.call_contract(
+        contract_address=YEARN_YCRV_VAULT.address,
+        abi=YEARN_YCRV_VAULT.abi,
+        method_name='balanceOf',
+        arguments=['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'],
+        call_order=call_order,
+    )
+    assert result >= 0

@@ -531,7 +531,7 @@ class EthereumManager():
                 tx_receipt['status'] = int(tx_receipt['status'], 16)
                 tx_index = int(tx_receipt['transactionIndex'], 16)
                 tx_receipt['transactionIndex'] = tx_index
-                for idx, log in enumerate(tx_receipt['logs']):
+                for log in tx_receipt['logs']:
                     log['blockNumber'] = block_number
                     log['logIndex'] = int(log['logIndex'], 16)
                     log['transactionIndex'] = tx_index
@@ -541,7 +541,7 @@ class EthereumManager():
                 )
             return tx_receipt
 
-        tx_receipt = web3.eth.getTransactionReceipt(tx_hash)
+        tx_receipt = web3.eth.getTransactionReceipt(tx_hash)  # type: ignore
         return process_result(tx_receipt)
 
     def get_transaction_receipt(
