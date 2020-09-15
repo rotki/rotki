@@ -58,22 +58,21 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         loadFrontendSettings(commit, settings.frontend_settings);
       }
 
-      await dispatch('balances/fetchSupportedAssets', null, {
-        root: true
-      });
-
       await dispatch('start', {
         settings
-      });
-
-      await dispatch('session/fetchWatchers', null, {
-        root: true
       });
 
       monitor.start();
       commit('tags', await api.getTags());
       commit('login', { username, newAccount: create });
-      const fetchBalances = [
+
+      const async = [
+        dispatch('balances/fetchSupportedAssets', null, {
+          root: true
+        }),
+        dispatch('session/fetchWatchers', null, {
+          root: true
+        }),
         dispatch('balances/fetchManualBalances', null, {
           root: true
         }),
@@ -88,7 +87,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
           }
         )
       ];
-      await Promise.all(fetchBalances);
+
+      Promise.all(async).then();
     } catch (e) {
       if (e instanceof SyncConflictError) {
         commit('syncConflict', e.message);

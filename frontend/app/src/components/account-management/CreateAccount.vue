@@ -113,6 +113,7 @@
                 <v-col>
                   <v-checkbox
                     v-model="submitUsageAnalytics"
+                    :disabled="loading"
                     :label="$t('create_account.usage_analytics.label_confirm')"
                   />
                 </v-col>
@@ -124,6 +125,7 @@
                 color="primary"
                 class="create-account__analytics__buttons__back"
                 depressed
+                :disabled="loading"
                 outlined
                 @click="step = 1"
               >
@@ -132,6 +134,8 @@
               <v-btn
                 color="primary"
                 depressed
+                :disabled="loading"
+                :loading="loading"
                 class="create-account__analytics__buttons__confirm"
                 @click="confirm()"
               >

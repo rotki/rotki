@@ -226,6 +226,11 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return accounts;
   },
 
+  account: (_, getters) => (address: string) => {
+    const accounts = getters.accounts as GeneralAccount[];
+    return accounts.find(acc => acc.address === address);
+  },
+
   isEthereumToken: ({ supportedAssets }) => (asset: string) => {
     const match = supportedAssets.find(
       supportedAsset => supportedAsset.symbol === asset

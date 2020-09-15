@@ -203,8 +203,6 @@ export default class App extends Vue {
 
 .app {
   &__app-bar {
-    z-index: 2015;
-
     &__button {
       i {
         &:focus {
