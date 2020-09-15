@@ -1,11 +1,12 @@
 <template>
   <v-bottom-sheet
-    v-model="display"
+    :value="display"
     over
     class="big-dialog"
     width="98%"
     @click:outside="cancel()"
     @keydown.esc.stop="cancel()"
+    @input="cancel"
   >
     <v-card class="big-dialog">
       <v-card-title class="text-h5 big-dialog__title pt-6">
@@ -85,7 +86,7 @@ export default class BigDialog extends Vue {
 </script>
 
 <style scoped lang="scss">
-@import '@/scss/scroll';
+@import '~@/scss/scroll';
 
 .big-dialog {
   height: calc(100vh - 80px);

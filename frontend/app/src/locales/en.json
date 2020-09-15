@@ -400,7 +400,8 @@
     }
   },
   "labeled_address_display": {
-    "identifier": "{identifier} |"
+    "identifier": "{identifier} |",
+    "copy": "Copy the address to the clipboard"
   },
   "defi_selector_item": {
     "vault": "Maker Vault"
@@ -487,6 +488,38 @@
       "amount": "The amount cannot be empty",
       "asset": "The asset cannot be empty",
       "label_empty": "The label cannot be empty"
+    }
+  },
+  "account_form": {
+    "labels": {
+      "blockchain": "Choose blockchain",
+      "account": "Account",
+      "label": "Label"
+    },
+    "validation": {
+      "address_non_empty": "The address cannot be empty",
+      "address_exists": "The address already exists"
+    },
+    "error": {
+      "title": "Adding Account",
+      "description": "Error while adding account: {error}"
+    }
+  },
+  "blockchain_balances": {
+    "title": "Blockchain Balances",
+    "form_dialog": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "add_title": "Add Blockchain Account",
+      "edit_title": "Edit Blockchain Account",
+      "edit_subtitle": "Modify account details"
+    },
+    "per_asset": {
+      "title": "Blockchain Balances per Asset"
+    },
+    "balances": {
+      "eth": "ETH per account balances",
+      "btc": "BTC per account balances"
     }
   }
 }

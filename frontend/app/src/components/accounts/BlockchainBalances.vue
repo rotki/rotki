@@ -1,6 +1,6 @@
 <template>
   <v-card class="blockchain-balances mt-8">
-    <v-card-title>Blockchain Balances</v-card-title>
+    <v-card-title>{{ $t('blockchain_balances.title') }}</v-card-title>
     <v-card-text>
       <v-btn absolute fab top right dark color="primary" @click="newAccount()">
         <v-icon>
@@ -11,26 +11,28 @@
         :display="openDialog"
         :title="dialogTitle"
         :subtitle="dialogSubtitle"
-        primary-action="Save"
+        :primary-action="$t('blockchain_balances.form_dialog.save')"
+        :secondary-action="$t('blockchain_balances.form_dialog.cancel')"
+        :action-disabled="!valid"
         @confirm="save()"
         @cancel="clearDialog()"
       >
-        <account-form ref="dialogChild" :edit="accountToEdit" />
+        <account-form ref="form" v-model="valid" :edit="accountToEdit" />
       </big-dialog>
       <asset-balances
-        title="Blockchain Balances per Asset"
+        :title="$t('blockchain_balances.per_asset.title')"
         :balances="totals"
       />
       <v-divider />
       <account-balances
-        title="ETH per account balances"
+        :title="$t('blockchain_balances.balances.eth')"
         blockchain="ETH"
         :balances="ethAccounts"
         @editAccount="edit($event)"
       />
       <v-divider />
       <account-balances
-        title="BTC per account balances"
+        :title="$t('blockchain_balances.balances.btc')"
         blockchain="BTC"
         :balances="btcAccounts"
         @editAccount="edit($event)"
@@ -41,15 +43,13 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters } from 'vuex';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { Account } from '@/typing/types';
-
-const { mapGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
@@ -59,7 +59,7 @@ const { mapGetters } = createNamespacedHelpers('balances');
     BigDialog
   },
   computed: {
-    ...mapGetters(['ethAccounts', 'btcAccounts', 'totals'])
+    ...mapGetters('balances', ['ethAccounts', 'btcAccounts', 'totals'])
   }
 })
 export default class BlockchainBalances extends Vue {
@@ -71,37 +71,36 @@ export default class BlockchainBalances extends Vue {
   dialogTitle: string = '';
   dialogSubtitle: string = '';
   openDialog: boolean = false;
+  valid: boolean = false;
 
   newAccount() {
     this.accountToEdit = null;
-    this.dialogTitle = 'Add Blockchain Account';
+    this.dialogTitle = this.$tc('blockchain_balances.form_dialog.add_title');
     this.dialogSubtitle = '';
     this.openDialog = true;
   }
+
   edit(account: Account) {
     this.accountToEdit = account;
-    this.dialogTitle = 'Edit Blockchain Account';
-    this.dialogSubtitle = 'Modify account details';
+    this.dialogTitle = this.$tc('blockchain_balances.form_dialog.edit_title');
+    this.dialogSubtitle = this.$tc(
+      'blockchain_balances.form_dialog.edit_subtitle'
+    );
     this.openDialog = true;
   }
 
   async clearDialog() {
-    interface dataForm extends Vue {
-      editComplete(): void;
-    }
-    const form = this.$refs.dialogChild as dataForm;
-    form.editComplete();
+    const form = this.$refs.form as AccountForm;
+    await form.reset();
     this.openDialog = false;
   }
 
   async save() {
-    interface dataForm extends Vue {
-      addAccount(): Promise<boolean>;
+    const form = this.$refs.form as AccountForm;
+    const success = await form.addAccount();
+    if (success) {
+      await this.clearDialog();
     }
-    const form = this.$refs.dialogChild as dataForm;
-    form.addAccount().then(success => {
-      if (success === true) this.clearDialog();
-    });
   }
 }
 </script>

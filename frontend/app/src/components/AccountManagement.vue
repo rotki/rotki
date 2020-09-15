@@ -193,6 +193,7 @@ export default class AccountManagement extends Vue {
       apiSecret,
       submitUsageAnalytics
     } as UnlockPayload);
+    this.accountCreation = false;
     this.loading = false;
     if (this.logged) {
       this.showGetPremiumButton();

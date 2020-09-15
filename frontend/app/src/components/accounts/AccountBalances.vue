@@ -63,7 +63,7 @@
         <v-row>
           <v-col cols="12" class="account-balances__account">
             <labeled-address-display :account="item" />
-            <span v-if="item.tags">
+            <span v-if="item.tags.length > 0" class="mt-2">
               <tag-icon
                 v-for="tag in item.tags"
                 :key="tag"
