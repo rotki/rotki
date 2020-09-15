@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
@@ -15,7 +15,6 @@ from rotkehlchen.chain.ethereum.makerdao.common import (
     WAD,
     MakerDAOCommon,
 )
-from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import (
@@ -44,6 +43,9 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hex_or_bytes_to_int, ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 log = logging.getLogger(__name__)
 
@@ -180,7 +182,7 @@ class MakerDAOVaults(MakerDAOCommon):
 
     def __init__(
             self,
-            ethereum_manager: EthereumManager,
+            ethereum_manager: 'EthereumManager',
             database: DBHandler,
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,

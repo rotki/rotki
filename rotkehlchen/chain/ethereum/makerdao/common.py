@@ -1,8 +1,7 @@
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants.ethereum import MAKERDAO_PROXY_REGISTRY
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.premium.premium import Premium
@@ -10,6 +9,9 @@ from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 MAKERDAO_REQUERY_PERIOD = 7200  # Refresh queries every 2 hours
 
@@ -26,7 +28,7 @@ class MakerDAOCommon(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: EthereumManager,
+            ethereum_manager: 'EthereumManager',
             database: DBHandler,
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,

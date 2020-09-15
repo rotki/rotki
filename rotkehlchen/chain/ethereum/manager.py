@@ -27,6 +27,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str, request_get_dict
@@ -520,10 +521,28 @@ class EthereumManager():
             tx_hash: str,
     ) -> Dict[str, Any]:
         if web3 is None:
-            return self.etherscan.get_transaction_receipt(tx_hash)
+            tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
+            try:
+                # Turn hex numbers to int
+                block_number = int(tx_receipt['blockNumber'], 16)
+                tx_receipt['blockNumber'] = block_number
+                tx_receipt['cumulativeGasUsed'] = int(tx_receipt['cumulativeGasUsed'], 16)
+                tx_receipt['gasUsed'] = int(tx_receipt['gasUsed'], 16)
+                tx_receipt['status'] = int(tx_receipt['status'], 16)
+                tx_index = int(tx_receipt['transactionIndex'], 16)
+                tx_receipt['transactionIndex'] = tx_index
+                for log in tx_receipt['logs']:
+                    log['blockNumber'] = block_number
+                    log['logIndex'] = int(log['logIndex'], 16)
+                    log['transactionIndex'] = tx_index
+            except ValueError:
+                raise RemoteError(
+                    f'Couldnt deserialize transaction receipt data from etherscan {tx_receipt}',
+                )
+            return tx_receipt
 
-        # ignoring type here since at runtime TxReceipt Type is equal to a Dict
-        return web3.eth.getTransactionReceipt(tx_hash)  # type: ignore
+        tx_receipt = web3.eth.getTransactionReceipt(tx_hash)  # type: ignore
+        return process_result(tx_receipt)
 
     def get_transaction_receipt(
             self,

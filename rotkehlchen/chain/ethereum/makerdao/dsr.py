@@ -1,7 +1,7 @@
 import logging
 import operator
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from gevent.lock import Semaphore
 from typing_extensions import Literal
@@ -13,7 +13,6 @@ from rotkehlchen.chain.ethereum.makerdao.common import (
     RAY,
     MakerDAOCommon,
 )
-from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
@@ -37,6 +36,9 @@ from rotkehlchen.utils.misc import (
     hex_or_bytes_to_str,
     ts_now,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 log = logging.getLogger(__name__)
 
@@ -144,7 +146,7 @@ class MakerDAODSR(MakerDAOCommon):
 
     def __init__(
             self,
-            ethereum_manager: EthereumManager,
+            ethereum_manager: 'EthereumManager',
             database: DBHandler,
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
