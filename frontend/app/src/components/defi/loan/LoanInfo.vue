@@ -32,7 +32,7 @@
             v-else
             :events="loan.events"
             :owner="loan.owner"
-            :asset="loan.asset"
+            :assets="assets"
           />
         </v-col>
       </v-row>
@@ -49,6 +49,7 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LoanLiquidation from '@/components/defi/loan/LoanLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
+import { CompoundLoan } from '@/services/defi/types/compound';
 import { CompoundBorrowingDetails, VaultEventsList } from '@/utils/premium';
 
 @Component({
@@ -63,6 +64,21 @@ import { CompoundBorrowingDetails, VaultEventsList } from '@/utils/premium';
   }
 })
 export default class LoanInfo extends Mixins(PremiumMixin, LoanDisplayMixin) {
+  get assets(): string[] {
+    const assets = this.loan?.asset ? [this.loan.asset] : [];
+
+    if (this.isCompound && (this.loan as CompoundLoan).events.length > 0) {
+      const { events } = this.loan as CompoundLoan;
+      const toAssets: string[] = events
+        .map(({ toAsset }) => toAsset ?? '')
+        .filter(
+          (value, index, array) => !!value && array.indexOf(value) === index
+        );
+      assets.push(...toAssets);
+    }
+
+    return assets;
+  }
   openLink(url: string) {
     this.$interop.openUrl(url);
   }
