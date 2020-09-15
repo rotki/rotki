@@ -564,9 +564,9 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         collateral=Balance(ZERO, ZERO),
         debt=Balance(ZERO, ZERO),
         collateralization_ratio=None,
-        liquidation_ratio=FVal(1.1),
+        liquidation_ratio=FVal('1.03'),
         liquidation_price=None,
-        stability_fee=FVal(0.04),
+        stability_fee=FVal('0.04'),
     )
     expected_vaults = [vault_7588.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=['stability_fee'])
@@ -626,7 +626,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     }
     details = assert_proper_response_with_result(response)
     expected_details = [vault_7588_details]
-    assert_serialized_lists_equal(expected_details, details)
+    assert_serialized_lists_equal(expected_details, details, ignore_keys=['liquidation_ratio'])
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
