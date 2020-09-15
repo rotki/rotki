@@ -189,7 +189,7 @@ export default class Accounting extends Settings {
   }
 
   onTaxFreeChange(enabled: boolean) {
-    let taxFreeAfterPeriod = this.taxFreeAfterPeriod;
+    let taxFreeAfterPeriod: number | null;
 
     if (!enabled) {
       taxFreeAfterPeriod = null;

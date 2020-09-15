@@ -11,9 +11,11 @@ export class DefiPage {
   selectModules() {
     cy.get('#defi-module-makerdao_dsr').find('button').click();
     cy.get('#defi-module-makerdao_vaults').find('button').click();
+    cy.get('#defi-module-compound').find('button').click();
     cy.get('#defi-module-aave').should('be.visible');
     cy.get('#defi-module-makerdao_dsr').should('not.be.visible');
     cy.get('#defi-module-makerdao_vaults').should('not.be.visible');
+    cy.get('#defi-module-compound').should('not.be.visible');
     cy.get('.defi-wizard__select-accounts').click();
   }
 

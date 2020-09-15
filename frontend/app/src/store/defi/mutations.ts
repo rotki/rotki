@@ -1,9 +1,11 @@
 import { MutationTree } from 'vuex';
-import { Status } from '@/store/const';
+import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
+import {
+  CompoundBalances,
+  CompoundHistory
+} from '@/services/defi/types/compound';
 import { defaultState } from '@/store/defi/state';
 import {
-  AaveBalances,
-  AaveHistory,
   AllDefiProtocols,
   DefiState,
   DSRBalances,
@@ -34,20 +36,14 @@ export const mutations: MutationTree<DefiState> = {
   aaveHistory(state: DefiState, aaveHistory: AaveHistory) {
     state.aaveHistory = aaveHistory;
   },
-  status(state: DefiState, status: Status) {
-    state.status = status;
-  },
-  defiStatus(state: DefiState, status: Status) {
-    state.defiStatus = status;
-  },
-  lendingHistoryStatus(state: DefiState, status: Status) {
-    state.lendingHistoryStatus = status;
-  },
-  borrowingHistoryStatus(state: DefiState, status: Status) {
-    state.borrowingHistoryStatus = status;
-  },
   allDefiProtocols(state: DefiState, allProtocols: AllDefiProtocols) {
     state.allProtocols = allProtocols;
+  },
+  compoundBalances(state: DefiState, balances: CompoundBalances) {
+    state.compoundBalances = balances;
+  },
+  compoundHistory(state: DefiState, history: CompoundHistory) {
+    state.compoundHistory = history;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

@@ -7,7 +7,7 @@
       <v-col cols="12">
         <refresh-header
           :title="$t('borrowing.header')"
-          :loading="refreshing"
+          :loading="anyRefreshing"
           @refresh="refresh()"
         />
       </v-col>
@@ -78,8 +78,8 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { Component, Mixins } from 'vue-property-decorator';
+import { mapActions, mapGetters } from 'vuex';
 import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
 import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -88,8 +88,10 @@ import StatCardWide from '@/components/display/StatCardWide.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
-import { Status } from '@/store/const';
+import StatusMixin from '@/mixins/status-mixin';
+import { DEFI_PROTOCOLS } from '@/services/defi/consts';
+import { SupportedDefiProtocols } from '@/services/defi/types';
+import { Section } from '@/store/const';
 import {
   AaveLoan,
   DefiLoan,
@@ -99,11 +101,10 @@ import {
 
 @Component({
   computed: {
-    ...mapGetters('defi', ['loan', 'loans', 'loanSummary']),
-    ...mapState('defi', ['borrowingHistoryStatus', 'status'])
+    ...mapGetters('defi', ['loan', 'loans', 'loanSummary'])
   },
   methods: {
-    ...mapActions('defi', ['fetchBorrowingHistory', 'fetchBorrowing'])
+    ...mapActions('defi', ['fetchBorrowing'])
   },
   components: {
     DefiSelectorItem,
@@ -116,30 +117,19 @@ import {
     ProgressScreen
   }
 })
-export default class Borrowing extends Vue {
+export default class Borrowing extends Mixins(StatusMixin) {
   selection?: string = '';
   loan!: (identifier?: string) => MakerDAOVaultModel | AaveLoan | null;
   loans!: (protocol: SupportedDefiProtocols[]) => DefiLoan[];
   loanSummary!: (protocol: SupportedDefiProtocols[]) => LoanSummary;
   fetchBorrowing!: (refreshing: boolean) => Promise<void>;
-  fetchBorrowingHistory!: (refreshing: boolean) => Promise<void>;
-  status!: Status;
-  borrowingHistoryStatus!: Status;
   protocol: SupportedDefiProtocols | null = null;
+
+  section = Section.DEFI_BORROWING;
+  secondSection = Section.DEFI_BORROWING_HISTORY;
 
   get selectedProtocols(): SupportedDefiProtocols[] {
     return this.protocol ? [this.protocol] : [];
-  }
-
-  get refreshing(): boolean {
-    return (
-      this.status !== Status.LOADED ||
-      this.borrowingHistoryStatus !== Status.LOADED
-    );
-  }
-
-  get loading(): boolean {
-    return this.status !== Status.LOADED && this.status !== Status.REFRESHING;
   }
 
   async created() {
@@ -150,12 +140,11 @@ export default class Borrowing extends Vue {
     if (protocolIndex >= 0) {
       this.protocol = DEFI_PROTOCOLS[protocolIndex];
     }
-    await this.fetchBorrowingHistory(false);
+    await this.fetchBorrowing(false);
   }
 
   async refresh() {
     await this.fetchBorrowing(true);
-    await this.fetchBorrowingHistory(true);
   }
 }
 </script>

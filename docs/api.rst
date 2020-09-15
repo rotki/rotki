@@ -3298,7 +3298,7 @@ Getting Compound balances
                               "amount": "10",
                               "usd_value": "3450"
                           },
-                          "apr": "7.46%"
+                          "apy": "7.46%"
                       }
                   }
               },
@@ -3310,7 +3310,7 @@ Getting Compound balances
                               "amount": "560",
                               "usd_value": "156.8"
                           },
-                          "apr": "7.46%"
+                          "apy": "7.46%"
                       }
                   }
               }
@@ -3490,6 +3490,14 @@ Getting compound historical data
 		      }
 		  }
 	       },
+	       "liquidation_profit": {
+                  "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+		       "ETH": {
+			      "amount": "0.00005",
+			      "usd_value": "0.023",
+		      }
+		  }
+	       },
 	       "rewards": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
 		      "COMP": {
@@ -3534,7 +3542,8 @@ Getting compound historical data
    :resjsonarr int tx_hash: The transaction hash of the event.
    :resjsonarr int log_index: The log index of the event.
    :resjson object interest_profit: A mapping of addresses to mappings of totals assets earned from lending over a given period
-   :resjson object debt_loss: A mapping of addresses to mappings of totals assets lost over a given period.
+   :resjson object debt_loss: A mapping of addresses to mappings of totals assets lost to repayment fees and liquidation over a given period.
+   :resjson object liquidation_profit: A mapping of addresses to mappings of totals assets gained thanks to liquidation repayments over a given period.
    :resjson object rewards: A mapping of addresses to mappings of totals assets (only COMP atm) gained as a reward for using Compound over a given period.
 
    :statuscode 200: Compound history succesfully queried.

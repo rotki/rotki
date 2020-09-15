@@ -1,5 +1,7 @@
+import { Commit } from 'vuex';
+import { Section, Status } from '@/store/const';
 import store from '@/store/store';
-import { Message } from '@/store/types';
+import { Message, StatusPayload } from '@/store/types';
 
 export function showError(description: string, title?: string) {
   const message = {
@@ -18,3 +20,19 @@ export function showMessage(description: string, title?: string): void {
   };
   store.commit('setMessage', message);
 }
+
+export const setStatus: (
+  newStatus: Status,
+  section: Section,
+  status: (section: Section) => Status,
+  commit: Commit
+) => void = (newStatus, section, status, commit) => {
+  if (status(section) === newStatus) {
+    return;
+  }
+  const payload: StatusPayload = {
+    section: section,
+    status: newStatus
+  };
+  commit('setStatus', payload, { root: true });
+};

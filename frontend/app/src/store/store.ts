@@ -3,7 +3,7 @@ import Vuex, { StoreOptions } from 'vuex';
 import { VersionCheck } from '@/model/version-check';
 import { api } from '@/services/rotkehlchen-api';
 import { balances } from '@/store/balances';
-import { Section, Status } from '@/store/const';
+import { defiSections, Section, Status } from '@/store/const';
 import { storePlugins } from '@/store/debug';
 import { defi } from '@/store/defi';
 import { history } from '@/store/history';
@@ -94,6 +94,15 @@ const store: StoreOptions<RotkehlchenState> = {
           // eslint-disable-next-line no-empty
         } catch (e) {}
       }, 1000);
+    },
+    async resetDefiStatus({ commit }): Promise<void> {
+      const status = Status.NONE;
+      defiSections.forEach(section => {
+        commit('setStatus', {
+          status,
+          section
+        });
+      });
     }
   },
   getters: {

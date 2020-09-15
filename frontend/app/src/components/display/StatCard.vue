@@ -1,5 +1,5 @@
 <template>
-  <v-card class="stat-card d-flex flex-columns pa-0">
+  <v-card class="stat-card d-flex flex-columns pa-0 fill-height">
     <div v-if="bordered" class="stat-card__border">
       <div class="stat-card__image ma-2">
         <v-img
@@ -75,7 +75,7 @@ export default class StatCard extends Vue {
       display: block;
       position: absolute;
       top: 0;
-      left: 0px;
+      left: 0;
       height: 100%;
       width: 48px;
       background: linear-gradient(115deg, rgba(255, 0, 0, 0), white);

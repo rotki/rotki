@@ -11,10 +11,12 @@ from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import (
     deserialize_blocknumber,
@@ -546,7 +548,7 @@ class Compound(EthereumModule):
             self,
             events: List[CompoundEvent],
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
+    ) -> Tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
         """Processes all events and returns a dictionary of earned balances totals"""
         assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
         loss_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
@@ -554,6 +556,7 @@ class Compound(EthereumModule):
 
         profit_so_far: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
         loss_so_far: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
+        liquidation_profit: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
 
         balances = self.get_balances(given_defi_balances)
 
@@ -611,7 +614,7 @@ class Compound(EthereumModule):
                 assert event.to_asset, 'liquidation events should have a to_asset'
                 # Liquidator covers part of the borrowed amount
                 loss_assets[event.address][event.asset] += event.value
-                loss_so_far[event.address][event.asset] += event.value
+                liquidation_profit[event.address][event.asset] += event.value
                 # Liquidator receives discounted to_asset
                 loss_assets[event.address][event.to_asset] += event.to_value
                 loss_so_far[event.address][event.to_asset] += event.to_value
@@ -620,16 +623,23 @@ class Compound(EthereumModule):
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():
-                # get the underlying
                 profit_so_far[address][asset] += entry.balance
 
             for asset, entry in bentry['borrowing'].items():
-                loss_so_far[address][asset] += entry.balance
+                remaining = entry.balance + loss_assets[address][asset]
+                if remaining.amount < ZERO:
+                    continue
+                loss_so_far[address][asset] += remaining
+                if loss_so_far[address][asset].usd_value < ZERO:
+                    amount = loss_so_far[address][asset].amount
+                    loss_so_far[address][asset] = Balance(
+                        amount=amount, usd_value=amount * Inquirer().find_usd_price(Asset(asset)),
+                    )
 
             for asset, entry in bentry['rewards'].items():
                 rewards_assets[address][asset] += entry.balance
 
-        return profit_so_far, loss_so_far, rewards_assets
+        return profit_so_far, loss_so_far, liquidation_profit, rewards_assets
 
     def get_history(
             self,
@@ -657,8 +667,9 @@ class Compound(EthereumModule):
 
         events.sort(key=lambda x: x.timestamp)
         history['events'] = events
-        profit, loss, rewards = self._process_events(events, given_defi_balances)
+        profit, loss, liquidation, rewards = self._process_events(events, given_defi_balances)
         history['interest_profit'] = profit
+        history['liquidation_profit'] = liquidation
         history['debt_loss'] = loss
         history['rewards'] = rewards
 

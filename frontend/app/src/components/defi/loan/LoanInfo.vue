@@ -5,11 +5,12 @@
       <v-row>
         <v-col cols="12" md="6">
           <loan-collateral :loan="loan" />
-          <loan-debt v-if="isVault" :loan="loan" class="mt-5" />
         </v-col>
-        <v-col cols="12" md="6">
-          <loan-debt v-if="!isVault" :loan="loan" />
-          <loan-liquidation v-if="isVault" :loan="loan" />
+        <v-col v-if="isVault" cols="12" md="6">
+          <loan-liquidation :loan="loan" />
+        </v-col>
+        <v-col cols="12" :md="isVault ? 12 : 6">
+          <loan-debt :loan="loan" />
         </v-col>
       </v-row>
       <v-row v-if="isVault" class="mt-6">
@@ -21,6 +22,17 @@
             :events="loan.events"
             :creation="loan.creationTs"
             @open-link="openLink($event)"
+          />
+        </v-col>
+      </v-row>
+      <v-row v-if="isCompound" no-gutters>
+        <v-col cols="12">
+          <premium-card v-if="!premium" title="Compound History" />
+          <compound-borrowing-details
+            v-else
+            :events="loan.events"
+            :owner="loan.owner"
+            :assets="assets"
           />
         </v-col>
       </v-row>
@@ -37,10 +49,12 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LoanLiquidation from '@/components/defi/loan/LoanLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
-import { VaultEventsList } from '@/utils/premium';
+import { CompoundLoan } from '@/services/defi/types/compound';
+import { CompoundBorrowingDetails, VaultEventsList } from '@/utils/premium';
 
 @Component({
   components: {
+    CompoundBorrowingDetails,
     LoanCollateral,
     LoanDebt,
     LoanHeader,
@@ -50,6 +64,21 @@ import { VaultEventsList } from '@/utils/premium';
   }
 })
 export default class LoanInfo extends Mixins(PremiumMixin, LoanDisplayMixin) {
+  get assets(): string[] {
+    const assets = this.loan?.asset ? [this.loan.asset] : [];
+
+    if (this.isCompound && (this.loan as CompoundLoan).events.length > 0) {
+      const { events } = this.loan as CompoundLoan;
+      const toAssets: string[] = events
+        .map(({ toAsset }) => toAsset ?? '')
+        .filter(
+          (value, index, array) => !!value && array.indexOf(value) === index
+        );
+      assets.push(...toAssets);
+    }
+
+    return assets;
+  }
   openLink(url: string) {
     this.$interop.openUrl(url);
   }

@@ -10,8 +10,8 @@ import {
 } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { ManualBalance, ManualBalances } from '@/services/balances/types';
+import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
-import { manualBalanceKeys } from '@/services/history/const';
 import { api } from '@/services/rotkehlchen-api';
 import { BalanceState } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
@@ -175,7 +175,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async removeAccount({ commit }, payload: BlockchainAccountPayload) {
+  async removeAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
     const { address, blockchain } = payload;
     const { task_id } = await api.removeBlockchainAccount(blockchain, address);
 
@@ -186,9 +186,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     commit('tasks/add', task, { root: true });
     commit('defi/reset', undefined, { root: true });
+    await dispatch('resetDefiStatus', {}, { root: true });
   },
 
-  async addAccount({ commit }, payload: BlockchainAccountPayload) {
+  async addAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
     const { address, blockchain } = payload;
     const { task_id } = await api.addBlockchainAccount(payload);
     const task = createTask(task_id, TaskType.ADD_ACCOUNT, {
@@ -198,6 +199,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     commit('tasks/add', task, { root: true });
     commit('defi/reset', undefined, { root: true });
+    await dispatch('resetDefiStatus', {}, { root: true });
   },
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
@@ -276,7 +278,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const task = createTask<TaskMeta>(taskId, taskType, {
         title: i18n.tc('actions.manual_balances.task.title'),
         ignoreResult: false,
-        numericKeys: manualBalanceKeys
+        numericKeys: balanceKeys
       });
 
       commit('tasks/add', task, { root: true });

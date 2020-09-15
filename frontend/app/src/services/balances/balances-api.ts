@@ -8,7 +8,7 @@ import {
   ManualBalances,
   SupportedExchange
 } from '@/services/balances/types';
-import { manualBalanceKeys } from '@/services/history/const';
+import { balanceKeys } from '@/services/consts';
 import { ActionResult, PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -43,7 +43,7 @@ export class BalancesApi {
     return this.axios
       .get<ActionResult<PendingTask>>('balances/manual', {
         params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        transformResponse: setupTransformer([]),
+        transformResponse: setupTransformer(),
         validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
@@ -57,7 +57,7 @@ export class BalancesApi {
           balances
         },
         {
-          transformResponse: setupTransformer(manualBalanceKeys),
+          transformResponse: setupTransformer(balanceKeys),
           validateStatus: validWithParamsSessionAndExternalService
         }
       )
@@ -72,7 +72,7 @@ export class BalancesApi {
           balances
         },
         {
-          transformResponse: setupTransformer(manualBalanceKeys),
+          transformResponse: setupTransformer(balanceKeys),
           validateStatus: validWithParamsSessionAndExternalService
         }
       )
@@ -83,7 +83,7 @@ export class BalancesApi {
     return this.axios
       .delete<ActionResult<ManualBalances>>('balances/manual', {
         data: { labels },
-        transformResponse: setupTransformer(manualBalanceKeys),
+        transformResponse: setupTransformer(balanceKeys),
         validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);

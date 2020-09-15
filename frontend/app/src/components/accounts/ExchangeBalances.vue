@@ -150,7 +150,7 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Vue, Prop, Watch } from 'vue-property-decorator';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
@@ -180,7 +180,7 @@ export default class ExchangeBalances extends Vue {
   exchangeBalances!: (exchange: string) => AssetBalance[];
 
   mounted() {
-    this.selectedExchange = this.selectedExchange = this.$route.params.exchange;
+    this.selectedExchange = this.$route.params.exchange;
   }
 
   @Watch('$route')
@@ -191,12 +191,10 @@ export default class ExchangeBalances extends Vue {
   }
 
   exchangeBalance(exchange: string): BigNumber {
-    const total: BigNumber = this.exchangeBalances(exchange).reduce(
+    return this.exchangeBalances(exchange).reduce(
       (sum, asset: AssetBalance) => sum.plus(asset.usdValue),
       Zero
     );
-
-    return total;
   }
 
   openExchangeDetails() {

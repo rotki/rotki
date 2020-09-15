@@ -5,10 +5,10 @@
     <span>
       <refresh-button
         :loading="loading"
-        :refresh="refresh"
         :tooltip="
           $t('helpers.refresh_header.tooltip', { title: lowercaseTitle })
         "
+        @refresh="refresh()"
       />
       <slot />
     </span>

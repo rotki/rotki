@@ -5,11 +5,11 @@ import { GetterTree } from 'vuex';
 import {
   AccountBalance,
   AssetBalance,
-  Balance,
   EthBalance,
   ManualBalancesByLocation,
   ManualBalanceByLocation
 } from '@/model/blockchain-balances';
+import { Balance } from '@/services/types-api';
 import { BalanceState } from '@/store/balances/types';
 import { RotkehlchenState } from '@/store/types';
 import { Blockchain, GeneralAccount } from '@/typing/types';

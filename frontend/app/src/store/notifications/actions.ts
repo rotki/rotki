@@ -6,28 +6,43 @@ import { NotificationPayload } from '@/store/notifications/types';
 import { createNotification } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
 
+const unique = function (
+  value: string,
+  index: number,
+  array: string[]
+): boolean {
+  return array.indexOf(value) === index;
+};
+
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
-  consume({ commit, getters }): any {
+  consume({ commit, getters, state: { data } }): any {
     const title = 'Backend messages';
     api
       .consumeMessages()
       .then(value => {
+        const existing = data.map(({ message }) => message);
         let id = getters.nextId;
-        const errors = value.errors.map(message =>
-          createNotification(id++, {
-            title,
-            message,
-            severity: Severity.ERROR,
-            display: true
-          })
-        );
-        const warnings = value.warnings.map(message =>
-          createNotification(id++, {
-            title,
-            message,
-            severity: Severity.WARNING
-          })
-        );
+        const errors = value.errors
+          .filter(unique)
+          .filter(error => !existing.includes(error))
+          .map(message =>
+            createNotification(id++, {
+              title,
+              message,
+              severity: Severity.ERROR,
+              display: true
+            })
+          );
+        const warnings = value.warnings
+          .filter(unique)
+          .filter(warning => !existing.includes(warning))
+          .map(message =>
+            createNotification(id++, {
+              title,
+              message,
+              severity: Severity.WARNING
+            })
+          );
 
         const notifications = errors.concat(warnings);
         if (notifications.length === 0) {

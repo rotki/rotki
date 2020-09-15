@@ -1,25 +1,21 @@
 <template>
-  <progress-screen v-if="initialLoading">
-    <template #message>
-      Please wait while your balances are getting loaded...
-    </template>
+  <progress-screen v-if="loading">
+    <template #message>{{ $t('lending.loading') }}</template>
   </progress-screen>
   <div v-else>
     <v-row>
       <v-col>
         <refresh-header
-          :loading="allLoading"
-          title="Lending"
+          :loading="anyRefreshing"
+          :title="$t('lending.title')"
           @refresh="refresh()"
         >
           <confirmable-reset
-            :loading="allLoading"
-            tooltip="Refreshes the data overwriting cached Aave historical entries"
+            :loading="anyRefreshing"
+            :tooltip="$t('lending.reset_tooltip')"
             @reset="reset()"
           >
-            This action will overwrite any Aave history cached entries in the DB
-            and will fetch everything again. Depending on the number of accounts
-            it may take a long time. Are you sure you want to continue?
+            {{ $t('lending.reset_confirm') }}
           </confirmable-reset>
         </refresh-header>
       </v-col>
@@ -30,7 +26,7 @@
           <template #first-col>
             <stat-card-column>
               <template #title>
-                Currently Deposited
+                {{ $t('lending.currently_deposited') }}
               </template>
               <amount-display
                 :value="
@@ -44,18 +40,14 @@
           <template #second-col>
             <stat-card-column>
               <template #title>
-                Effective Savings Rate
+                {{ $t('lending.effective_interest_rate') }}
                 <v-tooltip bottom max-width="300px">
                   <template #activator="{ on }">
                     <v-icon small class="mb-3 ml-1" v-on="on">
                       fa fa-info-circle
                     </v-icon>
                   </template>
-                  <div>
-                    The savings rate across all of the protocols in which you
-                    are actively lending, weighted based on the relative
-                    position in each protocol.
-                  </div>
+                  <div>{{ $t('lending.effective_interest_rate_tooltip') }}</div>
                 </v-tooltip>
               </template>
               {{ effectiveInterestRate(selectedProtocols, selectedAddresses) }}
@@ -64,12 +56,12 @@
           <template #third-col>
             <stat-card-column lock>
               <template #title>
-                Interest Earned
+                {{ $t('lending.interest_earned') }}
                 <premium-lock v-if="!premium" class="d-inline" />
               </template>
               <amount-display
                 v-if="premium"
-                :loading="initialHistoryLoading"
+                :loading="secondaryLoading"
                 :value="totalUsdEarned(selectedProtocols, selectedAddresses)"
                 show-currency="symbol"
                 fiat-currency="USD"
@@ -80,33 +72,39 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <blockchain-account-selector
           v-model="selectedAccount"
           hint
           :usable-accounts="defiAccounts(selectedProtocols)"
         />
       </v-col>
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>
     <v-row>
       <v-col>
-        <stat-card title="Assets">
+        <stat-card :title="$t('lending.assets')">
           <lending-asset-table
-            :loading="loading"
-            :assets="lendingBalances(selectedProtocols, selectedAddresses)"
+            :loading="refreshing"
+            :assets="
+              aggregatedLendingBalances(selectedProtocols, selectedAddresses)
+            "
           />
         </stat-card>
       </v-col>
     </v-row>
+    <compound-lending-details
+      v-if="isCompound"
+      :addresses="selectedAddresses"
+    />
     <v-row class="loans__history">
       <v-col cols="12">
-        <premium-card v-if="!premium" title="History" />
+        <premium-card v-if="!premium" :title="$t('lending.history')" />
         <lending-history
           v-else
-          :loading="historyLoading"
+          :loading="secondaryRefreshing"
           :history="lendingHistory(selectedProtocols, selectedAddresses)"
           :floating-precision="floatingPrecision"
           @open-link="openLink($event)"
@@ -119,7 +117,7 @@
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
-import { Vue } from 'vue-property-decorator';
+import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -133,14 +131,17 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { DEFI_PROTOCOLS, SupportedDefiProtocols } from '@/services/defi/types';
-import { Status } from '@/store/const';
-import { DefiBalance, DefiLendingHistory } from '@/store/defi/types';
+import StatusMixin from '@/mixins/status-mixin';
+import { DEFI_PROTOCOLS } from '@/services/defi/consts';
+import { SupportedDefiProtocols } from '@/services/defi/types';
+import { Section } from '@/store/const';
+import { BaseDefiBalance } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
-import { LendingHistory } from '@/utils/premium';
+import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
 
 @Component({
   components: {
+    CompoundLendingDetails,
     ConfirmableReset,
     RefreshHeader,
     LendingAssetTable,
@@ -158,21 +159,20 @@ import { LendingHistory } from '@/utils/premium';
   computed: {
     ...mapState('session', ['premium']),
     ...mapGetters('session', ['floatingPrecision']),
-    ...mapState('defi', ['lendingHistoryStatus', 'status']),
     ...mapGetters('defi', [
       'totalUsdEarned',
       'totalLendingDeposit',
       'defiAccounts',
       'effectiveInterestRate',
-      'lendingBalances',
+      'aggregatedLendingBalances',
       'lendingHistory'
     ])
   },
   methods: {
-    ...mapActions('defi', ['fetchLendingHistory', 'fetchLending'])
+    ...mapActions('defi', ['fetchLending'])
   }
 })
-export default class Lending extends Vue {
+export default class Lending extends Mixins(StatusMixin) {
   premium!: boolean;
   floatingPrecision!: number;
   selectedAccount: Account | null = null;
@@ -181,10 +181,10 @@ export default class Lending extends Vue {
     addresses: string[]
   ) => BigNumber;
   defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
-  lendingBalances!: (
+  aggregatedLendingBalances!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
-  ) => DefiBalance[];
+  ) => BaseDefiBalance[];
   effectiveInterestRate!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -194,17 +194,17 @@ export default class Lending extends Vue {
     refresh?: boolean;
     reset?: boolean;
   }) => Promise<void>;
-  fetchLending!: (refresh: boolean) => Promise<void>;
-  lendingHistoryStatus!: Status;
-  status!: Status;
-  lendingHistory!: (
-    protocols: SupportedDefiProtocols[],
-    addresses: string[]
-  ) => DefiLendingHistory<SupportedDefiProtocols>[];
+  fetchLending!: (payload?: {
+    refresh?: boolean;
+    reset?: boolean;
+  }) => Promise<void>;
   totalUsdEarned!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => BigNumber;
+
+  section = Section.DEFI_LENDING;
+  secondSection = Section.DEFI_LENDING_HISTORY;
 
   get selectedAddresses(): string[] {
     return this.selectedAccount ? [this.selectedAccount.address] : [];
@@ -216,16 +216,19 @@ export default class Lending extends Vue {
     );
   }
 
+  get isCompound(): boolean {
+    return (
+      this.selectedProtocols.length === 1 &&
+      this.selectedProtocols.includes('compound')
+    );
+  }
+
   async refresh() {
-    await this.fetchLending(true);
-    await this.fetchLendingHistory({
-      refresh: true
-    });
+    await this.fetchLending({ refresh: true });
   }
 
   async reset() {
-    await this.fetchLending(true);
-    await this.fetchLendingHistory({
+    await this.fetchLending({
       refresh: true,
       reset: true
     });
@@ -239,37 +242,11 @@ export default class Lending extends Vue {
     if (protocolIndex >= 0) {
       this.protocol = DEFI_PROTOCOLS[protocolIndex];
     }
-    await this.fetchLendingHistory();
+    await this.fetchLending();
   }
 
   get selectedProtocols(): SupportedDefiProtocols[] {
     return this.protocol ? [this.protocol] : [];
-  }
-
-  get initialLoading(): boolean {
-    return this.status !== Status.LOADED && this.status !== Status.REFRESHING;
-  }
-
-  get loading(): boolean {
-    return this.status !== Status.LOADED;
-  }
-
-  get allLoading(): boolean {
-    return (
-      this.status !== Status.LOADED ||
-      this.lendingHistoryStatus !== Status.LOADED
-    );
-  }
-
-  get initialHistoryLoading(): boolean {
-    return (
-      this.lendingHistoryStatus !== Status.LOADED &&
-      this.lendingHistoryStatus !== Status.REFRESHING
-    );
-  }
-
-  get historyLoading(): boolean {
-    return this.lendingHistoryStatus !== Status.LOADED;
   }
 
   openLink(url: string) {

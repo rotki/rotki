@@ -54,9 +54,13 @@ export default class DateTimePicker extends Vue {
   limitNow!: boolean;
 
   private date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
-  private dateFormatRule = (v: string) =>
-    (v && this.date.test(v)) ||
-    'Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format';
+
+  private dateFormatRule(v: string) {
+    return (
+      (v && this.date.test(v)) ||
+      'Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format'
+    );
+  }
 
   timeModel: string = moment().format(DateTimePicker.timeFormat);
   dateModel: string = '';
@@ -67,7 +71,7 @@ export default class DateTimePicker extends Vue {
   menu: boolean = false;
 
   get allRules(): ((v: string) => boolean | string)[] {
-    return this.rules.concat([this.dateFormatRule]);
+    return this.rules.concat([this.dateFormatRule.bind(this)]);
   }
 
   private setMaxTime() {

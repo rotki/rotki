@@ -171,6 +171,7 @@ export class TaskManager {
         'Tasks',
         Severity.INFO
       );
+      store.commit('tasks/remove', task.id);
       return;
     }
 

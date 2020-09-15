@@ -56,7 +56,7 @@ def query_usd_price_zero_if_error(
         )
     except (RemoteError, NoPriceForGivenTimestamp):
         msg_aggregator.add_error(
-            f'Could not query usd price for {asset.identifier} and time {time}'
+            f'Could not query usd price for {asset.identifier} and time {time} '
             f'when processing {location}. Using zero price',
         )
         usd_price = Price(ZERO)

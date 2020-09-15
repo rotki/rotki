@@ -247,6 +247,89 @@
         "description": "Failed query for {address}: {error}",
         "title": "Ethereum Transactions Query"
       }
+    },
+    "defi": {
+      "balances": {
+        "task": {
+          "title": "Querying DeFi balances"
+        },
+        "error": {
+          "title": "DeFi Balances",
+          "description": "Failed to retrieve DeFi balances: {error}"
+        }
+      },
+      "compound": {
+        "task": {
+          "title": "Querying Compound balances"
+        },
+        "error": {
+          "title": "Compound Balances",
+          "description": "Failed to retrieve Compound balances: {error}"
+        }
+      },
+      "compound_history": {
+        "task": {
+          "title": "Querying Compound history"
+        },
+        "error": {
+          "title": "Compound History",
+          "description": "Failed to retrieve Compound history: {error}"
+        }
+      },
+      "dsr_balances": {
+        "task": {
+          "title": "Querying DSR Balances"
+        },
+        "error": {
+          "title": "DSR Balances",
+          "description": "Failed to retrieve DSR balances: ${error}"
+        }
+      },
+      "dsr_history": {
+        "task": {
+          "title": "Querying DSR History"
+        },
+        "error": {
+          "title": "DSR History",
+          "description": "Failed to retrieve DSR history: ${error}"
+        }
+      },
+      "makerdao_vaults": {
+        "task": {
+          "title": "Querying MakerDAO Vaults"
+        },
+        "error": {
+          "title": "MakerDAO Vaults",
+          "description": "Failed to retrieve MakerDAO Vaults: ${error}"
+        }
+      },
+      "makerdao_vault_details": {
+        "task": {
+          "title": "Querying MakerDAO Vault details"
+        },
+        "error": {
+          "title": "MakerDAO Vault details",
+          "description": "Failed to retrieve MakerDAO Vault details: ${error}"
+        }
+      },
+      "aave_balances": {
+        "task": {
+          "title": "Querying Aave balances"
+        },
+        "error": {
+          "title": "Aave balances",
+          "description": "Failed to retrieve Aave balances: ${error}"
+        }
+      },
+      "aave_history": {
+        "task": {
+          "title": "Querying Aave history"
+        },
+        "error": {
+          "title": "Aave history",
+          "description": "Failed to retrieve Aave history: ${error}"
+        }
+      }
     }
   },
   "navigation_menu": {
@@ -315,7 +398,8 @@
   "loan_header": {
     "owned_by": "Owned by:",
     "aave_loan": "Aave Loan ({asset})",
-    "maker_vault": "Maker Vault #{identifier} ({collateralType})"
+    "maker_vault": "Maker Vault #{identifier} ({collateralType})",
+    "compound_loan": "Compound Loan ({asset})"
   },
   "borrowing": {
     "loading": "Please wait while your vaults are getting loaded...",
@@ -341,6 +425,43 @@
     "confirm_delete": {
       "title": "Account delete",
       "description": "Are you sure you want to delete {toDeleteAccount}"
+    }
+  },
+  "lending": {
+    "loading": "Please wait while your balances are getting loaded...",
+    "title": "Lending",
+    "reset_confirm": "This action will overwrite any Aave history cached entries in the DB and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
+    "reset_tooltip": "Refreshes the data overwriting cached Aave historical entries",
+    "currently_deposited": "Currently Deposited",
+    "effective_interest_rate": "Effective Savings Rate",
+    "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
+    "interest_earned": "Interest Earned",
+    "assets": "Assets",
+    "history": "History"
+  },
+  "loan_collateral": {
+    "per_asset": "Collateral Assets",
+    "title": "Collateral",
+    "locked_collateral": "Locked up collateral",
+    "current_ratio": "Current ratio",
+    "stable_apr": "Stable APR",
+    "variable_apr": "Variable APR",
+    "apy": "APY",
+    "watchers": {
+      "edit": "Edit {n} collateralization watcher | Edit {n} collateralization watchers",
+      "add": "Add collateralization ratio watcher",
+      "dialog": {
+        "title": "Collateralization watchers",
+        "label": "Collateralization Ratio"
+      }
+    }
+  },
+  "lending_asset_table": {
+    "headers": {
+      "usd_value": "{currency} value",
+      "asset": "Asset",
+      "amount": "Amount",
+      "effective_interest_rate": "Effective Interest Rate"
     }
   }
 }

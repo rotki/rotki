@@ -1,107 +1,160 @@
 import { ActionTree } from 'vuex';
+import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
+import { balanceKeys } from '@/services/consts';
+import { dsrKeys, vaultDetailsKeys, vaultKeys } from '@/services/defi/consts';
+import { ApiMakerDAOVault } from '@/services/defi/types';
+import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
-  ApiAaveBalances,
-  ApiAaveHistory,
-  ApiAllDefiProtocols,
-  ApiDSRBalances,
-  ApiDSRHistory,
-  ApiMakerDAOVault,
-  ApiMakerDAOVaultDetails
-} from '@/services/defi/types';
+  CompoundBalances,
+  CompoundHistory
+} from '@/services/defi/types/compound';
 import { api } from '@/services/rotkehlchen-api';
-import { Status } from '@/store/const';
+import { Section, Status } from '@/store/const';
+import { convertMakerDAOVaults } from '@/store/defi/converters';
 import {
-  convertAaveBalances,
-  convertAaveHistory,
-  convertAllDefiProtocols,
-  convertDSRBalances,
-  convertDSRHistory,
-  convertMakerDAOVaults,
-  convertVaultDetails
-} from '@/store/defi/converters';
-import { DefiState } from '@/store/defi/types';
+  AllDefiProtocols,
+  DefiState,
+  DSRBalances,
+  DSRHistory,
+  MakerDAOVaultDetails
+} from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
+import { setStatus } from '@/store/utils';
+
+function isLoading(status: Status): boolean {
+  return (
+    status === Status.LOADING ||
+    status === Status.PARTIALLY_LOADED ||
+    status == Status.REFRESHING
+  );
+}
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
-  async fetchDSRBalances({
-    commit,
-    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-  }) {
-    const taskType = TaskType.DSR_BALANCE;
-    if (isTaskRunning(taskType)) {
+  async fetchDSRBalances(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes('makerdao_dsr')) {
+      return;
+    }
+    const section = Section.DEFI_DRS_BALANCES;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
       return;
     }
 
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
     try {
-      const { task_id } = await api.defi.dsrBalance();
-      const task = createTask(task_id, taskType, {
-        title: `Fetching DSR Balances`,
-        ignoreResult: false
+      const taskType = TaskType.DSR_BALANCE;
+      const { taskId } = await api.defi.dsrBalance();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.dsr_balances.task.title'),
+        ignoreResult: false,
+        numericKeys: dsrKeys
       });
       commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<ApiDSRBalances, TaskMeta>(
-        taskType
-      );
-      commit('dsrBalances', convertDSRBalances(result));
+      const { result } = await taskCompletion<DSRBalances, TaskMeta>(taskType);
+      commit('dsrBalances', result);
     } catch (e) {
-      notify(
-        `There was an issue while fetching DSR Balances: ${e.message}`,
-        'DSR Balances',
-        Severity.ERROR,
-        true
+      const message = i18n.tc(
+        'actions.defi.dsr_balances.error.description',
+        undefined,
+        {
+          error: e.message
+        }
       );
+      const title = i18n.tc('actions.defi.dsr_balances.error.title');
+      notify(message, title, Severity.ERROR, true);
     }
+
+    setStatus(Status.LOADED, section, status, commit);
   },
 
-  async fetchDSRHistory({
-    commit,
-    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-  }) {
-    const taskType = TaskType.DSR_HISTORY;
+  async fetchDSRHistory(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes('makerdao_dsr') || !session?.premium) {
+      return;
+    }
+    const section = Section.DEFI_DSR_HISTORY;
+    const currentStatus = status(section);
 
-    if (isTaskRunning(taskType)) {
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
       return;
     }
 
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
     try {
-      const { task_id } = await api.defi.dsrHistory();
-      const task = createTask(task_id, taskType, {
-        title: `Fetching DSR History`,
-        ignoreResult: false
+      const taskType = TaskType.DSR_HISTORY;
+      const { taskId } = await api.defi.dsrHistory();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.dsr_history.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
       });
       commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<ApiDSRHistory, TaskMeta>(
-        taskType
-      );
-      commit('dsrHistory', convertDSRHistory(result));
+      const { result } = await taskCompletion<DSRHistory, TaskMeta>(taskType);
+      commit('dsrHistory', result);
     } catch (e) {
-      notify(
-        `There was an issue while fetching DSR History: ${e.message}`,
-        'DSR History',
-        Severity.ERROR,
-        true
+      const message = i18n.tc(
+        'actions.defi.dsr_history.error.description',
+        undefined,
+        {
+          error: e.message
+        }
       );
+      const title = i18n.tc('actions.defi.dsr_history.error.title');
+      notify(message, title, Severity.ERROR, true);
     }
+    setStatus(Status.LOADED, section, status, commit);
   },
 
-  async fetchMakerDAOVaults({
-    commit,
-    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-  }) {
-    const taskType = TaskType.MAKEDAO_VAULTS;
-    if (isTaskRunning(taskType)) {
+  async fetchMakerDAOVaults(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes('makerdao_vaults')) {
+      return;
+    }
+    const section = Section.DEFI_MAKERDAO_VAULTS;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
       return;
     }
 
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
     try {
-      const { task_id } = await api.defi.makerDAOVaults();
-      const task = createTask(task_id, taskType, {
-        title: `Fetching MakerDAO Vaults`,
-        ignoreResult: false
+      const taskType = TaskType.MAKEDAO_VAULTS;
+      const { taskId } = await api.defi.makerDAOVaults();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.makerdao_vaults.task.title'),
+        ignoreResult: false,
+        numericKeys: vaultKeys
       });
 
       commit('tasks/add', task, { root: true });
@@ -112,259 +165,441 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       >(taskType);
       commit('makerDAOVaults', convertMakerDAOVaults(makerDAOVaults));
     } catch (e) {
-      notify(`${e.message}`, 'MakerDAO Vaults', Severity.ERROR, true);
+      const message = i18n.tc(
+        'actions.defi.makerdao_vaults.error.description',
+        undefined,
+        {
+          error: e.message
+        }
+      );
+      const title = i18n.tc('actions.defi.makerdao_vaults.error.title');
+      notify(message, title, Severity.ERROR, true);
     }
+    setStatus(Status.LOADED, section, status, commit);
   },
 
-  async fetchMakerDAOVaultDetails({
-    commit,
-    rootState: { session },
-    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-  }) {
-    if (!session?.premium || isTaskRunning(TaskType.MAKERDAO_VAULT_DETAILS)) {
+  async fetchMakerDAOVaultDetails(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes('makerdao_vaults') || !session?.premium) {
+      return;
+    }
+    const section = Section.DEFI_MAKERDAO_VAULT_DETAILS;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
       return;
     }
 
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
     try {
-      const { task_id } = await api.defi.makerDAOVaultDetails();
-      const task = createTask(task_id, TaskType.MAKERDAO_VAULT_DETAILS, {
-        title: `Fetching MakerDAO Vault Details`,
-        ignoreResult: false
+      const { taskId } = await api.defi.makerDAOVaultDetails();
+      const task = createTask(taskId, TaskType.MAKERDAO_VAULT_DETAILS, {
+        title: i18n.tc('actions.defi.makerdao_vault_details.task.title'),
+        ignoreResult: false,
+        numericKeys: vaultDetailsKeys
       });
 
       commit('tasks/add', task, { root: true });
 
-      const { result: makerDAOVaultDetails } = await taskCompletion<
-        ApiMakerDAOVaultDetails[],
-        TaskMeta
-      >(TaskType.MAKERDAO_VAULT_DETAILS);
-
-      commit('makerDAOVaultDetails', convertVaultDetails(makerDAOVaultDetails));
-    } catch (e) {
-      notify(`${e.message}`, 'MakerDAO Vault details', Severity.ERROR, true);
-    }
-  },
-
-  async fetchAaveBalances({
-    commit,
-    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-  }) {
-    const taskType = TaskType.AAVE_BALANCES;
-    if (isTaskRunning(taskType)) {
-      return;
-    }
-    try {
-      const { task_id } = await api.defi.fetchAaveBalances();
-      const task = createTask(task_id, taskType, {
-        title: `Fetching Aave balances`,
-        ignoreResult: false
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<ApiAaveBalances, TaskMeta>(
-        taskType
+      const { result } = await taskCompletion<MakerDAOVaultDetails[], TaskMeta>(
+        TaskType.MAKERDAO_VAULT_DETAILS
       );
 
-      commit('aaveBalances', convertAaveBalances(result));
+      commit('makerDAOVaultDetails', result);
     } catch (e) {
-      notify(`${e.message}`, 'Fetching Aave Balances', Severity.ERROR, true);
+      const message = i18n.tc(
+        'actions.defi.makerdao_vault_details.error.description',
+        undefined,
+        { error: e.message }
+      );
+      const title = i18n.tc('actions.defi.makerdao_vault_details.error.title');
+      notify(message, title, Severity.ERROR, true);
     }
+
+    setStatus(Status.LOADED, section, status, commit);
+  },
+
+  async fetchAaveBalances(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes('aave')) {
+      return;
+    }
+    const section = Section.DEFI_AAVE_BALANCES;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.AAVE_BALANCES;
+      const { taskId } = await api.defi.fetchAaveBalances();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.aave_balances.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<AaveBalances, TaskMeta>(taskType);
+
+      commit('aaveBalances', result);
+    } catch (e) {
+      const message = i18n.tc(
+        'actions.defi.aave_balances.error.description',
+        undefined,
+        {
+          error: e.message
+        }
+      );
+      const title = i18n.tc('actions.defi.aave_balances.error.title');
+      notify(message, title, Severity.ERROR, true);
+    }
+
+    setStatus(Status.LOADED, section, status, commit);
   },
 
   async fetchAaveHistory(
-    {
-      commit,
-      rootState: { session },
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-    },
-    reset?: boolean
+    { commit, rootGetters: { status }, rootState: { session } },
+    payload: { refresh?: boolean; reset?: boolean }
   ) {
-    const taskType = TaskType.AAVE_HISTORY;
-    if (!session?.premium || isTaskRunning(taskType)) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes('aave') || !session?.premium) {
+      return;
+    }
+    const section = Section.DEFI_AAVE_HISTORY;
+    const currentStatus = status(section);
+    const refresh = payload?.refresh;
+    const reset = payload?.reset;
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
       return;
     }
 
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
     try {
-      const { task_id } = await api.defi.fetchAaveHistory(reset);
-      const task = createTask(task_id, taskType, {
-        title: `Fetching Aave history`,
-        ignoreResult: false
+      const taskType = TaskType.AAVE_HISTORY;
+      const { taskId } = await api.defi.fetchAaveHistory(reset);
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.aave_history.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
       });
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<ApiAaveHistory, TaskMeta>(
-        taskType
-      );
+      const { result } = await taskCompletion<AaveHistory, TaskMeta>(taskType);
 
-      commit('aaveHistory', convertAaveHistory(result));
+      commit('aaveHistory', result);
     } catch (e) {
-      notify(`${e.message}`, 'Fetching Aave History', Severity.ERROR, true);
+      const message = i18n.tc(
+        'actions.defi.aave_history.error.description',
+        undefined,
+        { error: e.message }
+      );
+      const title = i18n.tc('actions.defi.aave_history.error.title');
+      notify(message, title, Severity.ERROR, true);
     }
+
+    setStatus(Status.LOADED, section, status, commit);
   },
 
-  async fetchDefiBalances({
-    commit,
-    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-  }) {
-    const taskType = TaskType.DEFI_BALANCES;
+  async fetchDefiBalances(
+    { commit, rootGetters: { status } },
+    refresh: boolean
+  ) {
+    const section = Section.DEFI_BALANCES;
+    const currentStatus = status(section);
 
-    if (isTaskRunning(taskType)) {
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
       return;
     }
 
+    setStatus(Status.LOADING, section, status, commit);
+
     try {
-      const { task_id } = await api.defi.fetchAllDefi();
-      const task = createTask(task_id, taskType, {
-        title: `Fetching Defi Balances`,
-        ignoreResult: false
+      const taskType = TaskType.DEFI_BALANCES;
+      const { taskId } = await api.defi.fetchAllDefi();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.balances.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
       });
 
       commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<ApiAllDefiProtocols, TaskMeta>(
+      const { result } = await taskCompletion<AllDefiProtocols, TaskMeta>(
         taskType
       );
 
-      commit('allDefiProtocols', convertAllDefiProtocols(result));
+      commit('allDefiProtocols', result);
     } catch (e) {
-      notify(`${e.message}`, 'Fetching Defi Balances', Severity.ERROR, true);
+      const title = i18n.tc('actions.defi.balances.error.title');
+      const message = i18n.tc(
+        'actions.defi.balances.error.description',
+        undefined,
+        { error: e.message }
+      );
+      notify(message, title, Severity.ERROR, true);
     }
+    setStatus(Status.LOADED, section, status, commit);
   },
 
   async fetchAllDefi(
-    { commit, dispatch, state, rootState: { session } },
-    refreshing: boolean = false
+    { commit, dispatch, rootGetters: { status } },
+    refresh: boolean = false
   ) {
+    const section = Section.DEFI_OVERVIEW;
+    const currentStatus = status(section);
     if (
-      state.status === Status.LOADING ||
-      (state.status === Status.LOADED && !refreshing)
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
     ) {
       return;
     }
 
-    const { activeModules } = session!.generalSettings;
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+    await dispatch('fetchDefiBalances', refresh);
+    setStatus(Status.PARTIALLY_LOADED, section, status, commit);
 
-    commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
-    commit('defiStatus', refreshing ? Status.REFRESHING : Status.LOADING);
-    await dispatch('fetchDefiBalances');
-    commit('defiStatus', Status.LOADED);
+    await Promise.all([
+      dispatch('fetchAaveBalances', refresh),
+      dispatch('fetchDSRBalances', refresh),
+      dispatch('fetchMakerDAOVaults', refresh),
+      dispatch('fetchCompoundBalances', refresh)
+    ]);
 
-    if (activeModules.includes('aave')) {
-      await dispatch('fetchAaveBalances');
-    }
-
-    if (activeModules.includes('makerdao_dsr')) {
-      await dispatch('fetchDSRBalances');
-    }
-
-    if (activeModules.includes('makerdao_vaults')) {
-      await dispatch('fetchMakerDAOVaults');
-    }
-
-    commit('status', Status.LOADED);
+    setStatus(Status.LOADED, section, status, commit);
   },
 
   async fetchLending(
-    { commit, dispatch, state, rootState: { session } },
-    refreshing: boolean = false
-  ) {
-    if (
-      state.status === Status.LOADING ||
-      (state.status === Status.LOADED && !refreshing)
-    ) {
-      return;
-    }
-    const { activeModules } = session!.generalSettings;
-
-    commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
-
-    if (activeModules.includes('makerdao_dsr')) {
-      await dispatch('fetchDSRBalances');
-    }
-
-    if (activeModules.includes('aave')) {
-      await dispatch('fetchAaveBalances');
-    }
-
-    commit('status', Status.LOADED);
-  },
-
-  async fetchLendingHistory(
-    { commit, dispatch, state, rootState: { session } },
+    { commit, dispatch, rootState: { session }, rootGetters: { status } },
     payload?: { refresh?: boolean; reset?: boolean }
   ) {
+    const premium = session?.premium;
+    const section = Section.DEFI_LENDING;
+    const premiumSection = Section.DEFI_LENDING_HISTORY;
+    const currentStatus = status(section);
+    const refresh = payload?.refresh;
+    const reset = payload?.reset;
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+
     if (
-      !session?.premium ||
-      state.lendingHistoryStatus === Status.LOADING ||
-      (state.lendingHistoryStatus === Status.LOADED && !payload?.refresh)
+      !isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && refresh)
+    ) {
+      setStatus(newStatus, section, status, commit);
+
+      await Promise.all([
+        dispatch('fetchDSRBalances', refresh).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        }),
+        dispatch('fetchAaveBalances', refresh).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        }),
+        dispatch('fetchCompoundBalances', refresh).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        })
+      ]);
+
+      setStatus(Status.LOADED, section, status, commit);
+    }
+
+    const currentPremiumStatus = status(premiumSection);
+
+    if (
+      !premium ||
+      isLoading(currentPremiumStatus) ||
+      (currentPremiumStatus === Status.LOADED && !refresh)
     ) {
       return;
     }
 
-    const { activeModules } = session!.generalSettings;
+    setStatus(newStatus, premiumSection, status, commit);
 
-    commit(
-      'lendingHistoryStatus',
-      payload?.refresh ? Status.REFRESHING : Status.LOADING
-    );
+    await Promise.all([
+      dispatch('fetchDSRHistory', refresh),
+      dispatch('fetchAaveHistory', { refresh, reset }),
+      dispatch('fetchCompoundHistory', refresh)
+    ]);
 
-    if (activeModules.includes('makerdao_dsr')) {
-      await dispatch('fetchDSRHistory');
-    }
-
-    if (activeModules.includes('aave')) {
-      await dispatch('fetchAaveHistory', payload?.reset);
-    }
-
-    commit('lendingHistoryStatus', Status.LOADED);
+    setStatus(Status.LOADED, premiumSection, status, commit);
   },
 
   async fetchBorrowing(
-    { commit, dispatch, state, rootState: { session } },
-    refreshing: boolean = false
+    { commit, dispatch, rootState: { session }, rootGetters: { status } },
+    refresh: boolean = false
   ) {
+    const premium = session?.premium;
+    const section = Section.DEFI_BORROWING;
+    const premiumSection = Section.DEFI_BORROWING_HISTORY;
+    const currentStatus = status(section);
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+
     if (
-      state.status === Status.LOADING ||
-      (state.status === Status.LOADED && !refreshing)
+      !isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && refresh)
+    ) {
+      setStatus(newStatus, section, status, commit);
+      await Promise.all([
+        dispatch('fetchMakerDAOVaults', refresh).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        }),
+        dispatch('fetchCompoundBalances', refresh).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        })
+      ]);
+
+      setStatus(Status.LOADED, section, status, commit);
+    }
+
+    const currentPremiumStatus = status(premiumSection);
+
+    if (
+      !premium ||
+      isLoading(currentPremiumStatus) ||
+      (currentPremiumStatus === Status.LOADED && !refresh)
     ) {
       return;
     }
 
-    const { activeModules } = session!.generalSettings;
+    setStatus(newStatus, premiumSection, status, commit);
 
-    commit('status', refreshing ? Status.REFRESHING : Status.LOADING);
+    await Promise.all([
+      dispatch('fetchMakerDAOVaultDetails', refresh),
+      dispatch('fetchCompoundHistory', refresh)
+    ]);
 
-    if (activeModules.includes('makerdao_vaults')) {
-      await dispatch('fetchMakerDAOVaults');
-    }
-
-    commit('status', Status.LOADED);
+    setStatus(Status.LOADED, premiumSection, status, commit);
   },
 
-  async fetchBorrowingHistory(
-    { commit, dispatch, state, rootState: { session } },
-    refreshing: boolean = false
+  async fetchCompoundBalances(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
   ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes('compound')) {
+      return;
+    }
+
+    const section = Section.DEFI_COMPOUND_BALANCES;
+    const currentStatus = status(section);
+
     if (
-      !session?.premium ||
-      state.borrowingHistoryStatus === Status.LOADING ||
-      (state.borrowingHistoryStatus === Status.LOADED && !refreshing)
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
     ) {
       return;
     }
 
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.DEFI_COMPOUND_BALANCES;
+      const { taskId } = await api.defi.fetchCompoundBalances();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.compound.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<CompoundBalances, TaskMeta>(
+        taskType
+      );
+
+      commit('compoundBalances', result);
+    } catch (e) {
+      notify(
+        i18n.tc('actions.defi.compound.error.description', undefined, {
+          error: e.message
+        }),
+        i18n.tc('actions.defi.compound.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
+  },
+
+  async fetchCompoundHistory(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
     const { activeModules } = session!.generalSettings;
 
-    commit(
-      'borrowingHistoryStatus',
-      refreshing ? Status.REFRESHING : Status.LOADING
-    );
-
-    if (activeModules.includes('makerdao_vaults')) {
-      await dispatch('fetchMakerDAOVaultDetails');
+    if (!activeModules.includes('compound') || !session?.premium) {
+      return;
     }
 
-    commit('borrowingHistoryStatus', Status.LOADED);
+    const section = Section.DEFI_COMPOUND_HISTORY;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.DEFI_COMPOUND_HISTORY;
+      const { taskId } = await api.defi.fetchCompoundHistory();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.compound_history.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<CompoundHistory, TaskMeta>(
+        taskType
+      );
+
+      commit('compoundHistory', result);
+    } catch (e) {
+      notify(
+        i18n.tc('actions.defi.compound_history.error.description', undefined, {
+          error: e.message
+        }),
+        i18n.tc('actions.defi.compound_history.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
   }
 };

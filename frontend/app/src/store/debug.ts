@@ -33,7 +33,7 @@ const isObject = (data: any): boolean =>
 
 export const storePlugins = () => {
   const debugSettings = window.interop?.debugSettings?.();
-  const persistVuex = debugSettings?.vuex;
+  const persistVuex = debugSettings?.vuex || process.env.VUE_APP_PERSIST_VUEX;
 
   if (!persistVuex) {
     sessionStorage.removeItem('vuex');

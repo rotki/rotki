@@ -1,5 +1,5 @@
 <template>
-  <v-app id="rotki">
+  <v-app v-if="!isPlayground" id="rotki">
     <div v-show="logged" class="app__content rotki-light-grey">
       <notification-popup />
       <v-navigation-drawer
@@ -69,6 +69,7 @@
       />
     </v-fade-transition>
   </v-app>
+  <dev-app v-else />
 </template>
 
 <script lang="ts">
@@ -87,12 +88,14 @@ import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import '@/services/task-manager';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
+import DevApp from '@/DevApp.vue';
 import ErrorScreen from '@/ErrorScreen.vue';
 import { monitor } from '@/services/monitoring';
 import { Message } from '@/store/types';
 
 @Component({
   components: {
+    DevApp,
     NotificationPopup,
     NotificationSidebar,
     ErrorScreen,
@@ -171,6 +174,13 @@ export default class App extends Vue {
     if (process.env.NODE_ENV === 'development' && this.logged) {
       monitor.start();
     }
+  }
+
+  get isPlayground(): boolean {
+    return (
+      process.env.NODE_ENV === 'development' &&
+      this.$route.name === 'playground'
+    );
   }
 }
 </script>
