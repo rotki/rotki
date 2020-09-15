@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1453` Users will now see an validation error message when attempting to add an existing account.
 * :feature:`804` Users can now track borrowing from Compound in the DeFi borrowing page.
 * :feature:`597` Users can now track the interest earned by Compound loans in the DeFi lending page.
 * :bug:`1462` ycrvRenWSBTC vault token should now properly appear in the dashboard and have its price calculated correctly.
