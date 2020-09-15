@@ -60,6 +60,9 @@ def assert_serialized_dicts_equal(
             if a_val == b[a_key]:
                 continue
 
+            if '%' in a_val:
+                raise AssertionError(f'{a_val} != {b[a_key]}')
+
             # if strings are not equal, try to turn them to Fvals
             try:
                 afval = FVal(a_val)

@@ -278,9 +278,6 @@ class Compound(EthereumModule):
 
         events = []
         for entry in result[graph_event_name]:
-            if event_type == 'repay' and entry['borrower'] != entry['payer']:
-                continue  # skip repay event. It's actually a liquidation
-
             underlying_symbol = entry['underlyingSymbol']
             try:
                 underlying_asset = Asset(underlying_symbol)
@@ -658,8 +655,19 @@ class Compound(EthereumModule):
             user_events = self._get_lend_events('mint', address, from_timestamp, to_timestamp)
             user_events.extend(self._get_lend_events('redeem', address, from_timestamp, to_timestamp))  # noqa: E501
             user_events.extend(self._get_borrow_events('borrow', address, from_timestamp, to_timestamp))  # noqa: E501
-            user_events.extend(self._get_borrow_events('repay', address, from_timestamp, to_timestamp))  # noqa: E501
-            user_events.extend(self._get_liquidation_events(address, from_timestamp, to_timestamp))
+            repay_events = self._get_borrow_events('repay', address, from_timestamp, to_timestamp)
+            liquidation_events = self._get_liquidation_events(address, from_timestamp, to_timestamp)  # noqa: E501
+            indices_to_remove = []
+            for levent in liquidation_events:
+                for ridx, revent in enumerate(repay_events):
+                    if levent.tx_hash == revent.tx_hash:
+                        indices_to_remove.append(ridx)
+
+            for i in sorted(indices_to_remove, reverse=True):
+                del repay_events[i]
+
+            user_events.extend(repay_events)
+            user_events.extend(liquidation_events)
             if len(user_events) != 0:
                 # query comp events only if any other event has happened
                 user_events.extend(self._get_comp_events(address, from_timestamp, to_timestamp))
