@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Union
 
 from hexbytes import HexBytes
+from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
@@ -46,7 +47,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         for new_entry in entry:
             new_list.append(_process_entry(new_entry))
         return new_list
-    elif isinstance(entry, dict):
+    elif isinstance(entry, (dict, AttributeDict)):
         new_dict = {}
         for k, v in entry.items():
             if isinstance(k, Asset):
@@ -131,7 +132,7 @@ def process_result(result: Any) -> Dict[Any, Any]:
         - all enums and more
     """
     processed_result = _process_entry(result)
-    assert isinstance(processed_result, Dict)
+    assert isinstance(processed_result, (Dict, AttributeDict))
     return processed_result
 
 
