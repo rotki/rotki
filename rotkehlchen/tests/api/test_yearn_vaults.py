@@ -1,4 +1,6 @@
+import random
 from contextlib import ExitStack
+from http import HTTPStatus
 
 import pytest
 import requests
@@ -6,10 +8,11 @@ import requests
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.yearn.vaults import YearnVaultEvent, YearnVaultHistory
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
     wait_for_async_task,
@@ -18,6 +21,44 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Timestamp
 
 TEST_ACC1 = '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10'
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+@pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+def test_query_yearn_vault_balances(rotkehlchen_api_server, ethereum_accounts):
+    async_query = random.choice([True, False])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        original_queries=['zerion'],
+    )
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "yearnvaultsbalancesresource",
+        ), json={'async_query': async_query})
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    for _, vault in result[TEST_ACC1].items():
+        assert '%' in vault['roi']
+        assert FVal(vault['vault_value']['amount']) > ZERO
+        assert FVal(vault['vault_value']['usd_value']) > ZERO
+        assert FVal(vault['underlying_value']['amount']) > ZERO
+        assert FVal(vault['underlying_value']['usd_value']) > ZERO
+
 
 # Expected events as of writing of the test. USD values are all mocked.
 EXPECTED_HISTORY = {
@@ -351,7 +392,7 @@ def check_vault_history(name, expected_history, result_history):
 def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the yearn vaults history endpoint works. Uses real data.
     """
-    async_query = False
+    async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
         rotki,
@@ -368,7 +409,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=60)
             assert outcome['message'] == ''
             result = outcome['result']
         else:
@@ -381,3 +422,18 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
     check_vault_history('YUSDC Vault', EXPECTED_HISTORY, result)
     check_vault_history('YUSDT Vault', EXPECTED_HISTORY, result)
     check_vault_history('YYFI Vault', EXPECTED_HISTORY, result)
+
+
+@pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
+@pytest.mark.parametrize('start_with_valid_premium', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_query_yearn_vault_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "yearnvaultshistoryresource",
+    ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='Currently logged in user testuser does not have a premium subscription',
+        status_code=HTTPStatus.CONFLICT,
+    )
