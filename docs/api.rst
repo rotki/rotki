@@ -3596,12 +3596,12 @@ Getting yearn finance vaults historical data
 		          "event_type": "deposit",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
-			  from_value": {
+			  "from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
+			  "from_value": {
 			      "amount": "115000", "usd_value": "119523.23"
 			  },
-			  to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  to_value": {
+			  "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+			  "to_value": {
 			      "amount": "108230.234", "usd_value": "119523.23"
 			  },
 			  "realized_pnl": null,
@@ -3611,12 +3611,12 @@ Getting yearn finance vaults historical data
 		          "event_type": "withdraw",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  from_value": {
+			  "from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+			  "from_value": {
 			      "amount": "108230.234", "usd_value": "125321.24"
 			  },
-			  to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  to_value": {
+			  "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+			  "to_value": {
 			      "amount": "117500.23", "usd_value": "123500.32"
 			  },
 			  "realized_pnl": {
@@ -3634,12 +3634,12 @@ Getting yearn finance vaults historical data
 		          "event_type": "deposit",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  from_asset": "YFI,
-			  from_value": {
+			  "from_asset": "YFI,
+			  "from_value": {
 			      "amount": "5", "usd_value": "155300.23"
 			  },
-			  to_asset": "yYFI",
-			  to_value": {
+			  "to_asset": "yYFI",
+			  "to_value": {
 			      "amount": "4.97423", "usd_value": "154300.44"
 			  },
 			  "realized_pnl": null,
@@ -3656,12 +3656,12 @@ Getting yearn finance vaults historical data
 		          "event_type": "deposit",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  from_asset": "crvRenWSBTC,
-			  from_value": {
+			  "from_asset": "crvRenWSBTC,
+			  "from_value": {
 			      "amount": "20", "usd_value": "205213.12"
 			  },
-			  to_asset": "ycrvRenWSBTC",
-			  to_value": {
+			  "to_asset": "ycrvRenWSBTC",
+			  "to_value": {
 			      "amount": "19.8523", "usd_value": "2049874.23"
 			  },
 			  "realized_pnl": null,
