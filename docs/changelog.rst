@@ -1,7 +1,7 @@
 =========
 Changelog
 =========
-
+* :bug:`1482` Use binance api server time to avoid clock skew error with the signatures
 * :feature:`-` Users can now easily copy the address from the blockchain account view.
 * :bug:`1453` Users will now see an validation error message when attempting to add an existing account.
 * :feature:`804` Users can now track borrowing from Compound in the DeFi borrowing page.
