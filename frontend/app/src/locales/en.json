@@ -401,7 +401,7 @@
   },
   "labeled_address_display": {
     "identifier": "{identifier} |",
-    "copy": "Copy the address to the clipboard"
+    "copy": "Copy address to clipboard"
   },
   "defi_selector_item": {
     "vault": "Maker Vault"
@@ -421,7 +421,7 @@
     "select_loan_hint": "Please select a loan to see information"
   },
   "account_balances": {
-    "refresh_tooltip": "Refreshes the {blockchain} balances ignoring any cached entries",
+    "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
     "data_table": {
       "loading": "Please wait while rotki queries the blockchain..."
     },

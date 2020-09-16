@@ -19,7 +19,7 @@
               v-on="on"
               @click="refresh()"
             >
-              <v-icon>fa-refresh</v-icon>
+              <v-icon>mdi-refresh</v-icon>
             </v-btn>
           </template>
           <span>
@@ -86,22 +86,40 @@
       </template>
       <template #item.actions="{ item }">
         <span class="account-balances__actions">
-          <v-icon
-            small
-            class="mr-2"
-            :disabled="accountOperation"
-            @click="editAccount(item.account)"
-          >
-            mdi-pencil
-          </v-icon>
-          <v-icon
-            small
-            class="mr-2"
-            :disabled="accountOperation"
-            @click="toDeleteAccount = item.account"
-          >
-            mdi-delete
-          </v-icon>
+          <v-tooltip top>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                small
+                v-bind="attrs"
+                icon
+                class="mx-1"
+                v-on="on"
+                @click="editAccount(item.account)"
+              >
+                <v-icon :disabled="accountOperation" small>
+                  mdi-pencil-outline
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Edit account</span>
+          </v-tooltip>
+          <v-tooltip top>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                small
+                v-bind="attrs"
+                icon
+                class="mx-1"
+                v-on="on"
+                @click="toDeleteAccount = item.account"
+              >
+                <v-icon :disabled="accountOperation" small>
+                  mdi-delete-outline
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Delete account</span>
+          </v-tooltip>
         </span>
       </template>
       <template v-if="balances.length > 0" #body.append>
@@ -128,11 +146,11 @@
       </template>
       <template #item.expand="{ item }">
         <span v-if="expandable && hasTokens(item.account)">
-          <v-btn icon>
-            <v-icon v-if="expanded.includes(item)" @click="expanded = []">
-              fa fa-angle-up
+          <v-btn icon small>
+            <v-icon v-if="expanded.includes(item)" small @click="expanded = []">
+              mdi-arrow-up
             </v-icon>
-            <v-icon v-else @click="expanded = [item]">fa fa-angle-down</v-icon>
+            <v-icon v-else small @click="expanded = [item]">mdi-arrow-down</v-icon>
           </v-btn>
         </span>
       </template>

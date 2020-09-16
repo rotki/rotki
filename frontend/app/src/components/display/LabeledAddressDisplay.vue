@@ -19,21 +19,23 @@
       </template>
       <span> {{ address }} </span>
     </v-tooltip>
-    <v-tooltip top>
-      <template #activator="{ on, attrs }">
-        <v-btn
-          x-small
-          v-bind="attrs"
-          icon
-          class="ml-2"
-          v-on="on"
-          @click="copy(address)"
-        >
-          <v-icon>mdi-content-copy</v-icon>
-        </v-btn>
-      </template>
-      <span>{{ $t('labeled_address_display.copy') }}</span>
-    </v-tooltip>
+    <div class="labeled-address-display__copy">
+      <v-tooltip top>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            small
+            v-bind="attrs"
+            tile
+            icon
+            v-on="on"
+            @click="copy(address)"
+          >
+            <v-icon small>mdi-content-copy</v-icon>
+          </v-btn>
+        </template>
+        <span>{{ $t('labeled_address_display.copy') }}</span>
+      </v-tooltip>
+    </div>
   </div>
 </template>
 
@@ -70,6 +72,29 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
     font-weight: 500;
     padding-top: 6px;
     padding-bottom: 6px;
+    background-color: white;
+
+    ::v-deep {
+      .v-chip {
+        &--label {
+          border-top-right-radius: 0 !important;
+          border-bottom-right-radius: 0 !important;
+        }
+      }
+    }
+  }
+
+  &__copy {
+    display: inline-block;
+    background-color: var(--v-rotki-light-grey-base);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-left-width: 0;
+    border-radius: 0 4px 4px 0;
+
+    button {
+      height: 30px;
+      width: 30px;
+    }
   }
 }
 
