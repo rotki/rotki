@@ -498,7 +498,7 @@
     },
     "validation": {
       "address_non_empty": "The address cannot be empty",
-      "address_exists": "The address already exists"
+      "address_exists": "The address is already tracked"
     },
     "error": {
       "title": "Adding Account",
