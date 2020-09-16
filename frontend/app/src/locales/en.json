@@ -521,5 +521,8 @@
       "eth": "ETH per account balances",
       "btc": "BTC per account balances"
     }
+  },
+  "percentage_display": {
+    "symbol": "%"
   }
 }

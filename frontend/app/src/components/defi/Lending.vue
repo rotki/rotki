@@ -50,7 +50,12 @@
                   <div>{{ $t('lending.effective_interest_rate_tooltip') }}</div>
                 </v-tooltip>
               </template>
-              {{ effectiveInterestRate(selectedProtocols, selectedAddresses) }}
+              <percentage-display
+                justify="start"
+                :value="
+                  effectiveInterestRate(selectedProtocols, selectedAddresses)
+                "
+              />
             </stat-card-column>
           </template>
           <template #third-col>
@@ -121,6 +126,7 @@ import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
@@ -141,6 +147,7 @@ import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
 
 @Component({
   components: {
+    PercentageDisplay,
     CompoundLendingDetails,
     ConfirmableReset,
     RefreshHeader,
