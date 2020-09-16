@@ -23,8 +23,8 @@
         show-currency="symbol"
       />
     </template>
-    <template #item.apy="{ item }">
-      {{ item.effectiveInterestRate ? item.effectiveInterestRate : '-' }}
+    <template #item.effectiveInterestRate="{ item }">
+      <percentage-display :value="item.effectiveInterestRate" />
     </template>
     <template #header.balance.usdValue>
       {{
@@ -42,12 +42,13 @@ import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
 import { Currency } from '@/model/currency';
 import { DefiBalance } from '@/store/defi/types';
 
 @Component({
-  components: { AmountDisplay, CryptoIcon },
+  components: { PercentageDisplay, AmountDisplay, CryptoIcon },
   computed: {
     ...mapGetters('session', ['currency'])
   }

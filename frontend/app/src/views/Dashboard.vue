@@ -141,7 +141,7 @@
               />
             </template>
             <template #item.percentage="{ item }">
-              <amount-display
+              <percentage-display
                 :value="item.usdValue | percentage(total, floatingPrecision)"
               />
             </template>
@@ -191,6 +191,7 @@ import ManualBalanceCardList from '@/components/dashboard/ManualBalanceCardList.
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import SummaryCard from '@/components/dashboard/SummaryCard.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { footerProps } from '@/config/datatable.common';
 
@@ -218,6 +219,7 @@ interface BlockchainBalances {
 
 @Component({
   components: {
+    PercentageDisplay,
     AmountDisplay,
     BasePageHeader,
     OverallBalances,

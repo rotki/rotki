@@ -6,7 +6,7 @@
       </loan-row>
       <v-divider class="my-4" />
       <loan-row title="Minimum ratio" :medium="false">
-        {{ loan.liquidationRatio }}
+        <percentage-display :value="loan.liquidationRatio" />
       </loan-row>
     </div>
     <div>
@@ -73,12 +73,19 @@ import { Component, Mixins } from 'vue-property-decorator';
 import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 
 @Component({
-  components: { LoanRow, AmountDisplay, PremiumLock, StatCard }
+  components: {
+    PercentageDisplay,
+    LoanRow,
+    AmountDisplay,
+    PremiumLock,
+    StatCard
+  }
 })
 export default class LoanLiquidation extends Mixins(
   PremiumMixin,

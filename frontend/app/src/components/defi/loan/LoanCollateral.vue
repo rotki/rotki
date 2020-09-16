@@ -46,20 +46,24 @@
       :title="$t('loan_collateral.current_ratio')"
       class="mb-2"
     >
-      {{ loan.collateralizationRatio | optional }}
+      <percentage-display
+        :value="
+          loan.collateralizationRatio ? loan.collateralizationRatio : null
+        "
+      />
     </loan-row>
     <loan-row
       v-if="isAave"
       :title="$t('loan_collateral.stable_apr')"
       class="mb-2"
     >
-      {{ loan.stableApr | optional }}
+      <percentage-display :value="loan.stableApr ? loan.stableApr : null" />
     </loan-row>
     <loan-row v-if="isAave" :title="$t('loan_collateral.variable_apr')">
-      {{ loan.variableApr | optional }}
+      <percentage-display :value="loan.variableApr ? loan.variableApr : null" />
     </loan-row>
     <loan-row v-if="isCompound" :title="$t('loan_collateral.apy')">
-      {{ loan.apy | optional }}
+      <percentage-display :value="loan.apy ? loan.apy : null" />
     </loan-row>
     <v-btn
       v-if="isVault"
@@ -105,6 +109,7 @@ import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
@@ -113,7 +118,14 @@ import { Collateral, MakerDAOVaultModel } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
 
 @Component({
-  components: { WatcherDialog, LoanRow, AmountDisplay, PremiumLock, StatCard },
+  components: {
+    PercentageDisplay,
+    WatcherDialog,
+    LoanRow,
+    AmountDisplay,
+    PremiumLock,
+    StatCard
+  },
   computed: {
     ...mapGetters('session', ['loanWatchers'])
   }
