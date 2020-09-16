@@ -3593,7 +3593,7 @@ Getting yearn finance vaults balances
 		      "vault_value": {
 		          "amount": "19", "usd_value": "150"
 		      },
-		      "apy": "25.55%",
+		      "roi": "25.55%",
 		  },
 		  "YYFI Vault": {
 		      "underlying_token": "YFI",
@@ -3604,7 +3604,7 @@ Getting yearn finance vaults balances
 		      "vault_value": {
 		          "amount": "19", "usd_value": "150"
 		      },
-		      "apy": "5.35%",
+		      "roi": "5.35%",
 		  }
 	      },
           "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
@@ -3617,7 +3617,7 @@ Getting yearn finance vaults balances
 		      "vault_value": {
 		          "amount": "19", "usd_value": "150"
 		      },
-		      "apy": "35.15%",
+		      "roi": "35.15%",
 	      }
 	  }
           },
@@ -3629,7 +3629,7 @@ Getting yearn finance vaults balances
    :resjsonarr string vault_token: The symbol of the token that is minted when you deposit underlying token to the vault
    :resjsonarr object underlying_value: The value of the underlying token for the vault.
    :resjsonarr object vault_value: The value of the vault token for the vault.
-   :resjsonarr str apy: The projected apy for the vault
+   :resjsonarr str roi: The Return of Investment for the vault since its creation
 
 
    :statuscode 200: Yearn vault balances succesfully queried.
