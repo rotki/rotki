@@ -1592,6 +1592,21 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
+    @require_loggedin_user()
+    def get_yearn_vaults_balances(self, async_query: bool) -> Response:
+        # Once that has ran we can be sure that defi_balances mapping is populated
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module='yearn_vaults',
+            method='get_balances',
+            # We need to query defi balances before since defi_balances must be populated
+            query_specific_balances_before=['defi'],
+            # Giving the defi balances as a lambda function here so that they
+            # are retrieved only after we are sure the defi balances have been
+            # queried.
+            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+        )
+
     @require_premium_user(active_check=False)
     def get_yearn_vaults_history(
             self,
