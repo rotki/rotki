@@ -422,6 +422,8 @@
   },
   "account_balances": {
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
+    "edit_tooltip": "Edit account",
+    "delete_tooltip": "Delete account",
     "data_table": {
       "loading": "Please wait while rotki queries the blockchain..."
     },

@@ -101,7 +101,7 @@
                 </v-icon>
               </v-btn>
             </template>
-            <span>Edit account</span>
+            <span>{{ $t('account_balances.edit_tooltip') }}</span>
           </v-tooltip>
           <v-tooltip top>
             <template #activator="{ on, attrs }">
@@ -118,7 +118,7 @@
                 </v-icon>
               </v-btn>
             </template>
-            <span>Delete account</span>
+            <span>{{ $t('account_balances.delete_tooltip') }}</span>
           </v-tooltip>
         </span>
       </template>
@@ -150,7 +150,9 @@
             <v-icon v-if="expanded.includes(item)" small @click="expanded = []">
               mdi-arrow-up
             </v-icon>
-            <v-icon v-else small @click="expanded = [item]">mdi-arrow-down</v-icon>
+            <v-icon v-else small @click="expanded = [item]">
+              mdi-arrow-down
+            </v-icon>
           </v-btn>
         </span>
       </template>
