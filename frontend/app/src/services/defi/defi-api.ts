@@ -143,4 +143,20 @@ export class DefiApi {
       )
       .then(handleResponse);
   }
+
+  async fetchYearnVaultsHistory(reset?: boolean): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>(
+        '/blockchains/ETH/modules/yearn/vaults/history',
+        {
+          validateStatus: validWithSessionAndExternalService,
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true,
+            resetDbData: reset
+          }),
+          transformResponse: this.baseTransformer
+        }
+      )
+      .then(handleResponse);
+  }
 }

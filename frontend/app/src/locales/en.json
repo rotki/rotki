@@ -329,6 +329,15 @@
           "title": "Aave history",
           "description": "Failed to retrieve Aave history: ${error}"
         }
+      },
+      "yearn_vaults_history": {
+        "task": {
+          "title": "Querying yearn.finance Vaults history"
+        },
+        "error": {
+          "title": "yearn.finance Vaults history",
+          "description": "Failed to retrieve yearn.finance Vaults history: ${error}"
+        }
       }
     }
   },

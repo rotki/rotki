@@ -10,7 +10,9 @@ import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
+import { YearnVaultsHistory } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
+import { MODULE_YEARN } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import {
@@ -447,7 +449,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     await Promise.all([
       dispatch('fetchDSRHistory', refresh),
       dispatch('fetchAaveHistory', { refresh, reset }),
-      dispatch('fetchCompoundHistory', refresh)
+      dispatch('fetchCompoundHistory', refresh),
+      dispatch('fetchYearnVaultsHistory', { refresh, reset })
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);
@@ -596,6 +599,64 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
           error: e.message
         }),
         i18n.tc('actions.defi.compound_history.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
+  },
+
+  async fetchYearnVaultsHistory(
+    { commit, rootGetters: { status }, rootState: { session } },
+    payload: { refresh?: boolean; reset?: boolean }
+  ) {
+    const refresh = payload?.refresh;
+    const reset = payload?.reset;
+    const { activeModules } = session!.generalSettings;
+
+    if (!activeModules.includes(MODULE_YEARN) || !session?.premium) {
+      return;
+    }
+
+    const section = Section.DEFI_YEARN_VAULTS_HISTORY;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.DEFI_YEARN_VAULT_HISTORY;
+      const { taskId } = await api.defi.fetchYearnVaultsHistory(reset);
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.yearn_vaults_history.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<YearnVaultsHistory, TaskMeta>(
+        taskType
+      );
+
+      commit('yearnVaultsHistory', result);
+    } catch (e) {
+      notify(
+        i18n.tc(
+          'actions.defi.yearn_vaults_history.error.description',
+          undefined,
+          {
+            error: e.message
+          }
+        ),
+        i18n.tc('actions.defi.yearn_vaults_history.error.title'),
         Severity.ERROR,
         true
       );
