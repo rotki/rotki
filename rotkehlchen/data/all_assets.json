@@ -10895,6 +10895,15 @@
         "symbol": "UMA",
         "type": "ethereum token"
     },
+    "UNI": {
+        "coingecko": "uniswap",
+        "ethereum_address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+        "ethereum_token_decimals": 18,
+        "name": "Uniswap",
+        "started": 1600107086,
+        "symbol": "UNI",
+        "type": "ethereum token"
+    },
     "UNITY": {
         "active": false,
         "coingecko": "",
