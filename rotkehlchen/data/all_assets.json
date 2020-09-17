@@ -4007,6 +4007,20 @@
         "symbol": "EOSDAC",
         "type": "ethereum token"
     },
+    "EOSDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token EOSDOWN",
+        "started": 1599782400,
+        "symbol": "EOSDOWN",
+        "type": "own chain"
+    },
+    "EOSUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token EOSUP",
+        "started": 1599782400,
+        "symbol": "EOSUP",
+        "type": "own chain"
+    },
     "EPY": {
         "coingecko": "",
         "cryptocompare": "EMPHY",

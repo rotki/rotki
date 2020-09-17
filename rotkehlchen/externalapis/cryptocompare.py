@@ -61,6 +61,8 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('BTCUP'): Asset('USDT'),
     Asset('ETHDOWN'): Asset('USDT'),
     Asset('ETHUP'): Asset('USDT'),
+    Asset('EOSDOWN'): Asset('USDT'),
+    Asset('EOSUP'): Asset('USDT'),
     Asset('DOTDOWN'): Asset('USDT'),
     Asset('DOTUP'): Asset('USDT'),
     Asset('DEXT'): Asset('USDT'),
