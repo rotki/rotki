@@ -1095,6 +1095,15 @@
         "symbol": "BEE",
         "type": "ethereum token"
     },
+    "BEL": {
+        "coingecko": "bella-protocol",
+        "ethereum_address": "0xA91ac63D040dEB1b7A5E4d4134aD23eb0ba07e14",
+        "ethereum_token_decimals": 18,
+        "name": "Bella",
+        "started": 1597392058,
+        "symbol": "BEL",
+        "type": "ethereum token"
+    },
     "BELA": {
         "coingecko": "belacoin",
         "ethereum_address": "0x2e98A6804E4b6c832ED0ca876a943abD3400b224",
