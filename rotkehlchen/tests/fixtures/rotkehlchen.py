@@ -18,6 +18,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
 )
+from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.zerion import create_zerion_patch, wait_until_zerion_is_initialized
@@ -130,6 +131,11 @@ def initialize_mock_rotkehlchen_instance(
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,
         default_mock_value=default_mock_price_value,
+    )
+
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=rotki.chain_manager.ethereum,
     )
 
 

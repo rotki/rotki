@@ -13,6 +13,7 @@ from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
+from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.tests import cleanup_tasks
 from rotkehlchen.tests.utils.zerion import create_zerion_patch, wait_until_zerion_is_initialized
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
@@ -115,7 +116,7 @@ def ethereum_manager(
     else:
         endpoint = ethrpc_endpoint
 
-    return EthereumManager(
+    manager = EthereumManager(
         ethrpc_endpoint=endpoint,
         etherscan=etherscan,
         database=database,
@@ -123,6 +124,12 @@ def ethereum_manager(
         greenlet_manager=greenlet_manager,
         connect_at_start=ethereum_manager_connect_at_start,
     )
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=manager,
+    )
+
+    return manager
 
 
 def _geth_blockchain(
