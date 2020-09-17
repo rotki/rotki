@@ -50,7 +50,8 @@ V3_ENDPOINTS = (
 )
 
 V1_ENDPOINTS = (
-    'exchangeInfo'
+    'exchangeInfo',
+    'time',
 )
 
 WAPI_ENDPOINTS = (
@@ -181,6 +182,7 @@ class Binance(ExchangeInterface):
         self.initial_backoff = initial_backoff
         self.backoff_limit = backoff_limit
         self.nonce_lock = Semaphore()
+        self.offset_ms = 0
 
     def first_connection(self) -> None:
         if self.first_connection_made:
@@ -190,6 +192,9 @@ class Binance(ExchangeInterface):
         # We know exchangeInfo returns a dict
         exchange_data = self.api_query_dict('exchangeInfo')
         self._symbols_to_pair = create_binance_symbols_to_pair(exchange_data)
+
+        server_time = self.api_query_dict('time')
+        self.offset_ms = server_time['serverTime'] - ts_now_in_ms()
 
         self.first_connection_made = True
 
@@ -229,7 +234,7 @@ class Binance(ExchangeInterface):
                     api_version = 3
                     # Recommended recvWindows is 5000 but we get timeouts with it
                     options['recvWindow'] = 10000
-                    options['timestamp'] = str(ts_now_in_ms())
+                    options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
                     signature = hmac.new(
                         self.secret,
                         urlencode(options).encode('utf-8'),
