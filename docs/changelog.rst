@@ -20,6 +20,8 @@ Changelog
   - `Crypto is Everywhere Around Me (CREAM) <https://www.coingecko.com/en/coins/cream>`__
   - `Bella Protocol (BEL) <https://www.coingecko.com/en/coins/bella-protocol>`__
   - `Elrond (EGLD) <https://www.coingecko.com/en/coins/elrond>`__
+  - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
+  - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
 
 * :release:`1.7.0 <2020-09-01>`
 * :feature:`1092` Users can now refresh their manual balance entries.

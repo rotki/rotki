@@ -3415,6 +3415,20 @@
         "symbol": "DOT",
         "type": "own chain"
     },
+    "DOTDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token DOTDOWN",
+        "started": 1599696000,
+        "symbol": "DOTDOWN",
+        "type": "own chain"
+    },
+    "DOTUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token DOTUP",
+        "started": 1599696000,
+        "symbol": "DOTUP",
+        "type": "own chain"
+    },
     "DOS": {
         "coingecko": "dos-network",
         "ethereum_address": "0x0A913beaD80F321E7Ac35285Ee10d9d922659cB7",
