@@ -3241,7 +3241,7 @@ Getting Compound balances
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/compound/balances
 
-   Doing a GET on the compound balances resource will return the balances that the user has locked in Compound for lending and borrowing along with their current APYs. The APYs are return in a string percentage with 2 decimals of precision. If for some reason APY can't be queried ``null``is returned.
+   Doing a GET on the compound balances resource will return the balances that the user has locked in Compound for lending and borrowing along with their current APYs. The APYs are return in a string percentage with 2 decimals of precision. If for some reason APY can't be queried ``null`` is returned.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -3639,7 +3639,7 @@ Getting yearn finance vaults balances
 
 
 Getting yearn finance vaults historical data
-==========================================
+=============================================
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaults/history
 
@@ -3720,7 +3720,7 @@ Getting yearn finance vaults historical data
 		          "event_type": "deposit",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  "from_asset": "YFI,
+			  "from_asset": "YFI",
 			  "from_value": {
 			      "amount": "5", "usd_value": "155300.23"
 			  },
@@ -3735,14 +3735,15 @@ Getting yearn finance vaults historical data
 		      "profit_loss": {
 			      "amount": "0.05", "usd_value": "1500"
 		      }
-	      },
+	      }
+	  },
           "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
 	      "YSRENCURVE Vault": {
 		      "events": [{
 		          "event_type": "deposit",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  "from_asset": "crvRenWSBTC,
+			  "from_asset": "crvRenWSBTC",
 			  "from_value": {
 			      "amount": "20", "usd_value": "205213.12"
 			  },
@@ -3758,8 +3759,7 @@ Getting yearn finance vaults historical data
 			      "amount": "0.1", "usd_value": "1984.23"
 		      }
 	      }
-	  }
-          },
+          }},
           "message": ""
       }
 
