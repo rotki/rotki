@@ -3792,6 +3792,13 @@
         "symbol": "EGC",
         "type": "own chain"
     },
+    "EGLD": {
+        "coingecko": "elrond",
+        "name": "Elrond",
+        "started": 1599004800,
+        "symbol": "EGLD",
+        "type": "own chain"
+    },
     "EGT": {
         "coingecko": "egretia",
         "ethereum_address": "0x8e1b448EC7aDFc7Fa35FC2e885678bD323176E34",
