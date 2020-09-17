@@ -22,6 +22,8 @@ from rotkehlchen.constants.ethereum import (
     EthereumContract,
 )
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import SPECIAL_SYMBOLS, Inquirer
 from rotkehlchen.premium.premium import Premium
@@ -39,18 +41,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES, DefiProtocolBalances
     from rotkehlchen.db.dbhandler import DBHandler
 
-UNUSED_VAULTS = [
-    YEARN_YCRV_VAULT,
-    YEARN_DAI_VAULT,
-    YEARN_WETH_VAULT,
-    YEARN_YFI_VAULT,
-    YEARN_ALINK_VAULT,
-    YEARN_USDT_VAULT,
-    YEARN_USDC_VAULT,
-    YEARN_TUSD_VAULT,
-    YEARN_BCURVE_VAULT,
-    YEARN_SRENCURVE_VAULT,
-]
+BLOCKS_PER_YEAR = 2425846
 
 
 class YearnVault(NamedTuple):
@@ -60,68 +51,68 @@ class YearnVault(NamedTuple):
     token: EthereumToken
 
 
-YEARN_VAULTS = [
-    YearnVault(
+YEARN_VAULTS = {
+    'yyDAI+yUSDC+yUSDT+yTUSD': YearnVault(
         name='YCRV Vault',
         contract=YEARN_YCRV_VAULT,
         underlying_token=EthereumToken('yDAI+yUSDC+yUSDT+yTUSD'),
         token=EthereumToken('yyDAI+yUSDC+yUSDT+yTUSD'),
     ),
-    YearnVault(
+    'yDAI': YearnVault(
         name='YDAI Vault',
         contract=YEARN_DAI_VAULT,
         underlying_token=EthereumToken('DAI'),
         token=EthereumToken('yDAI'),
     ),
-    YearnVault(
+    'yWETH': YearnVault(
         name='YWETH Vault',
         contract=YEARN_WETH_VAULT,
         underlying_token=EthereumToken('WETH'),
         token=EthereumToken('yWETH'),
     ),
-    YearnVault(
+    'yYFI': YearnVault(
         name='YYFI Vault',
         contract=YEARN_YFI_VAULT,
         underlying_token=EthereumToken('YFI'),
         token=EthereumToken('yYFI'),
     ),
-    YearnVault(
+    'yaLINK': YearnVault(
         name='YALINK Vault',
         contract=YEARN_ALINK_VAULT,
         underlying_token=EthereumToken('aLINK'),
         token=EthereumToken('yaLINK'),
     ),
-    YearnVault(
+    'yUSDT': YearnVault(
         name='YUSDT Vault',
         contract=YEARN_USDT_VAULT,
         underlying_token=EthereumToken('USDT'),
         token=EthereumToken('yUSDT'),
     ),
-    YearnVault(
+    'yUSDC': YearnVault(
         name='YUSDC Vault',
         contract=YEARN_USDC_VAULT,
         underlying_token=EthereumToken('USDC'),
         token=EthereumToken('yUSDC'),
     ),
-    YearnVault(
+    'yTUSD': YearnVault(
         name='YTUSD Vault',
         contract=YEARN_TUSD_VAULT,
         underlying_token=EthereumToken('TUSD'),
         token=EthereumToken('yTUSD'),
     ),
-    YearnVault(
+    'yyDAI+yUSDC+yUSDT+yBUSD': YearnVault(
         name='YBCURVE Vault',
         contract=YEARN_BCURVE_VAULT,
         underlying_token=EthereumToken('yDAI+yUSDC+yUSDT+yBUSD'),
         token=EthereumToken('yyDAI+yUSDC+yUSDT+yBUSD'),
     ),
-    YearnVault(
+    'ycrvRenWSBTC': YearnVault(
         name='YSRENCURVE Vault',
         contract=YEARN_SRENCURVE_VAULT,
         underlying_token=EthereumToken('crvRenWSBTC'),
         token=EthereumToken('ycrvRenWSBTC'),
     ),
-]
+}
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -157,6 +148,19 @@ class YearnVaultEvent:
 class YearnVaultHistory(NamedTuple):
     events: List[YearnVaultEvent]
     profit_loss: Balance
+
+
+class YearnVaultBalance(NamedTuple):
+    underlying_token: Asset
+    vault_token: Asset
+    underlying_value: Balance
+    vault_value: Balance
+    roi: FVal
+
+    def serialize(self) -> Dict[str, Any]:
+        result = self._asdict()  # pylint: disable=no-member
+        result['roi'] = self.roi.to_percentage(precision=2)
+        return result
 
 
 def get_usd_price_zero_if_error(
@@ -198,6 +202,85 @@ class YearnVaults(EthereumModule):
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium
+
+    def _calculate_vault_roi(self, vault: YearnVault) -> FVal:
+        """
+        getPricePerFullShare A @ block X
+        getPricePerFullShare B @ block Y
+
+        (A-B / X-Y) * blocksPerYear (2425846)
+
+        So the numbers you see displayed on http://yearn.finance/vaults
+        are ROI since launch of contract. All vaults start with pricePerFullShare = 1e18
+        """
+        now_block_number = self.ethereum.get_latest_block_number()
+        price_per_full_share = self.ethereum.call_contract(
+            contract_address=vault.contract.address,
+            abi=YEARN_DAI_VAULT.abi,  # Any vault ABI will do
+            method_name='getPricePerFullShare',
+        )
+        nominator = price_per_full_share - (10**18)
+        denonimator = now_block_number - vault.contract.deployed_block
+        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / 10**18
+
+    def _get_single_addr_balance(
+            self,
+            defi_balances: List['DefiProtocolBalances'],
+            roi_cache: Dict[str, FVal],
+    ) -> Dict[str, YearnVaultBalance]:
+        result = {}
+        for balance in defi_balances:
+            if balance.protocol.name == 'yearn.finance • Vaults':
+                underlying_symbol = balance.underlying_balances[0].token_symbol
+                vault_symbol = balance.base_balance.token_symbol
+                vault = YEARN_VAULTS.get(vault_symbol, None)
+                if vault is None:
+                    self.msg_aggregator.add_warning(
+                        f'Found balance for unsupported yearn vault {vault_symbol}',
+                    )
+                    continue
+
+                try:
+                    underlying_asset = Asset(underlying_symbol)
+                    vault_asset = Asset(vault_symbol)
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unknown asset {e.asset_name} for yearn vault entry',
+                    )
+                    continue
+
+                roi = roi_cache.get(underlying_symbol, None)
+                if roi is None:
+                    roi = self._calculate_vault_roi(vault)
+                    roi_cache[underlying_symbol] = roi
+
+                result[vault.name] = YearnVaultBalance(
+                    underlying_token=underlying_asset,
+                    vault_token=vault_asset,
+                    underlying_value=balance.underlying_balances[0].balance,
+                    vault_value=balance.base_balance.balance,
+                    roi=roi,
+                )
+
+        return result
+
+    def get_balances(
+            self,
+            given_defi_balances: 'GIVEN_DEFI_BALANCES',
+    ) -> Dict[ChecksumEthAddress, Dict[str, YearnVaultBalance]]:
+        if isinstance(given_defi_balances, dict):
+            defi_balances = given_defi_balances
+        else:
+            defi_balances = given_defi_balances()
+
+        roi_cache: Dict[str, FVal] = {}
+        result = {}
+        for address, balances in defi_balances.items():
+            vault_balances = self._get_single_addr_balance(balances, roi_cache)
+            if len(vault_balances) != 0:
+                result[address] = vault_balances
+
+        return result
 
     def _get_vault_deposit_events(
             self,
@@ -452,7 +535,7 @@ class YearnVaults(EthereumModule):
         history: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
         for address in addresses:
             history[address] = {}
-            for vault in YEARN_VAULTS:
+            for _, vault in YEARN_VAULTS.items():
                 vault_history = self.get_vault_history(
                     defi_balances=defi_balances[address],
                     vault=vault,

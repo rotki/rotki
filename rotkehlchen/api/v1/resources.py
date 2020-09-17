@@ -873,6 +873,15 @@ class CompoundHistoryResource(BaseResource):
         )
 
 
+class YearnVaultsBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_yearn_vaults_balances(async_query)
+
+
 class YearnVaultsHistoryResource(BaseResource):
 
     get_schema = AsyncHistoricalQuerySchema()

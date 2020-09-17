@@ -3551,6 +3551,92 @@ Getting compound historical data
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
+Getting yearn finance vaults balances
+==========================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaults/balances
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the yearn finance vaults balances resource will return all yearn vault balances.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/yearn/vaults/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+	          "YCRV Vault": {
+		      "underlying_token": "yDAI+yUSDC+yUSDT+yTUSD",
+		      "vault_token": "yyDAI+yUSDC+yUSDT+yTUSD",
+		      "underlying_value": {
+		          "amount": "25", "usd_value": "150"
+		      },
+		      "vault_value": {
+		          "amount": "19", "usd_value": "150"
+		      },
+		      "roi": "25.55%",
+		  },
+		  "YYFI Vault": {
+		      "underlying_token": "YFI",
+		      "vault_token": "yYFI",
+		      "underlying_value": {
+		          "amount": "25", "usd_value": "150"
+		      },
+		      "vault_value": {
+		          "amount": "19", "usd_value": "150"
+		      },
+		      "roi": "5.35%",
+		  }
+	      },
+          "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+	      "YALINK Vault": {
+		      "underlying_token": "aLINK",
+		      "vault_token": "yaLINK",
+		      "underlying_value": {
+		          "amount": "25", "usd_value": "150"
+		      },
+		      "vault_value": {
+		          "amount": "19", "usd_value": "150"
+		      },
+		      "roi": "35.15%",
+	      }
+	  }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of addresses to a mapping of vault names to vault balances
+   :resjsonarr string underlying_token: The symbol of the token that is deposited to the vault
+   :resjsonarr string vault_token: The symbol of the token that is minted when you deposit underlying token to the vault
+   :resjsonarr object underlying_value: The value of the underlying token for the vault.
+   :resjsonarr object vault_value: The value of the vault token for the vault.
+   :resjsonarr str roi: The Return of Investment for the vault since its creation
+
+
+   :statuscode 200: Yearn vault balances succesfully queried.
+   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 
 Getting yearn finance vaults historical data
 ==========================================
@@ -3596,12 +3682,12 @@ Getting yearn finance vaults historical data
 		          "event_type": "deposit",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
-			  from_value": {
+			  "from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
+			  "from_value": {
 			      "amount": "115000", "usd_value": "119523.23"
 			  },
-			  to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  to_value": {
+			  "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+			  "to_value": {
 			      "amount": "108230.234", "usd_value": "119523.23"
 			  },
 			  "realized_pnl": null,
@@ -3611,12 +3697,12 @@ Getting yearn finance vaults historical data
 		          "event_type": "withdraw",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  from_value": {
+			  "from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+			  "from_value": {
 			      "amount": "108230.234", "usd_value": "125321.24"
 			  },
-			  to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  to_value": {
+			  "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+			  "to_value": {
 			      "amount": "117500.23", "usd_value": "123500.32"
 			  },
 			  "realized_pnl": {
@@ -3634,12 +3720,12 @@ Getting yearn finance vaults historical data
 		          "event_type": "deposit",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  from_asset": "YFI,
-			  from_value": {
+			  "from_asset": "YFI,
+			  "from_value": {
 			      "amount": "5", "usd_value": "155300.23"
 			  },
-			  to_asset": "yYFI",
-			  to_value": {
+			  "to_asset": "yYFI",
+			  "to_value": {
 			      "amount": "4.97423", "usd_value": "154300.44"
 			  },
 			  "realized_pnl": null,
@@ -3656,12 +3742,12 @@ Getting yearn finance vaults historical data
 		          "event_type": "deposit",
 			  "block_number": 1,
 			  "timestamp": 1,
-			  from_asset": "crvRenWSBTC,
-			  from_value": {
+			  "from_asset": "crvRenWSBTC,
+			  "from_value": {
 			      "amount": "20", "usd_value": "205213.12"
 			  },
-			  to_asset": "ycrvRenWSBTC",
-			  to_value": {
+			  "to_asset": "ycrvRenWSBTC",
+			  "to_value": {
 			      "amount": "19.8523", "usd_value": "2049874.23"
 			  },
 			  "realized_pnl": null,
