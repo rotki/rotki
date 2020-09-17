@@ -35,8 +35,8 @@ class Graph():
         log.debug(f'Querying The Graph for {querystr}')
         try:
             result = self.client.execute(gql(prefix + querystr), variable_values=param_values)
-        except requests.exceptions.RequestException:
-            raise RemoteError(f'Failed to query the graph for {querystr}')
+        except (requests.exceptions.RequestException, Exception) as e:
+            raise RemoteError(f'Failed to query the graph for {querystr} due to {str(e)}')
 
         log.debug('Got result from The Graph query')
         return result
