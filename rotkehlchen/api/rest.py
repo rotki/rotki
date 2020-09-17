@@ -1625,7 +1625,7 @@ class RestAPI():
             # are retrieved only after we are sure the defi balances have been
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('compound'),
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('yearn_vaults'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,

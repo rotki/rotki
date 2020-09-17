@@ -19,17 +19,18 @@
           v-if="mode === 'label' || mode === 'both'"
           class="defi-protocol-icon__label text--secondary"
         >
-          {{ protocol === 'makerdao' ? 'MakerDAO DSR' : protocol | capitalize }}
+          {{ name | capitalize }}
         </span>
       </template>
       <span>
-        {{ protocol === 'makerdao' ? 'MakerDAO DSR' : protocol | capitalize }}
+        {{ name | capitalize }}
       </span>
     </v-tooltip>
   </div>
 </template>
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { DEFI_MAKERDAO, DEFI_YEARN_VAULTS } from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 
 @Component({})
@@ -38,6 +39,15 @@ export default class DefiProtocolIcon extends Vue {
   protocol!: SupportedDefiProtocols;
   @Prop({ required: false, type: String, default: 'both' })
   mode!: 'icon' | 'label' | 'both';
+
+  get name(): string {
+    if (this.protocol === DEFI_MAKERDAO) {
+      return 'MakerDAO DSR';
+    } else if (this.protocol === DEFI_YEARN_VAULTS) {
+      return 'yearn.finance Vaults';
+    }
+    return this.protocol;
+  }
 }
 </script>
 

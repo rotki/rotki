@@ -31,6 +31,6 @@ export const DEFI_MODULES: Module[] = [
   {
     identifier: MODULE_YEARN,
     name: 'yearn.finance',
-    icon: require('@/assets/images/defi/yearn-finance.svg')
+    icon: require('@/assets/images/defi/yearn_vaults.svg')
   }
 ];
