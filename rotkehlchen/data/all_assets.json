@@ -2689,6 +2689,15 @@
         "symbol": "CRC",
         "type": "own chain"
     },
+    "CREAM": {
+        "coingecko": "cream",
+        "ethereum_address": "0x2ba592F78dB6436527729929AAf6c908497cB200",
+        "ethereum_token_decimals": 18,
+        "name": "Cream",
+        "started": 1596553617,
+        "symbol": "CREAM",
+        "type": "ethereum token"
+    },
     "CRED": {
         "active": true,
         "coingecko": "verify",

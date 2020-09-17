@@ -17,6 +17,7 @@ Changelog
   - `SushiToken (SUSHI) <https://www.coingecko.com/en/coins/sushi>`__
   - `Trustlines Network Token (TLN) <https://www.coingecko.com/en/coins/trustline-network>`__
   - `Uniswap (UNI) <https://www.coingecko.com/en/coins/uniswap>`__
+  - `Crypto is Everywhere Around Me (CREAM) <https://www.coingecko.com/en/coins/cream>`__
 
 * :release:`1.7.0 <2020-09-01>`
 * :feature:`1092` Users can now refresh their manual balance entries.
