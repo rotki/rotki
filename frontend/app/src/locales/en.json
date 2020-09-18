@@ -139,8 +139,8 @@
   "overview": {
     "stat_card": {
       "headers": {
-        "borrowing": "Borrowing",
-        "lending": "Lending"
+        "borrowing": "Liabilities",
+        "lending": "Deposits"
       },
       "content": {
         "labels": {
@@ -460,7 +460,7 @@
   },
   "lending": {
     "loading": "Please wait while your balances are getting loaded...",
-    "title": "Lending",
+    "title": "Deposits",
     "reset_confirm": "This action will overwrite any Aave history cached entries in the DB and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
     "reset_tooltip": "Refreshes the data overwriting cached Aave historical entries",
     "currently_deposited": "Currently Deposited",
@@ -544,5 +544,18 @@
   },
   "percentage_display": {
     "symbol": "%"
+  },
+  "decentralized_finance": {
+    "title": "Decentralized Finance\n",
+    "settings_tooltip": "Opens the Defi settings",
+    "tabs": {
+      "overview": "Overview",
+      "deposits": "Deposits",
+      "liabilities": "Liabilities"
+    }
+  },
+  "decentralized_overview": {
+    "loading": "Please wait while your defi balances are getting loaded...",
+    "title": "Defi Overview"
   }
 }

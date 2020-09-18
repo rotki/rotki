@@ -1,5 +1,5 @@
 <template>
-  <h2 class="d-flex justify-space-between align-center">
+  <div class="d-flex justify-space-between align-center text-h5">
     {{ title }}
 
     <span>
@@ -12,7 +12,7 @@
       />
       <slot />
     </span>
-  </h2>
+  </div>
 </template>
 
 <script lang="ts">

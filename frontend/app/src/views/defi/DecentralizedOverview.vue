@@ -4,15 +4,13 @@
       <v-col>
         <refresh-header
           :loading="refreshing"
-          title="Defi Overview"
+          :title="$t('decentralized_overview.title')"
           @refresh="refresh()"
         />
       </v-col>
     </v-row>
     <progress-screen v-if="loading">
-      <template #message>
-        Please wait while your defi balances are getting loaded...
-      </template>
+      <template #message>{{ $t('decentralized_overview.loading') }}</template>
     </progress-screen>
     <v-row>
       <v-col
@@ -64,5 +62,3 @@ export default class DecentralizedOverview extends Mixins(StatusMixin) {
   }
 }
 </script>
-
-<style scoped></style>

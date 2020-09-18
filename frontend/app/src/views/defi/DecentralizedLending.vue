@@ -11,5 +11,3 @@ import Lending from '@/components/defi/Lending.vue';
 })
 export default class DecentralizedLoans extends Vue {}
 </script>
-
-<style scoped></style>
