@@ -5396,6 +5396,15 @@
         "symbol": "HGT",
         "type": "ethereum token"
     },
+    "HGET": {
+        "coingecko": "hedget",
+        "ethereum_address": "0x7968bc6a03017eA2de509AAA816F163Db0f35148",
+        "ethereum_token_decimals": 6,
+        "name": "Hedget",
+        "started": 1599303343,
+        "symbol": "HGET",
+        "type": "ethereum token"
+    },
     "HIVE": {
         "coingecko": "hive",
         "name": "Hive",

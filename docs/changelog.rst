@@ -29,6 +29,7 @@ Changelog
   - `Carrot Finance (CRT) <https://www.coingecko.com/en/coins/carr-finance>`__
   - `FalconSwap Token (FSW) <https://www.coingecko.com/en/coins/falconswap>`__
   - `Unification (FUND) <https://www.coingecko.com/en/coins/unification>`__
+  - `Hedget (HGET) <https://www.coingecko.com/en/coins/hedget>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
   - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
   - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__
