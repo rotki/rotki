@@ -33,6 +33,7 @@ Changelog
   - `JackPool.Finance (JFI) <https://www.coingecko.com/en/coins/jackpool-finance>`__
   - `Pearl Finance (PEARL) <https://www.coingecko.com/en/coins/pearl-finance>`__
   - `tBridge Token (TAI) <https://www.coingecko.com/en/coins/tbridge-token>`__
+  - `YF Link (YFL) <https://www.coingecko.com/en/coins/yf-link>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
   - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
   - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__

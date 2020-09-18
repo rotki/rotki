@@ -12297,6 +12297,15 @@
         "symbol": "YFII",
         "type": "ethereum token"
     },
+    "YFL": {
+        "coingecko": "yf-link",
+        "ethereum_address": "0x28cb7e841ee97947a86B06fA4090C8451f64c0be",
+        "ethereum_token_decimals": 18,
+        "name": "YFLink",
+        "started": 1596432467,
+        "symbol": "YFL",
+        "type": "ethereum token"
+    },
     "YOU": {
         "active": true,
         "coingecko": "you-chain",
