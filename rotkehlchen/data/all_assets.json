@@ -9441,6 +9441,13 @@
         "symbol": "SDC",
         "type": "own chain"
     },
+    "SDT": {
+        "coingecko": "terra-sdt",
+        "name": "Terra SDT",
+        "started": 1569456000,
+        "symbol": "SDT",
+        "type": "own chain"
+    },
     "SEELE": {
         "coingecko": "seele",
         "ethereum_address": "0xB1eeF147028E9f480DbC5ccaA3277D417D1b85F0",
