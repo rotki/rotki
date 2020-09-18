@@ -10815,6 +10815,20 @@
         "symbol": "TRXBULL",
         "type": "ethereum token"
     },
+    "TRXDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token TRXDOWN",
+        "started": 1599696000,
+        "symbol": "TRXDOWN",
+        "type": "own chain"
+    },
+    "TRXUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token TRXUP",
+        "started": 1599696000,
+        "symbol": "TRXUP",
+        "type": "own chain"
+    },
     "TRY": {
         "coingecko": "trias",
         "name": "Turkish Lyra",

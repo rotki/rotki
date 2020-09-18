@@ -67,6 +67,8 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('DOTUP'): Asset('USDT'),
     Asset('LTCDOWN'): Asset('USDT'),
     Asset('LTCUP'): Asset('USDT'),
+    Asset('TRXDOWN'): Asset('USDT'),
+    Asset('TRXUP'): Asset('USDT'),
     Asset('DEXT'): Asset('USDT'),
     Asset('DOS'): Asset('USDT'),
     Asset('GEEQ'): Asset('USDT'),
