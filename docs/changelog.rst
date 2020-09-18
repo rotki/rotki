@@ -43,6 +43,7 @@ Changelog
   - `Terra SDT (SDT) <https://www.coingecko.com/en/coins/terra-sdt>`__
   - `BiLira (TRYB) <https://www.coingecko.com/en/coins/bilira>`__
   - `Neutrino Dollar (USDN) <https://www.coingecko.com/en/coins/neutrino-dollar>`__
+  - `Terra USD (UST) <https://www.cryptocompare.com/coins/ust/overview>`__
   - `Trump Wins Token (TRUMPWIN) <https://www.coingecko.com/en/coins/trump-wins-token>`__
   - `Trump Loses Token (TRUMPLOSE) <https://www.coingecko.com/en/coins/trump-loses-token>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__

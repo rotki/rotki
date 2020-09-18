@@ -11266,6 +11266,13 @@
         "symbol": "USNBT",
         "type": "own chain"
     },
+    "UST": {
+        "coingecko": "",
+        "name": "TerraUSD",
+        "started": 1599350400,
+        "symbol": "UST",
+        "type": "own chain"
+    },
     "UTC": {
         "active": true,
         "coingecko": "",
