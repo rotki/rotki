@@ -30,3 +30,9 @@ type AccountYearnVault = {
 export interface YearnVaultsHistory {
   readonly [address: string]: AccountYearnVault;
 }
+
+export interface YearnVaultProfitLoss {
+  readonly value: Balance;
+  readonly asset: string;
+  readonly vault: SupportedYearnVault;
+}

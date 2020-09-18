@@ -10,7 +10,11 @@ import {
 } from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { CompoundLoan } from '@/services/defi/types/compound';
-import { SupportedYearnVault } from '@/services/defi/types/yearn';
+import { DEPOSIT } from '@/services/defi/types/consts';
+import {
+  SupportedYearnVault,
+  YearnVaultProfitLoss
+} from '@/services/defi/types/yearn';
 import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
@@ -75,6 +79,7 @@ export interface DefiGetters {
   compoundRewards: CompoundProfitLossModel[];
   compoundInterestProfit: CompoundProfitLossModel[];
   compoundDebtLoss: CompoundProfitLossModel[];
+  yearnVaultsProfit: (addresses: string[]) => YearnVaultProfitLoss[];
 }
 
 type GettersDefinition = {
@@ -667,7 +672,6 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
     if (showAll || protocols.includes(DEFI_YEARN_VAULTS)) {
       for (const address in yearnVaultsHistory) {
-        console.log(address);
         if (!allAddresses && !addresses.includes(address)) {
           continue;
         }
@@ -850,5 +854,37 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     compoundHistory
   }): CompoundProfitLossModel[] => {
     return toProfitLossModel(compoundHistory.liquidationProfit);
+  },
+
+  yearnVaultsProfit: ({ yearnVaultsHistory }) => (
+    addresses: string[]
+  ): YearnVaultProfitLoss[] => {
+    const yearnVaultsProfit: YearnVaultProfitLoss[] = [];
+    const allAddresses = addresses.length === 0;
+    for (const address in yearnVaultsHistory) {
+      if (!allAddresses && !addresses.includes(address)) {
+        continue;
+      }
+      const history = yearnVaultsHistory[address];
+      for (const key in history) {
+        const vault = key as SupportedYearnVault;
+        const data = history[vault];
+        if (!data) {
+          continue;
+        }
+
+        const events = data.events.filter(event => event.eventType === DEPOSIT);
+        const asset = events && events.length > 0 ? events[0].fromAsset : '';
+
+        const vaultProfit: YearnVaultProfitLoss = {
+          value: data.profitLoss,
+          vault,
+          asset
+        };
+
+        yearnVaultsProfit.push(vaultProfit);
+      }
+    }
+    return yearnVaultsProfit;
   }
 };

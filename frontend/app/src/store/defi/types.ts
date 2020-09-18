@@ -17,7 +17,10 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import { YearnVaultsHistory } from '@/services/defi/types/yearn';
+import {
+  YearnEventType,
+  YearnVaultsHistory
+} from '@/services/defi/types/yearn';
 import { Balance, HasBalance } from '@/services/types-api';
 
 export interface DefiState {
@@ -126,8 +129,8 @@ interface MakerDAOLendingHistoryExtras {
   gainSoFar: Balance;
 }
 
-interface CompoundLendingHistoryExtras {
-  readonly eventType: CompoundEventType;
+interface HistoryExtras<T> {
+  readonly eventType: T;
   readonly asset: string;
   readonly value: Balance;
   readonly toAsset?: string;
@@ -138,7 +141,8 @@ interface CompoundLendingHistoryExtras {
 interface LendingHistoryExtras {
   readonly aave: {};
   readonly makerdao: MakerDAOLendingHistoryExtras;
-  readonly compound: CompoundLendingHistoryExtras;
+  readonly compound: HistoryExtras<CompoundEventType>;
+  readonly yearn_vaults: HistoryExtras<YearnEventType>;
 }
 
 export interface DefiLendingHistory<T extends SupportedDefiProtocols> {

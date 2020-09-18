@@ -101,8 +101,12 @@
       </v-col>
     </v-row>
     <compound-lending-details
-      v-if="isCompound"
+      v-if="premium && isCompound"
       :addresses="selectedAddresses"
+    />
+    <yearn-vaults-profit-details
+      v-if="premium && isYearnVaults"
+      :profit="yearnVaultsProfit(selectedAddresses)"
     />
     <v-row class="loans__history">
       <v-col cols="12">
@@ -138,17 +142,27 @@ import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import { DEFI_PROTOCOLS } from '@/services/defi/consts';
+import {
+  DEFI_COMPOUND,
+  DEFI_PROTOCOLS,
+  DEFI_YEARN_VAULTS
+} from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
+import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
 import { BaseDefiBalance } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
-import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
+import {
+  CompoundLendingDetails,
+  LendingHistory,
+  YearnVaultsProfitDetails
+} from '@/utils/premium';
 
 @Component({
   components: {
     PercentageDisplay,
     CompoundLendingDetails,
+    YearnVaultsProfitDetails,
     ConfirmableReset,
     RefreshHeader,
     LendingAssetTable,
@@ -172,7 +186,8 @@ import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
       'defiAccounts',
       'effectiveInterestRate',
       'aggregatedLendingBalances',
-      'lendingHistory'
+      'lendingHistory',
+      'yearnVaultsProfit'
     ])
   },
   methods: {
@@ -209,6 +224,7 @@ export default class Lending extends Mixins(StatusMixin) {
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => BigNumber;
+  yearnVaultsProfit!: (addresses: string[]) => YearnVaultProfitLoss[];
 
   section = Section.DEFI_LENDING;
   secondSection = Section.DEFI_LENDING_HISTORY;
@@ -226,7 +242,14 @@ export default class Lending extends Mixins(StatusMixin) {
   get isCompound(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes('compound')
+      this.selectedProtocols.includes(DEFI_COMPOUND)
+    );
+  }
+
+  get isYearnVaults(): boolean {
+    return (
+      this.selectedProtocols.length === 1 &&
+      this.selectedProtocols.includes(DEFI_YEARN_VAULTS)
     );
   }
 
