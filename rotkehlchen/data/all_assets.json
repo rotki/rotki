@@ -9298,6 +9298,13 @@
         "symbol": "RUNE",
         "type": "own chain"
     },
+    "RVC": {
+        "coingecko": "ravencoin-classic",
+        "name": "Ravencoin Classic",
+        "started": 1591747200,
+        "symbol": "RVC",
+        "type": "own chain"
+    },
     "RVN": {
         "coingecko": "ravencoin",
         "name": "Ravencoin",
