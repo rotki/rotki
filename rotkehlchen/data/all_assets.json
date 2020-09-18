@@ -4767,6 +4767,14 @@
         "symbol": "FUN",
         "type": "ethereum token"
     },
+    "FUND": {
+        "cryptocompare": "UNIFUND",
+        "coingecko": "unification",
+        "name": "Unification",
+        "started": 1592611200,
+        "symbol": "FUND",
+        "type": "own chain"
+    },
     "FX": {
         "coingecko": "fx-coin",
         "cryptocompare": "",
