@@ -1,15 +1,15 @@
 <template>
   <div class="asset-balances">
     <v-row v-if="title">
-      <v-col>
-        <h3 class="text-center">{{ title }}</h3>
+      <v-col class="text-center text-h6">
+        {{ title }}
       </v-col>
     </v-row>
     <v-data-table
       :headers="headers"
       :items="balances"
       :loading="isLoading"
-      loading-text="Please wait while Rotki queries the blockchain..."
+      loading-text="Please wait while rotki queries the blockchain..."
       sort-by="usdValue"
       sort-desc
       :footer-props="footerProps"

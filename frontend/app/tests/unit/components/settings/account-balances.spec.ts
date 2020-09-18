@@ -43,7 +43,10 @@ describe('AccountBalances.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(
-      wrapper.find('.account-balances__refresh').attributes('disabled')
+      wrapper
+        .find('.account-balances__refresh')
+        .find('button')
+        .attributes('disabled')
     ).toBe('disabled');
 
     expect(wrapper.find('.v-data-table__progress').exists()).toBeTruthy();
@@ -55,7 +58,10 @@ describe('AccountBalances.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(
-      wrapper.find('.account-balances__refresh').attributes('disabled')
+      wrapper
+        .find('.account-balances__refresh')
+        .find('button')
+        .attributes('disabled')
     ).toBeUndefined();
     expect(wrapper.find('.v-data-table__progress').exists()).toBeFalsy();
     expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
