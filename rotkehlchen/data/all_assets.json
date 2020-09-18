@@ -6114,6 +6114,13 @@
         "symbol": "KIND",
         "type": "ethereum token"
     },
+    "KLAY": {
+        "coingecko": "klay",
+        "name": "Klaytn",
+        "started": 1570838400,
+        "symbol": "KLAY",
+        "type": "own chain"
+    },
     "KMD": {
         "coingecko": "komodo",
         "name": "Komodo",
