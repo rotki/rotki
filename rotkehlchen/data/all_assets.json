@@ -12306,6 +12306,15 @@
         "symbol": "YFL",
         "type": "ethereum token"
     },
+    "YFV": {
+        "coingecko": "yfvalue",
+        "ethereum_address": "0x45f24BaEef268BB6d63AEe5129015d69702BCDfa",
+        "ethereum_token_decimals": 18,
+        "name": "YFValue",
+        "started": 1597602120,
+        "symbol": "YFV",
+        "type": "ethereum token"
+    },
     "YOU": {
         "active": true,
         "coingecko": "you-chain",
