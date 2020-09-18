@@ -24,6 +24,8 @@ Changelog
   - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
   - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__
   - `Binance leveraged token EOSUP (EOSUP) <https://www.cryptocompare.com/coins/eosup/>`__
+  - `Binance leveraged token LTCDOWN (LTCDOWN) <https://www.cryptocompare.com/coins/ltcdown>`__
+  - `Binance leveraged token LTCUP (LTCUP) <https://www.cryptocompare.com/coins/ltcup/>`__
 
 * :release:`1.7.0 <2020-09-01>`
 * :feature:`1092` Users can now refresh their manual balance entries.

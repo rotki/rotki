@@ -6512,6 +6512,20 @@
         "symbol": "LTC",
         "type": "own chain"
     },
+    "LTCDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token LTCDOWN",
+        "started": 1600214400,
+        "symbol": "LTCDOWN",
+        "type": "own chain"
+    },
+    "LTCUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token LTCUP",
+        "started": 1600214400,
+        "symbol": "LTCUP",
+        "type": "own chain"
+    },
     "LTCX": {
         "active": false,
         "coingecko": "",
