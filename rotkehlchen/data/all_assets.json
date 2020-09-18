@@ -10380,6 +10380,13 @@
         "symbol": "TAAS",
         "type": "ethereum token"
     },
+    "TAI": {
+        "coingecko": "tbridge-token",
+        "name": "tBridge Token",
+        "started": 1599004800,
+        "symbol": "TAI",
+        "type": "tron token"
+    },
     "TALAO": {
         "active": true,
         "coingecko": "",

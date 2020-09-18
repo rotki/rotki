@@ -100,6 +100,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('FSW'): Asset('USDT'),
     Asset('JFI'): Asset('USDT'),
     Asset('PEARL'): Asset('USDT'),
+    Asset('TAI'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 
