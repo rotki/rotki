@@ -6452,6 +6452,15 @@
         "symbol": "LMC",
         "type": "own chain"
     },
+    "LMCH": {
+        "coingecko": "latamcash",
+        "ethereum_address": "0x9205C049C231DdA51bAce0ba569f047E3E1e9979",
+        "ethereum_token_decimals": 18,
+        "name": "Latamcash",
+        "started": 1581735064,
+        "symbol": "LMCH",
+        "type": "ethereum token"
+    },
     "LNC": {
         "coingecko": "blocklancer",
         "ethereum_address": "0x63e634330A20150DbB61B15648bC73855d6CCF07",
