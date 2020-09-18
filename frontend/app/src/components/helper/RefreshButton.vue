@@ -10,7 +10,7 @@
         @click="refresh"
         v-on="on"
       >
-        <v-icon color="primary">fa-refresh</v-icon>
+        <v-icon color="primary">mdi-refresh</v-icon>
       </v-btn>
     </template>
     <span>{{ tooltip }}</span>

@@ -3,29 +3,19 @@
     class="account-balances"
     :class="`${blockchain.toLocaleLowerCase()}-account-balances`"
   >
-    <v-row>
-      <v-col cols="11">
-        <h3 class="text-center account-balances__title">{{ title }}</h3>
+    <v-row align="center">
+      <v-col cols="auto" class="account-balances__column" />
+      <v-col>
+        <div class="text-h6 text-center account-balances__title">
+          {{ title }}
+        </div>
       </v-col>
-      <v-col cols="1">
-        <v-tooltip bottom>
-          <template #activator="{ on }">
-            <v-btn
-              class="account-balances__refresh"
-              color="primary"
-              text
-              icon
-              :disabled="isLoading"
-              v-on="on"
-              @click="refresh()"
-            >
-              <v-icon>mdi-refresh</v-icon>
-            </v-btn>
-          </template>
-          <span>
-            {{ $t('account_balances.refresh_tooltip', { blockchain }) }}
-          </span>
-        </v-tooltip>
+      <v-col cols="auto">
+        <refresh-button
+          class="account-balances__refresh"
+          :loading="isLoading"
+          :tooltip="$t('account_balances.refresh_tooltip', { blockchain })"
+        />
       </v-col>
     </v-row>
     <v-row>
@@ -85,42 +75,14 @@
         />
       </template>
       <template #item.actions="{ item }">
-        <span class="account-balances__actions">
-          <v-tooltip top>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                small
-                v-bind="attrs"
-                icon
-                class="mx-1"
-                v-on="on"
-                @click="editAccount(item.account)"
-              >
-                <v-icon :disabled="accountOperation" small>
-                  mdi-pencil-outline
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>{{ $t('account_balances.edit_tooltip') }}</span>
-          </v-tooltip>
-          <v-tooltip top>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                small
-                v-bind="attrs"
-                icon
-                class="mx-1"
-                v-on="on"
-                @click="toDeleteAccount = item.account"
-              >
-                <v-icon :disabled="accountOperation" small>
-                  mdi-delete-outline
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>{{ $t('account_balances.delete_tooltip') }}</span>
-          </v-tooltip>
-        </span>
+        <row-actions
+          class="account-balances__actions"
+          :edit-tooltip="$t('account_balances.edit_tooltip')"
+          :delete-tooltip="$t('account_balances.delete_tooltip')"
+          :disabled="accountOperation"
+          @delete-click="toDeleteAccount = item.account"
+          @edit-click="editAccount(item.account)"
+        />
       </template>
       <template v-if="balances.length > 0" #body.append>
         <tr class="account-balances__total">
@@ -145,16 +107,11 @@
         </td>
       </template>
       <template #item.expand="{ item }">
-        <span v-if="expandable && hasTokens(item.account)">
-          <v-btn icon small>
-            <v-icon v-if="expanded.includes(item)" small @click="expanded = []">
-              mdi-arrow-up
-            </v-icon>
-            <v-icon v-else small @click="expanded = [item]">
-              mdi-arrow-down
-            </v-icon>
-          </v-btn>
-        </span>
+        <row-expander
+          v-if="expandable && hasTokens(item.account)"
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
       </template>
     </v-data-table>
     <confirm-dialog
@@ -175,6 +132,9 @@ import { mapGetters, mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import RowExpander from '@/components/helper/RowExpander.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
@@ -187,6 +147,9 @@ import { Account, Blockchain, Tags } from '@/typing/types';
 
 @Component({
   components: {
+    RefreshButton,
+    RowActions,
+    RowExpander,
     LabeledAddressDisplay,
     AmountDisplay,
     TagFilter,
@@ -324,6 +287,10 @@ export default class AccountBalances extends Vue {
 .account-balances {
   margin-top: 16px;
   margin-bottom: 16px;
+
+  &__column {
+    width: 80px;
+  }
 
   &__account {
     display: flex;
