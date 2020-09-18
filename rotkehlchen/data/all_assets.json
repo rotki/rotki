@@ -10991,6 +10991,15 @@
         "symbol": "TRY",
         "type": "fiat"
     },
+    "TRYB": {
+        "coingecko": "bilira",
+        "ethereum_address": "0x2C537E5624e4af88A7ae4060C022609376C8D0EB",
+        "ethereum_token_decimals": 6,
+        "name": "BiLira",
+        "started": 1563539445,
+        "symbol": "TRYB",
+        "type": "ethereum token"
+    },
     "TTC": {
         "coingecko": "ttc-protocol",
         "cryptocompare": "",

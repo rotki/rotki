@@ -41,6 +41,7 @@ Changelog
   - `Latamcash (LMCH) <https://www.coingecko.com/en/coins/latamcash>`__
   - `Ravencoin Classic (RVC) <https://www.coingecko.com/en/coins/ravencoin-classic>`__
   - `Terra SDT (SDT) <https://www.coingecko.com/en/coins/terra-sdt>`__
+  - `BiLira (TRYB) <https://www.coingecko.com/en/coins/bilira>`__
   - `Trump Wins Token (TRUMPWIN) <https://www.coingecko.com/en/coins/trump-wins-token>`__
   - `Trump Loses Token (TRUMPLOSE) <https://www.coingecko.com/en/coins/trump-loses-token>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
