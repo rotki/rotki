@@ -6190,6 +6190,13 @@
         "symbol": "KRL",
         "type": "ethereum token"
     },
+    "KRT": {
+        "coingecko": "terra-krw",
+        "name": "TerraKRW",
+        "started": 1563494400,
+        "symbol": "KRT",
+        "type": "own chain"
+    },
     "KRW": {
         "name": "Korean won",
         "symbol": "KRW",

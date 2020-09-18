@@ -37,6 +37,7 @@ Changelog
   - `YFValue (YFV) <https://www.coingecko.com/en/coins/yfvalue>`__
   - `Klaytn (KLAY) <https://www.coingecko.com/en/coins/klay>`__
   - `Klever (KLV) <https://www.coingecko.com/en/coins/klever>`__
+  - `TerraKRW (KRT) <https://www.coingecko.com/en/coins/terra-krw>`__
   - `Trump Wins Token (TRUMPWIN) <https://www.coingecko.com/en/coins/trump-wins-token>`__
   - `Trump Loses Token (TRUMPLOSE) <https://www.coingecko.com/en/coins/trump-loses-token>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
