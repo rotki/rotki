@@ -12013,6 +12013,20 @@
         "symbol": "XRPBULL",
         "type": "ethereum token"
     },
+    "XRPDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token XRPDOWN",
+        "started": 1599696000,
+        "symbol": "XRPDOWN",
+        "type": "own chain"
+    },
+    "XRPUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token XRPUP",
+        "started": 1599696000,
+        "symbol": "XRPUP",
+        "type": "own chain"
+    },
     "XSI": {
         "active": false,
         "coingecko": "",

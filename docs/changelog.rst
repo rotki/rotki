@@ -28,6 +28,8 @@ Changelog
   - `Binance leveraged token LTCUP (LTCUP) <https://www.cryptocompare.com/coins/ltcup/>`__
   - `Binance leveraged token TRXDOWN (TRXDOWN) <https://www.cryptocompare.com/coins/trxdown>`__
   - `Binance leveraged token TRXUP (TRXUP) <https://www.cryptocompare.com/coins/trxup/>`__
+  - `Binance leveraged token XRPDOWN (XRPDOWN) <https://www.cryptocompare.com/coins/xrpdown>`__
+  - `Binance leveraged token XRPUP (XRPUP) <https://www.cryptocompare.com/coins/xrpup/>`__
 
 * :release:`1.7.0 <2020-09-01>`
 * :feature:`1092` Users can now refresh their manual balance entries.
