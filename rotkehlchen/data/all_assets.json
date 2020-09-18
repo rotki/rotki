@@ -172,6 +172,15 @@
         "symbol": "ADB",
         "type": "ethereum token"
     },
+    "ADEL": {
+        "coingecko": "akropolis-delphi",
+        "ethereum_address": "0x94d863173EE77439E4292284fF13fAD54b3BA182",
+        "ethereum_token_decimals": 18,
+        "name": "Akropolis Delphi",
+        "started": 1598950842,
+        "symbol": "ADEL",
+        "type": "ethereum token"
+    },
     "ADH": {
         "coingecko": "adhive",
         "ethereum_address": "0xE69a353b3152Dd7b706ff7dD40fe1d18b7802d31",

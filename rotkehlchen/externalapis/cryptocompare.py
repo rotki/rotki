@@ -92,6 +92,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('YFII'): Asset('USDT'),
     Asset('BZRX'): Asset('USDT'),
     Asset('CREAM'): Asset('USDT'),
+    Asset('ADEL'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

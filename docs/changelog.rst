@@ -22,6 +22,7 @@ Changelog
   - `Elrond (EGLD) <https://www.coingecko.com/en/coins/elrond>`__
   - `Swerve DAO Token (SWRV) <https://www.coingecko.com/en/coins/swerve>`__
   - `Wing Finance (WING) <https://www.coingecko.com/en/coins/wing-finance>`__
+  - `Akropolis Delphi (ADEL) <https://www.coingecko.com/en/coins/akropolis-delphi>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
   - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
   - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__
