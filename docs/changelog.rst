@@ -20,6 +20,7 @@ Changelog
   - `Crypto is Everywhere Around Me (CREAM) <https://www.coingecko.com/en/coins/cream>`__
   - `Bella Protocol (BEL) <https://www.coingecko.com/en/coins/bella-protocol>`__
   - `Elrond (EGLD) <https://www.coingecko.com/en/coins/elrond>`__
+  - `Swerve DAO Token (SWRV) <https://www.coingecko.com/en/coins/swerve>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
   - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
   - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__

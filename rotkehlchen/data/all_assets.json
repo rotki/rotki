@@ -10211,6 +10211,15 @@
         "symbol": "SWM",
         "type": "ethereum token"
     },
+    "SWRV": {
+        "coingecko": "swerve",
+        "ethereum_address": "0xB8BAa0e4287890a5F79863aB62b7F175ceCbD433",
+        "ethereum_token_decimals": 18,
+        "name": "Swerve DAO Token",
+        "started": 1599252883,
+        "symbol": "SWRV",
+        "type": "ethereum token"
+    },
     "SWT": {
         "coingecko": "swarm-city",
         "ethereum_address": "0xB9e7F8568e08d5659f5D29C4997173d84CdF2607",
