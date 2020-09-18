@@ -6121,6 +6121,13 @@
         "symbol": "KLAY",
         "type": "own chain"
     },
+    "KLV": {
+        "coingecko": "klever",
+        "name": "Klever",
+        "started": 1598400000,
+        "symbol": "KLV",
+        "type": "tron token"
+    },
     "KMD": {
         "coingecko": "komodo",
         "name": "Komodo",
