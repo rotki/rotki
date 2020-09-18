@@ -96,6 +96,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('ANK'): Asset('USDT'),
     Asset('CORN'): Asset('USDT'),
     Asset('SAL'): Asset('USDT'),
+    Asset('CRT'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

@@ -26,6 +26,7 @@ Changelog
   - `AlphaLink (ANK) <https://www.coingecko.com/en/coins/alphalink>`__
   - `Corn (CORN) <https://www.coingecko.com/en/coins/corn>`__
   - `Salmon (SAL) <https://www.coingecko.com/en/coins/salmon>`__
+  - `Carrot Finance (CRT) <https://www.coingecko.com/en/coins/carr-finance>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
   - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
   - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__
