@@ -11233,6 +11233,13 @@
         "symbol": "USDJ",
         "type": "tron token"
     },
+    "USDN": {
+        "coingecko": "neutrino-dollar",
+        "name": "Neutrino Dollar",
+        "started": 1580515200,
+        "symbol": "USDN",
+        "type": "waves token"
+    },
     "USDS": {
         "coingecko": "stableusd",
         "ethereum_address": "0xA4Bdb11dc0a2bEC88d24A3aa1E6Bb17201112eBe",
