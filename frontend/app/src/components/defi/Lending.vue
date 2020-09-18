@@ -88,7 +88,7 @@
         <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>
-    <v-row>
+    <v-row v-if="!isYearnVaults">
       <v-col>
         <stat-card :title="$t('lending.assets')">
           <lending-asset-table
@@ -98,6 +98,14 @@
             "
           />
         </stat-card>
+      </v-col>
+    </v-row>
+    <v-row v-if="isYearnVaults || selectedProtocols.length === 0">
+      <v-col>
+        <yearn-assets-table
+          :loading="refreshing"
+          :selected-addresses="selectedAddresses"
+        />
       </v-col>
     </v-row>
     <compound-lending-details
@@ -129,6 +137,7 @@ import Component from 'vue-class-component';
 import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
+import YearnAssetsTable from '@/components/defi/yearn/YearnAssetsTable.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
@@ -160,6 +169,7 @@ import {
 
 @Component({
   components: {
+    YearnAssetsTable,
     PercentageDisplay,
     CompoundLendingDetails,
     YearnVaultsProfitDetails,

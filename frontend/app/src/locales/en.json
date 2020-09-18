@@ -557,5 +557,14 @@
   "decentralized_overview": {
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
+  },
+  "yearn_asset_table": {
+    "title": "Yearn Vaults",
+    "headers": {
+      "roi": "ROI",
+      "vault": "Vault",
+      "underlying_asset": "Underlying Asset",
+      "vault_asset": "Vault Asset"
+    }
   }
 }

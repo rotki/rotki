@@ -41,8 +41,12 @@ interface YearnVaultBalance {
   readonly underlyingToken: string;
   readonly vaultToken: string;
   readonly underlyingValue: Balance;
-  readonly vaultVault: Balance;
+  readonly vaultValue: Balance;
   readonly roi: string;
+}
+
+export interface YearnVaultAsset extends YearnVaultBalance {
+  readonly vault: SupportedYearnVault;
 }
 
 type AccountYearnVaultEntry = {

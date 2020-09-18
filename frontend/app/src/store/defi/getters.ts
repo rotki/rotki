@@ -13,6 +13,8 @@ import { CompoundLoan } from '@/services/defi/types/compound';
 import { DEPOSIT } from '@/services/defi/types/consts';
 import {
   SupportedYearnVault,
+  YearnVaultAsset,
+  YearnVaultBalance,
   YearnVaultProfitLoss
 } from '@/services/defi/types/yearn';
 import { Balance } from '@/services/types-api';
@@ -80,6 +82,7 @@ export interface DefiGetters {
   compoundInterestProfit: CompoundProfitLossModel[];
   compoundDebtLoss: CompoundProfitLossModel[];
   yearnVaultsProfit: (addresses: string[]) => YearnVaultProfitLoss[];
+  yearnVaultsAssets: (addresses: string[]) => YearnVaultBalance[];
 }
 
 type GettersDefinition = {
@@ -504,8 +507,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
   lendingBalances: ({
     dsrBalances,
     aaveBalances,
-    compoundBalances,
-    yearnVaultsBalances
+    compoundBalances
   }: DefiState) => (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -564,30 +566,6 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
             asset,
             effectiveInterestRate: assetDetails.apy ?? '0%',
             balance: { ...assetDetails.balance }
-          });
-        }
-      }
-    }
-
-    if (showAll || protocols.includes(DEFI_YEARN_VAULTS)) {
-      for (const address in yearnVaultsBalances) {
-        if (!allAddresses && !addresses.includes(address)) {
-          continue;
-        }
-
-        const vaultBalances = yearnVaultsBalances[address];
-        for (const key in vaultBalances) {
-          const vault = key as SupportedYearnVault;
-          const data = vaultBalances[vault];
-          if (!data) {
-            continue;
-          }
-          balances.push({
-            address,
-            protocol: DEFI_YEARN_VAULTS,
-            asset: data.underlyingToken,
-            effectiveInterestRate: data.roi,
-            balance: data.underlyingValue
           });
         }
       }
@@ -911,5 +889,69 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
     return yearnVaultsProfit;
+  },
+
+  yearnVaultsAssets: ({ yearnVaultsBalances }) => (
+    addresses: string[]
+  ): YearnVaultBalance[] => {
+    const balances: { [vault: string]: YearnVaultBalance[] } = {};
+    const allAddresses = addresses.length === 0;
+    for (const address in yearnVaultsBalances) {
+      if (!allAddresses && !addresses.includes(address)) {
+        continue;
+      }
+
+      const vaults = yearnVaultsBalances[address];
+      for (const key in vaults) {
+        const vault = key as SupportedYearnVault;
+        const balance = vaults[vault];
+        if (!balance) {
+          continue;
+        }
+
+        if (!balances[vault]) {
+          balances[vault] = [balance];
+        } else {
+          balances[vault].push(balance);
+        }
+      }
+    }
+
+    const vaultBalances: YearnVaultAsset[] = [];
+    for (const key in balances) {
+      const allBalances = balances[key];
+      const { underlyingToken, vaultToken, roi } = allBalances[0];
+
+      const underlyingValue = { amount: Zero, usdValue: Zero };
+      const vaultValue = { amount: Zero, usdValue: Zero };
+      const values = { underlyingValue, vaultValue };
+      const summary = allBalances.reduce((sum, current) => {
+        const { vaultValue, underlyingValue } = sum;
+        const {
+          vaultValue: cVaultValue,
+          underlyingValue: cUnderlyingValue
+        } = current;
+        vaultValue.amount = vaultValue.amount.plus(cVaultValue.amount);
+        vaultValue.usdValue = vaultValue.usdValue.plus(cVaultValue.usdValue);
+        underlyingValue.amount = underlyingValue.amount.plus(
+          cUnderlyingValue.amount
+        );
+        underlyingValue.usdValue = underlyingValue.amount.plus(
+          cUnderlyingValue.usdValue
+        );
+
+        return sum;
+      }, values);
+      vaultBalances.push({
+        vault: key as SupportedYearnVault,
+        underlyingToken,
+        underlyingValue: summary.underlyingValue,
+        vaultToken,
+        vaultValue: summary.vaultValue,
+        roi
+      });
+    }
+
+    return vaultBalances;
   }
 };
