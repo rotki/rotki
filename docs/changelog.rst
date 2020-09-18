@@ -35,6 +35,9 @@ Changelog
   - `tBridge Token (TAI) <https://www.coingecko.com/en/coins/tbridge-token>`__
   - `YF Link (YFL) <https://www.coingecko.com/en/coins/yf-link>`__
   - `YFValue (YFV) <https://www.coingecko.com/en/coins/yfvalue>`__
+  - `YFValue (YFV) <https://www.coingecko.com/en/coins/yfvalue>`__
+  - `Trump Wins Token (TRUMPWIN) <https://www.coingecko.com/en/coins/trump-wins-token>`__
+  - `Trump Loses Token (TRUMPLOSE) <https://www.coingecko.com/en/coins/trump-loses-token>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
   - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
   - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__

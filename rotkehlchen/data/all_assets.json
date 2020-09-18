@@ -10873,6 +10873,24 @@
         "symbol": "TRST",
         "type": "ethereum token"
     },
+    "TRUMPLOSE": {
+        "coingecko": "trump-loses-token",
+        "ethereum_address": "0x70878b693A57a733A79560e33cF6a828E685d19a",
+        "ethereum_token_decimals": 18,
+        "name": "Trump Loses Token",
+        "started": 1595588594,
+        "symbol": "TRUMPLOSE",
+        "type": "ethereum token"
+    },
+    "TRUMPWIN": {
+        "coingecko": "trump-wins-token",
+        "ethereum_address": "0x073aF3f70516380654Ba7C5812c4Ab0255F081Bc",
+        "ethereum_token_decimals": 18,
+        "name": "Trump Wins Token",
+        "started": 1595588594,
+        "symbol": "TRUMPWIN",
+        "type": "ethereum token"
+    },
     "TRUST": {
         "active": false,
         "coingecko": "trustdao",

@@ -102,6 +102,8 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('PEARL'): Asset('USDT'),
     Asset('TAI'): Asset('USDT'),
     Asset('YFL'): Asset('USDT'),
+    Asset('TRUMPWIN'): Asset('USDT'),
+    Asset('TRUMPLOSE'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 
