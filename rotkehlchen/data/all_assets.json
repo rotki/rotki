@@ -8177,6 +8177,13 @@
         "symbol": "PCL",
         "type": "ethereum token"
     },
+    "PEARL": {
+        "coingecko": "pearl-finance",
+        "name": "Pearl Finance",
+        "started": 1599004800,
+        "symbol": "PEARL",
+        "type": "tron token"
+    },
     "PERL": {
         "coingecko": "perlin",
         "ethereum_address": "0xb5A73f5Fc8BbdbcE59bfD01CA8d35062e0dad801",
