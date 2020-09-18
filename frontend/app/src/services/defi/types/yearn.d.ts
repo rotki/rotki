@@ -36,3 +36,19 @@ export interface YearnVaultProfitLoss {
   readonly asset: string;
   readonly vault: SupportedYearnVault;
 }
+
+interface YearnVaultBalance {
+  readonly underlyingToken: string;
+  readonly vaultToken: string;
+  readonly underlyingValue: Balance;
+  readonly vaultVault: Balance;
+  readonly roi: string;
+}
+
+type AccountYearnVaultEntry = {
+  readonly [vault in SupportedYearnVault]?: YearnVaultBalance;
+};
+
+export interface YearnVaultsBalances {
+  readonly [address: string]: AccountYearnVaultEntry;
+}

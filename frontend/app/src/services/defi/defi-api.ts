@@ -159,4 +159,19 @@ export class DefiApi {
       )
       .then(handleResponse);
   }
+
+  async fetchYearnVaultsBalances(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>(
+        '/blockchains/ETH/modules/yearn/vaults/balances',
+        {
+          validateStatus: validWithSessionAndExternalService,
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true
+          }),
+          transformResponse: this.baseTransformer
+        }
+      )
+      .then(handleResponse);
+  }
 }

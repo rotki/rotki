@@ -18,5 +18,6 @@ export enum TaskType {
   MANUAL_BALANCES = 'manual_balances',
   DEFI_COMPOUND_BALANCES = 'defi_compound_balances',
   DEFI_COMPOUND_HISTORY = 'defi_compound_history',
-  DEFI_YEARN_VAULT_HISTORY = 'defi_yearn_vault_history'
+  DEFI_YEARN_VAULT_HISTORY = 'defi_yearn_vault_history',
+  DEFI_YEARN_VAULT_BALANCES = 'defi_yearn_vault_balances'
 }

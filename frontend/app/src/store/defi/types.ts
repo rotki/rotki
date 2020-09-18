@@ -19,6 +19,7 @@ import {
 } from '@/services/defi/types/compound';
 import {
   YearnEventType,
+  YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { Balance, HasBalance } from '@/services/types-api';
@@ -34,6 +35,7 @@ export interface DefiState {
   compoundBalances: CompoundBalances;
   compoundHistory: CompoundHistory;
   yearnVaultsHistory: YearnVaultsHistory;
+  yearnVaultsBalances: YearnVaultsBalances;
 }
 
 export interface DSRBalances {

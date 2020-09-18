@@ -20,7 +20,8 @@ export const defaultState = (): DefiState => ({
     rewards: {},
     liquidationProfit: {}
   },
-  yearnVaultsHistory: {}
+  yearnVaultsHistory: {},
+  yearnVaultsBalances: {}
 });
 
 export const state: DefiState = defaultState();

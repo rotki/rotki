@@ -504,7 +504,8 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
   lendingBalances: ({
     dsrBalances,
     aaveBalances,
-    compoundBalances
+    compoundBalances,
+    yearnVaultsBalances
   }: DefiState) => (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -513,7 +514,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     const showAll = protocols.length === 0;
     const allAddresses = addresses.length === 0;
 
-    if (showAll || protocols.includes('makerdao')) {
+    if (showAll || protocols.includes(DEFI_MAKERDAO)) {
       for (const address of Object.keys(dsrBalances.balances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -521,7 +522,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         const balance = dsrBalances.balances[address];
         balances.push({
           address,
-          protocol: 'makerdao',
+          protocol: DEFI_MAKERDAO,
           asset: 'DAI',
           balance: { ...balance },
           effectiveInterestRate: `${dsrBalances.currentDSR.toFormat(2)}%`
@@ -529,7 +530,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
 
-    if (showAll || protocols.includes('aave')) {
+    if (showAll || protocols.includes(DEFI_AAVE)) {
       for (const address of Object.keys(aaveBalances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -540,7 +541,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           const aaveAsset = lending[asset];
           balances.push({
             address,
-            protocol: 'aave',
+            protocol: DEFI_AAVE,
             asset,
             effectiveInterestRate: aaveAsset.apy,
             balance: { ...aaveAsset.balance }
@@ -549,7 +550,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
 
-    if (showAll || protocols.includes('compound')) {
+    if (showAll || protocols.includes(DEFI_COMPOUND)) {
       for (const address of Object.keys(compoundBalances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -559,10 +560,34 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           const assetDetails = lending[asset];
           balances.push({
             address,
-            protocol: 'compound',
+            protocol: DEFI_COMPOUND,
             asset,
             effectiveInterestRate: assetDetails.apy ?? '0%',
             balance: { ...assetDetails.balance }
+          });
+        }
+      }
+    }
+
+    if (showAll || protocols.includes(DEFI_YEARN_VAULTS)) {
+      for (const address in yearnVaultsBalances) {
+        if (!allAddresses && !addresses.includes(address)) {
+          continue;
+        }
+
+        const vaultBalances = yearnVaultsBalances[address];
+        for (const key in vaultBalances) {
+          const vault = key as SupportedYearnVault;
+          const data = vaultBalances[vault];
+          if (!data) {
+            continue;
+          }
+          balances.push({
+            address,
+            protocol: DEFI_YEARN_VAULTS,
+            asset: data.underlyingToken,
+            effectiveInterestRate: data.roi,
+            balance: data.underlyingValue
           });
         }
       }
