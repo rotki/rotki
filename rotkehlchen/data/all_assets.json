@@ -469,7 +469,7 @@
         "type": "ethereum token"
     },
     "ANK": {
-        "coingecko": "https://www.coingecko.com/en/coins/alphalink",
+        "coingecko": "alphalink",
         "name": "AlphaLink",
         "started": 1599004800,
         "symbol": "ANK",
@@ -2567,6 +2567,13 @@
         "started": 1583323735,
         "symbol": "COMP",
         "type": "ethereum token"
+    },
+    "CORN": {
+        "coingecko": "corn",
+        "name": "Corn",
+        "started": 1599264000,
+        "symbol": "CORN",
+        "type": "tron token"
     },
     "COS": {
         "active": true,
@@ -9265,6 +9272,14 @@
         "started": 1513586475,
         "symbol": "SAI",
         "type": "ethereum token"
+    },
+    "SAL": {
+        "cryptocompare": "SALMON",
+        "coingecko": "salmon",
+        "name": "Salmon",
+        "started": 1599177600,
+        "symbol": "SAL",
+        "type": "tron token"
     },
     "SALT": {
         "coingecko": "salt",

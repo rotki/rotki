@@ -24,6 +24,8 @@ Changelog
   - `Wing Finance (WING) <https://www.coingecko.com/en/coins/wing-finance>`__
   - `Akropolis Delphi (ADEL) <https://www.coingecko.com/en/coins/akropolis-delphi>`__
   - `AlphaLink (ANK) <https://www.coingecko.com/en/coins/alphalink>`__
+  - `Corn (CORN) <https://www.coingecko.com/en/coins/corn>`__
+  - `Salmon (SAL) <https://www.coingecko.com/en/coins/salmon>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
   - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
   - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__
