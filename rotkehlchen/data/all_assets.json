@@ -11617,6 +11617,13 @@
         "symbol": "WIN",
         "type": "ethereum token"
     },
+    "WING": {
+        "coingecko": "wing-finance",
+        "name": "Wing Finance",
+        "started": 1600214400,
+        "symbol": "WING",
+        "type": "ontology token"
+    },
     "WINGS": {
         "coingecko": "wings",
         "ethereum_address": "0x667088b212ce3d06a1b553a7221E1fD19000d9aF",
