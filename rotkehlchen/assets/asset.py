@@ -120,6 +120,10 @@ WORLD_TO_KRAKEN = {
     'TRX': 'TRX',
     'OXT': 'OXT',
     'STORJ': 'STORJ',
+    'BAL': 'BAL',
+    'KSM': 'KSM',
+    'CRV': 'CRV',
+    'SNX': 'SNX',
 }
 
 WORLD_TO_BINANCE = {

@@ -43,6 +43,7 @@ PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
+    Asset('TLN'): Asset('WETH'),
     Asset('BLY'): Asset('USDT'),
     Asset('cDAI'): A_DAI,
     Asset('cBAT'): Asset('BAT'),
@@ -60,6 +61,16 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('BTCUP'): Asset('USDT'),
     Asset('ETHDOWN'): Asset('USDT'),
     Asset('ETHUP'): Asset('USDT'),
+    Asset('EOSDOWN'): Asset('USDT'),
+    Asset('EOSUP'): Asset('USDT'),
+    Asset('DOTDOWN'): Asset('USDT'),
+    Asset('DOTUP'): Asset('USDT'),
+    Asset('LTCDOWN'): Asset('USDT'),
+    Asset('LTCUP'): Asset('USDT'),
+    Asset('TRXDOWN'): Asset('USDT'),
+    Asset('TRXUP'): Asset('USDT'),
+    Asset('XRPDOWN'): Asset('USDT'),
+    Asset('XRPUP'): Asset('USDT'),
     Asset('DEXT'): Asset('USDT'),
     Asset('DOS'): Asset('USDT'),
     Asset('GEEQ'): Asset('USDT'),
@@ -80,6 +91,23 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('SBREE'): Asset('USDT'),
     Asset('YFII'): Asset('USDT'),
     Asset('BZRX'): Asset('USDT'),
+    Asset('CREAM'): Asset('USDT'),
+    Asset('ADEL'): Asset('USDT'),
+    Asset('ANK'): Asset('USDT'),
+    Asset('CORN'): Asset('USDT'),
+    Asset('SAL'): Asset('USDT'),
+    Asset('CRT'): Asset('USDT'),
+    Asset('FSW'): Asset('USDT'),
+    Asset('JFI'): Asset('USDT'),
+    Asset('PEARL'): Asset('USDT'),
+    Asset('TAI'): Asset('USDT'),
+    Asset('YFL'): Asset('USDT'),
+    Asset('TRUMPWIN'): Asset('USDT'),
+    Asset('TRUMPLOSE'): Asset('USDT'),
+    Asset('KLV'): Asset('USDT'),
+    Asset('KRT'): Asset('KRW'),
+    Asset('RVC'): Asset('USDT'),
+    Asset('SDT'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

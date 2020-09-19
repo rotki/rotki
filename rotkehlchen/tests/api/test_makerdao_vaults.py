@@ -569,7 +569,10 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         stability_fee=FVal('0.04'),
     )
     expected_vaults = [vault_7588.serialize()]
-    assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=['stability_fee'])
+    assert_serialized_lists_equal(
+        expected_vaults,
+        vaults, ignore_keys=['stability_fee', 'liquidation_ratio'],
+    )
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultdetailsresource",

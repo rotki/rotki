@@ -82,6 +82,7 @@ def test_coingecko_identifiers_are_reachable():
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
     coins_delisted_from_coingecko = [
+        '1SG',
         'FLUZ',
         'EBCH',
         'GOLOS',
@@ -90,6 +91,13 @@ def test_coingecko_identifiers_are_reachable():
         'PIX',
         'MTC-2',
         'LKY',
+        'ARB',
+        'BBI',
+        'BITCAR',
+        'BTR',
+        'OLE',
+        'ROC',
+        'VIN',
     ]
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
@@ -133,7 +141,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': 'eb7528aa0824182b9096c5cba1dd8d12', 'version': 12}
+    last_meta = {'md5': '181773f392237beefd156bdfdf841fc8', 'version': 13}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

@@ -172,6 +172,15 @@
         "symbol": "ADB",
         "type": "ethereum token"
     },
+    "ADEL": {
+        "coingecko": "akropolis-delphi",
+        "ethereum_address": "0x94d863173EE77439E4292284fF13fAD54b3BA182",
+        "ethereum_token_decimals": 18,
+        "name": "Akropolis Delphi",
+        "started": 1598950842,
+        "symbol": "ADEL",
+        "type": "ethereum token"
+    },
     "ADH": {
         "coingecko": "adhive",
         "ethereum_address": "0xE69a353b3152Dd7b706ff7dD40fe1d18b7802d31",
@@ -458,6 +467,13 @@
         "started": 1560475588,
         "symbol": "AMPL",
         "type": "ethereum token"
+    },
+    "ANK": {
+        "coingecko": "alphalink",
+        "name": "AlphaLink",
+        "started": 1599004800,
+        "symbol": "ANK",
+        "type": "tron token"
     },
     "ANKR": {
         "coingecko": "ankr",
@@ -1093,6 +1109,15 @@
         "name": "Bee Token",
         "started": 1506556800,
         "symbol": "BEE",
+        "type": "ethereum token"
+    },
+    "BEL": {
+        "coingecko": "bella-protocol",
+        "ethereum_address": "0xA91ac63D040dEB1b7A5E4d4134aD23eb0ba07e14",
+        "ethereum_token_decimals": 18,
+        "name": "Bella",
+        "started": 1597392058,
+        "symbol": "BEL",
         "type": "ethereum token"
     },
     "BELA": {
@@ -2543,6 +2568,13 @@
         "symbol": "COMP",
         "type": "ethereum token"
     },
+    "CORN": {
+        "coingecko": "corn",
+        "name": "Corn",
+        "started": 1599264000,
+        "symbol": "CORN",
+        "type": "tron token"
+    },
     "COS": {
         "active": true,
         "coingecko": "contentos",
@@ -2689,6 +2721,15 @@
         "symbol": "CRC",
         "type": "own chain"
     },
+    "CREAM": {
+        "coingecko": "cream",
+        "ethereum_address": "0x2ba592F78dB6436527729929AAf6c908497cB200",
+        "ethereum_token_decimals": 18,
+        "name": "Cream",
+        "started": 1596553617,
+        "symbol": "CREAM",
+        "type": "ethereum token"
+    },
     "CRED": {
         "active": true,
         "coingecko": "verify",
@@ -2734,6 +2775,13 @@
         "started": 1506556800,
         "symbol": "CRPT",
         "type": "ethereum token"
+    },
+    "CRT": {
+        "coingecko": "carr-finance",
+        "name": "Carrot finance",
+        "started": 1600041600,
+        "symbol": "CRT",
+        "type": "tron token"
     },
     "CRV": {
         "coingecko": "curve-dao-token",
@@ -3397,6 +3445,20 @@
         "symbol": "DOT",
         "type": "own chain"
     },
+    "DOTDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token DOTDOWN",
+        "started": 1599696000,
+        "symbol": "DOTDOWN",
+        "type": "own chain"
+    },
+    "DOTUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token DOTUP",
+        "started": 1599696000,
+        "symbol": "DOTUP",
+        "type": "own chain"
+    },
     "DOS": {
         "coingecko": "dos-network",
         "ethereum_address": "0x0A913beaD80F321E7Ac35285Ee10d9d922659cB7",
@@ -3774,6 +3836,13 @@
         "symbol": "EGC",
         "type": "own chain"
     },
+    "EGLD": {
+        "coingecko": "elrond-erd-2",
+        "name": "Elrond",
+        "started": 1599004800,
+        "symbol": "EGLD",
+        "type": "own chain"
+    },
     "EGT": {
         "coingecko": "egretia",
         "ethereum_address": "0x8e1b448EC7aDFc7Fa35FC2e885678bD323176E34",
@@ -3967,6 +4036,20 @@
         "started": 1520115088,
         "symbol": "EOSDAC",
         "type": "ethereum token"
+    },
+    "EOSDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token EOSDOWN",
+        "started": 1599782400,
+        "symbol": "EOSDOWN",
+        "type": "own chain"
+    },
+    "EOSUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token EOSUP",
+        "started": 1599782400,
+        "symbol": "EOSUP",
+        "type": "own chain"
     },
     "EPY": {
         "coingecko": "",
@@ -4584,6 +4667,15 @@
         "symbol": "FSN",
         "type": "ethereum token"
     },
+    "FSW": {
+        "coingecko": "fsw-token",
+        "ethereum_address": "0xfffffffFf15AbF397dA76f1dcc1A1604F45126DB",
+        "ethereum_token_decimals": 18,
+        "name": "FalconSwap Token ",
+        "started": 1598220320,
+        "symbol": "FSW",
+        "type": "ethereum token"
+    },
     "FT": {
         "coingecko": "",
         "ethereum_address": "0x78a73B6CBc5D183CE56e786f6e905CaDEC63547B",
@@ -4674,6 +4766,14 @@
         "started": 1485907200,
         "symbol": "FUN",
         "type": "ethereum token"
+    },
+    "FUND": {
+        "cryptocompare": "UNIFUND",
+        "coingecko": "unification",
+        "name": "Unification",
+        "started": 1592611200,
+        "symbol": "FUND",
+        "type": "own chain"
     },
     "FX": {
         "coingecko": "fx-coin",
@@ -5296,6 +5396,15 @@
         "symbol": "HGT",
         "type": "ethereum token"
     },
+    "HGET": {
+        "coingecko": "hedget",
+        "ethereum_address": "0x7968bc6a03017eA2de509AAA816F163Db0f35148",
+        "ethereum_token_decimals": 6,
+        "name": "Hedget",
+        "started": 1599303343,
+        "symbol": "HGET",
+        "type": "ethereum token"
+    },
     "HIVE": {
         "coingecko": "hive",
         "name": "Hive",
@@ -5862,6 +5971,13 @@
         "symbol": "JET",
         "type": "ethereum token"
     },
+    "JFI": {
+        "coingecko": "jackpool-finance",
+        "name": "JackPool.finance",
+        "started": 1599264000,
+        "symbol": "JFI",
+        "type": "tron token"
+    },
     "JNT": {
         "coingecko": "jibrel",
         "ethereum_address": "0xa5Fd1A791C4dfcaacC963D4F73c6Ae5824149eA7",
@@ -5998,6 +6114,20 @@
         "symbol": "KIND",
         "type": "ethereum token"
     },
+    "KLAY": {
+        "coingecko": "klay-token",
+        "name": "Klaytn",
+        "started": 1570838400,
+        "symbol": "KLAY",
+        "type": "own chain"
+    },
+    "KLV": {
+        "coingecko": "klever",
+        "name": "Klever",
+        "started": 1598400000,
+        "symbol": "KLV",
+        "type": "tron token"
+    },
     "KMD": {
         "coingecko": "komodo",
         "name": "Komodo",
@@ -6059,6 +6189,13 @@
         "started": 1525085278,
         "symbol": "KRL",
         "type": "ethereum token"
+    },
+    "KRT": {
+        "coingecko": "terra-krw",
+        "name": "TerraKRW",
+        "started": 1563494400,
+        "symbol": "KRT",
+        "type": "own chain"
     },
     "KRW": {
         "name": "Korean won",
@@ -6315,6 +6452,15 @@
         "symbol": "LMC",
         "type": "own chain"
     },
+    "LMCH": {
+        "coingecko": "latamcash",
+        "ethereum_address": "0x9205C049C231DdA51bAce0ba569f047E3E1e9979",
+        "ethereum_token_decimals": 18,
+        "name": "Latamcash",
+        "started": 1581735064,
+        "symbol": "LMCH",
+        "type": "ethereum token"
+    },
     "LNC": {
         "coingecko": "blocklancer",
         "ethereum_address": "0x63e634330A20150DbB61B15648bC73855d6CCF07",
@@ -6457,6 +6603,20 @@
         "name": "Litecoin",
         "started": 1317972665,
         "symbol": "LTC",
+        "type": "own chain"
+    },
+    "LTCDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token LTCDOWN",
+        "started": 1600214400,
+        "symbol": "LTCDOWN",
+        "type": "own chain"
+    },
+    "LTCUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token LTCUP",
+        "started": 1600214400,
+        "symbol": "LTCUP",
         "type": "own chain"
     },
     "LTCX": {
@@ -7044,7 +7204,7 @@
         "type": "ethereum token"
     },
     "MTA": {
-        "coingecko": "metiai",
+        "coingecko": "meta",
         "ethereum_address": "0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2",
         "ethereum_token_decimals": 18,
         "name": "Meta",
@@ -8046,6 +8206,13 @@
         "started": 1509926400,
         "symbol": "PCL",
         "type": "ethereum token"
+    },
+    "PEARL": {
+        "coingecko": "pearl-finance",
+        "name": "Pearl Finance",
+        "started": 1599004800,
+        "symbol": "PEARL",
+        "type": "tron token"
     },
     "PERL": {
         "coingecko": "perlin",
@@ -9131,6 +9298,13 @@
         "symbol": "RUNE",
         "type": "own chain"
     },
+    "RVC": {
+        "coingecko": "ravencoin-classic",
+        "name": "Ravencoin Classic",
+        "started": 1591747200,
+        "symbol": "RVC",
+        "type": "own chain"
+    },
     "RVN": {
         "coingecko": "ravencoin",
         "name": "Ravencoin",
@@ -9182,6 +9356,14 @@
         "started": 1513586475,
         "symbol": "SAI",
         "type": "ethereum token"
+    },
+    "SAL": {
+        "cryptocompare": "SALMON",
+        "coingecko": "salmon",
+        "name": "Salmon",
+        "started": 1599177600,
+        "symbol": "SAL",
+        "type": "tron token"
     },
     "SALT": {
         "coingecko": "salt",
@@ -9257,6 +9439,13 @@
         "name": "ShadowCash",
         "started": 1403049600,
         "symbol": "SDC",
+        "type": "own chain"
+    },
+    "SDT": {
+        "coingecko": "terra-sdt",
+        "name": "Terra SDT",
+        "started": 1569456000,
+        "symbol": "SDT",
         "type": "own chain"
     },
     "SEELE": {
@@ -9469,7 +9658,7 @@
         "type": "ethereum token"
     },
     "SKR": {
-        "coingecko": "staking",
+        "coingecko": "",
         "cryptocompare": "SKRT",
         "ethereum_address": "0x4c382F8E09615AC86E08CE58266CC227e7d4D913",
         "ethereum_token_decimals": 6,
@@ -10144,6 +10333,15 @@
         "symbol": "SWM",
         "type": "ethereum token"
     },
+    "SWRV": {
+        "coingecko": "swerve-dao",
+        "ethereum_address": "0xB8BAa0e4287890a5F79863aB62b7F175ceCbD433",
+        "ethereum_token_decimals": 18,
+        "name": "Swerve DAO Token",
+        "started": 1599252883,
+        "symbol": "SWRV",
+        "type": "ethereum token"
+    },
     "SWT": {
         "coingecko": "swarm-city",
         "ethereum_address": "0xB9e7F8568e08d5659f5D29C4997173d84CdF2607",
@@ -10225,6 +10423,13 @@
         "started": 1485993600,
         "symbol": "TAAS",
         "type": "ethereum token"
+    },
+    "TAI": {
+        "coingecko": "tai",
+        "name": "tBridge Token",
+        "started": 1599004800,
+        "symbol": "TAI",
+        "type": "tron token"
     },
     "TALAO": {
         "active": true,
@@ -10531,6 +10736,15 @@
         "symbol": "TKS",
         "type": "waves token"
     },
+    "TLN": {
+        "coingecko": "trustline-network",
+        "ethereum_address": "0x679131F591B4f369acB8cd8c51E68596806c3916",
+        "ethereum_token_decimals": 18,
+        "name": "Trustlines Network Token",
+        "started": 1573731681,
+        "symbol": "TLN",
+        "type": "ethereum token"
+    },
     "TMT": {
         "coingecko": "traxia",
         "ethereum_address": "0x3209f98BeBF0149B769ce26D71F7aEA8E435EfEa",
@@ -10703,6 +10917,24 @@
         "symbol": "TRST",
         "type": "ethereum token"
     },
+    "TRUMPLOSE": {
+        "coingecko": "trump-loses-token",
+        "ethereum_address": "0x70878b693A57a733A79560e33cF6a828E685d19a",
+        "ethereum_token_decimals": 18,
+        "name": "Trump Loses Token",
+        "started": 1595588594,
+        "symbol": "TRUMPLOSE",
+        "type": "ethereum token"
+    },
+    "TRUMPWIN": {
+        "coingecko": "trump-wins-token",
+        "ethereum_address": "0x073aF3f70516380654Ba7C5812c4Ab0255F081Bc",
+        "ethereum_token_decimals": 18,
+        "name": "Trump Wins Token",
+        "started": 1595588594,
+        "symbol": "TRUMPWIN",
+        "type": "ethereum token"
+    },
     "TRUST": {
         "active": false,
         "coingecko": "trustdao",
@@ -10739,11 +10971,34 @@
         "symbol": "TRXBULL",
         "type": "ethereum token"
     },
+    "TRXDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token TRXDOWN",
+        "started": 1599696000,
+        "symbol": "TRXDOWN",
+        "type": "own chain"
+    },
+    "TRXUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token TRXUP",
+        "started": 1599696000,
+        "symbol": "TRXUP",
+        "type": "own chain"
+    },
     "TRY": {
         "coingecko": "trias",
         "name": "Turkish Lyra",
         "symbol": "TRY",
         "type": "fiat"
+    },
+    "TRYB": {
+        "coingecko": "bilira",
+        "ethereum_address": "0x2C537E5624e4af88A7ae4060C022609376C8D0EB",
+        "ethereum_token_decimals": 6,
+        "name": "BiLira",
+        "started": 1563539445,
+        "symbol": "TRYB",
+        "type": "ethereum token"
     },
     "TTC": {
         "coingecko": "ttc-protocol",
@@ -10886,6 +11141,15 @@
         "symbol": "UMA",
         "type": "ethereum token"
     },
+    "UNI": {
+        "coingecko": "uniswap",
+        "ethereum_address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+        "ethereum_token_decimals": 18,
+        "name": "Uniswap",
+        "started": 1600107086,
+        "symbol": "UNI",
+        "type": "ethereum token"
+    },
     "UNITY": {
         "active": false,
         "coingecko": "",
@@ -10969,6 +11233,13 @@
         "symbol": "USDJ",
         "type": "tron token"
     },
+    "USDN": {
+        "coingecko": "neutrino",
+        "name": "Neutrino Dollar",
+        "started": 1580515200,
+        "symbol": "USDN",
+        "type": "waves token"
+    },
     "USDS": {
         "coingecko": "stableusd",
         "ethereum_address": "0xA4Bdb11dc0a2bEC88d24A3aa1E6Bb17201112eBe",
@@ -10993,6 +11264,13 @@
         "name": "NuBits",
         "started": 1411430400,
         "symbol": "USNBT",
+        "type": "own chain"
+    },
+    "UST": {
+        "coingecko": "",
+        "name": "TerraUSD",
+        "started": 1599350400,
+        "symbol": "UST",
         "type": "own chain"
     },
     "UTC": {
@@ -11509,6 +11787,13 @@
         "symbol": "WIN",
         "type": "ethereum token"
     },
+    "WING": {
+        "coingecko": "wing-finance",
+        "name": "Wing Finance",
+        "started": 1600214400,
+        "symbol": "WING",
+        "type": "ontology token"
+    },
     "WINGS": {
         "coingecko": "wings",
         "ethereum_address": "0x667088b212ce3d06a1b553a7221E1fD19000d9aF",
@@ -11914,6 +12199,20 @@
         "symbol": "XRPBULL",
         "type": "ethereum token"
     },
+    "XRPDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token XRPDOWN",
+        "started": 1599696000,
+        "symbol": "XRPDOWN",
+        "type": "own chain"
+    },
+    "XRPUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token XRPUP",
+        "started": 1599696000,
+        "symbol": "XRPUP",
+        "type": "own chain"
+    },
     "XSI": {
         "active": false,
         "coingecko": "",
@@ -12081,6 +12380,24 @@
         "name": "YFII.finance",
         "started": 1595768700,
         "symbol": "YFII",
+        "type": "ethereum token"
+    },
+    "YFL": {
+        "coingecko": "yflink",
+        "ethereum_address": "0x28cb7e841ee97947a86B06fA4090C8451f64c0be",
+        "ethereum_token_decimals": 18,
+        "name": "YFLink",
+        "started": 1596432467,
+        "symbol": "YFL",
+        "type": "ethereum token"
+    },
+    "YFV": {
+        "coingecko": "yfv-finance",
+        "ethereum_address": "0x45f24BaEef268BB6d63AEe5129015d69702BCDfa",
+        "ethereum_token_decimals": 18,
+        "name": "YFValue",
+        "started": 1597602120,
+        "symbol": "YFV",
         "type": "ethereum token"
     },
     "YOU": {

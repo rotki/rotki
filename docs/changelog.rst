@@ -15,6 +15,47 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `SushiToken (SUSHI) <https://www.coingecko.com/en/coins/sushi>`__
+  - `Trustlines Network Token (TLN) <https://www.coingecko.com/en/coins/trustline-network>`__
+  - `Uniswap (UNI) <https://www.coingecko.com/en/coins/uniswap>`__
+  - `Crypto is Everywhere Around Me (CREAM) <https://www.coingecko.com/en/coins/cream>`__
+  - `Bella Protocol (BEL) <https://www.coingecko.com/en/coins/bella-protocol>`__
+  - `Elrond (EGLD) <https://www.coingecko.com/en/coins/elrond>`__
+  - `Swerve DAO Token (SWRV) <https://www.coingecko.com/en/coins/swerve>`__
+  - `Wing Finance (WING) <https://www.coingecko.com/en/coins/wing-finance>`__
+  - `Akropolis Delphi (ADEL) <https://www.coingecko.com/en/coins/akropolis-delphi>`__
+  - `AlphaLink (ANK) <https://www.coingecko.com/en/coins/alphalink>`__
+  - `Corn (CORN) <https://www.coingecko.com/en/coins/corn>`__
+  - `Salmon (SAL) <https://www.coingecko.com/en/coins/salmon>`__
+  - `Carrot Finance (CRT) <https://www.coingecko.com/en/coins/carr-finance>`__
+  - `FalconSwap Token (FSW) <https://www.coingecko.com/en/coins/falconswap>`__
+  - `Unification (FUND) <https://www.coingecko.com/en/coins/unification>`__
+  - `Hedget (HGET) <https://www.coingecko.com/en/coins/hedget>`__
+  - `JackPool.Finance (JFI) <https://www.coingecko.com/en/coins/jackpool-finance>`__
+  - `Pearl Finance (PEARL) <https://www.coingecko.com/en/coins/pearl-finance>`__
+  - `tBridge Token (TAI) <https://www.coingecko.com/en/coins/tbridge-token>`__
+  - `YF Link (YFL) <https://www.coingecko.com/en/coins/yf-link>`__
+  - `YFValue (YFV) <https://www.coingecko.com/en/coins/yfvalue>`__
+  - `Klaytn (KLAY) <https://www.coingecko.com/en/coins/klay>`__
+  - `Klever (KLV) <https://www.coingecko.com/en/coins/klever>`__
+  - `TerraKRW (KRT) <https://www.coingecko.com/en/coins/terra-krw>`__
+  - `Latamcash (LMCH) <https://www.coingecko.com/en/coins/latamcash>`__
+  - `Ravencoin Classic (RVC) <https://www.coingecko.com/en/coins/ravencoin-classic>`__
+  - `Terra SDT (SDT) <https://www.coingecko.com/en/coins/terra-sdt>`__
+  - `BiLira (TRYB) <https://www.coingecko.com/en/coins/bilira>`__
+  - `Neutrino Dollar (USDN) <https://www.coingecko.com/en/coins/neutrino-dollar>`__
+  - `Terra USD (UST) <https://www.cryptocompare.com/coins/ust/overview>`__
+  - `Trump Wins Token (TRUMPWIN) <https://www.coingecko.com/en/coins/trump-wins-token>`__
+  - `Trump Loses Token (TRUMPLOSE) <https://www.coingecko.com/en/coins/trump-loses-token>`__
+  - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__
+  - `Binance leveraged token DOTUP (DOTUP) <https://www.cryptocompare.com/coins/dotup/>`__
+  - `Binance leveraged token EOSDOWN (EOSDOWN) <https://www.cryptocompare.com/coins/eosdown>`__
+  - `Binance leveraged token EOSUP (EOSUP) <https://www.cryptocompare.com/coins/eosup/>`__
+  - `Binance leveraged token LTCDOWN (LTCDOWN) <https://www.cryptocompare.com/coins/ltcdown>`__
+  - `Binance leveraged token LTCUP (LTCUP) <https://www.cryptocompare.com/coins/ltcup/>`__
+  - `Binance leveraged token TRXDOWN (TRXDOWN) <https://www.cryptocompare.com/coins/trxdown>`__
+  - `Binance leveraged token TRXUP (TRXUP) <https://www.cryptocompare.com/coins/trxup/>`__
+  - `Binance leveraged token XRPDOWN (XRPDOWN) <https://www.cryptocompare.com/coins/xrpdown>`__
+  - `Binance leveraged token XRPUP (XRPUP) <https://www.cryptocompare.com/coins/xrpup/>`__
 
 * :release:`1.7.0 <2020-09-01>`
 * :feature:`1092` Users can now refresh their manual balance entries.
