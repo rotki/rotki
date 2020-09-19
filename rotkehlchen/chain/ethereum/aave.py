@@ -225,7 +225,6 @@ class Aave(EthereumModule):
         result = {}
         latest_block = self.ethereum.get_latest_block_number()
         with self.history_lock:
-
             if reset_db_data is True:
                 self.database.delete_aave_data()
 
@@ -455,7 +454,7 @@ class Aave(EthereumModule):
             ))
 
         for event in withdraw_events:
-            if hex_or_bytes_to_address(event['topics'][0]) == reserve_address:
+            if hex_or_bytes_to_address(event['topics'][1]) == reserve_address:
                 # first 32 bytes of the data are the amount
                 withdrawal = hex_or_bytes_to_int(event['data'][:66])
                 block_number = deserialize_blocknumber(event['blockNumber'])

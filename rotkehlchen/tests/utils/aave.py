@@ -167,5 +167,49 @@ expected_aave_test_events = [
         timestamp=Timestamp(1594502373),
         tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
         log_index=100,
+    ), AaveEvent(
+        event_type='deposit',
+        asset=A_DAI,
+        value=Balance(
+            amount=FVal('2507.675873220870275072'),
+            usd_value=FVal('2507.675873220870275072'),
+        ),
+        block_number=10505913,
+        timestamp=Timestamp(1595376667),
+        tx_hash='0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410',
+        log_index=96,
+    ), AaveEvent(
+        event_type='interest',
+        asset=A_ADAI,
+        value=Balance(
+            amount=FVal('17.91499070977557364'),
+            usd_value=FVal('17.91499070977557364'),
+        ),
+        block_number=10505913,
+        timestamp=Timestamp(1595376667),
+        tx_hash='0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410',
+        log_index=92,
+    ), AaveEvent(
+        event_type='interest',
+        asset=A_ADAI,
+        value=Balance(
+            amount=FVal('88.663672238882760399'),
+            usd_value=FVal('88.663672238882760399'),
+        ),
+        block_number=10718983,
+        timestamp=Timestamp(1598217272),
+        tx_hash='0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486',
+        log_index=97,
+    ), AaveEvent(
+        event_type='withdrawal',
+        asset=A_DAI,
+        value=Balance(
+            amount=FVal('7968.408929477087756071'),
+            usd_value=FVal('7968.408929477087756071'),
+        ),
+        block_number=10718983,
+        timestamp=Timestamp(1598217272),
+        tx_hash='0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486',
+        log_index=102,
     ),
 ]
