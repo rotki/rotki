@@ -670,11 +670,12 @@ class DBHandler:
             address: ChecksumEthAddress,
             atoken: EthereumToken,
     ) -> List[AaveEvent]:
+        """Get aave for a single address and a single aToken"""
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT event_type, amount, usd_value, block_number, timestamp, tx_hash, log_index '
-            'from aave_events WHERE address=? AND asset=?',
-            (address, atoken.identifier),
+            'from aave_events WHERE address=? AND asset=? OR asset=?',
+            (address, atoken.identifier, atoken.identifier[1:]),
         )
         events = []
         for result in query:
