@@ -150,8 +150,8 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
-            # Timeout of 120 since this test can take a long time
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+            # Big timeout since this test can take a long time
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=600)
             assert outcome['message'] == ''
             result = outcome['result']
         else:
@@ -165,9 +165,10 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
     assert len(total_earned['aDAI']) == 2
     assert FVal(total_earned['aDAI']['amount']) >= FVal('24.207179802347627414')
     assert FVal(total_earned['aDAI']['usd_value']) >= FVal('24.580592532348742989192')
+
     expected_events = process_result_list(expected_aave_test_events)
-    assert len(events) >= 12
-    assert events[:12] == expected_events
+    assert len(events) >= 16
+    assert events[:16] == expected_events
 
 
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
