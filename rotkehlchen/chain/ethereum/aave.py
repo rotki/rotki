@@ -12,6 +12,7 @@ from rotkehlchen.constants.ethereum import (
     AAVE_ETH_RESERVE_ADDRESS,
     AAVE_LENDING_POOL,
     ATOKEN_ABI,
+    MAX_BLOCKTIME_CACHE,
     ZERO_ADDRESS,
 )
 from rotkehlchen.db.dbhandler import DBHandler
@@ -33,7 +34,6 @@ log = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
-MAX_BLOCKTIME_CACHE_AAVE = 250  # 55 mins with 13 secs avg block time
 
 ATOKEN_TO_DEPLOYED_BLOCK = {
     'aETH': 9241088,
@@ -260,7 +260,7 @@ class Aave(EthereumModule):
             '_user': user_address,
         }
         query_events = True
-        if given_from_block is not None and to_block - given_from_block < MAX_BLOCKTIME_CACHE_AAVE:  # noqa: E501
+        if given_from_block is not None and to_block - given_from_block < MAX_BLOCKTIME_CACHE:  # noqa: E501
             query_events = False  # Save time by not querying events if last query is recent
 
         deposit_events = []

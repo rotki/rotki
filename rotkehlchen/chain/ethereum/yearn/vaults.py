@@ -1,13 +1,14 @@
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from typing_extensions import Literal
+from gevent import Semaphore
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import (
     ERC20TOKEN_ABI,
+    MAX_BLOCKTIME_CACHE,
     YEARN_ALINK_VAULT,
     YEARN_BCURVE_VAULT,
     YEARN_DAI_VAULT,
@@ -19,7 +20,6 @@ from rotkehlchen.constants.ethereum import (
     YEARN_YCRV_VAULT,
     YEARN_YFI_VAULT,
     ZERO_ADDRESS,
-    EthereumContract,
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset
@@ -42,13 +42,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 BLOCKS_PER_YEAR = 2425846
-
-
-class YearnVault(NamedTuple):
-    name: str
-    contract: EthereumContract
-    underlying_token: EthereumToken
-    token: EthereumToken
 
 
 YEARN_VAULTS = {
@@ -115,36 +108,6 @@ YEARN_VAULTS = {
 }
 
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class YearnVaultEvent:
-    event_type: Literal['deposit', 'withdraw']
-    block_number: int
-    timestamp: Timestamp
-    from_asset: Asset
-    from_value: Balance
-    to_asset: Asset
-    to_value: Balance
-    realized_pnl: Optional[Balance]
-    tx_hash: str
-    log_index: int
-
-    def serialize(self) -> Dict[str, Any]:
-        # Would have been nice to have a customizable asdict() for dataclasses
-        # This way we could have avoided manual work with the Asset object serialization
-        return {
-            'event_type': self.event_type,
-            'block_number': self.block_number,
-            'timestamp': self.timestamp,
-            'from_asset': self.from_asset.serialize(),
-            'from_value': self.from_value.serialize(),
-            'to_asset': self.to_asset.serialize(),
-            'to_value': self.to_value.serialize(),
-            'realized_pnl': self.realized_pnl.serialize() if self.realized_pnl else None,
-            'tx_hash': self.tx_hash,
-            'log_index': self.log_index,
-        }
-
-
 class YearnVaultHistory(NamedTuple):
     events: List[YearnVaultEvent]
     profit_loss: Balance
@@ -202,6 +165,7 @@ class YearnVaults(EthereumModule):
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium
+        self.history_lock = Semaphore()
 
     def _calculate_vault_roi(self, vault: YearnVault) -> FVal:
         """
@@ -486,11 +450,21 @@ class YearnVaults(EthereumModule):
             to_block: int,
     ) -> Optional[YearnVaultHistory]:
         from_block = max(from_block, vault.contract.deployed_block)
-        events = self._get_vault_deposit_events(vault, address, from_block, to_block)
-        if len(events) == 0:
-            return None
+        last_query = self.database.get_used_query_range(f'yearn_vaults_events_{address}')
+        skip_query = last_query and to_block - last_query[1] < MAX_BLOCKTIME_CACHE
 
-        events.extend(self._get_vault_withdraw_events(vault, address, from_block, to_block))
+        events = self.database.get_yearn_vaults_events(address=address, vault=vault)
+        if not skip_query:
+            new_events = self._get_vault_deposit_events(vault, address, from_block, to_block)
+            if len(events) == 0 and len(new_events) == 0:
+                return None
+
+            new_events.extend(
+                self._get_vault_withdraw_events(vault, address, from_block, to_block),
+            )
+            # Now update the DB with the new events
+            self.database.add_yearn_vaults_events(address, new_events)
+
         events.sort(key=lambda x: x.timestamp)
         total_pnl = self._process_vault_events(events)
 
@@ -521,33 +495,42 @@ class YearnVaults(EthereumModule):
             self,
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
             addresses: List[ChecksumEthAddress],
-            reset_db_data: bool,  # pylint: disable=unused-argument
+            reset_db_data: bool,
             from_timestamp: Timestamp,  # pylint: disable=unused-argument
             to_timestamp: Timestamp,  # pylint: disable=unused-argument
     ) -> Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]]:
-        if isinstance(given_defi_balances, dict):
-            defi_balances = given_defi_balances
-        else:
-            defi_balances = given_defi_balances()
+        with self.history_lock:
 
-        from_block = self.ethereum.etherscan.get_blocknumber_by_time(from_timestamp)
-        to_block = self.ethereum.etherscan.get_blocknumber_by_time(to_timestamp)
-        history: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
-        for address in addresses:
-            history[address] = {}
-            for _, vault in YEARN_VAULTS.items():
-                vault_history = self.get_vault_history(
-                    defi_balances=defi_balances[address],
-                    vault=vault,
-                    address=address,
-                    from_block=from_block,
-                    to_block=to_block,
-                )
-                if vault_history:
-                    history[address][vault.name] = vault_history
+            if reset_db_data is True:
+                self.database.delete_yearn_vaults_data()
 
-            if len(history[address]) == 0:
-                del history[address]
+            if isinstance(given_defi_balances, dict):
+                defi_balances = given_defi_balances
+            else:
+                defi_balances = given_defi_balances()
+
+            from_block = self.ethereum.etherscan.get_blocknumber_by_time(from_timestamp)
+            to_block = self.ethereum.etherscan.get_blocknumber_by_time(to_timestamp)
+            history: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
+            for address in addresses:
+                history[address] = {}
+                last_query = self.database.get_used_query_range(f'yearn_vaults_events_{address}')
+                if last_query and to_block - last_query[1] < MAX_BLOCKTIME_CACHE:
+                    continue  # save time by not querying events if last query is recent
+
+                for _, vault in YEARN_VAULTS.items():
+                    vault_history = self.get_vault_history(
+                        defi_balances=defi_balances[address],
+                        vault=vault,
+                        address=address,
+                        from_block=last_query[1] + 1 if last_query is not None else from_block,
+                        to_block=to_block,
+                    )
+                    if vault_history:
+                        history[address][vault.name] = vault_history
+
+                if len(history[address]) == 0:
+                    del history[address]
 
         return history
 
