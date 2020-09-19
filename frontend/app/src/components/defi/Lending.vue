@@ -44,7 +44,7 @@
                 <v-tooltip bottom max-width="300px">
                   <template #activator="{ on }">
                     <v-icon small class="mb-3 ml-1" v-on="on">
-                      fa fa-info-circle
+                      mdi-information
                     </v-icon>
                   </template>
                   <div>{{ $t('lending.effective_interest_rate_tooltip') }}</div>
@@ -61,7 +61,7 @@
           <template #third-col>
             <stat-card-column lock>
               <template #title>
-                {{ $t('lending.interest_earned') }}
+                {{ $t('lending.profit_earned') }}
                 <premium-lock v-if="!premium" class="d-inline" />
               </template>
               <amount-display
@@ -113,7 +113,7 @@
       :addresses="selectedAddresses"
     />
     <yearn-vaults-profit-details
-      v-if="premium && isYearnVaults"
+      v-if="premium && (isYearnVaults || selectedProtocols.length === 0)"
       :profit="yearnVaultsProfit(selectedAddresses)"
     />
     <v-row class="loans__history">

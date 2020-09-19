@@ -21,3 +21,13 @@ export function toUnit(value: BigNumber, unit: Unit = Unit.ETH): BigNumber {
   const pow = unit === Unit.ETH ? 18 : 9;
   return value.div(new BigNumber('10').pow(pow));
 }
+
+export function balanceSum(
+  sum: Balance,
+  { amount, usdValue }: Balance
+): Balance {
+  return {
+    amount: sum.amount.plus(amount),
+    usdValue: sum.usdValue.plus(usdValue)
+  };
+}

@@ -402,7 +402,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchAaveBalances', refresh),
       dispatch('fetchDSRBalances', refresh),
       dispatch('fetchMakerDAOVaults', refresh),
-      dispatch('fetchCompoundBalances', refresh)
+      dispatch('fetchCompoundBalances', refresh),
+      dispatch('fetchYearnVaultBalances', refresh)
     ]);
 
     setStatus(Status.LOADED, section, status, commit);

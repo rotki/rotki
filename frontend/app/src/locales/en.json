@@ -466,7 +466,7 @@
     "currently_deposited": "Currently Deposited",
     "effective_interest_rate": "Effective Savings Rate",
     "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
-    "interest_earned": "Interest Earned",
+    "profit_earned": "Profit Earned",
     "assets": "Assets",
     "history": "History"
   },
@@ -546,7 +546,7 @@
     "symbol": "%"
   },
   "decentralized_finance": {
-    "title": "Decentralized Finance\n",
+    "title": "Decentralized Finance",
     "settings_tooltip": "Opens the Defi settings",
     "tabs": {
       "overview": "Overview",
