@@ -18,6 +18,7 @@ class DefiEventType(Enum):
     COMPOUND_LIQUIDATION_DEBT_REPAID = 5
     COMPOUND_LIQUIDATION_COLLATERAL_LOST = 6
     COMPOUND_REWARDS = 7
+    YEARN_VAULTS_PNL = 8
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_LOAN_GAIN:
@@ -36,6 +37,8 @@ class DefiEventType(Enum):
             return "Compound liquidation collateral lost"
         elif self == DefiEventType.COMPOUND_REWARDS:
             return "Compound rewards"
+        elif self == DefiEventType.YEARN_VAULTS_PNL:
+            return "Yearn vaults profit/loss"
 
         raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
 
@@ -46,6 +49,7 @@ class DefiEventType(Enum):
             DefiEventType.COMPOUND_LOAN_INTEREST,
             DefiEventType.COMPOUND_REWARDS,
             DefiEventType.COMPOUND_DEBT_REPAY,
+            DefiEventType.YEARN_VAULTS_PNL,
         )
 
 
