@@ -743,7 +743,7 @@ class DBHandler:
                     'timestamp, '
                     'tx_hash, '
                     'log_index)'
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?. ?. ?, ?, ?, ?)',
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     event_tuple,
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
@@ -777,7 +777,7 @@ class DBHandler:
             'tx_hash, '
             'log_index '
             'from yearn_vaults_events WHERE address=? AND from_asset=? OR from_asset=?;',
-            (address, vault.underlying_token, vault.token),
+            (address, vault.underlying_token.identifier, vault.token.identifier),
         )
         events = []
         for result in query:

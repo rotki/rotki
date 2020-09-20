@@ -450,20 +450,31 @@ class YearnVaults(EthereumModule):
             to_block: int,
     ) -> Optional[YearnVaultHistory]:
         from_block = max(from_block, vault.contract.deployed_block)
-        last_query = self.database.get_used_query_range(f'yearn_vaults_events_{address}')
+        last_query = self.database.get_used_query_range(
+            name=f'yearn_vault_events_{vault.name.replace(" ", "_")}_{address}',
+        )
         skip_query = last_query and to_block - last_query[1] < MAX_BLOCKTIME_CACHE
 
         events = self.database.get_yearn_vaults_events(address=address, vault=vault)
         if not skip_query:
-            new_events = self._get_vault_deposit_events(vault, address, from_block, to_block)
+            query_from_block = last_query[1] + 1 if last_query else from_block
+            new_events = self._get_vault_deposit_events(vault, address, query_from_block, to_block)
             if len(events) == 0 and len(new_events) == 0:
+                # After all events have been queried then also update the query range.
+                # Even if no events are found for an address we need to remember the range
+                self.database.update_used_block_query_range(
+                    name=f'yearn_vault_events_{vault.name}_{address}',
+                    from_block=from_block,
+                    to_block=to_block,
+                )
                 return None
 
             new_events.extend(
-                self._get_vault_withdraw_events(vault, address, from_block, to_block),
+                self._get_vault_withdraw_events(vault, address, query_from_block, to_block),
             )
             # Now update the DB with the new events
             self.database.add_yearn_vaults_events(address, new_events)
+            events.extend(new_events)
 
         events.sort(key=lambda x: x.timestamp)
         total_pnl = self._process_vault_events(events)
@@ -489,6 +500,14 @@ class YearnVaults(EthereumModule):
                 msg_aggregator=self.msg_aggregator,
             )
             total_pnl.usd_value = usd_price * total_pnl.amount
+
+        # After all events have been queried then also update the query range.
+        # Even if no events are found for an address we need to remember the range
+        self.database.update_used_block_query_range(
+            name=f'yearn_vault_events_{vault.name.replace(" ", "_")}_{address}',
+            from_block=from_block,
+            to_block=to_block,
+        )
         return YearnVaultHistory(events=events, profit_loss=total_pnl)
 
     def get_history(
@@ -531,6 +550,14 @@ class YearnVaults(EthereumModule):
 
                 if len(history[address]) == 0:
                     del history[address]
+
+                # After all events have been queried then also update the query range.
+                # Even if no events are found for an address we need to remember the range
+                self.database.update_used_block_query_range(
+                    name=f'yearn_vault_events_{address}',
+                    from_block=from_block,
+                    to_block=to_block,
+                )
 
         return history
 
