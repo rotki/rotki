@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from gevent import Semaphore
+from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
