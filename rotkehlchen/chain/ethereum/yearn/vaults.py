@@ -539,7 +539,7 @@ class YearnVaults(EthereumModule):
 
                 for _, vault in YEARN_VAULTS.items():
                     vault_history = self.get_vault_history(
-                        defi_balances=defi_balances[address],
+                        defi_balances=defi_balances.get(address, []),
                         vault=vault,
                         address=address,
                         from_block=last_query[1] + 1 if last_query is not None else from_block,

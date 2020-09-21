@@ -21,6 +21,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Timestamp
 
@@ -387,7 +388,9 @@ def check_vault_history(name, expected_history, result_history):
             assert FVal(s['realized_pnl']['amount']) == FVal(result['events'][idx]['realized_pnl']['amount'])  # noqa: E501
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+# Try with 2 addresses to make sure that if an address does not have yearn vault history
+# nothing breaks
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1, make_ethereum_address()]])
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
