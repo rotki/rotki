@@ -19,8 +19,12 @@ def assert_serialized_lists_equal(
     for idx, a_entry in enumerate(a):
         if max_length_to_check and idx + 1 > max_length_to_check:
             break
-        if a_entry == b[idx]:
-            continue
+
+        try:
+            if a_entry == b[idx]:
+                continue
+        except NotImplementedError:
+            pass
 
         assert_serialized_dicts_equal(
             a=a_entry,
