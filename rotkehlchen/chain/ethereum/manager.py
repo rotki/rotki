@@ -1,7 +1,7 @@
 import logging
 import random
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from urllib.parse import urlparse
 
 import requests
@@ -672,10 +672,19 @@ class EthereumManager():
                 )
                 # WTF: for some reason the first time we get in here the loop resets
                 # to the start without querying eth_getLogs and ends up with double logging
-                new_events_web3 = web3.eth.getLogs(filter_args)
+                new_events_web3 = cast(List[Dict[str, Any]], web3.eth.getLogs(filter_args))
+                # Turn all HexBytes into hex strings
+                for e_idx, event in enumerate(new_events_web3):
+                    new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
+                    new_topics = []
+                    for topic in (event['topics']):
+                        new_topics.append(topic.hex())
+                    new_events_web3[e_idx]['topics'] = new_topics
+                    new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
+
                 start_block = end_block + 1
-                events.extend(new_events_web3)  # type: ignore
-        else:
+                events.extend(new_events_web3)
+        else:  # etherscan
             until_block = (
                 self.etherscan.get_latest_block_number() if to_block == 'latest' else to_block
             )
@@ -687,6 +696,16 @@ class EthereumManager():
                     from_block=start_block,
                     to_block=end_block,
                 )
+                # Turn all Hex ints to ints
+                for e_idx, event in enumerate(new_events):
+                    new_events[e_idx]['address'] = to_checksum_address(event['address'])
+                    new_events[e_idx]['blockNumber'] = int(event['blockNumber'], 16)
+                    new_events[e_idx]['timeStamp'] = int(event['timeStamp'], 16)
+                    new_events[e_idx]['gasPrice'] = int(event['gasPrice'], 16)
+                    new_events[e_idx]['gasUsed'] = int(event['gasUsed'], 16)
+                    new_events[e_idx]['logIndex'] = int(event['logIndex'], 16)
+                    new_events[e_idx]['transactionIndex'] = int(event['transactionIndex'], 16)
+
                 start_block = end_block + 1
                 events.extend(new_events)
 

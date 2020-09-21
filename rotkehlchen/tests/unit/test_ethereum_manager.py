@@ -2,7 +2,8 @@ import gevent
 import pytest
 
 from rotkehlchen.chain.ethereum.manager import NodeName
-from rotkehlchen.constants.ethereum import YEARN_YCRV_VAULT
+from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, YEARN_YCRV_VAULT
+from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import ETHEREUM_TEST_PARAMETERS
 
 
@@ -90,3 +91,52 @@ def test_call_contract(ethereum_manager, call_order):
         call_order=call_order,
     )
     assert result >= 0
+
+
+@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
+def test_get_logs(ethereum_manager, call_order):
+    # Wait until all nodes are connected
+    if NodeName.OWN in call_order:
+        while NodeName.OWN not in ethereum_manager.web3_mapping:
+            gevent.sleep(2)
+            continue
+
+    argument_filters = {
+        'from': '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10',
+        'to': YEARN_YCRV_VAULT.address,
+    }
+    events = ethereum_manager.get_logs(
+        contract_address='0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8',
+        abi=ERC20TOKEN_ABI,
+        event_name='Transfer',
+        argument_filters=argument_filters,
+        from_block=10712531,
+        to_block=10712753,
+        call_order=call_order,
+    )
+    assert len(events) == 1
+    expected_event = {
+        'address': '0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8',
+        'blockNumber': 10712731,
+        'data': '0x0000000000000000000000000000000000000000000001e3f60028423cff0000',
+        'gasPrice': 72000000000,
+        'gasUsed': 93339,
+        'logIndex': 157,
+        'topics': [
+            '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+            '0x0000000000000000000000007780e86699e941254c8f4d9b7eb08ff7e96bbe10',
+            '0x0000000000000000000000005dbcf33d8c2e976c6b560249878e6f1491bca25c',
+        ],
+        'transactionHash': '0xca33e56e1e529dacc9aa1261c8ba9230927329eb609fbe252e5bd3c2f5f3bcc9',
+        'transactionIndex': 85,
+    }
+    assert_serialized_dicts_equal(
+        events[0],
+        expected_event,
+        same_key_length=False,
+        ignore_keys=[
+            'timeStamp',  # returned from etherscan
+            'blockHash',  # returned from web3
+            'removed',  # returned from web3
+        ],
+    )
