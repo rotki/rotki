@@ -11,6 +11,7 @@
           @refresh="refresh()"
         >
           <confirmable-reset
+            v-if="premium"
             :loading="anyRefreshing"
             :tooltip="$t('lending.reset_tooltip')"
             @reset="reset()"
