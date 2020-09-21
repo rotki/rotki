@@ -190,6 +190,26 @@ class TradesHistorian():
                         amount=detail.total_liquidated.usd_value + detail.total_interest_owed,
                     ))
 
+        # include yearn vault events
+        if self.chain_manager.yearn_vaults and has_premium:
+            yearn_vaults_history = self.chain_manager.yearn_vaults.get_history(
+                given_defi_balances=self.chain_manager.defi_balances,
+                addresses=self.chain_manager.queried_addresses_for_module('yearn_vaults'),
+                reset_db_data=False,
+                from_timestamp=start_ts,
+                to_timestamp=end_ts,
+            )
+            for _, vault_mappings in yearn_vaults_history.items():
+                for _, vault_history in vault_mappings.items():
+                    # For the vaults since we can't get historical values of vault tokens
+                    # yet, for the purposes of the tax report count everything as USD
+                    defi_events.append(DefiEvent(
+                        timestamp=ts_now(),
+                        event_type=DefiEventType.YEARN_VAULTS_PNL,
+                        asset=A_USD,
+                        amount=vault_history.profit_loss.usd_value,
+                    ))
+
         # include compound events
         if self.chain_manager.compound and has_premium:
             compound_history = self.chain_manager.compound.get_history(

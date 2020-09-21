@@ -7,7 +7,11 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.yearn.vaults import YearnVaultEvent, YearnVaultHistory
+from rotkehlchen.chain.ethereum.yearn.vaults import (
+    YEARN_VAULTS,
+    YearnVaultEvent,
+    YearnVaultHistory,
+)
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -400,28 +404,38 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
         btc_accounts=None,
         original_queries=['zerion'],
     )
-    with ExitStack() as stack:
-        # patch ethereum/etherscan to not autodetect tokens
-        setup.enter_ethereum_patches(stack)
-        response = requests.get(api_url_for(
-            rotkehlchen_api_server,
-            "yearnvaultshistoryresource",
-        ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=60)
-            assert outcome['message'] == ''
-            result = outcome['result']
-        else:
-            result = assert_proper_response_with_result(response)
 
-    result = result[TEST_ACC1]
-    check_vault_history('YALINK Vault', EXPECTED_HISTORY, result)
-    check_vault_history('YCRV Vault', EXPECTED_HISTORY, result)
-    check_vault_history('YSRENCURVE Vault', EXPECTED_HISTORY, result)
-    check_vault_history('YUSDC Vault', EXPECTED_HISTORY, result)
-    check_vault_history('YUSDT Vault', EXPECTED_HISTORY, result)
-    check_vault_history('YYFI Vault', EXPECTED_HISTORY, result)
+    for _ in range(2):
+        # Run 2 times to make sure that loading data from DB the 2nd time works fine
+        with ExitStack() as stack:
+            # patch ethereum/etherscan to not autodetect tokens
+            setup.enter_ethereum_patches(stack)
+            response = requests.get(api_url_for(
+                rotkehlchen_api_server,
+                "yearnvaultshistoryresource",
+            ), json={'async_query': async_query})
+            if async_query:
+                task_id = assert_ok_async_response(response)
+                outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=600)
+                assert outcome['message'] == ''
+                result = outcome['result']
+            else:
+                result = assert_proper_response_with_result(response)
+
+        # Make sure some data was saved in the DB after first call
+        events = rotki.data.db.get_yearn_vaults_events(
+            TEST_ACC1,
+            YEARN_VAULTS['yyDAI+yUSDC+yUSDT+yTUSD'],
+        )
+        assert len(events) >= 11
+
+        result = result[TEST_ACC1]
+        check_vault_history('YALINK Vault', EXPECTED_HISTORY, result)
+        check_vault_history('YCRV Vault', EXPECTED_HISTORY, result)
+        check_vault_history('YSRENCURVE Vault', EXPECTED_HISTORY, result)
+        check_vault_history('YUSDC Vault', EXPECTED_HISTORY, result)
+        check_vault_history('YUSDT Vault', EXPECTED_HISTORY, result)
+        check_vault_history('YYFI Vault', EXPECTED_HISTORY, result)
 
 
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])

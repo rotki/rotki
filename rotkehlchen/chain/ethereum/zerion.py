@@ -24,9 +24,12 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-def _is_symbol_non_standard(symbol: str) -> bool:
-    """ignore some non standard asset symbols like Curve finance and Pool together"""
-    if '+' in symbol:
+def _is_token_non_standard(symbol: str, address: ChecksumEthAddress) -> bool:
+    """ignore some assets we do not yet support and don't want to spam warnings with"""
+    if symbol in ('UNI-V2', 'swUSD', 'crCRV'):
+        return True
+
+    if address in ('0xCb2286d9471cc185281c4f763d34A962ED212962',):  # Sushi LP token
         return True
 
     return False
@@ -208,7 +211,7 @@ class Zerion():
             asset = Asset(token_symbol)
             usd_price = Inquirer().find_usd_price(asset)
         except (UnknownAsset, UnsupportedAsset):
-            if not _is_symbol_non_standard(token_symbol):
+            if not _is_token_non_standard(token_symbol, token_address):
                 self.msg_aggregator.add_warning(
                     f'Unsupported asset {token_symbol} encountered during DeFi protocol queries',
                 )

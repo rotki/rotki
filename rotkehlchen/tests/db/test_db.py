@@ -68,6 +68,7 @@ from rotkehlchen.utils.serialization import rlk_jsondumps
 
 TABLES_AT_INIT = [
     'aave_events',
+    'yearn_vaults_events',
     'timed_balances',
     'timed_location_data',
     'asset_movement_category',
