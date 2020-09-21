@@ -282,7 +282,7 @@
         },
         "error": {
           "title": "DSR Balances",
-          "description": "Failed to retrieve DSR balances: ${error}"
+          "description": "Failed to retrieve DSR balances: {error}"
         }
       },
       "dsr_history": {
@@ -291,7 +291,7 @@
         },
         "error": {
           "title": "DSR History",
-          "description": "Failed to retrieve DSR history: ${error}"
+          "description": "Failed to retrieve DSR history: {error}"
         }
       },
       "makerdao_vaults": {
@@ -300,7 +300,7 @@
         },
         "error": {
           "title": "MakerDAO Vaults",
-          "description": "Failed to retrieve MakerDAO Vaults: ${error}"
+          "description": "Failed to retrieve MakerDAO Vaults: {error}"
         }
       },
       "makerdao_vault_details": {
@@ -309,7 +309,7 @@
         },
         "error": {
           "title": "MakerDAO Vault details",
-          "description": "Failed to retrieve MakerDAO Vault details: ${error}"
+          "description": "Failed to retrieve MakerDAO Vault details: {error}"
         }
       },
       "aave_balances": {
@@ -318,7 +318,7 @@
         },
         "error": {
           "title": "Aave balances",
-          "description": "Failed to retrieve Aave balances: ${error}"
+          "description": "Failed to retrieve Aave balances: {error}"
         }
       },
       "aave_history": {
@@ -327,7 +327,7 @@
         },
         "error": {
           "title": "Aave history",
-          "description": "Failed to retrieve Aave history: ${error}"
+          "description": "Failed to retrieve Aave history: {error}"
         }
       },
       "yearn_vaults": {
@@ -336,7 +336,7 @@
         },
         "error": {
           "title": "yearn.finance Vaults balances",
-          "description": "Failed to retrieve yearn.finance Vaults balances: ${error}"
+          "description": "Failed to retrieve yearn.finance Vaults balances: {error}"
         }
       },
       "yearn_vaults_history": {
@@ -345,7 +345,7 @@
         },
         "error": {
           "title": "yearn.finance Vaults history",
-          "description": "Failed to retrieve yearn.finance Vaults history: ${error}"
+          "description": "Failed to retrieve yearn.finance Vaults history: {error}"
         }
       }
     }
