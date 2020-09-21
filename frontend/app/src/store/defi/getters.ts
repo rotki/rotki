@@ -389,7 +389,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           .filter(event => event.asset === asset || event.eventType === 'comp')
           .filter(({ address }) => address === owner)
           .filter(({ eventType }) => !['mint', 'redeem'].includes(eventType))
-          .map(value => ({ ...value, id: `${value.txHash}${value.logIndex}` }))
+          .map(value => ({ ...value, id: `${value.txHash}-${value.logIndex}` }))
       } as CompoundLoan;
     }
 
@@ -668,7 +668,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
         for (const movement of history.movements) {
           defiLendingHistory.push({
-            id: `${movement.txHash}${id++}`,
+            id: `${movement.txHash}-${id++}`,
             eventType: movement.movementType,
             protocol: 'makerdao',
             address,
@@ -695,7 +695,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
         for (const event of history.events) {
           const items = {
-            id: `${event.txHash}${event.logIndex}`,
+            id: `${event.txHash}-${event.logIndex}`,
             eventType: event.eventType,
             protocol: 'aave',
             address,
@@ -721,7 +721,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         }
 
         const item = {
-          id: `${event.txHash}${event.logIndex}`,
+          id: `${event.txHash}-${event.logIndex}`,
           eventType: event.eventType,
           protocol: 'compound',
           address: event.address,
@@ -757,7 +757,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           }
           for (const event of data.events) {
             const item = {
-              id: `${event.txHash}${event.logIndex}`,
+              id: `${event.txHash}-${event.logIndex}`,
               eventType: event.eventType,
               protocol: DEFI_YEARN_VAULTS,
               address: address,
@@ -954,7 +954,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
   yearnVaultsProfit: ({ yearnVaultsHistory }) => (
     addresses: string[]
   ): YearnVaultProfitLoss[] => {
-    const yearnVaultsProfit: YearnVaultProfitLoss[] = [];
+    const yearnVaultsProfit: { [vault: string]: YearnVaultProfitLoss } = {};
     const allAddresses = addresses.length === 0;
     for (const address in yearnVaultsHistory) {
       if (!allAddresses && !addresses.includes(address)) {
@@ -971,16 +971,21 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         const events = data.events.filter(event => event.eventType === DEPOSIT);
         const asset = events && events.length > 0 ? events[0].fromAsset : '';
 
-        const vaultProfit: YearnVaultProfitLoss = {
-          value: data.profitLoss,
-          vault,
-          asset
-        };
-
-        yearnVaultsProfit.push(vaultProfit);
+        if (!yearnVaultsProfit[vault]) {
+          yearnVaultsProfit[vault] = {
+            value: data.profitLoss,
+            vault,
+            asset
+          };
+        } else {
+          yearnVaultsProfit[vault] = {
+            ...yearnVaultsProfit[vault],
+            value: balanceSum(yearnVaultsProfit[vault].value, data.profitLoss)
+          };
+        }
       }
     }
-    return yearnVaultsProfit;
+    return Object.values(yearnVaultsProfit);
   },
 
   yearnVaultsAssets: ({ yearnVaultsBalances }) => (
