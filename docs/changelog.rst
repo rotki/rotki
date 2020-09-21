@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1402` Yearn vaults historical data and total profit/loss per vault is now available. Also the ROI since inception is now visible next to each vault.
 * :bug:`1491` All aave historical events should now be properly returned. Not only interest events.
 * :bug:`1482` Use binance api server time to avoid clock skew error with the signatures
 * :feature:`-` Users can now easily copy the address from the blockchain account view.

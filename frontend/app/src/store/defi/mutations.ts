@@ -4,6 +4,10 @@ import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
+import {
+  YearnVaultsBalances,
+  YearnVaultsHistory
+} from '@/services/defi/types/yearn';
 import { defaultState } from '@/store/defi/state';
 import {
   AllDefiProtocols,
@@ -44,6 +48,12 @@ export const mutations: MutationTree<DefiState> = {
   },
   compoundHistory(state: DefiState, history: CompoundHistory) {
     state.compoundHistory = history;
+  },
+  yearnVaultsHistory(state: DefiState, history: YearnVaultsHistory) {
+    state.yearnVaultsHistory = history;
+  },
+  yearnVaultsBalances(state: DefiState, balances: YearnVaultsBalances) {
+    state.yearnVaultsBalances = balances;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

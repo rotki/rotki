@@ -97,7 +97,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       showError(e.message, 'Login failed');
     }
   },
-  async periodicCheck({ commit }) {
+  async periodicCheck({
+    commit,
+    state: { accountingSettings, nodeConnection }
+  }) {
     try {
       const result = await api.queryPeriodicData();
       if (Object.keys(result).length === 0) {
@@ -112,10 +115,17 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         history_process_start_ts
       } = result;
 
-      commit('updateAccountingSetting', {
-        lastBalanceSave: last_balance_save
-      });
-      commit('nodeConnection', eth_node_connection);
+      const { lastBalanceSave } = accountingSettings;
+
+      if (last_balance_save !== lastBalanceSave) {
+        commit('updateAccountingSetting', {
+          lastBalanceSave: last_balance_save
+        });
+      }
+
+      if (eth_node_connection !== nodeConnection) {
+        commit('nodeConnection', eth_node_connection);
+      }
 
       if (history_process_current_ts > 0) {
         commit(
@@ -138,24 +148,27 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       );
     }
   },
-  async logout({ commit, state }) {
+  async logout({ dispatch, state }) {
     try {
       await api.logout(state.username);
-      monitor.stop();
-      const opts = { root: true };
-      const payload = {};
-      commit('session/reset', payload, opts);
-      commit('notifications/reset', payload, opts);
-      commit('reports/reset', payload, opts);
-      commit('balances/reset', payload, opts);
-      commit('defi/reset', payload, opts);
-      commit('tasks/reset', payload, opts);
-      commit('settings/reset', payload, opts);
-      commit('history/reset', payload, opts);
-      commit('reset', payload, opts);
+      await dispatch('stop');
     } catch (e) {
       showError(e.message, 'Logout failed');
     }
+  },
+  async stop({ commit }) {
+    monitor.stop();
+    const opts = { root: true };
+    const payload = {};
+    commit('session/reset', payload, opts);
+    commit('notifications/reset', payload, opts);
+    commit('reports/reset', payload, opts);
+    commit('balances/reset', payload, opts);
+    commit('defi/reset', payload, opts);
+    commit('tasks/reset', payload, opts);
+    commit('settings/reset', payload, opts);
+    commit('history/reset', payload, opts);
+    commit('reset', payload, opts);
   },
 
   async addTag({ commit }, tag: Tag) {

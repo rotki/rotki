@@ -17,6 +17,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.structures import AaveEvent, YearnVault, YearnVaultEvent
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
+from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
@@ -673,15 +674,15 @@ class DBHandler:
         """Get aave for a single address and a single aToken"""
         cursor = self.conn.cursor()
         query = cursor.execute(
-            'SELECT event_type, amount, usd_value, block_number, timestamp, tx_hash, log_index '
-            'from aave_events WHERE address=? AND asset=? OR asset=?',
+            'SELECT event_type, amount, usd_value, block_number, timestamp, tx_hash, log_index, '
+            'asset from aave_events WHERE address=? AND (asset=? OR asset=?)',
             (address, atoken.identifier, atoken.identifier[1:]),
         )
         events = []
         for result in query:
             events.append(AaveEvent(
                 event_type=result[0],
-                asset=atoken,
+                asset=Asset(result[7]),
                 value=Balance(amount=FVal(result[1]), usd_value=FVal(result[2])),
                 block_number=int(result[3]),
                 timestamp=Timestamp(int(result[4])),
@@ -776,7 +777,7 @@ class DBHandler:
             'timestamp, '
             'tx_hash, '
             'log_index '
-            'from yearn_vaults_events WHERE address=? AND from_asset=? OR from_asset=?;',
+            'from yearn_vaults_events WHERE address=? AND (from_asset=? OR from_asset=?);',
             (address, vault.underlying_token.identifier, vault.token.identifier),
         )
         events = []
@@ -802,7 +803,7 @@ class DBHandler:
         """Delete all historical aave event data"""
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM yearn_vaults_events;')
-        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "yearn_vaults_events%";')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_PREFIX}%";')
         self.conn.commit()
         self.update_last_write()
 

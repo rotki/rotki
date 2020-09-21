@@ -19,6 +19,13 @@ def assert_serialized_lists_equal(
     for idx, a_entry in enumerate(a):
         if max_length_to_check and idx + 1 > max_length_to_check:
             break
+
+        try:
+            if a_entry == b[idx]:
+                continue
+        except NotImplementedError:
+            pass
+
         assert_serialized_dicts_equal(
             a=a_entry,
             b=b[idx],
@@ -34,9 +41,12 @@ def assert_serialized_dicts_equal(
         ignore_keys: Optional[List] = None,
         length_list_keymap: Optional[Dict] = None,
         max_diff: str = "1e-6",
+        same_key_length=True,
 ) -> None:
     """Compares serialized dicts so that serialized numbers can be compared for equality"""
-    assert len(a) == len(b), f"Dicts don't have the same key length {len(a)} != {len(b)}"
+
+    if same_key_length:
+        assert len(a) == len(b), f"Dicts don't have the same key length {len(a)} != {len(b)}"
     for a_key, a_val in a.items():
 
         if ignore_keys and a_key in ignore_keys:

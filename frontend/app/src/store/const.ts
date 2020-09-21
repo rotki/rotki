@@ -24,7 +24,9 @@ export enum Section {
   DEFI_DRS_BALANCES = 'defi_dsr_balances',
   DEFI_DSR_HISTORY = 'defi_dsr_history',
   DEFI_MAKERDAO_VAULT_DETAILS = 'defi_makerdao_vault_details',
-  DEFI_MAKERDAO_VAULTS = 'defi_makerdao_vaults'
+  DEFI_MAKERDAO_VAULTS = 'defi_makerdao_vaults',
+  DEFI_YEARN_VAULTS_HISTORY = 'defi_yearn_vaults_history',
+  DEFI_YEARN_VAULTS_BALANCES = 'defi_yearn_vaults_balances'
 }
 
 export const defiSections: Section[] = [
@@ -41,5 +43,7 @@ export const defiSections: Section[] = [
   Section.DEFI_DRS_BALANCES,
   Section.DEFI_DSR_HISTORY,
   Section.DEFI_MAKERDAO_VAULT_DETAILS,
-  Section.DEFI_MAKERDAO_VAULTS
+  Section.DEFI_MAKERDAO_VAULTS,
+  Section.DEFI_YEARN_VAULTS_BALANCES,
+  Section.DEFI_YEARN_VAULTS_HISTORY
 ];

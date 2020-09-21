@@ -7,6 +7,7 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.yearn.vaults import (
     YEARN_VAULTS,
     YearnVaultEvent,
@@ -21,6 +22,8 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.ethereum import INFURA_TEST
+from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Timestamp
 
@@ -387,12 +390,21 @@ def check_vault_history(name, expected_history, result_history):
             assert FVal(s['realized_pnl']['amount']) == FVal(result['events'][idx]['realized_pnl']['amount'])  # noqa: E501
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+# Try with 2 addresses to make sure that if an address does not have yearn vault history
+# nothing breaks
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1, make_ethereum_address()]])
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize(  # Force infura to make sure one of our history tests work with web3
+    'ethrpc_endpoint,ethereum_manager_connect_at_start',
+    [(
+        INFURA_TEST,
+        (NodeName.OWN,),
+    )],
+)
 def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the yearn vaults history endpoint works. Uses real data.
     """
@@ -408,7 +420,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
     for _ in range(2):
         # Run 2 times to make sure that loading data from DB the 2nd time works fine
         with ExitStack() as stack:
-            # patch ethereum/etherscan to not autodetect tokens
+            # patch ethereum/etherscan to not autodetect tokens (not needed with infura)
             setup.enter_ethereum_patches(stack)
             response = requests.get(api_url_for(
                 rotkehlchen_api_server,

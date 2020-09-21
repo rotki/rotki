@@ -6,36 +6,32 @@
     bordered
     class="overview"
   >
-    <span
-      class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
-    >
-      {{ $t('overview.stat_card.headers.borrowing') }}
-      <v-btn
-        v-if="summary.borrowingUrl"
-        :to="summary.borrowingUrl"
-        icon
-        small
-        color="primary"
+    <div v-if="summary.liabilitiesUrl">
+      <span
+        class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
       >
-        <v-icon small color="primary">mdi-launch</v-icon>
-      </v-btn>
-    </span>
-    <info-row
-      :title="$t('overview.stat_card.content.labels.total_collateral')"
-      fiat
-      :value="summary.totalCollateralUsd"
-    />
-    <info-row
-      :title="$t('overview.stat_card.content.labels.total_debt')"
-      fiat
-      :value="summary.totalDebtUsd"
-    />
-    <v-divider class="my-4" />
+        {{ $t('overview.stat_card.headers.borrowing') }}
+        <v-btn :to="summary.liabilitiesUrl" icon small color="primary">
+          <v-icon small color="primary">mdi-launch</v-icon>
+        </v-btn>
+      </span>
+      <info-row
+        :title="$t('overview.stat_card.content.labels.total_collateral')"
+        fiat
+        :value="summary.totalCollateralUsd"
+      />
+      <info-row
+        :title="$t('overview.stat_card.content.labels.total_debt')"
+        fiat
+        :value="summary.totalDebtUsd"
+      />
+      <v-divider class="my-4" />
+    </div>
     <h4 class="pb-2 d-flex flex-row justify-space-between">
       {{ $t('overview.stat_card.headers.lending') }}
       <v-btn
-        v-if="summary.lendingUrl"
-        :to="summary.lendingUrl"
+        v-if="summary.depositsUrl"
+        :to="summary.depositsUrl"
         icon
         small
         color="primary"

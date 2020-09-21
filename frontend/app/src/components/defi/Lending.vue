@@ -11,6 +11,7 @@
           @refresh="refresh()"
         >
           <confirmable-reset
+            v-if="premium"
             :loading="anyRefreshing"
             :tooltip="$t('lending.reset_tooltip')"
             @reset="reset()"
@@ -44,7 +45,7 @@
                 <v-tooltip bottom max-width="300px">
                   <template #activator="{ on }">
                     <v-icon small class="mb-3 ml-1" v-on="on">
-                      fa fa-info-circle
+                      mdi-information
                     </v-icon>
                   </template>
                   <div>{{ $t('lending.effective_interest_rate_tooltip') }}</div>
@@ -61,7 +62,7 @@
           <template #third-col>
             <stat-card-column lock>
               <template #title>
-                {{ $t('lending.interest_earned') }}
+                {{ $t('lending.profit_earned') }}
                 <premium-lock v-if="!premium" class="d-inline" />
               </template>
               <amount-display
@@ -88,7 +89,7 @@
         <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>
-    <v-row>
+    <v-row v-if="!isYearnVaults">
       <v-col>
         <stat-card :title="$t('lending.assets')">
           <lending-asset-table
@@ -100,9 +101,21 @@
         </stat-card>
       </v-col>
     </v-row>
+    <v-row v-if="isYearnVaults || selectedProtocols.length === 0">
+      <v-col>
+        <yearn-assets-table
+          :loading="refreshing"
+          :selected-addresses="selectedAddresses"
+        />
+      </v-col>
+    </v-row>
     <compound-lending-details
-      v-if="isCompound"
+      v-if="premium && isCompound"
       :addresses="selectedAddresses"
+    />
+    <yearn-vaults-profit-details
+      v-if="premium && (isYearnVaults || selectedProtocols.length === 0)"
+      :profit="yearnVaultsProfit(selectedAddresses)"
     />
     <v-row class="loans__history">
       <v-col cols="12">
@@ -125,6 +138,7 @@ import Component from 'vue-class-component';
 import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
+import YearnAssetsTable from '@/components/defi/yearn/YearnAssetsTable.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
@@ -138,17 +152,28 @@ import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import { DEFI_PROTOCOLS } from '@/services/defi/consts';
+import {
+  DEFI_COMPOUND,
+  DEFI_PROTOCOLS,
+  DEFI_YEARN_VAULTS
+} from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
+import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
 import { BaseDefiBalance } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
-import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
+import {
+  CompoundLendingDetails,
+  LendingHistory,
+  YearnVaultsProfitDetails
+} from '@/utils/premium';
 
 @Component({
   components: {
+    YearnAssetsTable,
     PercentageDisplay,
     CompoundLendingDetails,
+    YearnVaultsProfitDetails,
     ConfirmableReset,
     RefreshHeader,
     LendingAssetTable,
@@ -172,7 +197,8 @@ import { CompoundLendingDetails, LendingHistory } from '@/utils/premium';
       'defiAccounts',
       'effectiveInterestRate',
       'aggregatedLendingBalances',
-      'lendingHistory'
+      'lendingHistory',
+      'yearnVaultsProfit'
     ])
   },
   methods: {
@@ -209,6 +235,7 @@ export default class Lending extends Mixins(StatusMixin) {
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => BigNumber;
+  yearnVaultsProfit!: (addresses: string[]) => YearnVaultProfitLoss[];
 
   section = Section.DEFI_LENDING;
   secondSection = Section.DEFI_LENDING_HISTORY;
@@ -226,7 +253,14 @@ export default class Lending extends Mixins(StatusMixin) {
   get isCompound(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes('compound')
+      this.selectedProtocols.includes(DEFI_COMPOUND)
+    );
+  }
+
+  get isYearnVaults(): boolean {
+    return (
+      this.selectedProtocols.length === 1 &&
+      this.selectedProtocols.includes(DEFI_YEARN_VAULTS)
     );
   }
 

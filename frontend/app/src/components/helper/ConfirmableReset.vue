@@ -11,7 +11,7 @@
             :disabled="loading"
             v-on="{ ...menu, ...tooltip }"
           >
-            <v-icon color="primary">fa-repeat</v-icon>
+            <v-icon color="primary">mdi-database-refresh</v-icon>
           </v-btn>
         </template>
         <span>
@@ -20,16 +20,18 @@
       </v-tooltip>
     </template>
     <v-card max-width="280px">
-      <v-card-title>Confirm</v-card-title>
+      <v-card-title>{{ $t('confirmable_reset.confirm.title') }}</v-card-title>
       <v-card-text>
-        <slot>
-          Are you sure you want to proceed with the reset?
-        </slot>
+        <slot>{{ $t('confirmable_reset.confirm.message') }}</slot>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="menu = false">Cancel</v-btn>
-        <v-btn color="primary" text @click="reset()">Confirm</v-btn>
+        <v-btn text @click="menu = false">
+          {{ $t('confirmable_reset.confirm.cancel') }}
+        </v-btn>
+        <v-btn color="primary" text @click="reset()">
+          {{ $t('confirmable_reset.confirm.confirm') }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-menu>
@@ -53,5 +55,3 @@ export default class ConfirmableReset extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

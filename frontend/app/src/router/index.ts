@@ -148,13 +148,13 @@ export default new Router({
           component: () => import('../views/defi/DecentralizedOverview.vue')
         },
         {
-          path: '/defi/lending/',
-          name: 'defi-lending',
+          path: '/defi/deposits/',
+          name: 'defi-deposits',
           component: () => import('../views/defi/DecentralizedLending.vue')
         },
         {
-          path: '/defi/borrowing',
-          name: 'defi-borrowing',
+          path: '/defi/liabilities',
+          name: 'defi-liabilities',
           component: () => import('../views/defi/DecentralizedBorrowing.vue')
         }
       ]

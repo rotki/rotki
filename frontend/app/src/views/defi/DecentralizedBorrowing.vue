@@ -11,5 +11,3 @@ import Borrowing from '@/components/defi/Borrowing.vue';
 })
 export default class DecentralizedBorrowing extends Vue {}
 </script>
-
-<style scoped></style>

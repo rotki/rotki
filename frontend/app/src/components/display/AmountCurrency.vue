@@ -21,9 +21,25 @@
     >
       {{ currency.name }}
     </span>
-    <span v-else-if="!!asset" class="amount-currency" :style="assetStyle">
-      {{ asset }}
-    </span>
+    <v-tooltip
+      v-else-if="!!asset"
+      top
+      :disabled="asset.length <= assetPadding"
+      open-delay="400"
+    >
+      <template #activator="{ on, attrs }">
+        <span
+          v-bind="attrs"
+          class="amount-currency"
+          :style="assetStyle"
+          v-on="on"
+        >
+          {{ asset }}
+        </span>
+      </template>
+      <span v-text="asset" />
+    </v-tooltip>
+
     <span v-else class="amount-currency" :style="assetStyle" />
   </fragment>
 </template>
@@ -72,9 +88,10 @@ export default class AmountCurrency extends Vue {
 <style scoped lang="scss">
 .amount-display {
   .amount-currency {
-    margin-left: 5px;
-    margin-right: 5px;
     font-size: 0.8em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 </style>

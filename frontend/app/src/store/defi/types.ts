@@ -17,6 +17,11 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
+import {
+  YearnEventType,
+  YearnVaultsBalances,
+  YearnVaultsHistory
+} from '@/services/defi/types/yearn';
 import { Balance, HasBalance } from '@/services/types-api';
 
 export interface DefiState {
@@ -29,6 +34,8 @@ export interface DefiState {
   allProtocols: AllDefiProtocols;
   compoundBalances: CompoundBalances;
   compoundHistory: CompoundHistory;
+  yearnVaultsHistory: YearnVaultsHistory;
+  yearnVaultsBalances: YearnVaultsBalances;
 }
 
 export interface DSRBalances {
@@ -124,8 +131,8 @@ interface MakerDAOLendingHistoryExtras {
   gainSoFar: Balance;
 }
 
-interface CompoundLendingHistoryExtras {
-  readonly eventType: CompoundEventType;
+interface HistoryExtras<T> {
+  readonly eventType: T;
   readonly asset: string;
   readonly value: Balance;
   readonly toAsset?: string;
@@ -136,7 +143,8 @@ interface CompoundLendingHistoryExtras {
 interface LendingHistoryExtras {
   readonly aave: {};
   readonly makerdao: MakerDAOLendingHistoryExtras;
-  readonly compound: CompoundLendingHistoryExtras;
+  readonly compound: HistoryExtras<CompoundEventType>;
+  readonly yearn_vaults: HistoryExtras<YearnEventType>;
 }
 
 export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
@@ -174,8 +182,8 @@ export interface DefiProtocolSummary {
   readonly balanceUsd?: BigNumber;
   readonly assets: DefiAsset[];
   readonly tokenInfo?: TokenInfo;
-  readonly lendingUrl?: string;
-  readonly borrowingUrl?: string;
+  readonly depositsUrl?: string;
+  readonly liabilitiesUrl?: string;
   readonly totalCollateralUsd: BigNumber;
   readonly totalDebtUsd: BigNumber;
   readonly totalLendingDepositUsd: BigNumber;

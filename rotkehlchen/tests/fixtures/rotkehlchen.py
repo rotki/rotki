@@ -48,7 +48,7 @@ def rotki_premium_credentials() -> PremiumCredentials:
 
 
 @pytest.fixture()
-def cli_args(data_dir):
+def cli_args(data_dir, ethrpc_endpoint):
     args = namedtuple('args', [
         'sleep_secs',
         'data_dir',
@@ -63,6 +63,7 @@ def cli_args(data_dir):
     args.logfromothermodules = False
     args.sleep_secs = 60
     args.data_dir = data_dir
+    args.ethrpc_endpoint = ethrpc_endpoint
     return args
 
 
@@ -85,13 +86,14 @@ def initialize_mock_rotkehlchen_instance(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        eth_rpc_endpoint,
 ):
     if not start_with_logged_in_user:
         return
 
     # Mock the initial get settings to include the specified ethereum modules
     def mock_get_settings() -> DBSettings:
-        settings = DBSettings(active_modules=ethereum_modules)
+        settings = DBSettings(active_modules=ethereum_modules, eth_rpc_endpoint=eth_rpc_endpoint)
         return settings
     settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
 
@@ -181,6 +183,7 @@ def rotkehlchen_api_server(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        ethrpc_endpoint,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -205,6 +208,7 @@ def rotkehlchen_api_server(
         manually_tracked_balances=manually_tracked_balances,
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        eth_rpc_endpoint=ethrpc_endpoint,
     )
     return api_server
 
@@ -229,6 +233,7 @@ def rotkehlchen_instance(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        ethrpc_endpoint,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -251,6 +256,7 @@ def rotkehlchen_instance(
         manually_tracked_balances=manually_tracked_balances,
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        eth_rpc_endpoint=ethrpc_endpoint,
     )
     return uninitialized_rotkehlchen
 

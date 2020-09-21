@@ -2,8 +2,8 @@
   <v-container>
     <v-row>
       <v-col>
-        <h1 class="d-flex justify-space-between align-center">
-          Decentralized Finance
+        <div class="d-flex justify-space-between align-center text-h4">
+          {{ $t('decentralized_finance.title') }}
           <v-tooltip v-if="defiSetupDone" top>
             <template #activator="{ on, attrs }">
               <v-btn
@@ -14,12 +14,12 @@
                 to="/settings/defi"
                 v-on="on"
               >
-                <v-icon color="primary">fa-gear</v-icon>
+                <v-icon color="primary">mdi-cog</v-icon>
               </v-btn>
             </template>
-            <span>Opens the Defi settings</span>
+            <span>{{ $t('decentralized_finance.settings_tooltip') }}</span>
           </v-tooltip>
-        </h1>
+        </div>
         <tab-navigation v-if="defiSetupDone" :tab-contents="tabs" />
         <defi-wizard v-else class="mt-8" />
       </v-col>
@@ -47,16 +47,16 @@ export default class DecentralizedFinance extends Vue {
 
   readonly tabs: TabContent[] = [
     {
-      name: 'Overview',
+      name: this.$tc('decentralized_finance.tabs.overview'),
       routeTo: '/defi/overview'
     },
     {
-      name: 'Lending',
-      routeTo: '/defi/lending'
+      name: this.$tc('decentralized_finance.tabs.deposits'),
+      routeTo: '/defi/deposits'
     },
     {
-      name: 'Borrowing',
-      routeTo: '/defi/borrowing'
+      name: this.$tc('decentralized_finance.tabs.liabilities'),
+      routeTo: '/defi/liabilities'
     }
   ];
 }

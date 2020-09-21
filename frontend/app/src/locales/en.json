@@ -139,8 +139,8 @@
   "overview": {
     "stat_card": {
       "headers": {
-        "borrowing": "Borrowing",
-        "lending": "Lending"
+        "borrowing": "Liabilities",
+        "lending": "Deposits"
       },
       "content": {
         "labels": {
@@ -282,7 +282,7 @@
         },
         "error": {
           "title": "DSR Balances",
-          "description": "Failed to retrieve DSR balances: ${error}"
+          "description": "Failed to retrieve DSR balances: {error}"
         }
       },
       "dsr_history": {
@@ -291,7 +291,7 @@
         },
         "error": {
           "title": "DSR History",
-          "description": "Failed to retrieve DSR history: ${error}"
+          "description": "Failed to retrieve DSR history: {error}"
         }
       },
       "makerdao_vaults": {
@@ -300,7 +300,7 @@
         },
         "error": {
           "title": "MakerDAO Vaults",
-          "description": "Failed to retrieve MakerDAO Vaults: ${error}"
+          "description": "Failed to retrieve MakerDAO Vaults: {error}"
         }
       },
       "makerdao_vault_details": {
@@ -309,7 +309,7 @@
         },
         "error": {
           "title": "MakerDAO Vault details",
-          "description": "Failed to retrieve MakerDAO Vault details: ${error}"
+          "description": "Failed to retrieve MakerDAO Vault details: {error}"
         }
       },
       "aave_balances": {
@@ -318,7 +318,7 @@
         },
         "error": {
           "title": "Aave balances",
-          "description": "Failed to retrieve Aave balances: ${error}"
+          "description": "Failed to retrieve Aave balances: {error}"
         }
       },
       "aave_history": {
@@ -327,7 +327,25 @@
         },
         "error": {
           "title": "Aave history",
-          "description": "Failed to retrieve Aave history: ${error}"
+          "description": "Failed to retrieve Aave history: {error}"
+        }
+      },
+      "yearn_vaults": {
+        "task": {
+          "title": "Querying yearn.finance Vaults balances"
+        },
+        "error": {
+          "title": "yearn.finance Vaults balances",
+          "description": "Failed to retrieve yearn.finance Vaults balances: {error}"
+        }
+      },
+      "yearn_vaults_history": {
+        "task": {
+          "title": "Querying yearn.finance Vaults history"
+        },
+        "error": {
+          "title": "yearn.finance Vaults history",
+          "description": "Failed to retrieve yearn.finance Vaults history: {error}"
         }
       }
     }
@@ -442,13 +460,13 @@
   },
   "lending": {
     "loading": "Please wait while your balances are getting loaded...",
-    "title": "Lending",
-    "reset_confirm": "This action will overwrite any Aave history cached entries in the DB and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
-    "reset_tooltip": "Refreshes the data overwriting cached Aave historical entries",
+    "title": "Deposits",
+    "reset_confirm": "This action will overwrite any Aave and yearn.finance Vaults history cached entries in the DB and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
+    "reset_tooltip": "Refreshes the data overwriting cached Aave and yearn.finance Vaults historical entries",
     "currently_deposited": "Currently Deposited",
     "effective_interest_rate": "Effective Savings Rate",
     "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
-    "interest_earned": "Interest Earned",
+    "profit_earned": "Profit Earned",
     "assets": "Assets",
     "history": "History"
   },
@@ -526,5 +544,39 @@
   },
   "percentage_display": {
     "symbol": "%"
+  },
+  "decentralized_finance": {
+    "title": "Decentralized Finance",
+    "settings_tooltip": "Opens the Defi settings",
+    "tabs": {
+      "overview": "Overview",
+      "deposits": "Deposits",
+      "liabilities": "Liabilities"
+    }
+  },
+  "decentralized_overview": {
+    "loading": "Please wait while your defi balances are getting loaded...",
+    "title": "Defi Overview"
+  },
+  "yearn_asset_table": {
+    "title": "Yearn Vaults",
+    "headers": {
+      "roi": "ROI",
+      "vault": "Vault",
+      "underlying_asset": "Underlying Asset",
+      "vault_asset": "Vault Asset"
+    }
+  },
+  "task_manager": {
+    "not_found": "The backend responded with a 404 not found error for task {taskId}: {title}",
+    "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
+  },
+  "confirmable_reset": {
+    "confirm": {
+      "title": "Confirm",
+      "message": "Are you sure you want to proceed with the reset?",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
   }
 }

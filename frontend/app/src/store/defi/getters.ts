@@ -2,8 +2,21 @@ import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
 import { GetterTree } from 'vuex';
 import { truncateAddress } from '@/filters';
+import {
+  DEFI_AAVE,
+  DEFI_COMPOUND,
+  DEFI_MAKERDAO,
+  DEFI_YEARN_VAULTS
+} from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { CompoundLoan } from '@/services/defi/types/compound';
+import { DEPOSIT } from '@/services/defi/types/consts';
+import {
+  SupportedYearnVault,
+  YearnVaultAsset,
+  YearnVaultBalance,
+  YearnVaultProfitLoss
+} from '@/services/defi/types/yearn';
 import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
@@ -24,6 +37,7 @@ import { RotkehlchenState } from '@/store/types';
 import { Writeable } from '@/types';
 import { DefiAccount } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
+import { balanceSum } from '@/utils/calculation';
 
 const unique = function (
   value: string,
@@ -68,6 +82,8 @@ export interface DefiGetters {
   compoundRewards: CompoundProfitLossModel[];
   compoundInterestProfit: CompoundProfitLossModel[];
   compoundDebtLoss: CompoundProfitLossModel[];
+  yearnVaultsProfit: (addresses: string[]) => YearnVaultProfitLoss[];
+  yearnVaultsAssets: (addresses: string[]) => YearnVaultBalance[];
 }
 
 type GettersDefinition = {
@@ -81,7 +97,12 @@ type GettersDefinition = {
 
 export const getters: GetterTree<DefiState, RotkehlchenState> &
   GettersDefinition = {
-  totalUsdEarned: ({ dsrHistory, aaveHistory }: DefiState) => (
+  totalUsdEarned: ({
+    dsrHistory,
+    aaveHistory,
+    compoundHistory,
+    yearnVaultsHistory
+  }: DefiState) => (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ): BigNumber => {
@@ -106,6 +127,37 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         const totalEarned = aaveHistory[address].totalEarned;
         for (const asset of Object.keys(totalEarned)) {
           total = total.plus(totalEarned[asset].usdValue);
+        }
+      }
+    }
+
+    if (showAll || protocols.includes(DEFI_COMPOUND)) {
+      for (const address in compoundHistory.interestProfit) {
+        if (!allAddresses && !addresses.includes(address)) {
+          continue;
+        }
+
+        const accountProfit = compoundHistory.interestProfit[address];
+        for (const asset in accountProfit) {
+          const assetProfit = accountProfit[asset];
+          total = total.plus(assetProfit.usdValue);
+        }
+      }
+    }
+
+    if (showAll || protocols.includes(DEFI_YEARN_VAULTS)) {
+      for (const address in yearnVaultsHistory) {
+        if (!allAddresses && !addresses.includes(address)) {
+          continue;
+        }
+        const accountVaults = yearnVaultsHistory[address];
+        for (const key in accountVaults) {
+          const vault = key as SupportedYearnVault;
+          const vaultData = accountVaults[vault];
+          if (!vaultData) {
+            continue;
+          }
+          total = total.plus(vaultData.profitLoss.usdValue);
         }
       }
     }
@@ -337,7 +389,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           .filter(event => event.asset === asset || event.eventType === 'comp')
           .filter(({ address }) => address === owner)
           .filter(({ eventType }) => !['mint', 'redeem'].includes(eventType))
-          .map(value => ({ ...value, id: `${value.txHash}${value.logIndex}` }))
+          .map(value => ({ ...value, id: `${value.txHash}-${value.logIndex}` }))
       } as CompoundLoan;
     }
 
@@ -394,14 +446,16 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     return { totalCollateralUsd, totalDebt };
   },
 
-  effectiveInterestRate: (_, { lendingBalances }) => (
+  effectiveInterestRate: (_, { lendingBalances, yearnVaultsAssets }) => (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ): string => {
-    const { usdValue: value, weight } = lendingBalances(protocols, addresses)
+    let { usdValue, weight } = lendingBalances(protocols, addresses)
+      .filter(({ balance }) => balance.usdValue.gt(0))
       .map(({ effectiveInterestRate, balance: { usdValue } }) => {
+        const n = parseFloat(effectiveInterestRate);
         return {
-          weight: usdValue.multipliedBy(parseFloat(effectiveInterestRate)),
+          weight: usdValue.multipliedBy(n),
           usdValue
         };
       })
@@ -416,19 +470,50 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         }
       );
 
-    const effectiveInterestRate = weight.div(value);
+    if (protocols.length === 0 || protocols.includes(DEFI_YEARN_VAULTS)) {
+      const { usdValue: yUsdValue, weight: yWeight } = yearnVaultsAssets([])
+        .filter(({ underlyingValue }) => underlyingValue.usdValue.gt(Zero))
+        .map(({ underlyingValue: { usdValue }, roi }) => ({
+          usdValue: usdValue,
+          weight: usdValue.multipliedBy(parseFloat(roi))
+        }))
+        .reduce(
+          ({ usdValue, weight: sWeight }, current) => ({
+            weight: sWeight.plus(current.weight),
+            usdValue: usdValue.plus(current.usdValue)
+          }),
+          { weight: Zero, usdValue: Zero }
+        );
+
+      usdValue = usdValue.plus(yUsdValue);
+      weight = weight.plus(yWeight);
+    }
+
+    const effectiveInterestRate = weight.div(usdValue);
     return effectiveInterestRate.isNaN()
       ? '0.00%'
       : `${effectiveInterestRate.toFormat(2)}%`;
   },
 
-  totalLendingDeposit: (_: DefiState, { lendingBalances }) => (
+  totalLendingDeposit: (
+    _: DefiState,
+    { lendingBalances, yearnVaultsAssets }
+  ) => (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ): BigNumber => {
-    return lendingBalances(protocols, addresses)
+    let lendingDeposit = lendingBalances(protocols, addresses)
       .map(value => value.balance.usdValue)
       .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
+
+    if (protocols.length === 0 || protocols.includes(DEFI_YEARN_VAULTS)) {
+      lendingDeposit = lendingDeposit.plus(
+        yearnVaultsAssets(addresses)
+          .map(value => value.underlyingValue.usdValue)
+          .reduce((sum, usdValue) => sum.plus(usdValue), Zero)
+      );
+    }
+    return lendingDeposit;
   },
 
   aggregatedLendingBalances: (_, { lendingBalances }) => (
@@ -501,7 +586,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     const showAll = protocols.length === 0;
     const allAddresses = addresses.length === 0;
 
-    if (showAll || protocols.includes('makerdao')) {
+    if (showAll || protocols.includes(DEFI_MAKERDAO)) {
       for (const address of Object.keys(dsrBalances.balances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -509,7 +594,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         const balance = dsrBalances.balances[address];
         balances.push({
           address,
-          protocol: 'makerdao',
+          protocol: DEFI_MAKERDAO,
           asset: 'DAI',
           balance: { ...balance },
           effectiveInterestRate: `${dsrBalances.currentDSR.toFormat(2)}%`
@@ -517,7 +602,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
 
-    if (showAll || protocols.includes('aave')) {
+    if (showAll || protocols.includes(DEFI_AAVE)) {
       for (const address of Object.keys(aaveBalances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -528,7 +613,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           const aaveAsset = lending[asset];
           balances.push({
             address,
-            protocol: 'aave',
+            protocol: DEFI_AAVE,
             asset,
             effectiveInterestRate: aaveAsset.apy,
             balance: { ...aaveAsset.balance }
@@ -537,7 +622,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
 
-    if (showAll || protocols.includes('compound')) {
+    if (showAll || protocols.includes(DEFI_COMPOUND)) {
       for (const address of Object.keys(compoundBalances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -547,7 +632,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           const assetDetails = lending[asset];
           balances.push({
             address,
-            protocol: 'compound',
+            protocol: DEFI_COMPOUND,
             asset,
             effectiveInterestRate: assetDetails.apy ?? '0%',
             balance: { ...assetDetails.balance }
@@ -559,7 +644,12 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     return sortBy(balances, 'asset');
   },
 
-  lendingHistory: ({ dsrHistory, aaveHistory, compoundHistory }: DefiState) => (
+  lendingHistory: ({
+    dsrHistory,
+    aaveHistory,
+    compoundHistory,
+    yearnVaultsHistory
+  }: DefiState) => (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ): DefiLendingHistory<SupportedDefiProtocols>[] => {
@@ -568,7 +658,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     const allAddresses = addresses.length === 0;
     let id = 1;
 
-    if (showAll || protocols.includes('makerdao')) {
+    if (showAll || protocols.includes(DEFI_MAKERDAO)) {
       for (const address of Object.keys(dsrHistory)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -578,7 +668,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
         for (const movement of history.movements) {
           defiLendingHistory.push({
-            id: `${movement.txHash}${id++}`,
+            id: `${movement.txHash}-${id++}`,
             eventType: movement.movementType,
             protocol: 'makerdao',
             address,
@@ -595,7 +685,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
 
-    if (showAll || protocols.includes('aave')) {
+    if (showAll || protocols.includes(DEFI_AAVE)) {
       for (const address of Object.keys(aaveHistory)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -605,7 +695,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
         for (const event of history.events) {
           const items = {
-            id: `${event.txHash}${event.logIndex}`,
+            id: `${event.txHash}-${event.logIndex}`,
             eventType: event.eventType,
             protocol: 'aave',
             address,
@@ -621,7 +711,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
 
-    if (showAll || protocols.includes('compound')) {
+    if (showAll || protocols.includes(DEFI_COMPOUND)) {
       for (const event of compoundHistory.events) {
         if (!allAddresses && !addresses.includes(event.address)) {
           continue;
@@ -631,7 +721,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         }
 
         const item = {
-          id: `${event.txHash}${event.logIndex}`,
+          id: `${event.txHash}-${event.logIndex}`,
           eventType: event.eventType,
           protocol: 'compound',
           address: event.address,
@@ -652,6 +742,44 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         defiLendingHistory.push(item);
       }
     }
+
+    if (showAll || protocols.includes(DEFI_YEARN_VAULTS)) {
+      for (const address in yearnVaultsHistory) {
+        if (!allAddresses && !addresses.includes(address)) {
+          continue;
+        }
+        const history = yearnVaultsHistory[address];
+
+        for (const vault in history) {
+          const data = history[vault as SupportedYearnVault];
+          if (!data || !data.events || data.events.length === 0) {
+            continue;
+          }
+          for (const event of data.events) {
+            const item = {
+              id: `${event.txHash}-${event.logIndex}`,
+              eventType: event.eventType,
+              protocol: DEFI_YEARN_VAULTS,
+              address: address,
+              asset: event.fromAsset,
+              value: event.fromValue,
+              blockNumber: event.blockNumber,
+              timestamp: event.timestamp,
+              txHash: event.txHash,
+              extras: {
+                eventType: event.eventType,
+                asset: event.fromAsset,
+                value: event.fromValue,
+                toAsset: event.toAsset,
+                toValue: event.toValue,
+                realizedPnl: event.realizedPnl
+              }
+            } as DefiLendingHistory<'yearn_vaults'>;
+            defiLendingHistory.push(item);
+          }
+        }
+      }
+    }
     return sortBy(defiLendingHistory, 'timestamp').reverse();
   },
 
@@ -664,7 +792,9 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     const protocolSummary = (
       protocol: SupportedDefiProtocols,
       icon: string,
-      section: Section
+      section: Section,
+      name?: string,
+      noLiabilities?: boolean
     ): DefiProtocolSummary | undefined => {
       const currentStatus = status(section);
       if (
@@ -674,15 +804,19 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         return undefined;
       }
       const filter: SupportedDefiProtocols[] = [protocol];
-      const { totalCollateralUsd, totalDebt } = loanSummary(filter);
+      const { totalCollateralUsd, totalDebt } = noLiabilities
+        ? { totalCollateralUsd: Zero, totalDebt: Zero }
+        : loanSummary(filter);
       return {
         protocol: {
-          name: protocol,
+          name: name ?? protocol,
           icon: icon
         },
         assets: [],
-        borrowingUrl: `/defi/borrowing?protocol=${protocol}`,
-        lendingUrl: `/defi/lending?protocol=${protocol}`,
+        liabilitiesUrl: noLiabilities
+          ? undefined
+          : `/defi/liabilities?protocol=${protocol}`,
+        depositsUrl: `/defi/deposits?protocol=${protocol}`,
         totalCollateralUsd,
         totalDebtUsd: totalDebt,
         totalLendingDepositUsd: totalLendingDeposit(filter, [])
@@ -698,7 +832,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
         if (protocol === 'Aave') {
           const aaveSummary = protocolSummary(
-            'aave',
+            DEFI_AAVE,
             entry.protocol.icon,
             Section.DEFI_AAVE_BALANCES
           );
@@ -711,9 +845,25 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
         if (protocol === 'Compound') {
           const compoundSummary = protocolSummary(
-            'compound',
+            DEFI_COMPOUND,
             entry.protocol.icon,
-            Section.DEFI_COMPOUND_BALANCES
+            Section.DEFI_COMPOUND_BALANCES,
+            protocol
+          );
+
+          if (compoundSummary) {
+            summary[protocol] = compoundSummary;
+          }
+          continue;
+        }
+
+        if (protocol === 'yearn.finance • Vaults') {
+          const compoundSummary = protocolSummary(
+            DEFI_YEARN_VAULTS,
+            entry.protocol.icon,
+            Section.DEFI_YEARN_VAULTS_BALANCES,
+            protocol,
+            true
           );
 
           if (compoundSummary) {
@@ -772,8 +922,8 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           icon: ''
         },
         assets: [],
-        borrowingUrl: '/defi/borrowing?protocol=makerdao',
-        lendingUrl: '/defi/lending?protocol=makerdao',
+        liabilitiesUrl: '/defi/liabilities?protocol=makerdao',
+        depositsUrl: '/defi/deposits?protocol=makerdao',
         totalCollateralUsd,
         totalDebtUsd: totalDebt,
         totalLendingDepositUsd: totalLendingDeposit(filter, [])
@@ -799,5 +949,98 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     compoundHistory
   }): CompoundProfitLossModel[] => {
     return toProfitLossModel(compoundHistory.liquidationProfit);
+  },
+
+  yearnVaultsProfit: ({ yearnVaultsHistory }) => (
+    addresses: string[]
+  ): YearnVaultProfitLoss[] => {
+    const yearnVaultsProfit: { [vault: string]: YearnVaultProfitLoss } = {};
+    const allAddresses = addresses.length === 0;
+    for (const address in yearnVaultsHistory) {
+      if (!allAddresses && !addresses.includes(address)) {
+        continue;
+      }
+      const history = yearnVaultsHistory[address];
+      for (const key in history) {
+        const vault = key as SupportedYearnVault;
+        const data = history[vault];
+        if (!data) {
+          continue;
+        }
+
+        const events = data.events.filter(event => event.eventType === DEPOSIT);
+        const asset = events && events.length > 0 ? events[0].fromAsset : '';
+
+        if (!yearnVaultsProfit[vault]) {
+          yearnVaultsProfit[vault] = {
+            value: data.profitLoss,
+            vault,
+            asset
+          };
+        } else {
+          yearnVaultsProfit[vault] = {
+            ...yearnVaultsProfit[vault],
+            value: balanceSum(yearnVaultsProfit[vault].value, data.profitLoss)
+          };
+        }
+      }
+    }
+    return Object.values(yearnVaultsProfit);
+  },
+
+  yearnVaultsAssets: ({ yearnVaultsBalances }) => (
+    addresses: string[]
+  ): YearnVaultBalance[] => {
+    const balances: { [vault: string]: YearnVaultBalance[] } = {};
+    const allAddresses = addresses.length === 0;
+    for (const address in yearnVaultsBalances) {
+      if (!allAddresses && !addresses.includes(address)) {
+        continue;
+      }
+
+      const vaults = yearnVaultsBalances[address];
+      for (const key in vaults) {
+        const vault = key as SupportedYearnVault;
+        const balance = vaults[vault];
+        if (!balance) {
+          continue;
+        }
+
+        if (!balances[vault]) {
+          balances[vault] = [balance];
+        } else {
+          balances[vault].push(balance);
+        }
+      }
+    }
+
+    const vaultBalances: YearnVaultAsset[] = [];
+    for (const key in balances) {
+      const allBalances = balances[key];
+      const { underlyingToken, vaultToken, roi } = allBalances[0];
+
+      const underlyingValue = { amount: Zero, usdValue: Zero };
+      const vaultValue = { amount: Zero, usdValue: Zero };
+      const values = { underlyingValue, vaultValue };
+      const summary = allBalances.reduce((sum, current) => {
+        return {
+          vaultValue: balanceSum(sum.vaultValue, current.vaultValue),
+          underlyingValue: balanceSum(
+            sum.underlyingValue,
+            current.underlyingValue
+          )
+        };
+      }, values);
+      vaultBalances.push({
+        vault: key as SupportedYearnVault,
+        underlyingToken,
+        underlyingValue: summary.underlyingValue,
+        vaultToken,
+        vaultValue: summary.vaultValue,
+        roi
+      });
+    }
+
+    return vaultBalances;
   }
 };
