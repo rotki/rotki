@@ -88,8 +88,6 @@ export default class AmountCurrency extends Vue {
 <style scoped lang="scss">
 .amount-display {
   .amount-currency {
-    margin-left: 5px;
-    margin-right: 5px;
     font-size: 0.8em;
     white-space: nowrap;
     overflow: hidden;
