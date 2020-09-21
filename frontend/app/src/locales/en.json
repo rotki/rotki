@@ -566,5 +566,9 @@
       "underlying_asset": "Underlying Asset",
       "vault_asset": "Vault Asset"
     }
+  },
+  "task_manager": {
+    "not_found": "The backend responded with a 404 not found error for task {taskId}: {title}",
+    "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
   }
 }

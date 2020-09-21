@@ -1,4 +1,5 @@
 import map from 'lodash/map';
+import i18n from '@/i18n';
 import { BlockchainBalances } from '@/model/blockchain-balances';
 import { BlockchainMetadata, ExchangeMeta, Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
@@ -142,10 +143,15 @@ export class TaskManager {
           store.commit('tasks/unlock', task.id);
           if (e instanceof TaskNotFoundError) {
             store.commit('tasks/remove', task.id);
-            notify(
-              `Task ${task.id}: ${task.meta.description} was not found`,
-              'Task not found',
-              Severity.ERROR
+            this.handleResult(
+              {
+                result: {},
+                message: i18n.tc('task_manager.not_found', 0, {
+                  taskId: task.id,
+                  title: task.meta.title
+                })
+              },
+              task
             );
           }
         });
@@ -178,11 +184,16 @@ export class TaskManager {
     try {
       handler(result, task.meta);
     } catch (e) {
-      notify(
-        `An error occurred while processing task [${task.id}] '${task.meta.title}': ${e}`,
-        'Task processing failed',
-        Severity.ERROR,
-        true
+      handler(
+        {
+          result: {},
+          message: i18n.tc('task_manager.error', 0, {
+            taskId: task.id,
+            title: task.meta.title,
+            error: e.message
+          })
+        },
+        task.meta
       );
     }
     store.commit('tasks/remove', task.id);
