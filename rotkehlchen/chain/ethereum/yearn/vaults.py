@@ -16,6 +16,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_TUSD_VAULT,
     YEARN_USDC_VAULT,
     YEARN_USDT_VAULT,
+    YEARN_VAULTS_PREFIX,
     YEARN_WETH_VAULT,
     YEARN_YCRV_VAULT,
     YEARN_YFI_VAULT,
@@ -451,7 +452,7 @@ class YearnVaults(EthereumModule):
     ) -> Optional[YearnVaultHistory]:
         from_block = max(from_block, vault.contract.deployed_block)
         last_query = self.database.get_used_query_range(
-            name=f'yearn_vault_events_{vault.name.replace(" ", "_")}_{address}',
+            name=f'{YEARN_VAULTS_PREFIX}_{vault.name.replace(" ", "_")}_{address}',
         )
         skip_query = last_query and to_block - last_query[1] < MAX_BLOCKTIME_CACHE
 
@@ -463,7 +464,7 @@ class YearnVaults(EthereumModule):
                 # After all events have been queried then also update the query range.
                 # Even if no events are found for an address we need to remember the range
                 self.database.update_used_block_query_range(
-                    name=f'yearn_vault_events_{vault.name}_{address}',
+                    name=f'{YEARN_VAULTS_PREFIX}_{vault.name.replace(" ", "_")}_{address}',
                     from_block=from_block,
                     to_block=to_block,
                 )
@@ -504,7 +505,7 @@ class YearnVaults(EthereumModule):
         # After all events have been queried then also update the query range.
         # Even if no events are found for an address we need to remember the range
         self.database.update_used_block_query_range(
-            name=f'yearn_vault_events_{vault.name.replace(" ", "_")}_{address}',
+            name=f'{YEARN_VAULTS_PREFIX}_{vault.name.replace(" ", "_")}_{address}',
             from_block=from_block,
             to_block=to_block,
         )
@@ -533,7 +534,7 @@ class YearnVaults(EthereumModule):
             history: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
             for address in addresses:
                 history[address] = {}
-                last_query = self.database.get_used_query_range(f'yearn_vaults_events_{address}')
+                last_query = self.database.get_used_query_range(f'{YEARN_VAULTS_PREFIX}_{address}')
                 if last_query and to_block - last_query[1] < MAX_BLOCKTIME_CACHE:
                     continue  # save time by not querying events if last query is recent
 
@@ -554,7 +555,7 @@ class YearnVaults(EthereumModule):
                 # After all events have been queried then also update the query range.
                 # Even if no events are found for an address we need to remember the range
                 self.database.update_used_block_query_range(
-                    name=f'yearn_vault_events_{address}',
+                    name=f'{YEARN_VAULTS_PREFIX}_{address}',
                     from_block=from_block,
                     to_block=to_block,
                 )

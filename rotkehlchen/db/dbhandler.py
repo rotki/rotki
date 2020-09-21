@@ -17,6 +17,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.structures import AaveEvent, YearnVault, YearnVaultEvent
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
+from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
@@ -802,7 +803,7 @@ class DBHandler:
         """Delete all historical aave event data"""
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM yearn_vaults_events;')
-        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "yearn_vaults_events%";')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_PREFIX}%";')
         self.conn.commit()
         self.update_last_write()
 
