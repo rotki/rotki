@@ -674,15 +674,15 @@ class DBHandler:
         """Get aave for a single address and a single aToken"""
         cursor = self.conn.cursor()
         query = cursor.execute(
-            'SELECT event_type, amount, usd_value, block_number, timestamp, tx_hash, log_index '
-            'from aave_events WHERE address=? AND asset=? OR asset=?',
+            'SELECT event_type, amount, usd_value, block_number, timestamp, tx_hash, log_index, '
+            'asset from aave_events WHERE address=? AND (asset=? OR asset=?)',
             (address, atoken.identifier, atoken.identifier[1:]),
         )
         events = []
         for result in query:
             events.append(AaveEvent(
                 event_type=result[0],
-                asset=atoken,
+                asset=Asset(result[7]),
                 value=Balance(amount=FVal(result[1]), usd_value=FVal(result[2])),
                 block_number=int(result[3]),
                 timestamp=Timestamp(int(result[4])),
@@ -777,7 +777,7 @@ class DBHandler:
             'timestamp, '
             'tx_hash, '
             'log_index '
-            'from yearn_vaults_events WHERE address=? AND from_asset=? OR from_asset=?;',
+            'from yearn_vaults_events WHERE address=? AND (from_asset=? OR from_asset=?);',
             (address, vault.underlying_token.identifier, vault.token.identifier),
         )
         events = []
