@@ -205,6 +205,7 @@ def test_binance_assets_are_known(
     assert asset_from_binance('LDBNB') == Asset('BNB')
     assert asset_from_binance('LDUSDT') == Asset('USDT')
 
+
 def test_binance_query_balances_unknown_asset(function_scope_binance):
     """Test that if a binance balance query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported asset."""
