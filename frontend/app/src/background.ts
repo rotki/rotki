@@ -232,8 +232,9 @@ function createWindow() {
     win = null;
   });
 
-  pyHandler.createPyProc(win);
-  pyHandler.listenForMessages();
+  pyHandler.createPyProc(win).then(() => {
+    pyHandler.listenForMessages();
+  });
 }
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -261,6 +262,10 @@ app.on('ready', async () => {
 
   ipcMain.on('GET_DEBUG', event => {
     event.returnValue = debugSettings;
+  });
+
+  ipcMain.on('SERVER_URL', event => {
+    event.returnValue = pyHandler.serverUrl;
   });
 
   ipcMain.on('PREMIUM_USER_LOGGED_IN', (event, args) => {

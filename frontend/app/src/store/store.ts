@@ -86,6 +86,12 @@ const store: StoreOptions<RotkehlchenState> = {
     async connect({ commit }): Promise<void> {
       const timerId = setInterval(async function () {
         try {
+          const serverUrl = window.interop?.serverUrl();
+          const defaultServerUrl = process.env.VUE_APP_BACKEND_URL;
+          if (serverUrl && serverUrl !== defaultServerUrl) {
+            api.setup(serverUrl);
+          }
+
           const connected = await api.ping();
           if (connected) {
             commit('setConnected', connected);
