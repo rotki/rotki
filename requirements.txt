@@ -1,4 +1,5 @@
 gevent==1.5a2
+greenlet==0.4.16  # adding this constraint since 0.4.17 does not work with gevent 1.5a2
 web3==5.11.1
 pysqlcipher3==1.0.3
 requests==2.20.0
