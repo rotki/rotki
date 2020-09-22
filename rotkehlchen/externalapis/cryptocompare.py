@@ -108,6 +108,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('KRT'): Asset('KRW'),
     Asset('RVC'): Asset('USDT'),
     Asset('SDT'): Asset('USDT'),
+    Asset('CHI'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

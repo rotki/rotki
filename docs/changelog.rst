@@ -51,6 +51,7 @@ Changelog
   - `Neutrino Dollar (USDN) <https://www.coingecko.com/en/coins/neutrino-dollar>`__
   - `Terra USD (UST) <https://www.cryptocompare.com/coins/ust/overview>`__
   - `Anyswap (ANY) <https://www.coingecko.com/en/coins/anyswap>`__
+  - `Chi Gastoken (CHI) <https://www.coingecko.com/en/coins/chi-gastoken>`__
   - `Trump Wins Token (TRUMPWIN) <https://www.coingecko.com/en/coins/trump-wins-token>`__
   - `Trump Loses Token (TRUMPLOSE) <https://www.coingecko.com/en/coins/trump-loses-token>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__

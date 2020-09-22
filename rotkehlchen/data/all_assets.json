@@ -2308,6 +2308,15 @@
         "symbol": "CHF",
         "type": "fiat"
     },
+    "CHI": {
+        "coingecko": "chi-gastoken",
+        "ethereum_address": "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c",
+        "ethereum_token_decimals": 0,
+        "name": "Chi Gastoken",
+        "started": 1590352004,
+        "symbol": "CHI",
+        "type": "ethereum token"
+    },
     "CHP": {
         "coingecko": "coinpoker",
         "ethereum_address": "0xf3db7560E820834658B590C96234c333Cd3D5E5e",
