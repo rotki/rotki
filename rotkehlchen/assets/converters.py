@@ -494,6 +494,12 @@ def asset_from_binance(binance_name: str) -> Asset:
     if not isinstance(binance_name, str):
         raise DeserializationError(f'Got non-string type {type(binance_name)} for binance asset')
 
+    if len(binance_name) >= 5 and binance_name.startswith('LD') :
+        # this is a lending/staked/savings coin. For now since we don't show lending/staked/savings coins
+        # consider it as the normal version. In the future we may perhaps
+        # differentiate between them in the balances
+        binance_name = binance_name[2:]
+
     if binance_name in UNSUPPORTED_BINANCE_ASSETS:
         raise UnsupportedAsset(binance_name)
 
