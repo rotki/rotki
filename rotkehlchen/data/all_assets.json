@@ -493,6 +493,13 @@
         "symbol": "ANT",
         "type": "ethereum token"
     },
+    "ANY": {
+        "coingecko": "anyswap",
+        "name": "Anyswap",
+        "started": 1598400000,
+        "symbol": "ANY",
+        "type": "fusion token"
+    },
     "AOA": {
         "coingecko": "aurora",
         "ethereum_address": "0x9ab165D795019b6d8B3e971DdA91071421305e5a",

@@ -33,6 +33,7 @@ asset_type_mapping = {
     'vechain token': AssetType.VECHAIN_TOKEN,
     'binance token': AssetType.BINANCE_TOKEN,
     'eos token': AssetType.EOS_TOKEN,
+    'fusion token': AssetType.FUSION_TOKEN,
 }
 
 
