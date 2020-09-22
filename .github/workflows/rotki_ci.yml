@@ -97,6 +97,7 @@ jobs:
 
   test-backend:
     needs: lint-backend
+    timeout-minutes: 30
     env:
       CI: true
     strategy:
