@@ -9,6 +9,7 @@ jest.mock('@/services/rotkehlchen-api');
 
 describe('session:actions', () => {
   beforeEach(() => {
+    (api.session as any) = jest.mock('@/services/session/session-api');
     store.dispatch('session/logout');
   });
 

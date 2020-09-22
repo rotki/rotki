@@ -35,6 +35,7 @@ describe('DataManagement.vue', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     jest.useFakeTimers();
+    (api.balances as any) = jest.mock('@/services/balances/balances-api');
     wrapper = createWrapper();
   });
 
@@ -43,6 +44,7 @@ describe('DataManagement.vue', () => {
   });
 
   test('purges ethereum transactions', async () => {
+    api.balances.deleteEthereumTransactions = jest.fn().mockResolvedValue(true);
     wrapper
       .find('.data-management__purge-transactions button')
       .trigger('click');
@@ -62,9 +64,9 @@ describe('DataManagement.vue', () => {
   });
 
   test('fails to purge ethereum transactions', async () => {
-    (api.balances.deleteEthereumTransactions as jest.Mock).mockRejectedValue(
-      new Error('failed')
-    );
+    api.balances.deleteEthereumTransactions = jest
+      .fn()
+      .mockRejectedValue(new Error('failed'));
     wrapper
       .find('.data-management__purge-transactions button')
       .trigger('click');
@@ -78,6 +80,7 @@ describe('DataManagement.vue', () => {
   });
 
   test('purges all exchange cached data', async () => {
+    api.balances.deleteExchangeData = jest.fn().mockResolvedValue(true);
     wrapper
       .find('.data-management__purge-all-exchange button')
       .trigger('click');
@@ -97,9 +100,9 @@ describe('DataManagement.vue', () => {
   });
 
   test('fails to purge all exchange cached data', async () => {
-    (api.balances.deleteExchangeData as jest.Mock).mockRejectedValue(
-      new Error('failed')
-    );
+    api.balances.deleteExchangeData = jest
+      .fn()
+      .mockRejectedValue(new Error('failed'));
     wrapper
       .find('.data-management__purge-all-exchange button')
       .trigger('click');
@@ -130,9 +133,9 @@ describe('DataManagement.vue', () => {
   });
 
   test('fails to purge exchange data', async () => {
-    (api.balances.deleteExchangeData as jest.Mock).mockRejectedValue(
-      new Error('failure')
-    );
+    api.balances.deleteExchangeData = jest
+      .fn()
+      .mockRejectedValue(new Error('failure'));
     wrapper.find('.data-management__purge-exchange').trigger('click');
     await wrapper.vm.$nextTick();
     wrapper.find('.confirm-dialog__buttons__confirm').trigger('click');
