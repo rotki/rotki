@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1504` Users can now properly start the application when the default backend port is used by another application.
 * :feature:`1502` Add support for Binance lending assets.
 * :feature:`1402` Yearn vaults historical data and total profit/loss per vault is now available. Also the ROI since inception is now visible next to each vault.
 * :bug:`1491` All aave historical events should now be properly returned. Not only interest events.
