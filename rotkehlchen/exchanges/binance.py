@@ -365,7 +365,13 @@ class Binance(ExchangeInterface):
             balance = {}
             balance['amount'] = amount
             balance['usd_value'] = FVal(amount * usd_price)
-            returned_balances[asset] = balance
+
+            if asset not in returned_balances:
+                returned_balances[asset] = balance
+            else:  # Some assets may appear twice in binance balance query for different locations
+                # Lending/staking for example
+                returned_balances[asset]['amount'] += balance['amount']
+                returned_balances[asset]['usd_value'] += balance['usd_value']
 
             log.debug(
                 'binance balance query result',
