@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.
 * :bug:`1504` Users can now properly start the application when the default backend port is used by another application.
 * :feature:`1502` Add support for Binance lending assets.
 * :feature:`1402` Yearn vaults historical data and total profit/loss per vault is now available. Also the ROI since inception is now visible next to each vault.
