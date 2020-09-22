@@ -9,6 +9,7 @@ export interface Interop {
   premiumUserLoggedIn(premiumUser: boolean): Promise<undefined | boolean>;
   monitorDebugSettings(): void;
   debugSettings?(): DebugSettings | undefined;
+  serverUrl(): string;
 }
 
 declare global {

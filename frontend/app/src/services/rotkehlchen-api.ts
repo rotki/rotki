@@ -53,21 +53,48 @@ import {
 import { convertAccountData } from '@/utils/conversion';
 
 export class RotkehlchenApi {
-  private readonly axios: AxiosInstance;
-  readonly defi: DefiApi;
-  readonly session: SessionApi;
-  readonly balances: BalancesApi;
-  readonly history: HistoryApi;
+  private axios: AxiosInstance;
+  private _defi: DefiApi;
+  private _session: SessionApi;
+  private _balances: BalancesApi;
+  private _history: HistoryApi;
 
   constructor() {
     this.axios = axios.create({
       baseURL: `${process.env.VUE_APP_BACKEND_URL}/api/1/`,
       timeout: 30000
     });
-    this.defi = new DefiApi(this.axios);
-    this.session = new SessionApi(this.axios);
-    this.balances = new BalancesApi(this.axios);
-    this.history = new HistoryApi(this.axios);
+    this._defi = new DefiApi(this.axios);
+    this._session = new SessionApi(this.axios);
+    this._balances = new BalancesApi(this.axios);
+    this._history = new HistoryApi(this.axios);
+  }
+
+  get defi(): DefiApi {
+    return this._defi;
+  }
+
+  get session(): SessionApi {
+    return this._session;
+  }
+
+  get balances(): BalancesApi {
+    return this._balances;
+  }
+
+  get history(): HistoryApi {
+    return this._history;
+  }
+
+  setup(serverUrl: string) {
+    this.axios = axios.create({
+      baseURL: `${serverUrl}/api/1/`,
+      timeout: 30000
+    });
+    this._defi = new DefiApi(this.axios);
+    this._session = new SessionApi(this.axios);
+    this._balances = new BalancesApi(this.axios);
+    this._history = new HistoryApi(this.axios);
   }
 
   checkIfLogged(username: string): Promise<boolean> {

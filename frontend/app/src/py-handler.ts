@@ -1,10 +1,13 @@
 import { ChildProcess, execFile, spawn } from 'child_process';
 import * as fs from 'fs';
+import { default as net } from 'net';
 import * as path from 'path';
 import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
 import { assert } from '@/utils/assertions';
+
+const DEFAULT_PORT = 4242;
 
 async function streamToString(givenStream: stream.Readable): Promise<string> {
   const bufferChunks: Buffer[] = [];
@@ -37,6 +40,7 @@ export default class PyHandler {
   private rpcFailureNotifier?: any;
   private childProcess?: ChildProcess;
   private _port?: number;
+  private _serverUrl: string;
   private executable?: string;
   private readonly logsPath: string;
   private readonly ELECTRON_LOG_PATH: string;
@@ -48,6 +52,10 @@ export default class PyHandler {
     return this._port;
   }
 
+  get serverUrl(): string {
+    return this._serverUrl;
+  }
+
   constructor(private app: App) {
     app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
     this.logsPath = app.getPath('logs');
@@ -56,6 +64,7 @@ export default class PyHandler {
       this.ELECTRON_LOG_PATH,
       'Rotki Electron Log initialization\n'
     );
+    this._serverUrl = '';
   }
 
   private logToFile(msg: string | Error) {
@@ -93,13 +102,27 @@ export default class PyHandler {
     this.app.quit();
   }
 
-  createPyProc(window: BrowserWindow) {
+  async createPyProc(window: BrowserWindow) {
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logToFile('Skipped starting python sub-process');
       return;
     }
 
-    const port = this.selectPort();
+    const port = await this.selectPort();
+    const backendUrl = process.env.VUE_APP_BACKEND_URL;
+    if (port !== DEFAULT_PORT && backendUrl && typeof backendUrl === 'string') {
+      const portSeparator = backendUrl.lastIndexOf(':');
+      const oldPort = backendUrl.substring(portSeparator + 1);
+      const host = backendUrl.substr(0, portSeparator);
+      if (parseInt(oldPort) !== port) {
+        this._serverUrl = `${host}:${port}`;
+        this.logToFile(
+          `Default port ${oldPort} was in use. Starting backend at ${port}`
+        );
+      }
+    }
+
+    this._port = port;
     const args: string[] = [];
     this.loadArgumentsFromFile(args);
 
@@ -185,10 +208,34 @@ export default class PyHandler {
     return path.join(resources, PyHandler.PY_DIST_FOLDER);
   }
 
-  private selectPort() {
-    // TODO: Perhaps find free port and return it here?
-    this._port = 4242;
-    return this._port;
+  private checkAvailability(port: number): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      const server = net.createServer();
+      server.unref();
+      server.on('error', reject);
+      server.listen(port, () => {
+        const address = server.address();
+        server.close();
+        if (address && typeof address !== 'string') {
+          resolve(address.port);
+        } else {
+          reject(new Error(`Invalid Address value ${address}`));
+        }
+      });
+    });
+  }
+
+  private async selectPort(): Promise<number> {
+    for (let portNumber = DEFAULT_PORT; portNumber <= 65535; portNumber++) {
+      try {
+        return await this.checkAvailability(portNumber);
+      } catch (e) {
+        if (!['EADDRINUSE', 'EACCES'].includes(e.code)) {
+          throw e;
+        }
+      }
+    }
+    throw new Error('no free ports found');
   }
 
   private setFailureNotification(

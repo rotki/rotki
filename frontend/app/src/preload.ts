@@ -39,5 +39,6 @@ contextBridge.exposeInMainWorld('interop', {
     ? (): DebugSettings | undefined => {
         return debugSettings;
       }
-    : undefined
+    : undefined,
+  serverUrl: (): string => ipcRenderer.sendSync('SERVER_URL')
 });
