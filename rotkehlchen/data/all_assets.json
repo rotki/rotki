@@ -498,7 +498,7 @@
         "name": "Anyswap",
         "started": 1598400000,
         "symbol": "ANY",
-        "type": "fusion token"
+        "type": "own chain"
     },
     "AOA": {
         "coingecko": "aurora",
