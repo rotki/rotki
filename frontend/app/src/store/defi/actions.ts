@@ -4,12 +4,16 @@ import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import {
+  DEFI_AAVE,
   DEFI_YEARN_VAULTS,
   dsrKeys,
   vaultDetailsKeys,
   vaultKeys
 } from '@/services/defi/consts';
-import { ApiMakerDAOVault } from '@/services/defi/types';
+import {
+  ApiMakerDAOVault,
+  SupportedDefiProtocols
+} from '@/services/defi/types';
 import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
@@ -411,7 +415,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
   async fetchLending(
     { commit, dispatch, rootState: { session }, rootGetters: { status } },
-    payload?: { refresh?: boolean; reset?: boolean }
+    payload?: { refresh?: boolean; reset?: SupportedDefiProtocols[] }
   ) {
     const premium = session?.premium;
     const section = Section.DEFI_LENDING;
@@ -460,9 +464,15 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     await Promise.all([
       dispatch('fetchDSRHistory', refresh),
-      dispatch('fetchAaveHistory', { refresh, reset }),
+      dispatch('fetchAaveHistory', {
+        refresh,
+        reset: reset && reset.includes(DEFI_AAVE)
+      }),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchYearnVaultsHistory', { refresh, reset })
+      dispatch('fetchYearnVaultsHistory', {
+        refresh,
+        reset: reset && reset.includes(DEFI_YEARN_VAULTS)
+      })
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);

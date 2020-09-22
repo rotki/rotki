@@ -14,9 +14,28 @@
             v-if="premium"
             :loading="anyRefreshing"
             :tooltip="$t('lending.reset_tooltip')"
+            :disabled="resetSelection.length === 0"
             @reset="reset()"
           >
             {{ $t('lending.reset_confirm') }}
+            <div />
+            <v-row>
+              <v-col class="text-center font-weight-medium">
+                {{ $t('lending.reset.protocol_selection') }}
+              </v-col>
+            </v-row>
+            <v-row align="center" justify="center">
+              <v-col cols="auto">
+                <v-btn-toggle v-model="resetSelection" multiple>
+                  <v-btn icon :value="AAVE">
+                    <defi-protocol-icon mode="icon" :protocol="AAVE" />
+                  </v-btn>
+                  <v-btn icon :value="YEARN_VAULTS">
+                    <defi-protocol-icon mode="icon" :protocol="YEARN_VAULTS" />
+                  </v-btn>
+                </v-btn-toggle>
+              </v-col>
+            </v-row>
           </confirmable-reset>
         </refresh-header>
       </v-col>
@@ -153,6 +172,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import {
+  DEFI_AAVE,
   DEFI_COMPOUND,
   DEFI_PROTOCOLS,
   DEFI_YEARN_VAULTS
@@ -223,13 +243,9 @@ export default class Lending extends Mixins(StatusMixin) {
     addresses: string[]
   ) => string;
   protocol: SupportedDefiProtocols | null = null;
-  fetchLendingHistory!: (payload?: {
-    refresh?: boolean;
-    reset?: boolean;
-  }) => Promise<void>;
   fetchLending!: (payload?: {
     refresh?: boolean;
-    reset?: boolean;
+    reset?: SupportedDefiProtocols[];
   }) => Promise<void>;
   totalUsdEarned!: (
     protocols: SupportedDefiProtocols[],
@@ -239,6 +255,11 @@ export default class Lending extends Mixins(StatusMixin) {
 
   section = Section.DEFI_LENDING;
   secondSection = Section.DEFI_LENDING_HISTORY;
+
+  resetSelection: SupportedDefiProtocols[] = [];
+
+  readonly AAVE = DEFI_AAVE;
+  readonly YEARN_VAULTS = DEFI_YEARN_VAULTS;
 
   get selectedAddresses(): string[] {
     return this.selectedAccount ? [this.selectedAccount.address] : [];
@@ -271,7 +292,7 @@ export default class Lending extends Mixins(StatusMixin) {
   async reset() {
     await this.fetchLending({
       refresh: true,
-      reset: true
+      reset: this.resetSelection
     });
   }
 
