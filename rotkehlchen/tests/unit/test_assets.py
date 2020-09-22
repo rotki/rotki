@@ -179,3 +179,25 @@ def test_assets_pulling_from_github_works(asset_resolver):  # pylint: disable=un
     # After the test runs we must reset the asset resolver so that it goes back to
     # the normal list of assets
     AssetResolver._AssetResolver__instance = None
+
+
+@pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('mock_asset_github_response', ["""{
+"COMPRLASSET": {
+    "coingecko": "",
+    "name": "Completely real asset, totally not for testing only",
+    "symbol": "COMPRLASSET",
+    "type": "not existing type"
+}
+}"""])
+@pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
+def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disable=unused-argument
+    """Test that finding an asset with an unknown type does not crash Rotki"""
+    new_asset = Asset("COMPRLASSET")
+    assert new_asset.name == 'Completely real asset, totally not for testing only'
+    token_list = AssetResolver().get_all_eth_token_info()
+    assert len(token_list) == 0
+    # After the test runs we must reset the asset resolver so that it goes back to
+    # the normal list of assets
+    AssetResolver._AssetResolver__instance = None

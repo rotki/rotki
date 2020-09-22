@@ -174,7 +174,9 @@ class AssetResolver():
     def get_asset_data(asset_identifier: str) -> AssetData:
         """Get all asset data from the known assets file for valid asset symbol"""
         data = AssetResolver().assets[asset_identifier]
-        asset_type = asset_type_mapping[data['type']]
+        # If an unknown asset is found (can happen if list is updated but code is not)
+        # then default to the "own chain" type"
+        asset_type = asset_type_mapping.get(data['type'], AssetType.OWN_CHAIN)
         result = AssetData(
             identifier=asset_identifier,
             symbol=data['symbol'],
@@ -200,7 +202,9 @@ class AssetResolver():
         all_tokens = []
 
         for identifier, asset_data in AssetResolver().assets.items():
-            asset_type = asset_type_mapping[asset_data['type']]
+            # If an unknown asset is found (can happen if list is updated but code is not)
+            # then default to the "own chain" type"
+            asset_type = asset_type_mapping.get(asset_data['type'], AssetType.OWN_CHAIN)
             if asset_type not in (AssetType.ETH_TOKEN_AND_MORE, AssetType.ETH_TOKEN):
                 continue
 
