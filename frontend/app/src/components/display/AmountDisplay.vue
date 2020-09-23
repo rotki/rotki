@@ -9,6 +9,7 @@
     >
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'before'"
+        class="ml-2"
         :show-currency="shownCurrency"
         :currency="currency"
         :asset="asset"
