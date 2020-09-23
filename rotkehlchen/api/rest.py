@@ -1437,9 +1437,15 @@ class RestAPI():
         status_code = HTTPStatus.OK
 
         if query_specific_balances_before and 'defi' in query_specific_balances_before:
+
             # Make sure ethereum balances are queried (this is protected by lock and by time cache)
             # so most of the times it should have already ran
-            self.rotkehlchen.chain_manager.query_balances(blockchain=SupportedBlockchain.ETHEREUM)
+            try:
+                self.rotkehlchen.chain_manager.query_balances(
+                    blockchain=SupportedBlockchain.ETHEREUM,
+                )
+            except (RemoteError, EthSyncError) as e:
+                return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         module_obj = getattr(self.rotkehlchen.chain_manager, module)
         if module_obj is None:
