@@ -615,5 +615,34 @@
   "exchange_badge": {
     "remove_tooltip": "Remove the exchange",
     "icon_alt": "Exchange icon"
+  },
+  "premium_settings": {
+    "title": "Rotki Premium",
+    "subtitle": "Rotki Premium is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
+    "rotki_premium": "Rotki Premium",
+    "fields": {
+      "api_key": "API Key",
+      "api_secret": "API Secret"
+    },
+    "premium_active": "Rotki Premium is active",
+    "actions": {
+      "delete": "Delete Key",
+      "cancel": "Cancel",
+      "setup": "Setup",
+      "replace": "Replace Key",
+      "sync": "Allow data sync with Rotki Server"
+    },
+    "error": {
+      "setting_failed": "Setting the keys was not successful",
+      "removing_failed": "Deleting the keys was not successful"
+    },
+    "delete_confirmation": {
+      "title": "Delete rotki premium keys?",
+      "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
+      "actions": {
+        "delete": "Delete",
+        "cancel": "Cancel"
+      }
+    }
   }
 }

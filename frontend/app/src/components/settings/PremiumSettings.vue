@@ -3,44 +3,33 @@
     <v-row class="premium-settings">
       <v-col>
         <v-card>
-          <v-card-title>Rotki Premium</v-card-title>
-          <v-card-text>
-            <p>
-              Rotki Premium is an optional subscription service to gain access
-              to to analytics, graphs, and unlock many additional features. For
-              information on what is available visit the
+          <v-card-title>{{ $t('premium_settings.title') }}</v-card-title>
+          <v-card-subtitle>
+            <i18n tag="div" path="premium_settings.subtitle">
               <base-external-link
-                text="Rotki Premium"
+                :text="$t('premium_settings.rotki_premium')"
                 :href="$interop.premiumURL"
               />
-              website.
-            </p>
-            <v-text-field
+            </i18n>
+          </v-card-subtitle>
+          <v-card-text>
+            <revealable-input
               v-model="apiKey"
               class="premium-settings__fields__api-key"
-              :append-icon="edit ? (showKey ? 'fa-eye' : 'fa-eye-slash') : ''"
-              prepend-icon="fa-key"
               :disabled="premium && !edit"
-              :type="showKey ? 'text' : 'password'"
               :error-messages="errorMessages"
-              label="Rotki API Key"
-              @click:append="showKey = !showKey"
+              :label="$t('premium_settings.fields.api_key')"
             />
-            <v-text-field
+            <revealable-input
               v-model="apiSecret"
               class="premium-settings__fields__api-secret"
-              :append-icon="
-                edit ? (showSecret ? 'fa-eye' : 'fa-eye-slash') : ''
-              "
+              prepend-icon="mdi-lock"
               :disabled="premium && !edit"
-              prepend-icon="fa-user-secret"
-              :type="showSecret ? 'text' : 'password'"
-              label="Rotki API Secret"
-              @click:append="showSecret = !showSecret"
+              :label="$t('premium_settings.fields.api_secret')"
             />
             <div v-if="premium" class="premium-settings__premium-active">
-              <v-icon color="success">fa-check-circle</v-icon>
-              <div>Rotki Premium is active</div>
+              <v-icon color="success">mdi-check-circle</v-icon>
+              <div>{{ $t('premium_settings.premium_active') }}</div>
             </div>
           </v-card-text>
           <v-card-actions>
@@ -51,10 +40,14 @@
               type="submit"
               @click="setup()"
             >
-              {{ premium && !edit ? 'Replace Key' : 'Setup' }}
+              {{
+                premium && !edit
+                  ? $t('premium_settings.actions.replace')
+                  : $t('premium_settings.actions.setup')
+              }}
             </v-btn>
             <v-btn
-              v-if="premium"
+              v-if="premium && !edit"
               class="premium-settings__button__delete"
               depressed
               outlined
@@ -62,22 +55,22 @@
               type="submit"
               @click="confirmDeletePremium = true"
             >
-              Delete Key
+              {{ $t('premium_settings.actions.delete') }}
             </v-btn>
             <v-btn
               v-if="edit && premium"
               id="premium-edit-cancel-button"
               depressed
               color="primary"
-              @click="edit = false"
+              @click="cancelEdit()"
             >
-              Cancel
+              {{ $t('premium_settings.actions.cancel') }}
             </v-btn>
             <v-switch
               v-if="premium && !edit"
               v-model="sync"
               class="premium-settings__sync"
-              label="Allow data sync with Rotki Server"
+              :label="$t('premium_settings.actions.sync')"
               @change="onSyncChange()"
             />
           </v-card-actions>
@@ -86,9 +79,14 @@
       <confirm-dialog
         :display="confirmDeletePremium"
         confirm-type="warning"
-        primary-action="Delete"
-        title="Delete rotki premium keys?"
-        message="Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again."
+        :primary-action="
+          $t('premium_settings.delete_confirmation.actions.delete')
+        "
+        :secondary-action="
+          $t('premium_settings.delete_confirmation.actions.cancel')
+        "
+        :title="$t('premium_settings.delete_confirmation.title')"
+        :message="$t('premium_settings.delete_confirmation.message')"
         @confirm="remove()"
         @cancel="confirmDeletePremium = false"
       />
@@ -101,12 +99,14 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 import { SettingsUpdate } from '@/typing/types';
 
 @Component({
   components: {
+    RevealableInput,
     ConfirmDialog,
     BaseExternalLink
   },
@@ -126,9 +126,6 @@ export default class PremiumSettings extends Vue {
   edit: boolean = true;
   confirmDeletePremium: boolean = false;
   errorMessages: string[] = [];
-
-  showKey: boolean = false;
-  showSecret: boolean = false;
 
   premium!: boolean;
   premiumSync!: boolean;
@@ -155,6 +152,13 @@ export default class PremiumSettings extends Vue {
     this.edit = !this.premium && !this.edit;
   }
 
+  cancelEdit() {
+    this.edit = false;
+    this.apiKey = '';
+    this.apiSecret = '';
+    this.clearErrors();
+  }
+
   async setup() {
     this.clearErrors();
     if (this.premium && !this.edit) {
@@ -169,7 +173,9 @@ export default class PremiumSettings extends Vue {
     };
     const { success, message } = await this.setupPremium(payload);
     if (!success) {
-      this.errorMessages.push(message ?? 'Setting the keys was not successful');
+      this.errorMessages.push(
+        message ?? this.$tc('premium_settings.error.setting_failed')
+      );
       return;
     }
     this.$interop.premiumUserLoggedIn(true);
@@ -185,7 +191,7 @@ export default class PremiumSettings extends Vue {
     const { success, message } = await this.deletePremium(this.username);
     if (!success) {
       this.errorMessages.push(
-        message ?? 'Deleting the keys was not successful'
+        message ?? this.$tc('premium_settings.error.removing_failed')
       );
       return;
     }
