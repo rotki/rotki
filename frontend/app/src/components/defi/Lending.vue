@@ -222,7 +222,7 @@ import {
     ])
   },
   methods: {
-    ...mapActions('defi', ['fetchLending'])
+    ...mapActions('defi', ['fetchLending', 'resetDB'])
   }
 })
 export default class Lending extends Mixins(StatusMixin) {
@@ -243,10 +243,8 @@ export default class Lending extends Mixins(StatusMixin) {
     addresses: string[]
   ) => string;
   protocol: SupportedDefiProtocols | null = null;
-  fetchLending!: (payload?: {
-    refresh?: boolean;
-    reset?: SupportedDefiProtocols[];
-  }) => Promise<void>;
+  fetchLending!: (refresh?: boolean) => Promise<void>;
+  resetDB!: (protocols: SupportedDefiProtocols[]) => Promise<void>;
   totalUsdEarned!: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -286,14 +284,11 @@ export default class Lending extends Mixins(StatusMixin) {
   }
 
   async refresh() {
-    await this.fetchLending({ refresh: true });
+    await this.fetchLending(true);
   }
 
   async reset() {
-    await this.fetchLending({
-      refresh: true,
-      reset: this.resetSelection
-    });
+    await this.resetDB(this.resetSelection);
   }
 
   async created() {

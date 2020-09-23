@@ -415,14 +415,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
   async fetchLending(
     { commit, dispatch, rootState: { session }, rootGetters: { status } },
-    payload?: { refresh?: boolean; reset?: SupportedDefiProtocols[] }
+    refresh?: boolean
   ) {
     const premium = session?.premium;
     const section = Section.DEFI_LENDING;
     const premiumSection = Section.DEFI_LENDING_HISTORY;
     const currentStatus = status(section);
-    const refresh = payload?.refresh;
-    const reset = payload?.reset;
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
@@ -464,16 +462,42 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     await Promise.all([
       dispatch('fetchDSRHistory', refresh),
-      dispatch('fetchAaveHistory', {
-        refresh,
-        reset: reset && reset.includes(DEFI_AAVE)
-      }),
+      dispatch('fetchAaveHistory', { refresh }),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchYearnVaultsHistory', {
-        refresh,
-        reset: reset && reset.includes(DEFI_YEARN_VAULTS)
-      })
+      dispatch('fetchYearnVaultsHistory', { refresh })
     ]);
+
+    setStatus(Status.LOADED, premiumSection, status, commit);
+  },
+
+  async resetDB(
+    { commit, dispatch, rootState: { session }, rootGetters: { status } },
+    protocols: SupportedDefiProtocols[]
+  ) {
+    const premiumSection = Section.DEFI_LENDING_HISTORY;
+    const currentPremiumStatus = status(premiumSection);
+    const premium = session!.premium;
+
+    if (!premium || isLoading(currentPremiumStatus)) {
+      return;
+    }
+
+    setStatus(Status.REFRESHING, premiumSection, status, commit);
+
+    const toReset: Promise<void>[] = [];
+    if (protocols.includes(DEFI_YEARN_VAULTS)) {
+      toReset.push(
+        dispatch('fetchYearnVaultsHistory', { refresh: true, reset: true })
+      );
+    }
+
+    if (protocols.includes(DEFI_AAVE)) {
+      toReset.push(
+        dispatch('fetchAaveHistory', { refresh: true, reset: true })
+      );
+    }
+
+    await Promise.all(toReset);
 
     setStatus(Status.LOADED, premiumSection, status, commit);
   },
