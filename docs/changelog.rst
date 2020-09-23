@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.
 * :bug:`1504` Users can now properly start the application when the default backend port is used by another application.
 * :feature:`1502` Add support for Binance lending assets.
 * :feature:`1402` Yearn vaults historical data and total profit/loss per vault is now available. Also the ROI since inception is now visible next to each vault.
@@ -50,6 +51,7 @@ Changelog
   - `Neutrino Dollar (USDN) <https://www.coingecko.com/en/coins/neutrino-dollar>`__
   - `Terra USD (UST) <https://www.cryptocompare.com/coins/ust/overview>`__
   - `Anyswap (ANY) <https://www.coingecko.com/en/coins/anyswap>`__
+  - `Chi Gastoken (CHI) <https://www.coingecko.com/en/coins/chi-gastoken>`__
   - `Trump Wins Token (TRUMPWIN) <https://www.coingecko.com/en/coins/trump-wins-token>`__
   - `Trump Loses Token (TRUMPLOSE) <https://www.coingecko.com/en/coins/trump-loses-token>`__
   - `Binance leveraged token DOTDOWN (DOTDOWN) <https://www.cryptocompare.com/coins/dotdown>`__

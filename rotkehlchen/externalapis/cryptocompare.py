@@ -108,6 +108,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('KRT'): Asset('KRW'),
     Asset('RVC'): Asset('USDT'),
     Asset('SDT'): Asset('USDT'),
+    Asset('CHI'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 
@@ -335,8 +336,11 @@ class Cryptocompare(ExternalServiceWithApiKey):
         elif method_name == 'query_endpoint_price':
             result = {
                 to_asset.identifier: _multiply_str_nums(
-                    result1[intermediate_asset.identifier],
-                    result2[to_asset.identifier]),
+                    # up until 23/09/2020 cryptocompare may return {} due to bug. Handle
+                    # that case by assuming 0 if that happens
+                    result1.get(intermediate_asset.identifier, '0'),
+                    result2.get(to_asset.identifier, '0'),
+                ),
             }
         elif method_name == 'query_endpoint_pricehistorical':
             result = result1 * result2

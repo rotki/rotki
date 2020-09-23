@@ -99,7 +99,7 @@ export class DefiApi {
         validateStatus: validWithSessionAndExternalService,
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
-          resetDbData: reset
+          resetDbData: reset ? reset : undefined
         }),
         transformResponse: this.baseTransformer
       })
@@ -152,7 +152,7 @@ export class DefiApi {
           validateStatus: validWithSessionAndExternalService,
           params: axiosSnakeCaseTransformer({
             asyncQuery: true,
-            resetDbData: reset
+            resetDbData: reset ? reset : undefined
           }),
           transformResponse: this.baseTransformer
         }

@@ -11,7 +11,8 @@
           v-bind="attrs"
           max-width="24px"
           max-height="24"
-          class="defi-protocol-icon__image mr-2"
+          class="defi-protocol-icon__image"
+          :class="mode !== 'icon' ? 'mr-2' : null"
           :src="require(`@/assets/images/defi/${protocol}.svg`)"
           v-on="on"
         />
