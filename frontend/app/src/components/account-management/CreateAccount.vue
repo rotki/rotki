@@ -22,32 +22,30 @@
                 autofocus
                 class="create-account__fields__username"
                 :label="$t('create_account.select_credentials.label_username')"
-                prepend-icon="fa-user"
+                prepend-icon="mdi-account"
                 :rules="usernameRules"
                 :disabled="loading"
                 required
               />
-              <v-text-field
+              <revealable-input
                 v-model="password"
                 class="create-account__fields__password"
                 :label="$t('create_account.select_credentials.label_password')"
                 prepend-icon="fa-lock"
                 :rules="passwordRules"
                 :disabled="loading"
-                type="password"
                 required
               />
-              <v-text-field
+              <revealable-input
                 v-model="passwordConfirm"
                 class="create-account__fields__password-repeat"
-                prepend-icon="fa-repeat"
+                prepend-icon="mdi-repeat"
                 :error-messages="errorMessages"
                 :rules="passwordConfirmRules"
                 :disabled="loading"
                 :label="
                   $t('create_account.select_credentials.label_password_repeat')
                 "
-                type="password"
                 required
               />
               <v-checkbox
@@ -152,10 +150,11 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { Credentials } from '@/typing/types';
 
 @Component({
-  components: { PremiumCredentials }
+  components: { RevealableInput, PremiumCredentials }
 })
 export default class CreateAccount extends Vue {
   @Prop({ required: true })

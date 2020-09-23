@@ -40,8 +40,8 @@
           @click="togglePrivacyMode()"
         >
           <v-list-item-avatar>
-            <v-icon v-if="privacyMode" color="primary">fa-eye-slash</v-icon>
-            <v-icon v-else color="primary">fa-eye</v-icon>
+            <v-icon v-if="privacyMode" color="primary">mdi-eye-off</v-icon>
+            <v-icon v-else color="primary">mdi-eye</v-icon>
           </v-list-item-avatar>
           <v-list-item-title>
             {{ $t('user_dropdown.toggle_privacy') }}
