@@ -28,3 +28,10 @@ export interface BalanceState {
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: ManualBalanceByLocation;
 }
+
+export interface ExchangePayload {
+  readonly exchange: string;
+  readonly apiKey: string;
+  readonly apiSecret: string;
+  readonly passphrase: string | null;
+}

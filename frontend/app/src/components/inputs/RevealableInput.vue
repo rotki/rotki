@@ -1,9 +1,10 @@
 <template>
   <v-text-field
+    v-bind="$attrs"
     :value="value"
     class="revealable-input"
-    :append-icon="revealed ? 'fa-eye' : 'fa-eye-slash'"
-    :prepend-icon="icon"
+    :append-icon="revealed ? 'mdi-eye' : 'mdi-eye-off'"
+    :prepend-icon="prependIcon"
     :type="revealed ? 'text' : 'password'"
     :rules="rules"
     :label="label"
@@ -11,6 +12,7 @@
     :disabled="disabled"
     :persistent-hint="!!hint"
     :error-messages="errorMessages"
+    v-on="$listeners"
     @input="input"
     @click:append="revealed = !revealed"
   />
@@ -32,8 +34,8 @@ export default class RevealableInput extends Vue {
   @Prop({ required: false, default: '' })
   label!: string;
 
-  @Prop({ required: false, default: 'fa-key' })
-  icon!: string;
+  @Prop({ required: false, default: 'mdi-key' })
+  prependIcon!: string;
 
   @Prop({ required: false, default: '' })
   hint!: string;

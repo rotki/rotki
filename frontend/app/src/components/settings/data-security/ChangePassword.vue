@@ -28,7 +28,7 @@
               v-model="newPasswordConfirm"
               class="user-security-settings__fields__new-password-confirm"
               label="Confirm New Password"
-              icon="fa-repeat"
+              prepend-icon="mdi-repeat"
               :rules="passwordConfirmRules"
               :error-messages="errorMessages"
             />
