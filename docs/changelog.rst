@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.
 * :bug:`1504` Users can now properly start the application when the default backend port is used by another application.
 * :feature:`1502` Add support for Binance lending assets.
