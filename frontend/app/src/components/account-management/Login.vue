@@ -11,24 +11,26 @@
           class="login__fields__username"
           color="secondary"
           :label="$t('login.label_username')"
-          prepend-icon="fa-user"
+          prepend-icon="mdi-account"
           validate-on-blur
           :rules="usernameRules"
           :disabled="loading || !!syncConflict"
           required
         />
-        <v-text-field
+
+        <revealable-input
           v-model="password"
-          class="login__fields__password"
-          color="secondary"
-          :label="$t('login.label_password')"
-          prepend-icon="fa-lock"
           :rules="passwordRules"
           :disabled="loading || !!syncConflict"
           type="password"
           required
+          class="login__fields__password"
+          color="secondary"
+          :label="$t('login.label_password')"
+          prepend-icon="mdi-lock"
           @keypress.enter="login()"
         />
+
         <transition name="bounce">
           <v-alert
             v-if="!!syncConflict"
@@ -89,9 +91,12 @@
 </template>
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { Credentials, SyncApproval } from '@/typing/types';
 
-@Component({})
+@Component({
+  components: { RevealableInput }
+})
 export default class Login extends Vue {
   @Prop({ required: true })
   displayed!: boolean;

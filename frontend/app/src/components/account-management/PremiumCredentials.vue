@@ -4,7 +4,6 @@
       <v-checkbox
         :value="enabled"
         :label="$t('premium_credentials.label_enable')"
-        off-icon="fa fa-square-o"
         @change="enabledChanged"
       />
       <v-tooltip bottom max-width="400px">
@@ -17,29 +16,22 @@
       </v-tooltip>
     </v-row>
     <div v-if="enabled">
-      <v-text-field
+      <revealable-input
         :value="apiKey"
         :disabled="loading"
         class="premium-settings__fields__api-key"
-        :append-icon="showKey ? 'fa-eye' : 'fa-eye-slash'"
-        prepend-icon="fa-key"
-        :type="showKey ? 'text' : 'password'"
         :rules="apiKeyRules"
         :label="$t('premium_credentials.label_api_key')"
         @input="apiKeyChanged"
-        @click:append="showKey = !showKey"
       />
-      <v-text-field
+      <revealable-input
         :value="apiSecret"
         :disabled="loading"
         class="premium-settings__fields__api-secret"
-        :append-icon="showSecret ? 'fa-eye' : 'fa-eye-slash'"
-        prepend-icon="fa-user-secret"
-        :type="showSecret ? 'text' : 'password'"
+        prepend-icon="mdi-lock"
         :label="$t('premium_credentials.label_api_secret')"
         :rules="apiSecretRules"
         @input="apiSecretChanged"
-        @click:append="showSecret = !showSecret"
       />
     </div>
   </div>
@@ -47,8 +39,11 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
 
-@Component({})
+@Component({
+  components: { RevealableInput }
+})
 export default class PremiumCredentials extends Vue {
   @Prop({ required: true })
   loading!: boolean;
@@ -89,5 +84,3 @@ export default class PremiumCredentials extends Vue {
   enabledChanged(_enabled: boolean) {}
 }
 </script>
-
-<style scoped lang="scss"></style>

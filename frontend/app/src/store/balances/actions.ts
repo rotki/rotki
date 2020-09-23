@@ -13,12 +13,13 @@ import { ManualBalance, ManualBalances } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
-import { BalanceState } from '@/store/balances/types';
+import { BalanceState, ExchangePayload } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
 import { showError } from '@/store/utils';
 import { Blockchain, UsdToFiatExchangeRates } from '@/typing/types';
+import { assert } from '@/utils/assertions';
 import { toMap } from '@/utils/conversion';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
@@ -328,6 +329,63 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('manualBalances', balances);
     } catch (e) {
       showError(`${e.message}`, 'Deleting Manual Balance');
+    }
+  },
+
+  async setupExchange(
+    { commit, dispatch },
+    { apiKey, apiSecret, exchange, passphrase }: ExchangePayload
+  ): Promise<boolean> {
+    try {
+      const success = await api.setupExchange(
+        exchange,
+        apiKey,
+        apiSecret,
+        passphrase ?? null
+      );
+      commit('addExchange', exchange);
+      dispatch('fetchExchangeBalances', {
+        name: exchange
+      }).then();
+      return success;
+    } catch (e) {
+      showError(
+        i18n.tc('actions.balances.exchange_setup.description', 0, {
+          exchange,
+          error: e.message
+        }),
+        i18n.tc('actions.balances.exchange_setup.title')
+      );
+      return false;
+    }
+  },
+
+  async removeExchange(
+    { commit, state: { connectedExchanges } },
+    exchange: string
+  ): Promise<boolean> {
+    try {
+      const success = await api.removeExchange(exchange);
+      if (success) {
+        const exchangeIndex = connectedExchanges.findIndex(
+          value => value === exchange
+        );
+        assert(
+          exchangeIndex >= 0,
+          `${exchange} not found in ${connectedExchanges.join(', ')}`
+        );
+        commit('removeExchange', exchange);
+      }
+      return success;
+    } catch (e) {
+      showError(
+        i18n.tc('actions.balances.exchange_removal.description', 0, {
+          exchange,
+          error: e.message
+        }),
+        i18n.tc('actions.balances.exchange_removal.title')
+      );
+      return false;
     }
   }
 };

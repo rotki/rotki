@@ -8,6 +8,7 @@ import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
+import '../../i18n';
 
 jest.mock('@/electron-interop');
 jest.mock('@/services/rotkehlchen-api');

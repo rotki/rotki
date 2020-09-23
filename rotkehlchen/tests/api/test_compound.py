@@ -52,7 +52,7 @@ def test_query_compound_balances(rotkehlchen_api_server, ethereum_accounts, asyn
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=60)
             assert outcome['message'] == ''
             result = outcome['result']
         else:

@@ -348,6 +348,16 @@
           "description": "Failed to retrieve yearn.finance Vaults history: {error}"
         }
       }
+    },
+    "balances": {
+      "exchange_setup": {
+        "title": "Exchange setup",
+        "description": "The setup of {exchange} failed due to: {error}"
+      },
+      "exchange_removal": {
+        "title": "Exchange removal",
+        "description": "The removal of {exchange} failed due to: {error}"
+      }
     }
   },
   "navigation_menu": {
@@ -580,6 +590,59 @@
       "message": "Are you sure you want to proceed with the reset?",
       "cancel": "Cancel",
       "confirm": "Confirm"
+    }
+  },
+  "exchange_settings": {
+    "title": "Exchanges",
+    "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
+    "usage_guide": "Usage Guide",
+    "inputs": {
+      "api_key": "API Key",
+      "api_secret": "API Secret",
+      "passphrase": "Passphrase",
+      "kraken_account": "Select the type of your Kraken account"
+    },
+    "actions": {
+      "setup": "Setup"
+    },
+    "confirmation": {
+      "title": "Confirmation Required",
+      "message": "Are you sure you want to delete the API key and secret for {exchange} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange."
+    },
+    "connected_exchanges": "Connected Exchanges",
+    "setup_exchange": "Setup Exchange"
+  },
+  "exchange_badge": {
+    "remove_tooltip": "Remove the exchange",
+    "icon_alt": "Exchange icon"
+  },
+  "premium_settings": {
+    "title": "Rotki Premium",
+    "subtitle": "Rotki Premium is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
+    "rotki_premium": "Rotki Premium",
+    "fields": {
+      "api_key": "API Key",
+      "api_secret": "API Secret"
+    },
+    "premium_active": "Rotki Premium is active",
+    "actions": {
+      "delete": "Delete Key",
+      "cancel": "Cancel",
+      "setup": "Setup",
+      "replace": "Replace Key",
+      "sync": "Allow data sync with Rotki Server"
+    },
+    "error": {
+      "setting_failed": "Setting the keys was not successful",
+      "removing_failed": "Deleting the keys was not successful"
+    },
+    "delete_confirmation": {
+      "title": "Delete rotki premium keys?",
+      "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
+      "actions": {
+        "delete": "Delete",
+        "cancel": "Cancel"
+      }
     }
   }
 }

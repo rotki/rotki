@@ -2,23 +2,35 @@
   <v-row class="exchange-settings">
     <v-col>
       <v-card>
-        <v-card-title>Exchanges</v-card-title>
-        <v-card-text>
-          <p>
-            Rotki can connect to supported exchanges and automatically pull your
-            your trades and balances from that exchange. See the
+        <v-card-title>{{ $t('exchange_settings.title') }}</v-card-title>
+        <v-card-subtitle>
+          <i18n path="exchange_settings.subtitle" tag="div">
             <base-external-link
-              text="Usage Guide"
+              :text="$t('exchange_settings.usage_guide')"
               :href="$interop.usageGuideURL + '#adding-an-exchange'"
             />
-            for more information.
-          </p>
+          </i18n>
+        </v-card-subtitle>
+        <v-card-text>
+          <v-row>
+            <v-col class="text-h6">
+              {{ $t('exchange_settings.connected_exchanges') }}
+            </v-col>
+          </v-row>
           <v-row class="exchange-settings__connected-exchanges">
             <exchange-badge
               v-for="exchange in connectedExchanges"
               :key="exchange"
               :name="exchange"
+              class="mr-2"
+              removeable
+              @remove="confirmRemoval(exchange)"
             />
+          </v-row>
+          <v-row class="mt-2">
+            <v-col class="text-h6">
+              {{ $t('exchange_settings.setup_exchange') }}
+            </v-col>
           </v-row>
           <v-select
             v-model="selectedExchange"
@@ -26,73 +38,79 @@
             :items="exchanges"
             label="Exchange"
           >
-            <template #item="{ item, attrs, on }">
-              <v-list-item
+            <template #selection="{ item, attrs, on }">
+              <exchange-display
+                :exchange="item"
                 :class="`exchange__${item}`"
                 v-bind="attrs"
                 v-on="on"
-              >
-                {{ item }}
-              </v-list-item>
+              />
+            </template>
+            <template #item="{ item, attrs, on }">
+              <exchange-display
+                :exchange="item"
+                :class="`exchange__${item}`"
+                v-bind="attrs"
+                v-on="on"
+              />
             </template>
           </v-select>
-          <v-text-field
+
+          <revealable-input
             v-model="apiKey"
             class="exchange-settings__fields__api-key"
-            prepend-icon="fa-key"
-            :append-icon="showKey ? 'fa-eye' : 'fa-eye-slash'"
-            label="API Key"
+            :label="$t('exchange_settings.inputs.api_key')"
             :disabled="isConnected"
-            :type="showKey ? 'text' : 'password'"
-            @click:append="showKey = !showKey"
           />
-          <v-text-field
+
+          <revealable-input
             v-model="apiSecret"
-            :append-icon="showSecret ? 'fa-eye' : 'fa-eye-slash'"
-            :type="showSecret ? 'text' : 'password'"
             class="exchange-settings__fields__api-secret"
-            prepend-icon="fa-user-secret"
-            label="API Secret"
+            prepend-icon="mdi-lock"
+            :label="$t('exchange_settings.inputs.api_secret')"
             :disabled="isConnected"
-            @click:append="showSecret = !showSecret"
           />
-          <v-text-field
+
+          <revealable-input
             v-if="selectedExchange === 'coinbasepro'"
             v-model="passphrase"
+            prepend-icon="mdi-key-plus"
             class="exchange-settings__fields__passphrase"
-            prepend-icon="fa-key"
-            :append-icon="showPassphrase ? 'fa-eye' : 'fa-eye-slash'"
-            label="Passphrase"
+            :label="$t('exchange_settings.inputs.passphrase')"
             :disabled="isConnected"
-            :type="showKey ? 'text' : 'password'"
-            @click:append="showKey = !showKey"
           />
+
           <v-select
             v-if="selectedExchange === 'kraken'"
             v-model="selectedKrakenAccountType"
+            :disabled="isConnected"
             class="exchange-settings__fields__kraken-account-type"
             :items="krakenAccountTypes"
-            label="Select the type of your Kraken account"
+            :label="$t('exchange_settings.inputs.kraken_account')"
             @change="onChangeKrakenAccountType"
           />
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions v-if="!isConnected">
           <v-btn
             class="exchange-settings__buttons__setup"
             depressed
             color="primary"
             type="submit"
-            @click="clicked()"
+            @click="setup()"
           >
-            {{ isConnected ? 'Remove' : 'Setup' }}
+            {{ $t('exchange_settings.actions.setup') }}
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-col>
     <confirm-dialog
       :display="confirmation"
-      title="Confirmation Required"
-      message="Are you sure you want to delete the API key and secret from rotkehlchen? This action can not be undone and you will need to obtain the key and secret again from the exchange."
+      :title="$t('exchange_settings.confirmation.title')"
+      :message="
+        $t('exchange_settings.confirmation.message', {
+          exchange: pendingRemoval
+        })
+      "
       @cancel="confirmation = false"
       @confirm="remove()"
     />
@@ -101,21 +119,30 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { exchanges } from '@/data/defaults';
-import { Message } from '@/store/types';
-
-const { mapState } = createNamespacedHelpers('balances');
-const { mapGetters } = createNamespacedHelpers('session');
+import { SupportedExchange } from '@/services/balances/types';
+import { ExchangePayload } from '@/store/balances/types';
 
 @Component({
-  components: { ConfirmDialog, ExchangeBadge, BaseExternalLink },
+  components: {
+    ExchangeDisplay,
+    RevealableInput,
+    ConfirmDialog,
+    ExchangeBadge,
+    BaseExternalLink
+  },
   computed: {
-    ...mapState(['connectedExchanges']),
-    ...mapGetters(['krakenAccountType'])
+    ...mapState('balances', ['connectedExchanges']),
+    ...mapGetters('session', ['krakenAccountType'])
+  },
+  methods: {
+    ...mapActions('balances', ['setupExchange', 'removeExchange'])
   }
 })
 export default class ExchangeSettings extends Vue {
@@ -124,17 +151,20 @@ export default class ExchangeSettings extends Vue {
   apiSecret: string = '';
   passphrase: string | null = null;
   selectedExchange: string = exchanges[0];
+  pendingRemoval: string = '';
   confirmation: boolean = false;
 
-  showKey: boolean = false;
-  showSecret: boolean = false;
-  showPassphrase: boolean = false;
-
   connectedExchanges!: string[];
+  setupExchange!: (payload: ExchangePayload) => Promise<boolean>;
+  removeExchange!: (exchange: string) => Promise<boolean>;
   krakenAccountTypes = ['starter', 'intermediate', 'pro'];
   selectedKrakenAccountType = '';
 
-  exchanges = exchanges;
+  get exchanges(): SupportedExchange[] {
+    return exchanges.filter(
+      exchange => !this.connectedExchanges.includes(exchange)
+    );
+  }
 
   mounted() {
     this.selectedKrakenAccountType = this.krakenAccountType;
@@ -170,58 +200,32 @@ export default class ExchangeSettings extends Vue {
     );
   }
 
-  clicked() {
-    if (this.isConnected) {
-      this.confirmation = true;
-      return;
-    }
-
-    const exchangeName = this.selectedExchange;
-    const { commit, dispatch } = this.$store;
-    this.$api
-      .setupExchange(exchangeName, this.apiKey, this.apiSecret, this.passphrase)
-      .then(() => {
-        this.resetFields(true);
-        commit('balances/addExchange', exchangeName);
-        dispatch('balances/fetchExchangeBalances', {
-          name: exchangeName
-        });
-      })
-      .catch((reason: Error) => {
-        commit('setMessage', {
-          title: 'Exchange Setup Error',
-          description: `Error at setup of ${exchangeName}: ${reason.message}`
-        } as Message);
-      });
+  confirmRemoval(exchange: string) {
+    this.confirmation = true;
+    this.pendingRemoval = exchange;
   }
 
-  remove() {
-    const { commit } = this.$store;
-    this.confirmation = false;
-    const exchangeName = this.selectedExchange;
+  async setup() {
+    const success = await this.setupExchange({
+      exchange: this.selectedExchange,
+      apiSecret: this.apiSecret,
+      apiKey: this.apiKey,
+      passphrase: this.passphrase
+    });
 
-    this.$api
-      .removeExchange(exchangeName)
-      .then(() => {
-        this.resetFields(true);
-        const exchangeIndex = this.connectedExchanges.findIndex(
-          value => value === exchangeName
-        );
-        if (exchangeIndex === -1) {
-          commit('setMessage', {
-            title: 'Error during exchange removal',
-            description: `Exchange ${exchangeName} was not in connected_exchanges when trying to remove`
-          } as Message);
-        } else {
-          commit('balances/removeExchange', exchangeName);
-        }
-      })
-      .catch((reason: Error) => {
-        commit('setMessage', {
-          title: 'Exchange Removal Error',
-          description: `Error at removing ${exchangeName} exchange: ${reason.message}`
-        } as Message);
-      });
+    if (success) {
+      this.resetFields(true);
+    }
+  }
+
+  async remove() {
+    this.confirmation = false;
+    const exchange = this.pendingRemoval;
+    this.pendingRemoval = '';
+    const success = await this.removeExchange(exchange);
+    if (success) {
+      this.resetFields(true);
+    }
   }
 }
 </script>
@@ -233,6 +237,18 @@ export default class ExchangeSettings extends Vue {
     flex-direction: row;
     justify-content: flex-start;
     padding: 8px;
+  }
+
+  &__fields {
+    &__exchange {
+      ::v-deep {
+        .v-select {
+          &__selections {
+            height: 36px;
+          }
+        }
+      }
+    }
   }
 
   ::v-deep {
