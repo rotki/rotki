@@ -24,9 +24,9 @@ const args = [
   '-m',
   'rotkehlchen',
   '--api-port',
-  '4242',
+  '22221',
   '--api-cors',
-  'http://localhost:8080',
+  'http://localhost:*',
   '--data-dir',
   tempPath
 ];
