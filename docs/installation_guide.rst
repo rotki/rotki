@@ -16,7 +16,7 @@ Packaged Binaries
 ******************
 
 Verifying integrity
-==========
+===========================
 
 Starting with the release of v1.6.2, rotki releases now include the sha512 sum of the packaged binaries.
 You can download the file containing the hash along with the binary from the release page.

@@ -1,5 +1,6 @@
 import csv
 import os
+import random
 import re
 from contextlib import ExitStack
 from http import HTTPStatus
@@ -34,7 +35,8 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
-    wait_for_async_task,
+    assert_proper_response_with_result,
+    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
@@ -49,6 +51,9 @@ from rotkehlchen.utils.misc import create_timestamp
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_query_history(rotkehlchen_api_server_with_exchanges):
     """Test that the history processing REST API endpoint works. Similar to test_history.py"""
+    async_query = random.choice([False, True])
+    start_ts = 0
+    end_ts = 1601040361
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = prepare_rotki_for_history_processing_test(
         rotki,
@@ -63,15 +68,21 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
             stack.enter_context(manager)
         response = requests.get(
             api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+            json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': async_query},
         )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task_with_result(
+                rotkehlchen_api_server_with_exchanges,
+                task_id,
+            )
+        else:
+            outcome = assert_proper_response_with_result(response)
 
     # Simply check that the results got returned here. The actual correctness of
     # accounting results is checked in other tests such as test_simple_accounting
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 2
-    overview = data['result']['overview']
+    assert len(outcome) == 2
+    overview = outcome['overview']
     assert len(overview) == 10
     assert overview["loan_profit"] is not None
     assert overview["margin_positions_profit_loss"] is not None
@@ -83,7 +94,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     assert overview["total_taxable_profit_loss"] is not None
     assert overview["total_profit_loss"] is not None
     assert overview["defi_profit_loss"] is not None
-    all_events = data['result']['all_events']
+    all_events = outcome['all_events']
     assert isinstance(all_events, list)
     # TODO: These events are not actually checked anywhere for correctness
     #       A test should probably be made for their correctness, even though
@@ -222,55 +233,6 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     assert data['result']['eth_node_connection'] is False
     assert data['result']['history_process_start_ts'] == 1428994442
     assert data['result']['history_process_current_ts'] == end_ts
-
-
-@pytest.mark.parametrize(
-    'added_exchanges',
-    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
-)
-@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_query_history_async(rotkehlchen_api_server_with_exchanges):
-    """Same as test_query_history but asynchronously"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    start_ts = 1539713237
-    end_ts = 1539713238
-    setup = prepare_rotki_for_history_processing_test(
-        rotki,
-        should_mock_history_processing=False,
-        history_start_ts=start_ts,
-        history_end_ts=end_ts,
-    )
-
-    # Query history processing to start the history processing
-    with ExitStack() as stack:
-        for manager in setup:
-            if manager is None:
-                continue
-            stack.enter_context(manager)
-        response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
-            json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': True},
-        )
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
-
-    assert len(outcome['result']) == 2
-    overview = outcome['result']['overview']
-    assert len(overview) == 10
-    assert overview["loan_profit"] is not None
-    assert overview["defi_profit_loss"] is not None
-    assert overview["margin_positions_profit_loss"] is not None
-    assert overview["settlement_losses"] is not None
-    assert overview["ethereum_transaction_gas_costs"] is not None
-    assert overview["asset_movement_fees"] is not None
-    assert overview["general_trade_profit_loss"] is not None
-    assert overview["taxable_trade_profit_loss"] is not None
-    assert overview["total_taxable_profit_loss"] is not None
-    assert overview["total_profit_loss"] is not None
-    all_events = outcome['result']['all_events']
-    assert isinstance(all_events, list)
-    assert len(all_events) == 4
 
 
 def test_query_history_errors(rotkehlchen_api_server):

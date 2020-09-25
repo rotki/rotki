@@ -1,19 +1,20 @@
-import gevent
 import pytest
 
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, YEARN_YCRV_VAULT
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
-from rotkehlchen.tests.utils.ethereum import ETHEREUM_TEST_PARAMETERS
+from rotkehlchen.tests.utils.ethereum import (
+    ETHEREUM_TEST_PARAMETERS,
+    wait_until_all_nodes_connected,
+)
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_block_by_number(ethereum_manager, call_order):
-    # Wait until all nodes are connected
-    if NodeName.OWN in call_order:
-        while NodeName.OWN not in ethereum_manager.web3_mapping:
-            gevent.sleep(2)
-            continue
+def test_get_block_by_number(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=ethereum_manager,
+    )
     block = ethereum_manager.get_block_by_number(10304885, call_order=call_order)
     assert block['timestamp'] == 1592686213
     assert block['number'] == 10304885
@@ -21,12 +22,11 @@ def test_get_block_by_number(ethereum_manager, call_order):
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_transaction_receipt(ethereum_manager, call_order):
-    # Wait until all nodes are connected
-    if NodeName.OWN in call_order:
-        while NodeName.OWN not in ethereum_manager.web3_mapping:
-            gevent.sleep(2)
-            continue
+def test_get_transaction_receipt(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=ethereum_manager,
+    )
     result = ethereum_manager.get_transaction_receipt(
         '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89',
         call_order=call_order,
@@ -54,12 +54,13 @@ def test_get_transaction_receipt(ethereum_manager, call_order):
         (NodeName.MYCRYPTO, NodeName.AVADO_POOL, NodeName.BLOCKSCOUT),
     ),
 ])
-def test_use_open_nodes(ethereum_manager, call_order):
+def test_use_open_nodes(ethereum_manager, call_order, ethereum_manager_connect_at_start):
     """Test that we can connect to and use the open nodes (except from etherscan)"""
     # Wait until all nodes are connected
-    while len(ethereum_manager.web3_mapping) < 3:
-        gevent.sleep(2)
-        continue
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=ethereum_manager,
+    )
     result = ethereum_manager.get_transaction_receipt(
         '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89',
         call_order=call_order,
@@ -69,12 +70,11 @@ def test_use_open_nodes(ethereum_manager, call_order):
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_call_contract(ethereum_manager, call_order):
-    # Wait until all nodes are connected
-    if NodeName.OWN in call_order:
-        while NodeName.OWN not in ethereum_manager.web3_mapping:
-            gevent.sleep(2)
-            continue
+def test_call_contract(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=ethereum_manager,
+    )
 
     result = ethereum_manager.call_contract(
         contract_address=YEARN_YCRV_VAULT.address,
@@ -94,12 +94,11 @@ def test_call_contract(ethereum_manager, call_order):
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_logs(ethereum_manager, call_order):
-    # Wait until all nodes are connected
-    if NodeName.OWN in call_order:
-        while NodeName.OWN not in ethereum_manager.web3_mapping:
-            gevent.sleep(2)
-            continue
+def test_get_logs(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=ethereum_manager,
+    )
 
     argument_filters = {
         'from': '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10',

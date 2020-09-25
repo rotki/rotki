@@ -3,7 +3,12 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_proper_response,
+    assert_proper_response_with_result,
+)
 from rotkehlchen.tests.utils.blockchain import assert_btc_balances_result
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -651,9 +656,9 @@ def test_delete_utilized_tag(rotkehlchen_api_server):
             "blockchainsaccountsresource",
             blockchain='BTC',
         ), json={'accounts': accounts_data})
-    assert_proper_response(response)
+    result = assert_proper_response_with_result(response)
     assert_btc_balances_result(
-        json_data=response.json(),
+        result=result,
         btc_accounts=new_btc_accounts,
         btc_balances=btc_balances,
         also_eth=False,

@@ -27,13 +27,13 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
-@pytest.mark.parametrize('async_query', [True, False])
-def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts, async_query):
+def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the aave balances endpoint works. Uses real data.
 
     TODO: Here we should use a test account for which we will know what balances
     it has and we never modify
     """
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
         rotki,
@@ -83,6 +83,7 @@ def test_query_aave_balances_module_not_activated(
         rotkehlchen_api_server,
         ethereum_accounts,
 ):
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
 
@@ -92,35 +93,19 @@ def test_query_aave_balances_module_not_activated(
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "aavebalancesresource",
-        ))
-    assert_error_response(
-        response=response,
-        contained_in_msg='aave module is not activated',
-        status_code=HTTPStatus.CONFLICT,
-    )
+        ), json={'async_query': async_query})
 
-
-@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
-def test_query_aave_balances_async_module_not_activated(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
-
-    with ExitStack() as stack:
-        # patch ethereum/etherscan to not autodetect tokens
-        setup.enter_ethereum_patches(stack)
-        response = requests.get(api_url_for(
-            rotkehlchen_api_server,
-            "aavebalancesresource",
-        ), json={'async_query': True})
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-
-    assert outcome['result'] is None
-    assert outcome['message'] == 'aave module is not activated'
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            assert outcome['result'] is None
+            assert outcome['message'] == 'aave module is not activated'
+        else:
+            assert_error_response(
+                response=response,
+                contained_in_msg='aave module is not activated',
+                status_code=HTTPStatus.CONFLICT,
+            )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_2]])
