@@ -211,7 +211,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
-    ), json={'async_query': True})
+    ), json={'async_query': async_query})
     if async_query:
         task_id = assert_ok_async_response(response)
         vaults = wait_for_async_task_with_result(
@@ -227,7 +227,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultdetailsresource",
-    ), json={'async_query': True})
+    ), json={'async_query': async_query})
     if async_query:
         task_id = assert_ok_async_response(response)
         details = wait_for_async_task_with_result(

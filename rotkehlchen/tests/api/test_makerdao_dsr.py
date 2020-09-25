@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.api import (
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
-    wait_for_async_task,
+    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -445,7 +445,7 @@ def test_query_current_dsr_balance(
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
         else:
             outcome = assert_proper_response_with_result(response)
 
@@ -544,7 +544,7 @@ def test_query_historical_dsr(
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
         else:
             outcome = assert_proper_response_with_result(response)
 
