@@ -1,3 +1,4 @@
+import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
@@ -125,15 +126,14 @@ EXPECTED_4193_TXS = [{
     '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
     '0x4193122032b38236825BBa166F42e54fc3F4A1EE',
 ]])
-@pytest.mark.parametrize('async_query', [True, False])
-def test_query_transactions(rotkehlchen_api_server, async_query):
+def test_query_transactions(rotkehlchen_api_server):
     """Test that querying the ethereum transactions endpoint works as expected
 
     This test uses real data. Found an ethereum address that has very few transactions
     and hopefully won't have more. If it does we can adjust the test.
     """
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
     # Check that we get all transactions
     response = requests.get(
         api_url_for(

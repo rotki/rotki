@@ -29,13 +29,13 @@ TEST_ACC1 = '0x65304d6aff5096472519ca86a6a1fea31cb47Ced'
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
-@pytest.mark.parametrize('async_query', [True, False])
-def test_query_compound_balances(rotkehlchen_api_server, ethereum_accounts, async_query):
+def test_query_compound_balances(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the compound balances endpoint works. Uses real data.
 
     TODO: Here we should use a test account for which we will know what balances
     it has and we never modify
     """
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
         rotki,

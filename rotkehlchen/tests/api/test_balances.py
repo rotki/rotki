@@ -16,6 +16,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
+    assert_proper_response_with_result,
     wait_for_async_task,
     wait_for_async_task_with_result,
 )
@@ -29,12 +30,11 @@ from rotkehlchen.typing import Location
 
 
 def assert_all_balances(
-        data,
+        result,
         db,
         expected_data_in_db,
         setup: BalancesTestSetup,
 ) -> None:
-    result = data['result']
     total_eth = get_asset_balance_total('ETH', setup)
     total_rdn = get_asset_balance_total('RDN', setup)
     total_btc = get_asset_balance_total('BTC', setup)
@@ -162,11 +162,17 @@ def test_query_all_balances(
                 "allbalancesresource",
             ), json={'async_query': async_query},
         )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task_with_result(
+                rotkehlchen_api_server_with_exchanges,
+                task_id,
+            )
+        else:
+            outcome = assert_proper_response_with_result(response)
 
-    assert_proper_response(response)
-    json_data = response.json()
     assert_all_balances(
-        data=json_data,
+        result=outcome,
         db=rotki.data.db,
         expected_data_in_db=True,
         setup=setup,
@@ -256,10 +262,9 @@ def test_query_all_balances_ignore_cache(
                 "allbalancesresource",
             ),
         )
-        assert_proper_response(response)
-        json_data = response.json()
+        result = assert_proper_response_with_result(response)
         assert_all_balances(
-            data=json_data,
+            result=result,
             db=rotki.data.db,
             expected_data_in_db=True,
             setup=setup,
@@ -274,10 +279,9 @@ def test_query_all_balances_ignore_cache(
                 "allbalancesresource",
             ),
         )
-        assert_proper_response(response)
-        json_data = response.json()
+        result = assert_proper_response_with_result(response)
         assert_all_balances(
-            data=json_data,
+            result=result,
             db=rotki.data.db,
             expected_data_in_db=True,
             setup=setup,
@@ -294,10 +298,9 @@ def test_query_all_balances_ignore_cache(
                 "allbalancesresource",
             ), json={'ignore_cache': True},
         )
-        assert_proper_response(response)
-        json_data = response.json()
+        result = assert_proper_response_with_result(response)
         assert_all_balances(
-            data=json_data,
+            result=result,
             db=rotki.data.db,
             expected_data_in_db=True,
             setup=setup,
@@ -375,10 +378,9 @@ def test_query_all_balances_with_manually_tracked_balances(
                 "allbalancesresource",
             ),
         )
-    assert_proper_response(response)
-    json_data = response.json()
+    result = assert_proper_response_with_result(response)
     assert_all_balances(
-        data=json_data,
+        result=result,
         db=rotki.data.db,
         expected_data_in_db=True,
         setup=setup,
@@ -460,7 +462,10 @@ def test_multiple_balance_queries_not_concurrent(
             "blockchainbalancesresource",
         ), json={'async_query': True})
         task_id_blockchain = assert_ok_async_response(response)
-        outcome_all = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id_all)
+        outcome_all = wait_for_async_task_with_result(
+            rotkehlchen_api_server_with_exchanges,
+            task_id_all,
+        )
         outcome_one_exchange = wait_for_async_task(
             rotkehlchen_api_server_with_exchanges,
             task_id_one_exchange,
@@ -473,7 +478,7 @@ def test_multiple_balance_queries_not_concurrent(
         assert bn.call_count == 1, 'binance balance call should not happen concurrently'
 
     assert_all_balances(
-        data=outcome_all,
+        result=outcome_all,
         db=rotki.data.db,
         expected_data_in_db=True,
         setup=setup,

@@ -1,3 +1,4 @@
+import random
 from contextlib import ExitStack
 from copy import deepcopy
 from http import HTTPStatus
@@ -119,14 +120,13 @@ def _populate_initial_balances(api_server) -> List[Dict[str, Any]]:
     return balances
 
 
-@pytest.mark.parametrize('async_query', [True, False])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_add_and_query_manually_tracked_balances(
         rotkehlchen_api_server,
         ethereum_accounts,
-        async_query,
 ):
     """Test that adding and querying manually tracked balances via the API works fine"""
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
     _populate_tags(rotkehlchen_api_server)
@@ -189,12 +189,12 @@ def test_add_and_query_manually_tracked_balances(
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{'CYFM': FVal(0)}])
-@pytest.mark.parametrize('async_query', [False, True])
-def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server, async_query):
+def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     """Test that adding a manually tracked balance of an asset for which we cant
     query a price is handled properly both in the adding and querying part
 
     Regression test for https://github.com/rotki/rotki/issues/896"""
+    async_query = random.choice([False, True])
     _populate_tags(rotkehlchen_api_server)
     balances: List[Dict[str, Any]] = [{
         "asset": "CYFM",
@@ -240,12 +240,9 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server, async_qu
     )
 
 
-@pytest.mark.parametrize('async_query', [False, True])
-def test_edit_manually_tracked_balances(
-        rotkehlchen_api_server,
-        async_query,
-):
+def test_edit_manually_tracked_balances(rotkehlchen_api_server):
     """Test that editing manually tracked balances via the API works fine"""
+    async_query = random.choice([False, True])
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
 
@@ -586,9 +583,9 @@ def test_add_edit_unknown_tags(rotkehlchen_api_server):
     )
 
 
-@pytest.mark.parametrize('async_query', [False, True])
-def test_delete_manually_tracked_balances(rotkehlchen_api_server, async_query):
+def test_delete_manually_tracked_balances(rotkehlchen_api_server):
     """Test that deleting manually tracked balances via the API works fine"""
+    async_query = random.choice([False, True])
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
 

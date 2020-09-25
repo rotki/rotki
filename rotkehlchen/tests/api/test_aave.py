@@ -27,13 +27,13 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
-@pytest.mark.parametrize('async_query', [True, False])
-def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts, async_query):
+def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the aave balances endpoint works. Uses real data.
 
     TODO: Here we should use a test account for which we will know what balances
     it has and we never modify
     """
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
         rotki,
