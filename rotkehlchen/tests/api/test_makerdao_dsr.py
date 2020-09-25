@@ -1,3 +1,4 @@
+import random
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any, Dict, NamedTuple
@@ -22,6 +23,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
+    assert_proper_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
@@ -426,6 +428,7 @@ def test_query_current_dsr_balance(
         rotkehlchen_api_server,
         ethereum_accounts,
 ):
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]
     account2 = ethereum_accounts[2]
@@ -439,41 +442,14 @@ def test_query_current_dsr_balance(
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "makerdaodsrbalanceresource",
-        ))
+        ), json={'async_query': async_query})
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        else:
+            outcome = assert_proper_response_with_result(response)
 
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
-    assert_dsr_current_result_is_correct(json_data['result'], setup)
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [3])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
-def test_query_current_dsr_balance_async(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    account1 = ethereum_accounts[0]
-    account2 = ethereum_accounts[2]
-    setup = setup_tests_for_dsr(
-        etherscan=rotki.etherscan,
-        account1=account1,
-        account2=account2,
-        original_requests_get=requests.get,
-    )
-    with setup.etherscan_patch:
-        response = requests.get(api_url_for(
-            rotkehlchen_api_server,
-            "makerdaodsrbalanceresource",
-        ), json={'async_query': True})
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-
-    assert outcome['message'] == ''
-    assert_dsr_current_result_is_correct(outcome['result'], setup)
+    assert_dsr_current_result_is_correct(outcome, setup)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
@@ -551,6 +527,7 @@ def test_query_historical_dsr(
     TODO: Perhaps change it to querying etherscan/chain until a given block for a
     given DSR account and check that until then all data match.
     """
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]
     account2 = ethereum_accounts[2]
@@ -564,45 +541,14 @@ def test_query_historical_dsr(
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "makerdaodsrhistoryresource",
-        ))
+        ), json={'async_query': async_query})
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        else:
+            outcome = assert_proper_response_with_result(response)
 
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
-    result = json_data['result']
-    assert_dsr_history_result_is_correct(result, setup)
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [3])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
-def test_query_historical_dsr_async(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        inquirer,  # pylint: disable=unused-argument
-):
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    account1 = ethereum_accounts[0]
-    account2 = ethereum_accounts[2]
-    setup = setup_tests_for_dsr(
-        etherscan=rotki.etherscan,
-        account1=account1,
-        account2=account2,
-        original_requests_get=requests.get,
-    )
-    with setup.etherscan_patch:
-        response = requests.get(api_url_for(
-            rotkehlchen_api_server,
-            "makerdaodsrhistoryresource",
-        ), json={'async_query': True})
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-
-    assert outcome['message'] == ''
-    result = outcome['result']
-    assert_dsr_history_result_is_correct(result, setup)
+    assert_dsr_history_result_is_correct(outcome, setup)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])

@@ -1,5 +1,6 @@
 """These tests do not need the ethereum mocks since they never query token balances"""
 
+import random
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -16,7 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
-    wait_for_async_task,
+    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.checks import (
     assert_serialized_dicts_equal,
@@ -203,34 +204,7 @@ def _check_vault_details_values(details, total_interest_owed_list: List[Optional
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the vaults endpoint works. Uses real vault data"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    proxies_mapping = {ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB'}
-    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        "makerdaovaultsresource",
-    ))
-    vaults = assert_proper_response_with_result(response)
-    _check_vaults_values(vaults, ethereum_accounts[0])
-
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        "makerdaovaultdetailsresource",
-    ))
-    details = assert_proper_response_with_result(response)
-    _check_vault_details_values(
-        details=details,
-        total_interest_owed_list=[FVal('0.2810015984764')],
-    )
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
-    """Check querying the vaults endpoint asynchronously works. Uses real vault data"""
+    async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     proxies_mapping = {ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB'}
     mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
@@ -238,28 +212,31 @@ def test_query_vaults_async(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,
         "makerdaovaultsresource",
     ), json={'async_query': True})
-    task_id = assert_ok_async_response(response)
-    outcome = wait_for_async_task(
-        rotkehlchen_api_server,
-        task_id,
-        timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
-    )
-    assert outcome['message'] == ''
-    vaults = outcome['result']
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        vaults = wait_for_async_task_with_result(
+            rotkehlchen_api_server,
+            task_id,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
+        )
+    else:
+        vaults = assert_proper_response_with_result(response)
+
     _check_vaults_values(vaults, ethereum_accounts[0])
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultdetailsresource",
     ), json={'async_query': True})
-    task_id = assert_ok_async_response(response)
-    outcome = wait_for_async_task(
-        rotkehlchen_api_server,
-        task_id,
-        timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
-    )
-    assert outcome['message'] == ''
-    details = outcome['result']
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        details = wait_for_async_task_with_result(
+            rotkehlchen_api_server,
+            task_id,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
+        )
+    else:
+        details = assert_proper_response_with_result(response)
     _check_vault_details_values(
         details=details,
         total_interest_owed_list=[FVal('0.2810015984764')],
