@@ -1,3 +1,4 @@
+import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
@@ -136,6 +137,7 @@ def test_query_all_balances(
 
     Test that balances from various sources are returned. Such as exchanges,
     blockchain and manually tracked balances"""
+    async_query = random.choice([False, True])
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
@@ -158,7 +160,7 @@ def test_query_all_balances(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ),
+            ), json={'async_query': async_query}
         )
 
     assert_proper_response(response)
@@ -202,40 +204,6 @@ def test_query_all_balances(
     assert_proper_response(response)
     new_save_timestamp = rotki.data.db.get_last_balance_save_time()
     assert last_save_timestamp != new_save_timestamp
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [2])
-@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
-def test_query_all_balances_async(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
-):
-    """Test that using the query all balances endpoint works with async call"""
-    # Disable caching of query results
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
-    setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
-
-    # Test all balances request by requesting to not save the data
-    with ExitStack() as stack:
-        setup.enter_all_patches(stack)
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                "allbalancesresource",
-            ), json={'async_query': True},
-        )
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
-
-    assert_all_balances(
-        data=outcome,
-        db=rotki.data.db,
-        expected_data_in_db=True,
-        setup=setup,
-    )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
