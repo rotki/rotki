@@ -160,7 +160,7 @@ def test_query_all_balances(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ), json={'async_query': async_query}
+            ), json={'async_query': async_query},
         )
 
     assert_proper_response(response)
