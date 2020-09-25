@@ -16,6 +16,7 @@ from rotkehlchen.tests.utils.api import (
     assert_ok_async_response,
     assert_proper_response,
     wait_for_async_task,
+    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
 from rotkehlchen.tests.utils.blockchain import assert_eth_balances_result
@@ -496,7 +497,7 @@ def test_multiple_balance_queries_not_concurrent(
             rotkehlchen_api_server_with_exchanges,
             task_id_one_exchange,
         )
-        outcome_blockchain = wait_for_async_task(
+        outcome_blockchain = wait_for_async_task_with_result(
             rotkehlchen_api_server_with_exchanges,
             task_id_blockchain,
         )
@@ -512,7 +513,7 @@ def test_multiple_balance_queries_not_concurrent(
     assert_binance_balances_result(outcome_one_exchange['result'])
     assert_eth_balances_result(
         rotki=rotki,
-        json_data=outcome_blockchain,
+        result=outcome_blockchain,
         eth_accounts=ethereum_accounts,
         eth_balances=setup.eth_balances,
         token_balances=setup.token_balances,

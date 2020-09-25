@@ -142,3 +142,14 @@ def wait_for_async_task(
                 raise AssertionError(
                     f'Waiting for task id {task_id} returned unexpected status {status}',
                 )
+
+
+def wait_for_async_task_with_result(
+        server: APIServer,
+        task_id: int,
+        timeout=ASYNC_TASK_WAIT_TIMEOUT,
+) -> Dict[str, Any]:
+    """Same as wait_for_async_task but returns the result part of the dict"""
+    result = wait_for_async_task(server=server, task_id=task_id, timeout=timeout)
+    assert result['message'] == ''
+    return result['result']

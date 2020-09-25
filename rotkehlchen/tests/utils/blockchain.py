@@ -226,13 +226,12 @@ def geth_create_blockchain(
 
 
 def assert_btc_balances_result(
-        json_data: Dict[str, Any],
+        result: Dict[str, Any],
         btc_accounts: List[str],
         btc_balances: List[str],
         also_eth: bool,
 ) -> None:
     """Asserts for correct BTC blockchain balances when mocked in tests"""
-    result = json_data['result']
     per_account = result['per_account']
     if also_eth:
         assert len(per_account) == 2
@@ -267,7 +266,7 @@ def assert_btc_balances_result(
 
 def assert_eth_balances_result(
         rotki: Rotkehlchen,
-        json_data: Dict[str, Any],
+        result: Dict[str, Any],
         eth_accounts: List[str],
         eth_balances: List[str],
         token_balances: Dict[EthereumToken, List[str]],
@@ -278,7 +277,6 @@ def assert_eth_balances_result(
 
     If totals_only is given then this is a query for all balances so only the totals are shown
     """
-    result = json_data['result']
     if not totals_only:
         per_account = result['per_account']
         if also_btc:
