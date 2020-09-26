@@ -1,4 +1,8 @@
-from rotkehlchen.chain.bitcoin import is_valid_btc_address
+from rotkehlchen.chain.bitcoin.utils import (
+    is_valid_btc_address,
+    pubkey_to_base58_address,
+    pubkey_to_bech32_address,
+)
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
@@ -46,3 +50,51 @@ def test_is_valid_btc_address():
     assert not is_valid_btc_address(
         'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3pjxtptv')
     assert not is_valid_btc_address('bc1gmk9yu')
+
+
+def test_pubkey_to_base58_address():
+    """Test vectors from here: https://iancoleman.io/bip39/"""
+    address = pubkey_to_base58_address(
+        bytes.fromhex('03564213318d739994e4d9785bf40eac4edbfa21f0546040ce7e6859778dfce5d4'),
+    )
+    assert address == '127NVqnjf8gB9BFAW2dnQeM6wqmy1gbGtv'
+    address = pubkey_to_base58_address(
+        bytes.fromhex('0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2'),
+    )
+    assert address == '15mKKb2eos1hWa6tisdPwwDC1a5J1y9nma'
+    address = pubkey_to_base58_address(
+        bytes.fromhex('035a784662a4a20a65bf6aab9ae98a6c068a81c52e4b032c0fb5400c706cfccc56'),
+    )
+    assert address == '19Q2WoS5hSS6T8GjhK8KZLMgmWaq4neXrh'
+    address = pubkey_to_base58_address(
+        bytes.fromhex('03501e454bf00751f24b1b489aa925215d66af2234e3891c3b21a52bedb3cd711c'),
+    )
+    assert address == '1JQheacLPdM5ySCkrZkV66G2ApAXe1mqLj'
+    address = pubkey_to_base58_address(
+        bytes.fromhex('0357bfe1e341d01c69fe5654309956cbea516822fba8a601743a012a7896ee8dc2'),
+    )
+    assert address == '1NjxqbA9aZWnh17q1UW3rB4EPu79wDXj7x'
+
+
+def test_pubkey_to_bech32_address():
+    """Test vectors from here: https://iancoleman.io/bip39/"""
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
+        witver=0,
+    )
+    assert address == 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('037ff51223cb6fddbfc2c90f0ce5bbb3ee1f846f319858940856b1724f7fa1e15c'),
+        witver=0,
+    )
+    assert address == 'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5'
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('02192dce4b382adecdcf74a366fc1f39dd1b88d0829eb058d746702c1d2626ab55'),
+        witver=0,
+    )
+    assert address == 'bc1q96nd0va09tdalp7f232ukhj6lp4s5m2g3s2hdy'
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('03ad84bf691e9d7ddb44d7e9311857af575b686e71506d2c9e8e1d2d11d4f115c1'),
+        witver=0,
+    )
+    assert address == 'bc1q7zxvguxdazzjd4m7d7ahlt03nnakc9fhxhskd5'

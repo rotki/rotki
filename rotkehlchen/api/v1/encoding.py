@@ -11,7 +11,7 @@ from webargs.compat import MARSHMALLOW_VERSION_INFO
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.bitcoin import is_valid_btc_address
+from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
