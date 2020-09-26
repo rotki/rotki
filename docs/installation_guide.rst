@@ -74,6 +74,13 @@ If you get a problem when starting the application or during its usage please op
 
 OSX
 ========
+Homebrew
+--------
+
+``brew cask install rotki``
+
+Manual installation
+-------------------
 
 Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the darwin-x64 dmg package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
 
