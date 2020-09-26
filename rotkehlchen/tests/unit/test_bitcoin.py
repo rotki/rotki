@@ -1,8 +1,12 @@
+import pytest
+
+from rotkehlchen.chain.bitcoin.hdkey import BTCAddressType, HDKey
 from rotkehlchen.chain.bitcoin.utils import (
     is_valid_btc_address,
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
 )
+from rotkehlchen.errors import XPUBError
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
@@ -98,3 +102,62 @@ def test_pubkey_to_bech32_address():
         witver=0,
     )
     assert address == 'bc1q7zxvguxdazzjd4m7d7ahlt03nnakc9fhxhskd5'
+
+
+def test_xpub_to_addresses():
+    """Test vectors from here: https://iancoleman.io/bip39/"""
+    xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
+    root = HDKey.from_xpub(xpub=xpub, path='m')
+
+    expected_addresses = [
+        '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r',
+        '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe',
+        '1DiF6JoLhsAekqps4HURHNd41ZofQSF1t',
+        '1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT',
+        '16Ny1KwjEB62XzDsjnS4new32nYXGBAkbt',
+    ]
+
+    for i in range(5):
+        child = root.derive_path(f'm/{i}')
+        assert child.address(BTCAddressType.BASE58) == expected_addresses[i]
+
+    expected_addresses = [
+        '1K3WM7WNiyZCkH31eMoEDwEcmnGNvQfZVA',
+        '1L5ic1V3bTJahEdwjufGJ28PjRcMcHWGka',
+        '16zNpyv8KxChtjXnE5nYcPqcXcrSQXX2JW',
+        '1NyBphgGhb29kj8UGjixxJCK5XtKLwFj8A',
+        '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd',
+    ]
+
+    for i in range(5):
+        child = root.derive_path(f'm/0/{i}')
+        assert child.address(BTCAddressType.BASE58) == expected_addresses[i]
+
+
+def test_zpub_to_addresses():
+    """Test vectors from here: https://iancoleman.io/bip39/"""
+    zpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
+    root = HDKey.from_xpub(xpub=zpub, path='m')
+
+    expected_addresses = [
+        'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5',
+        'bc1qnus7355ecckmeyrmvv56mlm42lxvwa4wuq5aev',
+        'bc1qup7f8g5k3h5uqzfjed03ztgn8hhe542w69wc0g',
+        'bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra',
+        'bc1qm2cy0wg6qej4taaywtfx9ccw02zep08r5295gj',
+    ]
+
+    for i in range(5):
+        child = root.derive_path(f'm/0/{i}')
+        assert child.address(BTCAddressType.BECH32) == expected_addresses[i]
+
+
+def test_from_bad_xpub():
+    with pytest.raises(XPUBError):
+        HDKey.from_xpub('ddodod')
+    with pytest.raises(XPUBError):
+        HDKey.from_xpub('zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp33333333333333yDDxQUo3q')  # noqa: E501
+    with pytest.raises(XPUBError):
+        HDKey.from_xpub('xpriv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
+    with pytest.raises(XPUBError):
+        HDKey.from_xpub('apfiv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501

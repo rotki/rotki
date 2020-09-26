@@ -100,13 +100,18 @@ class HDKey():
             path (str): the path if it's known. useful for calling derive_path
         Returns:
             (HDKey): the key object
+
+        May raise:
+        - XPUBError if there is a problem with decoding the xpub
         '''
         xpub_bytes = b58decode(xpub)
-        pubkey = PublicKey(xpub_bytes[45:78])
-        # try:
-        #     simple.compress_pubkey(pubkey)
-        # except Exception:
-        #     raise ValueError('Cannot parse public key')
+        if len(xpub_bytes) < 78:
+            raise XPUBError(f'Given XPUB {xpub} is too small')
+
+        try:
+            pubkey = PublicKey(xpub_bytes[45:78])
+        except ValueError as e:
+            raise XPUBError(str(e)) from e
 
         result = _parse_prefix(xpub_bytes[0:4])
         if not result.is_public:
