@@ -691,11 +691,11 @@ Query the result of an ongoing backend task
           "result": {
               "status": "completed",
               "outcome": {
-                  "per_account": {"BTC": {
+                  "per_account": {"BTC": { "standalone": {
                       "1Ec9S8KSw4UXXhqkoG3ZD31yjtModULKGg": {
                               "amount": "10",
                               "usd_value": "70500.15"
-                          }
+                          }}
                   }},
                   "totals": {"BTC": {"amount": "10", "usd_value": "70500.15"}}
               }
@@ -1389,10 +1389,30 @@ Querying onchain balances
       {
           "result": {
               "per_account": {
-                  "BTC": { "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
-                       "amount": "0.5", "usd_value": "3770.075"
-                   }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
-                       "amount": "0.5", "usd_value": "3770.075"
+                  "BTC": {
+                      "standalone": {
+                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                      }},
+                      "xpubs": {
+                          "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk": {
+                              "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              },
+                              "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              }
+                          },
+                          "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q": {
+                              "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              },
+                              "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              }
+                          }
                    }},
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
@@ -1411,7 +1431,7 @@ Querying onchain balances
           "message": ""
       }
 
-   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has an asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request.
+   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has an asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub.
    :resjson object total: The blockchain balances in total per asset. The format is the same as defined `here <balances_result_>`_.
 
    :statuscode 200: Balances succesfully queried.
@@ -3950,10 +3970,30 @@ Adding blockchain accounts
       {
           "result": {
               "per_account": {
-                  "BTC": { "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
-                       "amount": "0.5", "usd_value": "3770.075"
-                   }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
-                       "amount": "0.5", "usd_value": "3770.075"
+                  "BTC": {
+                      "standalone": {
+                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                      }},
+                      "xpubs": {
+                          "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk": {
+                              "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              },
+                              "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              }
+                          },
+                          "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q": {
+                              "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              },
+                              "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              }
+                          }
                    }},
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
@@ -4073,11 +4113,31 @@ Removing blockchain accounts
       {
           "result": {
               "per_account": {
-                  "BTC": { "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
-                       "amount": "0.5", "usd_value": "3770.075"
-                   }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
-                       "amount": "0.5", "usd_value": "3770.075"
-                   }},
+                  "BTC": {
+                      "standalone": {
+                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                      }},
+                      "xpubs": {
+                          "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk": {
+                              "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              },
+                              "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              }
+                          },
+                          "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q": {
+                              "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              },
+                              "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                  "amount": "0.5", "usd_value": "3770.075"
+                              }
+                          }
+                      }},
               },
               "totals": {
                   "BTC": {"amount": "1", "usd_value": "7540.15"},
