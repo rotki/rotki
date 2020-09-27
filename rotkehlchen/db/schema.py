@@ -169,8 +169,8 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
     xpub TEXT,
     derivation_path TEXT,
     index INTEGER,
-    FOREIGN KEY(xpub) REFERENCES xpubs(xpub)
-    FOREIGN KEY(derivation_path) REFERENCES xpubs(derivation_path)
+    FOREIGN KEY(xpub) REFERENCES xpubs(xpub) ON DELETE CASCADE,
+    FOREIGN KEY(derivation_path) REFERENCES xpubs(derivation_path) ON DELETE CASCADE,
     PRIMARY KEY (address, xpub, derivation_path)
 );
 """

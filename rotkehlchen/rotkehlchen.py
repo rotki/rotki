@@ -383,6 +383,16 @@ class Rotkehlchen():
         )
         return self.chain_manager.get_balances_update()
 
+    def delete_bitcoin_xpub(self, xpub_data: XpubData) -> BlockchainBalancesUpdate:
+        """
+        May raise:
+        - InputError: If the xpub does not exist in the DB
+        """
+        # First try to delete the xpub, and if it does not exist raise InputError
+        self.data.db.delete_bitcoin_xpub(xpub_data)
+        self.chain_manager.sync_btc_accounts_with_db()
+        return self.chain_manager.get_balances_update()
+
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,

@@ -16,6 +16,7 @@ from rotkehlchen.api.v1.encoding import (
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
+    BaseXpubSchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
     BlockchainAccountsPatchSchema,
@@ -725,6 +726,7 @@ class BlockchainsAccountsResource(BaseResource):
 class BTCXpubResource(BaseResource):
 
     put_schema = XpubSchema()
+    delete_schema = BaseXpubSchema()
 
     @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
@@ -741,6 +743,23 @@ class BTCXpubResource(BaseResource):
                 derivation_path=derivation_path,
                 label=label,
                 tags=tags,
+            ),
+            async_query=async_query,
+        )
+
+    @use_kwargs(delete_schema, location='json')  # type: ignore
+    def delete(
+            self,
+            xpub: 'HDKey',
+            derivation_path: str,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.delete_xpub(
+            xpub_data=XpubData(
+                xpub=xpub,
+                derivation_path=derivation_path,
+                label=None,
+                tags=None,
             ),
             async_query=async_query,
         )

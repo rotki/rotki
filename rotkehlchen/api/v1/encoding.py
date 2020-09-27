@@ -928,12 +928,15 @@ class BlockchainAccountDataSchema(Schema):
     tags = fields.List(fields.String(), missing=None)
 
 
-class XpubSchema(Schema):
+class BaseXpubSchema(Schema):
     xpub = XpubField(required=True)
     derivation_path = fields.String(missing='m/0/0')
+    async_query = fields.Boolean(missing=False)
+
+
+class XpubSchema(BaseXpubSchema):
     label = fields.String(missing=None)
     tags = fields.List(fields.String(), missing=None)
-    async_query = fields.Boolean(missing=False)
 
 
 class BlockchainAccountsGetSchema(Schema):

@@ -406,6 +406,22 @@ class ChainManager(CacheableObject, LockableQueryObject):
             )
         self.totals[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
 
+    def sync_btc_accounts_with_db(self) -> None:
+        """Call this function after having deleted BTC accounts from the DB to
+        sync the chain manager's balances and accounts with the DB
+
+        For example this is called after removing an xpub which deletes all derived
+        addresses from the DB.
+        """
+        db_btc_accounts = self.database.get_blockchain_accounts().btc
+        accounts_to_remove = []
+        for btc_account in self.accounts.btc:
+            if btc_account not in db_btc_accounts:
+                accounts_to_remove.append(btc_account)
+
+        for account in accounts_to_remove:
+            self.modify_btc_account(account, append_or_remove='remove', add_or_sub=operator.sub)
+
     def modify_btc_account(
             self,
             account: BTCAddress,

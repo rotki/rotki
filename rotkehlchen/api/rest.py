@@ -1120,6 +1120,31 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
+    def _delete_xpub(self, xpub_data: XpubData) -> Dict[str, Any]:
+        try:
+            result = self.rotkehlchen.delete_bitcoin_xpub(xpub_data=xpub_data)
+        except InputError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+
+        # success
+        return {'result': result.serialize(), 'message': ''}
+
+    @require_loggedin_user()
+    def delete_xpub(self, xpub_data: XpubData, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_delete_xpub', xpub_data=xpub_data)
+
+        response = self._delete_xpub(xpub_data=xpub_data)
+        result = response['result']
+        msg = response['message']
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
     @require_loggedin_user()
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
         data = self.rotkehlchen.data.db.get_blockchain_account_data(blockchain)

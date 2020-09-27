@@ -2260,13 +2260,34 @@ class DBHandler:
             cursor.execute(
                 'INSERT INTO xpubs(xpub, derivation_path, label) '
                 'VALUES (?, ?, ?)',
-                (xpub_data.xpub, xpub_data.derivation_path, xpub_data.label),
+                (xpub_data.xpub.xpub, xpub_data.derivation_path, xpub_data.label),
             )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
             raise InputError(
-                f'Xpub {xpub_data.xpub} with derivation path '
+                f'Xpub {xpub_data.xpub.xpub} with derivation path '
                 f'{xpub_data.derivation_path} is already tracked',
             )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_bitcoin_xpub(self, xpub_data: XpubData) -> None:
+        """Deletes an xpub from the DB. Also deletes all derived addresses
+
+        May raise:
+        - InputError if the xpub does not exist in the DB
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM xpubs WHERE xpub=? AND derivation_path=?;',
+            (xpub_data.xpub.xpub, xpub_data.derivation_path),
+        )
+        affected_rows = cursor.rowcount
+        if affected_rows == 0:
+            raise InputError(
+                f'Tried to remove non existing xpub {xpub_data.xpub.xpub} '
+                f'with derivation path {xpub_data.derivation_path}',
+            )
+
         self.conn.commit()
         self.update_last_write()
 
