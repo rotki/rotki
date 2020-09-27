@@ -1396,30 +1396,34 @@ Querying onchain balances
                           }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
                               "amount": "0.5", "usd_value": "3770.075"
                       }},
-                      "xpubs": {
-                          "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk": {
-                              "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              },
-                              "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              }
-                          },
-                          "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q": {
-                              "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              },
-                              "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              }
-                          }
-                   }},
+                      "xpubs": [{
+                              "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+			      "derivation_path": "m/0/0",
+			      "addresses": {
+                                  "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}, {
+                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
+			      "derivation_path": "m",
+			      "addresses": {
+				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+				      "amount": "0.5", "usd_value": "3770.075"
+				  },
+				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+				      "amount": "0.5", "usd_value": "3770.075"
+				  }
+                          }}]
+                   },
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
                            "ETH": {"amount": "10", "usd_value": "1650.53"},
                            "DAI": {"amount": "15", "usd_value": "15.21"}
                        },
-                       "total_usd_value": "1665.74",
+                       "total_usd_value": "1665.74"
                   }}
               },
               "totals": {
@@ -1431,7 +1435,7 @@ Querying onchain balances
           "message": ""
       }
 
-   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has an asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub.
+   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has an asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
    :resjson object total: The blockchain balances in total per asset. The format is the same as defined `here <balances_result_>`_.
 
    :statuscode 200: Balances succesfully queried.
@@ -3977,24 +3981,28 @@ Adding blockchain accounts
                           }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
                               "amount": "0.5", "usd_value": "3770.075"
                       }},
-                      "xpubs": {
-                          "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk": {
-                              "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              },
-                              "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              }
-                          },
-                          "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q": {
-                              "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              },
-                              "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              }
-                          }
-                   }},
+                      "xpubs": [{
+                              "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+			      "derivation_path": "m/0/0",
+			      "addresses": {
+                                  "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}, {
+                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
+			      "derivation_path": "m",
+			      "addresses": {
+				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+				      "amount": "0.5", "usd_value": "3770.075"
+				  },
+				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+				      "amount": "0.5", "usd_value": "3770.075"
+				  }
+                          }}]
+                   },
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
                            "ETH": {"amount": "10", "usd_value": "1755.53"},
@@ -4019,6 +4027,102 @@ Adding blockchain accounts
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
+
+
+Adding BTC xpubs
+========================
+
+.. http:put:: /api/(version)/blockchains/BTC/xpub
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a PUT on the BTC xpubs endpoint will add an extended public key for bitcoin mainnet.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/BTC/xpub HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+          "derivation_path": "m/0/0",
+          "label": "my electrum xpub",
+          "tags": ["public", "old"]
+      }
+
+   :reqjson string xpub: The extended public key to add
+   :reqjsonarr string derivation_path: The derivation path from which to start deriving addresses. The given xpub is always root m/.
+   :reqjsonarr string[optional] label: An optional label to describe the new extended public key
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "per_account": {
+                  "BTC": {
+                      "standalone": {
+                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                      }},
+                      "xpubs": [{
+                              "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+			      "derivation_path": "m/0/0",
+			      "addresses": {
+                                  "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}, {
+                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
+			      "derivation_path": "m",
+			      "addresses": {
+				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+				      "amount": "0.5", "usd_value": "3770.075"
+				  },
+				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+				      "amount": "0.5", "usd_value": "3770.075"
+				  }
+                          }}]
+                   },
+                   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+                       "assets": {
+                           "ETH": {"amount": "10", "usd_value": "1755.53"},
+                           "GNO": {"amount": "1", "usd_value": "50"},
+                           "RDN": {"amount": "1", "usd_value": "1.5"}
+                       },
+                       "total_usd_value": "1807.03",
+                  }}
+              },
+              "totals": {
+                  "BTC": {"amount": "1", "usd_value": "7540.15"},
+                  "ETH": {"amount": "10", "usd_value": "1650.53"},
+                  "RDN": {"amount": "1", "usd_value": "1.5"},
+                  "GNO": {"amount": "1", "usd_value": "50"}
+          },
+          "message": ""
+      }
+
+   :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
+   :statuscode 200: Xpub succesfully added
+   :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
+   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Provided tags do not exist. Check message for details.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as blockcypher. Check message for details.
 
 Editing blockchain account data
 =================================
@@ -4120,25 +4224,28 @@ Removing blockchain accounts
                           }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
                               "amount": "0.5", "usd_value": "3770.075"
                       }},
-                      "xpubs": {
-                          "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk": {
-                              "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              },
-                              "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              }
-                          },
-                          "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q": {
-                              "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              },
-                              "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-                                  "amount": "0.5", "usd_value": "3770.075"
-                              }
-                          }
-                      }},
-              },
+                      "xpubs": [{
+                              "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+			      "derivation_path": "m/0/0",
+			      "addresses": {
+                                  "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}, {
+                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
+			      "derivation_path": "m",
+			      "addresses": {
+				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+				      "amount": "0.5", "usd_value": "3770.075"
+				  },
+				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+				      "amount": "0.5", "usd_value": "3770.075"
+				  }
+                          }}]
+              }},
               "totals": {
                   "BTC": {"amount": "1", "usd_value": "7540.15"},
               }

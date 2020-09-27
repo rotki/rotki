@@ -6,12 +6,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 import gevent
-import requests
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
@@ -23,7 +23,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
@@ -46,7 +46,7 @@ from rotkehlchen.utils.interfaces import (
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import request_get, request_get_dict, satoshis_to_btc, ts_now
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -89,6 +89,7 @@ EthBalances = Dict[ChecksumEthAddress, EthereumAccountBalance]
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BlockchainBalances:
+    db: DBHandler  # Need this to serialize BTC accounts with xpub mappings
     eth: EthBalances = field(default_factory=dict)
     btc: Dict[BTCAddress, Balance] = field(default_factory=dict)
 
@@ -101,9 +102,39 @@ class BlockchainBalances:
                 eth_balances[account]['assets'][asset.identifier] = balance_entry.serialize()
             eth_balances[account]['total_usd_value'] = str(ethereum_balance.total_usd_value)
 
-        btc_balances: Dict[BTCAddress, Dict] = {}
+        btc_balances: Dict[str, Any] = {}
+        xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.btc.keys()))
         for btc_account, balances in self.btc.items():
-            btc_balances[btc_account] = balances.serialize()
+            xpub_result = xpub_mappings.get(btc_account, None)
+            if xpub_result is None:
+                if 'standalone' not in btc_balances:
+                    btc_balances['standalone'] = {}
+
+                addresses_dict = btc_balances['standalone']
+            else:
+                if 'xpubs' not in btc_balances:
+                    btc_balances['xpubs'] = {}
+
+                addresses_dict = None
+                for xpub_entry in btc_balances['xpubs']:
+                    found = (
+                        xpub_result.xpub.xpub == xpub_entry['xpub'] and
+                        xpub_result.derivation_path == xpub_entry['derivation_path']
+                    )
+                    if found:
+                        addresses_dict = xpub_entry['addresses']
+                        break
+
+                if addresses_dict is None:  # new xpub, create the mapping
+                    new_entry: Dict[str, Any] = {
+                        'xpub': xpub_result.xpub.xpub,
+                        'derivation_path': xpub_result.derivation_path,
+                        'addresses': {},
+                    }
+                    btc_balances['xpubs'].append(new_entry)
+                    addresses_dict = new_entry['addresses']
+
+            addresses_dict[btc_account] = balances.serialize()
 
         blockchain_balances: Dict[str, Dict] = {}
         if eth_balances != {}:
@@ -158,7 +189,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
         # Per account balances
-        self.balances = BlockchainBalances()
+        self.balances = BlockchainBalances(db=database)
         # Per asset total balances
         self.totals: Totals = defaultdict(Balance)
         # TODO: Perhaps turn this mapping into a typed dict?
@@ -354,74 +385,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         return self.get_balances_update()
 
-    @staticmethod
-    def query_btc_accounts_balances(accounts: List[BTCAddress]) -> Dict[BTCAddress, FVal]:
-        """Queries blockchain.info for the balance of account
-
-        May raise:
-        - RemotError if there is a problem querying blockchain.info or blockcypher
-        """
-        source = 'blockchain.info'
-        balances = {}
-        try:
-            if any(account.lower()[0:3] == 'bc1' for account in accounts):
-                # if 1 account is bech32 we have to query blockcypher. blockchaininfo won't work
-                source = 'blockcypher.com'
-                # the bech32 accounts have to be given lowercase to the
-                # blockcypher query. No idea why.
-                new_accounts = []
-                for x in accounts:
-                    lowered = x.lower()
-                    if lowered[0:3] == 'bc1':
-                        new_accounts.append(lowered)
-                    else:
-                        new_accounts.append(x)
-
-                # blockcypher's batching takes up as many api queries as the batch,
-                # and the api rate limit is 3 requests per second. So we should make
-                # sure each batch is of max size 3
-                # https://www.blockcypher.com/dev/bitcoin/#batching
-                batches = [new_accounts[x: x + 3] for x in range(0, len(new_accounts), 3)]
-                total_idx = 0
-                for batch in batches:
-                    params = ';'.join(batch)
-                    url = f'https://api.blockcypher.com/v1/btc/main/addrs/{params}/balance'
-                    response_data = request_get(url=url, handle_429=True, backoff_in_seconds=4)
-
-                    if isinstance(response_data, dict):
-                        # If only one account was requested put it in a list so the
-                        # rest of the code works
-                        response_data = [response_data]
-
-                    for idx, entry in enumerate(response_data):
-                        # we don't use the returned address as it may be lowercased
-                        balances[accounts[total_idx + idx]] = satoshis_to_btc(
-                            FVal(entry['final_balance']),
-                        )
-                    total_idx += len(batch)
-            else:
-                params = '|'.join(accounts)
-                btc_resp = request_get_dict(
-                    url=f'https://blockchain.info/multiaddr?active={params}',
-                    handle_429=True,
-                    # If we get a 429 then their docs suggest 10 seconds
-                    # https://blockchain.info/q
-                    backoff_in_seconds=10,
-                )
-                for idx, entry in enumerate(btc_resp['addresses']):
-                    balances[accounts[idx]] = satoshis_to_btc(FVal(entry['final_balance']))
-        except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
-            raise RemoteError(f'bitcoin external API request failed due to {str(e)}')
-        except KeyError as e:
-            raise RemoteError(
-                f'Malformed response when querying bitcoin blockchain via {source}.'
-                f'Did not find key {e}',
-            )
-
-        return balances
-
     def query_btc_balances(self) -> None:
-        """Queries blockchain.info for the balance of all BTC accounts
+        """Queries blockchain.info/blockcypher for the balance of all BTC accounts
 
         May raise:
         - RemotError if there is a problem querying blockchain.info or cryptocompare
@@ -432,7 +397,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.balances.btc = {}
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         total = FVal(0)
-        balances = self.query_btc_accounts_balances(self.accounts.btc)
+        balances = get_bitcoin_addresses_balances(self.accounts.btc)
         for account, balance in balances.items():
             total += balance
             self.balances.btc[account] = Balance(
@@ -462,7 +427,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Query the balance of the account except for the case when it's removed
         # and there is no other account in the balances
         if append_or_remove == 'append' or remove_with_populated_balance:
-            balances = self.query_btc_accounts_balances([account])
+            balances = get_bitcoin_addresses_balances([account])
             balance = balances[account]
             usd_balance = balance * btc_usd_price
 

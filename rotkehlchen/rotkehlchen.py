@@ -15,6 +15,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
+from rotkehlchen.chain.bitcoin.xpub import XpubData, derive_addresses_from_xpub_data
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
     EthereumManager,
@@ -338,6 +339,49 @@ class Rotkehlchen():
                 log.debug('Main loop start')
                 self.premium_sync_manager.maybe_upload_data_to_server()
                 log.debug('Main loop end')
+
+    def add_bitcoin_xpub(self, xpub_data: XpubData) -> BlockchainBalancesUpdate:
+        """
+        May raise:
+        - InputError: If the xpub already exists in the DB
+        - TagConstraintError if any of the given account data contain unknown tags.
+        - RemoteError if an external service such as blockcypher is queried and
+          there is a problem with its query.
+        """
+        # First try to add the xpub, and if it already exists raise
+        self.data.db.add_bitcoin_xpub(xpub_data)
+        # Then add tags if not existing
+        self.data.db.ensure_tags_exist(
+            given_data=[xpub_data],
+            action='adding',
+            data_type='bitcoin xpub',
+        )
+        start_index = self.data.db.get_last_xpub_derived_index(xpub_data)
+        derived_addresses_data = derive_addresses_from_xpub_data(
+            xpub_data=xpub_data,
+            start_index=start_index,
+        )
+        derived_addresses = [x[1] for x in derived_addresses_data]
+        known_btc_addresses = self.data.db.get_blockchain_accounts().btc
+        new_addresses = list(set(known_btc_addresses) - set(derived_addresses))
+        self.chain_manager.add_blockchain_accounts(
+            blockchain=SupportedBlockchain.BITCOIN,
+            accounts=new_addresses,
+        )
+        self.data.db.add_blockchain_accounts(
+            blockchain=SupportedBlockchain.BITCOIN,
+            account_data=[BlockchainAccountData(
+                address=x,
+                label=None,
+                tags=xpub_data.tags,
+            ) for x in new_addresses],
+        )
+        self.data.db.ensure_xpub_mappings_exist(
+            xpub=xpub_data.xpub.xpub,  # type: ignore
+            derivation_path=xpub_data.derivation_path,
+            derived_addresses_data=derived_addresses_data,
+        )
+        return self.chain_manager.get_balances_update()
 
     def add_blockchain_accounts(
             self,

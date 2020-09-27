@@ -5,6 +5,7 @@ import base58check
 import bech32
 
 from rotkehlchen.errors import EncodingError
+from rotkehlchen.typing import BTCAddress
 
 BIP32_HARDEN: int = 0x80000000
 
@@ -52,7 +53,7 @@ def hash160(msg: bytes) -> bytes:
     return h.digest()
 
 
-def pubkey_to_base58_address(data: bytes) -> str:
+def pubkey_to_base58_address(data: bytes) -> BTCAddress:
     """
     Bitcoin pubkey to base58 address
 
@@ -66,10 +67,10 @@ def pubkey_to_base58_address(data: bytes) -> str:
     s4 = b'\x00' + hash160(data)
     s5 = sha256(s4).digest()
     s6 = sha256(s5).digest()
-    return base58check.b58encode(s4 + s6[:4]).decode('ascii')
+    return BTCAddress(base58check.b58encode(s4 + s6[:4]).decode('ascii'))
 
 
-def pubkey_to_bech32_address(data: bytes, witver: int) -> str:
+def pubkey_to_bech32_address(data: bytes, witver: int) -> BTCAddress:
     """
     Bitcoin pubkey to bech32 address
 
@@ -85,4 +86,4 @@ def pubkey_to_bech32_address(data: bytes, witver: int) -> str:
     if not result:
         raise EncodingError('Could not derive bech32 address from given public key')
 
-    return result
+    return BTCAddress(result)

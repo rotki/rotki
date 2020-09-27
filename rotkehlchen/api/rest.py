@@ -70,6 +70,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -1089,6 +1090,35 @@ class RestAPI():
         data = self.rotkehlchen.query_periodic_data()
         result = process_result(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def _add_xpub(self, xpub_data: 'XpubData') -> Dict[str, Any]:
+        try:
+            result = self.rotkehlchen.add_bitcoin_xpub(xpub_data=xpub_data)
+        except InputError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+        except TagConstraintError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        # success
+        return {'result': result.serialize(), 'message': ''}
+
+    @require_loggedin_user()
+    def add_xpub(self, xpub_data: XpubData, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_add_xpub', xpub_data=xpub_data)
+
+        response = self._add_xpub(xpub_data=xpub_data)
+        result = response['result']
+        msg = response['message']
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:

@@ -17,6 +17,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     pubkey_to_bech32_address,
 )
 from rotkehlchen.errors import XPUBError
+from rotkehlchen.typing import BTCAddress
 
 COMPRESSED_PUBKEY = True
 
@@ -93,7 +94,7 @@ class HDKey():
 
     @staticmethod
     def from_xpub(xpub: str, path: Optional[str] = None) -> 'HDKey':
-        '''
+        """
         Instantiate an HDKey from an xpub. Populates all possible fields
         Args:
             xpub (str): the xpub
@@ -103,7 +104,7 @@ class HDKey():
 
         May raise:
         - XPUBError if there is a problem with decoding the xpub
-        '''
+        """
         xpub_bytes = b58decode(xpub)
         if len(xpub_bytes) < 78:
             raise XPUBError(f'Given XPUB {xpub} is too small')
@@ -135,13 +136,13 @@ class HDKey():
 
     @staticmethod
     def _normalize_index(idx: Union[int, str]) -> int:
-        '''
+        """
         Normalizes an index so that we can accept ints or strings
         Args:
             idx (int or str): the index as an integer, or a string with h/'
         Returns:
             (int): the index as an integer
-        '''
+        """
         if type(idx) is int:
             return cast(int, idx)
         if type(idx) is not str:
@@ -152,7 +153,7 @@ class HDKey():
         return int(str_idx)
 
     def _child_from_xpub(self, index: int, child_xpub: str) -> 'HDKey':
-        '''
+        """
         Returns a new HDKey object based on the current object and the new
             child xpub. Don't call this directly, it's for child derivation.
         Args:
@@ -160,7 +161,7 @@ class HDKey():
             child_xpub (str): the child's xpub
         Returns
             HDKey: the new child object
-        '''
+        """
         path: Optional[str]
         if self.path is not None:
             path = '{}/{}'.format(self.path, str(index))
@@ -194,7 +195,7 @@ class HDKey():
             child_pubkey: PublicKey,
             index: int,
             chain_code: bytes) -> str:
-        '''
+        """
         Makes a child xpub based on the current key and the child key info.
         Args:
             child_pubkey (bytes): the child pubkey
@@ -202,7 +203,7 @@ class HDKey():
             chain_code   (bytes): the child chain code
         Returns
             (str): the child xpub
-        '''
+        """
         xpub = bytearray()
 
         xpub.extend(b58decode(cast(str, self.xpub))[0:4])  # prefix
@@ -215,14 +216,14 @@ class HDKey():
 
     @staticmethod
     def _parse_derivation(derivation_path: str) -> List[int]:
-        '''
+        """
         turns a derivation path (e.g. m/44h/0) into a list of integer indexes
             e.g. [2147483692, 0]
         Args:
             derivation_path (str): the human-readable derivation path
         Returns:
             (list(int)): the derivaion path as a list of indexes
-        '''
+        """
         int_nodes: List[int] = []
 
         # Must be / separated
@@ -242,7 +243,7 @@ class HDKey():
         return int_nodes
 
     def derive_path(self, path: str) -> 'HDKey':
-        '''
+        """
         Derives a descendant of the current node
         Throws an error if the requested path is not known to be a descendant
 
@@ -250,7 +251,7 @@ class HDKey():
             path (str): the requested derivation path from master
         Returns:
             (HDKey): the descendant
-        '''
+        """
         if not self.path:
             raise XPUBError('XPUB current key\'s path is unknown')
 
@@ -270,13 +271,13 @@ class HDKey():
         return current_node
 
     def derive_child(self, idx: Union[int, str]) -> 'HDKey':
-        '''
+        """
         Derives a bip32 child node from the current node
         Args:
             idx (int or str): the index of the child
         Returns:
             (HDKey): the child
-        '''
+        """
         # TODO: Break up this function
 
         # normalize the index, error if we can't derive the child
@@ -338,7 +339,7 @@ class HDKey():
 
             return self._child_from_xpub(index=index, child_xpub=child_xpub)
 
-    def address(self, addr_type: BTCAddressType) -> str:
+    def generate_specific_address(self, addr_type: BTCAddressType) -> str:
         if addr_type == BTCAddressType.BASE58:
             return pubkey_to_base58_address(self.pubkey.format(COMPRESSED_PUBKEY))
         else:
@@ -346,3 +347,14 @@ class HDKey():
                 data=self.pubkey.format(COMPRESSED_PUBKEY),
                 witver=0,
             )
+
+    def address(self) -> BTCAddress:
+        if self.hint == 'xpub':
+            return pubkey_to_base58_address(self.pubkey.format(COMPRESSED_PUBKEY))
+        elif self.hint == 'zpub':
+            return pubkey_to_bech32_address(
+                data=self.pubkey.format(COMPRESSED_PUBKEY),
+                witver=0,
+            )
+
+        raise AssertionError(f'Unknown hint {self.hint} ended up in an HDKey')

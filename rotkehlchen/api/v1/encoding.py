@@ -11,11 +11,12 @@ from webargs.compat import MARSHMALLOW_VERSION_INFO
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset, XPUBError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -584,6 +585,26 @@ class FileField(fields.Field):
         return path
 
 
+class XpubField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> HDKey:
+        if not isinstance(value, str):
+            raise ValidationError('Xpub should be a string')
+
+        try:
+            hdkey = HDKey.from_xpub(value)
+        except XPUBError as e:
+            raise ValidationError(str(e))
+
+        return hdkey
+
+
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(missing=False)
@@ -905,6 +926,14 @@ class BlockchainAccountDataSchema(Schema):
     address = fields.String(required=True)
     label = fields.String(missing=None)
     tags = fields.List(fields.String(), missing=None)
+
+
+class XpubSchema(Schema):
+    xpub = XpubField(required=True)
+    derivation_path = fields.String(missing='m/0/0')
+    label = fields.String(missing=None)
+    tags = fields.List(fields.String(), missing=None)
+    async_query = fields.Boolean(missing=False)
 
 
 class BlockchainAccountsGetSchema(Schema):
