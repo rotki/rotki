@@ -314,7 +314,6 @@ class HDKey():
         # end key derivation process
 
         try:
-            child_privkey: Optional[bytes]
             if self.privkey:
                 raise NotImplementedError('Privkeys xpub derivation not implemented in Rotki')
                 # if we have a private key, give the child a private key
@@ -322,7 +321,6 @@ class HDKey():
                 # child_pubkey = PublicKey.from_secret(child_privkey.secret)
             else:
                 # otherwise, just derive a pubkey
-                child_privkey = None
                 child_pubkey = self.pubkey.add(tweak)
         except ValueError:
             # NB: it is possible to derive an "impossible" key.
@@ -330,14 +328,11 @@ class HDKey():
             #     if that happens, the spec says to derive at the next index
             return self.derive_child(index + 1)
 
-        if child_privkey:
-            raise NotImplementedError('HDKey from privkey is not implemented in Rotki')
-        else:
-            # Otherwise, make a new public child
-            child_xpub = self._make_child_xpub(
-                child_pubkey, index=index, chain_code=chain_code)
-
-            return self._child_from_xpub(index=index, child_xpub=child_xpub)
+        # no privkey here so make a new public child
+        child_xpub = self._make_child_xpub(
+            child_pubkey, index=index, chain_code=chain_code,
+        )
+        return self._child_from_xpub(index=index, child_xpub=child_xpub)
 
     def generate_specific_address(self, addr_type: BTCAddressType) -> str:
         if addr_type == BTCAddressType.BASE58:

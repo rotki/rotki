@@ -1,5 +1,4 @@
 import hashlib
-from hashlib import sha256
 
 import base58check
 import bech32
@@ -40,7 +39,7 @@ def is_valid_base58_address(value: str) -> bool:
     if not abytes[0] in (0x00, 0x05):
         return False
 
-    checksum = sha256(sha256(abytes[:-4]).digest()).digest()[:4]
+    checksum = hashlib.sha256(hashlib.sha256(abytes[:-4]).digest()).digest()[:4]
     if abytes[-4:] != checksum:
         return False
 
@@ -49,7 +48,7 @@ def is_valid_base58_address(value: str) -> bool:
 
 def hash160(msg: bytes) -> bytes:
     h = hashlib.new('ripemd160')
-    h.update(sha256(msg).digest())
+    h.update(hashlib.sha256(msg).digest())
     return h.digest()
 
 
@@ -65,8 +64,8 @@ def pubkey_to_base58_address(data: bytes) -> BTCAddress:
     - ValueError, TypeError due to b58encode
     """
     s4 = b'\x00' + hash160(data)
-    s5 = sha256(s4).digest()
-    s6 = sha256(s5).digest()
+    s5 = hashlib.sha256(s4).digest()
+    s6 = hashlib.sha256(s5).digest()
     return BTCAddress(base58check.b58encode(s4 + s6[:4]).decode('ascii'))
 
 
