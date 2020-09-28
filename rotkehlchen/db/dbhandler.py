@@ -2295,7 +2295,7 @@ class DBHandler:
         """Get the last known derived index from the given xpub"""
         cursor = self.conn.cursor()
         result = cursor.execute(
-            'SELECT MAX(index) from xpub_mappings WHERE xpub=? AND derivation_path=?',
+            'SELECT MAX(derivation_index) from xpub_mappings WHERE xpub=? AND derivation_path=?',
             (xpub_data.xpub.xpub, xpub_data.derivation_path),
         )
         result = result.fetchall()
@@ -2340,7 +2340,7 @@ class DBHandler:
         for entry in tuples:
             try:
                 cursor.execute(
-                    'INSERT INTO xpub_mappings(address, xpub, derivation_path, index) '
+                    'INSERT INTO xpub_mappings(address, xpub, derivation_path, derivation_index) '
                     'VALUES (?, ?, ?, ?)',
                     entry,
                 )

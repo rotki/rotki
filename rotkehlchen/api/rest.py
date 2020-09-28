@@ -1105,7 +1105,7 @@ class RestAPI():
         return {'result': result.serialize(), 'message': ''}
 
     @require_loggedin_user()
-    def add_xpub(self, xpub_data: XpubData, async_query: bool) -> Response:
+    def add_xpub(self, xpub_data: 'XpubData', async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_add_xpub', xpub_data=xpub_data)
 
@@ -1120,7 +1120,7 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
-    def _delete_xpub(self, xpub_data: XpubData) -> Dict[str, Any]:
+    def _delete_xpub(self, xpub_data: 'XpubData') -> Dict[str, Any]:
         try:
             result = self.rotkehlchen.delete_bitcoin_xpub(xpub_data=xpub_data)
         except InputError as e:
@@ -1130,7 +1130,7 @@ class RestAPI():
         return {'result': result.serialize(), 'message': ''}
 
     @require_loggedin_user()
-    def delete_xpub(self, xpub_data: XpubData, async_query: bool) -> Response:
+    def delete_xpub(self, xpub_data: 'XpubData', async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_delete_xpub', xpub_data=xpub_data)
 
