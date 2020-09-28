@@ -169,8 +169,7 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
     derivation_path TEXT NOT NULL,
     derivation_index INTEGER,
     FOREIGN KEY(address) REFERENCES blockchain_accounts(account)
-    FOREIGN KEY(xpub) REFERENCES xpubs(xpub) ON DELETE CASCADE
-    FOREIGN KEY(derivation_path) REFERENCES xpubs(derivation_path) ON DELETE CASCADE
+    FOREIGN KEY(xpub, derivation_path) REFERENCES xpubs(xpub, derivation_path) ON DELETE CASCADE
     PRIMARY KEY (address, xpub, derivation_path)
 );
 """

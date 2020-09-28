@@ -34,7 +34,7 @@ def privatekey_seed(request):
 
 @pytest.fixture
 def private_keys(number_of_eth_accounts, privatekey_seed):
-    """ Private keys for each raiden node. """
+    """ Private keys for each node. """
 
     # Note: The fixtures depend on the order of the private keys
     result = [

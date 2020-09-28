@@ -2299,28 +2299,29 @@ class DBHandler:
             (xpub_data.xpub.xpub, xpub_data.derivation_path),
         )
         result = result.fetchall()
-        if len(result) == 0:
-            return 0
-
-        return int(result[0][0])
+        return int(result[0][0]) if result[0][0] is not None else 0
 
     def get_addresses_to_xpub_mapping(
             self,
             addresses: List[BTCAddress],
     ) -> Dict[BTCAddress, XpubData]:
         cursor = self.conn.cursor()
-        query = cursor.executemany(
-            'SELECT A.address, A.xpub, A.derivation_path FROM xpubs as A '
-            'LEFT OUTER JOIN xpub_mappings as B '
-            'ON B.xpub = A.xpub AND B.derivation_path = A.derivation_path '
-            'WHERE B.address=?;',
-            [(x for x in addresses)],
-        )
+
         data = {}
-        for entry in query:
-            data[entry[0]] = XpubData(
-                xpub=HDKey.from_xpub(entry[1]),
-                derivation_path=entry[2],
+        for address in addresses:
+            result = cursor.execute(
+                'SELECT B.address, A.xpub, A.derivation_path FROM xpubs as A '
+                'LEFT OUTER JOIN xpub_mappings as B '
+                'ON B.xpub = A.xpub AND B.derivation_path = A.derivation_path '
+                'WHERE B.address=?;', (address,),
+            )
+            result = result.fetchall()
+            if len(result) == 0:
+                continue
+
+            data[result[0][0]] = XpubData(
+                xpub=HDKey.from_xpub(result[0][1]),
+                derivation_path=result[0][2],
             )
 
         return data
