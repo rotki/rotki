@@ -88,6 +88,8 @@ TABLES_AT_INIT = [
     'asset_movements',
     'tag_mappings',
     'tags',
+    'xpubs',
+    'xpub_mappings',
 ]
 
 
