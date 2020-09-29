@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.chain.bitcoin.hdkey import BTCAddressType, HDKey
+from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import (
     is_valid_btc_address,
     pubkey_to_base58_address,
@@ -119,7 +119,7 @@ def test_xpub_to_addresses():
 
     for i in range(5):
         child = root.derive_path(f'm/{i}')
-        assert child.address(BTCAddressType.BASE58) == expected_addresses[i]
+        assert child.address() == expected_addresses[i]
 
     expected_addresses = [
         '1K3WM7WNiyZCkH31eMoEDwEcmnGNvQfZVA',
@@ -131,7 +131,7 @@ def test_xpub_to_addresses():
 
     for i in range(5):
         child = root.derive_path(f'm/0/{i}')
-        assert child.address(BTCAddressType.BASE58) == expected_addresses[i]
+        assert child.address() == expected_addresses[i]
 
 
 def test_zpub_to_addresses():
@@ -149,7 +149,7 @@ def test_zpub_to_addresses():
 
     for i in range(5):
         child = root.derive_path(f'm/0/{i}')
-        assert child.address(BTCAddressType.BECH32) == expected_addresses[i]
+        assert child.address() == expected_addresses[i]
 
 
 def test_from_bad_xpub():
