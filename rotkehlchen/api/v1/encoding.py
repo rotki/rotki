@@ -598,7 +598,7 @@ class XpubField(fields.Field):
             raise ValidationError('Xpub should be a string')
 
         try:
-            hdkey = HDKey.from_xpub(value)
+            hdkey = HDKey.from_xpub(value, path='m')
         except XPUBError as e:
             raise ValidationError(str(e))
 

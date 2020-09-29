@@ -2271,7 +2271,7 @@ class DBHandler:
         self.update_last_write()
 
     def delete_bitcoin_xpub(self, xpub_data: XpubData) -> None:
-        """Deletes an xpub from the DB. Also deletes all derived addresses
+        """Deletes an xpub from the DB. Also deletes all derived addresses and mappings
 
         May raise:
         - InputError if the xpub does not exist in the DB
@@ -2320,7 +2320,7 @@ class DBHandler:
                 continue
 
             data[result[0][0]] = XpubData(
-                xpub=HDKey.from_xpub(result[0][1]),
+                xpub=HDKey.from_xpub(result[0][1], path='m'),
                 derivation_path=result[0][2],
             )
 
