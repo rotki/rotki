@@ -139,11 +139,13 @@ import TagFilter from '@/components/inputs/TagFilter.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { footerProps } from '@/config/datatable.common';
-import { AccountBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
-import { BlockchainBalancePayload } from '@/store/balances/actions';
-import { Account, Blockchain, Tags } from '@/typing/types';
+import {
+  AccountBalance,
+  BlockchainBalancePayload
+} from '@/store/balances/types';
+import { Account, Blockchain, ETH, Tags } from '@/typing/types';
 
 @Component({
   components: {
@@ -193,7 +195,7 @@ export default class AccountBalances extends Vue {
   }
 
   get expandable(): boolean {
-    return this.blockchain === 'ETH';
+    return this.blockchain === ETH;
   }
 
   currency!: Currency;

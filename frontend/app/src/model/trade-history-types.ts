@@ -17,7 +17,7 @@ export interface ApiEventEntry {
   readonly location: string;
 }
 
-export interface ApiTradeHistoryOverview {
+interface ApiTradeHistoryOverview {
   readonly loan_profit: string;
   readonly defi_profit_loss: string;
   readonly margin_positions_profit_loss: string;

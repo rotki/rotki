@@ -40,8 +40,8 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
-import { AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
+import { AssetBalances } from '@/store/balances/types';
 
 @Component({
   components: { AmountDisplay },

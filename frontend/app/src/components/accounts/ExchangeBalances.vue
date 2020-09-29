@@ -154,7 +154,7 @@ import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
-import { AssetBalance } from '@/model/blockchain-balances';
+import { AssetBalance } from '@/store/balances/types';
 import { ExchangeInfo } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 

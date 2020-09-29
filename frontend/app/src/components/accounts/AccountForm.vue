@@ -16,7 +16,38 @@
             <asset-details class="pt-2 pb-2" :asset="item" />
           </template>
         </v-select>
+        <v-radio-group
+          v-if="isBtc"
+          v-model="btcAccountType"
+          :label="$t('account_form.labels.btc.account_type')"
+          row
+          :disabled="edit"
+        >
+          <v-radio
+            value="standalone"
+            :label="$t('account_form.labels.btc.standalone')"
+          />
+
+          <v-radio value="xpub" :label="$t('account_form.labels.btc.xpub')" />
+        </v-radio-group>
         <v-text-field
+          v-if="btcAccountType === 'xpub'"
+          v-model="xpub"
+          class="account-form__xpub"
+          :label="$t('account_form.labels.btc.xpub')"
+          autocomplete="off"
+          :disabled="accountOperation || loading || !!edit"
+        />
+        <v-text-field
+          v-if="btcAccountType === 'xpub'"
+          v-model="derivationPath"
+          class="account-form__derivation-path"
+          :label="$t('account_form.labels.btc.derivation_path')"
+          autocomplete="off"
+          :disabled="accountOperation || loading || !!edit"
+        />
+        <v-text-field
+          v-if="!isBtc || (isBtc && btcAccountType !== 'xpub')"
           v-model="address"
           class="blockchain-balances__address"
           :label="$t('account_form.labels.account')"
@@ -45,17 +76,20 @@ import { mapGetters } from 'vuex';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { BlockchainAccountPayload } from '@/store/balances/actions';
+import { BlockchainAccountPayload } from '@/store/balances/types';
 import { Message } from '@/store/types';
 import {
   Account,
   Blockchain,
+  BTC,
+  ETH,
   GeneralAccount,
   SupportedBlockchains
 } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 
 type ValidationRule = (value: string) => boolean | string;
+
 @Component({
   components: { TagInput },
   computed: {
@@ -64,15 +98,23 @@ type ValidationRule = (value: string) => boolean | string;
   }
 })
 export default class AccountForm extends Vue {
-  readonly items: string[] = SupportedBlockchains;
+  readonly items = SupportedBlockchains;
   isTaskRunning!: (type: TaskType) => boolean;
-  selected: Blockchain = 'ETH';
+  selected: Blockchain = ETH;
   pending: boolean = false;
+  xpub: string = '';
+  derivationPath: string = '';
   address: string = '';
   label: string = '';
   tags: string[] = [];
   errorMessages: string[] = [];
   account!: (address: string) => GeneralAccount | undefined;
+
+  btcAccountType: 'xpub' | 'standalone' = 'standalone';
+
+  get isBtc(): boolean {
+    return this.selected === BTC;
+  }
 
   get rules(): ValidationRule[] {
     const rules: ValidationRule[] = [
@@ -158,11 +200,19 @@ export default class AccountForm extends Vue {
   async addAccount(): Promise<boolean> {
     this.pending = true;
     try {
+      const xpubPayload =
+        this.isBtc && this.btcAccountType === 'xpub'
+          ? {
+              xpub: this.xpub,
+              derivationPath: this.derivationPath
+            }
+          : undefined;
       const payload: BlockchainAccountPayload = {
         blockchain: this.selected,
         address: this.address,
         label: this.label,
-        tags: this.tags
+        tags: this.tags,
+        xpub: xpubPayload
       };
 
       await this.$store.dispatch(

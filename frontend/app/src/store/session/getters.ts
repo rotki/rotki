@@ -9,7 +9,7 @@ import { SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/types';
 import { Tag } from '@/typing/types';
 
-export interface SessionGetters {
+interface SessionGetters {
   floatingPrecision: number;
   dateDisplayFormat: string;
   lastBalanceSave: number;

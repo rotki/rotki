@@ -1,6 +1,6 @@
 import { Severity } from '@/store/notifications/consts';
 
-export interface NotificationBase {
+interface NotificationBase {
   readonly title: string;
   readonly message: string;
   readonly severity: Severity;

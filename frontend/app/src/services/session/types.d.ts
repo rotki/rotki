@@ -10,13 +10,13 @@ export interface Watcher<T extends WatcherTypes> {
   readonly args: WatcherArgs[T];
 }
 
-export interface MakerVaultCollateralizationRatio {
+interface MakerVaultCollateralizationRatio {
   readonly ratio: string;
   readonly op: WatcherOpTypes;
   readonly vault_id: string;
 }
 
-export interface WatcherArgs {
+interface WatcherArgs {
   readonly makervault_collateralization_ratio: MakerVaultCollateralizationRatio;
 }
 

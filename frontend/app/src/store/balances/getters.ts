@@ -2,17 +2,17 @@ import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { GetterTree } from 'vuex';
+import { EthBalance } from '@/services/balances/types';
+import { Balance } from '@/services/types-api';
 import {
   AccountBalance,
   AssetBalance,
-  EthBalance,
-  ManualBalancesByLocation,
-  ManualBalanceByLocation
-} from '@/model/blockchain-balances';
-import { Balance } from '@/services/types-api';
-import { BalanceState } from '@/store/balances/types';
+  BalanceState,
+  ManualBalanceByLocation,
+  ManualBalancesByLocation
+} from '@/store/balances/types';
 import { RotkehlchenState } from '@/store/types';
-import { Blockchain, GeneralAccount } from '@/typing/types';
+import { Blockchain, BTC, ETH, GeneralAccount } from '@/typing/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 
@@ -29,7 +29,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   },
 
   btcAccounts(state: BalanceState): AccountBalance[] {
-    return map(state.btc, (value: Balance, account: string) => {
+    return map(state.btc.standalone, (value: Balance, account: string) => {
       const accountBalance: AccountBalance = {
         account,
         ...value
@@ -192,7 +192,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     blockchain: Blockchain,
     address: string
   ): string[] => {
-    const data = blockchain === 'ETH' ? state.ethAccounts : state.btcAccounts;
+    const data = blockchain === ETH ? state.ethAccounts : state.btcAccounts;
     return data[address]?.tags ?? [];
   },
 
@@ -200,7 +200,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     blockchain: Blockchain,
     address: string
   ): string => {
-    const data = blockchain === 'ETH' ? state.ethAccounts : state.btcAccounts;
+    const data = blockchain === ETH ? state.ethAccounts : state.btcAccounts;
     return data[address]?.label ?? '';
   },
 
@@ -216,11 +216,11 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     const accounts: GeneralAccount[] = [];
 
     for (const account of Object.values(ethAccounts)) {
-      accounts.push({ chain: 'ETH', ...account });
+      accounts.push({ chain: ETH, ...account });
     }
 
     for (const account of Object.values(btcAccounts)) {
-      accounts.push({ chain: 'BTC', ...account });
+      accounts.push({ chain: BTC, ...account });
     }
 
     return accounts;

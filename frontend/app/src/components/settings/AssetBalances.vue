@@ -50,9 +50,9 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
-import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
+import { AssetBalance } from '@/store/balances/types';
 
 @Component({
   components: { AmountDisplay },

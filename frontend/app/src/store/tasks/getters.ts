@@ -6,7 +6,7 @@ import { TaskType } from '@/model/task-type';
 import { TaskState } from '@/store/tasks/state';
 import { RotkehlchenState } from '@/store/types';
 
-export type TaskGetters = {
+type TaskGetters = {
   isTaskRunning: (type: TaskType) => boolean;
   metadata: (type: TaskType) => TaskMeta | undefined;
   hasRunningTasks: boolean;

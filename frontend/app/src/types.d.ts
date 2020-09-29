@@ -1,6 +1,6 @@
 export type DebugSettings = { vuex: boolean };
 
-export interface Interop {
+interface Interop {
   openUrl(url: string): Promise<void>;
   closeApp(): void;
   listenForErrors(callback: (backendOutuput: string) => void): void;

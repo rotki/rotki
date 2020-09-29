@@ -2,7 +2,7 @@ import { GetterTree } from 'vuex';
 import { SettingsState } from '@/store/settings/types';
 import { RotkehlchenState } from '@/store/types';
 
-export type SettingsGetters = {};
+type SettingsGetters = {};
 
 type GettersDefinition<S = SettingsState, G = SettingsGetters> = {
   [P in keyof G]: (state: S, getters: G) => G[P];

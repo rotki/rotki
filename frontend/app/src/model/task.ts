@@ -54,7 +54,7 @@ export function taskCompletion<R, M extends TaskMeta>(
   });
 }
 
-export interface TaskResult<R, M extends TaskMeta> {
+interface TaskResult<R, M extends TaskMeta> {
   readonly result: R;
   readonly meta: M;
 }

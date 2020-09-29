@@ -195,17 +195,15 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { footerProps } from '@/config/datatable.common';
 
-import {
-  AssetBalance,
-  ManualBalanceByLocation,
-  AccountBalance
-} from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import {
+  AccountBalance,
+  AssetBalance,
   BlockchainBalancePayload,
-  ExchangeBalancePayload
-} from '@/store/balances/actions';
+  ExchangeBalancePayload,
+  ManualBalanceByLocation
+} from '@/store/balances/types';
 import { ExchangeInfo } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 

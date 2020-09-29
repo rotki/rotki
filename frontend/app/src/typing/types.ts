@@ -1,7 +1,7 @@
-import { ApiAssetBalance, AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { SupportedModules } from '@/services/session/types';
+import { AssetBalances } from '@/store/balances/types';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
@@ -44,10 +44,6 @@ export interface Credentials {
 
 export type UsdToFiatExchangeRates = { [key: string]: number };
 
-export interface ApiAssetBalances {
-  [asset: string]: ApiAssetBalance;
-}
-
 export interface ExchangeInfo {
   readonly name: string;
   readonly balances: AssetBalances;
@@ -73,9 +69,12 @@ export interface TaskResult<T> {
   status: 'completed' | 'not-found' | 'pending';
 }
 
-export const SupportedBlockchains = ['ETH', 'BTC'];
+export const ETH = 'ETH';
+export const BTC = 'BTC';
 
-export type Blockchain = 'ETH' | 'BTC';
+export const SupportedBlockchains = [ETH, BTC] as const;
+
+export type Blockchain = typeof SupportedBlockchains[number];
 
 export class SyncConflictError extends Error {}
 
@@ -95,7 +94,7 @@ export type SettingsUpdate = {
   +readonly [P in keyof SettingsPayload]+?: SettingsPayload[P];
 };
 
-export interface SettingsPayload {
+interface SettingsPayload {
   balance_save_frequency: number;
   main_currency: string;
   anonymized_logs: boolean;
@@ -152,7 +151,3 @@ export interface DefiAccount extends Account {
 }
 
 export interface GeneralAccount extends AccountData, Account {}
-
-export type Properties<TObj, TResult> = {
-  [K in keyof TObj]: TObj[K] extends TResult ? K : never;
-}[keyof TObj];

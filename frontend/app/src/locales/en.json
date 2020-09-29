@@ -357,6 +357,35 @@
       "exchange_removal": {
         "title": "Exchange removal",
         "description": "The removal of {exchange} failed due to: {error}"
+      },
+      "blockchain_account_removal": {
+        "task" : {
+          "title": "Removing {blockchain} account",
+          "description": "{address} is being removed"
+        },
+        "error": {
+          "description": "Failed to remove the account: {error}",
+          "title": "Removing {blockchain} account {address}"
+        }
+      },
+      "blockchain_account_add": {
+        "task" : {
+          "title": "Adding {blockchain} account",
+          "description": "{address} is being added"
+        },
+        "error": {
+          "description": "Failed to add the account: {error}",
+          "title": "Adding {blockchain} account {address}"
+        }
+      },
+      "exchange_balances": {
+        "task": {
+          "title": "Retrieving {name} balances"
+        },
+        "error": {
+          "title": "{name} balance query",
+          "message": "Failed to query {name} balances: {error}"
+        }
       }
     }
   },
@@ -527,7 +556,13 @@
     "labels": {
       "blockchain": "Choose blockchain",
       "account": "Account",
-      "label": "Label"
+      "label": "Label",
+      "btc": {
+        "standalone": "Standalone",
+        "xpub": "XPUB",
+        "derivation_path": "Derivation Path",
+        "account_type": "Account Type"
+      }
     },
     "validation": {
       "address_non_empty": "The address cannot be empty",

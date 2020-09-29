@@ -22,7 +22,7 @@ export interface Version {
   readonly downloadUrl: string;
 }
 
-export type SectionStatus = { [section: string]: Status };
+type SectionStatus = { [section: string]: Status };
 
 export interface RotkehlchenState {
   message: Message;

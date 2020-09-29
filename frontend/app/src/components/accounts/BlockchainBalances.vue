@@ -48,7 +48,7 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
-import { AccountBalance } from '@/model/blockchain-balances';
+import { AccountBalance } from '@/store/balances/types';
 import { Account } from '@/typing/types';
 
 @Component({

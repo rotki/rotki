@@ -13,11 +13,11 @@ export interface HistoricData<T> {
   readonly data: T[];
 }
 
-export interface Trades extends HistoricData<Trade> {}
+interface Trades extends HistoricData<Trade> {}
 
-export interface AssetMovements extends HistoricData<AssetMovement> {}
+interface AssetMovements extends HistoricData<AssetMovement> {}
 
-export interface EthTransactions extends HistoricData<EthTransaction> {}
+interface EthTransactions extends HistoricData<EthTransaction> {}
 
 export interface HistoryState {
   trades: Trades;

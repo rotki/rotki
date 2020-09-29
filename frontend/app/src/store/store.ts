@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
-import { VersionCheck } from '@/model/version-check';
 import { api } from '@/services/rotkehlchen-api';
+import { VersionCheck } from '@/services/types-api';
 import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
 import { storePlugins } from '@/store/debug';

@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 
-export interface ApiSupportedAsset {
+interface ApiSupportedAsset {
   readonly active?: boolean;
   readonly ended?: number;
   readonly name: string;
@@ -52,4 +52,36 @@ export interface Balance {
 
 export interface HasBalance {
   readonly balance: Balance;
+}
+
+// This is equivalent to python's AssetBalance named tuple
+export interface DBAssetBalance {
+  readonly time: number;
+  readonly asset: string;
+  readonly amount: string;
+  readonly usd_value: string;
+}
+
+export interface PeriodicClientQueryResult {
+  readonly last_balance_save: number;
+  readonly eth_node_connection: boolean;
+  readonly history_process_start_ts: number;
+  readonly history_process_current_ts: number;
+}
+
+export interface NetvalueDataResult {
+  readonly times: number[];
+  readonly data: number[];
+}
+
+export interface SingleAssetBalance {
+  readonly time: number;
+  readonly amount: string;
+  readonly usd_value: string;
+}
+
+export interface VersionCheck {
+  readonly our_version?: string;
+  readonly latest_version?: string;
+  readonly download_url?: string;
 }

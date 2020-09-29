@@ -4,7 +4,7 @@ declare module 'tasklist' {
 }
 
 declare namespace tasklist {
-  export interface Task {
+  interface Task {
     imageName: string;
     pid: number;
     sessionName: string;

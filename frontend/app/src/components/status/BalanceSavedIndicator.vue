@@ -50,7 +50,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { AllBalancePayload } from '@/store/balances/actions';
+import { AllBalancePayload } from '@/store/balances/types';
 
 const { mapGetters } = createNamespacedHelpers('session');
 

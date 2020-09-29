@@ -10,7 +10,7 @@ module.exports = {
     node: true
   },
 
-  plugins: ['vuetify', 'rulesdir'],
+  plugins: ['vuetify', 'rulesdir', 'import'],
 
   extends: [
     'plugin:vue/recommended',

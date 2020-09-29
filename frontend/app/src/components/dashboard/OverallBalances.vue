@@ -31,8 +31,8 @@ import { Component, Vue, Prop } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { AssetBalance } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
+import { AssetBalance } from '@/store/balances/types';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
