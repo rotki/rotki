@@ -113,7 +113,7 @@ class BlockchainBalances:
                 addresses_dict = btc_balances['standalone']
             else:
                 if 'xpubs' not in btc_balances:
-                    btc_balances['xpubs'] = {}
+                    btc_balances['xpubs'] = []
 
                 addresses_dict = None
                 for xpub_entry in btc_balances['xpubs']:

@@ -4,7 +4,7 @@ from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.typing import BTCAddress
 
-XPUB_ADDRESS_STEP = 20
+XPUB_ADDRESS_STEP = 12
 
 
 class XpubData(NamedTuple):
@@ -18,6 +18,9 @@ def derive_addresses_from_xpub_data(
         xpub_data: XpubData,
         start_index: int,
 ) -> List[Tuple[int, BTCAddress]]:
+    """Derive all addresses from the xpub that have had transactions. Also includes
+    any addresses until the biggest index derived addresses that have had no transactions.
+    This is to make it easier to later derive and check more addresses"""
     step_index = start_index
     root = xpub_data.xpub.derive_path(xpub_data.derivation_path)
 
@@ -35,6 +38,13 @@ def derive_addresses_from_xpub_data(
                 addresses.append((idx, address))
             else:
                 should_continue = False
+
+        # do one more pass and add any addresses with no transactions before the max index
+        # this is so we can start new address generation from the max index later
+        max_index = max(x[0] for x in addresses)
+        for idx, address in batch_addresses[:max_index]:
+            if not have_tx_mapping[address]:
+                addresses.append((idx, address))
 
         step_index += XPUB_ADDRESS_STEP
 

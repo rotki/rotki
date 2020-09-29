@@ -363,24 +363,27 @@ class Rotkehlchen():
         )
         derived_addresses = [x[1] for x in derived_addresses_data]
         known_btc_addresses = self.data.db.get_blockchain_accounts().btc
-        new_addresses = list(set(known_btc_addresses) - set(derived_addresses))
-        self.chain_manager.add_blockchain_accounts(
-            blockchain=SupportedBlockchain.BITCOIN,
-            accounts=new_addresses,
-        )
-        self.data.db.add_blockchain_accounts(
-            blockchain=SupportedBlockchain.BITCOIN,
-            account_data=[BlockchainAccountData(
-                address=x,
-                label=None,
-                tags=xpub_data.tags,
-            ) for x in new_addresses],
-        )
+        new_addresses = list(set(derived_addresses) - set(known_btc_addresses))
+        if len(new_addresses) != 0:
+            self.chain_manager.add_blockchain_accounts(
+                blockchain=SupportedBlockchain.BITCOIN,
+                accounts=new_addresses,
+            )
+            self.data.db.add_blockchain_accounts(
+                blockchain=SupportedBlockchain.BITCOIN,
+                account_data=[BlockchainAccountData(
+                    address=x,
+                    label=None,
+                    tags=xpub_data.tags,
+                ) for x in new_addresses],
+            )
         self.data.db.ensure_xpub_mappings_exist(
             xpub=xpub_data.xpub.xpub,  # type: ignore
             derivation_path=xpub_data.derivation_path,
             derived_addresses_data=derived_addresses_data,
         )
+        if not self.chain_manager.balances.is_queried(SupportedBlockchain.BITCOIN):
+            self.chain_manager.query_balances(SupportedBlockchain.BITCOIN, ignore_cache=True)
         return self.chain_manager.get_balances_update()
 
     def delete_bitcoin_xpub(self, xpub_data: XpubData) -> BlockchainBalancesUpdate:
