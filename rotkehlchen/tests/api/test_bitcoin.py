@@ -58,9 +58,11 @@ EXPECTED_XPUB_ADDESSES = [
 @pytest.mark.parametrize('btc_accounts', [[
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
-    '1KZB7aFfuZE2skJQPHH56VhSxUpUBjouwQ',  # should belong to the xpub (idx 3)
+    # Also have an address derived from an xpub preset. This way we make sure
+    # in the test that it is detected as belonging to the xpub
+    '1KZB7aFfuZE2skJQPHH56VhSxUpUBjouwQ',
 ]])
-def test_add_xpub(rotkehlchen_api_server):
+def test_add_delete_xpub(rotkehlchen_api_server):
     """This test uses real world data (queries actual BTC balances)
 
     Test data from here:
@@ -129,3 +131,17 @@ def test_add_xpub(rotkehlchen_api_server):
 
     assert outcome['totals']['BTC']['amount'] is not None
     assert outcome['totals']['BTC']['usd_value'] is not None
+
+    # Also make sure that tags got added to all xpub derived addresses
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='BTC'
+    ))
+    outcome = assert_proper_response_with_result(response)
+    for entry in outcome:
+        if entry['address'] in EXPECTED_XPUB_ADDESSES:
+            assert entry['tags'] == ['ledger', 'public']
+        else:
+            assert entry['tags'] is None
+        assert entry['label'] is None

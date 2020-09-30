@@ -26,6 +26,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
+from rotkehlchen.db.utils import insert_tag_mappings
 from rotkehlchen.errors import (
     EthSyncError,
     InputError,
@@ -366,10 +367,24 @@ class Rotkehlchen():
 
         new_addresses = []
         new_balances = []
+        existing_address_data = []
         for entry in derived_addresses_data:
             if entry.address not in known_btc_addresses:
                 new_addresses.append(entry.address)
                 new_balances.append(entry.balance)
+            else:
+                existing_address_data.append(BlockchainAccountData(
+                    address=entry.address,
+                    label=None,
+                    tags=xpub_data.tags,
+                ))
+
+        if len(existing_address_data) != 0:
+            insert_tag_mappings(    # if we got tags add them to the existing addresses too
+                cursor=self.data.db.conn.cursor(),
+                data=existing_address_data,
+                object_reference_key='address',
+            )
 
         if len(new_addresses) != 0:
             self.chain_manager.add_blockchain_accounts(
