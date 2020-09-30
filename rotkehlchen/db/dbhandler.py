@@ -16,7 +16,11 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
-from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
+from rotkehlchen.chain.bitcoin.xpub import (
+    XpubData,
+    XpubDerivedAddressData,
+    deserialize_derivation_path,
+)
 from rotkehlchen.chain.ethereum.structures import AaveEvent, YearnVault, YearnVaultEvent
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
@@ -2255,12 +2259,13 @@ class DBHandler:
         May raise:
         - InputError if the xpub data already exist
         """
+
         cursor = self.conn.cursor()
         try:
             cursor.execute(
                 'INSERT INTO xpubs(xpub, derivation_path, label) '
                 'VALUES (?, ?, ?)',
-                (xpub_data.xpub.xpub, xpub_data.derivation_path, xpub_data.label),
+                (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path(), xpub_data.label),
             )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
             raise InputError(
@@ -2277,16 +2282,31 @@ class DBHandler:
         - InputError if the xpub does not exist in the DB
         """
         cursor = self.conn.cursor()
-        cursor.execute(
-            'DELETE FROM xpubs WHERE xpub=? AND derivation_path=?;',
-            (xpub_data.xpub.xpub, xpub_data.derivation_path),
+        query = cursor.execute(
+            'SELECT COUNT(*) FROM xpubs WHERE xpub=? AND derivation_path IS ?;',
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path()),
         )
-        affected_rows = cursor.rowcount
-        if affected_rows == 0:
+        if query.fetchone()[0] == 0:
             raise InputError(
                 f'Tried to remove non existing xpub {xpub_data.xpub.xpub} '
                 f'with derivation path {xpub_data.derivation_path}',
             )
+
+        # First delete any derived addresses
+        cursor.execute(
+            'DELETE FROM blockchain_accounts WHERE blockchain=? AND account IN ('
+            'SELECT address from xpub_mappings WHERE xpub=? and derivation_path IS ?);',
+            (
+                SupportedBlockchain.BITCOIN.value,
+                xpub_data.xpub.xpub,
+                xpub_data.serialize_derivation_path(),
+            ),
+        )
+        # And then finally delete the xpub itself
+        cursor.execute(
+            'DELETE FROM xpubs WHERE xpub=? AND derivation_path IS ?;',
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path()),
+        )
 
         self.conn.commit()
         self.update_last_write()
@@ -2296,15 +2316,15 @@ class DBHandler:
         cursor = self.conn.cursor()
         result = cursor.execute(
             'SELECT MAX(derived_index) from xpub_mappings WHERE xpub=? AND '
-            'derivation_path=? AND account_index=0;',
-            (xpub_data.xpub.xpub, xpub_data.derivation_path),
+            'derivation_path IS ? AND account_index=0;',
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path()),
         )
         result = result.fetchall()
         last_receiving_idx = int(result[0][0]) if result[0][0] is not None else 0
         result = cursor.execute(
             'SELECT MAX(derived_index) from xpub_mappings WHERE xpub=? AND '
-            'derivation_path=? AND account_index=1;',
-            (xpub_data.xpub.xpub, xpub_data.derivation_path),
+            'derivation_path IS ? AND account_index=1;',
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path()),
         )
         result = result.fetchall()
         last_change_idx = int(result[0][0]) if result[0][0] is not None else 0
@@ -2330,7 +2350,7 @@ class DBHandler:
 
             data[result[0][0]] = XpubData(
                 xpub=HDKey.from_xpub(result[0][1], path='m'),
-                derivation_path=result[0][2],
+                derivation_path=deserialize_derivation_path(result[0][2]),
             )
 
         return data
@@ -2346,7 +2366,7 @@ class DBHandler:
             (
                 x.address,
                 xpub,
-                derivation_path,
+                '' if derivation_path is None else derivation_path,
                 x.account_index,
                 x.derived_index,
             ) for x in derived_addresses_data

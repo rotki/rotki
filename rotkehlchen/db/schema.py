@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS blockchain_accounts (
 DB_CREATE_XPUBS = """
 CREATE TABLE IF NOT EXISTS xpubs (
     xpub TEXT NOT NULL,
-    derivation_path TEXT,
+    derivation_path TEXT NOT NULL,
     label TEXT,
     PRIMARY KEY (xpub, derivation_path)
 );
@@ -166,10 +166,10 @@ DB_CREATE_XPUB_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS xpub_mappings (
     address TEXT NOT NULL,
     xpub TEXT NOT NULL,
-    derivation_path TEXT,
+    derivation_path TEXT NOT NULL,
     account_index INTEGER,
     derived_index INTEGER,
-    FOREIGN KEY(address) REFERENCES blockchain_accounts(account)
+    FOREIGN KEY(address) REFERENCES blockchain_accounts(account) ON DELETE CASCADE
     FOREIGN KEY(xpub, derivation_path) REFERENCES xpubs(xpub, derivation_path) ON DELETE CASCADE
     PRIMARY KEY (address, xpub, derivation_path)
 );

@@ -419,8 +419,15 @@ class ChainManager(CacheableObject, LockableQueryObject):
             if btc_account not in db_btc_accounts:
                 accounts_to_remove.append(btc_account)
 
-        for account in accounts_to_remove:
-            self.modify_btc_account(account, append_or_remove='remove', add_or_sub=operator.sub)
+        balances_mapping = get_bitcoin_addresses_balances(accounts_to_remove)
+        balances = [balances_mapping.get(x, ZERO) for x in accounts_to_remove]
+        self.modify_blockchain_accounts(
+            blockchain=SupportedBlockchain.BITCOIN,
+            accounts=accounts_to_remove,
+            append_or_remove='remove',
+            add_or_sub=operator.sub,
+            already_queried_balances=balances,
+        )
 
     def modify_btc_account(
             self,

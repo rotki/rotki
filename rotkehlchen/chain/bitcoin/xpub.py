@@ -14,6 +14,21 @@ class XpubData(NamedTuple):
     label: Optional[str] = None
     tags: Optional[List[str]] = None
 
+    def serialize_derivation_path(self) -> str:
+        """
+        In Rotki we store non-existing path as None but in sql it must be ''
+        https://stackoverflow.com/questions/43827629/why-does-sqlite-insert-duplicate-composite-primary-keys
+        """
+        return '' if self.derivation_path is None else self.derivation_path
+
+
+def deserialize_derivation_path(path: str) -> Optional[str]:
+    """
+    In Rotki we store non-existing path as None but in sql it must be ''
+    https://stackoverflow.com/questions/43827629/why-does-sqlite-insert-duplicate-composite-primary-keys
+    """
+    return None if path == '' else path
+
 
 class XpubDerivedAddressData(NamedTuple):
     account_index: int

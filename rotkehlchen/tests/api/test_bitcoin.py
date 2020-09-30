@@ -1,10 +1,12 @@
 import random
+from http import HTTPStatus
 
 import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
@@ -132,11 +134,28 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     assert outcome['totals']['BTC']['amount'] is not None
     assert outcome['totals']['BTC']['usd_value'] is not None
 
+    # Make sure that adding existing xpub fails
+    json_data = {
+        'async_query': False,
+        'xpub': xpub,
+        'label': 'ledger_test_xpub',
+        'tags': ['ledger', 'public'],
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "btcxpubresource",
+    ), json=json_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Xpub {xpub} with derivation path None is already tracked',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
     # Also make sure that tags got added to all xpub derived addresses
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "blockchainsaccountsresource",
-        blockchain='BTC'
+        blockchain='BTC',
     ))
     outcome = assert_proper_response_with_result(response)
     for entry in outcome:
@@ -145,3 +164,33 @@ def test_add_delete_xpub(rotkehlchen_api_server):
         else:
             assert entry['tags'] is None
         assert entry['label'] is None
+
+    # Now delete the xpub and make sure all derived addresses are gone
+    json_data = {
+        'async_query': async_query,
+        'xpub': xpub,
+        'derivation_path': None,
+    }
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        "btcxpubresource",
+    ), json=json_data)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id, timeout=180)
+    else:
+        outcome = assert_proper_response_with_result(response)
+
+    btc = outcome['per_account']['BTC']
+    assert len(btc['standalone']) == 2
+    assert UNIT_BTC_ADDRESS1 in btc['standalone']
+    assert UNIT_BTC_ADDRESS2 in btc['standalone']
+
+    assert 'xpubs' not in btc
+    assert outcome['totals']['BTC']['amount'] is not None
+    assert outcome['totals']['BTC']['usd_value'] is not None
+
+    # Also make sure all xpub mappings of that xpub are gone from the DB
+    cursor = rotki.data.db.conn.cursor()
+    result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (xpub,))
+    assert result.fetchall() == []
