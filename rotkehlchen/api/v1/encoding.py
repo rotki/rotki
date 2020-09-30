@@ -930,7 +930,7 @@ class BlockchainAccountDataSchema(Schema):
 
 class BaseXpubSchema(Schema):
     xpub = XpubField(required=True)
-    derivation_path = fields.String(missing='m/0')
+    derivation_path = fields.String(missing=None)
     async_query = fields.Boolean(missing=False)
 
 

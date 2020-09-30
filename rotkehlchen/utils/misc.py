@@ -210,6 +210,7 @@ def request_get(
     - UnableToDecryptRemoteData from request_get
     - Remote error if the get request fails
     """
+    log.debug(f'Querying {url}')
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
@@ -304,8 +305,9 @@ def hexstring_to_bytes(hexstr: str) -> bytes:
 
 def get_system_spec() -> Dict[str, str]:
     """Collect information about the system and installation."""
-    import pkg_resources
     import platform
+
+    import pkg_resources
 
     if sys.platform == 'darwin':
         system_info = 'macOS {} {}'.format(

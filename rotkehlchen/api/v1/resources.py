@@ -732,7 +732,7 @@ class BTCXpubResource(BaseResource):
     def put(
             self,
             xpub: 'HDKey',
-            derivation_path: str,
+            derivation_path: Optional[str],
             label: Optional[str],
             tags: Optional[List[str]],
             async_query: bool,
@@ -751,7 +751,7 @@ class BTCXpubResource(BaseResource):
     def delete(
             self,
             xpub: 'HDKey',
-            derivation_path: str,
+            derivation_path: Optional[str],
             async_query: bool,
     ) -> Response:
         return self.rest_api.delete_xpub(

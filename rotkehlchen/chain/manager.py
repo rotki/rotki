@@ -427,8 +427,12 @@ class ChainManager(CacheableObject, LockableQueryObject):
             account: BTCAddress,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
+            already_queried_balance: Optional[FVal] = None,
     ) -> None:
         """Either appends or removes a BTC acccount.
+
+        If already_queried_balance is not None then instead of querying the balance
+        of the account we can use the already queried one.
 
         Call with 'append', operator.add to add the account
         Call with 'remove', operator.sub to remove the account
@@ -443,8 +447,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Query the balance of the account except for the case when it's removed
         # and there is no other account in the balances
         if append_or_remove == 'append' or remove_with_populated_balance:
-            balances = get_bitcoin_addresses_balances([account])
-            balance = balances[account]
+            if already_queried_balance is None:
+                balances = get_bitcoin_addresses_balances([account])
+                balance = balances[account]
+            else:
+                balance = already_queried_balance
             usd_balance = balance * btc_usd_price
 
         if append_or_remove == 'append':
@@ -527,6 +534,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
+            already_queried_balances: Optional[List[FVal]] = None,
     ) -> BlockchainBalancesUpdate:
         """Adds new blockchain accounts and requeries all balances after the addition.
         The accounts are added in the blockchain object and not in the database.
@@ -553,6 +561,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             accounts=accounts,
             append_or_remove='append',
             add_or_sub=operator.add,
+            already_queried_balances=already_queried_balances,
         )
 
         return result
@@ -615,6 +624,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             accounts: ListOfBlockchainAddresses,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
+            already_queried_balances: Optional[List[FVal]] = None,
     ) -> BlockchainBalancesUpdate:
         """Add or remove a list of blockchain account
 
@@ -626,11 +636,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
           as etherscan or blockchain.info
         """
         if blockchain == SupportedBlockchain.BITCOIN:
-            for account in accounts:
+            for idx, account in enumerate(accounts):
+                a_balance = already_queried_balances[idx] if already_queried_balances else None
                 self.modify_btc_account(
                     BTCAddress(account),
                     append_or_remove,
                     add_or_sub,
+                    already_queried_balance=a_balance,
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:

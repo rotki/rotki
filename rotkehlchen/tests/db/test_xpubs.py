@@ -29,7 +29,7 @@ def setup_db_for_xpub_tests(data_dir, username):
     data.db.ensure_xpub_mappings_exist(
         xpub=xpub,
         derivation_path=derivation_path,
-        derived_addresses_data=[(0, addr1), (1, addr2)],
+        derived_addresses_data=[(0, 0, addr1), (0, 1, addr2)],
     )
 
     xpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
@@ -48,7 +48,7 @@ def setup_db_for_xpub_tests(data_dir, username):
     data.db.ensure_xpub_mappings_exist(
         xpub=xpub,
         derivation_path=derivation_path,
-        derived_addresses_data=[(0, addr1), (1, addr2), (2, addr3), (3, addr4)],
+        derived_addresses_data=[(1, 0, addr1), (1, 1, addr2), (1, 2, addr3), (1, 3, addr4)],
     )
 
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
@@ -59,18 +59,24 @@ def setup_db_for_xpub_tests(data_dir, username):
     return data.db, xpub_data1, xpub_data2, xpub_data3, all_addresses
 
 
-def test_get_last_xpub_derived_index(setup_db_for_xpub_tests):
+def test_get_last_xpub_derived_indices(setup_db_for_xpub_tests):
     db, xpub1, xpub2, xpub3, _ = setup_db_for_xpub_tests
     # Get index from xpubs existing in the DB that have derived addresses
-    assert db.get_last_xpub_derived_index(xpub1) == 1
-    assert db.get_last_xpub_derived_index(xpub2) == 3
+    receiving_idx, change_idx = db.get_last_xpub_derived_indices(xpub1)
+    assert receiving_idx == 1
+    assert change_idx == 0
+    receiving_idx, change_idx = db.get_last_xpub_derived_indices(xpub2)
+    assert receiving_idx == 0
+    assert change_idx == 3
     # Get index from xpubs existing in the DB that have no derived addresses
-    assert db.get_last_xpub_derived_index(xpub3) == 0
+    receiving_idx, change_idx = db.get_last_xpub_derived_indices(xpub3)
+    assert receiving_idx == change_idx == 0
     # Get index from unknown xpub (not in DB)
     xpub = 'xpub6D1ZRhLSRWWGowFT22WJYYJx3GH5wxidsHcEm6NYeXfMAGxKWiQ5dQ8hSz7gdJsE86Lrjf1MN7SCKowZU8VxZ45Z1KeNP5CZ514JbCamRdC'  # noqa: E501
     derivation_path = 'm/0/0/0'
     xpub_data = XpubData(xpub=HDKey.from_xpub(xpub=xpub), derivation_path=derivation_path)
-    assert db.get_last_xpub_derived_index(xpub_data) == 0
+    receiving_idx, change_idx = db.get_last_xpub_derived_indices(xpub_data)
+    assert receiving_idx == change_idx == 0
 
 
 def test_get_addresses_to_xpub_mapping(setup_db_for_xpub_tests):

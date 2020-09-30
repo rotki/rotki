@@ -16,7 +16,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
-from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
 from rotkehlchen.chain.ethereum.structures import AaveEvent, YearnVault, YearnVaultEvent
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
@@ -2291,15 +2291,24 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def get_last_xpub_derived_index(self, xpub_data: XpubData) -> int:
-        """Get the last known derived index from the given xpub"""
+    def get_last_xpub_derived_indices(self, xpub_data: XpubData) -> Tuple[int, int]:
+        """Get the last known receiving and change derived indices from the given xpub"""
         cursor = self.conn.cursor()
         result = cursor.execute(
-            'SELECT MAX(derivation_index) from xpub_mappings WHERE xpub=? AND derivation_path=?',
+            'SELECT MAX(derived_index) from xpub_mappings WHERE xpub=? AND '
+            'derivation_path=? AND account_index=0;',
             (xpub_data.xpub.xpub, xpub_data.derivation_path),
         )
         result = result.fetchall()
-        return int(result[0][0]) if result[0][0] is not None else 0
+        last_receiving_idx = int(result[0][0]) if result[0][0] is not None else 0
+        result = cursor.execute(
+            'SELECT MAX(derived_index) from xpub_mappings WHERE xpub=? AND '
+            'derivation_path=? AND account_index=1;',
+            (xpub_data.xpub.xpub, xpub_data.derivation_path),
+        )
+        result = result.fetchall()
+        last_change_idx = int(result[0][0]) if result[0][0] is not None else 0
+        return last_receiving_idx, last_change_idx
 
     def get_addresses_to_xpub_mapping(
             self,
@@ -2312,7 +2321,7 @@ class DBHandler:
             result = cursor.execute(
                 'SELECT B.address, A.xpub, A.derivation_path FROM xpubs as A '
                 'LEFT OUTER JOIN xpub_mappings as B '
-                'ON B.xpub = A.xpub AND B.derivation_path = A.derivation_path '
+                'ON B.xpub = A.xpub AND B.derivation_path IS A.derivation_path '
                 'WHERE B.address=?;', (address,),
             )
             result = result.fetchall()
@@ -2329,20 +2338,26 @@ class DBHandler:
     def ensure_xpub_mappings_exist(
             self,
             xpub: str,
-            derivation_path: str,
-            derived_addresses_data: List[Tuple[int, BTCAddress]],
+            derivation_path: Optional[str],
+            derived_addresses_data: List[XpubDerivedAddressData],
     ) -> None:
         """Create if not existing the mappings between the addresses and the xpub"""
         tuples = [
-            (x[1], xpub, derivation_path, x[0]) for x in derived_addresses_data
+            (
+                x.address,
+                xpub,
+                derivation_path,
+                x.account_index,
+                x.derived_index,
+            ) for x in derived_addresses_data
         ]
         cursor = self.conn.cursor()
-
         for entry in tuples:
             try:
                 cursor.execute(
-                    'INSERT INTO xpub_mappings(address, xpub, derivation_path, derivation_index) '
-                    'VALUES (?, ?, ?, ?)',
+                    'INSERT INTO xpub_mappings'
+                    '(address, xpub, derivation_path, account_index, derived_index) '
+                    'VALUES (?, ?, ?, ?, ?)',
                     entry,
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member

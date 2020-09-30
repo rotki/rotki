@@ -356,18 +356,26 @@ class Rotkehlchen():
             action='adding',
             data_type='bitcoin xpub',
         )
-        start_index = self.data.db.get_last_xpub_derived_index(xpub_data)
+        last_receiving_idx, last_change_idx = self.data.db.get_last_xpub_derived_indices(xpub_data)
         derived_addresses_data = derive_addresses_from_xpub_data(
             xpub_data=xpub_data,
-            start_index=start_index,
+            start_receiving_index=last_receiving_idx,
+            start_change_index=last_change_idx,
         )
-        derived_addresses = [x[1] for x in derived_addresses_data]
         known_btc_addresses = self.data.db.get_blockchain_accounts().btc
-        new_addresses = list(set(derived_addresses) - set(known_btc_addresses))
+
+        new_addresses = []
+        new_balances = []
+        for entry in derived_addresses_data:
+            if entry.address not in known_btc_addresses:
+                new_addresses.append(entry.address)
+                new_balances.append(entry.balance)
+
         if len(new_addresses) != 0:
             self.chain_manager.add_blockchain_accounts(
                 blockchain=SupportedBlockchain.BITCOIN,
                 accounts=new_addresses,
+                already_queried_balances=new_balances,
             )
             self.data.db.add_blockchain_accounts(
                 blockchain=SupportedBlockchain.BITCOIN,

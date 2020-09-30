@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import requests
 
@@ -24,6 +24,10 @@ def _prepare_blockcypher_accounts(accounts: List[BTCAddress]) -> List[BTCAddress
     return new_accounts
 
 
+def _have_bc1_accounts(accounts: List[BTCAddress]) -> bool:
+    return any(account.lower()[0:3] == 'bc1' for account in accounts)
+
+
 def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddress, FVal]:
     """Queries blockchain.info or blockcypher for the balances of accounts
 
@@ -33,7 +37,7 @@ def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddres
     source = 'blockchain.info'
     balances = {}
     try:
-        if any(account.lower()[0:3] == 'bc1' for account in accounts):
+        if _have_bc1_accounts(accounts):
             # if 1 account is bech32 we have to query blockcypher. blockchaininfo won't work
             source = 'blockcypher.com'
             new_accounts = _prepare_blockcypher_accounts(accounts)
@@ -71,8 +75,12 @@ def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddres
             )
             for idx, entry in enumerate(btc_resp['addresses']):
                 balances[accounts[idx]] = satoshis_to_btc(FVal(entry['final_balance']))
-    except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
-        raise RemoteError(f'bitcoin external API request failed due to {str(e)}')
+    except (
+            requests.exceptions.ConnectionError,
+            UnableToDecryptRemoteData,
+            requests.exceptions.Timeout,
+    ) as e:
+        raise RemoteError(f'bitcoin external API request for balances failed due to {str(e)}')
     except KeyError as e:
         raise RemoteError(
             f'Malformed response when querying bitcoin blockchain via {source}.'
@@ -82,8 +90,9 @@ def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddres
     return balances
 
 
-def have_bitcoin_transactions(accounts: List[BTCAddress]) -> Dict[BTCAddress, bool]:
-    """Takes a list of addresses and returns a mapping of which addresses have had transactions"""
+def _check_blockcypher_for_transactions(
+        accounts: List[BTCAddress],
+) -> Dict[BTCAddress, Tuple[bool, FVal]]:
     have_transactions = {}
     new_accounts = _prepare_blockcypher_accounts(accounts)
     # blockcypher's batching takes up as many api queries as the batch,
@@ -103,8 +112,51 @@ def have_bitcoin_transactions(accounts: List[BTCAddress]) -> Dict[BTCAddress, bo
             response_data = [response_data]
 
         for idx, entry in enumerate(response_data):
+            balance = satoshis_to_btc(FVal(entry['final_balance']))
             # we don't use the returned address as it may be lowercased
-            have_transactions[accounts[total_idx + idx]] = entry['final_n_tx'] != 0
+            have_transactions[accounts[total_idx + idx]] = (entry['final_n_tx'] != 0, balance)
         total_idx += len(batch)
+
+    return have_transactions
+
+
+def _check_blockchaininfo_for_transactions(
+        accounts: List[BTCAddress],
+) -> Dict[BTCAddress, Tuple[bool, FVal]]:
+    have_transactions = {}
+    params = '|'.join(accounts)
+    btc_resp = request_get_dict(
+        url=f'https://blockchain.info/multiaddr?active={params}',
+        handle_429=True,
+        # If we get a 429 then their docs suggest 10 seconds
+        # https://blockchain.infoq/
+        backoff_in_seconds=15,
+    )
+    for idx, entry in enumerate(btc_resp['addresses']):
+        balance = satoshis_to_btc(entry['final_balance'])
+        have_transactions[accounts[idx]] = (entry['n_tx'] != 0, balance)
+
+    return have_transactions
+
+
+def have_bitcoin_transactions(accounts: List[BTCAddress]) -> Dict[BTCAddress, Tuple[bool, FVal]]:
+    """
+    Takes a list of addresses and returns a mapping of which addresses have had transactions
+    and also their current balance
+
+    May raise:
+    - RemoteError if any of the queried websites fail to be queried
+    """
+    try:
+        if _have_bc1_accounts(accounts):
+            have_transactions = _check_blockcypher_for_transactions(accounts)
+        else:
+            have_transactions = _check_blockchaininfo_for_transactions(accounts)
+    except (
+            requests.exceptions.ConnectionError,
+            UnableToDecryptRemoteData,
+            requests.exceptions.Timeout,
+    ) as e:
+        raise RemoteError(f'bitcoin external API request for transactions failed due to {str(e)}')
 
     return have_transactions
