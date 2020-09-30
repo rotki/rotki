@@ -194,3 +194,29 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     cursor = rotki.data.db.conn.cursor()
     result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (xpub,))
     assert result.fetchall() == []
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('btc_accounts', [[
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+]])
+def test_delete_nonexisting_xpub(rotkehlchen_api_server):
+    # Disable caching of query results
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.chain_manager.cache_ttl_secs = 0
+
+    xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa : E501
+    json_data = {
+        'xpub': xpub,
+        'derivation_path': None,
+    }
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        "btcxpubresource",
+    ), json=json_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Tried to remove non existing xpub {xpub} with derivation path None',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

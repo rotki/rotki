@@ -1,7 +1,8 @@
 import pytest
 
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
-from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.typing import BlockchainAccountData, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
@@ -29,7 +30,10 @@ def setup_db_for_xpub_tests(data_dir, username):
     data.db.ensure_xpub_mappings_exist(
         xpub=xpub,
         derivation_path=derivation_path,
-        derived_addresses_data=[(0, 0, addr1), (0, 1, addr2)],
+        derived_addresses_data=[
+            XpubDerivedAddressData(0, 0, addr1, ZERO),
+            XpubDerivedAddressData(0, 1, addr2, ZERO),
+        ],
     )
 
     xpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
@@ -48,7 +52,12 @@ def setup_db_for_xpub_tests(data_dir, username):
     data.db.ensure_xpub_mappings_exist(
         xpub=xpub,
         derivation_path=derivation_path,
-        derived_addresses_data=[(1, 0, addr1), (1, 1, addr2), (1, 2, addr3), (1, 3, addr4)],
+        derived_addresses_data=[
+            XpubDerivedAddressData(1, 0, addr1, ZERO),
+            XpubDerivedAddressData(1, 1, addr2, ZERO),
+            XpubDerivedAddressData(1, 2, addr3, ZERO),
+            XpubDerivedAddressData(1, 3, addr4, ZERO),
+        ],
     )
 
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
@@ -89,6 +98,19 @@ def test_get_addresses_to_xpub_mapping(setup_db_for_xpub_tests):
         assert result[x].xpub.xpub == xpub1.xpub.xpub
         assert result[x].derivation_path == xpub1.derivation_path
 
+    for x in all_addresses[4:8]:
+        assert result[x].xpub.xpub == xpub2.xpub.xpub
+        assert result[x].derivation_path == xpub2.derivation_path
+
+
+def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
+    db, xpub1, xpub2, _, all_addresses = setup_db_for_xpub_tests
+    # Also add a non-existing address in there for fun
+    all_addresses.append('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
+    db.delete_bitcoin_xpub(xpub1)
+
+    result = db.get_addresses_to_xpub_mapping(all_addresses)
+    assert len(result) == 4
     for x in all_addresses[4:8]:
         assert result[x].xpub.xpub == xpub2.xpub.xpub
         assert result[x].derivation_path == xpub2.derivation_path
