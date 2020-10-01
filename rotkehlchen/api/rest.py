@@ -23,6 +23,7 @@ from rotkehlchen.balances.manual import (
     get_manually_tracked_balances,
     remove_manually_tracked_balances,
 )
+from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -1093,7 +1094,9 @@ class RestAPI():
 
     def _add_xpub(self, xpub_data: 'XpubData') -> Dict[str, Any]:
         try:
-            result = self.rotkehlchen.add_bitcoin_xpub(xpub_data=xpub_data)
+            result = XpubManager(self.rotkehlchen.chain_manager).add_bitcoin_xpub(
+                xpub_data=xpub_data,
+            )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
         except TagConstraintError as e:
@@ -1122,7 +1125,9 @@ class RestAPI():
 
     def _delete_xpub(self, xpub_data: 'XpubData') -> Dict[str, Any]:
         try:
-            result = self.rotkehlchen.delete_bitcoin_xpub(xpub_data=xpub_data)
+            result = XpubManager(self.rotkehlchen.chain_manager).delete_bitcoin_xpub(
+                xpub_data=xpub_data,
+            )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
