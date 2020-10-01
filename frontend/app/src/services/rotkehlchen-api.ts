@@ -39,7 +39,7 @@ import {
   validAuthorizedStatus,
   validTaskStatus
 } from '@/services/utils';
-import { BlockchainAccountPayload } from '@/store/balances/types';
+import { BlockchainAccountPayload, XpubPayload } from '@/store/balances/types';
 import {
   AccountData,
   AccountSession,
@@ -531,6 +531,19 @@ export class RotkehlchenApi {
       )
       .then(handleResponse)
       .then(accounts => accounts.map(convertAccountData));
+  }
+
+  async deleteXpub(payload: XpubPayload): Promise<PendingTask> {
+    return this.axios
+      .delete<ActionResult<PendingTask>>(`/blockchains/BTC/xpub`, {
+        data: axiosSnakeCaseTransformer({
+          ...payload,
+          asyncQuery: true
+        }),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
   }
 
   setupExchange(

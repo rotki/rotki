@@ -198,7 +198,7 @@ import { footerProps } from '@/config/datatable.common';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import {
-  AccountBalance,
+  AccountWithBalance,
   AssetBalance,
   BlockchainBalancePayload,
   ExchangeBalancePayload,
@@ -246,8 +246,8 @@ export default class Dashboard extends Vue {
   floatingPrecision!: number;
   exchanges!: ExchangeInfo;
   blockchainTotal!: BigNumber;
-  ethAccounts!: AccountBalance[];
-  btcAccounts!: AccountBalance[];
+  ethAccounts!: AccountWithBalance[];
+  btcAccounts!: AccountWithBalance[];
   isTaskRunning!: (type: TaskType) => boolean;
 
   aggregatedBalances!: AssetBalance[];
@@ -259,15 +259,15 @@ export default class Dashboard extends Vue {
 
   get blockchainTotals(): BlockchainBalances {
     const ethereumTotal = this.ethAccounts.reduce(
-      (sum: BigNumber, account: AccountBalance) => {
-        return sum.plus(account.usdValue);
+      (sum: BigNumber, { balance }: AccountWithBalance) => {
+        return sum.plus(balance.usdValue);
       },
       Zero
     );
 
     const bitcoinTotal = this.btcAccounts.reduce(
-      (sum: BigNumber, account: AccountBalance) => {
-        return sum.plus(account.usdValue);
+      (sum: BigNumber, { balance }: AccountWithBalance) => {
+        return sum.plus(balance.usdValue);
       },
       Zero
     );

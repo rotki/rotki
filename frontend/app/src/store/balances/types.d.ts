@@ -5,12 +5,13 @@ import {
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
-import { Balance } from '@/services/types-api';
+import { Balance, HasBalance } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import {
   AccountDataMap,
   Blockchain,
   ExchangeData,
+  GeneralAccount,
   UsdToFiatExchangeRates
 } from '@/typing/types';
 
@@ -76,11 +77,17 @@ export interface AllBalancePayload {
   readonly saveData: boolean;
 }
 
-export interface AccountBalance {
-  readonly account: string;
-  readonly amount: BigNumber;
-  readonly usdValue: BigNumber;
-}
+export interface AccountWithBalance extends GeneralAccount, HasBalance {}
+
+interface XpubAccount extends GeneralAccount, XpubPayload {}
+
+interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
+
+export type BlockchainAccount = GeneralAccount | XpubAccount;
+
+export type BlockchainAccountWithBalance =
+  | XpubAccountWithBalance
+  | AccountWithBalance;
 
 export interface AssetBalance {
   readonly asset: string;

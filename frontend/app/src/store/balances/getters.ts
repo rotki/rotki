@@ -2,40 +2,82 @@ import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { GetterTree } from 'vuex';
-import { EthBalance } from '@/services/balances/types';
 import { Balance } from '@/services/types-api';
 import {
-  AccountBalance,
+  BlockchainAccountWithBalance,
   AssetBalance,
   BalanceState,
   ManualBalanceByLocation,
   ManualBalancesByLocation
 } from '@/store/balances/types';
 import { RotkehlchenState } from '@/store/types';
-import { Blockchain, BTC, ETH, GeneralAccount } from '@/typing/types';
+import { BTC, ETH, GeneralAccount } from '@/typing/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 
 export const getters: GetterTree<BalanceState, RotkehlchenState> = {
-  ethAccounts(state: BalanceState): AccountBalance[] {
-    return map(state.eth, (value: EthBalance, account: string) => {
-      const accountBalance: AccountBalance = {
-        account,
-        amount: value.assets.ETH.amount,
-        usdValue: value.totalUsdValue
-      };
-      return accountBalance;
-    });
+  ethAccounts({
+    eth,
+    ethAccounts
+  }: BalanceState): BlockchainAccountWithBalance[] {
+    const accounts: BlockchainAccountWithBalance[] = [];
+    for (const address in ethAccounts) {
+      const data = ethAccounts[address];
+      const accountAssets = eth[address];
+      const balance: Balance = accountAssets
+        ? {
+            amount: accountAssets.assets.ETH.amount,
+            usdValue: accountAssets.totalUsdValue
+          }
+        : { amount: Zero, usdValue: Zero };
+
+      accounts.push({
+        ...data,
+        chain: ETH,
+        balance
+      });
+    }
+    return accounts;
   },
 
-  btcAccounts(state: BalanceState): AccountBalance[] {
-    return map(state.btc.standalone, (value: Balance, account: string) => {
-      const accountBalance: AccountBalance = {
-        account,
-        ...value
-      };
-      return accountBalance;
-    });
+  btcAccounts({
+    btc,
+    btcAccounts
+  }: BalanceState): BlockchainAccountWithBalance[] {
+    const accounts: BlockchainAccountWithBalance[] = [];
+
+    for (const address in btcAccounts) {
+      const data = btcAccounts[address];
+      const balance = btc.standalone?.[address];
+      if (balance) {
+        accounts.push({
+          ...data,
+          chain: BTC,
+          balance
+        });
+        continue;
+      }
+
+      const xpubIndex =
+        btc.xpubs?.findIndex(value => value.addresses[address]) ?? -1;
+      if (xpubIndex < 0) {
+        accounts.push({
+          ...data,
+          chain: BTC,
+          balance: { amount: Zero, usdValue: Zero }
+        });
+      } else {
+        const { xpub, derivationPath, addresses } = btc.xpubs[xpubIndex];
+        accounts.push({
+          ...data,
+          xpub,
+          derivationPath,
+          chain: BTC,
+          balance: addresses[address]
+        });
+      }
+    }
+    return accounts;
   },
 
   totals(state: BalanceState): AssetBalance[] {
@@ -186,22 +228,6 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }
 
     return Object.entries(ethAccount.assets).length > 1;
-  },
-
-  accountTags: (state: BalanceState) => (
-    blockchain: Blockchain,
-    address: string
-  ): string[] => {
-    const data = blockchain === ETH ? state.ethAccounts : state.btcAccounts;
-    return data[address]?.tags ?? [];
-  },
-
-  accountLabel: (state: BalanceState) => (
-    blockchain: Blockchain,
-    address: string
-  ): string => {
-    const data = blockchain === ETH ? state.ethAccounts : state.btcAccounts;
-    return data[address]?.label ?? '';
   },
 
   manualLabels: ({ manualBalances }: BalanceState) => {

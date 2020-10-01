@@ -21,33 +21,39 @@
           v-model="btcAccountType"
           :label="$t('account_form.labels.btc.account_type')"
           row
-          :disabled="edit"
+          :disabled="!!edit"
         >
+          <v-radio value="xpub" :label="$t('account_form.labels.btc.xpub')" />
           <v-radio
             value="standalone"
             :label="$t('account_form.labels.btc.standalone')"
           />
-
-          <v-radio value="xpub" :label="$t('account_form.labels.btc.xpub')" />
         </v-radio-group>
+        <v-row v-if="isBtc && isXpub">
+          <v-col>
+            <v-text-field
+              v-model="xpub"
+              class="account-form__xpub"
+              :label="$t('account_form.labels.btc.xpub')"
+              autocomplete="off"
+              :disabled="accountOperation || loading || !!edit"
+            />
+          </v-col>
+          <v-col cols="auto">
+            <v-text-field
+              v-model="derivationPath"
+              class="account-form__derivation-path"
+              :label="$t('account_form.labels.btc.derivation_path')"
+              autocomplete="off"
+              :disabled="accountOperation || loading || !!edit"
+              persistent-hint
+              :hint="$t('account_form.labels.btc.derivation_path_hint')"
+            />
+          </v-col>
+        </v-row>
+
         <v-text-field
-          v-if="btcAccountType === 'xpub'"
-          v-model="xpub"
-          class="account-form__xpub"
-          :label="$t('account_form.labels.btc.xpub')"
-          autocomplete="off"
-          :disabled="accountOperation || loading || !!edit"
-        />
-        <v-text-field
-          v-if="btcAccountType === 'xpub'"
-          v-model="derivationPath"
-          class="account-form__derivation-path"
-          :label="$t('account_form.labels.btc.derivation_path')"
-          autocomplete="off"
-          :disabled="accountOperation || loading || !!edit"
-        />
-        <v-text-field
-          v-if="!isBtc || (isBtc && btcAccountType !== 'xpub')"
+          v-if="!isBtc || ((isBtc && btcAccountType !== 'xpub') || !!edit)"
           v-model="address"
           class="blockchain-balances__address"
           :label="$t('account_form.labels.account')"
@@ -76,17 +82,18 @@ import { mapGetters } from 'vuex';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { BlockchainAccountPayload } from '@/store/balances/types';
+import {
+  BlockchainAccountPayload,
+  BlockchainAccount
+} from '@/store/balances/types';
 import { Message } from '@/store/types';
 import {
-  Account,
   Blockchain,
   BTC,
   ETH,
   GeneralAccount,
   SupportedBlockchains
 } from '@/typing/types';
-import { assert } from '@/utils/assertions';
 
 type ValidationRule = (value: string) => boolean | string;
 
@@ -110,10 +117,14 @@ export default class AccountForm extends Vue {
   errorMessages: string[] = [];
   account!: (address: string) => GeneralAccount | undefined;
 
-  btcAccountType: 'xpub' | 'standalone' = 'standalone';
+  btcAccountType: 'xpub' | 'standalone' = 'xpub';
 
   get isBtc(): boolean {
     return this.selected === BTC;
+  }
+
+  get isXpub(): boolean {
+    return this.btcAccountType === 'xpub';
   }
 
   get rules(): ValidationRule[] {
@@ -135,7 +146,7 @@ export default class AccountForm extends Vue {
   }
 
   @Prop({ required: false, default: null })
-  edit!: Account | null;
+  edit!: BlockchainAccount | null;
   @Prop({ required: true, type: Boolean, default: false })
   value!: boolean;
 
@@ -144,14 +155,15 @@ export default class AccountForm extends Vue {
       this.address = '';
       return;
     }
-    const { address, chain } = this.edit;
-    this.address = address;
-    this.selected = chain;
 
-    const account = this.account(address);
-    assert(account);
-    this.label = account.label;
-    this.tags = account.tags;
+    this.address = this.edit.address;
+    this.selected = this.edit.chain;
+    this.label = this.edit.label;
+    this.tags = this.edit.tags;
+    if ('xpub' in this.edit) {
+      this.xpub = this.edit.xpub;
+      this.derivationPath = this.edit.derivationPath;
+    }
   }
 
   mounted() {
@@ -176,6 +188,8 @@ export default class AccountForm extends Vue {
     this.address = '';
     this.label = '';
     this.tags = [];
+    this.xpub = '';
+    this.derivationPath = '';
     (this.$refs.form as any).resetValidation();
   }
 
@@ -204,7 +218,7 @@ export default class AccountForm extends Vue {
         this.isBtc && this.btcAccountType === 'xpub'
           ? {
               xpub: this.xpub,
-              derivationPath: this.derivationPath
+              derivationPath: this.derivationPath ?? undefined
             }
           : undefined;
       const payload: BlockchainAccountPayload = {

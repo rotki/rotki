@@ -35,6 +35,7 @@
     "moment": "2.27.0",
     "roboto-fontface": "*",
     "tasklist": "4.0.1",
+    "tslib": "^2.0.1",
     "typeface-roboto-mono": "0.0.75",
     "vue": "2.6.11",
     "vue-class-component": "7.2.5",

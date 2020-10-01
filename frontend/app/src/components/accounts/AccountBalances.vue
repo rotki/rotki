@@ -20,260 +20,119 @@
     </v-row>
     <v-row>
       <v-col cols="6" offset="6">
-        <tag-filter v-model="onlyTags" />
+        <tag-filter v-model="visibleTags" />
       </v-col>
     </v-row>
-    <v-data-table
-      :headers="headers"
-      :items="extendedBalances"
-      :loading="accountOperation || isLoading"
-      :loading-text="$t('account_balances.data_table.loading')"
-      single-expand
-      item-key="account"
-      :expanded.sync="expanded"
-      sort-by="usdValue"
-      :footer-props="footerProps"
-      sort-desc
-    >
-      <template v-if="blockchain === 'ETH'" #header.usdValue>
-        {{
-          $t('account_balances.headers.usd-value-eth', {
-            symbol: currency.ticker_symbol
-          })
-        }}
-      </template>
-      <template v-else #header.usdValue>
-        {{
-          $t('account_balances.headers.usd-value', {
-            symbol: currency.ticker_symbol
-          })
-        }}
-      </template>
-      <template #item.identifier="{ item }">
-        <v-row>
-          <v-col cols="12" class="account-balances__account">
-            <labeled-address-display :account="item" />
-            <span v-if="item.tags.length > 0" class="mt-2">
-              <tag-icon
-                v-for="tag in item.tags"
-                :key="tag"
-                class="account-balances__tag"
-                :tag="tags[tag]"
-              />
-            </span>
-          </v-col>
-        </v-row>
-      </template>
-      <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
-      </template>
-      <template #item.usdValue="{ item }">
-        <amount-display
-          fiat-currency="USD"
-          :value="item.usdValue"
-          show-currency="symbol"
-        />
-      </template>
-      <template #item.actions="{ item }">
-        <row-actions
-          class="account-balances__actions"
-          :edit-tooltip="$t('account_balances.edit_tooltip')"
-          :delete-tooltip="$t('account_balances.delete_tooltip')"
-          :disabled="accountOperation"
-          @delete-click="toDeleteAccount = item.account"
-          @edit-click="editAccount(item.account)"
-        />
-      </template>
-      <template v-if="balances.length > 0" #body.append>
-        <tr class="account-balances__total">
-          <td>{{ $t('account_balances.total') }}</td>
-          <td class="text-end">
-            <amount-display
-              :value="extendedBalances.map(val => val.amount) | balanceSum"
-            />
-          </td>
-          <td class="text-end">
-            <amount-display
-              fiat-currency="USD"
-              show-currency="symbol"
-              :value="extendedBalances.map(val => val.usdValue) | balanceSum"
-            />
-          </td>
-        </tr>
-      </template>
-      <template #expanded-item="{ headers, item }">
-        <td :colspan="headers.length" class="account-balances__expanded">
-          <account-asset-balances :account="item.account" />
-        </td>
-      </template>
-      <template #item.expand="{ item }">
-        <row-expander
-          v-if="expandable && hasTokens(item.account)"
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
-        />
-      </template>
-    </v-data-table>
+    <account-balance-table
+      :blockchain="blockchain"
+      :loading="isLoading"
+      :balances="balances"
+      :visible-tags="visibleTags"
+      @delete-click="toDeleteAccount = $event"
+      @edit-click="editAccount($event)"
+      @delete-xpub="xpubToDelete = $event"
+    />
     <confirm-dialog
-      :display="toDeleteAccount !== ''"
+      :display="confirm"
       :title="$t('account_balances.confirm_delete.title')"
       :message="
-        $t('account_balances.confirm_delete.description', { toDeleteAccount })
+        $t('account_balances.confirm_delete.description', {
+          address: pendingAddress
+        })
       "
-      @cancel="toDeleteAccount = ''"
+      @cancel="cancelDelete()"
       @confirm="deleteAccount()"
     />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { mapGetters } from 'vuex';
+import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
-import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
-import { footerProps } from '@/config/datatable.common';
-import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import {
-  AccountBalance,
-  BlockchainBalancePayload
+  BlockchainAccountWithBalance,
+  AccountWithBalance,
+  BlockchainBalancePayload,
+  XpubPayload
 } from '@/store/balances/types';
-import { Account, Blockchain, ETH, Tags } from '@/typing/types';
+import { Blockchain } from '@/typing/types';
 
 @Component({
   components: {
+    AccountBalanceTable,
     RefreshButton,
-    RowActions,
-    RowExpander,
-    LabeledAddressDisplay,
-    AmountDisplay,
     TagFilter,
-    TagIcon,
-    AccountAssetBalances,
     ConfirmDialog
   },
   computed: {
-    ...mapGetters('tasks', ['isTaskRunning']),
-    ...mapGetters('session', ['floatingPrecision', 'currency']),
-    ...mapState('session', ['tags']),
-    ...mapGetters('balances', [
-      'exchangeRate',
-      'hasTokens',
-      'accountTags',
-      'accountLabel'
-    ])
+    ...mapGetters('tasks', ['isTaskRunning'])
   }
 })
 export default class AccountBalances extends Vue {
   @Prop({ required: true })
-  balances!: AccountBalance[];
+  balances!: AccountWithBalance[];
   @Prop({ required: true })
   blockchain!: Blockchain;
   @Prop({ required: true })
   title!: string;
 
+  visibleTags: string[] = [];
   editedAccount = '';
-  onlyTags: string[] = [];
-  expanded = [];
+  toDeleteAccount: string = '';
+  xpubToDelete: XpubPayload | null = null;
 
   isTaskRunning!: (type: TaskType) => boolean;
-  accountTags!: (blockchain: Blockchain, address: string) => string[];
-  accountLabel!: (blockchain: Blockchain, address: string) => string;
-  tags!: Tags;
-
-  footerProps = footerProps;
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
   }
 
-  get expandable(): boolean {
-    return this.blockchain === ETH;
+  get confirm(): boolean {
+    return !!this.toDeleteAccount || !!this.xpubToDelete;
   }
 
-  currency!: Currency;
-  floatingPrecision!: number;
-  exchangeRate!: (currency: string) => number;
-  hasTokens!: (account: string) => boolean;
-
-  toDeleteAccount: string = '';
-  pending = false;
-
-  headers = [
-    { text: this.$tc('account_balances.headers.account'), value: 'identifier' },
-    { text: this.blockchain, value: 'amount', align: 'end' },
-    {
-      text: this.$tc('account_balances.headers.usd-value-default'),
-      value: 'usdValue',
-      align: 'end'
-    },
-    {
-      text: this.$tc('account_balances.headers.actions'),
-      value: 'actions',
-      sortable: false,
-      width: '50'
-    },
-    { text: '', value: 'expand', align: 'end', sortable: false }
-  ];
-
-  get visibleBalances(): AccountBalance[] {
-    if (this.onlyTags.length === 0) {
-      return this.balances;
+  get pendingAddress(): string {
+    if (this.xpubToDelete) {
+      return this.xpubToDelete.xpub;
+    }
+    if (this.toDeleteAccount) {
+      return this.toDeleteAccount;
     }
 
-    const blockchain = this.blockchain;
-    const accountTags = this.accountTags;
-    const filteredTags = this.onlyTags;
-    return this.balances.filter(({ account }) => {
-      const tags = accountTags(blockchain, account);
-      return filteredTags.every(tag => tags.includes(tag));
-    });
+    return '';
   }
 
-  get extendedBalances() {
-    return this.visibleBalances.map(balance => {
-      const accountLabel = this.accountLabel(this.blockchain, balance.account);
-
-      const accountIdentifier = accountLabel ? accountLabel : balance.account;
-
-      const accountTags = this.accountTags(this.blockchain, balance.account);
-
-      return { identifier: accountIdentifier, tags: accountTags, ...balance };
-    });
-  }
-
-  get accountOperation(): boolean {
-    return (
-      this.isTaskRunning(TaskType.ADD_ACCOUNT) ||
-      this.isTaskRunning(TaskType.REMOVE_ACCOUNT) ||
-      this.pending
-    );
-  }
-
-  editAccount(account: Account) {
-    const accountToEdit = { address: account, chain: this.blockchain };
-    this.$emit('editAccount', accountToEdit);
-    return accountToEdit;
+  @Emit()
+  editAccount(account: BlockchainAccountWithBalance) {
+    this.editedAccount = account.address;
+    return account;
   }
 
   async deleteAccount() {
-    const address = this.toDeleteAccount;
-    const blockchain = this.blockchain;
-    this.toDeleteAccount = '';
-    this.pending = true;
+    if (this.toDeleteAccount) {
+      const address = this.toDeleteAccount;
+      const blockchain = this.blockchain;
+      this.toDeleteAccount = '';
 
-    await this.$store.dispatch('balances/removeAccount', {
-      address,
-      blockchain
-    });
-    this.pending = false;
+      await this.$store.dispatch('balances/removeAccount', {
+        address,
+        blockchain
+      });
+    } else if (this.xpubToDelete) {
+      const payload = { ...this.xpubToDelete };
+      this.xpubToDelete = null;
+      await this.$store.dispatch('balances/deleteXpub', payload);
+    }
+  }
+
+  cancelDelete() {
+    this.toDeleteAccount = '';
+    this.xpubToDelete = null;
   }
 
   refresh() {
@@ -292,29 +151,6 @@ export default class AccountBalances extends Vue {
 
   &__column {
     width: 80px;
-  }
-
-  &__account {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__actions {
-    display: flex;
-    flex-direction: row;
-  }
-
-  &__total {
-    font-weight: 500;
-  }
-
-  &__expanded {
-    padding: 0 !important;
-  }
-
-  &__tag {
-    margin-right: 8px;
-    margin-bottom: 2px;
   }
 }
 </style>
