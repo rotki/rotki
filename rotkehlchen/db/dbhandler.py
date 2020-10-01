@@ -2292,6 +2292,16 @@ class DBHandler:
                 f'with derivation path {xpub_data.derivation_path}',
             )
 
+        # Delete the tag mappings for all affected accounts
+        cursor.execute(
+            'DELETE FROM tag_mappings WHERE '
+            'object_reference IN ('
+            'SELECT address from xpub_mappings WHERE xpub=? and derivation_path IS ?);',
+            (
+                xpub_data.xpub.xpub,
+                xpub_data.serialize_derivation_path(),
+            ),
+        )
         # First delete any derived addresses
         cursor.execute(
             'DELETE FROM blockchain_accounts WHERE blockchain=? AND account IN ('

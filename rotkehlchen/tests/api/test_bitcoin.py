@@ -190,10 +190,12 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     assert outcome['totals']['BTC']['amount'] is not None
     assert outcome['totals']['BTC']['usd_value'] is not None
 
-    # Also make sure all xpub mappings of that xpub are gone from the DB
+    # Also make sure all mappings are gone from the DB
     cursor = rotki.data.db.conn.cursor()
-    result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (xpub,))
-    assert result.fetchall() == []
+    result = cursor.execute('SELECT object_reference from tag_mappings;').fetchall()
+    assert len(result) == 0, 'all tag mappings should have been deleted'
+    result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (xpub,)).fetchall()
+    assert len(result) == 0, 'all xpub mappings should have been deleted'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
