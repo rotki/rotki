@@ -3,12 +3,12 @@
     <v-row no-gutters>
       <v-col>
         <v-card>
-          <v-card-title>Trade Settings</v-card-title>
+          <v-card-title>{{ $t('accounting_settings.title') }}</v-card-title>
           <v-card-text>
             <v-switch
               v-model="crypto2CryptoTrades"
               class="accounting-settings__crypto2crypto"
-              label="Take into account crypto to crypto trades"
+              :label="$t('accounting_settings.labels.crypto_to_crypto')"
               color="primary"
               :success-messages="settingsMessages['crypto2crypto'].success"
               :error-messages="settingsMessages['crypto2crypto'].error"
@@ -17,7 +17,7 @@
             <v-switch
               v-model="gasCosts"
               class="accounting-settings__include-gas-costs"
-              label="Take into account Ethereum gas costs"
+              :label="$t('accounting_settings.labels.gas_costs')"
               :success-messages="settingsMessages['gasCostChange'].success"
               :error-messages="settingsMessages['gasCostChange'].error"
               color="primary"
@@ -28,7 +28,7 @@
               class="accounting-settings__taxfree-period"
               :success-messages="settingsMessages['taxFreePeriod'].success"
               :error-messages="settingsMessages['taxFreePeriod'].error"
-              label="Is there a tax free period?"
+              :label="$t('accounting_settings.labels.tax_free')"
               color="primary"
               @change="onTaxFreeChange($event)"
             />
@@ -39,7 +39,7 @@
               :error-messages="settingsMessages['taxFreePeriodAfter'].error"
               :disabled="!taxFreePeriod"
               :rules="taxFreeRules"
-              label="Tax free after how many days"
+              :label="$t('accounting_settings.labels.tax_free_period')"
               type="number"
               @change="onTaxFreePeriodChange($event)"
             />
@@ -50,16 +50,18 @@
     <v-row>
       <v-col>
         <v-card>
-          <v-card-title>Asset Settings</v-card-title>
+          <v-card-title>
+            {{ $t('account_settings.asset_settings.title') }}
+          </v-card-title>
           <v-card-text>
             <v-row>
               <v-col cols="10">
                 <asset-select
                   v-model="assetToIgnore"
-                  label="Select asset to ignore"
+                  :label="$t('account_settings.asset_settings.labels.ignore')"
                   :success-messages="settingsMessages['addIgnoreAsset'].success"
                   :error-messages="settingsMessages['addIgnoreAsset'].error"
-                  hint="Click to see all assets and select one to ignore"
+                  :hint="$t('account_settings.asset_settings.ignore_tags_hint')"
                   class="accounting-settings__asset-to-ignore"
                 />
               </v-col>
@@ -71,7 +73,7 @@
                   :disabled="assetToIgnore === ''"
                   @click="addAsset()"
                 >
-                  Add
+                  {{ $t('account_settings.asset_settings.actions.add') }}
                 </v-btn>
               </v-col>
             </v-row>
@@ -79,12 +81,14 @@
               <v-col cols="10" class="d-flex">
                 <asset-select
                   v-model="assetToRemove"
-                  label="Select asset to remove from ignored assets"
+                  :label="$t('account_settings.asset_settings.labels.unignore')"
                   value="test"
                   :items="ignoredAssets"
                   :success-messages="settingsMessages['remIgnoreAsset'].success"
                   :error-messages="settingsMessages['remIgnoreAsset'].error"
-                  hint="Click to see all ignored assets and select one for removal"
+                  :hint="
+                    $t('account_settings.asset_settings.labels.unignore_hint')
+                  "
                   class="accounting-settings__ignored-assets"
                 />
                 <div slot="append-outer">
@@ -105,7 +109,7 @@
                   :disabled="assetToRemove === ''"
                   @click="removeAsset()"
                 >
-                  Remove
+                  {{ $t('account_settings.asset_settings.actions.remove') }}
                 </v-btn>
               </v-col>
             </v-row>
@@ -118,29 +122,34 @@
 
 <script lang="ts">
 import { Component } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import { Message } from '@/store/types';
+import { ActionStatus } from '@/store/types';
 import { AccountingSettings } from '@/typing/types';
 import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
-
-const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
     AssetSelect
   },
-  computed: mapState(['accountingSettings'])
+  computed: {
+    ...mapState('session', ['accountingSettings', 'ignoredAssets'])
+  },
+  methods: {
+    ...mapActions('session', ['ignoreAsset', 'unignoreAsset'])
+  }
 })
 export default class Accounting extends Settings {
   accountingSettings!: AccountingSettings;
+  ignoredAssets!: string[];
+  ignoreAsset!: (asset: string) => Promise<ActionStatus>;
+  unignoreAsset!: (asset: string) => Promise<ActionStatus>;
 
   crypto2CryptoTrades: boolean = false;
   gasCosts: boolean = false;
   taxFreeAfterPeriod: number | null = null;
   taxFreePeriod: boolean = false;
 
-  ignoredAssets: string[] = [];
   assetToIgnore: string = '';
   assetToRemove: string = '';
 
@@ -156,24 +165,11 @@ export default class Accounting extends Settings {
   };
 
   taxFreeRules = [
-    (v: string) => !!v || 'Please enter the number of days',
+    (v: string) => !!v || this.$tc('account_settings.validation.tax_free_days'),
     (v: string) =>
-      (v && parseInt(v) > 0) || 'The number of days cannot negative or zero'
+      (v && parseInt(v) > 0) ||
+      this.$tc('account_settings.validation.tax_free_days_gt_zero')
   ];
-
-  created() {
-    this.$api
-      .ignoredAssets()
-      .then(assets => {
-        this.ignoredAssets = assets;
-      })
-      .catch(() => {
-        this.$store.commit('setMessage', {
-          title: 'Error',
-          description: 'Failed to retrieve the ignored assets'
-        } as Message);
-      });
-  }
 
   mounted() {
     this.crypto2CryptoTrades = this.accountingSettings.includeCrypto2Crypto;
@@ -215,7 +211,9 @@ export default class Accounting extends Settings {
         this.validateSettingChange(
           'taxFreePeriod',
           'success',
-          `Tax free period ${enabled ? 'enabled' : 'disabled'}`
+          this.$tc('account_settings.messages.tax_free', 0, {
+            enabled: enabled ? 'enabled' : 'disabled'
+          })
         );
 
         commit('session/accountingSettings', {
@@ -248,7 +246,9 @@ export default class Accounting extends Settings {
         this.validateSettingChange(
           'taxFreePeriodAfter',
           'success',
-          `Tax free period set to ${this.taxFreeAfterPeriod} days`
+          this.$tc('account_settings.messages.tax_free_period', 0, {
+            period: this.taxFreeAfterPeriod
+          })
         );
 
         commit('session/accountingSettings', {
@@ -282,7 +282,9 @@ export default class Accounting extends Settings {
         this.validateSettingChange(
           'crypto2crypto',
           'error',
-          `Error setting crypto to crypto ${reason.message}`
+          this.$tc('account_settings.messages.crypto_to_crypto', 0, {
+            message: reason.message
+          })
         );
       });
   }
@@ -303,53 +305,54 @@ export default class Accounting extends Settings {
         this.validateSettingChange(
           'gasCostChange',
           'error',
-          `Error setting Ethereum gas costs: ${reason.message}`
+          this.$tc('account_settings.messages.gas_costs', 0, {
+            message: reason.message
+          })
         );
       });
   }
 
-  addAsset() {
-    this.$api
-      .modifyAsset(true, this.assetToIgnore)
-      .then(ignoredAssets => {
-        this.ignoredAssets = ignoredAssets;
-        this.validateSettingChange(
-          'addIgnoreAsset',
-          'success',
-          `${this.assetToIgnore} added to ignored assets`
-        );
-        this.assetToIgnore = '';
-      })
-      .catch((reason: Error) => {
-        this.validateSettingChange(
-          'addIgnoreAsset',
-          'error',
-          `error adding ignored asset ${this.assetToIgnore} (${reason.message})`
-        );
-      });
+  async addAsset() {
+    const asset = this.assetToIgnore;
+    const { message, success } = await this.ignoreAsset(asset);
+
+    const validationMessage = success
+      ? this.$tc('account_settings.messages.ignored_success', 0, { asset })
+      : this.$tc('account_settings.messages.ignored_failure', 0, {
+          asset,
+          message
+        });
+    this.validateSettingChange(
+      'addIgnoreAsset',
+      success ? 'success' : 'error',
+      validationMessage
+    );
+
+    if (success) {
+      this.assetToIgnore = '';
+    }
   }
 
-  removeAsset() {
-    this.$api
-      .modifyAsset(false, this.assetToRemove)
-      .then(ignoredAssets => {
-        this.ignoredAssets = ignoredAssets;
-        this.validateSettingChange(
-          'remIgnoreAsset',
-          'success',
-          `${this.assetToRemove} removed from ignored assets`
-        );
-        this.assetToRemove = '';
-      })
-      .catch((reason: Error) => {
-        this.validateSettingChange(
-          'remIgnoreAsset',
-          'error',
-          `error removing ignored asset ${this.assetToRemove} (${reason.message})`
-        );
-      });
+  async removeAsset() {
+    const asset = this.assetToRemove;
+    const { message, success } = await this.unignoreAsset(asset);
+
+    const validationMessage = success
+      ? this.$tc('account_settings.messages.unignored_success', 0, { asset })
+      : this.$tc('account_settings.messages.unignored_failure', 0, {
+          asset,
+          message
+        });
+
+    this.validateSettingChange(
+      'remIgnoreAsset',
+      success ? 'success' : 'error',
+      validationMessage
+    );
+
+    if (success) {
+      this.assetToRemove = '';
+    }
   }
 }
 </script>
-
-<style scoped></style>

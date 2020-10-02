@@ -2,7 +2,7 @@
   <v-container class="settings">
     <v-row>
       <v-col>
-        <h1>Settings</h1>
+        <h1>{{ $t('settings.title') }}</h1>
         <tab-navigation :tab-contents="settingsTabs" />
       </v-col>
     </v-row>
@@ -49,7 +49,7 @@ export default class Settings extends Vue {
 
   validateSettingChange(
     targetSetting: string,
-    targetState: string,
+    targetState: 'success' | 'error',
     message: string = '',
     timeOut: number = 5500
   ) {

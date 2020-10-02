@@ -397,6 +397,26 @@
           "description": "Failed to remove {xpub}: {error}"
         }
       }
+    },
+    "session": {
+      "ignored_assets": {
+        "error": {
+          "title": "Querying ignored assets",
+          "message": "Failed to retrieve ignored assets: {error}"
+        }
+      },
+      "ignore_asset": {
+        "error": {
+          "title": "Ignoring {asset}",
+          "message": "Failed to ignore asset: {error}"
+        }
+      },
+      "unignore_asset": {
+        "error": {
+          "title": "Unignoring {asset}",
+          "message": "Failed to unignore asset: {error}"
+        }
+      }
     }
   },
   "navigation_menu": {
@@ -698,5 +718,46 @@
     "xpub": "xpub:",
     "derivation_path": "Derivation Path",
     "delete_tooltip": "Delete the entry and all the accounts underneath it"
+  },
+  "accounting_settings": {
+    "title": "Trade Settings",
+    "labels": {
+      "crypto_to_crypto": "Take into account crypto to crypto trades",
+      "gas_costs": "Take into account Ethereum gas costs",
+      "tax_free": "Is there a tax free period?",
+      "tax_free_period": "Tax free after how many days"
+    }
+  },
+  "account_settings": {
+    "asset_settings": {
+      "title": "Asset Settings",
+      "actions": {
+        "add": "Add",
+        "remove": "Remove"
+      },
+      "labels": {
+        "ignore": "Select asset to ignore",
+        "unignore": "Select asset to remove from ignored assets",
+        "unignore_hint": "Click to see all ignored assets and select one for removal"
+      },
+      "ignore_tags_hint": "Click to see all assets and select one to ignore"
+    },
+    "validation": {
+      "tax_free_days": "Please enter the number of days",
+      "tax_free_days_gt_zero": "The number of days cannot negative or zero"
+    },
+    "messages": {
+      "tax_free_period": "Tax free period set to {period} days",
+      "tax_free": "Tax free period {enabled}",
+      "crypto_to_crypto": "Error setting crypto to crypto {message}",
+      "gas_costs": "Error setting Ethereum gas costs: {message}",
+      "ignored_success": "{asset} added to ignored assets",
+      "ignored_failure": "{asset} could not be added to ignored assets: {message}",
+      "unignored_success": "{asset} removed from ignored assets",
+      "unignored_failure": "{asset} could not be removed from ignored assets: {message}"
+    }
+  },
+  "settings": {
+    "title": "Settings"
   }
 }

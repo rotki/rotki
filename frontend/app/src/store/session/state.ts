@@ -19,7 +19,8 @@ export const defaultState: () => SessionState = () => ({
   syncConflict: '',
   tags: {},
   watchers: [],
-  queriedAddresses: {}
+  queriedAddresses: {},
+  ignoredAssets: []
 });
 
 export const state: SessionState = defaultState();

@@ -21,6 +21,7 @@ export interface SessionState {
   tags: Tags;
   watchers: Watcher<WatcherTypes>[];
   queriedAddresses: QueriedAddresses;
+  ignoredAssets: string[];
 }
 
 export interface PremiumCredentialsPayload {

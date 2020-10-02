@@ -3,6 +3,7 @@ import {
   convertToAccountingSettings,
   convertToGeneralSettings
 } from '@/data/converters';
+import i18n from '@/i18n';
 import { DBSettings } from '@/model/action-result';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
@@ -67,6 +68,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('login', { username, newAccount: create });
 
       const async = [
+        dispatch('fetchIgnoredAssets'),
         dispatch('balances/fetchSupportedAssets', null, {
           root: true
         }),
@@ -344,6 +346,55 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         success: false,
         message: e.message
       };
+    }
+  },
+
+  async fetchIgnoredAssets({ commit }): Promise<void> {
+    try {
+      const ignoredAssets = await api.ignoredAssets();
+      commit('ignoreAssets', ignoredAssets);
+    } catch (e) {
+      const title = i18n.tc('actions.session.ignored_assets.error.title');
+      const message = i18n.tc(
+        'actions.session.ignored_assets.error.message',
+        0,
+        {
+          error: e.message
+        }
+      );
+      notify(message, title, Severity.ERROR, true);
+    }
+  },
+  async ignoreAsset({ commit }, asset: string): Promise<ActionStatus> {
+    try {
+      const ignoredAssets = await api.modifyAsset(true, asset);
+      commit('ignoreAssets', ignoredAssets);
+      return { success: true };
+    } catch (e) {
+      const title = i18n.tc('actions.session.ignore_asset.error.title');
+      const message = i18n.tc('actions.session.ignore_asset.error.message', 0, {
+        error: e.message
+      });
+      notify(message, title, Severity.ERROR, true);
+      return { success: false, message: e.message };
+    }
+  },
+  async unignoreAsset({ commit }, asset: string): Promise<ActionStatus> {
+    try {
+      const ignoredAssets = await api.modifyAsset(false, asset);
+      commit('ignoreAssets', ignoredAssets);
+      return { success: true };
+    } catch (e) {
+      const title = i18n.tc('actions.session.unignore_asset.error.title');
+      const message = i18n.tc(
+        'actions.session.unignore_asset.error.message',
+        0,
+        {
+          error: e.message
+        }
+      );
+      notify(message, title, Severity.ERROR, true);
+      return { success: false, message: e.message };
     }
   }
 };
