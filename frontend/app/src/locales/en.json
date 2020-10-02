@@ -492,11 +492,7 @@
     "edit_tooltip": "Edit account",
     "delete_tooltip": "Delete account",
     "data_table": {
-      "loading": "Please wait while rotki queries the blockchain...",
-      "group": {
-        "standalone": "Standalone",
-        "xpub": "xpub:"
-      }
+      "loading": "Please wait while rotki queries the blockchain..."
     },
     "headers": {
       "account": "Account",
@@ -694,5 +690,11 @@
         "cancel": "Cancel"
       }
     }
+  },
+  "account_group_header": {
+    "copy_tooltip": "Copy the xpub to the clipboard",
+    "standalone": "Standalone",
+    "xpub": "xpub:",
+    "derivation_path": "Derivation Path"
   }
 }

@@ -95,16 +95,17 @@
         @click="expanded = expanded.includes(item) ? [] : [item]"
       />
     </template>
-    <template #group.header="{ group, headers, items }">
+    <template #group.header="{ group, headers, items, isOpen, toggle }">
       <td :colspan="headers.length">
         <account-group-header
           :group="group ? group : ''"
-          @delete-clicked="
-            deleteXpub({
-              xpub: items[0].xpub,
-              derivationPath: items[0].derivationPath
-            })
-          "
+          :xpub="{
+            xpub: items[0].xpub,
+            derivationPath: items[0].derivationPath
+          }"
+          :expanded="isOpen"
+          @expand-clicked="toggle"
+          @delete-clicked="deleteXpub($event)"
         />
       </td>
     </template>
