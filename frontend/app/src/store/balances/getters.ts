@@ -119,10 +119,18 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       : [];
   },
 
-  aggregatedBalances: (state: BalanceState, getters): AssetBalance[] => {
+  aggregatedBalances: (
+    { connectedExchanges, manualBalances }: BalanceState,
+    { exchangeBalances, totals },
+    { session }
+  ): AssetBalance[] => {
+    const ignoredAssets = session!.ignoredAssets;
     const ownedAssets: { [asset: string]: AssetBalance } = {};
     const addToOwned = (value: AssetBalance) => {
       const asset = ownedAssets[value.asset];
+      if (ignoredAssets.includes(value.asset)) {
+        return;
+      }
       ownedAssets[value.asset] = !asset
         ? value
         : {
@@ -132,13 +140,13 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
           };
     };
 
-    for (const exchange of state.connectedExchanges) {
-      const balances = getters.exchangeBalances(exchange);
+    for (const exchange of connectedExchanges) {
+      const balances = exchangeBalances(exchange);
       balances.forEach((value: AssetBalance) => addToOwned(value));
     }
 
-    getters.totals.forEach((value: AssetBalance) => addToOwned(value));
-    state.manualBalances.forEach(value => addToOwned(value));
+    totals.forEach((value: AssetBalance) => addToOwned(value));
+    manualBalances.forEach(value => addToOwned(value));
     return Object.values(ownedAssets);
   },
 
