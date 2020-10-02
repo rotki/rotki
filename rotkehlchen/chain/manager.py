@@ -219,8 +219,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     )
                 elif given_module == 'compound':
                     self.eth_modules['compound'] = 'loading'
-                    # Since Compound initialization needs a few networkd calls we do it async
+                    # Since Compound initialization needs a few network calls we do it async
                     greenlet_manager.spawn_and_track(
+                        after_seconds=None,
                         task_name='Initialize Compound object',
                         method=self._initialize_compound,
                         premium=premium,
@@ -239,6 +240,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         for name, module in self.iterate_modules():
             self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
                 task_name=f'startup of {name}',
                 method=module.on_startup,
             )
@@ -246,6 +248,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Since Zerion initialization needs a few ENS calls we do it asynchronously
         self.zerion: Optional[Zerion] = None
         self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
             task_name='Initialize Zerion object',
             method=self._initialize_zerion,
         )

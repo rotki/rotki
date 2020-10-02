@@ -15,6 +15,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
+from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
     EthereumManager,
@@ -118,6 +119,7 @@ class Rotkehlchen():
         self.coingecko = Coingecko()
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
         self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
             task_name='periodically_query_icons_until_all_cached',
             method=self.icon_manager.periodically_query_icons_until_all_cached,
             batch_size=ICONS_BATCH_SIZE,
@@ -197,6 +199,7 @@ class Rotkehlchen():
 
         settings = self.get_settings()
         self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
             task_name='submit_usage_analytics',
             method=maybe_submit_usage_analytics,
             should_submit=settings.submit_usage_analytics,
@@ -333,11 +336,22 @@ class Rotkehlchen():
         Each task remembers the last time it run sucesfully and know how often it
         should run. So each task manages itself.
         """
+        # super hacky -- organize better when recurring tasks are implemented
+        # https://github.com/rotki/rotki/issues/1106
+        xpub_derivation_scheduled = False
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             if self.user_is_logged_in:
                 log.debug('Main loop start')
                 self.premium_sync_manager.maybe_upload_data_to_server()
                 log.debug('Main loop end')
+                if not xpub_derivation_scheduled:
+                    # 1 minute in the app's startup try to derive new xpub addresses
+                    self.greenlet_manager.spawn_and_track(
+                        after_seconds=60,
+                        task_name='Derive new xpub addresses',
+                        method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
+                    )
+                    xpub_derivation_scheduled = True
 
     def add_blockchain_accounts(
             self,

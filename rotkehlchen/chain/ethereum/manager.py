@@ -139,6 +139,7 @@ class EthereumManager():
         )
         for node in connect_at_start:
             self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
                 task_name=f'Attempt connection to {str(node)} ethereum node',
                 method=self.attempt_connect,
                 name=node,

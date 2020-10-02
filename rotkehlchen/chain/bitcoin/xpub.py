@@ -1,8 +1,10 @@
+import logging
 from typing import TYPE_CHECKING, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.db.utils import insert_tag_mappings
+from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import BlockchainAccountData, BTCAddress, SupportedBlockchain
 
@@ -10,6 +12,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 
 XPUB_ADDRESS_STEP = 10
+
+log = logging.getLogger(__name__)
 
 
 class XpubData(NamedTuple):
@@ -46,6 +50,9 @@ def _derive_addresses_loop(
         start_index: int,
         root: HDKey,
 ) -> List[XpubDerivedAddressData]:
+    """May raise:
+    - RemoteError: if blockcypher/blockchain.info can't be reached
+    """
     step_index = start_index
     addresses: List[XpubDerivedAddressData] = []
     should_continue = True
@@ -95,7 +102,11 @@ def derive_addresses_from_xpub_data(
 ) -> List[XpubDerivedAddressData]:
     """Derive all addresses from the xpub that have had transactions. Also includes
     any addresses until the biggest index derived addresses that have had no transactions.
-    This is to make it easier to later derive and check more addresses"""
+    This is to make it easier to later derive and check more addresses
+
+    May raise:
+    - RemoteError: if blockcypher/blockchain.info and others can't be reached
+    """
     if xpub_data.derivation_path is not None:
         account_xpub = xpub_data.xpub.derive_path(xpub_data.derivation_path)
     else:
@@ -127,22 +138,13 @@ class XpubManager():
         self.chain_manager = chain_manager
         self.db = chain_manager.database
 
-    def add_bitcoin_xpub(self, xpub_data: XpubData) -> 'BlockchainBalancesUpdate':
-        """
+    def _derive_xpub_addresses(self, xpub_data: XpubData, new_xpub: bool) -> None:
+        """Derives new xpub addresses, and adds all those until the addresses that
+        have not had any transactions to the tracked bitcoin addresses
+
         May raise:
-        - InputError: If the xpub already exists in the DB
-        - TagConstraintError if any of the given account data contain unknown tags.
-        - RemoteError if an external service such as blockcypher is queried and
-          there is a problem with its query.
+        - RemoteError: if blockcypher/blockchain.info and others can't be reached
         """
-        # First try to add the xpub, and if it already exists raise
-        self.db.add_bitcoin_xpub(xpub_data)
-        # Then add tags if not existing
-        self.db.ensure_tags_exist(
-            given_data=[xpub_data],
-            action='adding',
-            data_type='bitcoin xpub',
-        )
         last_receiving_idx, last_change_idx = self.db.get_last_xpub_derived_indices(xpub_data)
         derived_addresses_data = derive_addresses_from_xpub_data(
             xpub_data=xpub_data,
@@ -158,21 +160,21 @@ class XpubManager():
             if entry.address not in known_btc_addresses:
                 new_addresses.append(entry.address)
                 new_balances.append(entry.balance)
-            else:
+            elif new_xpub:
                 existing_address_data.append(BlockchainAccountData(
                     address=entry.address,
                     label=None,
                     tags=xpub_data.tags,
                 ))
 
-        if xpub_data.tags:
-            insert_tag_mappings(    # if we got tags add them to the xpub
+        if new_xpub and xpub_data.tags:
+            insert_tag_mappings(  # if we got tags add them to the xpub
                 cursor=self.db.conn.cursor(),
                 data=[xpub_data],
                 object_reference_keys=['xpub.xpub', 'derivation_path'],
             )
-        if len(existing_address_data) != 0:
-            insert_tag_mappings(    # if we got tags add them to the existing addresses too
+        if new_xpub and len(existing_address_data) != 0:
+            insert_tag_mappings(  # if we got tags add them to the existing addresses too
                 cursor=self.db.conn.cursor(),
                 data=existing_address_data,
                 object_reference_keys=['address'],
@@ -197,6 +199,24 @@ class XpubManager():
             derivation_path=xpub_data.derivation_path,
             derived_addresses_data=derived_addresses_data,
         )
+
+    def add_bitcoin_xpub(self, xpub_data: XpubData) -> 'BlockchainBalancesUpdate':
+        """
+        May raise:
+        - InputError: If the xpub already exists in the DB
+        - TagConstraintError if any of the given account data contain unknown tags.
+        - RemoteError if an external service such as blockcypher is queried and
+          there is a problem with its query.
+        """
+        # First try to add the xpub, and if it already exists raise
+        self.db.add_bitcoin_xpub(xpub_data)
+        # Then add tags if not existing
+        self.db.ensure_tags_exist(
+            given_data=[xpub_data],
+            action='adding',
+            data_type='bitcoin xpub',
+        )
+        self._derive_xpub_addresses(xpub_data, new_xpub=True)
         if not self.chain_manager.balances.is_queried(SupportedBlockchain.BITCOIN):
             self.chain_manager.query_balances(SupportedBlockchain.BITCOIN, ignore_cache=True)
         return self.chain_manager.get_balances_update()
@@ -211,3 +231,22 @@ class XpubManager():
         self.db.delete_bitcoin_xpub(xpub_data)
         self.chain_manager.sync_btc_accounts_with_db()
         return self.chain_manager.get_balances_update()
+
+    def check_for_new_xpub_addresses(self) -> None:
+        """Checks all xpub addresseses and sees if new addresses got used.
+        If they did it adds them for tracking.
+        """
+        xpubs = self.db.get_bitcoin_xpub_data()
+        for xpub_data in xpubs:
+            try:
+                self._derive_xpub_addresses(xpub_data, new_xpub=False)
+            except RemoteError as e:
+                log.warning(
+                    f'Failed to derive new xpub addresses from xpub: {xpub_data.xpub.xpub} '
+                    f'and derivation_path: {xpub_data.derivation_path} due to: {str(e)}',
+                )
+                continue
+            log.debug(
+                f'Attempt to derive new addresses from xpub: {xpub_data.xpub.xpub} '
+                f'and derivation_path: {xpub_data.derivation_path} finished',
+            )
