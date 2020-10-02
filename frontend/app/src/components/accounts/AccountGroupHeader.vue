@@ -29,9 +29,14 @@
       {{ xpub.derivationPath }}
     </span>
 
-    <v-btn small icon class="ml-2" @click="deleteClicked(xpub)">
-      <v-icon small>mdi-delete-outline</v-icon>
-    </v-btn>
+    <v-tooltip top open-delay="400">
+      <template #activator="{ on }">
+        <v-btn small icon class="ml-2" v-on="on" @click="deleteClicked(xpub)">
+          <v-icon small>mdi-delete-outline</v-icon>
+        </v-btn>
+      </template>
+      <span> {{ $t('account_group_header.delete_tooltip') }} </span>
+    </v-tooltip>
   </div>
 </template>
 <script lang="ts">
