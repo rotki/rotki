@@ -582,7 +582,8 @@
     "error": {
       "title": "Adding Account",
       "description": "Error while adding account: {error}"
-    }
+    },
+    "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options"
   },
   "blockchain_balances": {
     "title": "Blockchain Balances",

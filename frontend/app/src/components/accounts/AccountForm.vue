@@ -29,7 +29,7 @@
             :label="$t('account_form.labels.btc.standalone')"
           />
         </v-radio-group>
-        <v-row v-if="isBtc && isXpub">
+        <v-row v-if="isBtc && isXpub" align="center" no-gutters>
           <v-col>
             <v-text-field
               v-model="xpub"
@@ -40,6 +40,27 @@
             />
           </v-col>
           <v-col cols="auto">
+            <v-tooltip open-delay="400" top>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  v-bind="attrs"
+                  v-on="on"
+                  @click="advanced = !advanced"
+                >
+                  <v-icon v-if="advanced">mdi-chevron-up</v-icon>
+                  <v-icon v-else>mdi-chevron-down</v-icon>
+                </v-btn>
+              </template>
+              <span>
+                {{ $tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
+              </span>
+            </v-tooltip>
+          </v-col>
+        </v-row>
+
+        <v-row v-if="isBtc && btcAccountType === 'xpub' && advanced" no-gutters>
+          <v-col>
             <v-text-field
               v-model="derivationPath"
               class="account-form__derivation-path"
@@ -116,6 +137,7 @@ export default class AccountForm extends Vue {
   tags: string[] = [];
   errorMessages: string[] = [];
   account!: (address: string) => GeneralAccount | undefined;
+  advanced: boolean = false;
 
   btcAccountType: 'xpub' | 'standalone' = 'xpub';
 
@@ -236,9 +258,17 @@ export default class AccountForm extends Vue {
       this.reset();
     } catch (e) {
       const apiErrorMessage = deserializeApiErrorMessage(e.message);
-      if (apiErrorMessage && 'address' in apiErrorMessage) {
+      if (apiErrorMessage) {
+        const fields = ['address', 'xpub'];
+        const errors: string[] = [];
         this.clearErrors();
-        this.setErrors(apiErrorMessage['address']);
+        for (const field in fields) {
+          if (!(field in apiErrorMessage)) {
+            continue;
+          }
+          errors.concat(apiErrorMessage[field]);
+        }
+        this.setErrors(errors);
         this.pending = false;
         return false;
       }
