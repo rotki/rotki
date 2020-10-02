@@ -23,12 +23,12 @@ class GreenletManager():
 
     def spawn_and_track(
             self,
-            after_seconds: Optional[int],
+            after_seconds: Optional[float],
             task_name: str,
             method: Callable,
             **kwargs: Any,
     ) -> None:
-        if after_seconds is not None:
+        if after_seconds is None:
             greenlet = gevent.spawn(method, **kwargs)
         else:
             greenlet = gevent.spawn_later(after_seconds, method, **kwargs)

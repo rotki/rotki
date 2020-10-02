@@ -347,7 +347,7 @@ class Rotkehlchen():
                 if not xpub_derivation_scheduled:
                     # 1 minute in the app's startup try to derive new xpub addresses
                     self.greenlet_manager.spawn_and_track(
-                        after_seconds=60,
+                        after_seconds=60.0,
                         task_name='Derive new xpub addresses',
                         method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
                     )

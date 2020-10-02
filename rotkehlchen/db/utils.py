@@ -129,7 +129,9 @@ def insert_tag_mappings(
         if entry.tags is not None:
             reference = ''
             for key in object_reference_keys:
-                reference += rgetattr(entry, key)
+                value = rgetattr(entry, key)
+                if value is not None:
+                    reference += value
             mapping_tuples.extend([(reference, tag) for tag in entry.tags])
 
     cursor.executemany(
