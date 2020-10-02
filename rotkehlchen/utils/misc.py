@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import functools
 import json
 import logging
 import operator
@@ -210,6 +211,7 @@ def request_get(
     - UnableToDecryptRemoteData from request_get
     - Remote error if the get request fails
     """
+    log.debug(f'Querying {url}')
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
@@ -304,8 +306,9 @@ def hexstring_to_bytes(hexstr: str) -> bytes:
 
 def get_system_spec() -> Dict[str, str]:
     """Collect information about the system and installation."""
-    import pkg_resources
     import platform
+
+    import pkg_resources
 
     if sys.platform == 'darwin':
         system_info = 'macOS {} {}'.format(
@@ -403,3 +406,22 @@ def get_chunks(lst: List[T], n: int) -> Iterator[List[T]]:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
+
+def rsetattr(obj: Any, attr: str, val: Any) -> None:
+    """
+    Recursive setattr for nested hierarchies. Taken from:
+    https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
+    """
+    pre, _, post = attr.rpartition('.')
+    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+
+
+def rgetattr(obj: Any, attr: str, *args: Any) -> Any:
+    """
+    Recursive getattr for nested hierarchies. Taken from:
+    https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
+    """
+    def _getattr(obj: Any, attr: str) -> Any:
+        return getattr(obj, attr, *args)
+    return functools.reduce(_getattr, [obj] + attr.split('.'))

@@ -238,17 +238,19 @@ def assert_btc_balances_result(
     else:
         assert len(per_account) == 1
     per_account = per_account['BTC']
-    msg = 'per account results num does not match number of btc accounts'
-    assert len(per_account) == len(btc_accounts), msg
+    assert len(per_account) == 1  # make sure we only have standalone accounts in these tests
+    standalone = per_account['standalone']
+    msg = 'standalone results num does not match number of btc accounts'
+    assert len(standalone) == len(btc_accounts), msg
     msg = 'given balances and accounts should have same length'
     assert len(btc_accounts) == len(btc_balances), msg
     for idx, account in enumerate(btc_accounts):
         balance = satoshis_to_btc(FVal(btc_balances[idx]))
-        assert FVal(per_account[account]['amount']) == balance
+        assert FVal(standalone[account]['amount']) == balance
         if balance == ZERO:
-            assert FVal(per_account[account]['usd_value']) == ZERO
+            assert FVal(standalone[account]['usd_value']) == ZERO
         else:
-            assert FVal(per_account[account]['usd_value']) > ZERO
+            assert FVal(standalone[account]['usd_value']) > ZERO
 
     totals = result['totals']
     if also_eth:

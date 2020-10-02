@@ -1,6 +1,6 @@
 from enum import Enum
 from sqlite3 import Cursor
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
@@ -15,6 +15,10 @@ from rotkehlchen.typing import (
     SupportedBlockchain,
     Timestamp,
 )
+from rotkehlchen.utils.misc import rgetattr
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.bitcoin.xpub import XpubData
 
 
 class BlockchainAccounts(NamedTuple):
@@ -111,15 +115,25 @@ def deserialize_tags_from_db(val: Optional[str]) -> Optional[List[str]]:
 
 def insert_tag_mappings(
         cursor: Cursor,
-        data: Union[List[ManuallyTrackedBalance], List[BlockchainAccountData]],
-        object_reference_key: Literal['label', 'address'],
+        data: Union[List[ManuallyTrackedBalance], List[BlockchainAccountData], List['XpubData']],
+        object_reference_keys: List[
+            Literal['label', 'address', 'xpub.xpub', 'derivation_path'],
+        ],
 ) -> None:
-    """Inserts the tag mappings from a list of potential data entries"""
+    """
+    Inserts the tag mappings from a list of potential data entries. If multiple keys are given
+    then the concatenation of their values is what goes in as the object reference.
+    """
     mapping_tuples = []
     for entry in data:
         if entry.tags is not None:
-            reference = getattr(entry, object_reference_key)
+            reference = ''
+            for key in object_reference_keys:
+                value = rgetattr(entry, key)
+                if value is not None:
+                    reference += value
             mapping_tuples.extend([(reference, tag) for tag in entry.tags])
+
     cursor.executemany(
         'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
     )

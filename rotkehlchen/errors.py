@@ -102,3 +102,12 @@ class BlockchainQueryError(Exception):
     For example a VM Execution error in ethereum contract calls
     """
     pass
+
+
+class XPUBError(Exception):
+    """Error XPUB Parsing and address derivation"""
+    pass
+
+
+class EncodingError(Exception):
+    pass

@@ -3,6 +3,7 @@ jobs=4
 persistent=yes
 suggestion-mode=yes
 unsafe-load-any-extension=no
+init-hook="import sys; sys.path.append('.')"
 load-plugins=tools.pylint.log_checker,tools.pylint.not_checker
 
 # Blacklist files or directories (basenames, not paths)
