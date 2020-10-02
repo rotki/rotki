@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import functools
 import json
 import logging
 import operator
@@ -405,3 +406,22 @@ def get_chunks(lst: List[T], n: int) -> Iterator[List[T]]:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
+
+def rsetattr(obj: Any, attr: str, val: Any) -> None:
+    """
+    Recursive setattr for nested hierarchies. Taken from:
+    https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
+    """
+    pre, _, post = attr.rpartition('.')
+    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+
+
+def rgetattr(obj: Any, attr: str, *args: Any) -> Any:
+    """
+    Recursive getattr for nested hierarchies. Taken from:
+    https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
+    """
+    def _getattr(obj: Any, attr: str) -> Any:
+        return getattr(obj, attr, *args)
+    return functools.reduce(_getattr, [obj] + attr.split('.'))

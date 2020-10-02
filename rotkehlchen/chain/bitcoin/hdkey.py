@@ -75,7 +75,7 @@ def _parse_prefix(prefix: bytes) -> PrefixParsingResult:
     return result
 
 
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class HDKey():
 
     path: Optional[str]

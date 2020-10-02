@@ -165,11 +165,17 @@ class XpubManager():
                     tags=xpub_data.tags,
                 ))
 
+        if xpub_data.tags:
+            insert_tag_mappings(    # if we got tags add them to the xpub
+                cursor=self.db.conn.cursor(),
+                data=[xpub_data],
+                object_reference_keys=['xpub.xpub', 'derivation_path'],
+            )
         if len(existing_address_data) != 0:
             insert_tag_mappings(    # if we got tags add them to the existing addresses too
                 cursor=self.db.conn.cursor(),
                 data=existing_address_data,
-                object_reference_key='address',
+                object_reference_keys=['address'],
             )
 
         if len(new_addresses) != 0:
@@ -197,6 +203,7 @@ class XpubManager():
 
     def delete_bitcoin_xpub(self, xpub_data: XpubData) -> 'BlockchainBalancesUpdate':
         """
+        Deletes an xpub from the DB, along with all derived addresses, xpub and tag mappings
         May raise:
         - InputError: If the xpub does not exist in the DB
         """

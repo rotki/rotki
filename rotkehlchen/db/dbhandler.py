@@ -935,7 +935,7 @@ class DBHandler:
                 f'Blockchain account/s {[x.address for x in account_data]} already exist',
             )
 
-        insert_tag_mappings(cursor=cursor, data=account_data, object_reference_key='address')
+        insert_tag_mappings(cursor=cursor, data=account_data, object_reference_keys=['address'])
 
         self.conn.commit()
         self.update_last_write()
@@ -974,7 +974,7 @@ class DBHandler:
             )
             log.error(msg)
             raise AssertionError(msg)
-        insert_tag_mappings(cursor=cursor, data=account_data, object_reference_key='address')
+        insert_tag_mappings(cursor=cursor, data=account_data, object_reference_keys=['address'])
 
         self.conn.commit()
         self.update_last_write()
@@ -1183,7 +1183,7 @@ class DBHandler:
             raise InputError(
                 f'One of the manually tracked balance entries already exists in the DB. {str(e)}',
             )
-        insert_tag_mappings(cursor=cursor, data=data, object_reference_key='label')
+        insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['label'])
 
         self.conn.commit()
         self.update_last_write()
@@ -1222,7 +1222,7 @@ class DBHandler:
         if cursor.rowcount != len(data):
             msg = 'Tried to edit manually tracked balance entry that did not exist in the DB'
             raise InputError(msg)
-        insert_tag_mappings(cursor=cursor, data=data, object_reference_key='label')
+        insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['label'])
 
         self.conn.commit()
         self.update_last_write()
@@ -2292,7 +2292,7 @@ class DBHandler:
                 f'with derivation path {xpub_data.derivation_path}',
             )
 
-        # Delete the tag mappings for all affected accounts
+        # Delete the tag mappings for all derived addresses
         cursor.execute(
             'DELETE FROM tag_mappings WHERE '
             'object_reference IN ('
@@ -2302,7 +2302,10 @@ class DBHandler:
                 xpub_data.serialize_derivation_path(),
             ),
         )
-        # First delete any derived addresses
+        # Delete the tag mappings for the xpub itself (type ignore is for xpub is not None
+        key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path()  # type: ignore
+        cursor.execute('DELETE FROM tag_mappings WHERE object_reference=?', (key,))
+        # Delete any derived addresses
         cursor.execute(
             'DELETE FROM blockchain_accounts WHERE blockchain=? AND account IN ('
             'SELECT address from xpub_mappings WHERE xpub=? and derivation_path IS ?);',
@@ -2320,6 +2323,25 @@ class DBHandler:
 
         self.conn.commit()
         self.update_last_write()
+
+    def get_bitcoin_xpub_data(self) -> List[XpubData]:
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT A.xpub, A.derivation_path, A.label, group_concat(B.tag_name,",") '
+            'FROM xpubs as A LEFT OUTER JOIN tag_mappings AS B ON '
+            'B.object_reference = A.xpub || A.derivation_path GROUP BY A.xpub || A.derivation_path;',  # noqa: E501
+        )
+        result = []
+        for entry in query:
+            tags = deserialize_tags_from_db(entry[3])
+            result.append(XpubData(
+                xpub=HDKey.from_xpub(entry[0]),
+                derivation_path=deserialize_derivation_path(entry[1]),
+                label=entry[2],
+                tags=tags,
+            ))
+
+        return result
 
     def get_last_xpub_derived_indices(self, xpub_data: XpubData) -> Tuple[int, int]:
         """Get the last known receiving and change derived indices from the given xpub"""
