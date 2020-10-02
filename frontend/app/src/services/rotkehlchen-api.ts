@@ -477,29 +477,32 @@ export class RotkehlchenApi {
       ? `/blockchains/${blockchain}/xpub`
       : `/blockchains/${blockchain}`;
 
-    const payload = {
+    const basePayload = {
       label,
       tags
     };
+
+    const payload = xpub
+      ? {
+          xpub: xpub.xpub,
+          derivationPath: xpub.derivationPath ? xpub.derivationPath : undefined,
+          ...basePayload
+        }
+      : {
+          accounts: [
+            {
+              address,
+              ...basePayload
+            }
+          ]
+        };
 
     return this.axios
       .put<ActionResult<PendingTask>>(
         url,
         axiosSnakeCaseTransformer({
           asyncQuery: true,
-          ...(xpub
-            ? {
-                ...xpub,
-                ...payload
-              }
-            : {
-                accounts: [
-                  {
-                    address,
-                    ...payload
-                  }
-                ]
-              })
+          ...payload
         }),
         {
           validateStatus: validWithParamsSessionAndExternalService,
