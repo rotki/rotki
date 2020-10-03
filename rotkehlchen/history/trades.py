@@ -204,7 +204,7 @@ class TradesHistorian():
                     # For the vaults since we can't get historical values of vault tokens
                     # yet, for the purposes of the tax report count everything as USD
                     defi_events.append(DefiEvent(
-                        timestamp=ts_now(),
+                        timestamp=end_ts - 1,
                         event_type=DefiEventType.YEARN_VAULTS_PNL,
                         asset=A_USD,
                         amount=vault_history.profit_loss.usd_value,
