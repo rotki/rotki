@@ -52,6 +52,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('cUSDC'): Asset('USDC'),
     Asset('cUSDT'): Asset('USDT'),
     Asset('cWBTC'): Asset('WBTC'),
+    Asset('cUNI'): Asset('UNI'),
     Asset('cZRX'): Asset('ZRX'),
     Asset('ADADOWN'): Asset('USDT'),
     Asset('ADAUP'): Asset('USDT'),

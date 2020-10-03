@@ -12855,6 +12855,15 @@
         "symbol": "cSAI",
         "type": "ethereum token"
     },
+    "cUNI": {
+        "coingecko": "compound-uniswap",
+        "ethereum_address": "0x35A18000230DA775CAc24873d00Ff85BccdeD550",
+        "ethereum_token_decimals": 8,
+        "name": "Compound Uniswap",
+        "started": 1600898747,
+        "symbol": "cUNI",
+        "type": "ethereum token"
+    },
     "cUSDC": {
         "coingecko": "compound-usd-coin",
         "ethereum_address": "0x39AA39c021dfbaE8faC545936693aC917d5E7563",
