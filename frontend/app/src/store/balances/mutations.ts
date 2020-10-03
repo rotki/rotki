@@ -1,6 +1,8 @@
 import { MutationTree } from 'vuex';
-import { Balances, EthBalances } from '@/model/blockchain-balances';
 import {
+  Balances,
+  BtcBalances,
+  EthBalances,
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
@@ -18,7 +20,7 @@ export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: EthBalances) {
     state.eth = { ...payload };
   },
-  updateBtc(state: BalanceState, payload: Balances) {
+  updateBtc(state: BalanceState, payload: BtcBalances) {
     state.btc = { ...payload };
   },
   updateTotals(state: BalanceState, payload: Balances) {

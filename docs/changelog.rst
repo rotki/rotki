@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`808` Bitcoin xpubs are now supported. Given an xpub rotki derives all addresses locally and tracks those that have been used without compromising user privacy
+
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.
 * :bug:`1504` Users can now properly start the application when the default backend port is used by another application.

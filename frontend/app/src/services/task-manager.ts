@@ -1,7 +1,6 @@
 import map from 'lodash/map';
 import i18n from '@/i18n';
-import { BlockchainBalances } from '@/model/blockchain-balances';
-import { BlockchainMetadata, ExchangeMeta, Task, TaskMeta } from '@/model/task';
+import { Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import {
   ApiEventEntry,
@@ -14,79 +13,8 @@ import { ActionResult, TaskNotFoundError } from '@/services/types-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
-import { ApiAssetBalances } from '@/typing/types';
-import {
-  convertAssetBalances,
-  convertBalances,
-  convertEthBalances
-} from '@/utils/conversion';
 
-export class TaskManager {
-  private static onQueryExchangeBalances(
-    payload: ActionResult<ApiAssetBalances>,
-    meta: ExchangeMeta
-  ) {
-    const { result, message } = payload;
-
-    if (message) {
-      notify(message, 'Exchange Query Error', Severity.ERROR, true);
-      return;
-    }
-
-    store.commit('balances/addExchangeBalances', {
-      name: meta.name,
-      balances: convertAssetBalances(result)
-    });
-  }
-
-  onQueryBlockchainBalances(
-    data: ActionResult<BlockchainBalances>,
-    _meta: TaskMeta
-  ) {
-    const { result, message } = data;
-
-    if (message) {
-      notify(
-        `Querying blockchain balances died because of: ${message}. Check the logs for more details.`,
-        'Blockchain Query Error',
-        Severity.ERROR,
-        true
-      );
-      return;
-    }
-
-    const { per_account, totals } = result;
-    const { ETH, BTC } = per_account;
-
-    store.commit('balances/updateEth', convertEthBalances(ETH));
-    store.commit('balances/updateBtc', convertBalances(BTC));
-    store.commit('balances/updateTotals', convertBalances(totals));
-  }
-
-  onAccountOperation(
-    data: ActionResult<BlockchainBalances>,
-    meta: BlockchainMetadata
-  ) {
-    const { result, message } = data;
-    const { title, blockchain } = meta;
-
-    if (message) {
-      notify(`Operation failed due to ${message}`, title, Severity.ERROR, true);
-      return;
-    }
-    const { per_account, totals } = result;
-    const { ETH, BTC } = per_account;
-
-    if (blockchain === 'ETH') {
-      store.commit('balances/updateEth', convertEthBalances(ETH));
-    } else {
-      store.commit('balances/updateBtc', convertBalances(BTC));
-    }
-    store.commit('balances/updateTotals', convertBalances(totals));
-
-    store.dispatch('balances/accounts').then();
-  }
-
+class TaskManager {
   onTradeHistory(data: ActionResult<TradeHistory>, _meta: TaskMeta) {
     const { message, result } = data;
 
@@ -202,11 +130,7 @@ export class TaskManager {
   private handler: {
     [type: string]: (result: any, meta: any) => void;
   } = {
-    [TaskType.QUERY_EXCHANGE_BALANCES]: TaskManager.onQueryExchangeBalances,
-    [TaskType.QUERY_BLOCKCHAIN_BALANCES]: this.onQueryBlockchainBalances,
-    [TaskType.TRADE_HISTORY]: this.onTradeHistory,
-    [TaskType.ADD_ACCOUNT]: this.onAccountOperation,
-    [TaskType.REMOVE_ACCOUNT]: this.onAccountOperation
+    [TaskType.TRADE_HISTORY]: this.onTradeHistory
   };
 
   registerHandler<R, M extends TaskMeta>(

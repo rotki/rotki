@@ -1,13 +1,13 @@
 <template>
   <div>
-    <v-tooltip top>
+    <v-tooltip top open-delay="400">
       <template #activator="{ on }">
         <span class="labeled-address-display__address" v-on="on">
           <v-chip label outlined>
-            <span v-if="account.identifier !== account.account" class="pr-1">
+            <span v-if="!!account.label" class="pr-1">
               {{
-                $t('labeled_address_display.identifier', {
-                  identifier: account.identifier
+                $t('labeled_address_display.label', {
+                  label: account.label
                 })
               }}
             </span>
@@ -20,7 +20,7 @@
       <span> {{ address }} </span>
     </v-tooltip>
     <div class="labeled-address-display__copy">
-      <v-tooltip top>
+      <v-tooltip top open-delay="400">
         <template #activator="{ on, attrs }">
           <v-btn
             small
@@ -43,9 +43,8 @@
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import ScrambleMixin from '@/mixins/scramble-mixin';
+import { GeneralAccount } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
-
-type Account = { readonly identifier: string; readonly account: string };
 
 @Component({
   computed: { ...mapState('session', ['privacyMode']) }
@@ -54,10 +53,10 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
   privacyMode!: boolean;
 
   @Prop({ required: true })
-  account!: Account;
+  account!: GeneralAccount;
 
   get address(): string {
-    return this.scrambleData ? randomHex() : this.account.account;
+    return this.scrambleData ? randomHex() : this.account.address;
   }
 
   copy(address: string) {

@@ -8,7 +8,7 @@ import {
   ManualBalances,
   SupportedExchange
 } from '@/services/balances/types';
-import { balanceKeys } from '@/services/consts';
+import { balanceKeys, basicAxiosTransformer } from '@/services/consts';
 import { ActionResult, PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -16,6 +16,7 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService
 } from '@/services/utils';
+import { Blockchain } from '@/typing/types';
 
 export class BalancesApi {
   private readonly axios: AxiosInstance;
@@ -43,7 +44,7 @@ export class BalancesApi {
     return this.axios
       .get<ActionResult<PendingTask>>('balances/manual', {
         params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        transformResponse: setupTransformer(),
+        transformResponse: basicAxiosTransformer,
         validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
@@ -85,6 +86,26 @@ export class BalancesApi {
         data: { labels },
         transformResponse: setupTransformer(balanceKeys),
         validateStatus: validWithParamsSessionAndExternalService
+      })
+      .then(handleResponse);
+  }
+
+  async queryBlockchainBalances(
+    ignoreCache: boolean = false,
+    blockchain?: Blockchain
+  ): Promise<PendingTask> {
+    let url = '/balances/blockchains';
+    if (blockchain) {
+      url += `/${blockchain}`;
+    }
+    return this.axios
+      .get<ActionResult<PendingTask>>(url, {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          ignoreCache: ignoreCache ? true : undefined
+        }),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }

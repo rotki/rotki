@@ -52,7 +52,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
-import { BlockchainBalancePayload } from '@/store/balances/actions';
+import { BlockchainBalancePayload } from '@/store/balances/types';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');

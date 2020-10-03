@@ -1,23 +1,36 @@
+import { BigNumber } from 'bignumber.js';
 import {
-  AssetBalances,
-  Balances,
+  BtcBalances,
   EthBalances,
-  ManualBalanceByLocation
-} from '@/model/blockchain-balances';
-import {
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
+import { Balance, HasBalance } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import {
   AccountDataMap,
+  Blockchain,
   ExchangeData,
+  GeneralAccount,
   UsdToFiatExchangeRates
 } from '@/typing/types';
 
+export interface ManualBalancesByLocation {
+  readonly location: string;
+  readonly usdValue: BigNumber;
+}
+
+export interface ManualBalanceByLocation {
+  [location: string]: BigNumber;
+}
+
+export interface AssetBalances {
+  readonly [asset: string]: Balance;
+}
+
 export interface BalanceState {
   eth: EthBalances;
-  btc: Balances;
+  btc: BtcBalances;
   totals: AssetBalances;
   usdToFiatExchangeRates: UsdToFiatExchangeRates;
   connectedExchanges: SupportedExchange[];
@@ -34,4 +47,50 @@ export interface ExchangePayload {
   readonly apiKey: string;
   readonly apiSecret: string;
   readonly passphrase: string | null;
+}
+
+interface XpubPayload {
+  readonly xpub: string;
+  readonly derivationPath: string;
+}
+
+export interface BlockchainAccountPayload {
+  readonly address: string;
+  readonly blockchain: Blockchain;
+  readonly label?: string;
+  readonly tags: string[];
+  readonly xpub?: XpubPayload;
+}
+
+export interface ExchangeBalancePayload {
+  readonly name: string;
+  readonly ignoreCache: boolean;
+}
+
+export interface BlockchainBalancePayload {
+  readonly blockchain?: Blockchain;
+  readonly ignoreCache: boolean;
+}
+
+export interface AllBalancePayload {
+  readonly ignoreCache: boolean;
+  readonly saveData: boolean;
+}
+
+export interface AccountWithBalance extends GeneralAccount, HasBalance {}
+
+interface XpubAccount extends GeneralAccount, XpubPayload {}
+
+interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
+
+export type BlockchainAccount = GeneralAccount | XpubAccount;
+
+export type BlockchainAccountWithBalance =
+  | XpubAccountWithBalance
+  | AccountWithBalance;
+
+export interface AssetBalance {
+  readonly asset: string;
+  readonly amount: BigNumber;
+  readonly usdValue: BigNumber;
 }

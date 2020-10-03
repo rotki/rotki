@@ -5,23 +5,28 @@ import {
   DBSettings,
   ExternalServiceKeys
 } from '@/model/action-result';
-import { DBAssetBalance } from '@/model/db-asset-balance';
-import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result';
-import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
-import { SingleAssetBalance } from '@/model/single-asset-balance';
-import { VersionCheck } from '@/model/version-check';
-import { setupTransformer } from '@/services/axios-tranformers';
+import {
+  axiosSnakeCaseTransformer,
+  setupTransformer
+} from '@/services/axios-tranformers';
 import { BalancesApi } from '@/services/balances/balances-api';
+import { basicAxiosTransformer } from '@/services/consts';
 import { DefiApi } from '@/services/defi/defi-api';
 import { HistoryApi } from '@/services/history/history-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
   ActionResult,
   AsyncQuery,
+  DBAssetBalance,
   LocationData,
   Messages,
+  NetvalueDataResult,
+  PendingTask,
+  PeriodicClientQueryResult,
+  SingleAssetBalance,
   SupportedAssets,
-  TaskNotFoundError
+  TaskNotFoundError,
+  VersionCheck
 } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
@@ -34,7 +39,7 @@ import {
   validAuthorizedStatus,
   validTaskStatus
 } from '@/services/utils';
-import { BlockchainAccountPayload } from '@/store/balances/actions';
+import { BlockchainAccountPayload, XpubPayload } from '@/store/balances/types';
 import {
   AccountData,
   AccountSession,
@@ -202,17 +207,18 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryExchangeBalancesAsync(
+  queryExchangeBalances(
     name: string,
     ignoreCache: boolean = false
-  ): Promise<AsyncQuery> {
+  ): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>(`/exchanges/balances/${name}`, {
-        params: {
-          async_query: true,
-          ignore_cache: ignoreCache ? true : undefined
-        },
-        validateStatus: validStatus
+      .get<ActionResult<PendingTask>>(`/exchanges/balances/${name}`, {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          ignoreCache: ignoreCache ? true : undefined
+        }),
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }
@@ -229,25 +235,6 @@ export class RotkehlchenApi {
           save_data: saveData ? true : undefined
         },
         validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
-  queryBlockchainBalancesAsync(
-    ignoreCache: boolean = false,
-    blockchain?: Blockchain
-  ): Promise<AsyncQuery> {
-    let url = '/balances/blockchains';
-    if (blockchain) {
-      url += `/${blockchain}`;
-    }
-    return this.axios
-      .get<ActionResult<AsyncQuery>>(url, {
-        params: {
-          async_query: true,
-          ignore_cache: ignoreCache ? true : undefined
-        },
-        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -466,35 +453,60 @@ export class RotkehlchenApi {
   removeBlockchainAccount(
     blockchain: string,
     account: string
-  ): Promise<AsyncQuery> {
+  ): Promise<PendingTask> {
     return this.axios
-      .delete<ActionResult<AsyncQuery>>(`/blockchains/${blockchain}`, {
-        data: {
-          async_query: true,
+      .delete<ActionResult<PendingTask>>(`/blockchains/${blockchain}`, {
+        data: axiosSnakeCaseTransformer({
+          asyncQuery: true,
           accounts: [account]
-        },
-        validateStatus: validWithParamsSessionAndExternalService
+        }),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }
 
-  addBlockchainAccount(payload: BlockchainAccountPayload): Promise<AsyncQuery> {
-    const { blockchain, address, label, tags } = payload;
-    return this.axios
-      .put<ActionResult<AsyncQuery>>(
-        `/blockchains/${blockchain}`,
-        {
-          async_query: true,
+  addBlockchainAccount({
+    address,
+    blockchain,
+    label,
+    tags,
+    xpub
+  }: BlockchainAccountPayload): Promise<PendingTask> {
+    const url = xpub
+      ? `/blockchains/${blockchain}/xpub`
+      : `/blockchains/${blockchain}`;
+
+    const basePayload = {
+      label,
+      tags
+    };
+
+    const payload = xpub
+      ? {
+          xpub: xpub.xpub,
+          derivationPath: xpub.derivationPath ? xpub.derivationPath : undefined,
+          ...basePayload
+        }
+      : {
           accounts: [
             {
               address,
-              label,
-              tags
+              ...basePayload
             }
           ]
-        },
+        };
+
+    return this.axios
+      .put<ActionResult<PendingTask>>(
+        url,
+        axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          ...payload
+        }),
         {
-          validateStatus: validWithParamsSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
         }
       )
       .then(handleResponse);
@@ -522,6 +534,19 @@ export class RotkehlchenApi {
       )
       .then(handleResponse)
       .then(accounts => accounts.map(convertAccountData));
+  }
+
+  async deleteXpub(payload: XpubPayload): Promise<PendingTask> {
+    return this.axios
+      .delete<ActionResult<PendingTask>>(`/blockchains/BTC/xpub`, {
+        data: axiosSnakeCaseTransformer({
+          ...payload,
+          asyncQuery: true
+        }),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
   }
 
   setupExchange(

@@ -33,7 +33,7 @@ export interface DBSettings {
   readonly frontend_settings: string;
 }
 
-export interface ApiKey {
+interface ApiKey {
   api_key: string;
 }
 

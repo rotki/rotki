@@ -4,7 +4,7 @@ import { defaultState } from '@/store/settings/state';
 import { SettingsState } from '@/store/settings/types';
 import { Writeable } from '@/types';
 
-export type Mutations<S = SettingsState> = {
+type Mutations<S = SettingsState> = {
   [DEFI_SETUP_DONE](state: S, done: boolean): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;

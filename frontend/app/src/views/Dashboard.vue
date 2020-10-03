@@ -195,17 +195,15 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { footerProps } from '@/config/datatable.common';
 
-import {
-  AssetBalance,
-  ManualBalanceByLocation,
-  AccountBalance
-} from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import {
+  AccountWithBalance,
+  AssetBalance,
   BlockchainBalancePayload,
-  ExchangeBalancePayload
-} from '@/store/balances/actions';
+  ExchangeBalancePayload,
+  ManualBalanceByLocation
+} from '@/store/balances/types';
 import { ExchangeInfo } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 
@@ -248,8 +246,8 @@ export default class Dashboard extends Vue {
   floatingPrecision!: number;
   exchanges!: ExchangeInfo;
   blockchainTotal!: BigNumber;
-  ethAccounts!: AccountBalance[];
-  btcAccounts!: AccountBalance[];
+  ethAccounts!: AccountWithBalance[];
+  btcAccounts!: AccountWithBalance[];
   isTaskRunning!: (type: TaskType) => boolean;
 
   aggregatedBalances!: AssetBalance[];
@@ -261,15 +259,15 @@ export default class Dashboard extends Vue {
 
   get blockchainTotals(): BlockchainBalances {
     const ethereumTotal = this.ethAccounts.reduce(
-      (sum: BigNumber, account: AccountBalance) => {
-        return sum.plus(account.usdValue);
+      (sum: BigNumber, { balance }: AccountWithBalance) => {
+        return sum.plus(balance.usdValue);
       },
       Zero
     );
 
     const bitcoinTotal = this.btcAccounts.reduce(
-      (sum: BigNumber, account: AccountBalance) => {
-        return sum.plus(account.usdValue);
+      (sum: BigNumber, { balance }: AccountWithBalance) => {
+        return sum.plus(balance.usdValue);
       },
       Zero
     );

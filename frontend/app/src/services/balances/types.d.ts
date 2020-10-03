@@ -1,5 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import { exchanges } from '@/data/defaults';
+import { Balance } from '@/services/types-api';
 import { Location } from '@/services/types-common';
 
 export type SupportedExchange = typeof exchanges[number];
@@ -18,4 +19,36 @@ export interface ManualBalanceWithValue extends ManualBalance {
 
 export interface ManualBalances {
   readonly balances: ManualBalanceWithValue[];
+}
+
+export interface BlockchainBalances {
+  readonly perAccount: {
+    ETH: EthBalances;
+    BTC: BtcBalances;
+  };
+  readonly totals: Balances;
+}
+
+interface XpubBalance {
+  readonly xpub: string;
+  readonly derivationPath: string;
+  readonly addresses: Balances;
+}
+
+interface BtcBalances {
+  readonly standalone: Balances;
+  readonly xpubs: XpubBalance[];
+}
+
+export interface EthBalance {
+  readonly assets: Balances;
+  readonly totalUsdValue: BigNumber;
+}
+
+export interface EthBalances {
+  [account: string]: EthBalance;
+}
+
+export interface Balances {
+  [account: string]: Balance;
 }

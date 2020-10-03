@@ -1,6 +1,6 @@
 export type DebugSettings = { vuex: boolean };
 
-export interface Interop {
+interface Interop {
   openUrl(url: string): Promise<void>;
   closeApp(): void;
   listenForErrors(callback: (backendOutuput: string) => void): void;
@@ -19,3 +19,7 @@ declare global {
 }
 
 export type Writeable<T> = { -readonly [P in keyof T]: T[P] };
+
+export type Properties<TObj, TResult> = {
+  [K in keyof TObj]: TObj[K] extends TResult ? K : never;
+}[keyof TObj];

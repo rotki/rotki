@@ -35,7 +35,7 @@ import {
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import { RotkehlchenState } from '@/store/types';
 import { Writeable } from '@/types';
-import { DefiAccount } from '@/typing/types';
+import { DefiAccount, ETH } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 
@@ -47,7 +47,7 @@ const unique = function (
   return array.indexOf(value) === index;
 };
 
-export interface DefiGetters {
+interface DefiGetters {
   totalUsdEarned: (
     protocols: SupportedDefiProtocols[],
     addresses: string[]
@@ -198,7 +198,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
       accounts.push({
         address,
-        chain: 'ETH',
+        chain: ETH,
         protocols
       });
     }
@@ -206,7 +206,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     for (const address of makerAddresses) {
       accounts.push({
         address,
-        chain: 'ETH',
+        chain: ETH,
         protocols: ['makerdao']
       });
     }

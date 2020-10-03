@@ -16,7 +16,65 @@
             <asset-details class="pt-2 pb-2" :asset="item" />
           </template>
         </v-select>
+        <v-radio-group
+          v-if="isBtc"
+          v-model="btcAccountType"
+          :label="$t('account_form.labels.btc.account_type')"
+          row
+          :disabled="!!edit"
+        >
+          <v-radio value="xpub" :label="$t('account_form.labels.btc.xpub')" />
+          <v-radio
+            value="standalone"
+            :label="$t('account_form.labels.btc.standalone')"
+          />
+        </v-radio-group>
+        <v-row v-if="isBtc && isXpub" align="center" no-gutters>
+          <v-col>
+            <v-text-field
+              v-model="xpub"
+              class="account-form__xpub"
+              :label="$t('account_form.labels.btc.xpub')"
+              autocomplete="off"
+              :disabled="accountOperation || loading || !!edit"
+            />
+          </v-col>
+          <v-col cols="auto">
+            <v-tooltip open-delay="400" top>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  v-bind="attrs"
+                  v-on="on"
+                  @click="advanced = !advanced"
+                >
+                  <v-icon v-if="advanced">mdi-chevron-up</v-icon>
+                  <v-icon v-else>mdi-chevron-down</v-icon>
+                </v-btn>
+              </template>
+              <span>
+                {{ $tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
+              </span>
+            </v-tooltip>
+          </v-col>
+        </v-row>
+
+        <v-row v-if="isBtc && btcAccountType === 'xpub' && advanced" no-gutters>
+          <v-col>
+            <v-text-field
+              v-model="derivationPath"
+              class="account-form__derivation-path"
+              :label="$t('account_form.labels.btc.derivation_path')"
+              autocomplete="off"
+              :disabled="accountOperation || loading || !!edit"
+              persistent-hint
+              :hint="$t('account_form.labels.btc.derivation_path_hint')"
+            />
+          </v-col>
+        </v-row>
+
         <v-text-field
+          v-if="!isBtc || ((isBtc && btcAccountType !== 'xpub') || !!edit)"
           v-model="address"
           class="blockchain-balances__address"
           :label="$t('account_form.labels.account')"
@@ -45,17 +103,21 @@ import { mapGetters } from 'vuex';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { BlockchainAccountPayload } from '@/store/balances/actions';
+import {
+  BlockchainAccountPayload,
+  BlockchainAccount
+} from '@/store/balances/types';
 import { Message } from '@/store/types';
 import {
-  Account,
   Blockchain,
+  BTC,
+  ETH,
   GeneralAccount,
   SupportedBlockchains
 } from '@/typing/types';
-import { assert } from '@/utils/assertions';
 
 type ValidationRule = (value: string) => boolean | string;
+
 @Component({
   components: { TagInput },
   computed: {
@@ -64,15 +126,28 @@ type ValidationRule = (value: string) => boolean | string;
   }
 })
 export default class AccountForm extends Vue {
-  readonly items: string[] = SupportedBlockchains;
+  readonly items = SupportedBlockchains;
   isTaskRunning!: (type: TaskType) => boolean;
-  selected: Blockchain = 'ETH';
+  selected: Blockchain = ETH;
   pending: boolean = false;
+  xpub: string = '';
+  derivationPath: string = '';
   address: string = '';
   label: string = '';
   tags: string[] = [];
   errorMessages: string[] = [];
   account!: (address: string) => GeneralAccount | undefined;
+  advanced: boolean = false;
+
+  btcAccountType: 'xpub' | 'standalone' = 'xpub';
+
+  get isBtc(): boolean {
+    return this.selected === BTC;
+  }
+
+  get isXpub(): boolean {
+    return this.btcAccountType === 'xpub';
+  }
 
   get rules(): ValidationRule[] {
     const rules: ValidationRule[] = [
@@ -93,7 +168,7 @@ export default class AccountForm extends Vue {
   }
 
   @Prop({ required: false, default: null })
-  edit!: Account | null;
+  edit!: BlockchainAccount | null;
   @Prop({ required: true, type: Boolean, default: false })
   value!: boolean;
 
@@ -102,14 +177,15 @@ export default class AccountForm extends Vue {
       this.address = '';
       return;
     }
-    const { address, chain } = this.edit;
-    this.address = address;
-    this.selected = chain;
 
-    const account = this.account(address);
-    assert(account);
-    this.label = account.label;
-    this.tags = account.tags;
+    this.address = this.edit.address;
+    this.selected = this.edit.chain;
+    this.label = this.edit.label;
+    this.tags = this.edit.tags;
+    if ('xpub' in this.edit) {
+      this.xpub = this.edit.xpub;
+      this.derivationPath = this.edit.derivationPath;
+    }
   }
 
   mounted() {
@@ -134,6 +210,8 @@ export default class AccountForm extends Vue {
     this.address = '';
     this.label = '';
     this.tags = [];
+    this.xpub = '';
+    this.derivationPath = '';
     (this.$refs.form as any).resetValidation();
   }
 
@@ -158,11 +236,19 @@ export default class AccountForm extends Vue {
   async addAccount(): Promise<boolean> {
     this.pending = true;
     try {
+      const xpubPayload =
+        this.isBtc && this.btcAccountType === 'xpub'
+          ? {
+              xpub: this.xpub,
+              derivationPath: this.derivationPath ?? undefined
+            }
+          : undefined;
       const payload: BlockchainAccountPayload = {
         blockchain: this.selected,
         address: this.address,
         label: this.label,
-        tags: this.tags
+        tags: this.tags,
+        xpub: xpubPayload
       };
 
       await this.$store.dispatch(
@@ -172,9 +258,17 @@ export default class AccountForm extends Vue {
       this.reset();
     } catch (e) {
       const apiErrorMessage = deserializeApiErrorMessage(e.message);
-      if (apiErrorMessage && 'address' in apiErrorMessage) {
+      if (apiErrorMessage) {
+        const fields = ['address', 'xpub'];
+        let errors: string[] = [];
         this.clearErrors();
-        this.setErrors(apiErrorMessage['address']);
+        for (const field in fields) {
+          if (!(field in apiErrorMessage)) {
+            continue;
+          }
+          errors = errors.concat(apiErrorMessage[field]);
+        }
+        this.setErrors(errors);
         this.pending = false;
         return false;
       }

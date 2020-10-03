@@ -30,7 +30,7 @@ export type TradeLocation =
   | 'bitcoin'
   | 'external';
 
-export type MovementCategory = 'deposit' | 'withdrawal';
+type MovementCategory = 'deposit' | 'withdrawal';
 
 export interface AssetMovement {
   readonly identifier: string;
