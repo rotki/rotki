@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`1533` Premium Yearn vaults users should now be able to see a USD PNL per vault they used during the tax report.
+* :bug:`1527` Premium Compound users should no longer get an exception during tax report.
 * :feature:`808` Bitcoin xpubs are now supported. Given an xpub rotki derives all addresses locally and tracks those that have been used without compromising user privacy
 
 * :feature:`-` Added support for the following tokens:
