@@ -220,7 +220,11 @@ class TradesHistorian():
                 to_timestamp=end_ts,
             )
             for event in compound_history['events']:
-                if event.event_type != 'liquidation' and event.realized_pnl.amount == ZERO:
+                skip_event = (
+                    event.event_type != 'liquidation' and
+                    (event.realized_pnl is None or event.realized_pnl.amount == ZERO)
+                )
+                if skip_event:
                     continue  # skip events with no realized profit/loss
 
                 if event.event_type == 'redeem':

@@ -439,22 +439,20 @@ class CSVExporter():
 
         paid_asset: Union[EmptyStr, Asset]
         received_asset: Union[EmptyStr, Asset]
-        if event.event_type in (DefiEventType.DSR_LOAN_GAIN, DefiEventType.AAVE_LOAN_INTEREST):
+        if event.is_profitable():
             paid_in_profit_currency = ZERO
             paid_in_asset = ZERO
             paid_asset = S_EMPTYSTR
             received_asset = event.asset
             received_in_asset = event.amount
             received_in_profit_currency = profit_loss_in_profit_currency
-        elif event.event_type == DefiEventType.MAKERDAO_VAULT_LOSS:
+        else:
             paid_in_profit_currency = profit_loss_in_profit_currency
             paid_in_asset = event.amount
             paid_asset = event.asset
             received_asset = S_EMPTYSTR
             received_in_asset = ZERO
             received_in_profit_currency = ZERO
-        else:
-            raise NotImplementedError('Not implemented Defi event encountered at csv export')
 
         self.add_to_allevents(
             event_type=EV_DEFI,
