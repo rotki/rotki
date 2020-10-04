@@ -2568,7 +2568,7 @@
     },
     "COMM": {
         "active": false,
-        "coingecko": "commonwealth",
+        "coingecko": "",
         "ended": 1459036800,
         "name": "CommunityCoin",
         "started": 1397520000,
@@ -12138,7 +12138,7 @@
     },
     "XNN": {
         "active": false,
-        "coingecko": "xenon",
+        "coingecko": "",
         "ended": 1555104394,
         "ethereum_address": "0xab95E915c123fdEd5BDfB6325e35ef5515F1EA69",
         "ethereum_token_decimals": 18,
