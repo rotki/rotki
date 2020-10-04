@@ -643,9 +643,11 @@ class Cryptocompare(ExternalServiceWithApiKey):
         except UnsupportedAsset as e:
             raise PriceQueryUnsupportedAsset(e.asset_name)
 
+        price = Price(ZERO)
         # all data are sorted and timestamps are always increasing by 1 hour
         # find the closest entry to the provided timestamp
         if timestamp >= data[0].time:
+            index_in_bounds = True
             # convert_to_int can't raise here due to its input
             index = convert_to_int((timestamp - data[0].time) / 3600, accept_only_exact=False)
             if index > len(data) - 1:  # index out of bounds
@@ -660,19 +662,16 @@ class Cryptocompare(ExternalServiceWithApiKey):
                         f'index: {index}. Length of returned data: {len(data)}. '
                         f'https://github.com/rotki/rotki/issues/1534. Attempting other methods...',
                     )
-                    price = Price(ZERO)
-            else:
+                    index_in_bounds = False
+
+            if index_in_bounds:
                 diff = abs(data[index].time - timestamp)
                 if index + 1 <= len(data) - 1:
                     diff_p1 = abs(data[index + 1].time - timestamp)
                     if diff_p1 < diff:
                         index = index + 1
 
-                if data[index].high is None or data[index].low is None:
-                    # If we get some None in the hourly set price to 0
-                    # so that we check alternatives
-                    price = Price(ZERO)
-                else:
+                if data[index].high is not None and data[index].low is not None:
                     price = Price((data[index].high + data[index].low) / 2)
 
         else:
