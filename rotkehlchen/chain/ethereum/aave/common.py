@@ -71,13 +71,17 @@ class AaveInquirer():
         self.msg_aggregator = msg_aggregator
         self.premium = premium
 
-    def get_history_for_address(
+    def get_history_for_addresses(
             self,
-            user_address: ChecksumEthAddress,
+            addresses: List[ChecksumEthAddress],
             to_block: int,
-            atokens_list: Optional[List[EthereumToken]] = None,
-            given_from_block: Optional[int] = None,
-    ) -> AaveHistory:
+    ) -> Dict[ChecksumEthAddress, AaveHistory]:
+        """
+        Queries aave history for a list of addresses.
+
+        This function should be entered while holding the history_lock
+        semaphore
+        """
         raise NotImplementedError(
-            'get_history_for_address should only be implemented by subclasses',
+            'get_history_for_addresses() should only be implemented by subclasses',
         )
