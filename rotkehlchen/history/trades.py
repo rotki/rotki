@@ -204,7 +204,7 @@ class TradesHistorian():
                     # For the vaults since we can't get historical values of vault tokens
                     # yet, for the purposes of the tax report count everything as USD
                     defi_events.append(DefiEvent(
-                        timestamp=ts_now(),
+                        timestamp=Timestamp(end_ts - 1),
                         event_type=DefiEventType.YEARN_VAULTS_PNL,
                         asset=A_USD,
                         amount=vault_history.profit_loss.usd_value,
@@ -220,7 +220,11 @@ class TradesHistorian():
                 to_timestamp=end_ts,
             )
             for event in compound_history['events']:
-                if event.event_type != 'liquidation' and event.realized_pnl.amount == ZERO:
+                skip_event = (
+                    event.event_type != 'liquidation' and
+                    (event.realized_pnl is None or event.realized_pnl.amount == ZERO)
+                )
+                if skip_event:
                     continue  # skip events with no realized profit/loss
 
                 if event.event_type == 'redeem':

@@ -160,7 +160,7 @@ def configure_logging(args: argparse.Namespace) -> None:
     loglevel = args.loglevel.upper()
     formatters = {
         'default': {
-            'format': '[%(asctime)s] %(name)s: %(message)s',
+            'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s',
             'datefmt': '%d/%m/%Y %H:%M:%S %Z',
         },
     }

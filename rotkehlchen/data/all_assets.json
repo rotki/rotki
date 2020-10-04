@@ -2568,7 +2568,7 @@
     },
     "COMM": {
         "active": false,
-        "coingecko": "commonwealth",
+        "coingecko": "",
         "ended": 1459036800,
         "name": "CommunityCoin",
         "started": 1397520000,
@@ -12138,7 +12138,7 @@
     },
     "XNN": {
         "active": false,
-        "coingecko": "xenon",
+        "coingecko": "",
         "ended": 1555104394,
         "ethereum_address": "0xab95E915c123fdEd5BDfB6325e35ef5515F1EA69",
         "ethereum_token_decimals": 18,
@@ -12344,7 +12344,16 @@
         "type": "own chain"
     },
     "YAM": {
-        "coingecko": "yam",
+        "coingecko": "yam-2",
+        "ethereum_address": "0x0AaCfbeC6a24756c20D41914F2caba817C0d8521",
+        "ethereum_token_decimals": 18,
+        "name": "YAMv3",
+        "started": 1597121253,
+        "symbol": "YAM",
+        "type": "ethereum token"
+    },
+    "YAMv1": {
+        "coingecko": "yam-2",
         "ethereum_address": "0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
         "ethereum_token_decimals": 18,
         "name": "YAM",
@@ -12853,6 +12862,15 @@
         "name": "Compound Sai",
         "started": 1557192252,
         "symbol": "cSAI",
+        "type": "ethereum token"
+    },
+    "cUNI": {
+        "coingecko": "compound-uniswap",
+        "ethereum_address": "0x35A18000230DA775CAc24873d00Ff85BccdeD550",
+        "ethereum_token_decimals": 8,
+        "name": "Compound Uniswap",
+        "started": 1600898747,
+        "symbol": "cUNI",
         "type": "ethereum token"
     },
     "cUSDC": {
