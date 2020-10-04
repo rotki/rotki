@@ -80,19 +80,19 @@ class PremiumSyncManager():
             return SyncCheckResult(can_sync=CanSync.NO, message='')
 
         our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts >= metadata.last_modify_ts:
-            # Local DB is newer than Server DB
-            log.debug('sync from server stopped -- local DB more recent than remote')
-            return SyncCheckResult(can_sync=CanSync.NO, message='')
-
         data_bytes_size = len(base64.b64decode(b64_encoded_data))
-        if data_bytes_size > metadata.data_size:
+        if our_last_write_ts >= metadata.last_modify_ts:
             message_prefix = (
-                'Detected newer remote database BUT with smaller size than the local one. '
+                'Detected remote database BUT with older last modification timestamp '
+                'than the local one. '
             )
-
         else:
-            message_prefix = 'Detected newer remote database. '
+            if data_bytes_size > metadata.data_size:
+                message_prefix = (
+                    'Detected newer remote database BUT with smaller size than the local one. '
+                )
+            else:
+                message_prefix = 'Detected newer remote database. '
 
         message = (
             f'{message_prefix}'
