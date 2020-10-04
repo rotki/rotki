@@ -9,7 +9,6 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.ethereum.aave import (
     AaveBalances,
     AaveBorrowingBalance,
-    AaveEvent,
     AaveHistory,
     AaveLendingBalance,
 )
@@ -21,6 +20,7 @@ from rotkehlchen.chain.ethereum.makerdao.vaults import (
     VaultEvent,
     VaultEventType,
 )
+from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.chain.ethereum.yearn.vaults import (
     YearnVaultBalance,
     YearnVaultEvent,

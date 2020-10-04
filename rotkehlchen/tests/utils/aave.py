@@ -1,5 +1,5 @@
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.aave import AaveEvent
+from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_ADAI
