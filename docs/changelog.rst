@@ -9,6 +9,7 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Compound Uni (cUNI) <https://www.coingecko.com/en/coins/compound-uniswap>`__
+  - `YAMv3 (YAM) <https://www.coingecko.com/en/coins/yam>`__
 
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.
