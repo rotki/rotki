@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,

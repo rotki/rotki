@@ -648,18 +648,33 @@ class Cryptocompare(ExternalServiceWithApiKey):
         if timestamp >= data[0].time:
             # convert_to_int can't raise here due to its input
             index = convert_to_int((timestamp - data[0].time) / 3600, accept_only_exact=False)
-            # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
-            diff = abs(data[index].time - timestamp)
-            if index + 1 <= len(data) - 1:
-                diff_p1 = abs(data[index + 1].time - timestamp)
-                if diff_p1 < diff:
-                    index = index + 1
-
-            if data[index].high is None or data[index].low is None:
-                # If we get some None in the hourly set price to 0 so that we check alternatives
-                price = Price(ZERO)
+            if index > len(data) - 1:  # index out of bounds
+                # Try to see if index - 1 is there and if yes take it
+                if index > len(data):
+                    index = index - 1
+                else:  # give up. This happened: https://github.com/rotki/rotki/issues/1534
+                    log.error(
+                        f'Expected data index in cryptocompare historical hour price '
+                        f'not found. Queried price of: {from_asset.identifier} in '
+                        f'{to_asset.identifier} at {timestamp}. Data '
+                        f'index: {index}. Length of returned data: {len(data)}. '
+                        f'https://github.com/rotki/rotki/issues/1534. Attempting other methods...',
+                    )
+                    price = Price(ZERO)
             else:
-                price = Price((data[index].high + data[index].low) / 2)
+                diff = abs(data[index].time - timestamp)
+                if index + 1 <= len(data) - 1:
+                    diff_p1 = abs(data[index + 1].time - timestamp)
+                    if diff_p1 < diff:
+                        index = index + 1
+
+                if data[index].high is None or data[index].low is None:
+                    # If we get some None in the hourly set price to 0
+                    # so that we check alternatives
+                    price = Price(ZERO)
+                else:
+                    price = Price((data[index].high + data[index].low) / 2)
+
         else:
             # no price found in the historical data from/to asset, try alternatives
             price = Price(ZERO)
