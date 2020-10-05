@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
 * :bug:`1530` Truncation of account addresses will now dynamically change based on the screen width.
 * :feature:`224` Coingecko is now used for current price queries if cryptocompare fails. This will allow more tokens to be displayed.
