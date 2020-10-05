@@ -6172,6 +6172,15 @@
         "symbol": "KDC",
         "type": "own chain"
     },
+    "KEEP": {
+        "coingecko": "keep-network",
+        "ethereum_address": "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC",
+        "ethereum_token_decimals": 18,
+        "name": "KEEP Token ",
+        "started": 1588042366,
+        "symbol": "KEEP",
+        "type": "ethereum token"
+    },
     "KEY": {
         "coingecko": "selfkey",
         "ethereum_address": "0x4CC19356f2D37338b9802aa8E8fc58B0373296E7",
