@@ -21,36 +21,17 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
+import { explorerUrls } from '@/components/helper/asset-urls';
 import HashLink from '@/components/helper/HashLink.vue';
 import { AssetMovement } from '@/services/history/types';
-
-type ExplorerUrls = { readonly address: string; readonly transaction: string };
-
-type AssetExplorerUrls = {
-  [key in 'ETH' | 'BTC' | 'ETC']: ExplorerUrls;
-};
 
 @Component({
   components: { HashLink },
   computed: { ...mapGetters('balances', ['isEthereumToken']) }
 })
 export default class MovementLinks extends Vue {
-  private urls: AssetExplorerUrls = {
-    ETH: {
-      address: 'https://etherscan.io/address/',
-      transaction: 'https://etherscan.io/tx/'
-    },
-    BTC: {
-      address: 'https://blockstream.info/address/',
-      transaction: 'https://blockstream.info/tx/'
-    },
-    ETC: {
-      address: 'https://blockscout.com/etc/mainnet/address/',
-      transaction: 'https://blockscout.com/etc/mainnet/tx/'
-    }
-  };
-
   isEthereumToken!: (asset: string) => boolean;
+  readonly urls = explorerUrls;
 
   @Prop({ required: true })
   item!: AssetMovement;
