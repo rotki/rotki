@@ -298,8 +298,7 @@ def test_try_premium_at_start_old_account_older_remote_ts(
         newer_remote_db=False,
         db_can_sync_setting=True,
     )
-    # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
+    assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
