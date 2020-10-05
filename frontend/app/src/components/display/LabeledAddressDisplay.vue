@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-tooltip top open-delay="400">
+    <v-tooltip top open-delay="400" :disabled="!truncated">
       <template #activator="{ on }">
         <span class="labeled-address-display__address" v-on="on">
           <v-chip label outlined>
@@ -12,7 +12,7 @@
               }}
             </span>
             <span :class="privacyMode ? 'blur-content' : null">
-              {{ address | truncateAddress }}
+              {{ displayAddress }}
             </span>
           </v-chip>
         </span>
@@ -42,6 +42,7 @@
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
+import { truncateAddress, truncationPoints } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import { GeneralAccount } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
@@ -55,8 +56,19 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
   @Prop({ required: true })
   account!: GeneralAccount;
 
+  truncated: boolean = false;
+
   get address(): string {
     return this.scrambleData ? randomHex() : this.account.address;
+  }
+
+  get displayAddress(): string {
+    const address = truncateAddress(
+      this.address,
+      truncationPoints[this.$vuetify.breakpoint.name] ?? 4
+    );
+    this.truncated = address.includes('...');
+    return address;
   }
 
   copy(address: string) {

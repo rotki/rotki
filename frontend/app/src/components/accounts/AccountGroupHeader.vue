@@ -13,7 +13,7 @@
     <span :style="privacyStyle">
       <v-tooltip top open-delay="400">
         <template #activator="{ on }">
-          <span v-on="on">{{ truncate(xpub.xpub) }}</span>
+          <span v-on="on">{{ displayXpub }}</span>
         </template>
         <span> {{ xpub.xpub }} </span>
       </v-tooltip>
@@ -42,7 +42,7 @@
 <script lang="ts">
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import CopyButton from '@/components/helper/CopyButton.vue';
-import { truncateAddress } from '@/filters';
+import { truncateAddress, truncationPoints } from '@/filters';
 import PrivacyMixin from '@/mixins/privacy-mixin';
 import { XpubPayload } from '@/store/balances/types';
 
@@ -57,7 +57,12 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
   @Prop({ required: true, type: Boolean })
   expanded!: boolean;
 
-  readonly truncate = truncateAddress;
+  get displayXpub(): string {
+    return truncateAddress(
+      this.xpub.xpub,
+      truncationPoints[this.$vuetify.breakpoint.name] ?? 4
+    );
+  }
 
   @Emit()
   deleteClicked(_payload: XpubPayload) {}
