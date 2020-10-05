@@ -274,7 +274,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if self.zerion is not None:
             return self.zerion
 
-        with gevent.Timeout(5):
+        with gevent.Timeout(10):
             while True:
                 if self.zerion is None:
                     gevent.sleep(0.5)

@@ -194,6 +194,11 @@ class Rotkehlchen():
             # the premium credentials were given by the user
             if create_new:
                 raise
+            self.msg_aggregator.add_error(
+                'Tried to synchronize the database from remote but the local password '
+                'does not match the one the remote DB has. Please change the password '
+                'to be the same as the password of the account you want to sync from ',
+            )
             # else let's just continue. User signed in succesfully, but he just
             # has unauthenticable/invalid premium credentials remaining in his DB
 
