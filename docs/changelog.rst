@@ -2,10 +2,12 @@
 Changelog
 =========
 
-* :feature:`1501` Assets that have been added to the ignore list will now be hidden from the dashboard
+* :bug:`-` Trailing or leading whitespace in pasted api keys will now be properly removed.
+* :bug:`1523` Trailing or leading whitespace in pasted addresses will now be properly removed.
+* :feature:`1501` Assets that have been added to the ignore list will now be hidden from the dashboard.
 * :bug:`1533` Premium Yearn vaults users should now be able to see a USD PNL per vault they used during the tax report.
 * :bug:`1527` Premium Compound users should no longer get an exception during tax report.
-* :feature:`808` Bitcoin xpubs are now supported. Given an xpub rotki derives all addresses locally and tracks those that have been used without compromising user privacy
+* :feature:`808` Bitcoin xpubs are now supported. Given an xpub rotki derives all addresses locally and tracks those that have been used without compromising user privacy.
 
 * :feature:`-` Added support for the following tokens:
 
