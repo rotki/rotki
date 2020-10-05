@@ -328,6 +328,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BVOL',
     'IBVOL',
     'XDOT',  # old polkadot before the split
+    'TALK',  # neither in coingecko nor cryptocompare
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -417,6 +418,10 @@ UNSUPPORTED_BINANCE_ASSETS = (
     '123',  # https://twitter.com/rotkiapp/status/1161977327078838272
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
     'WRX',  # https://info.binance.com/en/currencies/WRX - not listed anywhere else
+    'SCRT',  # no cryptocompare data
+    'SPARTA',  # no cryptocompare data
+    'UNIDOWN',  # no cryptocompare/coingecko data
+    'UNIUP',  # no cryptocompare/coingecko data
 )
 
 

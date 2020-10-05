@@ -1631,6 +1631,15 @@
         "symbol": "BRD",
         "type": "ethereum token"
     },
+    "BREE": {
+        "coingecko": "cbdao",
+        "ethereum_address": "0x4639cd8cd52EC1CF2E496a606ce28D8AfB1C792F",
+        "ethereum_token_decimals": 18,
+        "name": "CBDAO ",
+        "started": 1599219609,
+        "symbol": "BREE",
+        "type": "ethereum token"
+    },
     "BRK": {
         "coingecko": "",
         "name": "Breakout",
