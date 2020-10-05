@@ -112,6 +112,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('CHI'): Asset('USDT'),
     Asset('BAKE'): Asset('BNB'),
     Asset('BURGER'): Asset('BNB'),
+    Asset('CAKE'): Asset('BNB'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

@@ -2036,6 +2036,13 @@
         "symbol": "CAIX",
         "type": "own chain"
     },
+    "CAKE": {
+        "coingecko": "pancakeswap",
+        "name": "Pancake Swap",
+        "started": 1601337600,
+        "symbol": "CAKE",
+        "type": "binance token"
+    },
     "CAN": {
         "coingecko": "canyacoin",
         "ethereum_address": "0x1d462414fe14cf489c7A21CaC78509f4bF8CD7c0",
