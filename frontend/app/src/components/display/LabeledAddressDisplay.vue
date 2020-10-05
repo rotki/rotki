@@ -35,6 +35,25 @@
         </template>
         <span>{{ $t('labeled_address_display.copy') }}</span>
       </v-tooltip>
+      <v-tooltip top open-delay="600">
+        <template #activator="{ on, attrs }">
+          <v-btn
+            small
+            icon
+            tile
+            v-bind="attrs"
+            target="_blank"
+            :href="$interop.isPackaged ? undefined : url"
+            v-on="on"
+            @click="openLink"
+          >
+            <v-icon small>
+              mdi-launch
+            </v-icon>
+          </v-btn>
+        </template>
+        <span>{{ $t('labeled_address_display.open_link') }}</span>
+      </v-tooltip>
     </div>
   </div>
 </template>
@@ -42,10 +61,12 @@
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
+import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress, truncationPoints } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import { GeneralAccount } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
+import { assert } from '@/utils/assertions';
 
 @Component({
   computed: { ...mapState('session', ['privacyMode']) }
@@ -73,6 +94,17 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
 
   copy(address: string) {
     navigator.clipboard.writeText(address);
+  }
+
+  get url(): string {
+    const { chain, address } = this.account;
+    const explorerUrl = explorerUrls[chain];
+    assert(explorerUrl);
+    return explorerUrl.address + address;
+  }
+
+  openLink() {
+    this.$interop.openUrl(this.url);
   }
 }
 </script>

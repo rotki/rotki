@@ -488,7 +488,8 @@
   },
   "labeled_address_display": {
     "label": "{label} |",
-    "copy": "Copy address to clipboard"
+    "copy": "Copy address to clipboard",
+    "open_link": "labeled_address_display.open_link"
   },
   "defi_selector_item": {
     "vault": "Maker Vault"
