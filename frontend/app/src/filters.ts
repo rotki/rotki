@@ -24,7 +24,7 @@ export function capitalize(string: string): string {
   return string[0].toUpperCase() + string.slice(1);
 }
 
-export const truncationPoints = {
+export const truncationPoints: { [breakpoint: string]: number } = {
   xs: 3,
   sm: 6,
   md: 10,
