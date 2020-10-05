@@ -2074,7 +2074,7 @@
         "type": "own chain"
     },
     "CAKE": {
-        "coingecko": "pancakeswap",
+        "coingecko": "pancakeswap-token",
         "name": "Pancake Swap",
         "started": 1601337600,
         "symbol": "CAKE",
@@ -2985,7 +2985,7 @@
         "type": "ethereum token"
     },
     "CVP": {
-        "coingecko": "powerpool-concentrated-voting-power",
+        "coingecko": "concentrated-voting-power",
         "ethereum_address": "0x38e4adB44ef08F22F5B5b76A8f0c2d0dCbE7DcA1",
         "ethereum_token_decimals": 18,
         "name": "Concentrated Voting Power",
