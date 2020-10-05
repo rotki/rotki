@@ -225,8 +225,8 @@ export default class ExchangeSettings extends Vue {
   async setup() {
     const success = await this.setupExchange({
       exchange: this.selectedExchange,
-      apiSecret: this.apiSecret,
-      apiKey: this.apiKey,
+      apiSecret: this.apiSecret.trim(),
+      apiKey: this.apiKey.trim(),
       passphrase: this.passphrase
     });
 

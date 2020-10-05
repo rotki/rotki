@@ -256,13 +256,13 @@ export default class AccountForm extends Vue {
       const xpubPayload =
         this.isBtc && this.btcAccountType === 'xpub'
           ? {
-              xpub: this.xpub,
+              xpub: this.xpub.trim(),
               derivationPath: this.derivationPath ?? undefined
             }
           : undefined;
       const payload: BlockchainAccountPayload = {
         blockchain: this.selected,
-        address: this.address,
+        address: this.address.trim(),
         label: this.label,
         tags: this.tags,
         xpub: xpubPayload

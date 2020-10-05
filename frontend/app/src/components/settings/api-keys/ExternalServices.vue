@@ -86,7 +86,9 @@ export default class ExternalServices extends Vue {
   }
 
   async save(serviceName: ExternalServiceName, key: string) {
-    const keys: ExternalServiceKey[] = [{ name: serviceName, api_key: key }];
+    const keys: ExternalServiceKey[] = [
+      { name: serviceName, api_key: key.trim() }
+    ];
 
     try {
       this.loading = true;
