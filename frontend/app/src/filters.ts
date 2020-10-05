@@ -24,6 +24,14 @@ export function capitalize(string: string): string {
   return string[0].toUpperCase() + string.slice(1);
 }
 
+export const truncationPoints = {
+  xs: 3,
+  sm: 6,
+  md: 10,
+  lg: 20,
+  xl: 40
+};
+
 /**
  * Truncates blockchain hashes (addresses / txs) retaining `truncLength+2` characters
  * from the beginning and `truncLength` characters from the end of the string.
@@ -35,8 +43,18 @@ export function truncateAddress(
   address: string,
   truncLength: number = 4
 ): string {
+  const startPadding = address.startsWith('0x')
+    ? 2
+    : address.startsWith('xpub')
+    ? 4
+    : 0;
+
+  if (address.length <= truncLength * 2 + startPadding) {
+    return address;
+  }
+
   return (
-    address.slice(0, truncLength + 2) +
+    address.slice(0, truncLength + startPadding) +
     '...' +
     address!.slice(address!.length - truncLength, address!.length)
   );
