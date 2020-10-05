@@ -117,6 +117,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('GHST'): Asset('USDT'),
     Asset('MEXP'): Asset('USDT'),
     Asset('POLS'): Asset('USDT'),
+    Asset('RARI'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

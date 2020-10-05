@@ -9003,6 +9003,15 @@
         "symbol": "RADS",
         "type": "own chain"
     },
+    "RARI": {
+        "coingecko": "rarible",
+        "ethereum_address": "0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF",
+        "ethereum_token_decimals": 18,
+        "name": "Rarible",
+        "started": 1594721646,
+        "symbol": "RARI",
+        "type": "ethereum token"
+    },
     "RATING": {
         "coingecko": "dprating",
         "ethereum_address": "0xE8663A64A96169ff4d95b4299E7ae9a76b905B31",
