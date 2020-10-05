@@ -110,6 +110,15 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('RVC'): Asset('USDT'),
     Asset('SDT'): Asset('USDT'),
     Asset('CHI'): Asset('USDT'),
+    Asset('BAKE'): Asset('BNB'),
+    Asset('BURGER'): Asset('BNB'),
+    Asset('CAKE'): Asset('BNB'),
+    Asset('BREE'): Asset('USDT'),
+    Asset('GHST'): Asset('USDT'),
+    Asset('MEXP'): Asset('USDT'),
+    Asset('POLS'): Asset('USDT'),
+    Asset('RARI'): Asset('USDT'),
+    Asset('VALUE'): Asset('USDT'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 

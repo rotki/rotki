@@ -61,17 +61,21 @@ def gemini_symbol_to_pair(symbol: str) -> TradePair:
     """
     if len(symbol) == 6:
         base_asset = Asset(symbol[:3].upper())
-        quote_asset = Asset(symbol[3:6].upper())
+        quote_asset = Asset(symbol[3:].upper())
     elif len(symbol) == 7:
         try:
             base_asset = Asset(symbol[:4].upper())
-            quote_asset = Asset(symbol[4:7].upper())
+            quote_asset = Asset(symbol[4:].upper())
         except UnknownAsset:
             base_asset = Asset(symbol[:3].upper())
-            quote_asset = Asset(symbol[3:7].upper())
+            quote_asset = Asset(symbol[3:].upper())
     elif len(symbol) == 8:
-        base_asset = Asset(symbol[:4].upper())
-        quote_asset = Asset(symbol[4:8].upper())
+        if 'storj' in symbol:
+            base_asset = Asset(symbol[:5].upper())
+            quote_asset = Asset(symbol[5:].upper())
+        else:
+            base_asset = Asset(symbol[:4].upper())
+            quote_asset = Asset(symbol[4:].upper())
     else:
         raise UnprocessableTradePair(symbol)
 

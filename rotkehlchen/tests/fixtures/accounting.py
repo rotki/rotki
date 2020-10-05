@@ -8,6 +8,7 @@ import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.config import default_data_directory
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -144,7 +145,8 @@ def create_inquirer(data_directory, should_mock_current_price_queries, mocked_pr
     # Get a cryptocompare without a DB since invoking DB fixture here causes problems
     # of existing user for some tests
     cryptocompare = Cryptocompare(data_directory=data_directory, database=None)
-    inquirer = Inquirer(data_dir=data_directory, cryptocompare=cryptocompare)
+    gecko = Coingecko()
+    inquirer = Inquirer(data_dir=data_directory, cryptocompare=cryptocompare, coingecko=gecko)
     if not should_mock_current_price_queries:
         return inquirer
 

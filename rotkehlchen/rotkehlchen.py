@@ -126,7 +126,11 @@ class Rotkehlchen():
             sleep_time_secs=ICONS_QUERY_SLEEP,
         )
         # Initialize the Inquirer singleton
-        Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
+        Inquirer(
+            data_dir=self.data_dir,
+            cryptocompare=self.cryptocompare,
+            coingecko=self.coingecko,
+        )
         # Keeps how many trades we have found per location. Used for free user limiting
         self.actions_per_location: Dict[str, Dict[Location, int]] = {
             'trade': defaultdict(int),

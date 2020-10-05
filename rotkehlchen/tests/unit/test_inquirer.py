@@ -3,10 +3,13 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CNY, A_EUR, A_GBP, A_JPY, A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import _query_exchanges_rateapi
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import Price
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 
@@ -74,3 +77,14 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
         # The cached response for EUR CNY is too old so we will fail here
         with pytest.raises(ValueError):
             result = inquirer.query_fiat_pair(A_EUR, A_CNY)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_fallback_to_coingecko(inquirer):  # pylint: disable=unused-argument
+    """Cryptocompare does not return current prices for some assets.
+    For those we are going to be using coingecko"""
+    price = inquirer.find_usd_price(Asset('RARI'))
+    assert price != Price(ZERO)
+    price = inquirer.find_usd_price(Asset('TLN'))
+    assert price != Price(ZERO)

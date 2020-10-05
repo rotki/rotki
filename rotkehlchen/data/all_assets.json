@@ -64,6 +64,15 @@
         "symbol": "300",
         "type": "ethereum token"
     },
+    "AAVE": {
+        "coingecko": "aave",
+        "ethereum_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Token",
+        "started": 1600970788,
+        "symbol": "AAVE",
+        "type": "ethereum token"
+    },
     "ABBC": {
         "coingecko": "alibabacoin",
         "name": "ABBC Coin",
@@ -236,11 +245,21 @@
         "symbol": "ADT",
         "type": "ethereum token"
     },
-    "ADX": {
+    "ADXv1": {
         "coingecko": "adex",
         "ethereum_address": "0x4470BB87d77b963A013DB939BE332f927f2b992e",
         "ethereum_token_decimals": 4,
         "name": "AdEx",
+        "started": 1496102400,
+        "symbol": "ADX",
+        "swapped_for": "ADX",
+        "type": "ethereum token"
+    },
+    "ADX": {
+        "coingecko": "adex",
+        "ethereum_address": "0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
+        "ethereum_token_decimals": 18,
+        "name": "AdEx Network",
         "started": 1496102400,
         "symbol": "ADX",
         "type": "ethereum token"
@@ -838,6 +857,13 @@
         "started": 1504483200,
         "symbol": "B2BX",
         "type": "ethereum token"
+    },
+    "BAKE": {
+        "coingecko": "bakerytoken",
+        "name": "BakeryToken",
+        "started": 1600905600,
+        "symbol": "BAKE",
+        "type": "binance token"
     },
     "BAL": {
         "coingecko": "balancer",
@@ -1624,6 +1650,15 @@
         "symbol": "BRD",
         "type": "ethereum token"
     },
+    "BREE": {
+        "coingecko": "cbdao",
+        "ethereum_address": "0x4639cd8cd52EC1CF2E496a606ce28D8AfB1C792F",
+        "ethereum_token_decimals": 18,
+        "name": "CBDAO ",
+        "started": 1599219609,
+        "symbol": "BREE",
+        "type": "ethereum token"
+    },
     "BRK": {
         "coingecko": "",
         "name": "Breakout",
@@ -1902,6 +1937,13 @@
         "symbol": "BULL",
         "type": "ethereum token"
     },
+    "BURGER": {
+        "coingecko": "burger-swap",
+        "name": "Burger Swap",
+        "started": 1600905600,
+        "symbol": "BURGER",
+        "type": "binance token"
+    },
     "BURST": {
         "coingecko": "burst",
         "name": "Burst",
@@ -1916,6 +1958,15 @@
         "name": "Binance USD",
         "started": 1567641600,
         "symbol": "BUSD",
+        "type": "ethereum token"
+    },
+    "BWF": {
+        "coingecko": "beowulf",
+        "ethereum_address": "0xF7E04D8a32229B4cA63aA51eEA9979C7287FEa48",
+        "ethereum_token_decimals": 5,
+        "name": "Beowulf ",
+        "started": 1599476835,
+        "symbol": "BWF",
         "type": "ethereum token"
     },
     "BWX": {
@@ -2021,6 +2072,13 @@
         "started": 1397520000,
         "symbol": "CAIX",
         "type": "own chain"
+    },
+    "CAKE": {
+        "coingecko": "pancakeswap-token",
+        "name": "Pancake Swap",
+        "started": 1601337600,
+        "symbol": "CAKE",
+        "type": "binance token"
     },
     "CAN": {
         "coingecko": "canyacoin",
@@ -2926,6 +2984,15 @@
         "symbol": "CVC",
         "type": "ethereum token"
     },
+    "CVP": {
+        "coingecko": "concentrated-voting-power",
+        "ethereum_address": "0x38e4adB44ef08F22F5B5b76A8f0c2d0dCbE7DcA1",
+        "ethereum_token_decimals": 18,
+        "name": "Concentrated Voting Power",
+        "started": 1597938312,
+        "symbol": "CVP",
+        "type": "ethereum token"
+    },
     "CVT": {
         "coingecko": "cybervein",
         "ethereum_address": "0xBe428c3867F05deA2A89Fc76a102b544eaC7f772",
@@ -3301,6 +3368,15 @@
         "name": "Digix Gold Token",
         "started": 1521722301,
         "symbol": "DGX",
+        "type": "ethereum token"
+    },
+    "DHT": {
+        "coingecko": "dhedge-dao",
+        "ethereum_address": "0xca1207647Ff814039530D7d35df0e1Dd2e91Fa84",
+        "ethereum_token_decimals": 17,
+        "name": "dHedge DAO Token ",
+        "started": 1599730531,
+        "symbol": "DHT",
         "type": "ethereum token"
     },
     "DIA": {
@@ -4506,6 +4582,13 @@
         "symbol": "FLIXX",
         "type": "ethereum token"
     },
+    "FLM": {
+        "coingecko": "flamingo-finance",
+        "name": "Flamingo finance",
+        "started": 1601251200,
+        "symbol": "FLM",
+        "type": "neo token"
+    },
     "FLO": {
         "coingecko": "flo",
         "name": "FLO",
@@ -5006,6 +5089,15 @@
         "symbol": "GET",
         "type": "ethereum token"
     },
+    "GHST": {
+        "coingecko": "aavegotchi",
+        "ethereum_address": "0x3F382DbD960E3a9bbCeaE22651E88158d2791550",
+        "ethereum_token_decimals": 18,
+        "name": "Aavegotchi GHST Token",
+        "started": 1599986900,
+        "symbol": "GHST",
+        "type": "ethereum token"
+    },
     "GIM": {
         "active": false,
         "coingecko": "gimli",
@@ -5191,6 +5283,14 @@
         "started": 1528890581,
         "symbol": "GSE",
         "type": "ethereum token"
+    },
+    "GST": {
+        "coingecko": "gstcoin",
+        "cryptocompare": "GSTC",
+        "name": "GSTCoin",
+        "started": 1571356800,
+        "symbol": "GST",
+        "type": "own chain"
     },
     "GTC": {
         "coingecko": "global-trust-coin",
@@ -5485,6 +5585,13 @@
         "name": "Handshake ",
         "started": 1582326254,
         "symbol": "HNS",
+        "type": "own chain"
+    },
+    "HNT": {
+        "coingecko": "helium",
+        "name": "Helium",
+        "started": 1587168000,
+        "symbol": "HNT",
         "type": "own chain"
     },
     "HORSE": {
@@ -6074,6 +6181,15 @@
         "symbol": "KDC",
         "type": "own chain"
     },
+    "KEEP": {
+        "coingecko": "keep-network",
+        "ethereum_address": "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC",
+        "ethereum_token_decimals": 18,
+        "name": "KEEP Token ",
+        "started": 1588042366,
+        "symbol": "KEEP",
+        "type": "ethereum token"
+    },
     "KEY": {
         "coingecko": "selfkey",
         "ethereum_address": "0x4CC19356f2D37338b9802aa8E8fc58B0373296E7",
@@ -6367,6 +6483,7 @@
         "name": "ETHLend",
         "started": 1502755200,
         "symbol": "LEND",
+        "swapped_for": "AAVE",
         "type": "ethereum token"
     },
     "LEV": {
@@ -6944,6 +7061,15 @@
         "symbol": "METM",
         "type": "ethereum token"
     },
+    "MEXP": {
+        "coingecko": "moji-experience-points",
+        "ethereum_address": "0xDe201dAec04ba73166d9917Fdf08e1728E270F06",
+        "ethereum_token_decimals": 18,
+        "name": "MOJI Experience Points ",
+        "started": 1586610745,
+        "symbol": "MEXP",
+        "type": "ethereum token"
+    },
     "MFG": {
         "coingecko": "syncfab",
         "ethereum_address": "0x6710c63432A2De02954fc0f851db07146a6c0312",
@@ -7435,6 +7561,13 @@
         "started": 1512118339,
         "symbol": "NBC",
         "type": "ethereum token"
+    },
+    "NBS": {
+        "coingecko": "new-bitshares",
+        "name": "New Bitshare",
+        "started": 1600473600,
+        "symbol": "NBS",
+        "type": "own chain"
     },
     "NCASH": {
         "coingecko": "nucleus-vision",
@@ -8500,6 +8633,15 @@
         "symbol": "POLL",
         "type": "ethereum token"
     },
+    "POLS": {
+        "coingecko": "polkastarter",
+        "ethereum_address": "0x83e6f1E41cdd28eAcEB20Cb649155049Fac3D5Aa",
+        "ethereum_token_decimals": 18,
+        "name": "PolkastarterToken",
+        "started": 1601333180,
+        "symbol": "POLS",
+        "type": "ethereum token"
+    },
     "POLY": {
         "coingecko": "polymath-network",
         "cryptocompare": "POLYN",
@@ -8907,6 +9049,15 @@
         "symbol": "RADS",
         "type": "own chain"
     },
+    "RARI": {
+        "coingecko": "rarible",
+        "ethereum_address": "0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF",
+        "ethereum_token_decimals": 18,
+        "name": "Rarible",
+        "started": 1594721646,
+        "symbol": "RARI",
+        "type": "ethereum token"
+    },
     "RATING": {
         "coingecko": "dprating",
         "ethereum_address": "0xE8663A64A96169ff4d95b4299E7ae9a76b905B31",
@@ -9059,15 +9210,6 @@
         "symbol": "REP",
         "type": "ethereum token"
     },
-    "REP-old": {
-        "coingecko": "augur",
-        "ethereum_address": "0x48c80F1f4D53D5951e5D5438B54Cba84f29F32a5",
-        "ethereum_token_decimals": 18,
-        "name": "Augur old",
-        "started": 1416182400,
-        "symbol": "REP",
-        "type": "ethereum token"
-    },
     "REPV2": {
         "coingecko": "augur",
         "cryptocompare": "REP",
@@ -9112,6 +9254,15 @@
         "name": "Refereum",
         "started": 1506297600,
         "symbol": "RFR",
+        "type": "ethereum token"
+    },
+    "RFUEL": {
+        "coingecko": "rio-defi",
+        "ethereum_address": "0xaf9f549774ecEDbD0966C52f250aCc548D3F36E5",
+        "ethereum_token_decimals": 18,
+        "name": "Rio Fuel Token ",
+        "started": 1600840045,
+        "symbol": "RFUEL",
         "type": "ethereum token"
     },
     "RHOC": {
@@ -10284,6 +10435,13 @@
         "symbol": "SUKU",
         "type": "ethereum token"
     },
+    "SUN": {
+        "coingecko": "sun-token",
+        "name": "Sun Token",
+        "started": 1599696000,
+        "symbol": "SUN",
+        "type": "tron token"
+    },
     "SUR": {
         "coingecko": "suretly",
         "ethereum_address": "0xe120c1ECBfdFeA7F0A8f0Ee30063491E8c26fedf",
@@ -11353,6 +11511,15 @@
         "name": "U Network",
         "started": 1518068353,
         "symbol": "UUU",
+        "type": "ethereum token"
+    },
+    "VALUE": {
+        "coingecko": "value-liquidity",
+        "ethereum_address": "0x49E833337ECe7aFE375e44F4E3e8481029218E5c",
+        "ethereum_token_decimals": 18,
+        "name": "Value Liquidity",
+        "started": 1600162155,
+        "symbol": "VALUE",
         "type": "ethereum token"
     },
     "VBK": {
@@ -12430,6 +12597,7 @@
         "name": "YFValue",
         "started": 1597602120,
         "symbol": "YFV",
+        "swapped_for": "VALUE",
         "type": "ethereum token"
     },
     "YOU": {

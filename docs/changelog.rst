@@ -2,8 +2,10 @@
 Changelog
 =========
 
+* :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
 * :bug:`1530` Truncation of account addresses will now dynamically change based on the screen width.
+* :feature:`224` Coingecko is now used for current price queries if cryptocompare fails. This will allow more tokens to be displayed.
 * :feature:`1523` Trailing or leading whitespace in pasted addresses and api keys will now be properly removed.
 * :feature:`1501` Assets that have been added to the ignore list will now be hidden from the dashboard.
 * :bug:`1533` Premium Yearn vaults users should now be able to see a USD PNL per vault they used during the tax report.
@@ -15,6 +17,26 @@ Changelog
   - `Compound Uni (cUNI) <https://www.coingecko.com/en/coins/compound-uniswap>`__
   - `YAMv3 (YAM) <https://www.coingecko.com/en/coins/yam>`__
   - `Avalanche (AVAX) <https://www.coingecko.com/en/coins/avalanche>`__
+  - `BakeryToken (BAKE) <https://www.coingecko.com/en/coins/bakerytoken>`__
+  - `Burger Swap (BURGER) <https://www.coingecko.com/en/coins/burger-swap>`__
+  - `Pancake Swap (CAKE) <https://www.coingecko.com/en/coins/pancakeswap>`__
+  - `Flamingo Finance (FLM) <https://www.coingecko.com/en/coins/flamingo-finance>`__
+  - `Helium (HNT) <https://www.coingecko.com/en/coins/helium>`__
+  - `New Bitshares (NBS) <https://www.coingecko.com/en/coins/new-bitshares>`__
+  - `Sun Token (SUN) <https://www.coingecko.com/en/coins/sun-token>`__
+  - `CBDao (BREE) <https://www.coingecko.com/en/coins/cbdao>`__
+  - `Concentrated Voting Power (CVP) <https://www.coingecko.com/en/coins/powerpool-concentrated-voting-power>`__
+  - `dHedge DAO Token (DHT) <https://www.coingecko.com/en/coins/dhedge-dao>`__
+  - `Aavegotchi (GHST) <https://www.coingecko.com/en/coins/aavegotchi>`__
+  - `Moji Experience Points (MEXP) <https://www.coingecko.com/en/coins/moji-experience-points>`__
+  - `Polkastarter (POLS) <https://www.coingecko.com/en/coins/polkastarter>`__
+  - `Rarible (RARI) <https://www.coingecko.com/en/coins/rarible>`__
+  - `Rio DeFi (RFUEL) <https://www.coingecko.com/en/coins/rio-defi>`__
+  - `Value Liquidity (VALUE) <https://www.coingecko.com/en/coins/value-liquidity>`__
+  - `Beowulf (BWF) <https://www.coingecko.com/en/coins/beowulf>`__
+  - `GSTCoin (GST) <https://www.coingecko.com/en/coins/gstcoin>`__
+  - `Keep Token (KEEP) <https://www.coingecko.com/en/coins/keep-network>`__
+  - `Aave Token (AAVE) <https://www.coingecko.com/en/coins/aave>`__
 
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.

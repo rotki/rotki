@@ -111,6 +111,7 @@ def test_coingecko_identifiers_are_reachable():
         'IPSX',
         'SHP',
         'WDC',
+        'BOST',
     ]
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
@@ -154,7 +155,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '98eccaded148ef3e88b5f34d583d5e89', 'version': 16}
+    last_meta = {'md5': '4efcd83bc926a60b46574842b92c8766', 'version': 17}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
