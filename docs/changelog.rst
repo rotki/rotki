@@ -20,6 +20,7 @@ Changelog
   - `Pancake Swap (CAKE) <https://www.coingecko.com/en/coins/pancakeswap>`__
   - `Flamingo Finance (FLM) <https://www.coingecko.com/en/coins/flamingo-finance>`__
   - `Helium (HNT) <https://www.coingecko.com/en/coins/helium>`__
+  - `New Bitshares (NBS) <https://www.coingecko.com/en/coins/new-bitshares>`__
 
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.

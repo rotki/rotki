@@ -7471,6 +7471,13 @@
         "symbol": "NBC",
         "type": "ethereum token"
     },
+    "NBS": {
+        "coingecko": "new-bitshares",
+        "name": "New Bitshare",
+        "started": 1600473600,
+        "symbol": "NBS",
+        "type": "own chain"
+    },
     "NCASH": {
         "coingecko": "nucleus-vision",
         "ethereum_address": "0x809826cceAb68c387726af962713b64Cb5Cb3CCA",
