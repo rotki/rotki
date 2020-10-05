@@ -1,52 +1,50 @@
 <template>
   <v-container>
-    <v-row>
-      <v-col cols="12">
-        <v-card>
-          <v-card-title>External Services</v-card-title>
-          <v-card-text>
-            <p>
-              Rotki connects to various service providers in order to obtain
-              information such as historical prices or blockchain data. In
-              certain cases Rotki depends on these APIs for basic information,
-              in which case you will need to provide an API key.
-            </p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <service-key
-          v-model="etherscanKey"
-          class="external-services__etherscan-key"
-          title="Etherscan"
-          description="Recommended for any Ethereum blockchain balances or transactions if you are not using your own node."
-          label="API key"
-          hint="Enter your Etherscan API key"
-          :loading="loading"
-          tooltip="Deletes the Etherscan API key"
-          @save="save('etherscan', $event)"
-          @delete-key="deleteKey('etherscan')"
-        />
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <service-key
-          v-model="cryptocompareKey"
-          class="external-services__cryptocompare-key"
-          title="CryptoCompare"
-          description="Rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited."
-          label="API key"
-          hint="Enter your CryptoCompare API key"
-          :loading="loading"
-          tooltip="Deletes the CryptoCompare API key"
-          @save="save('cryptocompare', $event)"
-          @delete-key="deleteKey('cryptocompare')"
-        />
-      </v-col>
-    </v-row>
+    <v-card>
+      <v-card-title>External Services</v-card-title>
+      <v-card-subtitle>
+        Rotki connects to various service providers in order to obtain
+        information such as historical prices or blockchain data. In certain
+        cases Rotki depends on these APIs for basic information, in which case
+        you will need to provide an API key.
+      </v-card-subtitle>
+      <v-card-text>
+        <v-row no-gutters>
+          <v-col cols="12">
+            <service-key
+              v-model="etherscanKey"
+              class="external-services__etherscan-key"
+              title="Etherscan"
+              description="Recommended for any Ethereum blockchain balances or transactions if you are not using your own node."
+              label="API key"
+              hint="Enter your Etherscan API key"
+              :loading="loading"
+              tooltip="Deletes the Etherscan API key"
+              @save="save('etherscan', $event)"
+              @delete-key="deleteKey('etherscan')"
+            />
+          </v-col>
+        </v-row>
+        <v-divider class="mt-3" />
+        <v-row no-gutters>
+          <v-col cols="12">
+            <service-key
+              v-model="cryptocompareKey"
+              class="external-services__cryptocompare-key"
+              title="CryptoCompare"
+              description="Rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited."
+              label="API key"
+              hint="Enter your CryptoCompare API key"
+              :loading="loading"
+              tooltip="Deletes the CryptoCompare API key"
+              @save="save('cryptocompare', $event)"
+              @delete-key="deleteKey('cryptocompare')"
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
     <confirm-dialog
       title="Delete API Key"
       message="Are you sure you want to delete this API Key?"
