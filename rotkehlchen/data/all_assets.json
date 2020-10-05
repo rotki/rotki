@@ -1909,6 +1909,13 @@
         "symbol": "BULL",
         "type": "ethereum token"
     },
+    "BURGER": {
+        "coingecko": "burger-swap",
+        "name": "Burger Swap",
+        "started": 1600905600,
+        "symbol": "BURGER",
+        "type": "binance token"
+    },
     "BURST": {
         "coingecko": "burst",
         "name": "Burst",

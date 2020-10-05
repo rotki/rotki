@@ -16,6 +16,7 @@ Changelog
   - `YAMv3 (YAM) <https://www.coingecko.com/en/coins/yam>`__
   - `Avalanche (AVAX) <https://www.coingecko.com/en/coins/avalanche>`__
   - `BakeryToken (BAKE) <https://www.coingecko.com/en/coins/bakerytoken>`__
+  - `Burger Swap (BURGER) <https://www.coingecko.com/en/coins/burger-swap>`__
 
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.
