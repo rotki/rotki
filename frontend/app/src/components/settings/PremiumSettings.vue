@@ -19,6 +19,7 @@
               :disabled="premium && !edit"
               :error-messages="errorMessages"
               :label="$t('premium_settings.fields.api_key')"
+              @paste="onApiKeyPaste"
             />
             <revealable-input
               v-model="apiSecret"
@@ -26,6 +27,7 @@
               prepend-icon="mdi-lock"
               :disabled="premium && !edit"
               :label="$t('premium_settings.fields.api_secret')"
+              @paste="onApiSecretPaste"
             />
             <div v-if="premium" class="premium-settings__premium-active">
               <v-icon color="success">mdi-check-circle</v-icon>
@@ -103,6 +105,7 @@ import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 import { SettingsUpdate } from '@/typing/types';
+import { trimOnPaste } from '@/utils/event';
 
 @Component({
   components: {
@@ -144,6 +147,20 @@ export default class PremiumSettings extends Vue {
   private clearErrors() {
     for (let i = 0; i < this.errorMessages.length; i++) {
       this.errorMessages.pop();
+    }
+  }
+
+  onApiKeyPaste(event: ClipboardEvent) {
+    const paste = trimOnPaste(event);
+    if (paste) {
+      this.apiKey = paste;
+    }
+  }
+
+  onApiSecretPaste(event: ClipboardEvent) {
+    const paste = trimOnPaste(event);
+    if (paste) {
+      this.apiSecret = paste;
     }
   }
 
