@@ -9191,15 +9191,6 @@
         "symbol": "REP",
         "type": "ethereum token"
     },
-    "REP-old": {
-        "coingecko": "augur",
-        "ethereum_address": "0x48c80F1f4D53D5951e5D5438B54Cba84f29F32a5",
-        "ethereum_token_decimals": 18,
-        "name": "Augur old",
-        "started": 1416182400,
-        "symbol": "REP",
-        "type": "ethereum token"
-    },
     "REPV2": {
         "coingecko": "augur",
         "cryptocompare": "REP",
