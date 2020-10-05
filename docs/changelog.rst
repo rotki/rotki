@@ -29,6 +29,7 @@ Changelog
   - `Moji Experience Points (MEXP) <https://www.coingecko.com/en/coins/moji-experience-points>`__
   - `Polkastarter (POLS) <https://www.coingecko.com/en/coins/polkastarter>`__
   - `Rarible (RARI) <https://www.coingecko.com/en/coins/rarible>`__
+  - `Rio DeFi (RFUEL) <https://www.coingecko.com/en/coins/rio-defi>`__
 
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.
