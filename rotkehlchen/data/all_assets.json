@@ -4527,6 +4527,13 @@
         "symbol": "FLIXX",
         "type": "ethereum token"
     },
+    "FLM": {
+        "coingecko": "flamingo-finance",
+        "name": "Flamingo finance",
+        "started": 1601251200,
+        "symbol": "FLM",
+        "type": "neo token"
+    },
     "FLO": {
         "coingecko": "flo",
         "name": "FLO",
