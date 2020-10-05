@@ -236,11 +236,21 @@
         "symbol": "ADT",
         "type": "ethereum token"
     },
-    "ADX": {
+    "ADXv1": {
         "coingecko": "adex",
         "ethereum_address": "0x4470BB87d77b963A013DB939BE332f927f2b992e",
         "ethereum_token_decimals": 4,
         "name": "AdEx",
+        "started": 1496102400,
+        "symbol": "ADX",
+        "swapped_for": "ADX",
+        "type": "ethereum token"
+    },
+    "ADX": {
+        "coingecko": "adex",
+        "ethereum_address": "0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
+        "ethereum_token_decimals": 18,
+        "name": "AdEx Network",
         "started": 1496102400,
         "symbol": "ADX",
         "type": "ethereum token"
