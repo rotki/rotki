@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`1530` Truncation of account addresses will now dynamically change based on the screen width.
+* :feature:`1501` Assets that have been added to the ignore list will now be hidden from the dashboard
 * :feature:`1523` Trailing or leading whitespace in pasted addresses and api keys will now be properly removed.
 * :feature:`1501` Assets that have been added to the ignore list will now be hidden from the dashboard.
 * :bug:`1533` Premium Yearn vaults users should now be able to see a USD PNL per vault they used during the tax report.
