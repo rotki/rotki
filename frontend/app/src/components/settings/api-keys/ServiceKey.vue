@@ -1,14 +1,12 @@
 <template>
-  <v-card>
+  <v-card flat>
     <v-card-title>
       {{ title }}
     </v-card-title>
+    <v-card-subtitle>
+      {{ description }}
+    </v-card-subtitle>
     <v-card-text class="service-key__content">
-      <v-row>
-        <v-col cols="12">
-          {{ description }}
-        </v-col>
-      </v-row>
       <v-row align="center" justify="center">
         <v-col>
           <revealable-input
@@ -18,6 +16,7 @@
             :disabled="!editMode"
             :label="label"
             @input="currentValue = $event"
+            @paste="onPaste"
           />
         </v-col>
         <v-col cols="auto">
@@ -68,6 +67,7 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { trimOnPaste } from '@/utils/event';
 
 @Component({
   components: {
@@ -94,6 +94,13 @@ export default class ServiceKey extends Vue {
 
   editMode: boolean = false;
   cancellable: boolean = false;
+
+  onPaste(event: ClipboardEvent) {
+    const paste = trimOnPaste(event);
+    if (paste) {
+      this.currentValue = paste;
+    }
+  }
 
   mounted() {
     this.updateStatus();
