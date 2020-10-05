@@ -744,7 +744,7 @@
     },
     "validation": {
       "tax_free_days": "Please enter the number of days",
-      "tax_free_days_gt_zero": "The number of days cannot negative or zero"
+      "tax_free_days_gt_zero": "The number of days cannot be negative or zero"
     },
     "messages": {
       "tax_free_period": "Tax free period set to {period} days",
