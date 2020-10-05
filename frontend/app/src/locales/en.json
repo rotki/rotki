@@ -489,7 +489,7 @@
   "labeled_address_display": {
     "label": "{label} |",
     "copy": "Copy address to clipboard",
-    "open_link": "labeled_address_display.open_link"
+    "open_link": "Open in external block explorer"
   },
   "defi_selector_item": {
     "vault": "Maker Vault"
