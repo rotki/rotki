@@ -7015,6 +7015,15 @@
         "symbol": "METM",
         "type": "ethereum token"
     },
+    "MEXP": {
+        "coingecko": "moji-experience-points",
+        "ethereum_address": "0xDe201dAec04ba73166d9917Fdf08e1728E270F06",
+        "ethereum_token_decimals": 18,
+        "name": "MOJI Experience Points ",
+        "started": 1586610745,
+        "symbol": "MEXP",
+        "type": "ethereum token"
+    },
     "MFG": {
         "coingecko": "syncfab",
         "ethereum_address": "0x6710c63432A2De02954fc0f851db07146a6c0312",

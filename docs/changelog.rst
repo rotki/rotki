@@ -26,6 +26,7 @@ Changelog
   - `Concentrated Voting Power (CVP) <https://www.coingecko.com/en/coins/powerpool-concentrated-voting-power>`__
   - `dHedge DAO Token (DHT) <https://www.coingecko.com/en/coins/dhedge-dao>`__
   - `Aavegotchi (GHST) <https://www.coingecko.com/en/coins/aavegotchi>`__
+  - `Moji Experience Points (MEXP) <https://www.coingecko.com/en/coins/moji-experience-points>`__
 
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.
