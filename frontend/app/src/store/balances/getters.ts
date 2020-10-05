@@ -217,20 +217,23 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }, Zero);
   },
 
-  accountAssets: (state: BalanceState) => (account: string) => {
+  accountAssets: (state: BalanceState, _, { session }) => (account: string) => {
+    const ignoredAssets = session!.ignoredAssets;
     const ethAccount = state.eth[account];
     if (!ethAccount || isEmpty(ethAccount)) {
       return [];
     }
 
-    return Object.entries(ethAccount.assets).map(
-      ([key, asset_data]) =>
-        ({
-          asset: key,
-          amount: asset_data.amount,
-          usdValue: asset_data.usdValue
-        } as AssetBalance)
-    );
+    return Object.entries(ethAccount.assets)
+      .filter(([asset]) => !ignoredAssets.includes(asset))
+      .map(
+        ([key, asset_data]) =>
+          ({
+            asset: key,
+            amount: asset_data.amount,
+            usdValue: asset_data.usdValue
+          } as AssetBalance)
+      );
   },
 
   hasTokens: (state: BalanceState) => (account: string) => {

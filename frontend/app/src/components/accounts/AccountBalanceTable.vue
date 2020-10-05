@@ -85,12 +85,12 @@
     </template>
     <template #expanded-item="{ headers, item }">
       <td :colspan="headers.length" class="account-balance-table__expanded">
-        <account-asset-balances :account="item.account" />
+        <account-asset-balances :account="item.address" />
       </td>
     </template>
     <template #item.expand="{ item }">
       <row-expander
-        v-if="expandable && hasTokens(item.account)"
+        v-if="expandable && hasTokens(item.address)"
         :expanded="expanded.includes(item)"
         @click="expanded = expanded.includes(item) ? [] : [item]"
       />
