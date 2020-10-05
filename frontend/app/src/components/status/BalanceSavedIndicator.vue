@@ -8,7 +8,7 @@
   >
     <template #activator="{ on }">
       <menu-tooltip-button
-        tooltip="Balances Snasphot Save Status"
+        tooltip="Balances Snapshot Save Status"
         class-name="secondary--text text--lighten-2"
         :on-menu="on"
       >
