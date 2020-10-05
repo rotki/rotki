@@ -10326,6 +10326,13 @@
         "symbol": "SUKU",
         "type": "ethereum token"
     },
+    "SUN": {
+        "coingecko": "sun-token",
+        "name": "Sun Token",
+        "started": 1599696000,
+        "symbol": "SUN",
+        "type": "tron token"
+    },
     "SUR": {
         "coingecko": "suretly",
         "ethereum_address": "0xe120c1ECBfdFeA7F0A8f0Ee30063491E8c26fedf",
