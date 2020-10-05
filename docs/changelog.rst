@@ -23,6 +23,7 @@ Changelog
   - `New Bitshares (NBS) <https://www.coingecko.com/en/coins/new-bitshares>`__
   - `Sun Token (SUN) <https://www.coingecko.com/en/coins/sun-token>`__
   - `CBDao (BREE) <https://www.coingecko.com/en/coins/cbdao>`__
+  - `Concentrated Voting Power (CVP) <https://www.coingecko.com/en/coins/powerpool-concentrated-voting-power>`__
 
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.

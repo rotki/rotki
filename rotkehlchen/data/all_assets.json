@@ -2956,6 +2956,15 @@
         "symbol": "CVC",
         "type": "ethereum token"
     },
+    "CVP": {
+        "coingecko": "powerpool-concentrated-voting-power",
+        "ethereum_address": "0x38e4adB44ef08F22F5B5b76A8f0c2d0dCbE7DcA1",
+        "ethereum_token_decimals": 18,
+        "name": "Concentrated Voting Power",
+        "started": 1597938312,
+        "symbol": "CVP",
+        "type": "ethereum token"
+    },
     "CVT": {
         "coingecko": "cybervein",
         "ethereum_address": "0xBe428c3867F05deA2A89Fc76a102b544eaC7f772",
