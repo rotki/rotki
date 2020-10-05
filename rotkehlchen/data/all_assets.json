@@ -11476,6 +11476,15 @@
         "symbol": "UUU",
         "type": "ethereum token"
     },
+    "VALUE": {
+        "coingecko": "value-liquidity",
+        "ethereum_address": "0x49E833337ECe7aFE375e44F4E3e8481029218E5c",
+        "ethereum_token_decimals": 18,
+        "name": "Value Liquidity",
+        "started": 1600162155,
+        "symbol": "VALUE",
+        "type": "ethereum token"
+    },
     "VBK": {
         "coingecko": "veriblock",
         "cryptocompare": "",
@@ -12551,6 +12560,7 @@
         "name": "YFValue",
         "started": 1597602120,
         "symbol": "YFV",
+        "swapped_for": "VALUE",
         "type": "ethereum token"
     },
     "YOU": {
