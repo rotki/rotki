@@ -839,6 +839,13 @@
         "symbol": "B2BX",
         "type": "ethereum token"
     },
+    "BAKE": {
+        "coingecko": "bakerytoken",
+        "name": "BakeryToken",
+        "started": 1600905600,
+        "symbol": "BAKE",
+        "type": "binance token"
+    },
     "BAL": {
         "coingecko": "balancer",
         "ethereum_address": "0xba100000625a3754423978a60c9317c58a424e3D",
