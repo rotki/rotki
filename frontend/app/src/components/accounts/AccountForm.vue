@@ -37,6 +37,7 @@
               :label="$t('account_form.labels.btc.xpub')"
               autocomplete="off"
               :disabled="accountOperation || loading || !!edit"
+              @paste="onPasteXpub"
             />
           </v-col>
           <v-col cols="auto">
@@ -82,6 +83,7 @@
           :error-messages="errorMessages"
           autocomplete="off"
           :disabled="accountOperation || loading || !!edit"
+          @paste="onPasteAddress"
         />
         <v-text-field
           v-model="label"
@@ -115,6 +117,7 @@ import {
   GeneralAccount,
   SupportedBlockchains
 } from '@/typing/types';
+import { trimOnPaste } from '@/utils/event';
 
 type ValidationRule = (value: string) => boolean | string;
 
@@ -204,6 +207,20 @@ export default class AccountForm extends Vue {
   @Watch('edit')
   onEdit() {
     this.setEditMode();
+  }
+
+  onPasteAddress(event: ClipboardEvent) {
+    const paste = trimOnPaste(event);
+    if (paste) {
+      this.address = paste;
+    }
+  }
+
+  onPasteXpub(event: ClipboardEvent) {
+    const paste = trimOnPaste(event);
+    if (paste) {
+      this.xpub = paste;
+    }
   }
 
   reset() {
