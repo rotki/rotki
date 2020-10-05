@@ -31,6 +31,7 @@ from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
 
@@ -118,23 +119,27 @@ class Inquirer():
     _cached_forex_data: Dict
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
+    _coingecko: 'Coingecko'
     _ethereum: Optional['EthereumManager'] = None
 
     def __new__(
             cls,
             data_dir: Path = None,
             cryptocompare: 'Cryptocompare' = None,
+            coingecko: 'Coingecko' = None,
     ) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance
 
         assert data_dir, 'arguments should be given at the first instantiation'
         assert cryptocompare, 'arguments should be given at the first instantiation'
+        assert coingecko, 'arguments should be given at the first instantiation'
 
         Inquirer.__instance = object.__new__(cls)
 
         Inquirer.__instance._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
+        Inquirer._coingecko = coingecko
         filename = data_dir / 'price_history_forex.json'
         try:
             with open(filename, 'r') as f:
@@ -151,26 +156,14 @@ class Inquirer():
         Inquirer()._ethereum = ethereum
 
     @staticmethod
-    def find_usd_price(asset: Asset) -> Price:
+    def _cryptocompare_find_usd_price(asset: Asset) -> Price:
         """Returns the current USD price of the asset
+
+        Return Price(ZERO) if price can't be found.
 
         May raise:
         - RemoteError if the cryptocompare query has a problem
         """
-        if asset.identifier in SPECIAL_SYMBOLS:
-            ethereum = Inquirer()._ethereum
-            assert ethereum, 'Inquirer should never be called before the injection of ethereum'
-            underlying_asset_price = get_underlying_asset_price(asset.identifier)
-            usd_price = handle_defi_price_query(
-                ethereum=ethereum,
-                token_symbol=asset.identifier,
-                underlying_asset_price=underlying_asset_price,
-            )
-            if usd_price is None:
-                return Price(ZERO)
-
-            return Price(usd_price)
-
         try:
             result = Inquirer()._cryptocompare.query_endpoint_price(
                 from_asset=asset,
@@ -188,6 +181,41 @@ class Inquirer():
 
         price = Price(FVal(result['USD']))
         log.debug('Got usd price from cryptocompare', asset=asset, price=price)
+        return price
+
+    @staticmethod
+    def find_usd_price(asset: Asset) -> Price:
+        """Returns the current USD price of the asset
+
+        Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs
+        """
+        if asset.identifier in SPECIAL_SYMBOLS:
+            ethereum = Inquirer()._ethereum
+            assert ethereum, 'Inquirer should never be called before the injection of ethereum'
+            underlying_asset_price = get_underlying_asset_price(asset.identifier)
+            usd_price = handle_defi_price_query(
+                ethereum=ethereum,
+                token_symbol=asset.identifier,
+                underlying_asset_price=underlying_asset_price,
+            )
+            if usd_price is None:
+                return Price(ZERO)
+
+            return Price(usd_price)
+
+        try:
+            price = Inquirer()._cryptocompare_find_usd_price(asset)
+        except RemoteError:
+            price = Price(ZERO)
+
+        if price == Price(ZERO):
+            try:
+                price = Inquirer()._coingecko.simple_price(from_asset=asset, to_asset=A_USD)
+            except RemoteError as e:
+                log.error(
+                    f'Coingecko usd price query for {asset.identifier} failed due to {str(e)}',
+                )
+                price = Price(ZERO)
         return price
 
     @staticmethod

@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
 * :bug:`1530` Truncation of account addresses will now dynamically change based on the screen width.
+* :feature:`224` Coingecko is now used for current price queries if cryptocompare fails. This will allow more tokens to be displayed.
 * :feature:`1523` Trailing or leading whitespace in pasted addresses and api keys will now be properly removed.
 * :feature:`1501` Assets that have been added to the ignore list will now be hidden from the dashboard.
 * :bug:`1533` Premium Yearn vaults users should now be able to see a USD PNL per vault they used during the tax report.
