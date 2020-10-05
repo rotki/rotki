@@ -15,14 +15,14 @@
     sort-desc
     v-on="$listeners"
   >
-    <template v-if="blockchain === 'ETH'" #header.usdValue>
+    <template v-if="blockchain === 'ETH'" #header.balance.usdValue>
       {{
         $t('account_balances.headers.usd-value-eth', {
           symbol: currency.ticker_symbol
         })
       }}
     </template>
-    <template v-else #header.usdValue>
+    <template v-else #header.balance.usdValue>
       {{
         $t('account_balances.headers.usd-value', {
           symbol: currency.ticker_symbol
