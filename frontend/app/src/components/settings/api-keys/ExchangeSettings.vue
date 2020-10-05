@@ -61,6 +61,7 @@
             class="exchange-settings__fields__api-key"
             :label="$t('exchange_settings.inputs.api_key')"
             :disabled="isConnected"
+            @paste="onApiKeyPaste"
           />
 
           <revealable-input
@@ -69,6 +70,7 @@
             prepend-icon="mdi-lock"
             :label="$t('exchange_settings.inputs.api_secret')"
             :disabled="isConnected"
+            @paste="onApiSecretPaste"
           />
 
           <revealable-input
@@ -128,6 +130,7 @@ import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { exchanges } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 import { ExchangePayload } from '@/store/balances/types';
+import { trimOnPaste } from '@/utils/event';
 
 @Component({
   components: {
@@ -173,6 +176,20 @@ export default class ExchangeSettings extends Vue {
   @Watch('selectedExchange')
   onChangeExchange() {
     this.resetFields();
+  }
+
+  onApiKeyPaste(event: ClipboardEvent) {
+    const paste = trimOnPaste(event);
+    if (paste) {
+      this.apiKey = paste;
+    }
+  }
+
+  onApiSecretPaste(event: ClipboardEvent) {
+    const paste = trimOnPaste(event);
+    if (paste) {
+      this.apiSecret = paste;
+    }
   }
 
   async onChangeKrakenAccountType() {
