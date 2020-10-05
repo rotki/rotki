@@ -80,14 +80,15 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return accounts;
   },
 
-  totals(state: BalanceState): AssetBalance[] {
+  totals(state: BalanceState, _, { session }): AssetBalance[] {
+    const ignoredAssets = session!.ignoredAssets;
     return map(state.totals, (value: Balance, asset: string) => {
       const assetBalance: AssetBalance = {
         asset,
         ...value
       };
       return assetBalance;
-    });
+    }).filter(balance => !ignoredAssets.includes(balance.asset));
   },
 
   exchangeRate: (state: BalanceState) => (currency: string) => {
@@ -103,19 +104,22 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }));
   },
 
-  exchangeBalances: (state: BalanceState) => (
+  exchangeBalances: (state: BalanceState, _, { session }) => (
     exchange: string
   ): AssetBalance[] => {
+    const ignoredAssets = session!.ignoredAssets;
     const exchangeBalances = state.exchangeBalances[exchange];
     return exchangeBalances
-      ? Object.keys(exchangeBalances).map(
-          asset =>
-            ({
-              asset,
-              amount: exchangeBalances[asset].amount,
-              usdValue: exchangeBalances[asset].usdValue
-            } as AssetBalance)
-        )
+      ? Object.keys(exchangeBalances)
+          .filter(asset => !ignoredAssets.includes(asset))
+          .map(
+            asset =>
+              ({
+                asset,
+                amount: exchangeBalances[asset].amount,
+                usdValue: exchangeBalances[asset].usdValue
+              } as AssetBalance)
+          )
       : [];
   },
 
