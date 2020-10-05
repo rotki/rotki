@@ -31,6 +31,7 @@ Changelog
   - `Rarible (RARI) <https://www.coingecko.com/en/coins/rarible>`__
   - `Rio DeFi (RFUEL) <https://www.coingecko.com/en/coins/rio-defi>`__
   - `Value Liquidity (VALUE) <https://www.coingecko.com/en/coins/value-liquidity>`__
+  - `Beowulf (BWF) <https://www.coingecko.com/en/coins/beowulf>`__
 
 * :release:`1.8.0 <2020-09-23>`
 * :feature:`1498` Users can now select the protocol(s) when resetting the DeFi history cache.

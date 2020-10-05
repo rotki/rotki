@@ -1941,6 +1941,15 @@
         "symbol": "BUSD",
         "type": "ethereum token"
     },
+    "BWF": {
+        "coingecko": "beowulf",
+        "ethereum_address": "0xF7E04D8a32229B4cA63aA51eEA9979C7287FEa48",
+        "ethereum_token_decimals": 5,
+        "name": "Beowulf ",
+        "started": 1599476835,
+        "symbol": "BWF",
+        "type": "ethereum token"
+    },
     "BWX": {
         "coingecko": "blue-whale",
         "cryptocompare": "",
