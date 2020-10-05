@@ -8587,6 +8587,15 @@
         "symbol": "POLL",
         "type": "ethereum token"
     },
+    "POLS": {
+        "coingecko": "polkastarter",
+        "ethereum_address": "0x83e6f1E41cdd28eAcEB20Cb649155049Fac3D5Aa",
+        "ethereum_token_decimals": 18,
+        "name": "PolkastarterToken",
+        "started": 1601333180,
+        "symbol": "POLS",
+        "type": "ethereum token"
+    },
     "POLY": {
         "coingecko": "polymath-network",
         "cryptocompare": "POLYN",
