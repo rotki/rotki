@@ -406,6 +406,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'FME',
     'INX',
     'MFA',
+    'FCT2',  # neither in coingecko nor cryptocompare
 )
 
 
