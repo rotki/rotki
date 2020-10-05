@@ -3342,6 +3342,15 @@
         "symbol": "DGX",
         "type": "ethereum token"
     },
+    "DHT": {
+        "coingecko": "dhedge-dao",
+        "ethereum_address": "0xca1207647Ff814039530D7d35df0e1Dd2e91Fa84",
+        "ethereum_token_decimals": 17,
+        "name": "dHedge DAO Token ",
+        "started": 1599730531,
+        "symbol": "DHT",
+        "type": "ethereum token"
+    },
     "DIA": {
         "coingecko": "dia-data",
         "ethereum_address": "0x84cA8bc7997272c7CfB4D0Cd3D55cd942B3c9419",
