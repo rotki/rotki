@@ -78,10 +78,14 @@ export default class PremiumCredentials extends Vue {
   ];
 
   @Emit()
-  apiKeyChanged(_apiKey: string) {}
+  apiKeyChanged(apiKey: string): string {
+    return apiKey ? apiKey.trim() : '';
+  }
 
   @Emit()
-  apiSecretChanged(_apiSecret: string) {}
+  apiSecretChanged(apiSecret: string): string {
+    return apiSecret ? apiSecret.trim() : '';
+  }
 
   @Emit()
   enabledChanged(_enabled: boolean) {}

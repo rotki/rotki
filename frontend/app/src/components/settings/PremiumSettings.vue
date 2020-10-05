@@ -185,8 +185,8 @@ export default class PremiumSettings extends Vue {
 
     const payload: PremiumCredentialsPayload = {
       username: this.username,
-      apiKey: this.apiKey,
-      apiSecret: this.apiSecret
+      apiKey: this.apiKey.trim(),
+      apiSecret: this.apiSecret.trim()
     };
     const { success, message } = await this.setupPremium(payload);
     if (!success) {
