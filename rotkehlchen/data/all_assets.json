@@ -64,6 +64,15 @@
         "symbol": "300",
         "type": "ethereum token"
     },
+    "AAVE": {
+        "coingecko": "aave",
+        "ethereum_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Token",
+        "started": 1600970788,
+        "symbol": "AAVE",
+        "type": "ethereum token"
+    },
     "ABBC": {
         "coingecko": "alibabacoin",
         "name": "ABBC Coin",
@@ -6474,6 +6483,7 @@
         "name": "ETHLend",
         "started": 1502755200,
         "symbol": "LEND",
+        "swapped_for": "AAVE",
         "type": "ethereum token"
     },
     "LEV": {
