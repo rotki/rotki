@@ -330,6 +330,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'XDOT',  # old polkadot before the split
     'TALK',  # neither in coingecko nor cryptocompare
     'BTCTRON',  # neither in coingecko nor cryptocompare
+    'FCT2',  # neither in coingecko nor cryptocompare
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (

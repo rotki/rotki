@@ -5061,6 +5061,15 @@
         "symbol": "GET",
         "type": "ethereum token"
     },
+    "GHST": {
+        "coingecko": "aavegotchi",
+        "ethereum_address": "0x3F382DbD960E3a9bbCeaE22651E88158d2791550",
+        "ethereum_token_decimals": 18,
+        "name": "Aavegotchi GHST Token",
+        "started": 1599986900,
+        "symbol": "GHST",
+        "type": "ethereum token"
+    },
     "GIM": {
         "active": false,
         "coingecko": "gimli",
