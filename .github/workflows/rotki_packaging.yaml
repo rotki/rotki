@@ -97,9 +97,8 @@ jobs:
             ${{ runner.os }}-node-
       - name: Setup SQLCipher
         run: |
-          echo $( brew --prefix )
-          cd $( brew --prefix )
-          git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Library/Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
+          cd "$(brew --repo homebrew/core)"
+          git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
           brew install sqlcipher
       - name: Package
         id: packaging
