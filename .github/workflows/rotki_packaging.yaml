@@ -6,14 +6,13 @@ on:
     branches:
       - ga-packaging
 jobs:
-  package:
-    if: false
+  linux:
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         python-version: [3.7]
         node-version: [12.x]
     runs-on: ${{ matrix.os }}
@@ -29,52 +28,85 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux')
+      - name: Persist pip cache
+        uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'macOS')
+      - name: Persist npm cache
+        uses: actions/cache@v2
         with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - uses: actions/cache@v2
-        with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            ~/cache/Cypress
           key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Setup SQLCipher
         run: |
-          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
-          then
-            sudo apt-get update
-            sudo apt-get install libxml2-utils
-            ./install_deps.sh
-            sudo ldconfig
-          fi
-          if [ ${{ matrix.os }} == 'macos-latest' ];
-          then
-            brew install sqlcipher
-          fi
+          sudo apt-get update
+          sudo apt-get install libxml2-utils
+          ./install_deps.sh
+          sudo ldconfig
       - name: Package
         id: packaging
         run: |
           source ./package.sh
-          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
-          then
-            echo "##[set-output name=executable;]$(echo $APPIMAGE_CHECKSUM)"
-            echo "##[set-output name=archive;]$(echo $TAR_CHECKSUM)"
-          elif [ ${{ matrix.os }} == 'macos-latest' ];
-          then
-            echo "##[set-output name=executable;]$(echo $DMG_CHECKSUM)"
-            echo "##[set-output name=archive;]$(echo $ZIP_CHECKSUM)"
-          fi
+          echo "##[set-output name=executable;]$(echo $APPIMAGE_CHECKSUM)"
+          echo "##[set-output name=archive;]$(echo $TAR_CHECKSUM)"
+
+  osx:
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+        python-version: [3.7]
+        node-version: [12.x]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: Persist pip cache
+        uses: actions/cache@v2
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Persist npm cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.npm
+            ~/Library/Caches/Cypress
+          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Setup SQLCipher
+        run: |
+          echo $( brew --prefix )
+          cd $( brew --prefix )
+          git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Library/Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
+          brew install sqlcipher
+      - name: Package
+        id: packaging
+        run: |
+          source ./package.sh
+          echo "##[set-output name=executable;]$(echo $DMG_CHECKSUM)"
+          echo "##[set-output name=archive;]$(echo $ZIP_CHECKSUM)"
 
   windows:
     env:
@@ -136,5 +168,4 @@ jobs:
         shell: powershell
       - uses: actions/upload-artifact@v2
         with:
-          path: ${{ steps.build.outputs.binary }}    
-          
+          path: ${{ steps.build.outputs.binary }}
