@@ -4,11 +4,19 @@ $BUILD_DEPENDENCIES = if ($env:BUILD_DEPENDENCIES) { $env:BUILD_DEPENDENCIES } e
 
 # Setup constants
 $MINIMUM_NPM_VERSION = "5.7.0"
-$TCLTK='tcltk85-8.5.19.19.tcl85.Win10.x86_64'
+$TCLTK='tcltk85-8.5.19-17.tcl85.Win10.x86_64'
 
 echo "Starting rotki build process with SQLCipher $SQLCIPHER_VERSION and pysqlcipher3 $PYSQLCIPHER3_VERSION"
 
 $PROJECT_DIR = $PWD
+
+function ExitOnFailure {
+    param([string]$ExitMessage)
+    if (-not ($LASTEXITCODE -eq 0)) {
+        echo "$ExitMessage"
+        exit 1;
+    }
+}
 
 if ($Env:CI) {
     cd ~\
@@ -26,7 +34,9 @@ $BUILD_DEPS_DIR = $PWD
 if (-not (Test-Path $TCLTK -PathType Container)) {   
     echo "Setting up TCL/TK $TCLTK"
     curl.exe -L -O "https://bitbucket.org/tombert/tcltk/downloads/$TCLTK.tgz"
-    tar -xf "$TCLTK.tgz"    
+    ExitOnFailure("Failed to download tcl/tk")
+    tar -xf "$TCLTK.tgz"
+    ExitOnFailure("Failed to untar tcl/tk")
 }
 
 if ($Env:CI) { 
@@ -39,6 +49,7 @@ if ($Env:CI) {
 if (-not (Test-Path sqlcipher -PathType Container)) {
     echo "Cloning SQLCipher"
     git clone https://github.com/sqlcipher/sqlcipher
+    ExitOnFailure("Failed to clone SQLCipher")
 }
 
 cd sqlcipher
@@ -47,13 +58,25 @@ $SQLCIPHER_DIR = $PWD
 $tag = git name-rev --tags --name-only $(git rev-parse HEAD)
 
 if (-not ($tag -match $SQLCIPHER_VERSION)) {
-    echo "Checking out $SQLCIPHER_VERSION"
+    echo "Checking out SQLCipher $SQLCIPHER_VERSION"
     git checkout $SQLCIPHER_VERSION
+    ExitOnFailure("Failed to checkout SQLCipher $SQLCIPHER_VERSION")
 }
 
 if (-not (git status --porcelain)) {
-    echo "Applying Makefile patch"
+    echo "Applying Makefile patch for SQLCipher"
     git apply $PROJECT_DIR\packaging\sqlcipher_win.diff
+    ExitOnFailure("Failed to apply the Makefile patch for SQLCipher")
+}
+
+
+$OPENSSL_PATH = (Join-Path ${env:ProgramFiles} "OpenSSL-Win64")
+
+if (-not(Test-Path "$OPENSSL_PATH" -PathType Container))
+{
+    echo "Installing OpenSSL 1.1.1.8"
+    choco install -y openssl --version 1.1.1.800 --no-progress
+    ExitOnFailure("Installation of OpenSSL Failed")
 }
 
 if (-not (Test-Path sqlcipher.dll -PathType Leaf))
@@ -68,12 +91,6 @@ if (-not (Test-Path sqlcipher.dll -PathType Leaf))
     echo "Load MSVC environment $vc_env"
     $build = (Join-Path $vsPath "VC\Auxiliary\Build")
     $env:Path += ";$build"
-
-    if (-not(Test-Path (Join-Path ${env:ProgramFiles} "OpenSSL-Win64") -PathType Container))
-    {
-        echo "Installing OpenSSL 1.1.1.8"
-        choco install -y openssl --version 1.1.1.800 --no-progress
-    }
 
     Enter-VsDevShell -VsInstallPath $vsPath -DevCmdArguments -arch=x64
     if (Get-Command "$vc_env" -errorAction SilentlyContinue)
@@ -94,11 +111,7 @@ if (-not (Test-Path sqlcipher.dll -PathType Leaf))
 
     cd $SQLCIPHER_DIR
     nmake /f Makefile.msc
-
-    if (-not ($LASTEXITCODE -eq 0)) {
-        echo "SQLCipher build failed"
-        exit 1;
-    }
+    ExitOnFailure("Failed to build SQLCipher")
 }
 
 $env:Path += ";$SQLCIPHER_DIR"
@@ -108,33 +121,40 @@ cd $BUILD_DEPS_DIR
 if (-not (Test-Path pysqlcipher3 -PathType Container)) {
     echo "Cloning pysqlcipher3"
     git clone https://github.com/rigglemania/pysqlcipher3.git
+    ExitOnFailure("Failed to clone pysqlcipher3")
 }
 
 cd pysqlcipher3
 $PYSQLCIPHER3_DIR = $PWD
 
-git checkout $PYSQLCIPHER3_VERSION
+if (-not (git rev-parse HEAD) -match $PYSQLCIPHER3_VERSION) {
+    git checkout $PYSQLCIPHER3_VERSION
+    ExitOnFailure("Failed to checkout pysqlcipher3 $PYSQLCIPHER3_VERSION")
+}
 
 if (-not (git status --porcelain)) {
     echo "Applying setup patch"
     git apply $PROJECT_DIR\packaging\pysqlcipher3_win.diff
+    ExitOnFailure("Failed to apply pysqlcipher3 patch")
 }
 
-cd $BUILD_DEPS_DIR
+if ((-not ($env:VIRTUAL_ENV)) -and (-not ($Env:CI))) {
+    if ((-not (Test-Path "$BUILD_DEPS_DIR\.venv" -PathType Container))) {
+        cd $BUILD_DEPS_DIR
+        pip install virtualenv --user
+        echo "Creating rotki .venv"
+        python -m virtualenv .venv
+        ExitOnFailure("Failed to create rotki VirtualEnv")
+    }
+    
+    cd $PROJECT_DIR
 
-if ((-not (Test-Path .venv -PathType Container)) -and (-not ($Env:CI))) {
-    echo "Creating rotki .venv"
-    python virtualenv .venv
+    echo "Activating rotki .venv"
+    & $BUILD_DEPS_DIR\.venv\Scripts\activate.ps1
+    ExitOnFailure("Failed to activate rotki VirtualEnv")
 }
 
 cd $PROJECT_DIR
-if (-not ($Env:CI)) {
-    & $BUILD_DEPS_DIR\.venv\Scripts\activate.ps1    
-}
-
-
-#TODO: Check if already in venv and skip activation
-
 $NPM_VERSION = (npm --version) | Out-String  
  
 if ([version]$NPM_VERSION -lt [version]$MINIMUM_NPM_VERSION) {
@@ -148,9 +168,19 @@ if ($Env:CI) {
     choco install visualstudio2019-workload-vctools --no-progress
 }
 
+if (-not (Test-Path sqlcipher.dll -PathType Leaf)) {
+    echo "Copying sqlcipher.dll to project directory"
+    Copy-Item "$SQLCIPHER_DIR\sqlcipher.dll" .\
+}
+
+if (-not (Test-Path libcrypto-1_1-x64.dll -PathType Leaf)) {
+    echo "Copying libcrypto-1_1-x64.dll to project directory"
+    Copy-Item "$OPENSSL_PATH\bin\libcrypto-1_1-x64.dll" .\
+}
+
 pip install -r requirements.txt
-pip install -e .
 pip install pyinstaller==3.5
+pip install -e.
 
 cd $PYSQLCIPHER3_DIR
 python setup.py build
@@ -159,11 +189,7 @@ python setup.py install
 cd $PROJECT_DIR
 
 python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)"
-
-if (-not ($LASTEXITCODE -eq 0)) {
-    echo "SQLCipher version verification failed"
-    exit 1;
-}
+ExitOnFailure("SQLCipher version verification failed")
 
 $SETUP_VERSION = (python setup.py --version) | Out-String
 
@@ -175,41 +201,24 @@ if (Test-Path rotkehlchen_py_dist -PathType Container) {
     Remove-Item -Recurse -Force rotkehlchen_py_dist
 }
 
-pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
 
-if (-not ($LASTEXITCODE -eq 0)) {
-    echo "PyInstaller execution was not sucessful"
-    exit 1;
-}
+pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
+ExitOnFailure("PyInstaller execution was not sucessful")
 
 $BACKEND_BINARY = @(Get-ChildItem -Path $PWD\rotkehlchen_py_dist -Filter *.exe -Recurse -File -Name)[0]
-
-if (-not ($BACKEND_BINARY)) {
-    echo "The backend binary was not found"
-    exit 1
-}
+ExitOnFailure("The backend binary was not found")
 
 Invoke-Expression "$PWD\rotkehlchen_py_dist\$BACKEND_BINARY version" | Out-String
-
-if (-not ($LASTEXITCODE -eq 0)) {
-    echo "Backend test start failed"
-    exit 1;
-}
+ExitOnFailure("The backend test start failed")
 
 echo "Packaging the electron application"
 
 cd frontend\app
 npm ci
-if (-not ($LASTEXITCODE -eq 0)) {
-    echo "Restoring the node dependencies with npm ci failed"
-    exit 1;
-}
+ExitOnFailure("Restoring the node dependencies with npm ci failed")
 
 npm run electron:build
-if (-not ($LASTEXITCODE -eq 0)) {
-    echo "The build step failed"
-    exit 1;
-}
+ExitOnFailure("Building the electron app failed")
 
 $BINARY_NAME = @(Get-ChildItem -Path $PWD\dist -Filter *.exe -Recurse -File -Name)[0]
 
