@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Rotki Solutions GmbH",
   "license": "BSD",
   "dependencies": {
     "http-proxy-middleware": "1.0.5",
