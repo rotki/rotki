@@ -5,7 +5,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # the temp directory used, within $DIR
 # omit the -p parameter to create a temporal directory in the default location
-WORK_DIR=`mktemp -d -p "$DIR"`
+WORK_DIR=$(mktemp -d -p "$DIR")
 
 # check if tmp dir was created
 if [[ ! "$WORK_DIR" || ! -d "$WORK_DIR" ]]; then
@@ -37,7 +37,7 @@ if [[ $SQLCIPHER_EXISTS == "" ]]; then
     cd "$WORK_DIR" || exit 1
     git clone https://github.com/sqlcipher/sqlcipher
     cd sqlcipher || exit 1
-    git checkout v4.0.1
+    git checkout v4.4.0
     ./configure \
 	--enable-tempstore=yes \
 	CFLAGS="-DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS" \
