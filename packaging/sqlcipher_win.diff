@@ -75,8 +75,8 @@ index d59ca46..5325383 100644
 +RCC = $(RCC) -DSQLITE_TEMP_STORE=2
 +
 +# Add -DSQLITE_HAS_CODEC to TCC and RCC as per https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher
-+TCC = $(TCC) -DSQLITE_HAS_CODEC
-+RCC = $(RCC) -DSQLITE_HAS_CODEC
++TCC = $(TCC) -DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS
++RCC = $(RCC) -DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS
 +
 +# Add OpenSSL Include path to TCC and RCC as per same tutorial
 +TCC = $(TCC) -I"C:\Program Files\OpenSSL-Win64\include"
