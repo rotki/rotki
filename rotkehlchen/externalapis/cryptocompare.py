@@ -119,6 +119,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('POLS'): Asset('USDT'),
     Asset('RARI'): Asset('USDT'),
     Asset('VALUE'): Asset('USDT'),
+    Asset('$BASED'): Asset('WETH'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 
