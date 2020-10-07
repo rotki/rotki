@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`1559` Users can now properly refresh the blockchain balances in the Accounts & Balances page.
 * :bug:`1564` Blockchain balances are now properly sorted by fiat currency value.
+* :feature:`1560` Users can now see the total value of the accounts under an xpub.
 * :feature:`-` Added support for the following tokens:
 
   - `Based Money ($BASED) <https://www.coingecko.com/en/coins/based-money>`__
