@@ -903,6 +903,15 @@
         "symbol": "BAS",
         "type": "ethereum token"
     },
+    "$BASED": {
+        "coingecko": "based-money",
+        "ethereum_address": "0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5",
+        "ethereum_token_decimals": 18,
+        "name": "$BASED",
+        "started": 1597276800,
+        "symbol": "$BASED",
+        "type": "ethereum token"
+    },
     "BAT": {
         "coingecko": "basic-attention-token",
         "ethereum_address": "0x0D8775F648430679A709E98d2b0Cb6250d2887EF",

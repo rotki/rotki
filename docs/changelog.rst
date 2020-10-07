@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :feature:`-` Added support for the following tokens:
+
+  - `Based Money ($BASED) <https://www.coingecko.com/en/coins/based-money>`__
+
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
 * :bug:`1530` Truncation of account addresses will now dynamically change based on the screen width.
