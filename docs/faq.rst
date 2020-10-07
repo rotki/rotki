@@ -52,7 +52,7 @@ Questions on Roadmap and Features
 How can I see what's planned for Rotki?
 =============================================
 
-Please take a look at the Github issues `here <https://github.com/rotki/rotki/issues>`__. For more specific planning check the `next release <https://github.com/rotki/rotki/projects/1>`__ github project and the `milestones <https://github.com/rotki/rotki/milestones>`__.
+Please take a look at the Github issues `here <https://github.com/rotki/rotki/issues>`__. For more specific planning check the github `milestones <https://github.com/rotki/rotki/milestones>`__.
 
 Why doesn't Rotki support exchange X/Y/Z or have feature X/Y/Z?
 ============================================================================
