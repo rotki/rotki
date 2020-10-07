@@ -79,39 +79,40 @@ if (-not(Test-Path "$OPENSSL_PATH" -PathType Container))
     ExitOnFailure("Installation of OpenSSL Failed")
 }
 
-if (-not (Test-Path sqlcipher.dll -PathType Leaf))
+echo "Setting up Visual Studio Dev Shell"
+
+$vsPath = &(Join-Path ${env:ProgramFiles(x86)} "\Microsoft Visual Studio\Installer\vswhere.exe") -property installationpath
+Import-Module (Join-Path $vsPath "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
+
+$arch = 64
+$vc_env = "vcvars$arch.bat"
+echo "Load MSVC environment $vc_env"
+$build = (Join-Path $vsPath "VC\Auxiliary\Build")
+$env:Path += ";$build"
+
+Enter-VsDevShell -VsInstallPath $vsPath -DevCmdArguments -arch=x64
+if (Get-Command "$vc_env" -errorAction SilentlyContinue)
 {
-    echo "Setting up Visual Studio Dev Shell"
-
-    $vsPath = &(Join-Path ${env:ProgramFiles(x86)} "\Microsoft Visual Studio\Installer\vswhere.exe") -property installationpath
-    Import-Module (Join-Path $vsPath "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
-
-    $arch = 64
-    $vc_env = "vcvars$arch.bat"
-    echo "Load MSVC environment $vc_env"
-    $build = (Join-Path $vsPath "VC\Auxiliary\Build")
-    $env:Path += ";$build"
-
-    Enter-VsDevShell -VsInstallPath $vsPath -DevCmdArguments -arch=x64
-    if (Get-Command "$vc_env" -errorAction SilentlyContinue)
-    {
-        ## Store the output of cmd.exe. We also ask cmd.exe to output
-        ## the environment table after the batch file completes
-        ## Go through the environment variables in the temp file.
-        ## For each of them, set the variable in our local environment.
-        cmd /Q /c "$vc_env && set" 2>&1 | Foreach-Object {
-            if ($_ -match "^(.*?)=(.*)$")
-            {
-                Set-Content "env:\$( $matches[1] )" $matches[2]
-            }
+    ## Store the output of cmd.exe. We also ask cmd.exe to output
+    ## the environment table after the batch file completes
+    ## Go through the environment variables in the temp file.
+    ## For each of them, set the variable in our local environment.
+    cmd /Q /c "$vc_env && set" 2>&1 | Foreach-Object {
+        if ($_ -match "^(.*?)=(.*)$")
+        {
+            Set-Content "env:\$( $matches[1] )" $matches[2]
         }
-
-        echo "Environment successfully set"
     }
 
+    echo "Environment successfully set"
+}
+
+if (-not (Test-Path sqlcipher.dll -PathType Leaf))
+{
     cd $SQLCIPHER_DIR
     nmake /f Makefile.msc
     ExitOnFailure("Failed to build SQLCipher")
+
 }
 
 $env:Path += ";$SQLCIPHER_DIR"
@@ -162,12 +163,6 @@ if ([version]$NPM_VERSION -lt [version]$MINIMUM_NPM_VERSION) {
     exit 1;
 }
 
-# If vctools are not installed building some native python dependenceis will fail with
-# Microsoft Visual C++ 14.0 is required
-if ($Env:CI) {
-    choco install visualstudio2019-workload-vctools --no-progress
-}
-
 if (-not (Test-Path sqlcipher.dll -PathType Leaf)) {
     echo "Copying sqlcipher.dll to project directory"
     Copy-Item "$SQLCIPHER_DIR\sqlcipher.dll" .\
@@ -176,6 +171,12 @@ if (-not (Test-Path sqlcipher.dll -PathType Leaf)) {
 if (-not (Test-Path libcrypto-1_1-x64.dll -PathType Leaf)) {
     echo "Copying libcrypto-1_1-x64.dll to project directory"
     Copy-Item "$OPENSSL_PATH\bin\libcrypto-1_1-x64.dll" .\
+}
+
+# If vctools are not installed building some native python dependenceis will fail with
+# Microsoft Visual C++ 14.0 is required
+if ($Env:CI) {
+    choco install visualstudio2019-workload-vctools --no-progress --passive
 }
 
 pip install -r requirements.txt
@@ -214,7 +215,7 @@ ExitOnFailure("The backend test start failed")
 echo "Packaging the electron application"
 
 cd frontend\app
-npm ci
+npm ci --no-optional
 ExitOnFailure("Restoring the node dependencies with npm ci failed")
 
 npm run electron:build
@@ -228,15 +229,17 @@ if (-not ($BINARY_NAME)) {
 }
 
 cd dist
-
+$CHECKSUM_NAME = "$BINARY_NAME.sha512"
 $APP_BINARY = "$PWD\$BINARY_NAME"
-$APP_CHECKSUM = "$PWD\$BINARY_NAME.sha512"
+$APP_CHECKSUM = "$PWD\$CHECKSUM_NAME"
 
 Get-FileHash $APP_BINARY -Algorithm SHA512 | Select-Object Hash | foreach {$_.Hash} | Out-File -FilePath $APP_CHECKSUM
 
 if ($Env:CI) {
     echo "::set-output name=binary::$($APP_BINARY)"
-    echo "::set-output name=checksum::$($APP_CHECKSUM)"
+    echo "::set-output name=binary_name::$($BINARY_NAME)"
+    echo "::set-output name=binary_checksum::$($APP_CHECKSUM)"
+    echo "::set-output name=binary_checksum_name::$($CHECKSUM_NAME)"
 }
 
 echo "Rotki $SETUP_VERSION was build successfully"
