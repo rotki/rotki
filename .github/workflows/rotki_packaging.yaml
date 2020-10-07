@@ -3,9 +3,53 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - ga-packaging
 jobs:
+  create_draft:
+    name: Create Draft
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Rotki ${{ github.ref }} -
+          body: |
+            # Description
+
+            For more information check the detailed changelog below :point_down:
+
+            # Binaries
+
+            Upgrade is highly recommended. Choose your binary from below:
+
+            - **Linux**
+              - [AppImage](https://github.com/rotki/rotki/releases/download/${{ github.ref }}/rotki-linux_x86_64-${{ github.ref }}.AppImage)
+              - [Tar with executable](https://github.com/rotki/rotki/releases/download/${{ github.ref }}rotki-linux_x64-${{ github.ref }}.tar.xz)
+            - **OSX**
+              -  [DMG](https://github.com/rotki/rotki/releases/download/${{ github.ref }}/rotki-darwin-${{ github.ref }}.dmg)
+            - **Windows**
+              - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ github.ref }}/rotki-win32-${{ github.ref }}.exe)
+
+            # Release Highlights
+            ----
+
+            These were the highlights. Check below for the full changelog :point_down:
+            # New Features
+
+            # Bug Fixes
+
+            # Newly supported assets
+
+            Added support for the following assets:
+
+          draft: true
   linux:
     env:
       CI: true
@@ -16,6 +60,7 @@ jobs:
         python-version: [3.7]
         node-version: [12.x]
     runs-on: ${{ matrix.os }}
+    needs: create_draft
     steps:
       - uses: actions/checkout@v2
         with:
@@ -28,14 +73,14 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
-      - name: Persist pip cache
+      - name: pip cache persistence
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - name: Persist npm cache
+      - name: npm cache persistence
         uses: actions/cache@v2
         with:
           path: |
@@ -52,10 +97,25 @@ jobs:
           sudo ldconfig
       - name: Package
         id: packaging
-        run: |
-          source ./package.sh
-          echo "##[set-output name=executable;]$(echo $APPIMAGE_CHECKSUM)"
-          echo "##[set-output name=archive;]$(echo $TAR_CHECKSUM)"
+        run: ./package.sh
+      - name: Upload AppImage sha512 checksum file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.binary_checksum_name }}
+          asset_content_type: text/plain
+      - name: Upload tar sha512 checksum file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.archive_checksum }}
+          asset_name: ${{ steps.packaging.outputs.archive_checksum_name }}
+          asset_content_type: text/plain
 
   osx:
     env:
@@ -67,6 +127,7 @@ jobs:
         python-version: [3.7]
         node-version: [12.x]
     runs-on: ${{ matrix.os }}
+    needs: create_draft
     steps:
       - uses: actions/checkout@v2
         with:
@@ -79,14 +140,14 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
-      - name: Persist pip cache
+      - name: pip cache persistence
         uses: actions/cache@v2
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - name: Persist npm cache
+      - name: npm cache persistence
         uses: actions/cache@v2
         with:
           path: |
@@ -102,10 +163,25 @@ jobs:
           brew install sqlcipher
       - name: Package
         id: packaging
-        run: |
-          source ./package.sh
-          echo "##[set-output name=executable;]$(echo $DMG_CHECKSUM)"
-          echo "##[set-output name=archive;]$(echo $ZIP_CHECKSUM)"
+        run: ./package.sh
+      - name: Upload dmg sha512 checksum file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.binary_checksum_name }}
+          asset_content_type: text/plain
+      - name: Upload zip sha512 checksum file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.archive_checksum }}
+          asset_name: ${{ steps.packaging.outputs.archive_checksum_name }}
+          asset_content_type: text/plain
 
   windows:
     env:
@@ -120,6 +196,7 @@ jobs:
         python-version: [ 3.7 ]
         node-version: [ 12.x ]
     runs-on: ${{ matrix.os }}
+    needs: create_draft
     steps:
       - uses: actions/checkout@v2
         with:
@@ -132,7 +209,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
-      - name: Persist pip cache
+      - name: pip cache persistence
         uses: actions/cache@v2    
         with:
           path: ~\AppData\Local\pip\Cache
@@ -143,7 +220,7 @@ jobs:
         id: npm-cache
         run: |
           echo "::set-output name=dir::$(npm config get cache)"
-      - name: Persist npm cache
+      - name: npm cache persistence
         uses: actions/cache@v2    
         with:
           path: | 
@@ -165,6 +242,12 @@ jobs:
         id: build
         run: .\package.ps1
         shell: powershell
-      - uses: actions/upload-artifact@v2
+      - name: Upload exe sha512 checksum file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          path: ${{ steps.build.outputs.binary }}
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.build.outputs.binary_checksum }}
+          asset_name: ${{ steps.build.outputs.binary_checksum_name }}
+          asset_content_type: text/plain
