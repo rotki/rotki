@@ -15,6 +15,7 @@
           class="account-balances__refresh"
           :loading="isLoading"
           :tooltip="$t('account_balances.refresh_tooltip', { blockchain })"
+          @refresh="refresh"
         />
       </v-col>
     </v-row>

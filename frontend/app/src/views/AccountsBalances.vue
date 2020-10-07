@@ -1,6 +1,6 @@
 <template>
   <v-container class="accounts-balances">
-    <base-page-header text="Accounts & Balances" />
+    <base-page-header :text="$t('accounts_balances.title')" />
     <tab-navigation :tab-contents="accountsBalancesTabs" />
   </v-container>
 </template>
@@ -33,5 +33,3 @@ export default class AccountsBalances extends Vue {
   ];
 }
 </script>
-
-<style scoped></style>

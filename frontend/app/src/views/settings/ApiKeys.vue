@@ -1,8 +1,8 @@
 <template>
   <v-container class="api-keys">
+    <base-page-header :text="$t('api_keys.title')" />
     <v-row>
       <v-col>
-        <h1>API Keys</h1>
         <tab-navigation :tab-contents="apiKeysTabs" />
       </v-col>
     </v-row>
@@ -11,12 +11,14 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
 
 @Component({
   components: {
+    BasePageHeader,
     TabNavigation
   }
 })
