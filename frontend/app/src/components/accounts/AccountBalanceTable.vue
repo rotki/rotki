@@ -96,18 +96,17 @@
       />
     </template>
     <template #group.header="{ group, headers, items, isOpen, toggle }">
-      <td :colspan="headers.length">
-        <account-group-header
-          :group="group ? group : ''"
-          :xpub="{
-            xpub: items[0].xpub,
-            derivationPath: items[0].derivationPath
-          }"
-          :expanded="isOpen"
-          @expand-clicked="toggle"
-          @delete-clicked="deleteXpub($event)"
-        />
-      </td>
+      <account-group-header
+        :group="group ? group : ''"
+        :items="getItems(items[0].xpub, items[0].derivationPath)"
+        :xpub="{
+          xpub: items[0].xpub,
+          derivationPath: items[0].derivationPath
+        }"
+        :expanded="isOpen"
+        @expand-clicked="toggle"
+        @delete-clicked="deleteXpub($event)"
+      />
     </template>
   </v-data-table>
 </template>
@@ -213,6 +212,12 @@ export default class AccountBalanceTable extends Vue {
     },
     { text: '', value: 'expand', align: 'end', sortable: false }
   ];
+
+  getItems(xpub: string, derivationPath?: string) {
+    return this.balances.filter(
+      value => xpub === value?.xpub && derivationPath === value?.derivationPath
+    );
+  }
 
   get accountOperation(): boolean {
     return (

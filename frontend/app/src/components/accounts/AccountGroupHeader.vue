@@ -1,59 +1,78 @@
 <template>
-  <div v-if="!group" class="font-weight-medium">
+  <td v-if="!group" class="font-weight-medium" colspan="5">
     {{ $t('account_group_header.standalone') }}
-  </div>
-  <div v-else>
-    <v-btn small icon @click="expandClicked">
-      <v-icon v-if="expanded" small>mdi-chevron-up</v-icon>
-      <v-icon v-else small>mdi-chevron-down</v-icon>
-    </v-btn>
-    <span class="font-weight-medium">
-      {{ $t('account_group_header.xpub') }}
-    </span>
-    <span :style="privacyStyle">
+  </td>
+  <fragment v-else>
+    <td>
+      <v-btn small icon @click="expandClicked">
+        <v-icon v-if="expanded" small>mdi-chevron-up</v-icon>
+        <v-icon v-else small>mdi-chevron-down</v-icon>
+      </v-btn>
+      <span class="font-weight-medium">
+        {{ $t('account_group_header.xpub') }}
+      </span>
+      <span :style="privacyStyle">
+        <v-tooltip top open-delay="400">
+          <template #activator="{ on }">
+            <span v-on="on">{{ displayXpub }}</span>
+          </template>
+          <span> {{ xpub.xpub }} </span>
+        </v-tooltip>
+      </span>
+      <copy-button
+        :value="xpub.xpub"
+        :tooltip="$t('account_group_header.copy_tooltip')"
+      />
+      <span v-if="xpub.derivationPath" :style="privacyStyle">
+        <span class="font-weight-medium">
+          {{ $t('account_group_header.derivation_path') }}
+        </span>
+        {{ xpub.derivationPath }}
+      </span>
+    </td>
+    <td class="text-end">
+      <amount-display :value="sum" />
+    </td>
+    <td class="text-end">
+      <amount-display
+        fiat-currency="USD"
+        show-currency="symbol"
+        :value="usdSum"
+      />
+    </td>
+    <td class="text-end">
       <v-tooltip top open-delay="400">
         <template #activator="{ on }">
-          <span v-on="on">{{ displayXpub }}</span>
+          <v-btn small icon class="mr-1" v-on="on" @click="deleteClicked(xpub)">
+            <v-icon small>mdi-delete-outline</v-icon>
+          </v-btn>
         </template>
-        <span> {{ xpub.xpub }} </span>
+        <span> {{ $t('account_group_header.delete_tooltip') }} </span>
       </v-tooltip>
-    </span>
-    <copy-button
-      :value="xpub.xpub"
-      :tooltip="$t('account_group_header.copy_tooltip')"
-    />
-    <span v-if="xpub.derivationPath" :style="privacyStyle">
-      <span class="font-weight-medium">
-        {{ $t('account_group_header.derivation_path') }}
-      </span>
-      {{ xpub.derivationPath }}
-    </span>
-
-    <v-tooltip top open-delay="400">
-      <template #activator="{ on }">
-        <v-btn small icon class="ml-2" v-on="on" @click="deleteClicked(xpub)">
-          <v-icon small>mdi-delete-outline</v-icon>
-        </v-btn>
-      </template>
-      <span> {{ $t('account_group_header.delete_tooltip') }} </span>
-    </v-tooltip>
-  </div>
+    </td>
+    <td />
+  </fragment>
 </template>
 <script lang="ts">
+import { default as BigNumber } from 'bignumber.js';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import CopyButton from '@/components/helper/CopyButton.vue';
-import { truncateAddress, truncationPoints } from '@/filters';
+import Fragment from '@/components/helper/Fragment';
+import { balanceSum, truncateAddress, truncationPoints } from '@/filters';
 import PrivacyMixin from '@/mixins/privacy-mixin';
-import { XpubPayload } from '@/store/balances/types';
+import { XpubAccountWithBalance, XpubPayload } from '@/store/balances/types';
+import { balanceUsdValueSum } from '@/store/defi/utils';
 
 @Component({
-  components: { CopyButton }
+  components: { CopyButton, Fragment }
 })
 export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
   @Prop({ required: true, type: String })
   group!: string;
   @Prop({ required: true, type: Object })
   xpub!: XpubPayload;
+  @Prop({ required: true, type: Array })
+  items!: XpubAccountWithBalance[];
   @Prop({ required: true, type: Boolean })
   expanded!: boolean;
 
@@ -62,6 +81,14 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
       this.xpub.xpub,
       truncationPoints[this.$vuetify.breakpoint.name] ?? 4
     );
+  }
+
+  get sum(): BigNumber {
+    return balanceSum(this.items.map(({ balance: { amount } }) => amount));
+  }
+
+  get usdSum(): BigNumber {
+    return balanceUsdValueSum(this.items);
   }
 
   @Emit()
