@@ -95,6 +95,8 @@ jobs:
           sudo apt-get install libxml2-utils
           ./install_deps.sh
           sudo ldconfig
+      - name: Restore depdendencies;
+        run: npm ci
       - name: Package
         id: packaging
         run: ./package.sh
@@ -161,6 +163,8 @@ jobs:
           cd "$(brew --repo homebrew/core)"
           git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
           brew install sqlcipher
+      - name: Restore depdendencies;
+        run: npm ci
       - name: Package
         id: packaging
         run: ./package.sh
@@ -238,6 +242,8 @@ jobs:
           key: ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
           restore-keys: |
             ${{ runner.os }}-build-dependencies
+      - name: Restore depdendencies;
+        run: npm ci
       - name: Build rotki
         id: build
         run: .\package.ps1

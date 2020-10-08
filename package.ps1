@@ -1,4 +1,4 @@
-$SQLCIPHER_VERSION = if ($env:SQLCIPHER_VERSION) { $env:SQLCIPHER_VERSION } else { 'v4.4.0' } 
+$SQLCIPHER_VERSION = if ($env:SQLCIPHER_VERSION) { $env:SQLCIPHER_VERSION } else { 'v4.4.0' }
 $PYSQLCIPHER3_VERSION = if ($env:PYSQLCIPHER3_VERSION) { $env:PYSQLCIPHER3_VERSION } else { 'fd1b547407bcb7198107fe3c458105286a060b0d' }
 $BUILD_DEPENDENCIES = if ($env:BUILD_DEPENDENCIES) { $env:BUILD_DEPENDENCIES } else { 'rotki-build-dependencies' }
 
@@ -21,7 +21,7 @@ function ExitOnFailure {
 if ($Env:CI) {
     cd ~\
 } else {
-    cd ..    
+    cd ..
 }
 
 if (-not (Test-Path $BUILD_DEPENDENCIES -PathType Container)) {
@@ -31,7 +31,7 @@ if (-not (Test-Path $BUILD_DEPENDENCIES -PathType Container)) {
 cd $BUILD_DEPENDENCIES
 $BUILD_DEPS_DIR = $PWD
 
-if (-not (Test-Path $TCLTK -PathType Container)) {   
+if (-not (Test-Path $TCLTK -PathType Container)) {
     echo "Setting up TCL/TK $TCLTK"
     curl.exe -L -O "https://bitbucket.org/tombert/tcltk/downloads/$TCLTK.tgz"
     ExitOnFailure("Failed to download tcl/tk")
@@ -39,7 +39,7 @@ if (-not (Test-Path $TCLTK -PathType Container)) {
     ExitOnFailure("Failed to untar tcl/tk")
 }
 
-if ($Env:CI) { 
+if ($Env:CI) {
     echo "::addpath::$PWD\$TCLTK\bin"
 } else {
     $env:Path += ";$PWD\$TCLTK\bin"
@@ -81,6 +81,11 @@ if (-not(Test-Path "$OPENSSL_PATH" -PathType Container))
 
 echo "Setting up Visual Studio Dev Shell"
 
+$BACKUP_ENV = @()
+Get-Childitem -Path Env:* | Foreach-Object {
+    $BACKUP_ENV += $_
+}
+
 $vsPath = &(Join-Path ${env:ProgramFiles(x86)} "\Microsoft Visual Studio\Installer\vswhere.exe") -property installationpath
 Import-Module (Join-Path $vsPath "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
 
@@ -115,6 +120,15 @@ if (-not (Test-Path sqlcipher.dll -PathType Leaf))
 
 }
 
+# Reset the environment **
+Get-Childitem -Path Env:* | Foreach-Object {
+    Remove-Item "env:\$($_.Name)"
+}
+
+$BACKUP_ENV | Foreach-Object {
+    Set-Content "env:\$($_.Name)" $_.Value
+}
+
 $env:Path += ";$SQLCIPHER_DIR"
 
 cd $BUILD_DEPS_DIR
@@ -147,7 +161,7 @@ if ((-not ($env:VIRTUAL_ENV)) -and (-not ($Env:CI))) {
         python -m virtualenv .venv
         ExitOnFailure("Failed to create rotki VirtualEnv")
     }
-    
+
     cd $PROJECT_DIR
 
     echo "Activating rotki .venv"
@@ -156,8 +170,8 @@ if ((-not ($env:VIRTUAL_ENV)) -and (-not ($Env:CI))) {
 }
 
 cd $PROJECT_DIR
-$NPM_VERSION = (npm --version) | Out-String  
- 
+$NPM_VERSION = (npm --version) | Out-String
+
 if ([version]$NPM_VERSION -lt [version]$MINIMUM_NPM_VERSION) {
     echo "Please make sure you have npm version 5.7.0 or newer installed"
     exit 1;
@@ -173,14 +187,8 @@ if (-not (Test-Path libcrypto-1_1-x64.dll -PathType Leaf)) {
     Copy-Item "$OPENSSL_PATH\bin\libcrypto-1_1-x64.dll" .\
 }
 
-# If vctools are not installed building some native python dependenceis will fail with
-# Microsoft Visual C++ 14.0 is required
-if ($Env:CI) {
-    choco install visualstudio2019-workload-vctools --no-progress --passive
-}
-
-pip install -r requirements.txt
 pip install pyinstaller==3.5
+pip install -r requirements.txt
 pip install -e.
 
 cd $PYSQLCIPHER3_DIR
