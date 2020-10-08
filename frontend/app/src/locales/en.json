@@ -760,5 +760,30 @@
   },
   "settings": {
     "title": "Settings"
+  },
+  "statistics": {
+    "title": "Statistics",
+    "no_premium": "No premium subscription detected. Statistics are only available to premium users.",
+    "get_premium": "To get a premium subscription please visit our {0}"
+  },
+  "tax_report": {
+    "title": "Tax Report",
+    "export_csv": "Export CSV",
+    "loading_message": "Please wait while your report is generated...",
+    "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
+    "select_directory": "Select a directory",
+    "csv_export_error": "There was an error with Export"
+  },
+  "import_data": {
+    "title": "Import Data"
+  },
+  "dashboard": {
+    "title": "Dashboard"
+  },
+  "accounts_balances": {
+    "title": "Accounts & Balances"
+  },
+  "api_keys": {
+    "title": "API Keys"
   }
 }

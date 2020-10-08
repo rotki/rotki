@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1559` Users can now properly refresh the blockchain balances in the Accounts & Balances page.
 * :feature:`-` Added support for the following tokens:
 
   - `Based Money ($BASED) <https://www.coingecko.com/en/coins/based-money>`__

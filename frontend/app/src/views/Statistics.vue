@@ -1,18 +1,12 @@
 <template>
   <v-container>
+    <base-page-header :text="$t('statistics.title')" />
     <div id="statistics">
-      <div class="row">
-        <div class="col-lg-12">
-          <h1 class="page-header">Statistics</h1>
-        </div>
-      </div>
       <div v-if="!premium">
-        <p>
-          No premium subscription detected. Statistics are only available to
-          premium users.
-        </p>
-        To get a premium subscription please visit our
-        <base-external-link text="website." :href="$interop.premiumURL" />
+        <p>{{ $t('statistics.no_premium') }}</p>
+        <i18n path="statistics.get_premium" tag="p">
+          <base-external-link text="website." :href="$interop.premiumURL" />
+        </i18n>
       </div>
       <div v-else>
         <premium-statistics
@@ -26,17 +20,16 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import { PremiumStatistics } from '@/utils/premium';
 
-const { mapState, mapGetters } = createNamespacedHelpers('session');
-
 @Component({
-  components: { PremiumStatistics, BaseExternalLink },
+  components: { BasePageHeader, PremiumStatistics, BaseExternalLink },
   computed: {
-    ...mapState(['premium']),
-    ...mapGetters(['floatingPrecision'])
+    ...mapState('session', ['premium']),
+    ...mapGetters('session', ['floatingPrecision'])
   }
 })
 export default class Statistics extends Vue {
@@ -50,5 +43,3 @@ export default class Statistics extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

@@ -1,7 +1,10 @@
 <template>
-  <v-row class="base-page-header">
-    <v-col class="mx-4">
-      <div class="base-page-header__text">{{ text }}</div>
+  <v-row class="base-page-header" align="center">
+    <v-col class="mt-4 mb-4">
+      <div class="text-h3">{{ text }}</div>
+    </v-col>
+    <v-col cols="auto">
+      <slot />
     </v-col>
   </v-row>
 </template>
@@ -15,12 +18,3 @@ export default class BaseExternalLink extends Vue {
   text!: string;
 }
 </script>
-
-<style lang="scss" scoped>
-.base-page-header {
-  &__text {
-    font-size: 3em;
-    font-weight: bold;
-  }
-}
-</style>

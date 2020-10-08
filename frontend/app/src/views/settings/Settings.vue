@@ -1,16 +1,13 @@
 <template>
   <v-container class="settings">
-    <v-row>
-      <v-col>
-        <h1>{{ $t('settings.title') }}</h1>
-        <tab-navigation :tab-contents="settingsTabs" />
-      </v-col>
-    </v-row>
+    <base-page-header :text="$t('settings.title')" />
+    <tab-navigation :tab-contents="settingsTabs" />
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
@@ -23,7 +20,7 @@ export interface SettingsMessages {
 }
 
 @Component({
-  components: { TabNavigation }
+  components: { BasePageHeader, TabNavigation }
 })
 export default class Settings extends Vue {
   readonly settingsTabs: TabContent[] = [

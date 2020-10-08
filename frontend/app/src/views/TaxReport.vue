@@ -1,10 +1,6 @@
 <template>
   <v-container>
-    <v-col cols="12" class="tax-report">
-      <v-row>
-        <h1>Tax Report</h1>
-      </v-row>
-    </v-col>
+    <base-page-header :text="$t('tax_report.title')" />
     <generate v-show="!isRunning" @generate="generate($event)" />
     <div v-if="loaded && !isRunning">
       <v-btn
@@ -13,25 +9,22 @@
         color="primary"
         @click="exportCSV()"
       >
-        Export CSV
+        {{ $t('tax_report.export_csv') }}
       </v-btn>
       <tax-report-overview class="tax-report__section" />
       <tax-report-events class="tax-report__section" />
     </div>
     <progress-screen v-if="isRunning" :progress="progress">
-      <template #message>
-        Please wait while your report is generated...
-      </template>
-
-      Your report generation might take a while depending on the amount of
-      trades and actions you performed during the selected period.
+      <template #message>{{ $t('tax_report.loading_message') }}</template>
+      {{ $t('tax_report.loading_hint') }}
     </progress-screen>
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
+import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import Generate from '@/components/taxreport/Generate.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
@@ -41,22 +34,19 @@ import { TaskType } from '@/model/task-type';
 import { Message } from '@/store/types';
 import { TaxReportEvent } from '@/typing/types';
 
-const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
-const { mapState, mapGetters } = createNamespacedHelpers('reports');
-const { mapGetters: mapSessionGetters } = createNamespacedHelpers('session');
-
 @Component({
   components: {
+    BasePageHeader,
     ProgressScreen,
     TaxReportEvents,
     TaxReportOverview,
     Generate
   },
   computed: {
-    ...mapTaskGetters(['isTaskRunning']),
-    ...mapGetters(['progress']),
-    ...mapState(['loaded']),
-    ...mapSessionGetters(['currency'])
+    ...mapGetters('tasks', ['isTaskRunning']),
+    ...mapGetters('reports', ['progress']),
+    ...mapState('reports', ['loaded']),
+    ...mapGetters('session', ['currency'])
   }
 })
 export default class TaxReport extends Vue {
@@ -76,14 +66,16 @@ export default class TaxReport extends Vue {
 
   async exportCSV() {
     try {
-      const directory = await this.$interop.openDirectory('Select a directory');
+      const directory = await this.$interop.openDirectory(
+        this.$tc('tax_report.select_directory')
+      );
       if (!directory) {
         return;
       }
       await this.$store.dispatch('reports/createCSV', directory);
     } catch (e) {
       this.$store.commit('setMessage', {
-        title: 'There was an error with Export',
+        title: this.$tc('tax_report.csv_export_error'),
         description: e.message
       } as Message);
     }

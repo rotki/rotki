@@ -1,12 +1,8 @@
 <template>
   <v-container>
+    <base-page-header :text="$t('import_data.title')" />
     <v-row>
       <v-col cols="12">
-        <v-row>
-          <v-col cols="12">
-            <h1 class="page-header">Import Data</h1>
-          </v-col>
-        </v-row>
         <v-row>
           <v-col cols="12">
             You can manually import data from the services below by clicking on
@@ -127,11 +123,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { Message } from '@/store/types';
 
 @Component({
-  components: { ExternalLink }
+  components: { BasePageHeader, ExternalLink }
 })
 export default class ImportData extends Vue {
   async importData(importType: string) {
