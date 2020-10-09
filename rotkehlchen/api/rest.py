@@ -856,6 +856,7 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
         except RotkehlchenPermissionError as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
+            result_dict['result'] = e.message_payload
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
         except (DBUpgradeError, SystemPermissionError) as e:

@@ -214,7 +214,7 @@ Handling user creation, sign-in, log-out and querying
 
    :resjson object result: For succesful requests, result contains the currently connected exchanges,and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
    :statuscode 200: Logged in succesfully
-   :statuscode 300: Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
+   :statuscode 300: Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``. In this case the result will contain an object with a payload for the message under the ``result`` key and the message under the ``message`` key. The payload has the following keys: ``local_size``, ``remote_size``, ``local_last_modified``, ``remote_last_modified``.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: Provided password is wrong for the user or some other authentication error.
    :statuscode 409: Another user is already logged in. User does not exist. There was a fatal error during the upgrade of the DB. Permission error while trying to access the directory where Rotki saves data.
