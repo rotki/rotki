@@ -51,7 +51,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
           api.getExchanges()
         ]);
       } else {
-        commit('syncConflict', '');
+        commit('syncConflict', { message: '', payload: null });
         ({ settings, exchanges } = await api.unlockUser(payload));
       }
 
@@ -93,7 +93,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       Promise.all(async).then();
     } catch (e) {
       if (e instanceof SyncConflictError) {
-        commit('syncConflict', e.message);
+        commit('syncConflict', { message: e.message, payload: e.payload });
         return;
       }
       showError(e.message, 'Login failed');

@@ -5,7 +5,7 @@ import {
   WatcherTypes
 } from '@/services/session/types';
 import { defaultState } from '@/store/session/state';
-import { SessionState } from '@/store/session/types';
+import { SessionState, SyncConflict } from '@/store/session/types';
 import {
   AccountingSettings,
   AccountingSettingsUpdate,
@@ -59,7 +59,7 @@ export const mutations: MutationTree<SessionState> = {
   reset(state: SessionState) {
     Object.assign(state, defaultState());
   },
-  syncConflict(state: SessionState, syncConflict: string) {
+  syncConflict(state: SessionState, syncConflict: SyncConflict) {
     state.syncConflict = syncConflict;
   },
   tags(state: SessionState, tags: Tags) {
