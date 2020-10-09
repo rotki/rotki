@@ -77,26 +77,24 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-pip-packaging-
       - name: npm cache persistence
         uses: actions/cache@v2
         with:
           path: |
             ~/.npm
             ~/cache/Cypress
-          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-node--packaging-
       - name: Setup SQLCipher
         run: |
           sudo apt-get update
           sudo apt-get install libxml2-utils
           ./install_deps.sh
           sudo ldconfig
-      - name: Restore depdendencies;
-        run: npm ci
       - name: Package
         id: packaging
         run: ./package.sh
@@ -146,25 +144,23 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-pip-packaging-
       - name: npm cache persistence
         uses: actions/cache@v2
         with:
           path: |
             ~/.npm
             ~/Library/Caches/Cypress
-          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-node--packaging-
       - name: Setup SQLCipher
         run: |
           cd "$(brew --repo homebrew/core)"
           git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
           brew install sqlcipher
-      - name: Restore depdendencies;
-        run: npm ci
       - name: Package
         id: packaging
         run: ./package.sh
@@ -217,9 +213,9 @@ jobs:
         uses: actions/cache@v2    
         with:
           path: ~\AppData\Local\pip\Cache
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-pip-packaging-
       - name: Get npm cache directory
         id: npm-cache
         run: |
@@ -230,9 +226,9 @@ jobs:
           path: | 
             ${{ steps.npm-cache.outputs.dir }}
             ~\AppData\Local\Cypress
-          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-    
+            ${{ runner.os }}-node--packaging-
       - name: Persist Build Dependencies
         uses: actions/cache@v2        
         with:
@@ -242,8 +238,6 @@ jobs:
           key: ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
           restore-keys: |
             ${{ runner.os }}-build-dependencies
-      - name: Restore depdendencies;
-        run: npm ci
       - name: Build rotki
         id: build
         run: .\package.ps1

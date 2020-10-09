@@ -115,7 +115,7 @@ jobs:
       <<: *job-template-frontend
       script:
         - npm run lint:check
-        - npm run stylelint
+        - npm run lint:style
         - npm run build
 
     - stage: test
