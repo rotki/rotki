@@ -8,7 +8,7 @@
     single-expand
     item-key="address"
     :expanded.sync="expanded"
-    sort-by="usdValue"
+    sort-by="balance.usdValue"
     :footer-props="footerProps"
     :custom-group="groupBy"
     :group-by="isBtc ? ['xpub', 'derivationPath'] : undefined"
