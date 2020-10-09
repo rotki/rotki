@@ -124,6 +124,10 @@ class PremiumSyncManager():
             log.debug('sync from server -- pulling failed.', error=str(e))
             return False
 
+        if result['data'] is None:
+            log.debug('sync from server -- no data found.')
+            return False
+
         try:
             self.data.decompress_and_decrypt_db(self.password, result['data'])
         except UnableToDecryptRemoteData:
