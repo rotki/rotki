@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 from http import HTTPStatus
 from typing import Optional
@@ -47,7 +48,8 @@ def mock_get_saved_data(saved_data):
         assert len(data) == 1
         assert 'nonce' in data
         assert timeout == ROTKEHLCHEN_SERVER_TIMEOUT
-        payload = f'{{"data": "{saved_data.decode()}"}}'
+        decoded_data = None if saved_data is None else saved_data.decode()
+        payload = f'{{"data": {json.dumps(decoded_data)}}}'
         return MockResponse(200, payload)
 
     return do_mock_get_saved_data
@@ -79,7 +81,6 @@ def create_patched_requests_get_for_premium(
                 data_size=metadata_data_size,
             )
         elif 'get_saved_data' in url:
-            assert saved_data is not None
             implementation = mock_get_saved_data(saved_data=saved_data)
         else:
             raise ValueError('Unmocked url in session get for premium')

@@ -327,6 +327,29 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
         )
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_first_time_no_previous_db(
+        rotkehlchen_instance,
+        username,
+        db_password,
+        rotki_premium_credentials,
+):
+    """Regression test for https://github.com/rotki/rotki/issues/1571"""
+    setup_starting_environment(
+        rotkehlchen_instance=rotkehlchen_instance,
+        username=username,
+        db_password=db_password,
+        premium_credentials=rotki_premium_credentials,
+        first_time=True,
+        same_hash_with_remote=False,
+        newer_remote_db=False,
+        db_can_sync_setting=True,
+        remote_data=None
+    )
+    # DB should not have changed and no exception raised
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
+
+
 def test_premium_credentials():
     """Test the premium credentials class"""
     # Test that improperly formatted keys are spotted
