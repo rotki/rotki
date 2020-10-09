@@ -215,7 +215,10 @@ export default class AccountBalanceTable extends Vue {
 
   getItems(xpub: string, derivationPath?: string) {
     return this.balances.filter(
-      value => xpub === value?.xpub && derivationPath === value?.derivationPath
+      value =>
+        'xpub' in value &&
+        xpub === value.xpub &&
+        derivationPath === value?.derivationPath
     );
   }
 
