@@ -11,7 +11,7 @@ on:
       - develop
 
 jobs:
-  lint-frontend:
+  check-frontend:
     env:
       CI: true
     strategy:
@@ -27,26 +27,21 @@ jobs:
           node-version: '12.x'
       - uses: actions/cache@v2
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
+          path: |
+            ~/.npm
+            ~/.cache/Cypress
+          key: ${{ runner.os }}-node--ci-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux')
-        with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
+            ${{ runner.os }}-node--ci-
       - name: Install dependencies
         working-directory: ./frontend/app
         run: npm ci
-      - name: Lint
+      - name: Lint code
         working-directory: ./frontend/app
         run: npm run lint:check
-      - name: Stylelint
+      - name: Lint style
         working-directory: ./frontend/app
-        run: npm run stylelint
+        run: npm run lint:style
       - name: Build
         working-directory: ./frontend/app
         run: npm run build
@@ -97,7 +92,7 @@ jobs:
 
   test-backend:
     needs: lint-backend
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       CI: true
     strategy:
@@ -169,8 +164,8 @@ jobs:
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash) -F backend
-  test-integration:
-    needs: [lint-frontend]
+  test-e2e:
+    needs: [check-frontend]
     env:
       CI: true
       FILTER: '[ui tests]'
@@ -201,16 +196,16 @@ jobs:
         if: startsWith(runner.os, 'Linux') && contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-e2e-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-pip-e2e-
       - uses: actions/cache@v2
         if: startsWith(runner.os, 'macOS') && contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-e2e-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-pip-e2e-
       - uses: actions/cache@v2
         if: startsWith(runner.os, 'Linux') && contains(steps.check.outputs.ui-tests, true)
         with:
@@ -229,9 +224,9 @@ jobs:
         if: contains(steps.check.outputs.ui-tests, true)
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ runner.os }}-node--e2e-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-node--e2e-
       - uses: actions/cache@v2
         if: contains(steps.check.outputs.ui-tests, true)
         with:
