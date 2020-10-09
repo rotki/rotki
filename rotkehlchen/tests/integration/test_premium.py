@@ -344,7 +344,7 @@ def test_try_premium_at_start_first_time_no_previous_db(
         same_hash_with_remote=False,
         newer_remote_db=False,
         db_can_sync_setting=True,
-        remote_data=None
+        remote_data=None,
     )
     # DB should not have changed and no exception raised
     assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY

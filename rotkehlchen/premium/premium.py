@@ -225,7 +225,7 @@ class Premium():
 
         return _process_dict_response(response)
 
-    def pull_data(self) -> Optional[Dict]:
+    def pull_data(self) -> Dict:
         """Pulls data from the server and returns the response dict
 
         Returns None if there is no DB saved in the server.
