@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
+from rotkehlchen.tests.fixtures.aave import *
 from rotkehlchen.tests.fixtures.accounting import *
 from rotkehlchen.tests.fixtures.assets import *
 from rotkehlchen.tests.fixtures.blockchain import *

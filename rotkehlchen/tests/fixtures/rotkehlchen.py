@@ -87,6 +87,7 @@ def initialize_mock_rotkehlchen_instance(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         eth_rpc_endpoint,
+        aave_use_graph,
 ):
     if not start_with_logged_in_user:
         return
@@ -140,6 +141,10 @@ def initialize_mock_rotkehlchen_instance(
         ethereum=rotki.chain_manager.ethereum,
     )
 
+    aave = rotki.chain_manager.aave
+    if aave:
+        aave.use_graph = aave_use_graph
+
 
 @pytest.fixture()
 def uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver):  # pylint: disable=unused-argument  # noqa: E501
@@ -184,6 +189,7 @@ def rotkehlchen_api_server(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         ethrpc_endpoint,
+        aave_use_graph,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -209,6 +215,7 @@ def rotkehlchen_api_server(
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
+        aave_use_graph=aave_use_graph,
     )
     return api_server
 
@@ -234,6 +241,7 @@ def rotkehlchen_instance(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         ethrpc_endpoint,
+        aave_use_graph,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -257,6 +265,7 @@ def rotkehlchen_instance(
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
+        aave_use_graph=aave_use_graph,
     )
     return uninitialized_rotkehlchen
 

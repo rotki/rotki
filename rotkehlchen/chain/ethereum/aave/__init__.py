@@ -82,6 +82,7 @@ class Aave(EthereumModule):
             database: DBHandler,
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
+            use_graph: bool = False,
     ) -> None:
         self.ethereum = ethereum_manager
         self.database = database
@@ -99,6 +100,7 @@ class Aave(EthereumModule):
             premium=premium,
             msg_aggregator=msg_aggregator,
         )
+        self.use_graph = use_graph
         self.history_lock = Semaphore()
         self.balances_lock = Semaphore()
 
@@ -184,10 +186,16 @@ class Aave(EthereumModule):
             if reset_db_data is True:
                 self.database.delete_aave_data()
 
-            return self.blockchain_inquirer.get_history_for_addresses(
-                addresses=addresses,
-                to_block=latest_block,
-            )
+            if self.use_graph:
+                return self.graph_inquirer.get_history_for_addresses(
+                    addresses=addresses,
+                    to_block=latest_block,
+                )
+            else:
+                return self.blockchain_inquirer.get_history_for_addresses(
+                    addresses=addresses,
+                    to_block=latest_block,
+                )
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
