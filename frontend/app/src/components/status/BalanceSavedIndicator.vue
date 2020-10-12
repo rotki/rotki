@@ -18,7 +18,7 @@
       </menu-tooltip-button>
     </template>
     <div class="balance-saved-indicator__content">
-      <v-row v-if="premiumSync">
+      <v-row v-if="displaySyncInformation">
         <v-col>
           <v-row no-gutters>
             <v-col class="font-weight-medium">
@@ -35,7 +35,7 @@
           </v-row>
         </v-col>
       </v-row>
-      <v-divider v-if="premiumSync" />
+      <v-divider v-if="displaySyncInformation" />
       <v-row>
         <v-col>
           <v-row class="font-weight-medium" no-gutters>
@@ -84,13 +84,23 @@ import { AllBalancePayload } from '@/store/balances/types';
 @Component({
   components: { DateDisplay, MenuTooltipButton },
   computed: {
-    ...mapState('session', ['lastBalanceSave', 'premiumSync', 'lastDataUpload'])
+    ...mapState('session', [
+      'lastBalanceSave',
+      'premiumSync',
+      'lastDataUpload',
+      'premium'
+    ])
   }
 })
 export default class BalanceSavedIndicator extends Vue {
   lastBalanceSave!: number;
   premiumSync!: boolean;
+  premium!: boolean;
   lastDataUpload!: string;
+
+  get displaySyncInformation(): boolean {
+    return this.premium && this.premiumSync;
+  }
 
   refreshAllAndSave() {
     this.$store.dispatch('balances/fetchBalances', {
