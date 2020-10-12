@@ -223,7 +223,7 @@ ExitOnFailure("The backend test start failed")
 echo "Packaging the electron application"
 
 cd frontend\app
-npm ci --no-optional
+npm ci
 ExitOnFailure("Restoring the node dependencies with npm ci failed")
 
 npm run electron:build

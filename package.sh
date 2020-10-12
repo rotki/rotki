@@ -74,10 +74,16 @@ cd frontend/app || exit 1
 
 # Let's make sure all npm dependencies are installed.
 echo "Installing node dependencies"
-npm ci --no-optional
+npm ci
 if [[ $? -ne 0 ]]; then
-    echo "package.sh - ERROR: npm ci step failed"
-    exit 1
+    echo "Verifying npm cache"
+    npm cache verify
+    echo "Attempting node installation again"
+    npm ci
+    if [[ $? -ne 0 ]]; then
+      echo "package.sh - ERROR: npm ci step failed"
+      exit 1
+    fi
 fi
 
 # Finally run the packaging
