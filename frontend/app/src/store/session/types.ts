@@ -22,6 +22,8 @@ export interface SessionState {
   watchers: Watcher<WatcherTypes>[];
   queriedAddresses: QueriedAddresses;
   ignoredAssets: string[];
+  lastBalanceSave: number;
+  lastDataUpload: number;
 }
 
 export interface SyncConflictPayload {

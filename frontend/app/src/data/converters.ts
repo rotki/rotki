@@ -36,6 +36,5 @@ export const convertToAccountingSettings = (
 ): AccountingSettings => ({
   taxFreeAfterPeriod: settings.taxfree_after_period,
   includeGasCosts: settings.include_gas_costs,
-  includeCrypto2Crypto: settings.include_crypto2crypto,
-  lastBalanceSave: settings.last_balance_save
+  includeCrypto2Crypto: settings.include_crypto2crypto
 });

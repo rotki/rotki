@@ -21,18 +21,14 @@ export interface GeneralSettings {
 }
 
 export interface AccountingSettings {
-  readonly lastBalanceSave: number;
   readonly includeCrypto2Crypto: boolean;
   readonly includeGasCosts: boolean;
   readonly taxFreeAfterPeriod: number | null;
 }
 
-export interface AccountingSettingsUpdate {
-  readonly lastBalanceSave?: number;
-  readonly includeCrypto2Crypto?: boolean;
-  readonly includeGasCosts?: boolean;
-  readonly taxFreeAfterPeriod?: number | null;
-}
+export type AccountingSettingsUpdate = {
+  +readonly [P in keyof AccountingSettings]+?: AccountingSettings[P];
+};
 
 export interface Credentials {
   readonly username: string;

@@ -35,6 +35,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
     commit('premium', settings.have_premium);
     commit('premiumSync', settings.premium_should_sync);
+    commit('updateLastBalanceSave', settings.last_balance_save);
+    commit('updateLastDataUpload', settings.last_data_upload_ts);
     commit('generalSettings', convertToGeneralSettings(settings));
     commit('accountingSettings', convertToAccountingSettings(settings));
   },
@@ -99,10 +101,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       showError(e.message, 'Login failed');
     }
   },
-  async periodicCheck({
-    commit,
-    state: { accountingSettings, nodeConnection }
-  }) {
+  async periodicCheck({ commit, state: { lastBalanceSave, nodeConnection } }) {
     try {
       const result = await api.queryPeriodicData();
       if (Object.keys(result).length === 0) {
@@ -117,12 +116,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         history_process_start_ts
       } = result;
 
-      const { lastBalanceSave } = accountingSettings;
-
       if (last_balance_save !== lastBalanceSave) {
-        commit('updateAccountingSetting', {
-          lastBalanceSave: last_balance_save
-        });
+        commit('updateLastBalanceSave', last_balance_save);
       }
 
       if (eth_node_connection !== nodeConnection) {
@@ -208,7 +203,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         'setMessage',
         {
           title: 'Success',
-          description: 'Succesfully set kraken account type',
+          description: 'Successfully set kraken account type',
           success: true
         } as Message,
         { root: true }
@@ -218,10 +213,22 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
 
-  async updateSettings({ commit }, update: SettingsUpdate): Promise<void> {
+  async updateSettings(
+    { commit, state },
+    update: SettingsUpdate
+  ): Promise<void> {
     try {
       const settings = await api.setSettings(update);
+      if (state.premium !== settings.have_premium) {
+        commit('premium', settings.have_premium);
+      }
+
+      if (state.premiumSync !== settings.premium_should_sync) {
+        commit('premiumSync', settings.premium_should_sync);
+      }
+
       commit('generalSettings', convertToGeneralSettings(settings));
+      commit('accountingSettings', convertToAccountingSettings(settings));
     } catch (e) {
       showError(`Updating settings was not successful: ${e.message}`);
     }
