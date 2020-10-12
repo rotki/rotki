@@ -38,8 +38,8 @@ class RotkehlchenPermissionError(Exception):
     The payload contains information to be shown to the user by the frontend so
     they can decide what to do
     """
-    def __init__(self, message: str, payload: Optional[Dict[str, Any]]) -> None:
-        self.message = message
+    def __init__(self, error_message: str, payload: Optional[Dict[str, Any]]) -> None:
+        self.error_message = error_message
         self.message_payload = payload if payload is not None else {}
 
 
