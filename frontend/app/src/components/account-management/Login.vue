@@ -45,7 +45,8 @@
               {{ $t('login.sync_error.title') }}
             </h3>
             <div class="login__sync-error__body mt-2">
-              <i18n path="login.sync_error.message" tag="p">
+              <div>
+                <div>{{ syncConflict.message }}</div>
                 <ul class="mt-2">
                   <li>
                     <i18n path="login.sync_error.local_modified">
@@ -76,10 +77,11 @@
                     </i18n>
                   </li>
                 </ul>
-              </i18n>
+              </div>
+              <div class="mt-2">{{ $t('login.sync_error.question') }}</div>
             </div>
 
-            <v-row no-gutters justify="end">
+            <v-row no-gutters justify="end" class="mt-2">
               <v-col cols="3" class="shrink">
                 <v-btn color="error" depressed @click="login('no')">
                   {{ $t('login.sync_error.button_no') }}

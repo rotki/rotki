@@ -35,14 +35,14 @@
     "label_username": "Username",
     "label_password": "Password",
     "sync_error": {
-      "title": "Sync database mismatch",
+      "title": "User action required for DB sync",
       "button_yes": "Yes",
       "button_no": "No",
-      "message": "A remote database was detected BUT with an older last modification timestamp that the local one. {0}",
       "local_size": "Local size: {0}",
       "remote_size": "Remote size: {0}",
       "local_modified": "Local last modified: {0}",
-      "remote_modified": "Remote last modified: {0}"
+      "remote_modified": "Remote last modified: {0}",
+      "question": "Do you want to replace your local database?"
     },
     "button_signin": "Sign In",
     "button_new_account": "Create New Account",
