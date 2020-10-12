@@ -142,8 +142,10 @@ if [[ "$PLATFORM" == "linux" ]]; then
   generate_checksum "$PLATFORM" "*.tar.xz" TAR_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
+    echo "::set-output name=binary::$GENERATED_APPIMAGE"
+    echo "::set-output name=binary_name::${GENERATED_APPIMAGE##*/}"
     echo "::set-output name=binary_checksum::$APPIMAGE_CHECKSUM"
-    echo "::set-output name=binary_checksum_name::${APPIMAGE_CHECKSUM##*/}  "
+    echo "::set-output name=binary_checksum_name::${APPIMAGE_CHECKSUM##*/}"
     echo "::set-output name=archive_checksum::$TAR_CHECKSUM"
     echo "::set-output name=archive_checksum_name::${TAR_CHECKSUM##*/}"
   fi
