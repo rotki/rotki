@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1288` Users can now see the last premium database sync date in the save indicator when database sync is enabled.
 * :bug:`1571` New user account with new premium keys will no longer fail to create an account the first time if premium keys are given at account creation time.
 * :bug:`1559` Users can now properly refresh the blockchain balances in the Accounts & Balances page.
 * :bug:`1564` Blockchain balances are now properly sorted by fiat currency value.
