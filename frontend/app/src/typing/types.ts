@@ -2,6 +2,7 @@ import { Currency } from '@/model/currency';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { SupportedModules } from '@/services/session/types';
 import { AssetBalances } from '@/store/balances/types';
+import { SyncConflictPayload } from '@/store/session/types';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
@@ -76,7 +77,14 @@ export const SupportedBlockchains = [ETH, BTC] as const;
 
 export type Blockchain = typeof SupportedBlockchains[number];
 
-export class SyncConflictError extends Error {}
+export class SyncConflictError extends Error {
+  readonly payload: SyncConflictPayload;
+
+  constructor(message: string, payload: SyncConflictPayload) {
+    super(message);
+    this.payload = payload;
+  }
+}
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
 

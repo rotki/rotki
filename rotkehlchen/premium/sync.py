@@ -2,7 +2,7 @@ import base64
 import logging
 import shutil
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Any, Dict, NamedTuple, Optional
 
 from typing_extensions import Literal
 
@@ -32,6 +32,7 @@ class SyncCheckResult(NamedTuple):
     can_sync: CanSync
     # If result is ASK_USER, what should the message be?
     message: str
+    payload: Optional[Dict[str, Any]]
 
 
 class PremiumSyncManager():
@@ -52,7 +53,7 @@ class PremiumSyncManager():
         """
         log.debug('can sync data from server -- start')
         if self.premium is None:
-            return SyncCheckResult(can_sync=CanSync.NO, message='')
+            return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
         b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
 
@@ -60,14 +61,14 @@ class PremiumSyncManager():
             metadata = self.premium.query_last_data_metadata()
         except RemoteError as e:
             log.debug('can sync data from server failed', error=str(e))
-            return SyncCheckResult(can_sync=CanSync.NO, message='')
+            return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
         if new_account:
-            return SyncCheckResult(can_sync=CanSync.YES, message='')
+            return SyncCheckResult(can_sync=CanSync.YES, message='', payload=None)
 
         if not self.data.db.get_premium_sync():
-            # If it's not a new account and the db setting for premium syncin is off stop
-            return SyncCheckResult(can_sync=CanSync.NO, message='')
+            # If it's not a new account and the db setting for premium syncing is off stop
+            return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
         log.debug(
             'CAN_PULL',
@@ -77,33 +78,32 @@ class PremiumSyncManager():
         if our_hash == metadata.data_hash:
             log.debug('sync from server stopped -- same hash')
             # same hash -- no need to get anything
-            return SyncCheckResult(can_sync=CanSync.NO, message='')
+            return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
         our_last_write_ts = self.data.db.get_last_write_ts()
         data_bytes_size = len(base64.b64decode(b64_encoded_data))
         if our_last_write_ts >= metadata.last_modify_ts:
-            message_prefix = (
+            message = (
                 'Detected remote database BUT with older last modification timestamp '
                 'than the local one. '
             )
         else:
             if data_bytes_size > metadata.data_size:
-                message_prefix = (
+                message = (
                     'Detected newer remote database BUT with smaller size than the local one. '
                 )
             else:
-                message_prefix = 'Detected newer remote database. '
+                message = 'Detected newer remote database. '
 
-        message = (
-            f'{message_prefix}'
-            f'Local size: {data_bytes_size} Remote size: {metadata.data_size} '
-            f'Local last modified time: {timestamp_to_date(our_last_write_ts)} '
-            f'Remote last modified time: {timestamp_to_date(metadata.last_modify_ts)} '
-            f'Would you like to replace the local DB with the remote one?'
-        )
         return SyncCheckResult(
             can_sync=CanSync.ASK_USER,
             message=message,
+            payload={
+                'local_size': data_bytes_size,
+                'remote_size': metadata.data_size,
+                'local_last_modified': timestamp_to_date(our_last_write_ts),
+                'remote_last_modified': timestamp_to_date(metadata.last_modify_ts),
+            },
         )
 
     def _sync_data_from_server_and_replace_local(self) -> bool:
@@ -255,7 +255,7 @@ class PremiumSyncManager():
         if result.can_sync == CanSync.ASK_USER:
             if sync_approval == 'unknown':
                 log.info('DB data at server newer than local')
-                raise RotkehlchenPermissionError(result.message)
+                raise RotkehlchenPermissionError(result.message, result.payload)
             elif sync_approval == 'yes':
                 log.info('User approved data sync from server')
                 if self._sync_data_from_server_and_replace_local():

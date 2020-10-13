@@ -128,6 +128,7 @@ import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
 import Login from '@/components/account-management/Login.vue';
+import { SyncConflict } from '@/store/session/types';
 import { Message } from '@/store/types';
 import { Credentials, UnlockPayload } from '@/typing/types';
 
@@ -148,7 +149,7 @@ export default class AccountManagement extends Vue {
   loading: boolean = false;
   message!: Message;
   connected!: boolean;
-  syncConflict!: boolean;
+  syncConflict!: SyncConflict;
 
   premiumVisible = false;
 

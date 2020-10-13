@@ -14,14 +14,14 @@
           prepend-icon="mdi-account"
           validate-on-blur
           :rules="usernameRules"
-          :disabled="loading || !!syncConflict"
+          :disabled="loading || !!syncConflict.message"
           required
         />
 
         <revealable-input
           v-model="password"
           :rules="passwordRules"
-          :disabled="loading || !!syncConflict"
+          :disabled="loading || !!syncConflict.message"
           type="password"
           required
           class="login__fields__password"
@@ -33,22 +33,55 @@
 
         <transition name="bounce">
           <v-alert
-            v-if="!!syncConflict"
+            v-if="!!syncConflict.message"
             class="login__sync-error"
             text
             prominent
             outlined
-            type="error"
+            type="info"
             icon="fa-cloud-download"
           >
             <h3 class="login__sync-error__header">
               {{ $t('login.sync_error.title') }}
             </h3>
-            <div class="login__sync-error__body">
-              {{ syncConflict }}
+            <div class="login__sync-error__body mt-2">
+              <div>
+                <div>{{ syncConflict.message }}</div>
+                <ul class="mt-2">
+                  <li>
+                    <i18n path="login.sync_error.local_modified">
+                      <div class="font-weight-medium">
+                        {{ localLastModified }}
+                      </div>
+                    </i18n>
+                  </li>
+                  <li class="mt-2">
+                    <i18n path="login.sync_error.remote_modified">
+                      <div class="font-weight-medium">
+                        {{ remoteLastModified }}
+                      </div>
+                    </i18n>
+                  </li>
+                  <li class="mt-2">
+                    <i18n path="login.sync_error.local_size">
+                      <div class="font-weight-medium">
+                        {{ localSize }}
+                      </div>
+                    </i18n>
+                  </li>
+                  <li class="mt-2">
+                    <i18n path="login.sync_error.remote_size">
+                      <div class="font-weight-medium">
+                        {{ remoteSize }}
+                      </div>
+                    </i18n>
+                  </li>
+                </ul>
+              </div>
+              <div class="mt-2">{{ $t('login.sync_error.question') }}</div>
             </div>
 
-            <v-row no-gutters justify="end">
+            <v-row no-gutters justify="end" class="mt-2">
               <v-col cols="3" class="shrink">
                 <v-btn color="error" depressed @click="login('no')">
                   {{ $t('login.sync_error.button_no') }}
@@ -70,7 +103,7 @@
           class="login__button__sign-in"
           depressed
           color="primary"
-          :disabled="!valid || loading || !!syncConflict"
+          :disabled="!valid || loading || !!syncConflict.message"
           :loading="loading"
           @click="login()"
         >
@@ -92,6 +125,7 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { SyncConflict } from '@/store/session/types';
 import { Credentials, SyncApproval } from '@/typing/types';
 
 @Component({
@@ -105,7 +139,23 @@ export default class Login extends Vue {
   loading!: boolean;
 
   @Prop({ required: true })
-  syncConflict!: string;
+  syncConflict!: SyncConflict;
+
+  get localLastModified(): string {
+    return this.syncConflict.payload?.localLastModified ?? '';
+  }
+
+  get remoteLastModified(): string {
+    return this.syncConflict.payload?.remoteLastModified ?? '';
+  }
+
+  get localSize(): string {
+    return this.syncConflict.payload?.localSize ?? '';
+  }
+
+  get remoteSize(): string {
+    return this.syncConflict.payload?.remoteSize ?? '';
+  }
 
   @Watch('displayed')
   onDisplayChange() {

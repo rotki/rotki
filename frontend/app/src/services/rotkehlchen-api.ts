@@ -6,6 +6,7 @@ import {
   ExternalServiceKeys
 } from '@/model/action-result';
 import {
+  axiosCamelCaseTransformer,
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
@@ -417,7 +418,10 @@ export class RotkehlchenApi {
       )
       .then(response => {
         if (response.status === 300) {
-          throw new SyncConflictError(response.data.message);
+          throw new SyncConflictError(
+            response.data.message,
+            axiosCamelCaseTransformer(response.data.result)
+          );
         }
         return response;
       })
