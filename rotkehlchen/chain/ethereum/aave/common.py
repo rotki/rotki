@@ -60,6 +60,7 @@ AAVE_RESERVE_TO_ASSET = {
     '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e': EthereumToken('YFI'),
     '0xE41d2489571d322189246DaFA5ebDe1F4699F498': EthereumToken('ZRX'),
 }
+ASSET_TO_AAVE_RESERVE_ADDRESS = {v: k for k, v in AAVE_RESERVE_TO_ASSET.items()}
 
 
 def _get_reserve_address_decimals(symbol: str) -> Tuple[ChecksumEthAddress, int]:

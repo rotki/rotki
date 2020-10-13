@@ -7,7 +7,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.graph import Graph
+from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
@@ -114,24 +114,6 @@ def _get_txhash_and_logidx(identifier: str) -> Optional[Tuple[str, int]]:
         return None
 
     return result[0], log_index
-
-
-def _get_params(
-        from_ts: Timestamp,
-        to_ts: Timestamp,
-        address: ChecksumEthAddress,
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    param_types = {
-        '$start_ts': 'Int!',
-        '$end_ts': 'Int!',
-        '$address': 'Bytes!',
-    }
-    param_values = {
-        'start_ts': from_ts,
-        'end_ts': to_ts,
-        'address': address,
-    }
-    return param_types, param_values
 
 
 class Compound(EthereumModule):
@@ -259,7 +241,7 @@ class Compound(EthereumModule):
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
-        param_types, param_values = _get_params(from_ts, to_ts, address)
+        param_types, param_values = get_common_params(from_ts, to_ts, address)
         if event_type == 'borrow':
             graph_event_name = 'borrowEvents'
             payer_or_empty = ''
@@ -325,7 +307,7 @@ class Compound(EthereumModule):
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
         """https://compound.finance/docs/ctokens#liquidate-borrow"""
-        param_types, param_values = _get_params(from_ts, to_ts, address)
+        param_types, param_values = get_common_params(from_ts, to_ts, address)
         result = self.graph.query(
             querystr="""liquidationEvents (where: {blockTime_lte: $end_ts, blockTime_gte: $start_ts, from: $address}) {
     id
@@ -412,7 +394,7 @@ class Compound(EthereumModule):
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
-        param_types, param_values = _get_params(from_ts, to_ts, address)
+        param_types, param_values = get_common_params(from_ts, to_ts, address)
         if event_type == 'mint':
             graph_event_name = 'mintEvents'
             addr_position = 'to'

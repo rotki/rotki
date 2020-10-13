@@ -22,6 +22,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
@@ -114,7 +115,9 @@ def test_query_aave_balances_module_not_activated(
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+# @pytest.mark.parametrize('aave_use_graph', [True, False])
+@pytest.mark.parametrize('aave_use_graph', [True])
+def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
     Since this actually queries real blockchain data for aave it is a very slow test
@@ -152,8 +155,14 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
     assert FVal(total_earned['aDAI']['usd_value']) >= FVal('24.580592532348742989192')
 
     expected_events = process_result_list(expected_aave_test_events)
-    assert len(events) >= 16
-    assert events[:16] == expected_events
+    if aave_use_graph:
+        expected_events = expected_events[:7] + expected_events[8:]
+
+    assert_serialized_lists_equal(
+        a=events[:len(expected_events)],
+        b=expected_events,
+        ignore_keys=['log_index', 'block_number'] if aave_use_graph else None,
+    )
 
 
 @pytest.mark.parametrize('ethereum_modules', [['aave']])

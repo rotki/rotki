@@ -19,10 +19,16 @@ class AaveEvent(NamedTuple):
     event_type: Literal['deposit', 'withdrawal', 'interest']
     asset: Asset
     value: Balance
+    # for events coming from Graph this is not retrievable
+    # Because of this "TODO":
+    # https://github.com/aave/aave-protocol/blob/f7ef52000af2964046857da7e5fe01894a51f2ab/thegraph/raw/schema.graphql#L144
     block_number: int
     timestamp: Timestamp
     tx_hash: str
-    log_index: int  # only used to identify uniqueness
+    # only used to identify uniqueness. Does not really correspond to the real log
+    # index for graph queries. Because of this "TODO":
+    # https://github.com/aave/aave-protocol/blob/f7ef52000af2964046857da7e5fe01894a51f2ab/thegraph/raw/schema.graphql#L144
+    log_index: int
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
