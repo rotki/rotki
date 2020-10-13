@@ -253,12 +253,17 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -e .
-      - name: Run integration tests
+      - name: Restore dependencies
         if: contains(steps.check.outputs.ui-tests, true)
         working-directory: ./frontend/app
         run: |
-          npm ci
-          npm run test:integration-ci
+          if ! npm ci --exit-code; then
+            npm ci
+          fi
+      - name: Run integration tests
+        if: contains(steps.check.outputs.ui-tests, true)
+        working-directory: ./frontend/app
+        run: npm run test:integration-ci
       - name: Upload coverage
         if: contains(steps.check.outputs.ui-tests, true)
         working-directory: ./frontend/app
