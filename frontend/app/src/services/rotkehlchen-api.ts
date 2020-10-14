@@ -750,6 +750,19 @@ export class RotkehlchenApi {
       })
       .then(handleResponse);
   }
+
+  async forceSync(username: string): Promise<PendingTask> {
+    return this.axios
+      .put<ActionResult<PendingTask>>(
+        `/users/${username}/premium/sync`,
+        axiosSnakeCaseTransformer({ asyncQuery: true }),
+        {
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
 }
 
 export const api = new RotkehlchenApi();

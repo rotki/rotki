@@ -5,6 +5,9 @@ import {
 } from '@/data/converters';
 import i18n from '@/i18n';
 import { DBSettings } from '@/model/action-result';
+import { createTask, taskCompletion, TaskMeta } from '@/model/task';
+import { TaskType } from '@/model/task-type';
+import { balanceKeys } from '@/services/consts';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -414,6 +417,35 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       );
       notify(message, title, Severity.ERROR, true);
       return { success: false, message: e.message };
+    }
+  },
+  async forceSync({
+    state,
+    commit,
+    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+  }): Promise<void> {
+    const taskType = TaskType.FORCE_SYNC;
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+    try {
+      const { taskId } = await api.forceSync(state.username);
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.session.force_sync.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+      commit('tasks/add', task, { root: true });
+      await taskCompletion<{}, TaskMeta>(taskType);
+      const title = i18n.tc('actions.session.force_sync.success.title');
+      const message = i18n.tc('actions.session.force_sync.success.message');
+      notify(message, title, Severity.INFO, true);
+    } catch (e) {
+      const title = i18n.tc('actions.session.force_sync.error.title');
+      const message = i18n.tc('actions.session.force_sync.error.message', 0, {
+        error: e.message
+      });
+      notify(message, title, Severity.ERROR, true);
     }
   }
 };

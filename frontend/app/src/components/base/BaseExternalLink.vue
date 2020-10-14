@@ -4,17 +4,13 @@
     target="_blank"
     @click="$interop.isPackaged ? openLink() : undefined"
   >
-    <span v-if="truncate">
-      {{ text | truncateAddress }}
-    </span>
-    <span v-else>
-      {{ text }}
-    </span>
+    {{ displayText }}
   </a>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { truncateAddress } from '@/filters';
 
 @Component({})
 export default class BaseExternalLink extends Vue {
@@ -25,10 +21,12 @@ export default class BaseExternalLink extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   truncate!: boolean;
 
+  get displayText(): string {
+    return this.truncate ? truncateAddress(this.text) : this.text;
+  }
+
   openLink() {
     this.$interop.openUrl(this.href);
   }
 }
 </script>
-
-<style scoped></style>

@@ -75,6 +75,45 @@
               :label="$t('premium_settings.actions.sync')"
               @change="onSyncChange()"
             />
+            <v-spacer />
+            <v-btn
+              depressed
+              color="primary"
+              :disabled="!premium || uploading"
+              @click="confirmUpload = true"
+            >
+              <v-progress-circular
+                v-if="uploading"
+                class="mr-2"
+                indeterminate
+                size="24"
+                width="2"
+              />
+              <v-icon v-else class="mr-2">mdi-cloud-upload</v-icon>
+              {{ $t('premium_settings.force_sync') }}
+            </v-btn>
+            <confirm-dialog
+              confirm-type="warning"
+              :display="confirmUpload"
+              :title="$t('premium_settings.upload_confirmation.title')"
+              :message="$t('premium_settings.upload_confirmation.message')"
+              :disabled="!confirmChecked"
+              :primary-action="
+                $t('premium_settings.upload_confirmation.upload')
+              "
+              :secondary-action="
+                $t('premium_settings.upload_confirmation.cancel')
+              "
+              @cancel="confirmUpload = false"
+              @confirm="performSync"
+            >
+              <v-checkbox
+                v-model="confirmChecked"
+                :label="
+                  $t('premium_settings.upload_confirmation.confirm_check')
+                "
+              />
+            </confirm-dialog>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -118,7 +157,8 @@ import { trimOnPaste } from '@/utils/event';
     ...mapActions('session', [
       'setupPremium',
       'deletePremium',
-      'updateSettings'
+      'updateSettings',
+      'forceSync'
     ])
   }
 })
@@ -128,6 +168,9 @@ export default class PremiumSettings extends Vue {
   sync: boolean = false;
   edit: boolean = true;
   confirmDeletePremium: boolean = false;
+  confirmUpload: boolean = false;
+  confirmChecked: boolean = false;
+  uploading: boolean = false;
   errorMessages: string[] = [];
 
   premium!: boolean;
@@ -137,6 +180,7 @@ export default class PremiumSettings extends Vue {
   setupPremium!: (payload: PremiumCredentialsPayload) => Promise<ActionStatus>;
   deletePremium!: (username: string) => Promise<ActionStatus>;
   updateSettings!: (settings: SettingsUpdate) => Promise<void>;
+  forceSync!: () => Promise<void>;
 
   private reset() {
     this.apiSecret = '';
@@ -174,6 +218,13 @@ export default class PremiumSettings extends Vue {
     this.apiKey = '';
     this.apiSecret = '';
     this.clearErrors();
+  }
+
+  performSync() {
+    this.uploading = true;
+    this.forceSync().then(() => (this.uploading = false));
+    this.confirmUpload = false;
+    this.confirmChecked = false;
   }
 
   async setup() {
