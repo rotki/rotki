@@ -336,7 +336,11 @@ class Rotkehlchen():
         self.premium_sync_manager.premium = None
         self.chain_manager.deactivate_premium_status()
 
-    def premium_sync_data(self, name: str) -> Tuple[bool, str]:
+    def premium_sync_data(
+            self,
+            name: str,
+            action: Literal['upload', 'download'],
+    ) -> Tuple[bool, str]:
         """Overwrites the remote database with the local one"""
         success: bool
         msg = ''
@@ -345,7 +349,7 @@ class Rotkehlchen():
             msg = f'Provided user "{name}" is not the logged in user'
             success = False
         else:
-            success, msg = self.premium_sync_manager.upload_data_to_server()
+            success, msg = self.premium_sync_manager.sync_data(action)
 
         return success, msg
 

@@ -126,7 +126,7 @@ def test_manual_upload_data_to_server(rotkehlchen_instance, username, db_passwor
 
     now = ts_now()
     with patched_put:
-        rotkehlchen_instance.premium_sync_manager.upload_data_to_server()
+        rotkehlchen_instance.premium_sync_manager.sync_data('upload')
 
     last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
     msg = 'The last data upload timestamp should have been saved in the db as now'

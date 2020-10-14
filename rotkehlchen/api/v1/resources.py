@@ -573,8 +573,8 @@ class UserPremiumSyncResource(BaseResource):
     put_schema = UserPremiumSyncSchema()
 
     @use_kwargs(put_schema, location='json_and_view_args')  # type: ignore
-    def put(self, async_query: bool, name: str) -> Response:
-        return self.rest_api.upload_data_to_server(async_query, name)
+    def put(self, async_query: bool, name: str, action: Literal['upload', 'download']) -> Response:
+        return self.rest_api.sync_data(async_query, name, action)
 
 
 class StatisticsNetvalueResource(BaseResource):

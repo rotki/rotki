@@ -840,6 +840,10 @@ class UserPremiumKeyRemoveSchema(Schema):
 
 class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
     name = fields.String(required=True)
+    action = fields.String(
+        validate=webargs.validate.OneOf(choices=('upload', 'download')),
+        required=True,
+    )
 
 
 class NewUserSchema(BaseUserSchema):
