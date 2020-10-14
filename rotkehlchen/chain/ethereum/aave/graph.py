@@ -227,6 +227,7 @@ class AaveGraphInquirer(AaveInquirer):
             from_ts=from_ts,
             to_ts=to_ts,
         )
+        borrows = self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
 
         reserve_history = {}
         for reserve in user_result['reserves']:
@@ -422,6 +423,61 @@ class AaveGraphInquirer(AaveInquirer):
             )
             result.append(AaveEvent(
                 event_type='withdrawal',
+                asset=asset,
+                value=Balance(amount=amount, usd_value=amount * usd_price),
+                block_number=0,  # can't get from graph query
+                timestamp=timestamp,
+                tx_hash=tx_hash,
+                log_index=index,  # not really the log index, but should also be unique
+            ))
+
+        return result
+
+    def _parse_borrows(
+            self,
+            borrows: List[Dict[str, Any]],
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> List[AaveEvent]:
+        result = []
+        for entry in borrows:
+            timestamp = entry['timestamp']
+            if timestamp < from_ts or timestamp > to_ts:
+                # Since for the user data we can't query per timestamp, filter timestamps here
+                continue
+
+            pair = entry['id'].split(':')
+            if len(pair) != 2:
+                log.error(
+                    f'Could not parse the id entry for an aave deposit as '
+                    f'returned by graph: {entry["id"]}.  Skipping entry ...',
+                )
+                continue
+
+            tx_hash = pair[0]
+            index = int(pair[1])  # not really log index
+
+            reserve_address = to_checksum_address(entry['reserve']['id'])
+            asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
+            if asset is None:
+                log.error(
+                    f'Unknown aave reserve address returned by graph query: '
+                    f'{reserve_address}. Skipping entry ...',
+                )
+                continue
+
+            _, decimals = _get_reserve_address_decimals(asset.identifier)
+            amount = token_normalized_value(int(entry['amount']), token_decimals=decimals)
+            usd_price = query_usd_price_zero_if_error(
+                asset=asset,
+                time=timestamp,
+                location='aave deposit from graph query',
+                msg_aggregator=self.msg_aggregator,
+            )
+            borrow_rate = entry['borrowRate']  # use this somehow?
+            borrow_rate_mode  = entry['borrowRateMode']  # use this somehow?
+            result.append(AaveEvent(
+                event_type='borrow',
                 asset=asset,
                 value=Balance(amount=amount, usd_value=amount * usd_price),
                 block_number=0,  # can't get from graph query
