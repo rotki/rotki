@@ -2,7 +2,7 @@ import base64
 import logging
 import shutil
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 from typing_extensions import Literal
 
@@ -199,6 +199,24 @@ class PremiumSyncManager():
         self.last_data_upload_ts = ts_now()
         self.data.db.update_last_data_upload_ts(self.last_data_upload_ts)
         log.debug('upload to server -- success')
+
+    def upload_data_to_server(self) -> Tuple[bool, str]:
+        if self.premium is None:
+            return False, 'User has no premium'
+
+        b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
+        our_last_write_ts = self.data.db.get_last_write_ts()
+
+        self.premium.upload_data(
+            data_blob=b64_encoded_data,
+            our_hash=our_hash,
+            last_modify_ts=our_last_write_ts,
+            compression_type='zlib',
+        )
+
+        self.last_data_upload_ts = ts_now()
+        self.data.db.update_last_data_upload_ts(self.last_data_upload_ts)
+        return True, ''
 
     def try_premium_at_start(
             self,

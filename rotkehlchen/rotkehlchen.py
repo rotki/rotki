@@ -336,13 +336,26 @@ class Rotkehlchen():
         self.premium_sync_manager.premium = None
         self.chain_manager.deactivate_premium_status()
 
+    def premium_sync_data(self, name: str) -> Tuple[bool, str]:
+        """Overwrites the remote database with the local one"""
+        success: bool
+        msg = ''
+
+        if name != self.data.username:
+            msg = f'Provided user "{name}" is not the logged in user'
+            success = False
+        else:
+            success, msg = self.premium_sync_manager.upload_data_to_server()
+
+        return success, msg
+
     def start(self) -> gevent.Greenlet:
         return gevent.spawn(self.main_loop)
 
     def main_loop(self) -> None:
         """Rotki main loop that fires often and manages many different tasks
 
-        Each task remembers the last time it run sucesfully and know how often it
+        Each task remembers the last time it run successfully and know how often it
         should run. So each task manages itself.
         """
         # super hacky -- organize better when recurring tasks are implemented

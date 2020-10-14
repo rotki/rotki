@@ -51,6 +51,7 @@ from rotkehlchen.api.v1.encoding import (
     UserActionSchema,
     UserPasswordChangeSchema,
     UserPremiumKeyRemoveSchema,
+    UserPremiumSyncSchema,
     WatchersAddSchema,
     WatchersDeleteSchema,
     WatchersEditSchema,
@@ -566,6 +567,14 @@ class UserPremiumKeyResource(BaseResource):
     @use_kwargs(delete_schema, location='view_args')  # type: ignore
     def delete(self, name: str) -> Response:
         return self.rest_api.user_premium_key_remove(name=name)
+
+
+class UserPremiumSyncResource(BaseResource):
+    put_schema = UserPremiumSyncSchema()
+
+    @use_kwargs(put_schema, location='json_and_view_args')  # type: ignore
+    def put(self, async_query: bool, name: str) -> Response:
+        return self.rest_api.upload_data_to_server(async_query, name)
 
 
 class StatisticsNetvalueResource(BaseResource):

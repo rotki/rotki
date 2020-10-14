@@ -838,6 +838,10 @@ class UserPremiumKeyRemoveSchema(Schema):
     name = fields.String(required=True)
 
 
+class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
+    name = fields.String(required=True)
+
+
 class NewUserSchema(BaseUserSchema):
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')

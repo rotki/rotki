@@ -90,6 +90,59 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_manual_upload_data_to_server(rotkehlchen_instance, username, db_password):
+    """Test our side of uploading data to the server"""
+    last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
+    assert last_ts == 0
+
+    # Write anything in the DB to set a non-zero last_write_ts
+    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_GBP))
+    last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+
+    def mock_succesfull_upload_data_to_server(
+            url,  # pylint: disable=unused-argument
+            data,
+            timeout,
+    ):
+        # Can't compare data blobs as they are encrypted and as such can be
+        # different each time
+        assert 'data_blob' in data
+        assert data['original_hash'] == our_hash
+        assert data['last_modify_ts'] == last_write_ts
+        assert 'index' in data
+        assert len(data['data_blob']) == data['length']
+        assert 'nonce' in data
+        assert data['compression'] == 'zlib'
+
+        assert timeout == ROTKEHLCHEN_SERVER_TIMEOUT
+        return MockResponse(200, '{"success": true}')
+
+    patched_put = patch.object(
+        rotkehlchen_instance.premium.session,
+        'put',
+        side_effect=mock_succesfull_upload_data_to_server,
+    )
+
+    now = ts_now()
+    with patched_put:
+        rotkehlchen_instance.premium_sync_manager.upload_data_to_server()
+
+    last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
+    msg = 'The last data upload timestamp should have been saved in the db as now'
+    assert last_ts >= now and last_ts - now < 50, msg
+    last_ts = rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
+    msg = 'The last data upload timestamp should also be in memory'
+    assert last_ts >= now and last_ts - now < 50, msg
+
+    # and now logout and login again and make sure that the last_data_upload_ts is correct
+    rotkehlchen_instance.logout()
+    rotkehlchen_instance.data.unlock(username, db_password, create_new=False)
+    assert last_ts == rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
+    assert last_ts == rotkehlchen_instance.data.db.get_last_data_upload_ts()
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     """Test that if the server has same data hash as we no upload happens"""
     last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
