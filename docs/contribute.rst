@@ -39,6 +39,50 @@ For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/>`_ g
 4. Commits should do one thing, if two commits both do the same thing, that's a good sign they should be combined.
 5. **Never** merge master on the branch, always rebase on master. To delete/amend/edit/combine commits follow `this tutorial <https://robots.thoughtbot.com/git-interactive-rebase-squash-amend-rewriting-history>`_.
 
+Adding new assets to Rotki
+================================
+
+To add new assets to rotki you need to edit `all assets file <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/data/all_assets.json>`__.
+
+::
+
+    "CRC": {
+        "coingecko": "crycash",
+        "cryptocompare": "CRYC",
+        "ethereum_address": "0xF41e5Fbc2F6Aac200Dd8619E121CE1f05D150077",
+        "ethereum_token_decimals": 18,
+        "name": "CryCash",
+        "started": 1524526765,
+        "symbol": "CRC",
+        "type": "ethereum token"
+    },
+
+As an example look above. The key should be unique as it's the unique identifier for each asset. Then the possible keys are:
+
+- ``coingecko``: The coingecko identifier for the asset. It's used to pull coingecko logo and prices. If not supported by coingecko it should be an empty string.
+- ``cryptoocompare``: This is an optional entry. If it's missing the cryptocompare identifier is considered the same as as the asset key. If not supported by cryptocompare the empty string should be given.
+- ``ethereum_address``: If this is an ethereum token give the checksummed ethereum address here
+- ``ethereum_token_decimal``: If this is an ethereum token give the ERC20 decimals here
+- ``name``: Give the name of the asset here
+- ``started``: The timestamp where data for the assets should first be available. The launch of a chain, deploment of a token etc.
+- ``symbol``: The token symbol. Does not need to be unique (identifier should be)
+- ``type``: The type of the asset. Standalone chain, ethereum token etc. For possible values for this field check `here <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/assets/resolver.py#L12>`__.
+- ``forked``: This is an optional field. Given to specify if an asset is a fork of another asset. For example ``ETC`` should have ``ETH`` here.
+- ``swapped_for``: This is an optional field. Given to specify if an asset is swapped for another asset. For example ``LEND`` should have ``AAVE`` here.
+
+Once an asset is added here the md5sum of the file should be regenerated and added to the `meta file <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/data/all_assets.meta>`__. And the version in the meta file should also be bumped. The same changes should be done in the unit test that checks exactly for the md5 sum of the assets file.
+
+One important gotcha is to check for cryptocompare asset prices. Unfortunately you need to to check the page of each asset in cryptocompare. For example for `$BASED <https://www.cryptocompare.com/coins/based/overview>`__ you would need to check the page and then try to see the api call for USD price to see `if it exists <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=USD&ts=1611915600>`__. If this returns something like:
+
+::
+
+   {"Response":"Error","Message":"There is no data for any of the toSymbols USD .","HasWarning":true,"Type":2,"RateLimit":{},"Data":{},"Warning":"There is no data for the toSymbol/s USD ","ParamWithError":"tsyms"}
+
+Then that means you have to check the cryptocompare page and compare directly with the asset they have listed there. Like `so <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=WETH&ts=1611915600>`__ and see that it works. Then you need to edit the cryptocompare mappings in the code to add that special mapping `here <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/externalapis/cryptocompare.py#L45>`__.
+
+Hopefully this situation with cryptocompare is temporary and they will remove the need for these special mappings soon.
+
+
 Manual Testing
 ***********************
 
