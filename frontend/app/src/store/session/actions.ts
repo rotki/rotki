@@ -101,7 +101,14 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       showError(e.message, 'Login failed');
     }
   },
-  async periodicCheck({ commit, state: { lastBalanceSave, nodeConnection } }) {
+  async periodicCheck({
+    commit,
+    state: {
+      lastBalanceSave: lastKnownBalanceSave,
+      lastDataUpload,
+      nodeConnection
+    }
+  }) {
     try {
       const result = await api.queryPeriodicData();
       if (Object.keys(result).length === 0) {
@@ -110,26 +117,31 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       }
 
       const {
-        last_balance_save,
-        eth_node_connection,
-        history_process_current_ts,
-        history_process_start_ts
+        lastBalanceSave,
+        ethNodeConnection,
+        historyProcessCurrentTs,
+        historyProcessStartTs,
+        lastDataUploadTs
       } = result;
 
-      if (last_balance_save !== lastBalanceSave) {
-        commit('updateLastBalanceSave', last_balance_save);
+      if (lastBalanceSave !== lastKnownBalanceSave) {
+        commit('updateLastBalanceSave', lastBalanceSave);
       }
 
-      if (eth_node_connection !== nodeConnection) {
-        commit('nodeConnection', eth_node_connection);
+      if (ethNodeConnection !== nodeConnection) {
+        commit('nodeConnection', ethNodeConnection);
       }
 
-      if (history_process_current_ts > 0) {
+      if (lastDataUploadTs !== lastDataUpload) {
+        commit('updateLastDataUpload', lastDataUploadTs);
+      }
+
+      if (historyProcessCurrentTs > 0) {
         commit(
           'reports/historyProcess',
           {
-            start: history_process_start_ts,
-            current: history_process_current_ts
+            start: historyProcessStartTs,
+            current: historyProcessCurrentTs
           },
           {
             root: true

@@ -857,6 +857,7 @@ class Rotkehlchen():
             result['eth_node_connection'] = self.chain_manager.ethereum.web3_mapping.get(NodeName.OWN, None) is not None  # noqa : E501
             result['history_process_start_ts'] = self.accountant.started_processing_timestamp
             result['history_process_current_ts'] = self.accountant.currently_processing_timestamp
+            result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
         return result
 
     def shutdown(self) -> None:
