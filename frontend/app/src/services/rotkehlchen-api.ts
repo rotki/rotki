@@ -26,6 +26,7 @@ import {
   PeriodicClientQueryResult,
   SingleAssetBalance,
   SupportedAssets,
+  SyncAction,
   TaskNotFoundError,
   VersionCheck
 } from '@/services/types-api';
@@ -751,11 +752,11 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async forceSync(username: string): Promise<PendingTask> {
+  async forceSync(username: string, action: SyncAction): Promise<PendingTask> {
     return this.axios
       .put<ActionResult<PendingTask>>(
         `/users/${username}/premium/sync`,
-        axiosSnakeCaseTransformer({ asyncQuery: true }),
+        axiosSnakeCaseTransformer({ asyncQuery: true, action }),
         {
           validateStatus: validWithSessionAndExternalService,
           transformResponse: basicAxiosTransformer

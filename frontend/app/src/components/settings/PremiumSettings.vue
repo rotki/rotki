@@ -76,27 +76,45 @@
               @change="onSyncChange()"
             />
             <v-spacer />
-            <v-btn
-              depressed
-              color="primary"
-              :disabled="!premium || uploading"
-              @click="confirmUpload = true"
-            >
-              <v-progress-circular
-                v-if="uploading"
-                class="mr-2"
-                indeterminate
-                size="24"
-                width="2"
-              />
-              <v-icon v-else class="mr-2">mdi-cloud-upload</v-icon>
-              {{ $t('premium_settings.force_sync') }}
-            </v-btn>
+            <v-tooltip top open-delay="400">
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  v-bind="attrs"
+                  icon
+                  depressed
+                  color="primary"
+                  :disabled="!premium || pending"
+                  v-on="on"
+                  @click="confirmAction = 'upload'"
+                >
+                  <v-icon>mdi-cloud-upload</v-icon>
+                </v-btn>
+              </template>
+              <span>{{ $t('premium_settings.upload_tooltip') }}</span>
+            </v-tooltip>
+
+            <v-tooltip top open-delay="400">
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  v-bind="attrs"
+                  icon
+                  depressed
+                  color="primary"
+                  :disabled="!premium || pending"
+                  v-on="on"
+                  @click="confirmAction = 'download'"
+                >
+                  <v-icon>mdi-cloud-download</v-icon>
+                </v-btn>
+              </template>
+              <span>{{ $t('premium_settings.download_tooltip') }}</span>
+            </v-tooltip>
+
             <confirm-dialog
               confirm-type="warning"
-              :display="confirmUpload"
+              :display="!!confirmAction"
               :title="$t('premium_settings.upload_confirmation.title')"
-              :message="$t('premium_settings.upload_confirmation.message')"
+              :message="message"
               :disabled="!confirmChecked"
               :primary-action="
                 $t('premium_settings.upload_confirmation.upload')
@@ -104,7 +122,7 @@
               :secondary-action="
                 $t('premium_settings.upload_confirmation.cancel')
               "
-              @cancel="confirmUpload = false"
+              @cancel="cancel"
               @confirm="performSync"
             >
               <v-checkbox
@@ -141,9 +159,11 @@ import { mapActions, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 import { SettingsUpdate } from '@/typing/types';
+import { assert } from '@/utils/assertions';
 import { trimOnPaste } from '@/utils/event';
 
 @Component({
@@ -168,9 +188,10 @@ export default class PremiumSettings extends Vue {
   sync: boolean = false;
   edit: boolean = true;
   confirmDeletePremium: boolean = false;
-  confirmUpload: boolean = false;
+  confirmAction: SyncAction | null = null;
   confirmChecked: boolean = false;
-  uploading: boolean = false;
+  pending: boolean = false;
+
   errorMessages: string[] = [];
 
   premium!: boolean;
@@ -180,7 +201,13 @@ export default class PremiumSettings extends Vue {
   setupPremium!: (payload: PremiumCredentialsPayload) => Promise<ActionStatus>;
   deletePremium!: (username: string) => Promise<ActionStatus>;
   updateSettings!: (settings: SettingsUpdate) => Promise<void>;
-  forceSync!: () => Promise<void>;
+  forceSync!: (action: SyncAction) => Promise<void>;
+
+  get message(): string {
+    return this.confirmAction === SYNC_UPLOAD
+      ? this.$tc('premium_settings.upload_confirmation.message_upload')
+      : this.$tc('premium_settings.upload_confirmation.message_download');
+  }
 
   private reset() {
     this.apiSecret = '';
@@ -221,9 +248,15 @@ export default class PremiumSettings extends Vue {
   }
 
   performSync() {
-    this.uploading = true;
-    this.forceSync().then(() => (this.uploading = false));
-    this.confirmUpload = false;
+    assert(this.confirmAction !== null);
+    this.pending = true;
+    this.forceSync(this.confirmAction).then(() => (this.pending = false));
+    this.confirmAction = null;
+    this.confirmChecked = false;
+  }
+
+  cancel() {
+    this.confirmAction = null;
     this.confirmChecked = false;
   }
 

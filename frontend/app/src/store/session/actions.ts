@@ -15,6 +15,7 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
+import { SyncAction } from '@/services/types-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import {
@@ -419,17 +420,16 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       return { success: false, message: e.message };
     }
   },
-  async forceSync({
-    state,
-    commit,
-    rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-  }): Promise<void> {
+  async forceSync(
+    { state, commit, rootGetters: { 'tasks/isTaskRunning': isTaskRunning } },
+    action: SyncAction
+  ): Promise<void> {
     const taskType = TaskType.FORCE_SYNC;
     if (isTaskRunning(taskType)) {
       return;
     }
     try {
-      const { taskId } = await api.forceSync(state.username);
+      const { taskId } = await api.forceSync(state.username, action);
       const task = createTask(taskId, taskType, {
         title: i18n.tc('actions.session.force_sync.task.title'),
         ignoreResult: false,
