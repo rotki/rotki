@@ -55,7 +55,7 @@ describe('AmountDisplay.vue', () => {
   describe('Common case', () => {
     test('displays amount converted to selected fiat currency', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), Zero, 'USD');
-      expect(wrapper.find('.amount-display__value').text()).toMatch('1.44');
+      expect(wrapper.find('.amount-display__value').text()).toBe('1.44');
       expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
     });
 
@@ -65,14 +65,14 @@ describe('AmountDisplay.vue', () => {
         bigNumberify(1.20440001),
         'EUR'
       );
-      expect(wrapper.find('.amount-display__value').text()).toMatch('1.20');
+      expect(wrapper.find('.amount-display__value').text()).toBe('1.20');
       expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
     });
 
     test('displays amount as it is without fiat conversion', async () => {
       wrapper = createWrapper(bigNumberify(1.20540001), Zero, null);
-      expect(wrapper.find('.amount-display__value').text()).toMatch('1.21');
-      expect(wrapper.find('.amount-display__full-value').text()).toMatch(
+      expect(wrapper.find('.amount-display__value').text()).toBe('1.21');
+      expect(wrapper.find('.amount-display__full-value').text()).toBe(
         '1.20540001'
       );
     });
@@ -85,7 +85,7 @@ describe('AmountDisplay.vue', () => {
 
     test('displays amount converted to selected fiat currency as scrambled', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), Zero, 'USD');
-      expect(wrapper.find('.amount-display__value').text()).not.toMatch('1.44');
+      expect(wrapper.find('.amount-display__value').text()).not.toBe('1.44');
       expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
     });
 
@@ -95,14 +95,14 @@ describe('AmountDisplay.vue', () => {
         bigNumberify(1.20440001),
         'EUR'
       );
-      expect(wrapper.find('.amount-display__value').text()).not.toMatch('1.20');
+      expect(wrapper.find('.amount-display__value').text()).not.toBe('1.20');
       expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
     });
 
     test('displays amount as it is without fiat conversion as scrambled', async () => {
       wrapper = createWrapper(bigNumberify(1.20540001), Zero, null);
-      expect(wrapper.find('.amount-display__value').text()).not.toMatch('1.21');
-      expect(wrapper.find('.amount-display__full-value').text()).not.toMatch(
+      expect(wrapper.find('.amount-display__value').text()).not.toBe('1.21');
+      expect(wrapper.find('.amount-display__full-value').text()).not.toBe(
         '1.20540001'
       );
     });
