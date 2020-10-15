@@ -3808,6 +3808,16 @@
         "symbol": "DUBI",
         "type": "ethereum token"
     },
+    "DUCATO": {
+        "coingecko": "ducato-protocol-token",
+        "cryptocompare": "",
+        "ethereum_address": "0xa117ea1c0c85CEf648df2b6f40e50bb5475C228d",
+        "ethereum_token_decimals": 18,
+        "name": "DUCATO Protocol Token",
+        "started": 1595831020,
+        "symbol": "DUCATO",
+        "type": "ethereum token"
+    },
     "DUSK": {
         "coingecko": "dusk-network",
         "ethereum_address": "0x940a2dB1B7008B6C776d4faaCa729d6d4A4AA551",
