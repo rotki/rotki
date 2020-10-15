@@ -7659,6 +7659,13 @@
         "symbol": "NDX",
         "type": "ethereum token"
     },
+    "NEAR": {
+        "coingecko": "near",
+        "name": "Near",
+        "started": 1602633600,
+        "symbol": "NEAR",
+        "type": "own chain"
+    },
     "NEBL": {
         "coingecko": "neblio",
         "name": "Neblio",
