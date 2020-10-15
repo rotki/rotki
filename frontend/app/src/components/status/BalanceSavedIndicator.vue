@@ -8,60 +8,99 @@
   >
     <template #activator="{ on }">
       <menu-tooltip-button
-        tooltip="Balances Snapshot Save Status"
+        :tooltip="$t('balances_saved_indicator.menu_tooltip')"
         class-name="secondary--text text--lighten-2"
         :on-menu="on"
       >
         <v-icon>
-          fa fa-save
+          mdi-content-save
         </v-icon>
       </menu-tooltip-button>
     </template>
     <div class="balance-saved-indicator__content">
-      <v-row>
-        Balances last saved
+      <v-row v-if="displaySyncInformation">
+        <v-col>
+          <v-row no-gutters>
+            <v-col class="font-weight-medium">
+              {{ $t('balances_saved_indicator.last_data_upload') }}
+            </v-col>
+          </v-row>
+          <v-row class="text--secondary">
+            <v-col>
+              <date-display v-if="lastDataUpload" :timestamp="lastDataUpload" />
+              <span v-else>
+                {{ $t('balances_saved_indicator.never_saved') }}
+              </span>
+            </v-col>
+          </v-row>
+        </v-col>
       </v-row>
-      <v-row class="text--secondary">
-        <date-display v-if="lastBalanceSave" :timestamp="lastBalanceSave" />
-        <span v-else>
-          Never
-        </span>
-      </v-row>
-      <v-divider />
+      <v-divider v-if="displaySyncInformation" />
       <v-row>
-        <v-btn color="primary" outlined @click="refreshAllAndSave()">
-          <v-icon left>fa fa-save</v-icon>force save
-        </v-btn>
-        <v-tooltip bottom max-width="300px">
-          <template #activator="{ on }">
-            <v-icon class="ml-3" v-on="on">fa fa-info-circle</v-icon>
-          </template>
-          <div>
-            This will force taking a snapshot of all your balances, ignoring any
-            cache. Use this sparingly as it may lead to you being rate-limited.
-          </div>
-        </v-tooltip>
+        <v-col>
+          <v-row class="font-weight-medium" no-gutters>
+            <v-col>{{ $t('balances_saved_indicator.snapshot_title') }}</v-col>
+          </v-row>
+          <v-row class="text--secondary">
+            <v-col>
+              <date-display
+                v-if="lastBalanceSave"
+                :timestamp="lastBalanceSave"
+              />
+              <span v-else>
+                {{ $t('balances_saved_indicator.never_saved') }}
+              </span>
+            </v-col>
+          </v-row>
+          <v-divider />
+          <v-row align="center">
+            <v-col>
+              <v-btn color="primary" outlined @click="refreshAllAndSave()">
+                <v-icon left>mdi-content-save</v-icon>
+                {{ $t('balances_saved_indicator.force_save') }}
+              </v-btn>
+            </v-col>
+            <v-col cols="auto">
+              <v-tooltip bottom max-width="300px">
+                <template #activator="{ on }">
+                  <v-icon class="ml-3" v-on="on">mdi-information</v-icon>
+                </template>
+                <div>{{ $t('balances_saved_indicator.snapshot_tooltip') }}</div>
+              </v-tooltip>
+            </v-col>
+          </v-row>
+        </v-col>
       </v-row>
     </div>
   </v-menu>
 </template>
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapState } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { AllBalancePayload } from '@/store/balances/types';
 
-const { mapGetters } = createNamespacedHelpers('session');
-
 @Component({
   components: { DateDisplay, MenuTooltipButton },
   computed: {
-    ...mapGetters(['lastBalanceSave'])
+    ...mapState('session', [
+      'lastBalanceSave',
+      'premiumSync',
+      'lastDataUpload',
+      'premium'
+    ])
   }
 })
 export default class BalanceSavedIndicator extends Vue {
   lastBalanceSave!: number;
+  premiumSync!: boolean;
+  premium!: boolean;
+  lastDataUpload!: string;
+
+  get displaySyncInformation(): boolean {
+    return this.premium && this.premiumSync;
+  }
 
   refreshAllAndSave() {
     this.$store.dispatch('balances/fetchBalances', {
@@ -77,11 +116,7 @@ export default class BalanceSavedIndicator extends Vue {
   &__content {
     background: white;
     width: 280px;
-    padding: 16px;
-
-    * {
-      padding: 4px 16px;
-    }
+    padding: 0 16px;
   }
 }
 </style>

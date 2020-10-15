@@ -73,5 +73,11 @@ export const mutations: MutationTree<SessionState> = {
   },
   ignoreAssets(state: SessionState, ignoredAssets: string[]) {
     state.ignoredAssets = ignoredAssets;
+  },
+  updateLastBalanceSave(state: SessionState, lastBalanceSave: number) {
+    state.lastBalanceSave = lastBalanceSave;
+  },
+  updateLastDataUpload(state: SessionState, lastDataUpload: number) {
+    state.lastDataUpload = lastDataUpload;
   }
 };

@@ -125,7 +125,8 @@ export class RotkehlchenApi {
   queryPeriodicData(): Promise<PeriodicClientQueryResult> {
     return this.axios
       .get<ActionResult<PeriodicClientQueryResult>>('/periodic/', {
-        validateStatus: validWithSessionStatus
+        validateStatus: validWithSessionStatus,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }

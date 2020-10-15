@@ -790,5 +790,14 @@
   },
   "api_keys": {
     "title": "API Keys"
+  },
+  "balances_saved_indicator": {
+    "menu_tooltip": "View the date of the last balances snapshot",
+    "menu_tooltip_premium": "View the date of the last balances snapshot, and the time of the last premium database sync",
+    "snapshot_title": "Last balances snapshot",
+    "never_saved": "Never",
+    "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited.",
+    "force_save": "Force save",
+    "last_data_upload": "Last premium database sync"
   }
 }

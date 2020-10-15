@@ -35,6 +35,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
     commit('premium', settings.have_premium);
     commit('premiumSync', settings.premium_should_sync);
+    commit('updateLastBalanceSave', settings.last_balance_save);
+    commit('updateLastDataUpload', settings.last_data_upload_ts);
     commit('generalSettings', convertToGeneralSettings(settings));
     commit('accountingSettings', convertToAccountingSettings(settings));
   },
@@ -101,7 +103,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
   async periodicCheck({
     commit,
-    state: { accountingSettings, nodeConnection }
+    state: {
+      lastBalanceSave: lastKnownBalanceSave,
+      lastDataUpload,
+      nodeConnection
+    }
   }) {
     try {
       const result = await api.queryPeriodicData();
@@ -111,30 +117,31 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       }
 
       const {
-        last_balance_save,
-        eth_node_connection,
-        history_process_current_ts,
-        history_process_start_ts
+        lastBalanceSave,
+        ethNodeConnection,
+        historyProcessCurrentTs,
+        historyProcessStartTs,
+        lastDataUploadTs
       } = result;
 
-      const { lastBalanceSave } = accountingSettings;
-
-      if (last_balance_save !== lastBalanceSave) {
-        commit('updateAccountingSetting', {
-          lastBalanceSave: last_balance_save
-        });
+      if (lastBalanceSave !== lastKnownBalanceSave) {
+        commit('updateLastBalanceSave', lastBalanceSave);
       }
 
-      if (eth_node_connection !== nodeConnection) {
-        commit('nodeConnection', eth_node_connection);
+      if (ethNodeConnection !== nodeConnection) {
+        commit('nodeConnection', ethNodeConnection);
       }
 
-      if (history_process_current_ts > 0) {
+      if (lastDataUploadTs !== lastDataUpload) {
+        commit('updateLastDataUpload', lastDataUploadTs);
+      }
+
+      if (historyProcessCurrentTs > 0) {
         commit(
           'reports/historyProcess',
           {
-            start: history_process_start_ts,
-            current: history_process_current_ts
+            start: historyProcessStartTs,
+            current: historyProcessCurrentTs
           },
           {
             root: true
@@ -208,7 +215,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         'setMessage',
         {
           title: 'Success',
-          description: 'Succesfully set kraken account type',
+          description: 'Successfully set kraken account type',
           success: true
         } as Message,
         { root: true }
@@ -218,10 +225,22 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
 
-  async updateSettings({ commit }, update: SettingsUpdate): Promise<void> {
+  async updateSettings(
+    { commit, state },
+    update: SettingsUpdate
+  ): Promise<void> {
     try {
       const settings = await api.setSettings(update);
+      if (state.premium !== settings.have_premium) {
+        commit('premium', settings.have_premium);
+      }
+
+      if (state.premiumSync !== settings.premium_should_sync) {
+        commit('premiumSync', settings.premium_should_sync);
+      }
+
       commit('generalSettings', convertToGeneralSettings(settings));
+      commit('accountingSettings', convertToAccountingSettings(settings));
     } catch (e) {
       showError(`Updating settings was not successful: ${e.message}`);
     }

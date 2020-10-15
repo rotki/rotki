@@ -12,7 +12,6 @@ import { Tag } from '@/typing/types';
 interface SessionGetters {
   floatingPrecision: number;
   dateDisplayFormat: string;
-  lastBalanceSave: number;
   currency: Currency;
   tags: Tag[];
   krakenAccountType: string;
@@ -47,10 +46,6 @@ export const getters: GetterTree<SessionState, RotkehlchenState> &
 
   currencyLocation: (state: SessionState) => {
     return state.generalSettings.currencyLocation;
-  },
-
-  lastBalanceSave: (state: SessionState) => {
-    return state.accountingSettings.lastBalanceSave;
   },
 
   currency: (state: SessionState) => {

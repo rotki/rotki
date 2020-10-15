@@ -23,7 +23,9 @@ export const defaultState: () => SessionState = () => ({
   tags: {},
   watchers: [],
   queriedAddresses: {},
-  ignoredAssets: []
+  ignoredAssets: [],
+  lastBalanceSave: 0,
+  lastDataUpload: 0
 });
 
 export const state: SessionState = defaultState();
