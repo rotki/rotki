@@ -3595,6 +3595,15 @@
         "symbol": "DOW",
         "type": "ethereum token"
     },
+    "DPI": {
+        "coingecko": "defipulse-index",
+        "ethereum_address": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b",
+        "ethereum_token_decimals": 18,
+        "name": "DefiPulse Index",
+        "started": 1599694252,
+        "symbol": "DPI",
+        "type": "ethereum token"
+    },
     "DPP": {
         "coingecko": "",
         "ethereum_address": "0x01b3Ec4aAe1B8729529BEB4965F27d008788B0EB",
