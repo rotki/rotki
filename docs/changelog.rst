@@ -17,6 +17,8 @@ Changelog
   - `Alpha Finance (ALPHA) <https://www.coingecko.com/en/coins/alpha-finance>`__
   - `Near Protocol (NEAR) <https://www.coingecko.com/en/coins/near>`__
   - `Venus (XVS) <https://www.coingecko.com/en/coins/venus>`__
+  - `3x Short Cardano Token (ADABEAR) <https://www.coingecko.com/en/coins/3x-short-cardano-token>`__
+  - `3x Long Cardano Token (ADABULL) <https://www.coingecko.com/en/coins/3x-long-cardano-token>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.

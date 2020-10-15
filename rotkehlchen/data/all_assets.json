@@ -158,6 +158,24 @@
         "symbol": "ADA",
         "type": "own chain"
     },
+    "ADABEAR": {
+        "coingecko": "3x-short-cardano-token",
+        "ethereum_address": "0xb3299d4BaB93Bf04d5b11bc49CD6DFAD1f77d23f",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short Cardano Token",
+        "started": 1580720441,
+        "symbol": "ADABEAR",
+        "type": "ethereum token"
+    },
+    "ADABULL": {
+        "coingecko": "3x-long-cardano-token",
+        "ethereum_address": "0x43dE1145Cd22f0a9Cc99e51c205e6e81161Df6B9",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long Cardano Token",
+        "started": 1580720497,
+        "symbol": "ADABULL",
+        "type": "ethereum token"
+    },
     "ADADOWN": {
         "coingecko": "",
         "name": "Binance leveraged token ADADOWN",
