@@ -3349,6 +3349,13 @@
         "symbol": "DEXT",
         "type": "ethereum token"
     },
+    "DFI": {
+        "coingecko": "defichain",
+        "name": "DeFiChain",
+        "started": 1593561600,
+        "symbol": "DFI",
+        "type": "own chain"
+    },
     "DGB": {
         "coingecko": "digibyte",
         "name": "DigiByte",
