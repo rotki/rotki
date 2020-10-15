@@ -398,6 +398,13 @@
         "symbol": "ALIS",
         "type": "ethereum token"
     },
+    "ALPHA": {
+        "coingecko": "alpha-finance",
+        "name": "Alpha Finance",
+        "started": 1602288000,
+        "symbol": "ALPHA",
+        "type": "binance token"
+    },
     "ALQO": {
         "coingecko": "alqo",
         "cryptocompare": "XLQ",
