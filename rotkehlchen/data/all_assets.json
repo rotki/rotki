@@ -6931,6 +6931,13 @@
         "symbol": "MANA",
         "type": "ethereum token"
     },
+    "MARO": {
+        "coingecko": "maro",
+        "name": "Maro",
+        "started": 1534377600,
+        "symbol": "MARO",
+        "type": "own chain"
+    },
     "MAS": {
         "coingecko": "midas-protocol",
         "cryptocompare": "",
