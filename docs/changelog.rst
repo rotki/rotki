@@ -13,6 +13,7 @@ Changelog
   - `Filecoin (FIL) <https://www.coingecko.com/en/coins/filecoin>`__
   - `DefiPulse Index (DPI) <https://www.coingecko.com/en/coins/defipulse-index>`__
   - `renBTC (renBTC) <https://www.coingecko.com/en/coins/renbtc>`__
+  - `Jarvis Reward Token (JRT) <https://www.coingecko.com/en/coins/jarvis-reward-token>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
