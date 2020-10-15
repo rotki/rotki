@@ -12541,6 +12541,13 @@
         "symbol": "XVG",
         "type": "own chain"
     },
+    "XVS": {
+        "coingecko": "venus",
+        "name": "Venus",
+        "started": 1601942400,
+        "symbol": "XVS",
+        "type": "binance token"
+    },
     "XWC": {
         "coingecko": "whitecoin",
         "name": "WhiteCoin",
