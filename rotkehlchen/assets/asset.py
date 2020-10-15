@@ -121,6 +121,9 @@ WORLD_TO_KRAKEN = {
     'KSM': 'KSM',
     'CRV': 'CRV',
     'SNX': 'SNX',
+    'FIL': 'FIL',
+    'UNI': 'UNI',
+    'YFI': 'YFI',
 }
 
 WORLD_TO_BINANCE = {
