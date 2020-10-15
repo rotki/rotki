@@ -3915,6 +3915,15 @@
         "symbol": "ECC",
         "type": "own chain"
     },
+    "ECELL": {
+        "coingecko": "consensus-cell-network",
+        "ethereum_address": "0x9b62Ec1453cEa5Dde760AAf662048cA6eEB66E7f",
+        "ethereum_token_decimals": 2,
+        "name": "Consensus Cell Network",
+        "started": 1566879537,
+        "symbol": "ECELL",
+        "type": "ethereum token"
+    },
     "ECOM": {
         "coingecko": "omnitude",
         "ethereum_address": "0x171D750d42d661B62C277a6B486ADb82348c3Eca",

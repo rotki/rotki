@@ -21,6 +21,7 @@ Changelog
   - `3x Long Cardano Token (ADABULL) <https://www.coingecko.com/en/coins/3x-long-cardano-token>`__
   - `DefiChain (DFI) <https://www.coingecko.com/en/coins/defichain>`__
   - `Ducato Protocol Token (DUCATO) <https://www.coingecko.com/en/coins/ducato-protocol-token>`__
+  - `Consensus Cell Network (ECELL) <https://www.coingecko.com/en/coins/consensus-cell-network>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
