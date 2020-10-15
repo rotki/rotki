@@ -4541,6 +4541,13 @@
         "symbol": "FIH",
         "type": "ethereum token"
     },
+    "FIL": {
+        "coingecko": "filecoin",
+        "name": "Filecoin",
+        "started": 1602773100,
+        "symbol": "FIL",
+        "type": "own chain"
+    },
     "FIO": {
         "coingecko": "fio-protocol",
         "name": "FIO Protocol",
