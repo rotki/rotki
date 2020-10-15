@@ -9225,6 +9225,15 @@
         "symbol": "REN",
         "type": "ethereum token"
     },
+    "RENBTC": {
+        "coingecko": "renbtc",
+        "ethereum_address": "0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D",
+        "ethereum_token_decimals": 8,
+        "name": "renBTC",
+        "started": 1585090944,
+        "symbol": "renBTC",
+        "type": "ethereum token"
+    },
     "REP": {
         "coingecko": "augur",
         "ethereum_address": "0x1985365e9f78359a9B6AD760e32412f4a445E862",
