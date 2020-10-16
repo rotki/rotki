@@ -1,18 +1,20 @@
 import path from 'path';
 import {
   app,
-  protocol,
   BrowserWindow,
-  Menu,
-  ipcMain,
-  shell,
   dialog,
+  ipcMain,
+  Menu,
+  MenuItem,
   MenuItemConstructorOptions,
-  MenuItem
+  protocol,
+  shell
 } from 'electron';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import windowStateKeeper from 'electron-window-state';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
+import { startHttp, stopHttp } from '@/electron-main/http';
+import { selectPort } from '@/electron-main/port-utils';
 import PyHandler from './py-handler';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -329,6 +331,22 @@ app.on('ready', async () => {
   ipcMain.on('OPEN_DIRECTORY', async (event, args) => {
     const directory = await select(args, 'openDirectory');
     event.sender.send('OPEN_DIRECTORY', directory);
+  });
+  ipcMain.on('METAMASK_IMPORT', async (event, _args) => {
+    try {
+      const port = await selectPort(40000);
+      startHttp(
+        addresses => event.sender.send('METAMASK_IMPORT', { addresses }),
+        port
+      );
+      await shell.openExternal(`http://localhost:${port}`);
+      setTimeout(() => {
+        stopHttp();
+        event.sender.send('METAMASK_IMPORT', { error: 'waiting timeout' });
+      }, 120000);
+    } catch (e) {
+      event.sender.send('METAMASK_IMPORT', { error: e.message });
+    }
   });
   createWindow();
 });

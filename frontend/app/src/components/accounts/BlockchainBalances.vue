@@ -7,6 +7,11 @@
           mdi-plus
         </v-icon>
       </v-btn>
+      <v-btn fab top right dark color="primary" @click="metamaskImport">
+        <v-icon>
+          mdi-import
+        </v-icon>
+      </v-btn>
       <big-dialog
         :display="openDialog"
         :title="dialogTitle"
@@ -43,15 +48,17 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import {
   BlockchainAccountWithBalance,
-  AccountWithBalance
+  AccountWithBalance,
+  AddAccountsPayload
 } from '@/store/balances/types';
+import { ETH } from '@/typing/types';
 
 @Component({
   components: {
@@ -62,18 +69,37 @@ import {
   },
   computed: {
     ...mapGetters('balances', ['ethAccounts', 'btcAccounts', 'totals'])
+  },
+  methods: {
+    ...mapActions('balances', ['addAccounts'])
   }
 })
 export default class BlockchainBalances extends Vue {
   ethAccounts!: AccountWithBalance[];
   btcAccounts!: BlockchainAccountWithBalance[];
   totals!: AccountWithBalance[];
+  addAccounts!: (payload: AddAccountsPayload) => Promise<void>;
 
   accountToEdit: BlockchainAccountWithBalance | null = null;
   dialogTitle: string = '';
   dialogSubtitle: string = '';
   openDialog: boolean = false;
   valid: boolean = false;
+
+  async metamaskImport() {
+    const result = await this.$interop.metamaskImport();
+    if ('addresses' in result) {
+      const payload = result.addresses.map(value => ({
+        address: value,
+        label: 'Metamask Address'
+      }));
+      console.log(payload);
+      await this.addAccounts({
+        blockchain: ETH,
+        payload: payload
+      });
+    }
+  }
 
   newAccount() {
     this.accountToEdit = null;

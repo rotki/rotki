@@ -501,7 +501,19 @@ export class RotkehlchenApi {
             }
           ]
         };
+    return this.performAsyncQuery(url, payload);
+  }
 
+  addBlockchainAccounts(
+    chain: Blockchain,
+    payload: BlockchainAccountPayload[]
+  ) {
+    return this.performAsyncQuery(`/blockchains/${chain}`, {
+      accounts: payload
+    });
+  }
+
+  private performAsyncQuery(url: string, payload: any) {
     return this.axios
       .put<ActionResult<PendingTask>>(
         url,

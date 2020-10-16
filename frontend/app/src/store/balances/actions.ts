@@ -19,6 +19,7 @@ import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import {
+  AddAccountsPayload,
   AllBalancePayload,
   AssetBalances,
   BalanceState,
@@ -316,6 +317,58 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
       const description = i18n.tc(
         'actions.balances.blockchain_account_removal.error.description',
+        0,
+        {
+          error: e.message
+        }
+      );
+      notify(description, title, Severity.ERROR, true);
+    }
+  },
+
+  async addAccounts(
+    { commit, dispatch },
+    { blockchain, payload }: AddAccountsPayload
+  ) {
+    // TODO filter existing accounts
+    const addresses = payload.map(value => value.address).join(', ');
+    try {
+      const taskType = TaskType.ADD_ACCOUNT;
+      const { taskId } = await api.addBlockchainAccounts(blockchain, payload);
+
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc(
+          'actions.balances.blockchain_account_add.task.title',
+          0,
+          { blockchain }
+        ),
+        description: i18n.tc(
+          'actions.balances.blockchain_account_add.task.description',
+          0,
+          { address: addresses }
+        ),
+        blockchain,
+        numericKeys: blockchainBalanceKeys
+      } as BlockchainMetadata);
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<
+        BlockchainBalances,
+        BlockchainMetadata
+      >(taskType);
+
+      await dispatch('updateBalances', { chain: blockchain, balances: result });
+      commit('defi/reset', undefined, { root: true });
+      await dispatch('resetDefiStatus', {}, { root: true });
+    } catch (e) {
+      const title = i18n.tc(
+        'actions.balances.blockchain_account_add.error.title',
+        0,
+        { address: addresses, blockchain }
+      );
+      const description = i18n.tc(
+        'actions.balances.blockchain_account_add.error.description',
         0,
         {
           error: e.message

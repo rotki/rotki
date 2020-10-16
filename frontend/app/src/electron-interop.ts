@@ -1,3 +1,5 @@
+import { MetamaskImport } from '@/types';
+
 export class ElectronInterop {
   private packagedApp: boolean = !!window.interop;
   readonly baseUrl = 'https://rotki.com/';
@@ -39,6 +41,13 @@ export class ElectronInterop {
 
   closeApp() {
     window.interop?.closeApp();
+  }
+
+  async metamaskImport(): Promise<MetamaskImport> {
+    if (!window.interop) {
+      throw new Error('environment does not support interop');
+    }
+    return window.interop.metamaskImport();
   }
 }
 

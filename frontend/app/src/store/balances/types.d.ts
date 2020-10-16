@@ -94,3 +94,8 @@ export interface AssetBalance {
   readonly amount: BigNumber;
   readonly usdValue: BigNumber;
 }
+
+export type AddAccountsPayload = {
+  readonly blockchain: Blockchain;
+  readonly payload: BlockchainAccountPayload[];
+};
