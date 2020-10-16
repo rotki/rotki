@@ -82,18 +82,21 @@ class PremiumSyncManager():
 
         our_last_write_ts = self.data.db.get_last_write_ts()
         data_bytes_size = len(base64.b64decode(b64_encoded_data))
-        if our_last_write_ts >= metadata.last_modify_ts:
+
+        local_more_recent = our_last_write_ts >= metadata.last_modify_ts
+        local_bigger = data_bytes_size >= metadata.data_size
+
+        if local_more_recent and local_bigger:
+            log.debug('sync from server stopped -- local is both newer and bigger')
+            return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
+
+        if local_more_recent is False:  # remote is more recent
             message = (
-                'Detected remote database BUT with older last modification timestamp '
+                'Detected remote database with more recent modification timestamp '
                 'than the local one. '
             )
-        else:
-            if data_bytes_size > metadata.data_size:
-                message = (
-                    'Detected newer remote database BUT with smaller size than the local one. '
-                )
-            else:
-                message = 'Detected newer remote database. '
+        else:  # remote is bigger
+            message = 'Detected remote database with bigger size than the local one. '
 
         return SyncCheckResult(
             can_sync=CanSync.ASK_USER,
@@ -254,7 +257,7 @@ class PremiumSyncManager():
         result = self._can_sync_data_from_server(new_account=create_new)
         if result.can_sync == CanSync.ASK_USER:
             if sync_approval == 'unknown':
-                log.info('DB data at server newer than local')
+                log.info('Remote DB is possibly newer. Ask user.')
                 raise RotkehlchenPermissionError(result.message, result.payload)
             elif sync_approval == 'yes':
                 log.info('User approved data sync from server')

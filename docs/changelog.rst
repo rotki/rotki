@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1596` If the local DB of a premium user is both newer and bigger size than the remote, then do not ask the user whether to pull the remote DB or not.
 * :feature:`1288` Users can now see the last premium database sync date in the save indicator when database sync is enabled.
 * :bug:`1571` New user account with new premium keys will no longer fail to create an account the first time if premium keys are given at account creation time.
 * :bug:`1559` Users can now properly refresh the blockchain balances in the Accounts & Balances page.
