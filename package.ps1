@@ -251,3 +251,5 @@ if ($Env:CI) {
 }
 
 echo "Rotki $SETUP_VERSION was build successfully"
+deactivate
+cd ../../..
