@@ -425,6 +425,8 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'SPARTA',  # no cryptocompare data
     'UNIDOWN',  # no cryptocompare/coingecko data
     'UNIUP',  # no cryptocompare/coingecko data
+    'SXPDOWN',  # no cryptocompare/coingecko data
+    'SXPUP',  # no cryptocompare/coingecko data
 )
 
 

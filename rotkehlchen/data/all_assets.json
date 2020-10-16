@@ -158,6 +158,24 @@
         "symbol": "ADA",
         "type": "own chain"
     },
+    "ADABEAR": {
+        "coingecko": "3x-short-cardano-token",
+        "ethereum_address": "0xb3299d4BaB93Bf04d5b11bc49CD6DFAD1f77d23f",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short Cardano Token",
+        "started": 1580720441,
+        "symbol": "ADABEAR",
+        "type": "ethereum token"
+    },
+    "ADABULL": {
+        "coingecko": "3x-long-cardano-token",
+        "ethereum_address": "0x43dE1145Cd22f0a9Cc99e51c205e6e81161Df6B9",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long Cardano Token",
+        "started": 1580720497,
+        "symbol": "ADABULL",
+        "type": "ethereum token"
+    },
     "ADADOWN": {
         "coingecko": "",
         "name": "Binance leveraged token ADADOWN",
@@ -397,6 +415,13 @@
         "started": 1503100800,
         "symbol": "ALIS",
         "type": "ethereum token"
+    },
+    "ALPHA": {
+        "coingecko": "alpha-finance",
+        "name": "Alpha Finance",
+        "started": 1602288000,
+        "symbol": "ALPHA",
+        "type": "binance token"
     },
     "ALQO": {
         "coingecko": "alqo",
@@ -3324,6 +3349,13 @@
         "symbol": "DEXT",
         "type": "ethereum token"
     },
+    "DFI": {
+        "coingecko": "defichain",
+        "name": "DeFiChain",
+        "started": 1593561600,
+        "symbol": "DFI",
+        "type": "own chain"
+    },
     "DGB": {
         "coingecko": "digibyte",
         "name": "DigiByte",
@@ -3595,6 +3627,15 @@
         "symbol": "DOW",
         "type": "ethereum token"
     },
+    "DPI": {
+        "coingecko": "defipulse-index",
+        "ethereum_address": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b",
+        "ethereum_token_decimals": 18,
+        "name": "DefiPulse Index",
+        "started": 1599694252,
+        "symbol": "DPI",
+        "type": "ethereum token"
+    },
     "DPP": {
         "coingecko": "",
         "ethereum_address": "0x01b3Ec4aAe1B8729529BEB4965F27d008788B0EB",
@@ -3767,6 +3808,16 @@
         "symbol": "DUBI",
         "type": "ethereum token"
     },
+    "DUCATO": {
+        "coingecko": "ducato-protocol-token",
+        "cryptocompare": "",
+        "ethereum_address": "0xa117ea1c0c85CEf648df2b6f40e50bb5475C228d",
+        "ethereum_token_decimals": 18,
+        "name": "DUCATO Protocol Token",
+        "started": 1595831020,
+        "symbol": "DUCATO",
+        "type": "ethereum token"
+    },
     "DUSK": {
         "coingecko": "dusk-network",
         "ethereum_address": "0x940a2dB1B7008B6C776d4faaCa729d6d4A4AA551",
@@ -3863,6 +3914,15 @@
         "started": 1395292195,
         "symbol": "ECC",
         "type": "own chain"
+    },
+    "ECELL": {
+        "coingecko": "consensus-cell-network",
+        "ethereum_address": "0x9b62Ec1453cEa5Dde760AAf662048cA6eEB66E7f",
+        "ethereum_token_decimals": 2,
+        "name": "Consensus Cell Network",
+        "started": 1566879537,
+        "symbol": "ECELL",
+        "type": "ethereum token"
     },
     "ECOM": {
         "coingecko": "omnitude",
@@ -4503,7 +4563,7 @@
         "type": "ethereum token"
     },
     "FET": {
-        "coingecko": "firstenergy-token",
+        "coingecko": "fetch-ai",
         "ethereum_address": "0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD",
         "ethereum_token_decimals": 18,
         "name": "Fetch AI",
@@ -4540,6 +4600,13 @@
         "started": 1543227347,
         "symbol": "FIH",
         "type": "ethereum token"
+    },
+    "FIL": {
+        "coingecko": "filecoin",
+        "name": "Filecoin",
+        "started": 1602773100,
+        "symbol": "FIL",
+        "type": "own chain"
     },
     "FIO": {
         "coingecko": "fio-protocol",
@@ -5908,7 +5975,7 @@
         "type": "ethereum token"
     },
     "INT": {
-        "coingecko": "internet-token",
+        "coingecko": "internet-node-token",
         "ethereum_address": "0x0b76544F6C413a555F309Bf76260d1E02377c02A",
         "ethereum_token_decimals": 6,
         "name": "Internet Node Token",
@@ -6140,6 +6207,15 @@
         "name": "Japanese Yen",
         "symbol": "JPY",
         "type": "fiat"
+    },
+    "JRT": {
+        "coingecko": "jarvis-reward-token",
+        "ethereum_address": "0x8A9C67fee641579dEbA04928c4BC45F66e26343A",
+        "ethereum_token_decimals": 18,
+        "name": "Jarvis Reward Token",
+        "started": 1554767428,
+        "symbol": "JRT",
+        "type": "ethereum token"
     },
     "JST": {
         "coingecko": "just",
@@ -6854,6 +6930,13 @@
         "started": 1502824689,
         "symbol": "MANA",
         "type": "ethereum token"
+    },
+    "MARO": {
+        "coingecko": "ttc-protocol",
+        "name": "Maro",
+        "started": 1534377600,
+        "symbol": "MARO",
+        "type": "own chain"
     },
     "MAS": {
         "coingecko": "midas-protocol",
@@ -7626,6 +7709,13 @@
         "started": 1534287453,
         "symbol": "NDX",
         "type": "ethereum token"
+    },
+    "NEAR": {
+        "coingecko": "near",
+        "name": "Near",
+        "started": 1602633600,
+        "symbol": "NEAR",
+        "type": "own chain"
     },
     "NEBL": {
         "coingecko": "neblio",
@@ -9209,6 +9299,15 @@
         "symbol": "REN",
         "type": "ethereum token"
     },
+    "RENBTC": {
+        "coingecko": "renbtc",
+        "ethereum_address": "0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D",
+        "ethereum_token_decimals": 8,
+        "name": "renBTC",
+        "started": 1585090944,
+        "symbol": "renBTC",
+        "type": "ethereum token"
+    },
     "REP": {
         "coingecko": "augur",
         "ethereum_address": "0x1985365e9f78359a9B6AD760e32412f4a445E862",
@@ -9714,8 +9813,8 @@
         "type": "ethereum token"
     },
     "SGR": {
-        "active": true,
         "coingecko": "sugar-exchange",
+        "cryptocompare": "SUGAR",
         "ethereum_address": "0xCB5A05beF3257613E984C17DbcF039952B6d883F",
         "ethereum_token_decimals": 8,
         "name": "Sugar Exchange",
@@ -12492,6 +12591,13 @@
         "started": 1412816400,
         "symbol": "XVG",
         "type": "own chain"
+    },
+    "XVS": {
+        "coingecko": "venus",
+        "name": "Venus",
+        "started": 1601942400,
+        "symbol": "XVS",
+        "type": "binance token"
     },
     "XWC": {
         "coingecko": "whitecoin",
