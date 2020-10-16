@@ -315,14 +315,9 @@ class Rotkehlchen():
 
         self.data.db.set_rotkehlchen_premium(credentials)
 
-    def delete_premium_credentials(self, name: str) -> Tuple[bool, str]:
+    def delete_premium_credentials(self) -> Tuple[bool, str]:
         """Deletes the premium credentials for Rotki"""
-        success: bool
         msg = ''
-
-        if name != self.data.username:
-            msg = f'Provided user "{name}" is not the logged in user'
-            success = False
 
         success = self.data.db.del_rotkehlchen_premium()
         if success is False:
@@ -335,23 +330,6 @@ class Rotkehlchen():
         self.premium = None
         self.premium_sync_manager.premium = None
         self.chain_manager.deactivate_premium_status()
-
-    def premium_sync_data(
-            self,
-            name: str,
-            action: Literal['upload', 'download'],
-    ) -> Tuple[bool, str]:
-        """Overwrites the remote database with the local one"""
-        success: bool
-        msg = ''
-
-        if name != self.data.username:
-            msg = f'Provided user "{name}" is not the logged in user'
-            success = False
-        else:
-            success, msg = self.premium_sync_manager.sync_data(action)
-
-        return success, msg
 
     def start(self) -> gevent.Greenlet:
         return gevent.spawn(self.main_loop)
@@ -368,7 +346,14 @@ class Rotkehlchen():
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             if self.user_is_logged_in:
                 log.debug('Main loop start')
-                self.premium_sync_manager.maybe_upload_data_to_server()
+                try:
+                    self.premium_sync_manager.maybe_upload_data_to_server()
+                except RemoteError as e:
+                    log.debug(
+                        'upload to server stopped',
+                        error=str(e),
+                    )
+
                 log.debug('Main loop end')
                 if not xpub_derivation_scheduled:
                     # 1 minute in the app's startup try to derive new xpub addresses

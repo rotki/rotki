@@ -953,12 +953,12 @@ class RestAPI():
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=False)
-    def user_premium_key_remove(self, name: str) -> Response:
+    def user_premium_key_remove(self) -> Response:
         """Returns successful result if API keys are successfully removed"""
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
         success: bool
 
-        success, msg = self.rotkehlchen.delete_premium_credentials(name)
+        success, msg = self.rotkehlchen.delete_premium_credentials()
 
         if success is False:
             result_dict['message'] = msg
@@ -1843,34 +1843,29 @@ class RestAPI():
 
         return response
 
-    def _sync_data(self, name: str, action: Literal['upload', 'download']) -> Dict[str, Any]:
+    def _sync_data(self, action: Literal['upload', 'download']) -> Dict[str, Any]:
         try:
-            success, msg = self.rotkehlchen.premium_sync_data(name, action)
-
-            if success is False:
-                return wrap_in_fail_result(msg, status_code=HTTPStatus.CONFLICT)
-            else:
-                return _wrap_in_ok_result({})
+            success, msg = self.rotkehlchen.premium_sync_manager.sync_data(action)
+            return _wrap_in_result(success, message=msg)
         except RemoteError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except PremiumApiError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+        except PremiumAuthenticationError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.UNAUTHORIZED)
 
-    @require_premium_user(active_check=True)
     def sync_data(
             self,
             async_query: bool,
-            name: str,
             action: Literal['upload', 'download'],
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_sync_data',
-                name=name,
                 action=action,
             )
 
-        result_dict = self._sync_data(name, action)
+        result_dict = self._sync_data(action)
 
         status_code = result_dict['status_code']
         if status_code is None:

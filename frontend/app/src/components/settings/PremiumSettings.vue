@@ -146,7 +146,7 @@
         "
         :title="$t('premium_settings.delete_confirmation.title')"
         :message="$t('premium_settings.delete_confirmation.message')"
-        @confirm="remove()"
+        @confirm="remove"
         @cancel="confirmDeletePremium = false"
       />
     </v-row>
@@ -199,7 +199,7 @@ export default class PremiumSettings extends Vue {
   username!: string;
 
   setupPremium!: (payload: PremiumCredentialsPayload) => Promise<ActionStatus>;
-  deletePremium!: (username: string) => Promise<ActionStatus>;
+  deletePremium!: () => Promise<ActionStatus>;
   updateSettings!: (settings: SettingsUpdate) => Promise<void>;
   forceSync!: (action: SyncAction) => Promise<void>;
 
@@ -289,7 +289,7 @@ export default class PremiumSettings extends Vue {
     if (!this.premium) {
       return;
     }
-    const { success, message } = await this.deletePremium(this.username);
+    const { success, message } = await this.deletePremium();
     if (!success) {
       this.errorMessages.push(
         message ?? this.$tc('premium_settings.error.removing_failed')

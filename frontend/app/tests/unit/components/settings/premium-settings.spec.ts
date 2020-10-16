@@ -25,7 +25,7 @@ describe('PremiumSettings.vue', () => {
     return mount(PremiumSettings, {
       store,
       vuetify,
-      stubs: ['v-tooltip', 'v-dialog']
+      stubs: ['v-tooltip', 'v-dialog', 'i18n']
     });
   }
 
@@ -60,9 +60,7 @@ describe('PremiumSettings.vue', () => {
       .fn()
       .mockResolvedValue({ result: true });
 
-    wrapper.find('.premium-settings__button__delete').trigger('click');
-    await wrapper.vm.$nextTick();
-    wrapper.find('.confirm-dialog__buttons__confirm').trigger('click');
+    await (wrapper.vm as any).remove();
     await wrapper.vm.$nextTick();
     await flushPromises();
 

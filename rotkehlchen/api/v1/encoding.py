@@ -834,12 +834,7 @@ class UserPasswordChangeSchema(Schema):
     new_password = fields.String(required=True)
 
 
-class UserPremiumKeyRemoveSchema(Schema):
-    name = fields.String(required=True)
-
-
 class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
-    name = fields.String(required=True)
     action = fields.String(
         validate=webargs.validate.OneOf(choices=('upload', 'download')),
         required=True,

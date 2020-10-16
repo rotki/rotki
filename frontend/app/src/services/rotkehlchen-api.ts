@@ -153,9 +153,9 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  deletePremiumCredentials(username: string): Promise<boolean> {
+  deletePremiumCredentials(): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>(`/users/${username}/premium`, {
+      .delete<ActionResult<boolean>>('/premium', {
         validateStatus: validStatus
       })
       .then(handleResponse);
@@ -752,13 +752,13 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async forceSync(username: string, action: SyncAction): Promise<PendingTask> {
+  async forceSync(action: SyncAction): Promise<PendingTask> {
     return this.axios
       .put<ActionResult<PendingTask>>(
-        `/users/${username}/premium/sync`,
+        '/premium/sync',
         axiosSnakeCaseTransformer({ asyncQuery: true, action }),
         {
-          validateStatus: validWithSessionAndExternalService,
+          validateStatus: validWithParamsSessionAndExternalService,
           transformResponse: basicAxiosTransformer
         }
       )

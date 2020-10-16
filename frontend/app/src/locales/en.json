@@ -740,8 +740,8 @@
       "cancel": "Cancel",
       "upload": "Sync",
       "title": "Force Sync",
-      "message_upload": "By forcing syncing, any previous synced data with the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may case unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
-      "message_download": "By forcing syncing, your local database will be replaced with data synced on the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may case unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
+      "message_upload": "By forcing syncing, any previous synced data with the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
+      "message_download": "By forcing syncing, your local database will be replaced with data synced on the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
       "confirm_check": "I understand"
     },
     "error": {

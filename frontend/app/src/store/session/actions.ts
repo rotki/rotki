@@ -15,7 +15,7 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
-import { SyncAction } from '@/services/types-api';
+import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import {
@@ -51,7 +51,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const { username, create } = payload;
       const isLogged = await api.checkIfLogged(username);
-      if (isLogged && !state.syncConflict) {
+      if (isLogged && !state.syncConflict.message) {
         [settings, exchanges] = await Promise.all([
           api.getSettings(),
           api.getExchanges()
@@ -334,9 +334,9 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
 
-  async deletePremium({ commit }, username: string): Promise<ActionStatus> {
+  async deletePremium({ commit }): Promise<ActionStatus> {
     try {
-      const success = await api.deletePremiumCredentials(username);
+      const success = await api.deletePremiumCredentials();
       if (success) {
         commit('premium', false);
       }
@@ -421,7 +421,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
   async forceSync(
-    { state, commit, rootGetters: { 'tasks/isTaskRunning': isTaskRunning } },
+    {
+      state,
+      commit,
+      dispatch,
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+    },
     action: SyncAction
   ): Promise<void> {
     const taskType = TaskType.FORCE_SYNC;
@@ -429,17 +434,24 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       return;
     }
     try {
-      const { taskId } = await api.forceSync(state.username, action);
+      const { taskId } = await api.forceSync(action);
       const task = createTask(taskId, taskType, {
         title: i18n.tc('actions.session.force_sync.task.title'),
         ignoreResult: false,
         numericKeys: balanceKeys
       });
       commit('tasks/add', task, { root: true });
-      await taskCompletion<{}, TaskMeta>(taskType);
+      await taskCompletion<boolean, TaskMeta>(taskType);
       const title = i18n.tc('actions.session.force_sync.success.title');
       const message = i18n.tc('actions.session.force_sync.success.message');
       notify(message, title, Severity.INFO, true);
+
+      if (action === SYNC_DOWNLOAD) {
+        const username = state.username;
+        await dispatch('stop');
+        await dispatch('unlock', { username: username });
+        commit('completeLogin', true);
+      }
     } catch (e) {
       const title = i18n.tc('actions.session.force_sync.error.title');
       const message = i18n.tc('actions.session.force_sync.error.message', 0, {

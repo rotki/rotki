@@ -121,11 +121,7 @@ class PremiumSyncManager():
         does not match the one on the saved DB.
         """
         assert self.premium, 'This function has to be called with a not None premium'
-        try:
-            result = self.premium.pull_data()
-        except RemoteError as e:
-            log.debug('sync from server -- pulling failed.', error=str(e))
-            return False
+        result = self.premium.pull_data()
 
         if result['data'] is None:
             log.debug('sync from server -- no data found.')
@@ -141,59 +137,48 @@ class PremiumSyncManager():
 
         return True
 
-    def maybe_upload_data_to_server(self) -> None:
+    def maybe_upload_data_to_server(self, force_upload: bool = False) -> None:
         # if user has no premium do nothing
         if self.premium is None:
             return
 
         # upload only once per hour
         diff = ts_now() - self.last_data_upload_ts
-        if diff < 3600:
+        if diff < 3600 and not force_upload:
             return
 
         b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
-        try:
-            metadata = self.premium.query_last_data_metadata()
-        except RemoteError as e:
-            log.debug(
-                'upload to server stopped -- query last metadata failed',
-                error=str(e),
-            )
-            return
+        metadata = self.premium.query_last_data_metadata()
 
         log.debug(
             'CAN_PUSH',
             ours=our_hash,
             theirs=metadata.data_hash,
         )
-        if our_hash == metadata.data_hash:
+        if our_hash == metadata.data_hash and not force_upload:
             log.debug('upload to server stopped -- same hash')
             # same hash -- no need to upload anything
             return
 
         our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts <= metadata.last_modify_ts:
+        if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
             # Server's DB was modified after our local DB
             log.debug('upload to server stopped -- remote db more recent than local')
             return
 
         data_bytes_size = len(base64.b64decode(b64_encoded_data))
-        if data_bytes_size < metadata.data_size:
+        if data_bytes_size < metadata.data_size and not force_upload:
             # Let's be conservative.
             # TODO: Here perhaps prompt user in the future
             log.debug('upload to server stopped -- remote db bigger than local')
             return
 
-        try:
-            self.premium.upload_data(
-                data_blob=b64_encoded_data,
-                our_hash=our_hash,
-                last_modify_ts=our_last_write_ts,
-                compression_type='zlib',
-            )
-        except RemoteError as e:
-            log.debug('upload to server -- upload error', error=str(e))
-            return
+        self.premium.upload_data(
+            data_blob=b64_encoded_data,
+            our_hash=our_hash,
+            last_modify_ts=our_last_write_ts,
+            compression_type='zlib',
+        )
 
         # update the last data upload value
         self.last_data_upload_ts = ts_now()
@@ -204,30 +189,9 @@ class PremiumSyncManager():
         assert self.premium, 'This function has to be called with a not None premium'
 
         if action == 'upload':
-            b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
-            our_last_write_ts = self.data.db.get_last_write_ts()
-
-            self.premium.upload_data(
-                data_blob=b64_encoded_data,
-                our_hash=our_hash,
-                last_modify_ts=our_last_write_ts,
-                compression_type='zlib',
-            )
-
-            self.last_data_upload_ts = ts_now()
-            self.data.db.update_last_data_upload_ts(self.last_data_upload_ts)
+            self.maybe_upload_data_to_server()
         else:
-            result = self.premium.pull_data()
-            if result['data'] is None:
-                return False, 'No data found.'
-            try:
-                self.data.decompress_and_decrypt_db(self.password, result['data'])
-            except UnableToDecryptRemoteData:
-                raise PremiumAuthenticationError(
-                    'The given password can not unlock the database that was retrieved  from '
-                    'the server. Make sure to use the same password as when the account '
-                    'was created.',
-                )
+            return self._sync_data_from_server_and_replace_local(), 'No data found'
         return True, ''
 
     def try_premium_at_start(
@@ -291,22 +255,29 @@ class PremiumSyncManager():
                 raise RotkehlchenPermissionError(result.message, result.payload)
             elif sync_approval == 'yes':
                 log.info('User approved data sync from server')
+                try:
+                    if self._sync_data_from_server_and_replace_local():
+                        if create_new:
+                            # if we successfully synced data from the server and this is
+                            # a new account, make sure the api keys are properly stored
+                            # in the DB
+                            self.data.db.set_rotkehlchen_premium(self.premium.credentials)
+                except RemoteError as e:
+                    log.debug('sync from server -- pulling failed.', error=str(e))
+
+            else:
+                log.debug('Could sync data from server but user refused')
+        elif result.can_sync == CanSync.YES:
+            log.info('User approved data sync from server')
+            try:
                 if self._sync_data_from_server_and_replace_local():
                     if create_new:
                         # if we successfully synced data from the server and this is
                         # a new account, make sure the api keys are properly stored
                         # in the DB
                         self.data.db.set_rotkehlchen_premium(self.premium.credentials)
-            else:
-                log.debug('Could sync data from server but user refused')
-        elif result.can_sync == CanSync.YES:
-            log.info('User approved data sync from server')
-            if self._sync_data_from_server_and_replace_local():
-                if create_new:
-                    # if we successfully synced data from the server and this is
-                    # a new account, make sure the api keys are properly stored
-                    # in the DB
-                    self.data.db.set_rotkehlchen_premium(self.premium.credentials)
+            except RemoteError as e:
+                log.debug('sync from server -- pulling failed.', error=str(e))
 
         # else result.can_sync was no, so we do nothing
 

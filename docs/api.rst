@@ -288,13 +288,13 @@ Handling user creation, sign-in, log-out and querying
       }
 
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
-   :statuscode 200: API key/secret set succesfully
+   :statuscode 200: API key/secret set successfully
    :statuscode 400: Provided JSON is in some way malformed. For example invalid API key format
    :statuscode 401: Provided API key/secret does not authenticate.
    :statuscode 409: User is not logged in, or user does not exist
    :statuscode 500: Internal Rotki error
 
-.. http:delete:: /api/(version)/users/(username)/premium
+.. http:delete:: /api/(version)/premium
 
    By doing a ``DELETE`` at this endpoint you can delete the premium api key and secret pair for the logged-in user.
 
@@ -302,7 +302,7 @@ Handling user creation, sign-in, log-out and querying
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/users/john/premium HTTP/1.1
+      DELETE /api/1/premium HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -319,9 +319,48 @@ Handling user creation, sign-in, log-out and querying
 
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: API key/secret deleted succesfully
-   :statuscode 400: Provided call is in some way malformed. For example a user who is not logged in has been specified.
+   :statuscode 400: Provided call is in some way malformed.
    :statuscode 409: User is not logged in, or user does not exist, or db operation error
    :statuscode 500: Internal Rotki error
+
+.. http:put:: /api/(version)/premium/sync
+
+   By doing a ``PUT`` at this endpoint you can backup or restore the database for the logged-in user using premium sync.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/premium/sync HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "action": "download"
+      }
+
+   :reqjson string action: The action to perform. Can only be one of ``"upload"`` or ``"download"``.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
+   :statuscode 200: API key/secret deleted successfully
+   :statuscode 400: Provided call is in some way malformed.
+   :statuscode 401: The user does not have premium access.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: The external premium service could not be reached or returned unexpected response.
 
 Modify user password
 ========================
@@ -2461,7 +2500,8 @@ Querying periodic data
               "last_balance_save": 1572345881,
               "eth_node_connection": true,
               "history_process_start_ts": 1572325881,
-              "history_process_current_ts": 1572345881
+              "history_process_current_ts": 1572345881,
+              "last_data_upload_ts": 0
           }
           "message": ""
       }
