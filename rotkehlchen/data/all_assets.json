@@ -4563,7 +4563,7 @@
         "type": "ethereum token"
     },
     "FET": {
-        "coingecko": "firstenergy-token",
+        "coingecko": "fetch-ai",
         "ethereum_address": "0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD",
         "ethereum_token_decimals": 18,
         "name": "Fetch AI",
@@ -5975,7 +5975,7 @@
         "type": "ethereum token"
     },
     "INT": {
-        "coingecko": "internet-token",
+        "coingecko": "internet-node-token",
         "ethereum_address": "0x0b76544F6C413a555F309Bf76260d1E02377c02A",
         "ethereum_token_decimals": 6,
         "name": "Internet Node Token",
@@ -6932,7 +6932,7 @@
         "type": "ethereum token"
     },
     "MARO": {
-        "coingecko": "maro",
+        "coingecko": "ttc-protocol",
         "name": "Maro",
         "started": 1534377600,
         "symbol": "MARO",
@@ -9813,8 +9813,8 @@
         "type": "ethereum token"
     },
     "SGR": {
-        "active": true,
         "coingecko": "sugar-exchange",
+        "cryptocompare": "SUGAR",
         "ethereum_address": "0xCB5A05beF3257613E984C17DbcF039952B6d883F",
         "ethereum_token_decimals": 8,
         "name": "Sugar Exchange",
