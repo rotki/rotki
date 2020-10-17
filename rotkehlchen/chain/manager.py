@@ -28,6 +28,7 @@ from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
+from rotkehlchen.chain.ethereum.uniswap import Uniswap
 from rotkehlchen.chain.ethereum.yearn import YearnVaults
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances, Zerion
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
@@ -249,6 +250,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         method=self._initialize_compound,
                         premium=premium,
                     )
+                elif given_module == 'uniswap':
+                    self.eth_modules['uniswap'] = 'loading'
+                    greenlet_manager.spawn_and_track(
+                        after_seconds=None,
+                        task_name='Initialize Uniswap object',
+                        method=self._initialize_uniswap,
+                        premium=premium,
+                    )
                 elif given_module == 'yearn_vaults':
                     self.eth_modules['yearn_vaults'] = YearnVaults(
                         ethereum_manager=ethereum_manager,
@@ -281,6 +290,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     def _initialize_compound(self, premium: Optional[Premium]) -> None:
         self.eth_modules['compound'] = Compound(
+            ethereum_manager=self.ethereum,
+            database=self.database,
+            premium=premium,
+            msg_aggregator=self.msg_aggregator,
+        )
+
+    def _initialize_uniswap(self, premium: Optional[Premium]) -> None:
+        self.eth_modules['uniswap'] = Uniswap(
             ethereum_manager=self.ethereum,
             database=self.database,
             premium=premium,
@@ -360,6 +377,22 @@ class ChainManager(CacheableObject, LockableQueryObject):
             with gevent.Timeout(10):
                 while True:
                     module = self.eth_modules.get('compound', None)
+                    if module == 'loading':
+                        gevent.sleep(0.5)
+                    else:
+                        return module  # type: ignore
+        return module  # type: ignore
+
+    @property
+    def uniswap(self) -> Optional[Uniswap]:
+        module = self.eth_modules.get('uniswap', None)
+        if not module:
+            return None
+
+        if module == 'loading':
+            with gevent.Timeout(10):
+                while True:
+                    module = self.eth_modules.get('uniswap', None)
                     if module == 'loading':
                         gevent.sleep(0.5)
                     else:

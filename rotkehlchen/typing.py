@@ -7,8 +7,8 @@ from typing_extensions import Literal
 
 from rotkehlchen.fval import FVal
 
-ModuleName = Literal['makerdao_dsr', 'makerdao_vaults', 'aave', 'compound', 'yearn_vaults']
-AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave', 'compound', 'yearn_vaults']
+ModuleName = Literal['makerdao_dsr', 'makerdao_vaults', 'aave', 'compound', 'yearn_vaults', 'uniswap']
+AVAILABLE_MODULES = ['makerdao_dsr', 'makerdao_vaults', 'aave', 'compound', 'yearn_vaults', 'uniswap']
 
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)

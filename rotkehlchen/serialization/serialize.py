@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.compound import CompoundBalance, CompoundEvent
+from rotkehlchen.chain.ethereum.uniswap import UniswapBalance, UniswapEvent
 from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
     MakerDAOVault,
@@ -88,6 +89,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveLendingBalance,
             AaveBorrowingBalance,
             CompoundBalance,
+            UniswapBalance,
             YearnVaultEvent,
             YearnVaultBalance,
             AaveEvent,
@@ -97,6 +99,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             DBSettings,
             EthTokenInfo,
             CompoundEvent,
+            UniswapEvent,
             VersionCheckResult,
             DBSettings,
             DSRCurrentBalances,
