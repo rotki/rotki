@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple
 
 from eth_utils.address import to_checksum_address
 
@@ -11,8 +11,15 @@ from rotkehlchen.chain.ethereum.aave.common import (
     ASSET_TO_AAVE_RESERVE_ADDRESS,
     _get_reserve_address_decimals,
 )
-from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
-from rotkehlchen.chain.ethereum.structures import AaveEvent
+from rotkehlchen.chain.ethereum.graph import Graph
+from rotkehlchen.chain.ethereum.makerdao.common import RAY
+from rotkehlchen.chain.ethereum.structures import (
+    AaveBorrowEvent,
+    AaveEvent,
+    AaveLiquidationEvent,
+    AaveRepayEvent,
+    AaveSimpleEvent,
+)
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset
@@ -82,6 +89,38 @@ USER_EVENTS_QUERY = """
         }
         timestamp
     }
+    borrowHistory {
+        id
+        amount
+        reserve {
+          id
+        }
+        timestamp
+        borrowRate
+        borrowRateMode
+        accruedBorrowInterest
+    }
+    repayHistory {
+        id
+        amountAfterFee
+        fee
+        reserve {
+          id
+        }
+        timestamp
+    }
+    liquidationCallHistory {
+        id
+        collateralAmount
+        collateralReserve {
+          id
+        }
+        principalAmount
+        principalReserve {
+          id
+        }
+        timestamp
+    }
     reserves{
         id
         aTokenBalanceHistory {
@@ -108,6 +147,33 @@ class ATokenBalanceHistory(NamedTuple):
 class AaveUserReserve(NamedTuple):
     address: ChecksumEthAddress
     symbol: str
+
+
+def _parse_common_event_data(
+        entry: Dict[str, Any],
+        from_ts: Timestamp,
+        to_ts: Timestamp,
+) -> Optional[Tuple[Timestamp, str, int]]:
+    """Parses and returns the common data of each event.
+
+    Returns None if timestamp is out of range or if there is an error
+    """
+    timestamp = entry['timestamp']
+    if timestamp < from_ts or timestamp > to_ts:
+        # Since for the user data we can't query per timestamp, filter timestamps here
+        return None
+
+    pair = entry['id'].split(':')
+    if len(pair) != 2:
+        log.error(
+            f'Could not parse the id entry for an aave liquidation as '
+            f'returned by graph: {entry["id"]}.  Skipping entry ...',
+        )
+        return None
+
+    tx_hash = pair[0]
+    index = int(pair[1])  # not really log index
+    return timestamp, tx_hash, index
 
 
 def _parse_atoken_balance_history(
@@ -150,6 +216,23 @@ def _parse_atoken_balance_history(
         ))
 
     return result
+
+
+def _get_reserve_asset_and_decimals(
+        entry: Dict[str, Any],
+        reserve_key: str,
+) -> Optional[Tuple[Asset, int]]:
+    reserve_address = to_checksum_address(entry[reserve_key]['id'])
+    asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
+    if asset is None:
+        log.error(
+            f'Unknown aave reserve address returned by graph query: '
+            f'{reserve_address}. Skipping entry ...',
+        )
+        return None
+
+    _, decimals = _get_reserve_address_decimals(asset.identifier)
+    return asset, decimals
 
 
 class AaveGraphInquirer(AaveInquirer):
@@ -209,32 +292,20 @@ class AaveGraphInquirer(AaveInquirer):
 
         return result
 
-    def _get_user_data(
+    def _calculate_interest_events(
             self,
+            user_result: Dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-            address: ChecksumEthAddress,
-    ) -> AaveHistory:
-        query = self.graph.query(
-            querystr=USER_EVENTS_QUERY,
-            param_types={'$address': 'ID!'},
-            param_values={'address': address.lower()},
-        )
-        user_result = query['users'][0]
-        deposits = self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
-        withdrawals = self._parse_withdrawals(
-            withdrawals=user_result['redeemUnderlyingHistory'],
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        borrows = self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
-
+            deposits: List[AaveSimpleEvent],
+            withdrawals: List[AaveSimpleEvent],
+    ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance]]:
         reserve_history = {}
         for reserve in user_result['reserves']:
             pairs = reserve['id'].split('0x')
             if len(pairs) != 3:
                 log.error(
-                    f'Expected to find 2 hashes in graps\'s reserve history id '
+                    f'Expected to find 2 hashes in graph\'s reserve history id '
                     f'but the encountered id does not match: {reserve["id"]}. Skipping entry...',
                 )
             reserve_address = to_checksum_address('0x' + pairs[2])
@@ -248,7 +319,7 @@ class AaveGraphInquirer(AaveInquirer):
         actions = deposits + withdrawals
         actions.sort(key=lambda event: event.timestamp)
         atoken_balances: Dict[Asset, FVal] = defaultdict(FVal)
-        interest_events: List[AaveEvent] = []
+        interest_events: List[AaveSimpleEvent] = []
         total_earned: Dict[EthereumToken, Balance] = defaultdict(Balance)
         used_history_indices = set()
         for action in actions:
@@ -294,7 +365,7 @@ class AaveGraphInquirer(AaveInquirer):
                             msg_aggregator=self.msg_aggregator,
                         )
                         earned_balance = Balance(amount=diff, usd_value=diff * usd_price)
-                        interest_events.append(AaveEvent(
+                        interest_events.append(AaveSimpleEvent(
                             event_type='interest',
                             asset=asset,
                             value=earned_balance,
@@ -318,9 +389,45 @@ class AaveGraphInquirer(AaveInquirer):
                     else:  # withdrawal
                         atoken_balances[action.asset] -= action.value.amount
 
+        return interest_events, total_earned
+
+    def _get_user_data(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            address: ChecksumEthAddress,
+    ) -> AaveHistory:
+        query = self.graph.query(
+            querystr=USER_EVENTS_QUERY,
+            param_types={'$address': 'ID!'},
+            param_values={'address': address.lower()},
+        )
+        user_result = query['users'][0]
+        deposits = self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
+        withdrawals = self._parse_withdrawals(
+            withdrawals=user_result['redeemUnderlyingHistory'],
+            from_ts=from_ts,
+            to_ts=to_ts,
+        )
+        borrows = self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
+        repays = self._parse_borrows(user_result['repayHistory'], from_ts, to_ts)
+        liquidation_calls = self._parse_liquidations(
+            user_result['liquidationCallHistory'],
+            from_ts,
+            to_ts,
+        )
+
+        interest_events, total_earned = self._calculate_interest_events(
+            user_result=user_result,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            deposits=deposits,
+            withdrawals=withdrawals,
+        )
+
         # Sort actions so that actions with same time are sorted deposit -> interest -> withdrawal
-        events = interest_events + actions
-        sort_map = {'deposit': 0, 'interest': 0.1, 'withdrawal': 0.2}
+        events: List[AaveEvent] = deposits + withdrawals + interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
+        sort_map = {'deposit': 0, 'interest': 0.1, 'withdrawal': 0.2, 'borrow': 0.3, 'repay': 0.4, 'liquidation': 0.5}  # noqa: E501
         events.sort(key=lambda event: sort_map[event.event_type] + event.timestamp)
         return AaveHistory(
             events=events,
@@ -332,176 +439,195 @@ class AaveGraphInquirer(AaveInquirer):
             deposits: List[Dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveEvent]:
-        result = []
+    ) -> List[AaveSimpleEvent]:
+        events: List[AaveSimpleEvent] = []
         for entry in deposits:
-            timestamp = entry['timestamp']
-            if timestamp < from_ts or timestamp > to_ts:
-                # Since for the user data we can't query per timestamp, filter timestamps here
-                continue
-
-            pair = entry['id'].split(':')
-            if len(pair) != 2:
-                log.error(
-                    f'Could not parse the id entry for an aave deposit as '
-                    f'returned by graph: {entry["id"]}.  Skipping entry ...',
-                )
-                continue
-
-            tx_hash = pair[0]
-            index = int(pair[1])  # not really log index
-
-            reserve_address = to_checksum_address(entry['reserve']['id'])
-            asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
-            if asset is None:
-                log.error(
-                    f'Unknown aave reserve address returned by graph query: '
-                    f'{reserve_address}. Skipping entry ...',
-                )
-                continue
-
-            _, decimals = _get_reserve_address_decimals(asset.identifier)
-            amount = token_normalized_value(int(entry['amount']), token_decimals=decimals)
-            usd_price = query_usd_price_zero_if_error(
-                asset=asset,
-                time=timestamp,
+            common = _parse_common_event_data(entry, from_ts, to_ts)
+            if common is None:
+                continue  # either timestamp out of range or error (logged in the function above)
+            timestamp, tx_hash, index = common
+            result = self._get_asset_and_balance(
+                entry=entry,
+                timestamp=timestamp,
+                reserve_key='reserve',
+                amount_key='amount',
                 location='aave deposit from graph query',
-                msg_aggregator=self.msg_aggregator,
             )
-            result.append(AaveEvent(
+            if result is None:
+                continue  # problem parsing, error already logged
+            asset, balance = result
+            events.append(AaveSimpleEvent(
                 event_type='deposit',
                 asset=asset,
-                value=Balance(amount=amount, usd_value=amount * usd_price),
+                value=balance,
                 block_number=0,  # can't get from graph query
                 timestamp=timestamp,
                 tx_hash=tx_hash,
                 log_index=index,  # not really the log index, but should also be unique
             ))
 
-        return result
+        return events
 
     def _parse_withdrawals(
             self,
             withdrawals: List[Dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveEvent]:
-        result = []
+    ) -> List[AaveSimpleEvent]:
+        events = []
         for entry in withdrawals:
-            timestamp = entry['timestamp']
-            if timestamp < from_ts or timestamp > to_ts:
-                # Since for the user data we can't query per timestamp, filter timestamps here
-                continue
-
-            pair = entry['id'].split(':')
-            if len(pair) != 2:
-                log.error(
-                    f'Could not parse the id entry for an aave withdrawal as '
-                    f'returned by graph: {entry["id"]}.  Skipping entry ...',
-                )
-                continue
-
-            tx_hash = pair[0]
-            index = int(pair[1])  # not really log index
-
-            reserve_address = to_checksum_address(entry['reserve']['id'])
-            asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
-            if asset is None:
-                log.error(
-                    f'Unknown aave reserve address returned by graph query: '
-                    f'{reserve_address}. Skipping entry ...',
-                )
-                continue
-
-            _, decimals = _get_reserve_address_decimals(asset.identifier)
-            amount = token_normalized_value(int(entry['amount']), token_decimals=decimals)
-            usd_price = query_usd_price_zero_if_error(
-                asset=asset,
-                time=timestamp,
+            common = _parse_common_event_data(entry, from_ts, to_ts)
+            if common is None:
+                continue  # either timestamp out of range or error (logged in the function above)
+            timestamp, tx_hash, index = common
+            result = self._get_asset_and_balance(
+                entry=entry,
+                timestamp=timestamp,
+                reserve_key='reserve',
+                amount_key='amount',
                 location='aave withdrawal from graph query',
-                msg_aggregator=self.msg_aggregator,
             )
-            result.append(AaveEvent(
+            if result is None:
+                continue  # problem parsing, error already logged
+            asset, balance = result
+            events.append(AaveSimpleEvent(
                 event_type='withdrawal',
                 asset=asset,
-                value=Balance(amount=amount, usd_value=amount * usd_price),
+                value=balance,
                 block_number=0,  # can't get from graph query
                 timestamp=timestamp,
                 tx_hash=tx_hash,
                 log_index=index,  # not really the log index, but should also be unique
             ))
 
-        return result
+        return events
 
     def _parse_borrows(
             self,
             borrows: List[Dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveEvent]:
-        result = []
+    ) -> List[AaveBorrowEvent]:
+        events = []
         for entry in borrows:
-            timestamp = entry['timestamp']
-            if timestamp < from_ts or timestamp > to_ts:
-                # Since for the user data we can't query per timestamp, filter timestamps here
-                continue
-
-            pair = entry['id'].split(':')
-            if len(pair) != 2:
-                log.error(
-                    f'Could not parse the id entry for an aave deposit as '
-                    f'returned by graph: {entry["id"]}.  Skipping entry ...',
-                )
-                continue
-
-            tx_hash = pair[0]
-            index = int(pair[1])  # not really log index
-
-            reserve_address = to_checksum_address(entry['reserve']['id'])
-            asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
-            if asset is None:
-                log.error(
-                    f'Unknown aave reserve address returned by graph query: '
-                    f'{reserve_address}. Skipping entry ...',
-                )
-                continue
-
-            _, decimals = _get_reserve_address_decimals(asset.identifier)
-            amount = token_normalized_value(int(entry['amount']), token_decimals=decimals)
-            usd_price = query_usd_price_zero_if_error(
-                asset=asset,
-                time=timestamp,
-                location='aave deposit from graph query',
-                msg_aggregator=self.msg_aggregator,
+            common = _parse_common_event_data(entry, from_ts, to_ts)
+            if common is None:
+                continue  # either timestamp out of range or error (logged in the function above)
+            timestamp, tx_hash, index = common
+            result = self._get_asset_and_balance(
+                entry=entry,
+                timestamp=timestamp,
+                reserve_key='reserve',
+                amount_key='amount',
+                location='aave borrow from graph query',
             )
-            borrow_rate = entry['borrowRate']  # use this somehow?
-            borrow_rate_mode  = entry['borrowRateMode']  # use this somehow?
-            result.append(AaveEvent(
+            if result is None:
+                continue  # problem parsing, error already logged
+            asset, balance = result
+            borrow_rate = FVal(entry['borrowRate']) / RAY
+            borrow_rate_mode = entry['borrowRateMode']
+            accrued_borrow_interest = entry['accruedBorrowInterest']
+            events.append(AaveBorrowEvent(
                 event_type='borrow',
                 asset=asset,
-                value=Balance(amount=amount, usd_value=amount * usd_price),
+                value=balance,
+                borrow_rate_mode=borrow_rate_mode.lower(),
+                borrow_rate=borrow_rate,
+                accrued_borrow_interest=accrued_borrow_interest,
                 block_number=0,  # can't get from graph query
                 timestamp=timestamp,
                 tx_hash=tx_hash,
                 log_index=index,  # not really the log index, but should also be unique
             ))
 
-        return result
+        return events
 
-    def _get_deposits(
+    def _parse_repays(
             self,
+            repays: List[Dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-            address: ChecksumEthAddress,
-    ) -> List[AaveEvent]:
-        param_types, param_values = get_common_params(from_ts, to_ts, address, 'String!')
-        query = self.graph.query(
-            querystr=DEPOSIT_EVENTS_QUERY,
-            param_types=param_types,
-            param_values=param_values,
-        )
+    ) -> List[AaveRepayEvent]:
+        events = []
+        for entry in repays:
+            common = _parse_common_event_data(entry, from_ts, to_ts)
+            if common is None:
+                continue  # either timestamp out of range or error (logged in the function above)
+            timestamp, tx_hash, index = common
+            result = _get_reserve_asset_and_decimals(entry, reserve_key='reserve')
+            if not result:
+                continue  # problem parsing, error already logged
+            asset, decimals = result
+            amount_after_fee = token_normalized_value(
+                int(entry['amount_after_fee']),
+                token_decimals=decimals,
+            )
+            fee = token_normalized_value(int(entry['fee']), token_decimals=decimals)
+            usd_price = query_usd_price_zero_if_error(
+                asset=asset,
+                time=timestamp,
+                location='aave repay from graph query',
+                msg_aggregator=self.msg_aggregator,
+            )
+            events.append(AaveRepayEvent(
+                event_type='repay',
+                asset=asset,
+                value=Balance(amount=amount_after_fee, usd_value=amount_after_fee * usd_price),
+                fee=Balance(amount=fee, usd_value=fee * usd_price),
+                block_number=0,  # can't get from graph query
+                timestamp=timestamp,
+                tx_hash=tx_hash,
+                log_index=index,  # not really the log index, but should also be unique
+            ))
 
-        return self._parse_deposits(query['deposits'], from_ts, to_ts)
+        return events
+
+    def _parse_liquidations(
+            self,
+            liquidations: List[Dict[str, Any]],
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> List[AaveLiquidationEvent]:
+        events = []
+        for entry in liquidations:
+            common = _parse_common_event_data(entry, from_ts, to_ts)
+            if common is None:
+                continue  # either timestamp out of range or error (logged in the function above)
+            timestamp, tx_hash, index = common
+            result = self._get_asset_and_balance(
+                entry=entry,
+                timestamp=timestamp,
+                reserve_key='collateralReserve',
+                amount_key='collateralAmount',
+                location='aave liquidation from graph query',
+            )
+            if result is None:
+                continue  # problem parsing, error already logged
+            collateral_asset, collateral_balance = result
+
+            result = self._get_asset_and_balance(
+                entry=entry,
+                timestamp=timestamp,
+                reserve_key='principalReserve',
+                amount_key='principalAmount',
+                location='aave liquidation from graph query',
+            )
+            if result is None:
+                continue  # problem parsing, error already logged
+            principal_asset, principal_balance = result
+            events.append(AaveLiquidationEvent(
+                event_type='repay',
+                collateral_asset=collateral_asset,
+                collateral_balance=collateral_balance,
+                principal_asset=principal_asset,
+                principal_balance=principal_balance,
+                block_number=0,  # can't get from graph query
+                timestamp=timestamp,
+                tx_hash=tx_hash,
+                log_index=index,  # not really the log index, but should also be unique
+            ))
+
+        return events
 
     def get_history_for_address(
             self,
@@ -522,3 +648,28 @@ class AaveGraphInquirer(AaveInquirer):
             return self._get_user_data(from_ts=Timestamp(0), to_ts=now, address=user_address)
 
         return None
+
+    def _get_asset_and_balance(
+            self,
+            entry: Dict[str, Any],
+            timestamp: Timestamp,
+            reserve_key: str,
+            amount_key: str,
+            location: str,
+    ) -> Optional[Tuple[Asset, Balance]]:
+        """Utility function to parse asset from graph query amount and price and return balance"""
+        result = _get_reserve_asset_and_decimals(entry, reserve_key)
+        if not result:
+            return None
+        asset, decimals = result
+        amount = token_normalized_value(
+            token_amount=int(entry[amount_key]),
+            token_decimals=decimals,
+        )
+        usd_price = query_usd_price_zero_if_error(
+            asset=asset,
+            time=timestamp,
+            location=location,
+            msg_aggregator=self.msg_aggregator,
+        )
+        return asset, Balance(amount=amount, usd_value=amount * usd_price)

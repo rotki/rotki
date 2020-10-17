@@ -1,3 +1,4 @@
+import dataclasses
 from typing import Any, Dict, List, Union
 
 from hexbytes import HexBytes
@@ -88,12 +89,12 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             CompoundBalance,
             YearnVaultEvent,
             YearnVaultBalance,
+            AaveEvent,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (
             DBSettings,
             EthTokenInfo,
-            AaveEvent,
             CompoundEvent,
             VersionCheckResult,
             DBSettings,

@@ -1,9 +1,9 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.structures import AaveEvent
+from rotkehlchen.chain.ethereum.structures import AaveSimpleEvent
 from rotkehlchen.constants.ethereum import (
     AAVE_LENDING_POOL,
     ATOKEN_ABI,
@@ -134,6 +134,7 @@ class AaveBlockchainInquirer(AaveInquirer):
             events = []
             if given_from_block:
                 events.extend(self.database.get_aave_events(user_address, token))
+                events = cast(List[AaveSimpleEvent], events)
 
             new_events = []
             if query_events:
@@ -202,7 +203,7 @@ class AaveBlockchainInquirer(AaveInquirer):
             withdraw_events: List[Dict[str, Any]],
             from_block: int,
             to_block: int,
-    ) -> List[AaveEvent]:
+    ) -> List[AaveSimpleEvent]:
         """This function should be entered while holding the history_lock
         semaphore"""
         argument_filters = {
@@ -258,7 +259,7 @@ class AaveBlockchainInquirer(AaveInquirer):
                     msg_aggregator=self.msg_aggregator,
                 )
                 deposit_amount = deposit / (FVal(10) ** FVal(decimals))
-                aave_events.append(AaveEvent(
+                aave_events.append(AaveSimpleEvent(
                     event_type='deposit',
                     asset=reserve_asset,
                     value=Balance(
@@ -279,7 +280,7 @@ class AaveBlockchainInquirer(AaveInquirer):
                 msg_aggregator=self.msg_aggregator,
             )
             interest_amount = data[1] / (FVal(10) ** FVal(decimals))
-            aave_events.append(AaveEvent(
+            aave_events.append(AaveSimpleEvent(
                 event_type='interest',
                 asset=atoken,
                 value=Balance(
@@ -306,7 +307,7 @@ class AaveBlockchainInquirer(AaveInquirer):
                     msg_aggregator=self.msg_aggregator,
                 )
                 withdrawal_amount = withdrawal / (FVal(10) ** FVal(decimals))
-                aave_events.append(AaveEvent(
+                aave_events.append(AaveSimpleEvent(
                     event_type='withdrawal',
                     asset=reserve_asset,
                     value=Balance(

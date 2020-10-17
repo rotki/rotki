@@ -1,6 +1,6 @@
 """Ethereum/defi protocol structures that need to be accessed from multiple places"""
 
-from dataclasses import dataclass
+import dataclasses
 from typing import Any, Dict, NamedTuple, Optional
 
 from typing_extensions import Literal
@@ -8,17 +8,14 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.ethereum import EthereumContract
+from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
 
 
-class AaveEvent(NamedTuple):
-    """An event related to an Aave aToken
-
-    Can be a deposit, withdrawal or interest payment
-    """
-    event_type: Literal['deposit', 'withdrawal', 'interest']
-    asset: Asset
-    value: Balance
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class AaveEvent:
+    """An event of the Aave protocol"""
+    event_type: Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
     # for events coming from Graph this is not retrievable
     # Because of this "TODO":
     # https://github.com/aave/aave-protocol/blob/f7ef52000af2964046857da7e5fe01894a51f2ab/thegraph/raw/schema.graphql#L144
@@ -30,8 +27,52 @@ class AaveEvent(NamedTuple):
     # https://github.com/aave/aave-protocol/blob/f7ef52000af2964046857da7e5fe01894a51f2ab/thegraph/raw/schema.graphql#L144
     log_index: int
 
+    def serialize(self):
+        return dataclasses.asdict(self)
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class AaveSimpleEvent(AaveEvent):
+    """A simple event of the Aave protocol. Deposit or withdrawal"""
+    asset: Asset
+    value: Balance
+
+    def serialize(self):
+        result = super().serialize()
+        result['asset'] = self.asset.identifier
+        return result
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class AaveBorrowEvent(AaveSimpleEvent):
+    """A borrow event of the Aave protocol"""
+    borrow_rate_mode: Literal['stable', 'variable']
+    borrow_rate: FVal
+    accrued_borrow_interest: FVal
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class AaveRepayEvent(AaveSimpleEvent):
+    """A repay event of the Aave protocol"""
+    fee: Balance
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class AaveLiquidationEvent(AaveEvent):
+    """A simple event of the Aave protocol. Deposit or withdrawal"""
+    collateral_asset: Asset
+    collateral_balance: Balance
+    principal_asset: Asset
+    principal_balance: Balance
+
+    def serialize(self):
+        result = super().serialize()
+        result['collateral_asset'] = self.collateral_asset.identifier
+        result['principal_asset'] = self.principal_asset.identifier
+        return result
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class YearnVaultEvent:
     event_type: Literal['deposit', 'withdraw']
     block_number: int
