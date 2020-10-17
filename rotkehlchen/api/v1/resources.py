@@ -82,7 +82,7 @@ from rotkehlchen.typing import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.bitcoin.hdkey import HDKey
+    from rotkehlchen.chain.bitcoin.hdkey import HDKey
 
 
 def _combine_data_and_view_args(
