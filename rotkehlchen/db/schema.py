@@ -98,13 +98,17 @@ DB_CREATE_AAVE_EVENTS = """
 CREATE TABLE IF NOT EXISTS aave_events (
     address VARCHAR[42] NOT NULL,
     event_type VARCHAR[10] NOT NULL,
-    asset VARCHAR[12] NOT NULL,
-    amount TEXT NOT NULL,
-    usd_value TEXT NOT NULL,
     block_number INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
     tx_hash VARCHAR[66] NOT NULL,
     log_index INTEGER NOT NULL,
+    asset1 VARCHAR[12] NOT NULL,
+    asset1_amount TEXT NOT NULL,
+    asset1_usd_value TEXT NOT NULL,
+    asset2 VARCHAR[12],
+    asset2amount_borrowrate_feeamount TEXT,
+    asset2usd_value_accruedinterest_feeusdvalue TEXT,
+    borrow_rate_mode VARCHAR[10],
     PRIMARY KEY (event_type, tx_hash, log_index)
 );
 """

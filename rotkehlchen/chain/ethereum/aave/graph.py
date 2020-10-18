@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from eth_utils.address import to_checksum_address
 
@@ -37,6 +37,8 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 log = logging.getLogger(__name__)
+
+AAVE_GRAPH_RECENT_SECS = 600  # 10 mins
 
 USER_RESERVES_QUERY = """
 {{
@@ -257,6 +259,8 @@ class AaveGraphInquirer(AaveInquirer):
             self,
             addresses: List[ChecksumEthAddress],
             to_block: int,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         """
         Queries aave history for a list of addresses.
@@ -266,11 +270,10 @@ class AaveGraphInquirer(AaveInquirer):
         """
         result = {}
         for address in addresses:
-            last_query = self.database.get_used_query_range(f'aave_events_{address}')
             history_results = self.get_history_for_address(
                 user_address=address,
-                to_block=to_block,
-                given_from_block=last_query[1] + 1 if last_query is not None else None,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
             )
             if history_results is None:
                 continue
@@ -299,7 +302,12 @@ class AaveGraphInquirer(AaveInquirer):
             to_ts: Timestamp,
             deposits: List[AaveSimpleEvent],
             withdrawals: List[AaveSimpleEvent],
+            db_events: List[AaveEvent],
     ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance]]:
+        """Calculates the interest events and the total earned from all the given events
+
+        Also returns the edited DB events. At the moment weremove
+        """
         reserve_history = {}
         for reserve in user_result['reserves']:
             pairs = reserve['id'].split('0x')
@@ -316,10 +324,19 @@ class AaveGraphInquirer(AaveInquirer):
             )
             reserve_history[reserve_address] = atoken_history
 
-        actions = deposits + withdrawals
+        db_interest_events: Set[AaveSimpleEvent] = set()
+        actions: List[AaveSimpleEvent] = []
+        for db_event in db_events:
+            if db_event.event_type == 'deposit':
+                actions.append(db_event)  # type: ignore
+            elif db_event.event_type == 'withdrawal':
+                actions.append(db_event)  # type: ignore
+            elif db_event.event_type == 'interest':
+                db_interest_events.add(db_event)  # type: ignore
+        interest_events: List[AaveSimpleEvent] = []
+        actions = actions + deposits + withdrawals
         actions.sort(key=lambda event: event.timestamp)
         atoken_balances: Dict[Asset, FVal] = defaultdict(FVal)
-        interest_events: List[AaveSimpleEvent] = []
         total_earned: Dict[EthereumToken, Balance] = defaultdict(Balance)
         used_history_indices = set()
         for action in actions:
@@ -365,7 +382,7 @@ class AaveGraphInquirer(AaveInquirer):
                             msg_aggregator=self.msg_aggregator,
                         )
                         earned_balance = Balance(amount=diff, usd_value=diff * usd_price)
-                        interest_events.append(AaveSimpleEvent(
+                        interest_event = AaveSimpleEvent(
                             event_type='interest',
                             asset=asset,
                             value=earned_balance,
@@ -374,7 +391,9 @@ class AaveGraphInquirer(AaveInquirer):
                             tx_hash=entry.tx_hash,
                             # not really the log index, but should also be unique
                             log_index=action.log_index + 1,
-                        ))
+                        )
+                        if interest_event not in db_interest_events:
+                            interest_events.append(interest_event)
                         total_earned[asset] += earned_balance
 
                     # and once done break off the loop
@@ -397,25 +416,36 @@ class AaveGraphInquirer(AaveInquirer):
             to_ts: Timestamp,
             address: ChecksumEthAddress,
     ) -> AaveHistory:
-        query = self.graph.query(
-            querystr=USER_EVENTS_QUERY,
-            param_types={'$address': 'ID!'},
-            param_values={'address': address.lower()},
-        )
-        user_result = query['users'][0]
-        deposits = self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
-        withdrawals = self._parse_withdrawals(
-            withdrawals=user_result['redeemUnderlyingHistory'],
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        borrows = self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
-        repays = self._parse_borrows(user_result['repayHistory'], from_ts, to_ts)
-        liquidation_calls = self._parse_liquidations(
-            user_result['liquidationCallHistory'],
-            from_ts,
-            to_ts,
-        )
+
+        last_query = self.database.get_used_query_range(f'aave_events_{address}')
+        db_events = self.database.get_aave_events(address=address)
+
+        now = ts_now()
+        if last_query is not None:
+            from_ts = Timestamp(last_query[1] + 1)
+
+        deposits = withdrawals = borrows = repays = liquidation_calls = []
+        if last_query and now - last_query[1] > AAVE_GRAPH_RECENT_SECS:
+            # query the graph unless we have recently saved data
+            query = self.graph.query(
+                querystr=USER_EVENTS_QUERY,
+                param_types={'$address': 'ID!'},
+                param_values={'address': address.lower()},
+            )
+            user_result = query['users'][0]
+            deposits = self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
+            withdrawals = self._parse_withdrawals(
+                withdrawals=user_result['redeemUnderlyingHistory'],
+                from_ts=from_ts,
+                to_ts=to_ts,
+            )
+            borrows = self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
+            repays = self._parse_borrows(user_result['repayHistory'], from_ts, to_ts)
+            liquidation_calls = self._parse_liquidations(
+                user_result['liquidationCallHistory'],
+                from_ts,
+                to_ts,
+            )
 
         interest_events, total_earned = self._calculate_interest_events(
             user_result=user_result,
@@ -423,14 +453,19 @@ class AaveGraphInquirer(AaveInquirer):
             to_ts=to_ts,
             deposits=deposits,
             withdrawals=withdrawals,
+            db_events=db_events,
         )
 
+        # Add all new events to the DB
+        new_events: List[AaveEvent] = deposits + withdrawals + interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
+        self.database.add_aave_events(address, new_events)
+
         # Sort actions so that actions with same time are sorted deposit -> interest -> withdrawal
-        events: List[AaveEvent] = deposits + withdrawals + interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
+        all_events: List[AaveEvent] = new_events + db_events
         sort_map = {'deposit': 0, 'interest': 0.1, 'withdrawal': 0.2, 'borrow': 0.3, 'repay': 0.4, 'liquidation': 0.5}  # noqa: E501
-        events.sort(key=lambda event: sort_map[event.event_type] + event.timestamp)
+        all_events.sort(key=lambda event: sort_map[event.event_type] + event.timestamp)
         return AaveHistory(
-            events=events,
+            events=all_events,
             total_earned=total_earned,
         )
 
@@ -555,7 +590,7 @@ class AaveGraphInquirer(AaveInquirer):
                 continue  # either timestamp out of range or error (logged in the function above)
             timestamp, tx_hash, index = common
             result = _get_reserve_asset_and_decimals(entry, reserve_key='reserve')
-            if not result:
+            if result is None:
                 continue  # problem parsing, error already logged
             asset, decimals = result
             amount_after_fee = token_normalized_value(
@@ -632,9 +667,8 @@ class AaveGraphInquirer(AaveInquirer):
     def get_history_for_address(
             self,
             user_address: ChecksumEthAddress,
-            to_block: int,
-            atokens_list: Optional[List[EthereumToken]] = None,
-            given_from_block: Optional[int] = None,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Optional[AaveHistory]:
         """
         Queries aave history for a single address.
@@ -642,10 +676,13 @@ class AaveGraphInquirer(AaveInquirer):
         This function should be entered while holding the history_lock
         semaphore
         """
-        now = ts_now()
         reserves = self._get_user_reserves(address=user_address)
         if len(reserves) != 0:
-            return self._get_user_data(from_ts=Timestamp(0), to_ts=now, address=user_address)
+            return self._get_user_data(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                address=user_address,
+            )
 
         return None
 
@@ -659,7 +696,7 @@ class AaveGraphInquirer(AaveInquirer):
     ) -> Optional[Tuple[Asset, Balance]]:
         """Utility function to parse asset from graph query amount and price and return balance"""
         result = _get_reserve_asset_and_decimals(entry, reserve_key)
-        if not result:
+        if result is None:
             return None
         asset, decimals = result
         amount = token_normalized_value(

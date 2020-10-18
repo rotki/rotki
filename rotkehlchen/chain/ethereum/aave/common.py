@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import AAVE_ETH_RESERVE_ADDRESS
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -101,6 +101,8 @@ class AaveInquirer():
             self,
             addresses: List[ChecksumEthAddress],
             to_block: int,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         """
         Queries aave history for a list of addresses.

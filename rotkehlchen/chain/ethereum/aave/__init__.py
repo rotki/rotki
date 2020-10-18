@@ -177,8 +177,8 @@ class Aave(EthereumModule):
             self,
             addresses: List[ChecksumEthAddress],
             reset_db_data: bool,
-            from_timestamp: Timestamp,  # pylint: disable=unused-argument
-            to_timestamp: Timestamp,  # pylint: disable=unused-argument
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         """Detects aave historical data for the given addresses"""
         latest_block = self.ethereum.get_latest_block_number()
@@ -190,11 +190,15 @@ class Aave(EthereumModule):
                 return self.graph_inquirer.get_history_for_addresses(
                     addresses=addresses,
                     to_block=latest_block,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
                 )
             else:
                 return self.blockchain_inquirer.get_history_for_addresses(
                     addresses=addresses,
                     to_block=latest_block,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
                 )
 
     # -- Methods following the EthereumModule interface -- #

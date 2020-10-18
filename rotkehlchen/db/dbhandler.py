@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 
 from eth_utils import is_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -21,7 +21,12 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path,
 )
-from rotkehlchen.chain.ethereum.structures import AaveEvent, YearnVault, YearnVaultEvent
+from rotkehlchen.chain.ethereum.structures import (
+    AaveEvent,
+    YearnVault,
+    YearnVaultEvent,
+    aave_event_from_db,
+)
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.datatyping import BalancesData
@@ -643,25 +648,28 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def add_aave_events(self, address: ChecksumEthAddress, events: List[AaveEvent]) -> None:
+    def add_aave_events(self, address: ChecksumEthAddress, events: Sequence[AaveEvent]) -> None:
         cursor = self.conn.cursor()
         for e in events:
-            event_tuple = (
-                address,
-                e.event_type,
-                e.asset.identifier,
-                str(e.value.amount),
-                str(e.value.usd_value),
-                str(e.block_number),
-                str(e.timestamp),
-                e.tx_hash,
-                e.log_index,
-            )
+            event_tuple = e.to_db_tuple(address)
             try:
                 cursor.execute(
-                    'INSERT INTO '
-                    'aave_events(address, event_type, asset, amount, usd_value, block_number, timestamp, tx_hash, log_index)'  # noqa: E501
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO aave_events( '
+                    'address, '
+                    'event_type, '
+                    'block_number, '
+                    'timestamp, '
+                    'tx_hash, '
+                    'log_index, '
+                    'asset1, '
+                    'asset1_amount, '
+                    'asset1_usd_value, '
+                    'asset2, '
+                    'asset2amount_borrowrate_feeamount, '
+                    'asset2usd_value_accruedinterest_feeusdvalue, '
+                    'borrow_rate_mode) '
+
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ? , ? , ?)',
                     event_tuple,
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
@@ -669,6 +677,7 @@ class DBHandler:
                     f'Tried to add an aave event that already exists in the DB. '
                     f'Event data: {event_tuple}. Skipping...',
                 )
+                continue
 
         self.conn.commit()
         self.update_last_write()
@@ -676,26 +685,43 @@ class DBHandler:
     def get_aave_events(
             self,
             address: ChecksumEthAddress,
-            atoken: EthereumToken,
+            atoken: Optional[EthereumToken] = None,
     ) -> List[AaveEvent]:
         """Get aave for a single address and a single aToken"""
         cursor = self.conn.cursor()
-        query = cursor.execute(
-            'SELECT event_type, amount, usd_value, block_number, timestamp, tx_hash, log_index, '
-            'asset from aave_events WHERE address=? AND (asset=? OR asset=?)',
-            (address, atoken.identifier, atoken.identifier[1:]),
+        querystr = (
+            'SELECT address, '
+            'event_type, '
+            'block_number, '
+            'timestamp, '
+            'tx_hash, '
+            'log_index, '
+            'asset1, '
+            'asset1_amount, '
+            'asset1_usd_value, '
+            'asset2, '
+            'asset2amount_borrowrate_feeamount, '
+            'asset2usd_value_accruedinterest_feeusdvalue, '
+            'borrow_rate_mode '
+            'FROM aave_events '
         )
+        values: Tuple
+        if atoken is not None:  # when called by blockchain
+            querystr += 'WHERE address = ? AND (asset1=? OR asset1=?);'
+            values = (address, atoken.identifier, atoken.identifier[1:])
+        else:  # called by graph
+            querystr += 'WHERE address = ?;'
+            values = (address,)
+
+        query = cursor.execute(querystr, values)
         events = []
         for result in query:
-            events.append(AaveEvent(
-                event_type=result[0],
-                asset=Asset(result[7]),
-                value=Balance(amount=FVal(result[1]), usd_value=FVal(result[2])),
-                block_number=int(result[3]),
-                timestamp=Timestamp(int(result[4])),
-                tx_hash=result[5],
-                log_index=result[6],
-            ))
+            try:
+                event = aave_event_from_db(result)
+            except DeserializationError:
+                continue  # skip entry. Above function should already log an error
+            events.append(event)
+
         return events
 
     def delete_aave_data(self) -> None:
