@@ -251,12 +251,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         premium=premium,
                     )
                 elif given_module == 'uniswap':
-                    self.eth_modules['uniswap'] = 'loading'
-                    greenlet_manager.spawn_and_track(
-                        after_seconds=None,
-                        task_name='Initialize Uniswap object',
-                        method=self._initialize_uniswap,
+                    self.eth_modules['uniswap'] = Uniswap(
+                        ethereum_manager=ethereum_manager,
+                        database=self.database,
                         premium=premium,
+                        msg_aggregator=msg_aggregator,
                     )
                 elif given_module == 'yearn_vaults':
                     self.eth_modules['yearn_vaults'] = YearnVaults(
@@ -290,14 +289,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     def _initialize_compound(self, premium: Optional[Premium]) -> None:
         self.eth_modules['compound'] = Compound(
-            ethereum_manager=self.ethereum,
-            database=self.database,
-            premium=premium,
-            msg_aggregator=self.msg_aggregator,
-        )
-
-    def _initialize_uniswap(self, premium: Optional[Premium]) -> None:
-        self.eth_modules['uniswap'] = Uniswap(
             ethereum_manager=self.ethereum,
             database=self.database,
             premium=premium,
@@ -388,15 +379,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         module = self.eth_modules.get('uniswap', None)
         if not module:
             return None
-
-        if module == 'loading':
-            with gevent.Timeout(10):
-                while True:
-                    module = self.eth_modules.get('uniswap', None)
-                    if module == 'loading':
-                        gevent.sleep(0.5)
-                    else:
-                        return module  # type: ignore
+            
         return module  # type: ignore
 
     @property
