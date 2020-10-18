@@ -32,6 +32,21 @@ if TYPE_CHECKING:
 
 A_UNI = EthereumToken('UNI')
 
+PAIRS_QUERY_PREFIX = """{graph_event_name}
+ (id: "{token_address}") {{
+    id
+    token0 {{
+        id
+        name
+        symbol
+    }}
+    token1 {{
+        id
+        name
+        symbol
+    }}
+}}}}"""
+
 log = logging.getLogger(__name__)
 
 class UniswapBalance(NamedTuple):
@@ -86,37 +101,39 @@ class Uniswap(EthereumModule):
                     continue
 
                 entry = balance_entry.base_balance
-                '''
-                try:
-                    asset = Asset(entry.token_symbol)
-                except UnknownAsset:
-                    log.error(
-                        f'Encountered unknown asset {entry.token_symbol} in Uniswap V2. Skipping',
-                    )
-                    continue
-                '''
 
-                if entry.token_address == A_UNI.ethereum_address:
-                    rewards_map[A_UNI] = UniswapBalance(
+                result = self.graph.query(
+                    querystr=PAIRS_QUERY_PREFIX.format(
+                        graph_event_name='pair',
+                        token_address=entry.token_address.lower(),
+                    ),
+                    param_types=None,
+                    param_values=None,
+                )
+                log.info("graph query result: {}".format(result))
+                if not result['pair']:
+                    continue
+                pair_name = f'Uniswap V2 {result["pair"]["token0"]["symbol"]}-{result["pair"]["token1"]["symbol"]} Pair'
+                try:
+                    asset_1 = Asset(result['pair']['token0']['symbol'])
+                except UnknownAsset:
+                    asset_1 = None
+
+                try:
+                    asset_2 = Asset(result['pair']['token1']['symbol'])
+                except UnknownAsset:
+                    asset_2 = None
+
+                if asset_1 or asset_2:
+                    liquidity_map[pair_name] = UniswapBalance(
                         balance_type=BalanceType.ASSET,
                         balance=entry.balance,
                     )
-                    continue
-
-                # Get the underlying balance
-                underlying_symbol = balance_entry.underlying_balances[0].token_symbol
-                try:
-                    underlying_asset = Asset(underlying_symbol)
-                except UnknownAsset:
+                else:
                     log.error(
-                        f'Encountered unknown asset {underlying_symbol} in Uniswap V2. Skipping',
+                        f'Encountered unknown asset {pair_name} in Uniswap V2. Skipping',
                     )
                     continue
-
-                liquidity_map[underlying_asset.identifier] = UniswapBalance(
-                    balance_type=BalanceType.ASSET,
-                    balance=balance_entry.underlying_balances[0].balance,
-                )
 
             if liquidity_map == {} and rewards_map == {}:
                 # no balances for the account
