@@ -1,25 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
+import pathlib
 
+from pkg_resources import parse_requirements
 from setuptools import setup, find_packages
 
+# Repository root directory for use with reading files
+directory = pathlib.Path(__file__).parent
 
-# Utility function to read the README file.
-# Used for the long_description.  It's nice, because now 1) we have a top level
-# README file and 2) it's easier to type in the README file than to put a raw
-# string in below ...
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
-
-
-install_requires_replacements = {}
-
-install_requirements = list(set(
-    install_requires_replacements.get(requirement.strip(), requirement.strip())
-    for requirement in open('requirements.txt')
-    if not requirement.lstrip().startswith('#')
-))
+# Load install_requires from requirements.txt.
+# https://stackoverflow.com/a/59971236/4651668
+requirements = directory.joinpath('requirements.txt').read_text()
+requirements = [str(r) for r in parse_requirements(requirements)]
 
 version = '1.8.1'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
@@ -27,7 +19,7 @@ setup(
     name='rotkehlchen',
     author='Lefteris Karapetsas',
     author_email='lefteris@refu.co',
-    description=('Acccounting, asset management and tax report helper for cryptocurrencies'),
+    description='Acccounting, asset management and tax report helper for cryptocurrencies',
     license='BSD-3',
     keywords='accounting tax-report portfolio asset-management cryptocurrencies',
     url='https://github.com/rotki/rotki',
@@ -35,10 +27,12 @@ setup(
     package_data={
         "rotkehlchen": ["data/*.json"],
     },
-    install_requires=install_requirements,
+    python_requires='>=3.6',
+    install_requires=requirements,
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
-    long_description=read('README.md'),
+    long_description=directory.joinpath('README.md').read_text(),
+    long_description_content_type='text/markdown',
     classifiers=[
         'Development Status :: 1 - Planning',
         'Topic :: Utilities',
