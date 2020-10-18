@@ -6,7 +6,7 @@ from pkg_resources import parse_requirements
 from setuptools import setup, find_packages
 
 # Repository root directory for use with reading files
-directory = pathlib.Path(__path__).parent
+directory = pathlib.Path(__file__).parent
 
 # Load install_requires from requirements.txt.
 # https://stackoverflow.com/a/59971236/4651668
