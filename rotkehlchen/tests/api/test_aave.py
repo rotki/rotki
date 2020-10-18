@@ -11,9 +11,11 @@ from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.aave import (
     AAVE_TEST_ACC_1,
     AAVE_TEST_ACC_2,
+    AAVE_TEST_ACC_3,
     aave_mocked_current_prices,
     aave_mocked_historical_prices,
-    expected_aave_test_events,
+    expected_aave_deposit_test_events,
+    expected_aave_liquidation_test_events,
 )
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -115,13 +117,12 @@ def test_query_aave_balances_module_not_activated(
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-# @pytest.mark.parametrize('aave_use_graph', [True, False])
-@pytest.mark.parametrize('aave_use_graph', [True])
+@pytest.mark.parametrize('aave_use_graph', [True, False])  # Try both with lockchain and graph
 def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
     Since this actually queries real blockchain data for aave it is a very slow test
-    due to the sheer amount of log queries
+    due to the sheer amount of log queries. We also use graph in 2nd version of test.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
@@ -154,7 +155,7 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_
     assert FVal(total_earned['aDAI']['amount']) >= FVal('24.207179802347627414')
     assert FVal(total_earned['aDAI']['usd_value']) >= FVal('24.580592532348742989192')
 
-    expected_events = process_result_list(expected_aave_test_events)
+    expected_events = process_result_list(expected_aave_deposit_test_events)
     if aave_use_graph:
         expected_events = expected_events[:7] + expected_events[8:]
 
@@ -162,6 +163,49 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_
         a=events[:len(expected_events)],
         b=expected_events,
         ignore_keys=['log_index', 'block_number'] if aave_use_graph else None,
+    )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_3]])
+@pytest.mark.parametrize('ethereum_modules', [['aave']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
+@pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('aave_use_graph', [True])
+def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+    """Check querying the aave histoy endpoint works. Uses real data.
+
+    Since this actually queries real blockchain data for aave it is a very slow test
+    due to the sheer amount of log queries
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
+
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "aavehistoryresource",
+        ))
+        result = assert_proper_response_with_result(response)
+
+    assert len(result) == 1
+    assert len(result[AAVE_TEST_ACC_3]) == 2
+    events = result[AAVE_TEST_ACC_3]['events']
+    total_earned = result[AAVE_TEST_ACC_3]['total_earned']
+    assert len(total_earned) == 1
+    assert len(total_earned['aWBTC']) == 2
+    assert FVal(total_earned['aWBTC']['amount']) >= FVal('0.00000833')
+    assert FVal(total_earned['aWBTC']['usd_value']) >= FVal('0.00000833')
+
+    expected_events = process_result_list(expected_aave_liquidation_test_events)
+
+    assert_serialized_lists_equal(
+        a=events[:len(expected_events)],
+        b=expected_events,
+        ignore_keys=None,
     )
 
 

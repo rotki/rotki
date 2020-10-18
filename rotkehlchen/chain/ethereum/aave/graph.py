@@ -444,7 +444,7 @@ class AaveGraphInquirer(AaveInquirer):
                 to_ts=to_ts,
             )
             borrows = self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
-            repays = self._parse_borrows(user_result['repayHistory'], from_ts, to_ts)
+            repays = self._parse_repays(user_result['repayHistory'], from_ts, to_ts)
             liquidation_calls = self._parse_liquidations(
                 user_result['liquidationCallHistory'],
                 from_ts,
@@ -598,7 +598,7 @@ class AaveGraphInquirer(AaveInquirer):
                 continue  # problem parsing, error already logged
             asset, decimals = result
             amount_after_fee = token_normalized_value(
-                int(entry['amount_after_fee']),
+                int(entry['amountAfterFee']),
                 token_decimals=decimals,
             )
             fee = token_normalized_value(int(entry['fee']), token_decimals=decimals)
@@ -655,7 +655,7 @@ class AaveGraphInquirer(AaveInquirer):
                 continue  # problem parsing, error already logged
             principal_asset, principal_balance = result
             events.append(AaveLiquidationEvent(
-                event_type='repay',
+                event_type='liquidation',
                 collateral_asset=collateral_asset,
                 collateral_balance=collateral_balance,
                 principal_asset=principal_asset,
