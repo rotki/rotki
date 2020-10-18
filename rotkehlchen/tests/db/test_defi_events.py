@@ -128,6 +128,12 @@ def test_add_and_get_aave_events(data_dir, username):
     events = data.db.get_aave_events(address=addr3)
     assert events == addr3_events
 
+    # check that all aave events are properly hashable (aka can go in a set)
+    test_set = set()
+    for event in addr3_events:
+        test_set.add(event)
+    assert len(test_set) == len(addr3_events)
+
 
 def test_add_and_get_yearn_vault_events(data_dir, username):
     """Test that get yearn vault events works fine and returns only events for what we need"""

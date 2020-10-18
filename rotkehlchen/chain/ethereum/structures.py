@@ -31,7 +31,7 @@ AAVE_EVENT_DB_TUPLE = Tuple[
 ]
 
 
-@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+@dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveEvent:
     """An event of the Aave protocol"""
     event_type: AAVE_EVENT_TYPE
@@ -66,8 +66,14 @@ class AaveEvent:
             self.log_index,
         )
 
+    def __hash__(self) -> int:
+        return hash(self.event_type + self.tx_hash + str(self.log_index))
 
-@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+    def __eq__(self, other: Any) -> bool:
+        return hash(self) == hash(other)
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveSimpleEvent(AaveEvent):
     """A simple event of the Aave protocol. Deposit or withdrawal"""
     asset: Asset
@@ -91,7 +97,7 @@ class AaveSimpleEvent(AaveEvent):
         )
 
 
-@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+@dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveBorrowEvent(AaveSimpleEvent):
     """A borrow event of the Aave protocol"""
     borrow_rate_mode: Literal['stable', 'variable']
@@ -111,7 +117,7 @@ class AaveBorrowEvent(AaveSimpleEvent):
         )
 
 
-@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+@dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveRepayEvent(AaveSimpleEvent):
     """A repay event of the Aave protocol"""
     fee: Balance
@@ -129,7 +135,7 @@ class AaveRepayEvent(AaveSimpleEvent):
         )
 
 
-@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+@dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveLiquidationEvent(AaveEvent):
     """A simple event of the Aave protocol. Deposit or withdrawal"""
     collateral_asset: Asset

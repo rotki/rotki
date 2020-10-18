@@ -416,23 +416,27 @@ class AaveGraphInquirer(AaveInquirer):
             to_ts: Timestamp,
             address: ChecksumEthAddress,
     ) -> AaveHistory:
-
         last_query = self.database.get_used_query_range(f'aave_events_{address}')
         db_events = self.database.get_aave_events(address=address)
 
         now = ts_now()
+        last_query_ts = 0
         if last_query is not None:
-            from_ts = Timestamp(last_query[1] + 1)
+            last_query_ts = last_query[1]
+            from_ts = Timestamp(last_query_ts + 1)
 
         deposits = withdrawals = borrows = repays = liquidation_calls = []
-        if last_query and now - last_query[1] > AAVE_GRAPH_RECENT_SECS:
-            # query the graph unless we have recently saved data
-            query = self.graph.query(
-                querystr=USER_EVENTS_QUERY,
-                param_types={'$address': 'ID!'},
-                param_values={'address': address.lower()},
-            )
-            user_result = query['users'][0]
+        query = self.graph.query(
+            querystr=USER_EVENTS_QUERY,
+            param_types={'$address': 'ID!'},
+            param_values={'address': address.lower()},
+        )
+        user_result = query['users'][0]
+        if now - last_query_ts > AAVE_GRAPH_RECENT_SECS:
+            # In theory if these were individual queries we should do them only if
+            # we have not queried recently. In practise since we only do 1 query above
+            # this is useless for now, but keeping the mechanism in case we change
+            # the way we query the subgraph
             deposits = self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
             withdrawals = self._parse_withdrawals(
                 withdrawals=user_result['redeemUnderlyingHistory'],
