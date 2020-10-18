@@ -22,7 +22,13 @@ from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .common import ATOKENS_LIST, AaveHistory, AaveInquirer, _get_reserve_address_decimals
+from .common import (
+    ATOKENS_LIST,
+    AaveBalances,
+    AaveHistory,
+    AaveInquirer,
+    _get_reserve_address_decimals,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -61,6 +67,7 @@ class AaveBlockchainInquirer(AaveInquirer):
             to_block: int,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            aave_balances: Dict[ChecksumEthAddress, AaveBalances],  # pylint: disable=unused-argument  # noqa: E501
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         """
         Queries aave history for a list of addresses.
@@ -153,6 +160,7 @@ class AaveBlockchainInquirer(AaveInquirer):
             for x in events:
                 if x.event_type == 'interest':
                     total_balance += x.value  # type: ignore
+
             # If the user still has balance in Aave we also need to see how much
             # accrued interest has not been yet paid out
             # TODO: ARCHIVE if to_block is not latest here we should get the balance

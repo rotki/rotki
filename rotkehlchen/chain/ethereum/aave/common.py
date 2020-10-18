@@ -1,10 +1,11 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import AAVE_ETH_RESERVE_ADDRESS
+from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -12,6 +13,45 @@ from rotkehlchen.user_messages import MessagesAggregator
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+class AaveLendingBalance(NamedTuple):
+    """A balance for Aave lending.
+
+    Asset not included here since it's the key in the map that leads to this structure
+    """
+    balance: Balance
+    apy: FVal
+
+    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
+        return {
+            'balance': self.balance.serialize(),
+            'apy': self.apy.to_percentage(precision=2),
+        }
+
+
+class AaveBorrowingBalance(NamedTuple):
+    """A balance for Aave borrowing.
+
+    Asset not included here since it's the key in the map that leads to this structure
+    """
+    balance: Balance
+    variable_apr: FVal
+    stable_apr: FVal
+
+    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
+        return {
+            'balance': self.balance.serialize(),
+            'variable_apr': self.variable_apr.to_percentage(precision=2),
+            'stable_apr': self.stable_apr.to_percentage(precision=2),
+        }
+
+
+class AaveBalances(NamedTuple):
+    """The Aave balances per account. Using str for symbol since ETH is not a token"""
+    lending: Dict[str, AaveLendingBalance]
+    borrowing: Dict[str, AaveBorrowingBalance]
+
 
 ATOKEN_TO_DEPLOYED_BLOCK = {
     'aETH': 9241088,
@@ -103,6 +143,7 @@ class AaveInquirer():
             to_block: int,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            aave_balances: Dict[ChecksumEthAddress, AaveBalances],
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         """
         Queries aave history for a list of addresses.

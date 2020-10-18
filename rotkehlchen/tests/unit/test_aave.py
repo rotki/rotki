@@ -10,7 +10,7 @@ from rotkehlchen.tests.utils.aave import (
     AAVE_TEST_ACC_2,
     aave_mocked_current_prices,
     aave_mocked_historical_prices,
-    expected_aave_test_events,
+    expected_aave_deposit_test_events,
 )
 
 
@@ -44,7 +44,7 @@ def test_get_lending_profit_for_address(aave, price_historian):  # pylint: disab
         atokens_list=[EthereumToken('aDAI')],
     )
 
-    assert history.events == expected_aave_test_events[:10]
+    assert history.events == expected_aave_deposit_test_events[:10]
     assert len(history.total_earned) == 1
     # comparison is greater than since interest is always accruing since writing the test
     # and 5.6 "should be" the principal balance at the given block

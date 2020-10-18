@@ -1,9 +1,8 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.makerdao.common import RAY
 from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
@@ -16,51 +15,19 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
 from .blockchain import AaveBlockchainInquirer
-from .common import AaveHistory, _get_reserve_address_decimals
+from .common import (
+    AaveBalances,
+    AaveBorrowingBalance,
+    AaveHistory,
+    AaveLendingBalance,
+    _get_reserve_address_decimals,
+)
 from .graph import AaveGraphInquirer
 
 log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-
-
-class AaveLendingBalance(NamedTuple):
-    """A balance for Aave lending.
-
-    Asset not included here since it's the key in the map that leads to this structure
-    """
-    balance: Balance
-    apy: FVal
-
-    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
-        return {
-            'balance': self.balance.serialize(),
-            'apy': self.apy.to_percentage(precision=2),
-        }
-
-
-class AaveBorrowingBalance(NamedTuple):
-    """A balance for Aave borrowing.
-
-    Asset not included here since it's the key in the map that leads to this structure
-    """
-    balance: Balance
-    variable_apr: FVal
-    stable_apr: FVal
-
-    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
-        return {
-            'balance': self.balance.serialize(),
-            'variable_apr': self.variable_apr.to_percentage(precision=2),
-            'stable_apr': self.stable_apr.to_percentage(precision=2),
-        }
-
-
-class AaveBalances(NamedTuple):
-    """The Aave balances per account. Using str for symbol since ETH is not a token"""
-    lending: Dict[str, AaveLendingBalance]
-    borrowing: Dict[str, AaveBorrowingBalance]
 
 
 def _atoken_to_reserve_asset(atoken: EthereumToken) -> Asset:
@@ -179,6 +146,7 @@ class Aave(EthereumModule):
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            given_defi_balances: GIVEN_DEFI_BALANCES,
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         """Detects aave historical data for the given addresses"""
         latest_block = self.ethereum.get_latest_block_number()
@@ -187,11 +155,13 @@ class Aave(EthereumModule):
                 self.database.delete_aave_data()
 
             if self.use_graph:
+                aave_balances = self.get_balances(given_defi_balances)
                 return self.graph_inquirer.get_history_for_addresses(
                     addresses=addresses,
                     to_block=latest_block,
                     from_timestamp=from_timestamp,
                     to_timestamp=to_timestamp,
+                    aave_balances=aave_balances,
                 )
             else:
                 return self.blockchain_inquirer.get_history_for_addresses(
@@ -199,6 +169,7 @@ class Aave(EthereumModule):
                     to_block=latest_block,
                     from_timestamp=from_timestamp,
                     to_timestamp=to_timestamp,
+                    aave_balances=None,  # type: ignore
                 )
 
     # -- Methods following the EthereumModule interface -- #

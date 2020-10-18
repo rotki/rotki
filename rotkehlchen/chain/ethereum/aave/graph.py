@@ -9,6 +9,9 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.aave.common import (
     AAVE_RESERVE_TO_ASSET,
     ASSET_TO_AAVE_RESERVE_ADDRESS,
+    AaveBalances,
+    AaveHistory,
+    AaveInquirer,
     _get_reserve_address_decimals,
 )
 from rotkehlchen.chain.ethereum.graph import Graph
@@ -21,16 +24,16 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveSimpleEvent,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.constants.ethereum import ATOKEN_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
-
-from .common import AaveHistory, AaveInquirer
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -261,6 +264,7 @@ class AaveGraphInquirer(AaveInquirer):
             to_block: int,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            aave_balances: Dict[ChecksumEthAddress, AaveBalances],
     ) -> Dict[ChecksumEthAddress, AaveHistory]:
         """
         Queries aave history for a list of addresses.
@@ -274,6 +278,7 @@ class AaveGraphInquirer(AaveInquirer):
                 user_address=address,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
+                balances=aave_balances.get(address, AaveBalances({}, {})),
             )
             if history_results is None:
                 continue
@@ -297,12 +302,14 @@ class AaveGraphInquirer(AaveInquirer):
 
     def _calculate_interest_events(
             self,
+            user_address: ChecksumEthAddress,
             user_result: Dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
             deposits: List[AaveSimpleEvent],
             withdrawals: List[AaveSimpleEvent],
             db_events: List[AaveEvent],
+            balances: AaveBalances,
     ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance]]:
         """Calculates the interest events and the total earned from all the given events
 
@@ -408,6 +415,22 @@ class AaveGraphInquirer(AaveInquirer):
                     else:  # withdrawal
                         atoken_balances[action.asset] -= action.value.amount
 
+        for atoken, earn_entry in total_earned.items():
+            lending_balance = balances.lending.get(atoken.identifier, None)
+            if lending_balance is not None:
+                principal_balance = self.ethereum.call_contract(
+                    contract_address=atoken.ethereum_address,
+                    abi=ATOKEN_ABI,
+                    method_name='principalBalanceOf',
+                    arguments=[user_address],
+                )
+                unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.decimals)))  # noqa: E501
+                usd_price = Inquirer().find_usd_price(atoken)
+                earn_entry += Balance(
+                    amount=unpaid_interest,
+                    usd_value=unpaid_interest * usd_price,
+                )
+
         return interest_events, total_earned
 
     def _get_user_data(
@@ -415,6 +438,7 @@ class AaveGraphInquirer(AaveInquirer):
             from_ts: Timestamp,
             to_ts: Timestamp,
             address: ChecksumEthAddress,
+            balances: AaveBalances,
     ) -> AaveHistory:
         last_query = self.database.get_used_query_range(f'aave_events_{address}')
         db_events = self.database.get_aave_events(address=address)
@@ -452,12 +476,14 @@ class AaveGraphInquirer(AaveInquirer):
             )
 
         interest_events, total_earned = self._calculate_interest_events(
+            user_address=address,
             user_result=user_result,
             from_ts=from_ts,
             to_ts=to_ts,
             deposits=deposits,
             withdrawals=withdrawals,
             db_events=db_events,
+            balances=balances,
         )
 
         # Add all new events to the DB
@@ -673,6 +699,7 @@ class AaveGraphInquirer(AaveInquirer):
             user_address: ChecksumEthAddress,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            balances: AaveBalances,
     ) -> Optional[AaveHistory]:
         """
         Queries aave history for a single address.
@@ -686,6 +713,7 @@ class AaveGraphInquirer(AaveInquirer):
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 address=user_address,
+                balances=balances,
             )
 
         return None

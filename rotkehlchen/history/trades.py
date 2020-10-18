@@ -266,6 +266,7 @@ class TradesHistorian():
         aave = self.chain_manager.aave
         if aave is not None and has_premium:
             mapping = aave.get_history(
+                given_defi_balances=self.chain_manager.defi_balances,
                 addresses=self.chain_manager.queried_addresses_for_module('aave'),
                 reset_db_data=False,
                 from_timestamp=start_ts,
