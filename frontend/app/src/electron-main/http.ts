@@ -6,6 +6,7 @@ import http, {
   Server
 } from 'http';
 import path from 'path';
+import { assert } from '@/utils/assertions';
 
 type Callback = (addresses: string[]) => void;
 
@@ -162,14 +163,18 @@ function handleRequests(
   }
 }
 
-export function startHttp(cb: Callback, port: number = 43432) {
-  if (server && server.listening) {
-    throw new Error(`http server is already listening at: ${server.address()}`);
+export function startHttp(cb: Callback, port: number = 43432): number {
+  if (!(server && server.listening)) {
+    console.log(
+      `Metamask Import Server: Listening at: http://localhost:${port}`
+    );
+    server = http.createServer((req, resp) => handleRequests(req, resp, cb));
+    server.listen(port);
   }
-  console.log(`Metamask Import Server: Listening at: http://localhost:${port}`);
-  server = http.createServer((req, resp) => handleRequests(req, resp, cb));
-  server.listen(port);
-  return server.address();
+
+  const address = server.address();
+  assert(address && typeof address !== 'string');
+  return address.port;
 }
 
 export function stopHttp() {

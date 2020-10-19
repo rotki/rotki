@@ -16,6 +16,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { startHttp, stopHttp } from '@/electron-main/http';
 import { selectPort } from '@/electron-main/port-utils';
 import PyHandler from './py-handler';
+import Timeout = NodeJS.Timeout;
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
@@ -332,15 +333,18 @@ app.on('ready', async () => {
     const directory = await select(args, 'openDirectory');
     event.sender.send('OPEN_DIRECTORY', directory);
   });
+  let importTimeout: Timeout;
   ipcMain.on('METAMASK_IMPORT', async (event, _args) => {
     try {
-      const port = await selectPort(40000);
-      startHttp(
+      const port = startHttp(
         addresses => event.sender.send('METAMASK_IMPORT', { addresses }),
-        port
+        await selectPort(40000)
       );
       await shell.openExternal(`http://localhost:${port}`);
-      setTimeout(() => {
+      if (importTimeout) {
+        clearTimeout(importTimeout);
+      }
+      importTimeout = setTimeout(() => {
         stopHttp();
         event.sender.send('METAMASK_IMPORT', { error: 'waiting timeout' });
       }, 120000);
