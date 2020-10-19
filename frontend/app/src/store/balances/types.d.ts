@@ -54,12 +54,15 @@ interface XpubPayload {
   readonly derivationPath: string;
 }
 
-export interface BlockchainAccountPayload {
-  readonly address: string;
+export interface BlockchainAccountPayload extends AccountPayload {
   readonly blockchain: Blockchain;
-  readonly label?: string;
   readonly tags: string[];
   readonly xpub?: XpubPayload;
+}
+
+export interface AccountPayload {
+  readonly address: string;
+  readonly label?: string;
 }
 
 export interface ExchangeBalancePayload {
@@ -97,5 +100,5 @@ export interface AssetBalance {
 
 export type AddAccountsPayload = {
   readonly blockchain: Blockchain;
-  readonly payload: BlockchainAccountPayload[];
+  readonly payload: AccountPayload[];
 };

@@ -401,6 +401,20 @@
           "title": "Xpub Removal",
           "description": "Failed to remove {xpub}: {error}"
         }
+      },
+      "blockchain_accounts_add": {
+        "no_new": {
+          "title": "Adding {blockchain} accounts",
+          "description": "All the addresses specified are already tracked by rotki"
+        },
+        "task": {
+          "title": "Adding {blockchain} accounts",
+          "description": "Adding {addresses} new {blockchain} accounts"
+        },
+        "error": {
+          "title": "Adding {blockchain} accounts",
+          "description": "Failed to add {addresses} new {blockchain} accounts: {error}"
+        }
       }
     },
     "session": {
@@ -626,7 +640,8 @@
     "balances": {
       "eth": "ETH per account balances",
       "btc": "BTC per account balances"
-    }
+    },
+    "metamask_import": "Add your metamask addresses to rotki"
   },
   "percentage_display": {
     "symbol": "%"

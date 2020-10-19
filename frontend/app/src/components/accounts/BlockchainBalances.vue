@@ -7,11 +7,34 @@
           mdi-plus
         </v-icon>
       </v-btn>
-      <v-btn fab top right dark color="primary" @click="metamaskImport">
-        <v-icon>
-          mdi-import
-        </v-icon>
-      </v-btn>
+      <v-row justify="end">
+        <v-col cols="auto">
+          <v-tooltip
+            open-delay="400"
+            attach=".blockchain-balances"
+            min-width="275"
+          >
+            <template #activator="{ on, attr }">
+              <v-btn
+                v-bind="attr"
+                fab
+                top
+                right
+                dark
+                color="primary"
+                v-on="on"
+                @click="metamaskImport"
+              >
+                <v-icon>
+                  mdi-import
+                </v-icon>
+              </v-btn>
+            </template>
+            <span v-text="$t('blockchain_balances.metamask_import')" />
+          </v-tooltip>
+        </v-col>
+      </v-row>
+
       <big-dialog
         :display="openDialog"
         :title="dialogTitle"
@@ -93,7 +116,6 @@ export default class BlockchainBalances extends Vue {
         address: value,
         label: 'Metamask Address'
       }));
-      console.log(payload);
       await this.addAccounts({
         blockchain: ETH,
         payload: payload

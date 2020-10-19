@@ -17,6 +17,7 @@ const STATUS_OK = 200;
 const STATUS_BAD_REQUEST = 400;
 const STATUS_FORBIDDEN = 403;
 const STATUS_NOT_FOUND = 404;
+const STATUS_CONTENT_LENGTH_REQUIRED = 411;
 
 let server: Server;
 
@@ -112,6 +113,29 @@ function handleRequests(
   res: ServerResponse,
   cb: Callback
 ) {
+  const contentLengthHeader = req.headers['content-length'];
+  if (contentLengthHeader) {
+    try {
+      const contentLength = parseInt(contentLengthHeader);
+      if (contentLength > 524288) {
+        invalidRequest(
+          req,
+          res,
+          'Only requests up to 0.5MB are allowed',
+          STATUS_BAD_REQUEST
+        );
+        return;
+      }
+    } catch (e) {
+      invalidRequest(
+        req,
+        res,
+        'No valid content length',
+        STATUS_CONTENT_LENGTH_REQUIRED
+      );
+      return;
+    }
+  }
   const paths =
     process.env.NODE_ENV === 'development'
       ? path.join(__dirname, '..', 'public')
@@ -142,14 +166,14 @@ export function startHttp(cb: Callback, port: number = 43432) {
   if (server && server.listening) {
     throw new Error(`http server is already listening at: ${server.address()}`);
   }
-  console.log('starting http');
+  console.log(`Metamask Import Server: Listening at: http://localhost:${port}`);
   server = http.createServer((req, resp) => handleRequests(req, resp, cb));
   server.listen(port);
   return server.address();
 }
 
 export function stopHttp() {
-  console.log('stopping http');
+  console.log('Metamask Import Server: Stopped');
   if (server && server.listening) {
     server.close();
   }

@@ -48,6 +48,10 @@
             text-align: center;
         }
 
+        .text.small {
+            font-size: 14px !important;
+        }
+
         #missing {
             display: none;
         }
@@ -151,7 +155,8 @@
                 )
 
                 if (!accountPermission) {
-                    console.log('no permission')
+                    error.style.display = 'flex';
+                    errorMessage.innerText = 'Could not find the eth_accounts permission';
                 } else {
                     const exposedAccounts = accountPermission.caveats.find(
                         caveat => caveat.name === 'exposedAccounts'
@@ -163,6 +168,7 @@
             } catch (e) {
                 error.style.display = 'flex';
                 errorMessage.innerText = e.message;
+                console.log(e)
             }
         }
         async function post(addresses) {
@@ -215,21 +221,24 @@
         </div>
         <img src="img/mm-logo.svg"/>
 
-        <div class="text">Import your Metamask accounts to rotki</div>
-        <div class="text" id="missing">
+        <div class="text">
+            Start tracking your Metamask addresses with rotki
+        </div>
+        <div class="text small" id="missing">
             Metamask was not detected
         </div>
-        <button id="import" class="button">Import</button>
+        <button id="import" class="button">Select Addresses</button>
         <div id="success" class="flex-column flex align-center justify-center alert">
             <img src="img/done.svg"/>
             <div class="text">
-                Accounts have been successfully imported. <br/>
+                Your addresses have been successfully added. <br/>
+                Please check rotki for more information <br />
                 You can safely close this page now.
             </div>
         </div>
         <div id="error" class="flex-column flex align-center justify-center alert">
             <img src="img/alert.svg"/>
-            <div id="error-message" class="text"></div>
+            <div id="error-message" class="text small"></div>
         </div>
 
     </div>

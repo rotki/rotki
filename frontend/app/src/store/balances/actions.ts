@@ -327,25 +327,49 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async addAccounts(
-    { commit, dispatch },
+    { state, commit, dispatch, rootGetters },
     { blockchain, payload }: AddAccountsPayload
-  ) {
-    // TODO filter existing accounts
-    const addresses = payload.map(value => value.address).join(', ');
+  ): Promise<void> {
+    const taskType = TaskType.ADD_ACCOUNT;
+    const isTaskRunning = rootGetters['tasks/isTaskRunning'];
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+    const existingAddresses = Object.keys(state.ethAccounts).map(address =>
+      address.toLocaleLowerCase()
+    );
+    const addresses = payload
+      .filter(
+        value => !existingAddresses.includes(value.address.toLocaleLowerCase())
+      )
+      .map(value => value.address);
+
+    if (addresses.length === 0) {
+      const title = i18n.tc(
+        'actions.balances.blockchain_accounts_add.no_new.title',
+        0,
+        { blockchain }
+      );
+      const description = i18n.tc(
+        'actions.balances.blockchain_accounts_add.no_new.description'
+      );
+      notify(description, title, Severity.INFO, true);
+      return;
+    }
+
     try {
-      const taskType = TaskType.ADD_ACCOUNT;
       const { taskId } = await api.addBlockchainAccounts(blockchain, payload);
 
       const task = createTask(taskId, taskType, {
         title: i18n.tc(
-          'actions.balances.blockchain_account_add.task.title',
+          'actions.balances.blockchain_accounts_add.task.title',
           0,
           { blockchain }
         ),
         description: i18n.tc(
-          'actions.balances.blockchain_account_add.task.description',
+          'actions.balances.blockchain_accounts_add.task.description',
           0,
-          { address: addresses }
+          { addresses: addresses.length, blockchain }
         ),
         blockchain,
         numericKeys: blockchainBalanceKeys
@@ -363,15 +387,17 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await dispatch('resetDefiStatus', {}, { root: true });
     } catch (e) {
       const title = i18n.tc(
-        'actions.balances.blockchain_account_add.error.title',
+        'actions.balances.blockchain_accounts_add.error.title',
         0,
-        { address: addresses, blockchain }
+        { blockchain }
       );
       const description = i18n.tc(
-        'actions.balances.blockchain_account_add.error.description',
+        'actions.balances.blockchain_accounts_add.error.description',
         0,
         {
-          error: e.message
+          error: e.message,
+          address: addresses.length,
+          blockchain
         }
       );
       notify(description, title, Severity.ERROR, true);
