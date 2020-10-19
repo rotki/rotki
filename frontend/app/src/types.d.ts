@@ -3,9 +3,11 @@ export type DebugSettings = { vuex: boolean };
 type MetamaskImportError = {
   readonly error: string;
 };
+
 type MetamaskImportSupport = {
   readonly addresses: string[];
 };
+
 type MetamaskImport = MetamaskImportError | MetamaskImportSupport;
 
 interface Interop {
@@ -21,9 +23,30 @@ interface Interop {
   metamaskImport(): Promise<MetamaskImport>;
 }
 
+interface Request {
+  readonly method: string;
+  readonly params: { [key: string]: any }[];
+}
+
+interface Caveat {
+  readonly name: string;
+  readonly value: string[];
+}
+
+interface Permission {
+  readonly parentCapability: string;
+  readonly caveats: Caveat[];
+}
+
+interface Provider {
+  readonly isMetaMask?: boolean;
+  readonly request: (request: Request) => Promise<Permission[]>;
+}
+
 declare global {
   interface Window {
     interop?: Interop;
+    ethereum?: Provider;
   }
 }
 

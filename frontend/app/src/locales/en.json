@@ -405,7 +405,7 @@
       "blockchain_accounts_add": {
         "no_new": {
           "title": "Adding {blockchain} accounts",
-          "description": "All the addresses specified are already tracked by rotki"
+          "description": "The selected addresses are already tracked by rotki"
         },
         "task": {
           "title": "Adding {blockchain} accounts",
@@ -641,7 +641,13 @@
       "eth": "ETH per account balances",
       "btc": "BTC per account balances"
     },
-    "metamask_import": "Add your metamask addresses to rotki"
+    "metamask_import": {
+      "tooltip":  "Add your metamask addresses to rotki | Adding addresses from MetaMask is disabled because MetaMask could not be detected",
+      "error": {
+        "title": "Metamask address import",
+        "description": "Adding addresses from metamask could not be completed: {error}"
+      }
+    }
   },
   "percentage_display": {
     "symbol": "%"
