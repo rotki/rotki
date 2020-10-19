@@ -118,8 +118,7 @@ def test_query_aave_balances_module_not_activated(
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('aave_use_graph', [False])  # Try both with lockchain and graph
-# @pytest.mark.parametrize('aave_use_graph', [True, False])  # Try both with lockchain and graph
+@pytest.mark.parametrize('aave_use_graph', [True, False])  # Try both with lockchain and graph
 def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
