@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1458` Aave borrowing and liquidations are now also taken into account and displayed to the user. Also for historical aave queries a subgraph is used instead of blockchain event querying which makes the entire process considerably faster.
 * :bug:`1596` If the local DB of a premium user is both newer and bigger size than the remote, then do not ask the user whether to pull the remote DB or not.
 * :feature:`1288` Users can now see the last premium database sync date in the save indicator when database sync is enabled.
 * :bug:`1571` New user account with new premium keys will no longer fail to create an account the first time if premium keys are given at account creation time.
