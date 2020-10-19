@@ -1006,6 +1006,32 @@ def test_upgrade_db_16_to_17(user_data_dir):
     assert db.get_version() == 17
 
 
+def test_upgrade_db_18_to_19(user_data_dir):
+    """Test upgrading the DB from version 18 to version 19.
+
+    Deletes all aave data and recreates table with all the new attributes
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v18_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=19,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    assert cursor.execute('SELECT COUNT(*) FROM aave_events;').fetchone()[0] == 0
+    # Test that query ranges also get cleared
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "aave_events%";',
+    ).fetchone()[0] == 0
+    # test schema upgrade by using a new column from the upgraded schema. If nonexisting it raises
+    cursor.execute('SELECT asset2usd_value_accruedinterest_feeusdvalue FROM aave_events;')
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 19
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the

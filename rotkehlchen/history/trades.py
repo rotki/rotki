@@ -266,6 +266,7 @@ class TradesHistorian():
         aave = self.chain_manager.aave
         if aave is not None and has_premium:
             mapping = aave.get_history(
+                given_defi_balances=self.chain_manager.defi_balances,
                 addresses=self.chain_manager.queried_addresses_for_module('aave'),
                 reset_db_data=False,
                 from_timestamp=start_ts,
@@ -296,9 +297,18 @@ class TradesHistorian():
                         defi_events.append(DefiEvent(
                             timestamp=now,
                             event_type=DefiEventType.AAVE_LOAN_INTEREST,
-                            asset=event.asset,
+                            asset=token,
                             amount=balance.amount - total_amount_per_token[token],
                         ))
+
+                for asset, balance in aave_history.total_lost.items():
+                    # Add all losses from aave borrowing/liquidations
+                    defi_events.append(DefiEvent(
+                        timestamp=now,
+                        event_type=DefiEventType.AAVE_LOSS,
+                        asset=asset,
+                        amount=balance.amount,
+                    ))
 
         history.sort(key=lambda trade: action_get_timestamp(trade))
         return (

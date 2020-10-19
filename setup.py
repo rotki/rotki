@@ -3,7 +3,7 @@
 import pathlib
 
 from pkg_resources import parse_requirements
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # Repository root directory for use with reading files
 directory = pathlib.Path(__file__).parent
@@ -17,8 +17,8 @@ version = '1.8.1'  # Do not edit: this is maintained by bumpversion (see .bumpve
 
 setup(
     name='rotkehlchen',
-    author='Lefteris Karapetsas',
-    author_email='lefteris@refu.co',
+    author='Rotki Solutions GmbH',
+    author_email='info@rotki.com',
     description='Acccounting, asset management and tax report helper for cryptocurrencies',
     license='BSD-3',
     keywords='accounting tax-report portfolio asset-management cryptocurrencies',

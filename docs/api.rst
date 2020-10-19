@@ -3218,6 +3218,12 @@ Getting Aave historical data
 		          "amount": "0.523",
 			  "usd_value": "0.0253"
 		      }
+		  },
+		  "total_lost": {
+		      "WBTC": {
+		          "amount": "0.3212",
+			  "usd_value": "3560.32"
+		      }
 		  }
               },
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
@@ -3238,22 +3244,32 @@ Getting Aave historical data
 		          "amount": "0.9482",
 			  "usd_value": "0.2312"
 		      }
-		  }
+		  },
+		  "total_lost": {}
               }
           },
           "message": ""
       }
 
    :resjson object result: A mapping of accounts to the Aave history report of each account. If an account is not in the mapping Rotki does not see anything ever deposited in Aave for it.
-   :resjson object events: A list of deposits/withdrawals/interest payments to/from Aave for each account.
-   :resjson object total_earned: A mapping of asset identifier to total earned (amount + usd_value mapping) for each asset. The total earned is essentially the sum of all interest payments plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
-   :resjsonarr string event_type: The type of Aave event. Can be "deposit", "withdrawal" or "interest".
-   :resjsonarr string asset: The asset that this event is about. This can only be an underlying asset of an aToken.
-   :resjsonarr string value: The value of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
+   :resjson object events: A list of AaveEvents. Check the fields below for the potential values.
+   :resjsonarr string event_type: The type of Aave event. Can be ``"deposit"``, ``"withdrawal"``, ``"interest"``, ``"borrow"``, ``"repay"`` and ``"liquidation"``.
    :resjsonarr int timestamp: The unix timestamp at which the event occured.
-   :resjsonarr int block_number: The block number at which the event occured.
-   :resjsonarr int tx_hash: The transaction hash of the event.
-   :resjsonarr int log_index: The log_index of the event
+   :resjsonarr int block_number: The block number at which the event occured. If the graph is queried this is unfortunately always 0, so UI should not show it.
+   :resjsonarr string tx_hash: The transaction hash of the event.
+   :resjsonarr int log_index: The log_index of the event. For the graph this is indeed a unique number in combination with the transaction hash, but it's unfortunately not the log index.
+   :resjsonarr string asset: This attribute appears in all event types except for ``"liquidation"``. It shows the asset that this event is about. This can only be an underlying asset of an aToken.
+   :resjsonarr object value: This attribute appears in all event types except for ``"liquidation"``. The value (amount and usd_value mapping) of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr string borrow_rate_mode: This attribute appears only in ``"borrow"`` events. Signifies the type of borrow. Can be either ``"stable"`` or ``"variable"``.
+   :resjsonarr string borrow_rate: This attribute appears only in ``"borrow"`` events. Shows the rate at which the asset was borrowed. It's a floating point number. For example ``"0.155434"`` would means 15.5434% interest rate for this borrowing.
+   :resjsonarr string accrued_borrow_interest: This attribute appears only in ``"borrow"`` events. Its a floating point number showing the acrrued interest for borrowing the asset so far
+   :resjsonarr  object fee: This attribute appears only in ``"repay"`` events. The value (amount and usd_value mapping) of the fee for the repayment. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr string collateral_asset: This attribute appears only in ``"liquidation"`` events. It shows the collateral asset that the user loses due to liquidation.
+   :resjsonarr string collateral_balance: This attribute appears only in ``"liquidation"`` events. It shows the value (amount and usd_value mapping) of the collateral asset that the user loses due to liquidation. The rate is the asset/USD rate at the events's timestamp.
+   :resjsonarr string principal_asset: This attribute appears only in ``"liquidation"`` events. It shows the principal debt asset that is repaid due to the liquidation due to liquidation.
+   :resjsonarr string principal_balance: This attribute appears only in ``"liquidation"`` events. It shows the value (amount and usd_value mapping) of the principal asset whose debt is repaid due to liquidation. The rate is the asset/USD rate at the events's timestamp.
+   :resjson object total_earned: A mapping of asset identifier to total earned (amount + usd_value mapping) for each asset. The total earned is essentially the sum of all interest payments plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
+   :resjson object total_lost: A mapping of asset identifier to total lost (amount + usd_value mapping) for each asset. The total losst for each asset is essentially the accrued interest from borrowing and the collateral lost from liquidations.
 
    :statuscode 200: Aave history succesfully queried.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or aave module is not activated.

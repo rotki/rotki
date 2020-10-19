@@ -6,14 +6,17 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.aave import (
     AAVE_TEST_ACC_1,
     AAVE_TEST_ACC_2,
+    AAVE_TEST_ACC_3,
     aave_mocked_current_prices,
     aave_mocked_historical_prices,
-    expected_aave_test_events,
+    expected_aave_deposit_test_events,
+    expected_aave_liquidation_test_events,
 )
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -22,6 +25,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
@@ -114,14 +118,20 @@ def test_query_aave_balances_module_not_activated(
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+@pytest.mark.parametrize('aave_use_graph', [True, False])  # Try both with lockchain and graph
+def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
     Since this actually queries real blockchain data for aave it is a very slow test
-    due to the sheer amount of log queries
+    due to the sheer amount of log queries. We also use graph in 2nd version of test.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        original_queries=['zerion'],
+    )
     # Since this test is slow we don't run both async and sync in the same test run
     # Instead we randomly choose one. Eventually both cases will be covered.
     async_query = random.choice([True, False])
@@ -143,17 +153,89 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
             result = assert_proper_response_with_result(response)
 
     assert len(result) == 1
-    assert len(result[AAVE_TEST_ACC_2]) == 2
+    assert len(result[AAVE_TEST_ACC_2]) == 3
     events = result[AAVE_TEST_ACC_2]['events']
     total_earned = result[AAVE_TEST_ACC_2]['total_earned']
+    total_lost = result[AAVE_TEST_ACC_2]['total_lost']
+    assert len(total_lost) == 0
     assert len(total_earned) == 1
     assert len(total_earned['aDAI']) == 2
     assert FVal(total_earned['aDAI']['amount']) >= FVal('24.207179802347627414')
     assert FVal(total_earned['aDAI']['usd_value']) >= FVal('24.580592532348742989192')
 
-    expected_events = process_result_list(expected_aave_test_events)
-    assert len(events) >= 16
-    assert events[:16] == expected_events
+    expected_events = process_result_list(expected_aave_deposit_test_events)
+    if aave_use_graph:
+        expected_events = expected_events[:7] + expected_events[8:]
+
+    assert_serialized_lists_equal(
+        a=events[:len(expected_events)],
+        b=expected_events,
+        ignore_keys=['log_index', 'block_number'] if aave_use_graph else None,
+    )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_3]])
+@pytest.mark.parametrize('ethereum_modules', [['aave']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
+@pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('aave_use_graph', [True])
+def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+    """Check querying the aave histoy endpoint works. Uses real data.
+
+    Since this actually queries real blockchain data for aave it is a very slow test
+    due to the sheer amount of log queries
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        original_queries=['zerion'],
+    )
+
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "aavehistoryresource",
+        ))
+        result = assert_proper_response_with_result(response)
+
+    assert len(result) == 1
+    assert len(result[AAVE_TEST_ACC_3]) == 3
+    events = result[AAVE_TEST_ACC_3]['events']
+    total_earned = result[AAVE_TEST_ACC_3]['total_earned']
+    total_lost = result[AAVE_TEST_ACC_3]['total_lost']
+
+    assert len(total_earned) == 1
+    assert len(total_earned['aWBTC']) == 2
+    assert FVal(total_earned['aWBTC']['amount']) >= FVal('0.00000833')
+    assert FVal(total_earned['aWBTC']['usd_value']) >= ZERO
+
+    assert len(total_lost) == 3
+    eth_lost = total_lost['ETH']
+    assert len(eth_lost) == 2
+    assert FVal(eth_lost['amount']) >= FVal('0.004452186358507873')
+    assert FVal(eth_lost['usd_value']) >= ZERO
+    busd_lost = total_lost['BUSD']
+    assert len(busd_lost) == 2
+    assert FVal(busd_lost['amount']) >= FVal('21.605824443625747553')
+    assert FVal(busd_lost['usd_value']) >= ZERO
+    wbtc_lost = total_lost['WBTC']
+    assert len(wbtc_lost) == 2
+    assert FVal(wbtc_lost['amount']) >= FVal('0.41590034')  # ouch
+    assert FVal(wbtc_lost['usd_value']) >= ZERO
+
+    expected_events = process_result_list(expected_aave_liquidation_test_events)
+
+    assert_serialized_lists_equal(
+        a=events[:len(expected_events)],
+        b=expected_events,
+        ignore_keys=None,
+    )
 
 
 @pytest.mark.parametrize('ethereum_modules', [['aave']])

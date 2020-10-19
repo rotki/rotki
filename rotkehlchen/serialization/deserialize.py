@@ -186,6 +186,27 @@ def deserialize_fval(amount: AcceptableFValInitInput) -> FVal:
     return result
 
 
+def deserialize_optional_fval(
+        value: Optional[AcceptableFValInitInput],
+        name: str,
+        location: str,
+) -> FVal:
+    """
+    Deserializes an FVal from a field that was optional and if None raises DeserializationError
+    """
+    if value is None:
+        raise DeserializationError(
+            f'Failed to deserialize value entry for {name} during {location} since null was given',
+        )
+
+    try:
+        result = FVal(value)
+    except ValueError as e:
+        raise DeserializationError(f'Failed to deserialize value entry: {str(e)}')
+
+    return result
+
+
 def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
     try:
         result = AssetAmount(FVal(amount))
