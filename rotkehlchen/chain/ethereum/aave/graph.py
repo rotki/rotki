@@ -300,7 +300,7 @@ class AaveGraphInquirer(AaveInquirer):
 
         return result
 
-    def _calculate_interest_events(
+    def _process_events(
             self,
             user_address: ChecksumEthAddress,
             user_result: Dict[str, Any],
@@ -308,12 +308,16 @@ class AaveGraphInquirer(AaveInquirer):
             to_ts: Timestamp,
             deposits: List[AaveSimpleEvent],
             withdrawals: List[AaveSimpleEvent],
+            borrows: List[AaveBorrowEvent],
+            repays: List[AaveRepayEvent],
+            liquidations: List[AaveLiquidationEvent],
             db_events: List[AaveEvent],
             balances: AaveBalances,
-    ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance]]:
-        """Calculates the interest events and the total earned from all the given events
+    ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance], Dict[Asset, Balance]]:
+        """Calculates the interest events and the total earned from all the given events.
+        Also calculates total loss from borrowing and liquidations.
 
-        Also returns the edited DB events. At the moment weremove
+        Also returns the edited DB events
         """
         reserve_history = {}
         for reserve in user_result['reserves']:
@@ -333,6 +337,7 @@ class AaveGraphInquirer(AaveInquirer):
 
         db_interest_events: Set[AaveSimpleEvent] = set()
         actions: List[AaveSimpleEvent] = []
+        borrow_actions: List[AaveEvent] = []
         for db_event in db_events:
             if db_event.event_type == 'deposit':
                 actions.append(db_event)  # type: ignore
@@ -340,6 +345,13 @@ class AaveGraphInquirer(AaveInquirer):
                 actions.append(db_event)  # type: ignore
             elif db_event.event_type == 'interest':
                 db_interest_events.add(db_event)  # type: ignore
+            elif db_event.event_type == 'borrow':
+                borrow_actions.append(db_event)
+            elif db_event.event_type == 'repay':
+                borrow_actions.append(db_event)
+            elif db_event.event_type == 'liquidation':
+                borrow_actions.append(db_event)
+
         interest_events: List[AaveSimpleEvent] = []
         actions = actions + deposits + withdrawals
         actions.sort(key=lambda event: event.timestamp)
@@ -415,6 +427,7 @@ class AaveGraphInquirer(AaveInquirer):
                     else:  # withdrawal
                         atoken_balances[action.asset] -= action.value.amount
 
+        # Take aave unpaid interest into account
         for atoken, earn_entry in total_earned.items():
             lending_balance = balances.lending.get(atoken.identifier, None)
             if lending_balance is not None:
@@ -431,7 +444,36 @@ class AaveGraphInquirer(AaveInquirer):
                     usd_value=unpaid_interest * usd_price,
                 )
 
-        return interest_events, total_earned
+        # Calculate losses
+        borrow_actions = borrow_actions + borrows + repays + liquidations  # type: ignore
+        borrow_actions.sort(key=lambda event: event.timestamp)
+        historical_borrow_balances: Dict[Asset, FVal] = defaultdict(FVal)
+        total_lost: Dict[Asset, Balance] = defaultdict(Balance)
+
+        for b_action in borrow_actions:
+            if b_action.event_type == 'borrow':
+                historical_borrow_balances[b_action.asset] -= b_action.value.amount  # type: ignore
+            elif b_action.event_type == 'repay':
+                historical_borrow_balances[b_action.asset] += b_action.value.amount  # type: ignore
+            elif b_action.event_type == 'liquidation':
+                # At liquidation you lose the collateral asset
+                total_lost[b_action.collateral_asset] += b_action.collateral_balance  # type: ignore  # noqa: E501
+                # And your principal asset is repaid
+                historical_borrow_balances[b_action.principal_asset] += b_action.principal_balance.amount  # type: ignore # noqa: E501
+
+        for b_asset, amount in historical_borrow_balances.items():
+            borrow_balance = balances.borrowing.get(b_asset.identifier, None)
+            if borrow_balance is not None:
+                amount += borrow_balance.balance.amount
+
+            usd_price = Inquirer().find_usd_price(atoken)
+            total_lost[b_asset] = Balance(
+                # add total_lost amount in case of liquidations
+                amount=total_lost[b_asset].amount + amount,
+                usd_value=amount * usd_price,
+            )
+
+        return interest_events, total_earned, total_lost
 
     def _get_user_data(
             self,
@@ -475,13 +517,16 @@ class AaveGraphInquirer(AaveInquirer):
                 to_ts,
             )
 
-        interest_events, total_earned = self._calculate_interest_events(
+        interest_events, total_earned, total_lost = self._process_events(
             user_address=address,
             user_result=user_result,
             from_ts=from_ts,
             to_ts=to_ts,
             deposits=deposits,
             withdrawals=withdrawals,
+            borrows=borrows,
+            repays=repays,
+            liquidations=liquidation_calls,
             db_events=db_events,
             balances=balances,
         )
@@ -497,6 +542,7 @@ class AaveGraphInquirer(AaveInquirer):
         return AaveHistory(
             events=all_events,
             total_earned=total_earned,
+            total_lost=total_lost,
         )
 
     def _parse_deposits(

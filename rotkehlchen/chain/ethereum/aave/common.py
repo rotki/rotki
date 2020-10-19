@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import AAVE_ETH_RESERVE_ADDRESS
@@ -121,6 +121,7 @@ class AaveHistory(NamedTuple):
     """
     events: List[AaveEvent]
     total_earned: Dict[EthereumToken, Balance]
+    total_lost: Dict[Asset, Balance]
 
 
 class AaveInquirer():

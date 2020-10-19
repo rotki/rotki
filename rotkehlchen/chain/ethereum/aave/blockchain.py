@@ -203,7 +203,11 @@ class AaveBlockchainInquirer(AaveInquirer):
         )
 
         total_address_events.sort(key=lambda event: event.timestamp)
-        return AaveHistory(events=total_address_events, total_earned=total_earned_map)
+        return AaveHistory(
+            events=total_address_events,
+            total_earned=total_earned_map,
+            total_lost={},
+        )
 
     def get_events_for_atoken_and_address(
             self,
