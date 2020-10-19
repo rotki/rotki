@@ -1023,7 +1023,7 @@ def test_upgrade_db_18_to_19(user_data_dir):
     assert cursor.execute('SELECT COUNT(*) FROM aave_events;').fetchone()[0] == 0
     # Test that query ranges also get cleared
     assert cursor.execute(
-        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "aave_events%";'
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "aave_events%";',
     ).fetchone()[0] == 0
     # test schema upgrade by using a new column from the upgraded schema. If nonexisting it raises
     cursor.execute('SELECT asset2usd_value_accruedinterest_feeusdvalue FROM aave_events;')

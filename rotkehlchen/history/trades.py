@@ -297,9 +297,18 @@ class TradesHistorian():
                         defi_events.append(DefiEvent(
                             timestamp=now,
                             event_type=DefiEventType.AAVE_LOAN_INTEREST,
-                            asset=event.asset,
+                            asset=token,
                             amount=balance.amount - total_amount_per_token[token],
                         ))
+
+                for asset, balance in aave_history.total_lost.items():
+                    # Add all losses from aave borrowing/liquidations
+                    defi_events.append(DefiEvent(
+                        timestamp=now,
+                        event_type=DefiEventType.AAVE_LOSS,
+                        asset=asset,
+                        amount=balance.amount,
+                    ))
 
         history.sort(key=lambda trade: action_get_timestamp(trade))
         return (

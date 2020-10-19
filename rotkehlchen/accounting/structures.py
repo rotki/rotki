@@ -19,6 +19,7 @@ class DefiEventType(Enum):
     COMPOUND_LIQUIDATION_COLLATERAL_LOST = 6
     COMPOUND_REWARDS = 7
     YEARN_VAULTS_PNL = 8
+    AAVE_LOSS = 9
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_LOAN_GAIN:
@@ -27,6 +28,8 @@ class DefiEventType(Enum):
             return "Makerdao vault loss"
         elif self == DefiEventType.AAVE_LOAN_INTEREST:
             return "Aave loan interest"
+        elif self == DefiEventType.AAVE_LOSS:
+            return "Aave loss"
         elif self == DefiEventType.COMPOUND_LOAN_INTEREST:
             return "Compound loan interest"
         elif self == DefiEventType.COMPOUND_DEBT_REPAY:
