@@ -35,8 +35,13 @@ def get_common_params(
 class Graph():
 
     def __init__(self, url: str) -> None:
+        """
+        - May raise requests.RequestException if there is a problem connecting to the subgraph"""
         transport = RequestsHTTPTransport(url=url)
-        self.client = Client(transport=transport, fetch_schema_from_transport=True)
+        try:
+            self.client = Client(transport=transport, fetch_schema_from_transport=True)
+        except (requests.exceptions.RequestException) as e:
+            raise RemoteError(f'Failed to connect to the graph at {url} due to {str(e)}') from e
 
     def query(
             self,
@@ -47,7 +52,7 @@ class Graph():
         """Queries The Graph for a particular query
 
         May raise:
-        - RemoteError: If there is a problem querying
+        - RemoteError: If there is a problem querying the subgraph
         """
         prefix = ''
         if param_types is not None:
@@ -60,7 +65,7 @@ class Graph():
         try:
             result = self.client.execute(gql(querystr), variable_values=param_values)
         except (requests.exceptions.RequestException, Exception) as e:
-            raise RemoteError(f'Failed to query the graph for {querystr} due to {str(e)}')
+            raise RemoteError(f'Failed to query the graph for {querystr} due to {str(e)}') from e
 
         log.debug('Got result from The Graph query')
         return result

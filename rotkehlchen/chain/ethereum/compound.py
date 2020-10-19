@@ -133,7 +133,18 @@ class Compound(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
-        self.graph = Graph('https://api.thegraph.com/subgraphs/name/graphprotocol/compound-v2')
+        try:
+            self.graph: Optional[Graph] = Graph(
+                'https://api.thegraph.com/subgraphs/name/graphprotocol/compound-v2',
+            )
+        except RemoteError as e:
+            self.graph = None
+            self.msg_aggregator.add_error(
+                f'Could not initialize the Compound subgraph due to {str(e)}. '
+                f' All compound historical queries are not functioning until this is fixed. '
+                f'Probably will get fixed with time. If not report it to Rotkis support channel ',
+            )
+
         self.comptroller_address = to_checksum_address(self.ethereum.call_contract(
             contract_address=COMPTROLLER_PROXY.address,
             abi=COMPTROLLER_PROXY.abi,
@@ -249,7 +260,7 @@ class Compound(EthereumModule):
             graph_event_name = 'repayEvents'
             payer_or_empty = 'payer'
 
-        result = self.graph.query(
+        result = self.graph.query(  # type: ignore
             querystr=BORROW_EVENTS_QUERY_PREFIX.format(
                 graph_event_name=graph_event_name,
                 payer_or_empty=payer_or_empty,
@@ -308,7 +319,7 @@ class Compound(EthereumModule):
     ) -> List[CompoundEvent]:
         """https://compound.finance/docs/ctokens#liquidate-borrow"""
         param_types, param_values = get_common_params(from_ts, to_ts, address)
-        result = self.graph.query(
+        result = self.graph.query(  # type: ignore
             querystr="""liquidationEvents (where: {blockTime_lte: $end_ts, blockTime_gte: $start_ts, from: $address}) {
     id
     amount
@@ -402,7 +413,7 @@ class Compound(EthereumModule):
             graph_event_name = 'redeemEvents'
             addr_position = 'from'
 
-        result = self.graph.query(
+        result = self.graph.query(  # type: ignore
             querystr=LEND_EVENTS_QUERY_PREFIX.format(
                 graph_event_name=graph_event_name,
                 addr_position=addr_position,
@@ -633,6 +644,10 @@ class Compound(EthereumModule):
         """
         history: Dict[str, Any] = {}
         events: List[CompoundEvent] = []
+
+        if self.graph is None:  # could not initialize graph
+            return {}
+
         for address in addresses:
             user_events = self._get_lend_events('mint', address, from_timestamp, to_timestamp)
             user_events.extend(self._get_lend_events('redeem', address, from_timestamp, to_timestamp))  # noqa: E501

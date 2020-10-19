@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.makerdao.common import RAY
 from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
 from rotkehlchen.constants.ethereum import AAVE_LENDING_POOL
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
@@ -61,12 +62,21 @@ class Aave(EthereumModule):
             premium=premium,
             msg_aggregator=msg_aggregator,
         )
-        self.graph_inquirer = AaveGraphInquirer(
-            ethereum_manager=ethereum_manager,
-            database=database,
-            premium=premium,
-            msg_aggregator=msg_aggregator,
-        )
+        try:
+            self.graph_inquirer: Optional[AaveGraphInquirer] = AaveGraphInquirer(
+                ethereum_manager=ethereum_manager,
+                database=database,
+                premium=premium,
+                msg_aggregator=msg_aggregator,
+            )
+        except RemoteError as e:
+            self.graph_inquirer = None
+            self.msg_aggregator.add_error(
+                f'Could not initialize the Aave subgraph due to {str(e)}. '
+                f' All aave historical queries are not functioning until this is fixed. '
+                f'Probably will get fixed with time. If not report it to Rotkis support channel ',
+            )
+
         self.use_graph = use_graph
         self.history_lock = Semaphore()
         self.balances_lock = Semaphore()
@@ -155,6 +165,9 @@ class Aave(EthereumModule):
                 self.database.delete_aave_data()
 
             if self.use_graph:
+                if self.graph_inquirer is None:  # could not initialize graph
+                    return {}
+
                 aave_balances = self.get_balances(given_defi_balances)
                 return self.graph_inquirer.get_history_for_addresses(
                     addresses=addresses,

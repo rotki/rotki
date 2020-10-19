@@ -284,6 +284,7 @@ class AaveGraphInquirer(AaveInquirer):
             msg_aggregator: MessagesAggregator,
             premium: Optional[Premium],
     ) -> None:
+        """May raise RemoteError if we can't connect to the subgraph"""
         super().__init__(
             ethereum_manager=ethereum_manager,
             database=database,

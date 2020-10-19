@@ -26,6 +26,7 @@ def price_historian(
         should_mock_price_queries,
         mocked_price_queries,
         cryptocompare,
+        default_mock_price_value,
 ):
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -39,6 +40,7 @@ def price_historian(
         historian=historian,
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,
+        default_mock_value=default_mock_price_value,
     )
 
     return historian
