@@ -608,10 +608,8 @@
       "account": "Account",
       "label": "Label",
       "btc": {
-        "standalone": "Standalone",
         "xpub": "XPUB",
         "derivation_path": "Derivation Path",
-        "account_type": "Account Type",
         "derivation_path_hint": "Optional"
       }
     },
@@ -642,7 +640,6 @@
       "btc": "BTC per account balances"
     },
     "metamask_import": {
-      "tooltip":  "Add your metamask addresses to rotki | Adding addresses from MetaMask is disabled because MetaMask could not be detected",
       "error": {
         "title": "Metamask address import",
         "description": "Adding addresses from metamask could not be completed: {error}"
@@ -820,5 +817,18 @@
     "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited.",
     "force_save": "Force save",
     "last_data_upload": "Last premium database sync"
+  },
+  "input_mode_select": {
+    "metamask_import": {
+      "label": "MetaMask",
+      "missing": "* Importing addresses from MetaMask is disabled. MetaMask could not be detected.",
+      "metamask": "* You will be prompted to import your addresses from MetaMask after pressing save."
+    },
+    "manual_add": {
+      "label": "Manual"
+    },
+    "xpub_add": {
+      "label": "XPUB"
+    }
   }
 }

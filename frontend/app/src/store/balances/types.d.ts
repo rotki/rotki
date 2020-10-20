@@ -56,13 +56,13 @@ interface XpubPayload {
 
 export interface BlockchainAccountPayload extends AccountPayload {
   readonly blockchain: Blockchain;
-  readonly tags: string[];
   readonly xpub?: XpubPayload;
 }
 
 export interface AccountPayload {
   readonly address: string;
   readonly label?: string;
+  readonly tags: string[];
 }
 
 export interface ExchangeBalancePayload {

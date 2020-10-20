@@ -1,6 +1,6 @@
 import { assert } from '@/utils/assertions';
 
-export function metamaskImportEnabled(): boolean {
+export function isMetaMaskSupported(): boolean {
   return (
     (!!window.interop || (window.ethereum && window.ethereum.isMetaMask)) ??
     false

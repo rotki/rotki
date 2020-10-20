@@ -7,38 +7,6 @@
           mdi-plus
         </v-icon>
       </v-btn>
-      <v-row justify="end">
-        <v-col cols="auto">
-          <v-tooltip open-delay="400" attach=".blockchain-balances">
-            <template #activator="{ on, attr }">
-              <div class="d-inline-block" v-on="on">
-                <v-btn
-                  v-bind="attr"
-                  fab
-                  top
-                  right
-                  :disabled="!isMetamaskSupported()"
-                  color="primary"
-                  @click="metamaskImport"
-                >
-                  <v-icon>
-                    mdi-import
-                  </v-icon>
-                </v-btn>
-              </div>
-            </template>
-            <span
-              v-text="
-                $tc(
-                  'blockchain_balances.metamask_import.tooltip',
-                  isMetamaskSupported() ? 1 : 2
-                )
-              "
-            />
-          </v-tooltip>
-        </v-col>
-      </v-row>
-
       <big-dialog
         :display="openDialog"
         :title="dialogTitle"
@@ -75,20 +43,15 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { mapGetters } from 'vuex';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import {
   AccountWithBalance,
-  AddAccountsPayload,
   BlockchainAccountWithBalance
 } from '@/store/balances/types';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
-import { ETH } from '@/typing/types';
-import { getMetamaskAddresses, metamaskImportEnabled } from '@/utils/metamask';
 
 @Component({
   components: {
@@ -99,54 +62,18 @@ import { getMetamaskAddresses, metamaskImportEnabled } from '@/utils/metamask';
   },
   computed: {
     ...mapGetters('balances', ['ethAccounts', 'btcAccounts', 'totals'])
-  },
-  methods: {
-    ...mapActions('balances', ['addAccounts'])
   }
 })
 export default class BlockchainBalances extends Vue {
   ethAccounts!: AccountWithBalance[];
   btcAccounts!: BlockchainAccountWithBalance[];
   totals!: AccountWithBalance[];
-  addAccounts!: (payload: AddAccountsPayload) => Promise<void>;
 
   accountToEdit: BlockchainAccountWithBalance | null = null;
   dialogTitle: string = '';
   dialogSubtitle: string = '';
   openDialog: boolean = false;
   valid: boolean = false;
-
-  isMetamaskSupported = metamaskImportEnabled;
-
-  async metamaskImport() {
-    try {
-      let addresses: string[];
-      if (this.$interop.isPackaged) {
-        addresses = await this.$interop.metamaskImport();
-      } else {
-        addresses = await getMetamaskAddresses();
-      }
-
-      const payload = addresses.map(value => ({
-        address: value,
-        label: 'Metamask Address'
-      }));
-      await this.addAccounts({
-        blockchain: ETH,
-        payload: payload
-      });
-    } catch (e) {
-      const title = this.$tc('blockchain_balances.metamask_import.error.title');
-      const description = this.$tc(
-        'blockchain_balances.metamask_import.error.description',
-        0,
-        {
-          error: e.message
-        }
-      );
-      notify(description, title, Severity.ERROR, true);
-    }
-  }
 
   newAccount() {
     this.accountToEdit = null;
@@ -172,7 +99,7 @@ export default class BlockchainBalances extends Vue {
 
   async save() {
     const form = this.$refs.form as AccountForm;
-    const success = await form.addAccount();
+    const success = await form.save();
     if (success) {
       await this.clearDialog();
     }
