@@ -19,6 +19,8 @@ import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import {
+  AccountPayload,
+  AddAccountsPayload,
   AllBalancePayload,
   AssetBalances,
   BalanceState,
@@ -319,6 +321,96 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         0,
         {
           error: e.message
+        }
+      );
+      notify(description, title, Severity.ERROR, true);
+    }
+  },
+
+  async addAccounts(
+    { state, commit, dispatch, rootGetters },
+    { blockchain, payload }: AddAccountsPayload
+  ): Promise<void> {
+    const taskType = TaskType.ADD_ACCOUNT;
+    const isTaskRunning = rootGetters['tasks/isTaskRunning'];
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+    const existingAddresses = Object.keys(state.ethAccounts).map(address =>
+      address.toLocaleLowerCase()
+    );
+    const accounts = payload.filter(
+      value => !existingAddresses.includes(value.address.toLocaleLowerCase())
+    );
+
+    if (accounts.length === 0) {
+      const title = i18n.tc(
+        'actions.balances.blockchain_accounts_add.no_new.title',
+        0,
+        { blockchain }
+      );
+      const description = i18n.tc(
+        'actions.balances.blockchain_accounts_add.no_new.description'
+      );
+      notify(description, title, Severity.INFO, true);
+      return;
+    }
+
+    const addAccount = async (
+      blockchain: Blockchain,
+      { address, label, tags }: AccountPayload
+    ) => {
+      const { taskId } = await api.addBlockchainAccount({
+        blockchain,
+        address,
+        label,
+        tags
+      });
+
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc(
+          'actions.balances.blockchain_accounts_add.task.title',
+          0,
+          { blockchain }
+        ),
+        description: i18n.tc(
+          'actions.balances.blockchain_accounts_add.task.description',
+          0,
+          { address }
+        ),
+        blockchain,
+        numericKeys: blockchainBalanceKeys
+      } as BlockchainMetadata);
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<
+        BlockchainBalances,
+        BlockchainMetadata
+      >(taskType, `${taskId}`);
+      await dispatch('updateBalances', { chain: blockchain, balances: result });
+    };
+
+    try {
+      const additions = accounts.map(value =>
+        addAccount(blockchain, value).catch(() => {})
+      );
+      await Promise.all(additions);
+      commit('defi/reset', undefined, { root: true });
+      await dispatch('resetDefiStatus', {}, { root: true });
+    } catch (e) {
+      const title = i18n.tc(
+        'actions.balances.blockchain_accounts_add.error.title',
+        0,
+        { blockchain }
+      );
+      const description = i18n.tc(
+        'actions.balances.blockchain_accounts_add.error.description',
+        0,
+        {
+          error: e.message,
+          address: accounts.length,
+          blockchain
         }
       );
       notify(description, title, Severity.ERROR, true);

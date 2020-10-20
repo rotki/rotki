@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>rotki: Metamask Import</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Import page">
+    <meta name="author" content="Rotki Solutions GmbH">
+    <style>
+        html {
+            background-color: rgb(248, 248, 248)
+        }
+
+        body {
+            height: 98vh;
+            width: 98vw;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-column {
+            flex-direction: column;
+        }
+
+        .align-center {
+            align-items: center;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .container {
+            height: 100%;
+            width: 100%;
+        }
+
+        .text {
+            margin: 24px 8px;
+            font-style: normal;
+            font-weight: normal;
+            font-size: 16px;
+            line-height: 24px;
+            color: #5a6166;
+            text-align: center;
+        }
+
+        .text.small {
+            font-size: 14px !important;
+        }
+
+        #missing {
+            display: none;
+        }
+
+        .logo {
+            max-height: 80px;
+            max-width: 80px;
+        }
+
+        .logo-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .wrapper {
+            min-width: 200px;
+            min-height: 168px;
+            background: #fff;
+            box-shadow: 0 0 1px rgba(6, 10, 13, 0.4), 0 8px 16px rgba(113, 121, 128, 0.08);
+            border-radius: 4px;
+
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            max-height: 400px;
+
+            padding: 16px;
+        }
+
+        .button {
+            line-height: 1.5715;
+            position: relative;
+            display: inline-block;
+            font-weight: 400;
+            white-space: nowrap;
+            text-align: center;
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.015);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+            height: 32px;
+            padding: 4px 15px;
+            font-size: 14px;
+            border-radius: 4px;
+            color: rgba(0, 0, 0, 0.85);
+            background: #fff none;
+            border: 1px solid #d9d9d9;
+            outline: none!important;
+        }
+
+        .button:hover {
+            background-color: rgb(248, 248, 248)
+        }
+
+        .button:active {
+            background-color: rgb(238, 238, 238)
+        }
+
+        #success  {
+            display: none;
+        }
+
+        .alert {
+            margin-top: 8px;
+            padding-top: 16px;
+        }
+
+        .alert img {
+            min-width: 48px;
+            min-height: 48px;
+        }
+
+        #error {
+            display: none;
+        }
+
+    </style>
+    <script type="text/javascript">
+        let isMetamask = false
+        async function onImport() {
+            const error = document.getElementById('error');
+            const errorMessage = document.getElementById('error-message');
+            error.style.display = 'none';
+            errorMessage.innerText = '';
+            try {
+                const permissions = await window.ethereum.request({
+                    method: 'wallet_requestPermissions',
+                    params: [{
+                        'eth_accounts': {},
+                    }]
+                });
+
+                const accountPermission = permissions.find(
+                    permission => permission.parentCapability === 'eth_accounts'
+                )
+
+                if (!accountPermission) {
+                    error.style.display = 'flex';
+                    errorMessage.innerText = 'Could not find the eth_accounts permission';
+                } else {
+                    const exposedAccounts = accountPermission.caveats.find(
+                        caveat => caveat.name === 'exposedAccounts'
+                    );
+                    if (exposedAccounts) {
+                        await post(exposedAccounts.value)
+                    }
+                }
+            } catch (e) {
+                error.style.display = 'flex';
+                errorMessage.innerText = e.message;
+                console.log(e)
+            }
+        }
+        async function post(addresses) {
+            const response = await fetch('/import', {
+                method: 'POST',
+                body: JSON.stringify({ addresses }),
+                headers: {
+                    "Content-Type": 'application/json'
+                }
+            });
+
+            if (response.status !== 200) {
+                const json = await response.json();
+                const error = document.getElementById('error');
+                const errorMessage = document.getElementById('error-message');
+                error.style.display = 'flex';
+                errorMessage.innerText = json?.message ?? json;
+            } else {
+                const success = document.getElementById('success')
+                const button = document.getElementById('import');
+                success.style.display = 'flex'
+                button.style.display = 'none'
+            }
+        }
+
+        if (typeof window.ethereum !== 'undefined') {
+            isMetamask = window.ethereum.isMetaMask;
+        }
+
+        document.addEventListener("DOMContentLoaded", function(){
+            const button = document.getElementById('import');
+            const warning = document.getElementById('missing')
+            if (!isMetamask) {
+                button.setAttribute('disabled', 'disabled')
+                warning.style.display = 'block'
+            }
+
+            button.addEventListener('click', onImport)
+        });
+
+
+    </script>
+</head>
+<body>
+
+<div class="container flex-column flex align-center justify-center">
+    <div class="wrapper">
+        <div class="logo-wrapper">
+            <img class="logo" src="img/rotki.svg"/>
+        </div>
+        <img src="img/mm-logo.svg"/>
+
+        <div class="text">
+            Import your MetaMask addresses to rotki
+        </div>
+        <div class="text small" id="missing">
+            MetaMask was not detected
+        </div>
+        <button id="import" class="button">Select Addresses</button>
+        <div id="success" class="flex-column flex align-center justify-center alert">
+            <img src="img/done.svg"/>
+            <div class="text">
+                Rotki is importing your addresses. <br/>
+                Please check the app for more information <br />
+                You can safely close this page now.
+            </div>
+        </div>
+        <div id="error" class="flex-column flex align-center justify-center alert">
+            <img src="img/alert.svg"/>
+            <div id="error-message" class="text small"></div>
+        </div>
+
+    </div>
+
+</div>
+</body>
+</html>

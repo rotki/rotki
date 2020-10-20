@@ -1,11 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-function ipcAction(message: string, title: string) {
+function ipcAction<T>(message: string, arg?: any): Promise<T> {
   return new Promise(resolve => {
     ipcRenderer.on(message, (event, args) => {
       resolve(args);
     });
-    ipcRenderer.send(message, title);
+    ipcRenderer.send(message, arg);
   });
 }
 
@@ -40,5 +40,6 @@ contextBridge.exposeInMainWorld('interop', {
         return debugSettings;
       }
     : undefined,
-  serverUrl: (): string => ipcRenderer.sendSync('SERVER_URL')
+  serverUrl: (): string => ipcRenderer.sendSync('SERVER_URL'),
+  metamaskImport: () => ipcAction('METAMASK_IMPORT')
 });

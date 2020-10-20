@@ -40,6 +40,18 @@ export class ElectronInterop {
   closeApp() {
     window.interop?.closeApp();
   }
+
+  async metamaskImport(): Promise<string[]> {
+    if (!window.interop) {
+      throw new Error('environment does not support interop');
+    }
+    return window.interop.metamaskImport().then(value => {
+      if ('error' in value) {
+        throw new Error(value.error);
+      }
+      return value.addresses;
+    });
+  }
 }
 
 export const interop = new ElectronInterop();

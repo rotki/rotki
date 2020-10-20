@@ -2,7 +2,7 @@
   <v-card class="blockchain-balances mt-8">
     <v-card-title>{{ $t('blockchain_balances.title') }}</v-card-title>
     <v-card-text>
-      <v-btn absolute fab top right dark color="primary" @click="newAccount()">
+      <v-btn absolute fab top right color="primary" @click="newAccount()">
         <v-icon>
           mdi-plus
         </v-icon>
@@ -49,8 +49,8 @@ import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import {
-  BlockchainAccountWithBalance,
-  AccountWithBalance
+  AccountWithBalance,
+  BlockchainAccountWithBalance
 } from '@/store/balances/types';
 
 @Component({
@@ -99,7 +99,7 @@ export default class BlockchainBalances extends Vue {
 
   async save() {
     const form = this.$refs.form as AccountForm;
-    const success = await form.addAccount();
+    const success = await form.save();
     if (success) {
       await this.clearDialog();
     }

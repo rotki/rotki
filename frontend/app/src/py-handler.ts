@@ -1,13 +1,11 @@
 import { ChildProcess, execFile, spawn } from 'child_process';
 import * as fs from 'fs';
-import { default as net } from 'net';
 import * as path from 'path';
 import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
+import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
-
-const DEFAULT_PORT = 4242;
 
 async function streamToString(givenStream: stream.Readable): Promise<string> {
   const bufferChunks: Buffer[] = [];
@@ -108,7 +106,7 @@ export default class PyHandler {
       return;
     }
 
-    const port = await this.selectPort();
+    const port = await selectPort();
     const backendUrl = process.env.VUE_APP_BACKEND_URL;
     if (port !== DEFAULT_PORT && backendUrl && typeof backendUrl === 'string') {
       const portSeparator = backendUrl.lastIndexOf(':');
@@ -206,36 +204,6 @@ export default class PyHandler {
   private static packagedBackendPath() {
     const resources = process.resourcesPath ? process.resourcesPath : __dirname;
     return path.join(resources, PyHandler.PY_DIST_FOLDER);
-  }
-
-  private checkAvailability(port: number): Promise<number> {
-    return new Promise<number>((resolve, reject) => {
-      const server = net.createServer();
-      server.unref();
-      server.on('error', reject);
-      server.listen(port, () => {
-        const address = server.address();
-        server.close();
-        if (address && typeof address !== 'string') {
-          resolve(address.port);
-        } else {
-          reject(new Error(`Invalid Address value ${address}`));
-        }
-      });
-    });
-  }
-
-  private async selectPort(): Promise<number> {
-    for (let portNumber = DEFAULT_PORT; portNumber <= 65535; portNumber++) {
-      try {
-        return await this.checkAvailability(portNumber);
-      } catch (e) {
-        if (!['EADDRINUSE', 'EACCES'].includes(e.code)) {
-          throw e;
-        }
-      }
-    }
-    throw new Error('no free ports found');
   }
 
   private setFailureNotification(

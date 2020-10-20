@@ -40,7 +40,11 @@ import {
   validAuthorizedStatus,
   validTaskStatus
 } from '@/services/utils';
-import { BlockchainAccountPayload, XpubPayload } from '@/store/balances/types';
+import {
+  AccountPayload,
+  BlockchainAccountPayload,
+  XpubPayload
+} from '@/store/balances/types';
 import {
   AccountData,
   AccountSession,
@@ -501,7 +505,16 @@ export class RotkehlchenApi {
             }
           ]
         };
+    return this.performAsyncQuery(url, payload);
+  }
 
+  addBlockchainAccounts(chain: Blockchain, payload: AccountPayload[]) {
+    return this.performAsyncQuery(`/blockchains/${chain}`, {
+      accounts: payload
+    });
+  }
+
+  private performAsyncQuery(url: string, payload: any) {
     return this.axios
       .put<ActionResult<PendingTask>>(
         url,

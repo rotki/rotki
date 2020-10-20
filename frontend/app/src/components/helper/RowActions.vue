@@ -6,11 +6,12 @@
           small
           v-bind="attrs"
           icon
+          :disabled="disabled"
           class="mx-1"
           v-on="on"
           @click="editClick"
         >
-          <v-icon :disabled="disabled" small>
+          <v-icon small>
             mdi-pencil-outline
           </v-icon>
         </v-btn>
@@ -23,11 +24,12 @@
           small
           v-bind="attrs"
           icon
+          :disabled="disabled"
           class="mx-1"
           v-on="on"
           @click="deleteClick"
         >
-          <v-icon :disabled="disabled" small>
+          <v-icon small>
             mdi-delete-outline
           </v-icon>
         </v-btn>

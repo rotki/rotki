@@ -59,7 +59,7 @@
         class="account-balance-table__actions"
         :edit-tooltip="$t('account_balances.edit_tooltip')"
         :delete-tooltip="$t('account_balances.delete_tooltip')"
-        :disabled="accountOperation"
+        :disabled="accountOperation || loading"
         @delete-click="deleteClick(item.address)"
         @edit-click="editClick(item)"
       />
