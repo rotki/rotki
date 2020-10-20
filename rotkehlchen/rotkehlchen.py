@@ -346,15 +346,7 @@ class Rotkehlchen():
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             if self.user_is_logged_in:
                 log.debug('Main loop start')
-                try:
-                    self.premium_sync_manager.maybe_upload_data_to_server()
-                except RemoteError as e:
-                    log.debug(
-                        'upload to server stopped',
-                        error=str(e),
-                    )
-
-                log.debug('Main loop end')
+                self.premium_sync_manager.maybe_upload_data_to_server()
                 if not xpub_derivation_scheduled:
                     # 1 minute in the app's startup try to derive new xpub addresses
                     self.greenlet_manager.spawn_and_track(
@@ -363,6 +355,7 @@ class Rotkehlchen():
                         method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
                     )
                     xpub_derivation_scheduled = True
+                log.debug('Main loop end')
 
     def add_blockchain_accounts(
             self,

@@ -125,7 +125,7 @@ class PremiumSyncManager():
             result = self.premium.pull_data()
         except RemoteError as e:
             log.debug('sync from server -- pulling failed.', error=str(e))
-            return False, f"Pulling failed: {str(e)}"
+            return False, f'Pulling failed: {str(e)}'
 
         if result['data'] is None:
             log.debug('sync from server -- no data found.')
