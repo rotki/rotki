@@ -2551,7 +2551,8 @@ Getting blockchain account data
       }
 
    :resjson list result: A list with the account data details
-   :resjsonarr string address: The address, which is the unique identifier of each account
+   :resjsonarr string address: The address, which is the unique identifier of each account. For BTC blockchain query and if the entry is an xpub then this attribute is misssing.
+   :resjsonarr string xpub: The extended public key. This attribute only exists for BTC blockchain query and if the entry is an xpub
    :resjsonarr string label: The label to describe the account. Can also be null.
    :resjsonarr list tags: A list of tags associated with the account. Can also be null.
 

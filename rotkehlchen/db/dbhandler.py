@@ -19,7 +19,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import (
     XpubData,
     XpubDerivedAddressData,
-    deserialize_derivation_path,
+    deserialize_derivation_path_for_db,
 )
 from rotkehlchen.chain.ethereum.structures import (
     AaveEvent,
@@ -2291,7 +2291,11 @@ class DBHandler:
             cursor.execute(
                 'INSERT INTO xpubs(xpub, derivation_path, label) '
                 'VALUES (?, ?, ?)',
-                (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path(), xpub_data.label),
+                (
+                    xpub_data.xpub.xpub,
+                    xpub_data.serialize_derivation_path_for_db(),
+                    xpub_data.label,
+                ),
             )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
             raise InputError(
@@ -2310,7 +2314,7 @@ class DBHandler:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT COUNT(*) FROM xpubs WHERE xpub=? AND derivation_path IS ?;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path()),
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
         )
         if query.fetchone()[0] == 0:
             raise InputError(
@@ -2325,11 +2329,11 @@ class DBHandler:
             'SELECT address from xpub_mappings WHERE xpub=? and derivation_path IS ?);',
             (
                 xpub_data.xpub.xpub,
-                xpub_data.serialize_derivation_path(),
+                xpub_data.serialize_derivation_path_for_db(),
             ),
         )
         # Delete the tag mappings for the xpub itself (type ignore is for xpub is not None
-        key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path()  # type: ignore
+        key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path_for_db()  # type: ignore
         cursor.execute('DELETE FROM tag_mappings WHERE object_reference=?', (key,))
         # Delete any derived addresses
         cursor.execute(
@@ -2338,13 +2342,13 @@ class DBHandler:
             (
                 SupportedBlockchain.BITCOIN.value,
                 xpub_data.xpub.xpub,
-                xpub_data.serialize_derivation_path(),
+                xpub_data.serialize_derivation_path_for_db(),
             ),
         )
         # And then finally delete the xpub itself
         cursor.execute(
             'DELETE FROM xpubs WHERE xpub=? AND derivation_path IS ?;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path()),
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
         )
 
         self.conn.commit()
@@ -2362,7 +2366,7 @@ class DBHandler:
             tags = deserialize_tags_from_db(entry[3])
             result.append(XpubData(
                 xpub=HDKey.from_xpub(entry[0]),
-                derivation_path=deserialize_derivation_path(entry[1]),
+                derivation_path=deserialize_derivation_path_for_db(entry[1]),
                 label=entry[2],
                 tags=tags,
             ))
@@ -2375,14 +2379,14 @@ class DBHandler:
         result = cursor.execute(
             'SELECT MAX(derived_index) from xpub_mappings WHERE xpub=? AND '
             'derivation_path IS ? AND account_index=0;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path()),
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
         )
         result = result.fetchall()
         last_receiving_idx = int(result[0][0]) if result[0][0] is not None else 0
         result = cursor.execute(
             'SELECT MAX(derived_index) from xpub_mappings WHERE xpub=? AND '
             'derivation_path IS ? AND account_index=1;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path()),
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
         )
         result = result.fetchall()
         last_change_idx = int(result[0][0]) if result[0][0] is not None else 0
@@ -2408,7 +2412,7 @@ class DBHandler:
 
             data[result[0][0]] = XpubData(
                 xpub=HDKey.from_xpub(result[0][1], path='m'),
-                derivation_path=deserialize_derivation_path(result[0][2]),
+                derivation_path=deserialize_derivation_path_for_db(result[0][2]),
             )
 
         return data

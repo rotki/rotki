@@ -146,9 +146,7 @@ def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
 
 def test_get_bitcoin_xpub_data(setup_db_for_xpub_tests):
     """Test that retrieving bitcoin xpub data also returns all properly mapped tags"""
-    db, xpub1, xpub2, xpub3, all_addresses = setup_db_for_xpub_tests
-    # Also add a non-existing address in there for fun
-    all_addresses.append('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
+    db, xpub1, xpub2, xpub3, _ = setup_db_for_xpub_tests
     result = db.get_bitcoin_xpub_data()
     assert len(result) == 3
 
