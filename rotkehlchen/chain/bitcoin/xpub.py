@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -22,15 +22,23 @@ class XpubData(NamedTuple):
     label: Optional[str] = None
     tags: Optional[List[str]] = None
 
-    def serialize_derivation_path(self) -> str:
+    def serialize_derivation_path_for_db(self) -> str:
         """
         In Rotki we store non-existing path as None but in sql it must be ''
         https://stackoverflow.com/questions/43827629/why-does-sqlite-insert-duplicate-composite-primary-keys
         """
         return '' if self.derivation_path is None else self.derivation_path
 
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'xpub': self.xpub.xpub,
+            'derivation_path': self.derivation_path,
+            'label': self.label,
+            'tags': self.tags,
+        }
 
-def deserialize_derivation_path(path: str) -> Optional[str]:
+
+def deserialize_derivation_path_for_db(path: str) -> Optional[str]:
     """
     In Rotki we store non-existing path as None but in sql it must be ''
     https://stackoverflow.com/questions/43827629/why-does-sqlite-insert-duplicate-composite-primary-keys

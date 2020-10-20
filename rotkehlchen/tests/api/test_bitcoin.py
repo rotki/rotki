@@ -101,11 +101,13 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     )
     assert_proper_response(response)
     xpub = 'xpub6DCi5iJ57ZPd5qPzvTm5hUt6X23TJdh9H4NjNsNbt7t7UuTMJfawQWsdWRFhfLwkiMkB1rQ4ZJWLB9YBnzR7kbs9N8b2PsKZgKUHQm1X4or'  # noqa : E501
+    xpub_label = 'ledger_test_xpub'
+    xpub_tags = ['ledger', 'public']
     json_data = {
         'async_query': async_query,
         'xpub': xpub,
-        'label': 'ledger_test_xpub',
-        'tags': ['ledger', 'public'],
+        'label': xpub_label,
+        'tags': xpub_tags,
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
@@ -138,8 +140,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     json_data = {
         'async_query': False,
         'xpub': xpub,
-        'label': 'ledger_test_xpub',
-        'tags': ['ledger', 'public'],
+        'label': xpub_label,
+        'tags': xpub_tags,
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
@@ -158,12 +160,20 @@ def test_add_delete_xpub(rotkehlchen_api_server):
         blockchain='BTC',
     ))
     outcome = assert_proper_response_with_result(response)
+
     for entry in outcome:
-        if entry['address'] in EXPECTED_XPUB_ADDESSES:
-            assert entry['tags'] == ['ledger', 'public']
+        if 'xpub' in entry:
+            assert len(entry) == 4
+            assert entry['xpub'] == xpub
+            assert entry['derivation_path'] is None
+            assert entry['label'] == xpub_label
+            assert entry['tags'] == xpub_tags
+        elif entry['address'] in EXPECTED_XPUB_ADDESSES:
+            assert entry['tags'] == xpub_tags
+            assert entry['label'] is None
         else:
             assert entry['tags'] is None
-        assert entry['label'] is None
+            assert entry['label'] is None
 
     # Now delete the xpub and make sure all derived addresses are gone
     json_data = {
