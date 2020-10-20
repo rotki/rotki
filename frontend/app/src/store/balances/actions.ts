@@ -19,6 +19,7 @@ import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import {
+  AccountPayload,
   AddAccountsPayload,
   AllBalancePayload,
   AssetBalances,
@@ -338,13 +339,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const existingAddresses = Object.keys(state.ethAccounts).map(address =>
       address.toLocaleLowerCase()
     );
-    const addresses = payload
-      .filter(
-        value => !existingAddresses.includes(value.address.toLocaleLowerCase())
-      )
-      .map(value => value.address);
+    const accounts = payload.filter(
+      value => !existingAddresses.includes(value.address.toLocaleLowerCase())
+    );
 
-    if (addresses.length === 0) {
+    if (accounts.length === 0) {
       const title = i18n.tc(
         'actions.balances.blockchain_accounts_add.no_new.title',
         0,
@@ -357,8 +356,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return;
     }
 
-    try {
-      const { taskId } = await api.addBlockchainAccounts(blockchain, payload);
+    const addAccount = async (
+      blockchain: Blockchain,
+      { address, label, tags }: AccountPayload
+    ) => {
+      const { taskId } = await api.addBlockchainAccount({
+        blockchain,
+        address,
+        label,
+        tags
+      });
 
       const task = createTask(taskId, taskType, {
         title: i18n.tc(
@@ -369,7 +376,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         description: i18n.tc(
           'actions.balances.blockchain_accounts_add.task.description',
           0,
-          { addresses: addresses.length, blockchain }
+          { address }
         ),
         blockchain,
         numericKeys: blockchainBalanceKeys
@@ -380,9 +387,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const { result } = await taskCompletion<
         BlockchainBalances,
         BlockchainMetadata
-      >(taskType);
-
+      >(taskType, `${taskId}`);
       await dispatch('updateBalances', { chain: blockchain, balances: result });
+    };
+
+    try {
+      const additions = accounts.map(value =>
+        addAccount(blockchain, value).catch(() => {})
+      );
+      await Promise.all(additions);
       commit('defi/reset', undefined, { root: true });
       await dispatch('resetDefiStatus', {}, { root: true });
     } catch (e) {
@@ -396,7 +409,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         0,
         {
           error: e.message,
-          address: addresses.length,
+          address: accounts.length,
           blockchain
         }
       );

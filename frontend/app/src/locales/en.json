@@ -408,8 +408,8 @@
           "description": "The selected addresses are already tracked by rotki"
         },
         "task": {
-          "title": "Adding {blockchain} accounts",
-          "description": "Adding {addresses} new {blockchain} accounts"
+          "title": "Adding {blockchain} account",
+          "description": "Adding {address}"
         },
         "error": {
           "title": "Adding {blockchain} accounts",
