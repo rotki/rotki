@@ -315,14 +315,9 @@ class Rotkehlchen():
 
         self.data.db.set_rotkehlchen_premium(credentials)
 
-    def delete_premium_credentials(self, name: str) -> Tuple[bool, str]:
+    def delete_premium_credentials(self) -> Tuple[bool, str]:
         """Deletes the premium credentials for Rotki"""
-        success: bool
         msg = ''
-
-        if name != self.data.username:
-            msg = f'Provided user "{name}" is not the logged in user'
-            success = False
 
         success = self.data.db.del_rotkehlchen_premium()
         if success is False:
@@ -342,7 +337,7 @@ class Rotkehlchen():
     def main_loop(self) -> None:
         """Rotki main loop that fires often and manages many different tasks
 
-        Each task remembers the last time it run sucesfully and know how often it
+        Each task remembers the last time it run successfully and know how often it
         should run. So each task manages itself.
         """
         # super hacky -- organize better when recurring tasks are implemented
@@ -352,7 +347,6 @@ class Rotkehlchen():
             if self.user_is_logged_in:
                 log.debug('Main loop start')
                 self.premium_sync_manager.maybe_upload_data_to_server()
-                log.debug('Main loop end')
                 if not xpub_derivation_scheduled:
                     # 1 minute in the app's startup try to derive new xpub addresses
                     self.greenlet_manager.spawn_and_track(
@@ -361,6 +355,7 @@ class Rotkehlchen():
                         method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
                     )
                     xpub_derivation_scheduled = True
+                log.debug('Main loop end')
 
     def add_blockchain_accounts(
             self,

@@ -18,6 +18,7 @@
         </v-col>
         <v-col cols="10">
           {{ message }}
+          <slot />
         </v-col>
       </v-row>
 
@@ -36,6 +37,7 @@
         <v-btn
           :color="confirmTypeProps[confirmType].color"
           depressed
+          :disabled="disabled"
           class="confirm-dialog__buttons__confirm"
           @click="confirm()"
         >
@@ -63,6 +65,8 @@ export default class ConfirmDialog extends Vue {
   secondaryAction!: string;
   @Prop({ type: String, required: false, default: 'info' }) // must be one of the types defined in confirmTypesProps below
   confirmType!: string;
+  @Prop({ type: Boolean, required: false, default: false })
+  disabled!: boolean;
 
   confirmTypeProps = {
     info: { icon: 'fa-question-circle', color: 'primary' }, // TODO: change color: 'primary' -> 'info' when we start to use it as a variable in the new color scheme

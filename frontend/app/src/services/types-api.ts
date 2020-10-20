@@ -1,5 +1,12 @@
 import { BigNumber } from 'bignumber.js';
 
+export const SYNC_UPLOAD = 'upload';
+export const SYNC_DOWNLOAD = 'download';
+
+const SYNC_ACTIONS = [SYNC_DOWNLOAD, SYNC_UPLOAD] as const;
+
+export type SyncAction = typeof SYNC_ACTIONS[number];
+
 interface ApiSupportedAsset {
   readonly active?: boolean;
   readonly ended?: number;

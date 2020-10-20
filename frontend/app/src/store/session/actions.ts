@@ -5,6 +5,9 @@ import {
 } from '@/data/converters';
 import i18n from '@/i18n';
 import { DBSettings } from '@/model/action-result';
+import { createTask, taskCompletion, TaskMeta } from '@/model/task';
+import { TaskType } from '@/model/task-type';
+import { balanceKeys } from '@/services/consts';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -12,6 +15,7 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
+import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import {
@@ -47,7 +51,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const { username, create } = payload;
       const isLogged = await api.checkIfLogged(username);
-      if (isLogged && !state.syncConflict) {
+      if (isLogged && !state.syncConflict.message) {
         [settings, exchanges] = await Promise.all([
           api.getSettings(),
           api.getExchanges()
@@ -330,9 +334,9 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
 
-  async deletePremium({ commit }, username: string): Promise<ActionStatus> {
+  async deletePremium({ commit }): Promise<ActionStatus> {
     try {
-      const success = await api.deletePremiumCredentials(username);
+      const success = await api.deletePremiumCredentials();
       if (success) {
         commit('premium', false);
       }
@@ -414,6 +418,46 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       );
       notify(message, title, Severity.ERROR, true);
       return { success: false, message: e.message };
+    }
+  },
+  async forceSync(
+    {
+      state,
+      commit,
+      dispatch,
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
+    },
+    action: SyncAction
+  ): Promise<void> {
+    const taskType = TaskType.FORCE_SYNC;
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+    try {
+      const { taskId } = await api.forceSync(action);
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.session.force_sync.task.title'),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+      commit('tasks/add', task, { root: true });
+      await taskCompletion<boolean, TaskMeta>(taskType);
+      const title = i18n.tc('actions.session.force_sync.success.title');
+      const message = i18n.tc('actions.session.force_sync.success.message');
+      notify(message, title, Severity.INFO, true);
+
+      if (action === SYNC_DOWNLOAD) {
+        const username = state.username;
+        await dispatch('stop');
+        await dispatch('unlock', { username: username });
+        commit('completeLogin', true);
+      }
+    } catch (e) {
+      const title = i18n.tc('actions.session.force_sync.error.title');
+      const message = i18n.tc('actions.session.force_sync.error.message', 0, {
+        error: e.message
+      });
+      notify(message, title, Severity.ERROR, true);
     }
   }
 };

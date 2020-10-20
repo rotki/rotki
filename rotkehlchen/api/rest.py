@@ -953,12 +953,12 @@ class RestAPI():
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=False)
-    def user_premium_key_remove(self, name: str) -> Response:
+    def user_premium_key_remove(self) -> Response:
         """Returns successful result if API keys are successfully removed"""
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
         success: bool
 
-        success, msg = self.rotkehlchen.delete_premium_credentials(name)
+        success, msg = self.rotkehlchen.delete_premium_credentials()
 
         if success is False:
             result_dict['message'] = msg
@@ -1842,3 +1842,35 @@ class RestAPI():
             response.set_etag(hashlib.md5(image_data).hexdigest())
 
         return response
+
+    def _sync_data(self, action: Literal['upload', 'download']) -> Dict[str, Any]:
+        try:
+            success, msg = self.rotkehlchen.premium_sync_manager.sync_data(action)
+            if msg.startswith('Pulling failed'):
+                return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
+            return _wrap_in_result(success, message=msg)
+        except RemoteError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+        except PremiumApiError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+        except PremiumAuthenticationError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.UNAUTHORIZED)
+
+    def sync_data(
+            self,
+            async_query: bool,
+            action: Literal['upload', 'download'],
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_sync_data',
+                action=action,
+            )
+
+        result_dict = self._sync_data(action)
+
+        status_code = result_dict.get('status_code', None)
+        if status_code is None:
+            status_code = HTTPStatus.OK
+
+        return api_response(result_dict, status_code=status_code)

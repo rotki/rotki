@@ -8,7 +8,7 @@
   >
     <template #activator="{ on }">
       <menu-tooltip-button
-        :tooltip="$t('balances_saved_indicator.menu_tooltip')"
+        :tooltip="$tc('balances_saved_indicator.menu_tooltip', premium ? 2 : 1)"
         class-name="secondary--text text--lighten-2"
         :on-menu="on"
       >

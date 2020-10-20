@@ -26,6 +26,7 @@ import {
   PeriodicClientQueryResult,
   SingleAssetBalance,
   SupportedAssets,
+  SyncAction,
   TaskNotFoundError,
   VersionCheck
 } from '@/services/types-api';
@@ -152,9 +153,9 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  deletePremiumCredentials(username: string): Promise<boolean> {
+  deletePremiumCredentials(): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>(`/users/${username}/premium`, {
+      .delete<ActionResult<boolean>>('/premium', {
         validateStatus: validStatus
       })
       .then(handleResponse);
@@ -748,6 +749,19 @@ export class RotkehlchenApi {
       .get<ActionResult<SupportedAssets>>('assets/all', {
         validateStatus: validWithSessionAndExternalService
       })
+      .then(handleResponse);
+  }
+
+  async forceSync(action: SyncAction): Promise<PendingTask> {
+    return this.axios
+      .put<ActionResult<PendingTask>>(
+        '/premium/sync',
+        axiosSnakeCaseTransformer({ asyncQuery: true, action }),
+        {
+          validateStatus: validWithParamsSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
       .then(handleResponse);
   }
 }
