@@ -113,11 +113,13 @@
             <confirm-dialog
               confirm-type="warning"
               :display="!!confirmAction"
-              :title="$t('premium_settings.upload_confirmation.title')"
+              :title="
+                $tc('premium_settings.upload_confirmation.title', textChoice)
+              "
               :message="message"
               :disabled="!confirmChecked"
               :primary-action="
-                $t('premium_settings.upload_confirmation.upload')
+                $tc('premium_settings.upload_confirmation.action', textChoice)
               "
               :secondary-action="
                 $t('premium_settings.upload_confirmation.cancel')
@@ -202,6 +204,10 @@ export default class PremiumSettings extends Vue {
   deletePremium!: () => Promise<ActionStatus>;
   updateSettings!: (settings: SettingsUpdate) => Promise<void>;
   forceSync!: (action: SyncAction) => Promise<void>;
+
+  get textChoice(): number {
+    return this.confirmAction === 'upload' ? 1 : 2;
+  }
 
   get message(): string {
     return this.confirmAction === SYNC_UPLOAD

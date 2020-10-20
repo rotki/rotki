@@ -738,10 +738,10 @@
     },
     "upload_confirmation": {
       "cancel": "Cancel",
-      "upload": "Sync",
-      "title": "Force Sync",
-      "message_upload": "By forcing syncing, any previous synced data with the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
-      "message_download": "By forcing syncing, your local database will be replaced with data synced on the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
+      "action": "Push | Pull",
+      "title": "Force Push | Force Pull",
+      "message_upload": "By forcing pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
+      "message_download": "By forcing pulling, your local database will be replaced with data pulled from the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
       "confirm_check": "I understand"
     },
     "error": {
@@ -756,9 +756,8 @@
         "cancel": "Cancel"
       }
     },
-    "force_sync": "Force Sync",
-    "upload_tooltip": "Replace your remotely synced database with your local database",
-    "download_tooltip": "Replace your local database with the remotely synced database"
+    "upload_tooltip": "Push your local database to the server and replace all data there",
+    "download_tooltip": "Pull the saved data from the server and replace your local database"
   },
   "account_group_header": {
     "copy_tooltip": "Copy the xpub to the clipboard",
@@ -834,8 +833,7 @@
     "title": "API Keys"
   },
   "balances_saved_indicator": {
-    "menu_tooltip": "View the date of the last balances snapshot",
-    "menu_tooltip_premium": "View the date of the last balances snapshot, and the time of the last premium database sync",
+    "menu_tooltip": "View the date of the last balances snapshot | View the date of the last balances snapshot, and the time of the last premium database sync",
     "snapshot_title": "Last balances snapshot",
     "never_saved": "Never",
     "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited.",

@@ -1846,6 +1846,8 @@ class RestAPI():
     def _sync_data(self, action: Literal['upload', 'download']) -> Dict[str, Any]:
         try:
             success, msg = self.rotkehlchen.premium_sync_manager.sync_data(action)
+            if msg.startswith('Pulling failed'):
+                return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
             return _wrap_in_result(success, message=msg)
         except RemoteError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
@@ -1867,7 +1869,7 @@ class RestAPI():
 
         result_dict = self._sync_data(action)
 
-        status_code = result_dict['status_code']
+        status_code = result_dict.get('status_code', None)
         if status_code is None:
             status_code = HTTPStatus.OK
 
