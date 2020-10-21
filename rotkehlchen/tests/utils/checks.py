@@ -78,14 +78,16 @@ def assert_serialized_dicts_equal(
                 afval = FVal(a_val)
             except ValueError:
                 raise AssertionError(
-                    f'After string comparison failure could not turn {a_val} to a number',
+                    f'After string comparison failure could not turn {a_val} to a number '
+                    f'to compare with {b[a_key]}',
                 )
 
             try:
                 bfval = FVal(b[a_key])
             except ValueError:
                 raise AssertionError(
-                    f'After string comparison failure could not turn {b[a_key]} to a number',
+                    f'After string comparison failure could not turn {b[a_key]} to a number '
+                    f'to compare with {b[a_key]}',
                 )
             msg = f"{a_key} doesn't match. {afval} != {bfval}"
             assert afval.is_close(bfval, max_diff=max_diff), msg

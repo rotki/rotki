@@ -709,6 +709,7 @@ class EthereumManager():
                 # Turn all Hex ints to ints
                 for e_idx, event in enumerate(new_events):
                     try:
+                        new_events[e_idx]['address'] = to_checksum_address(event['address'])
                         new_events[e_idx]['blockNumber'] = deserialize_int_from_hex(
                             symbol=event['blockNumber'],
                             location='etherscan log query',
