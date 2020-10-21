@@ -24,7 +24,7 @@ const FILE_WHITELIST = [
   'img/done.svg',
   'img/mm-logo.svg',
   'img/rotki.svg',
-  'favicon.ico'
+  'apple-touch-icon.png'
 ];
 
 let server: Server;
