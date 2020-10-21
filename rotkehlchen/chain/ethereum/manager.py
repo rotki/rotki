@@ -22,11 +22,17 @@ from web3.middleware.exception_retry_request import http_retry_request_middlewar
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors import (
+    BlockchainQueryError,
+    DeserializationError,
+    RemoteError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_int_from_hex
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -699,14 +705,35 @@ class EthereumManager():
                 )
                 # Turn all Hex ints to ints
                 for e_idx, event in enumerate(new_events):
-                    new_events[e_idx]['address'] = to_checksum_address(event['address'])
-                    new_events[e_idx]['blockNumber'] = int(event['blockNumber'], 16)
-                    new_events[e_idx]['timeStamp'] = int(event['timeStamp'], 16)
-                    new_events[e_idx]['gasPrice'] = int(event['gasPrice'], 16)
-                    new_events[e_idx]['gasUsed'] = int(event['gasUsed'], 16)
-                    new_events[e_idx]['logIndex'] = int(event['logIndex'], 16)
-                    new_events[e_idx]['transactionIndex'] = int(event['transactionIndex'], 16)
-
+                    try:
+                        new_events[e_idx]['blockNumber'] = deserialize_int_from_hex(
+                            symbol=event['blockNumber'],
+                            location='etherscan log query',
+                        )
+                        new_events[e_idx]['timeStamp'] = deserialize_int_from_hex(
+                            symbol=event['timeStamp'],
+                            location='etherscan log query',
+                        )
+                        new_events[e_idx]['gasPrice'] = deserialize_int_from_hex(
+                            symbol=event['gasPrice'],
+                            location='etherscan log query',
+                        )
+                        new_events[e_idx]['gasUsed'] = deserialize_int_from_hex(
+                            symbol=event['gasUsed'],
+                            location='etherscan log query',
+                        )
+                        new_events[e_idx]['logIndex'] = deserialize_int_from_hex(
+                            symbol=event['logIndex'],
+                            location='etherscan log query',
+                        )
+                        new_events[e_idx]['transactionIndex'] = deserialize_int_from_hex(
+                            symbol=event['transactionIndex'],
+                            location='etherscan log query',
+                        )
+                    except DeserializationError as e:
+                        raise RemoteError(
+                            'Couldnt decode an etherscan event due to {str(e)}}',
+                        ) from e
                 start_block = end_block + 1
                 events.extend(new_events)
 
