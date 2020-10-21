@@ -147,7 +147,7 @@ def test_get_logs(ethereum_manager, call_order, ethereum_manager_connect_at_star
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_log_etherscan_bad_tx_index(
+def test_get_log_and_receipt_etherscan_bad_tx_index(
         ethereum_manager,
         call_order,
         ethereum_manager_connect_at_start,
@@ -164,6 +164,7 @@ def test_get_log_etherscan_bad_tx_index(
         ethereum=ethereum_manager,
     )
 
+    # Test getting the offending log entry does not raise
     argument_filters = {
         'from': ZERO_ADDRESS,
         'to': '0xbA215F7BE6c620dA3F8240B82741eaF3C5f5D786',
@@ -180,3 +181,11 @@ def test_get_log_etherscan_bad_tx_index(
     assert len(events) == 2
     assert events[0]['transactionIndex'] == 0
     assert events[1]['transactionIndex'] == 0
+
+    # Test getting the transaction receipt (also containing the log entries) does not raise
+    # They seem to all be 0
+    result = ethereum_manager.get_transaction_receipt(
+        '0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829',
+        call_order=call_order,
+    )
+    assert all(x['transactionIndex'] == 0 for x in result['logs'])

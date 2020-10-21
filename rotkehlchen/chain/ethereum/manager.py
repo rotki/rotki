@@ -540,12 +540,15 @@ class EthereumManager():
                 tx_receipt['transactionIndex'] = tx_index
                 for log in tx_receipt['logs']:
                     log['blockNumber'] = block_number
-                    log['logIndex'] = int(log['logIndex'], 16)
+                    log['logIndex'] = deserialize_int_from_hex(
+                        symbol=log['logIndex'],
+                        location='etherscan tx receipt',
+                    )
                     log['transactionIndex'] = tx_index
-            except ValueError:
+            except (DeserializationError, ValueError) as e:
                 raise RemoteError(
                     f'Couldnt deserialize transaction receipt data from etherscan {tx_receipt}',
-                )
+                ) from e
             return tx_receipt
 
         tx_receipt = web3.eth.getTransactionReceipt(tx_hash)  # type: ignore
