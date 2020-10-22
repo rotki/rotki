@@ -120,7 +120,7 @@ class AaveHistory(NamedTuple):
     """All events and total interest accrued for all Atoken of an address
     """
     events: List[AaveEvent]
-    total_earned: Dict[EthereumToken, Balance]
+    total_earned: Dict[Asset, Balance]
     total_lost: Dict[Asset, Balance]
 
 

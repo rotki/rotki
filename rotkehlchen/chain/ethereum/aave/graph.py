@@ -344,7 +344,7 @@ class AaveGraphInquirer(AaveInquirer):
             db_interest_events: Set[AaveSimpleEvent],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance]]:
+    ) -> Tuple[List[AaveSimpleEvent], Dict[Asset, Balance]]:
         reserve_history = {}
         for reserve in user_result['reserves']:
             pairs = reserve['id'].split('0x')
@@ -364,7 +364,7 @@ class AaveGraphInquirer(AaveInquirer):
         interest_events: List[AaveSimpleEvent] = []
         atoken_balances: Dict[Asset, FVal] = defaultdict(FVal)
         used_history_indices = set()
-        total_earned: Dict[EthereumToken, Balance] = defaultdict(Balance)
+        total_earned: Dict[Asset, Balance] = defaultdict(Balance)
 
         # Go through the existing db interest events and add total earned
         for interest_event in db_interest_events:
@@ -481,7 +481,7 @@ class AaveGraphInquirer(AaveInquirer):
             liquidations: List[AaveLiquidationEvent],
             db_events: List[AaveEvent],
             balances: AaveBalances,
-    ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance], Dict[Asset, Balance]]:
+    ) -> Tuple[List[AaveSimpleEvent], Dict[Asset, Balance], Dict[Asset, Balance]]:
         """Calculates the interest events and the total earned from all the given events.
         Also calculates total loss from borrowing and liquidations.
 
@@ -583,7 +583,7 @@ class AaveGraphInquirer(AaveInquirer):
         # Even if no events are found for an address we need to remember the range
         self.database.update_used_query_range(
             name=f'aave_events_{address}',
-            start_ts=0,
+            start_ts=Timestamp(0),
             end_ts=now,
         )
 

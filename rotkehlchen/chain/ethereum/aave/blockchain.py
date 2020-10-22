@@ -134,7 +134,7 @@ class AaveBlockchainInquirer(AaveInquirer):
         # now for each atoken get all mint events and pass then to profit calculation
         tokens = atokens_list if atokens_list is not None else ATOKENS_LIST
         total_address_events = []
-        total_earned_map = {}
+        total_earned_map: Dict[Asset, Balance] = {}
         for token in tokens:
             log.debug(
                 f'Querying aave events for {user_address} and token '
