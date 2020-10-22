@@ -36,6 +36,17 @@
           />
         </v-col>
       </v-row>
+      <v-row v-if="isAave" no-gutters>
+        <v-col cols="12">
+          <premium-card v-if="!premium" title="Aave History" />
+          <aave-borrowing-details
+            v-else
+            :events="loan.events"
+            :owner="loan.owner"
+            :total-lost="loan.totalLost"
+          />
+        </v-col>
+      </v-row>
     </v-col>
   </v-row>
 </template>
@@ -50,7 +61,11 @@ import LoanLiquidation from '@/components/defi/loan/LoanLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import { CompoundLoan } from '@/services/defi/types/compound';
-import { CompoundBorrowingDetails, VaultEventsList } from '@/utils/premium';
+import {
+  AaveBorrowingDetails,
+  CompoundBorrowingDetails,
+  VaultEventsList
+} from '@/utils/premium';
 
 @Component({
   components: {
@@ -60,7 +75,8 @@ import { CompoundBorrowingDetails, VaultEventsList } from '@/utils/premium';
     LoanHeader,
     LoanLiquidation,
     PremiumCard,
-    VaultEventsList
+    VaultEventsList,
+    AaveBorrowingDetails
   }
 })
 export default class LoanInfo extends Mixins(PremiumMixin, LoanDisplayMixin) {

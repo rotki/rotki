@@ -10,7 +10,9 @@ import {
 import {
   AaveBalances,
   AaveBorrowingRates,
-  AaveHistory
+  AaveHistory,
+  AaveHistoryEvents,
+  AaveHistoryTotal
 } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
@@ -115,7 +117,10 @@ export interface CollateralizedLoan<
 
 export interface AaveLoan
   extends AaveBorrowingRates,
-    CollateralizedLoan<Collateral<string>[]> {}
+    CollateralizedLoan<Collateral<string>[]> {
+  readonly events: AaveHistoryEvents[];
+  readonly totalLost: AaveHistoryTotal;
+}
 
 export interface DefiBalance extends BaseDefiBalance {
   readonly address: string;
@@ -206,7 +211,7 @@ export interface AllDefiProtocols {
   readonly [asset: string]: DefiProtocolData[];
 }
 
-export interface CompoundProfitLossModel {
+export interface ProfitLossModel {
   readonly address: string;
   readonly asset: string;
   readonly value: Balance;

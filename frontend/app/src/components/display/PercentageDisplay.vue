@@ -68,7 +68,9 @@ export default class PercentageDisplay extends Mixins(
 
   get assetStyle(): { [key: string]: string } {
     if (!this.assetPadding) {
-      return {};
+      return {
+        'max-width': '1ch'
+      };
     }
     return {
       width: `${this.assetPadding + 1}ch`,

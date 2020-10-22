@@ -1,5 +1,9 @@
 import { default as BigNumber } from 'bignumber.js';
-import { DEFI_PROTOCOLS } from '@/services/defi/consts';
+import {
+  AAVE_BORROWING_EVENTS,
+  AAVE_LENDING_EVENTS,
+  DEFI_PROTOCOLS
+} from '@/services/defi/consts';
 import { CompoundEventType } from '@/services/defi/types/compound';
 import { Balance } from '@/services/types-api';
 
@@ -10,7 +14,12 @@ export type MakerDAOVaultEventType =
   | 'generate'
   | 'payback'
   | 'liquidation';
-export type AaveEventType = 'deposit' | 'interest' | 'withdrawal';
+
+export type AaveBorrowingEventType = typeof AAVE_BORROWING_EVENTS[number];
+type AaveLendingEventType = typeof AAVE_LENDING_EVENTS[number];
+
+export type AaveEventType = AaveLendingEventType | AaveBorrowingEventType;
+
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
 export type DefiBalanceType = 'Asset' | 'Debt';
 
