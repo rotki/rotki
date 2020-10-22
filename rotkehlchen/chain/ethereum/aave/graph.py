@@ -452,7 +452,7 @@ class AaveGraphInquirer(AaveInquirer):
 
         # Take aave unpaid interest into account
         for symbol, lending_balance in balances.lending.items():
-            atoken = EthereumToken(symbol)
+            atoken = EthereumToken('a' + symbol)
             principal_balance = self.ethereum.call_contract(
                 contract_address=atoken.ethereum_address,
                 abi=ATOKEN_ABI,
