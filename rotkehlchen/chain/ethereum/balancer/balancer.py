@@ -1,14 +1,14 @@
 import logging
 from collections import defaultdict
-from eth_utils import to_checksum_address
 from typing import (
     TYPE_CHECKING,
-    DefaultDict,
-    Dict,
     List,
     Optional,
     Set,
 )
+
+from eth_utils import to_checksum_address
+import gevent
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.balancer.graph_queries import (
@@ -179,10 +179,17 @@ class Balancer(EthereumModule):
         into `unknown_assets`.
         """
         known_asset_prices: AssetsPrices = {}
-        for known_asset in known_assets:
-            usd_price = Inquirer().find_usd_price(known_asset.asset)
-            if usd_price != Price(ZERO):
-                known_asset_prices[known_asset.address] = FVal(usd_price)
+        known_assets_ = list(known_assets)  # ! Get a deterministic sequence
+        # ! TODO VN PR: consider timeout and list/kill greenlets
+        assets_usd_prices = [
+            gevent.spawn(Inquirer().find_usd_price, known_asset.asset)
+            for known_asset in known_assets_
+        ]
+        gevent.joinall(assets_usd_prices, timeout=5)
+
+        for known_asset, asset_usd_price in zip(known_assets_, assets_usd_prices):
+            if asset_usd_price.value != Price(ZERO):
+                known_asset_prices[known_asset.address] = FVal(asset_usd_price.value)
             else:
                 unknown_assets.add(known_asset.address)
 
