@@ -344,7 +344,7 @@ class AaveGraphInquirer(AaveInquirer):
             db_interest_events: Set[AaveSimpleEvent],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance]]:
+    ) -> Tuple[List[AaveSimpleEvent], Dict[Asset, Balance]]:
         reserve_history = {}
         for reserve in user_result['reserves']:
             pairs = reserve['id'].split('0x')
@@ -364,8 +364,13 @@ class AaveGraphInquirer(AaveInquirer):
         interest_events: List[AaveSimpleEvent] = []
         atoken_balances: Dict[Asset, FVal] = defaultdict(FVal)
         used_history_indices = set()
-        total_earned: Dict[EthereumToken, Balance] = defaultdict(Balance)
+        total_earned: Dict[Asset, Balance] = defaultdict(Balance)
 
+        # Go through the existing db interest events and add total earned
+        for interest_event in db_interest_events:
+            total_earned[interest_event.asset] += interest_event.value
+
+        # Create all new interest events in the query
         actions.sort(key=lambda event: event.timestamp)
         for action in actions:
             if action.event_type == 'deposit':
@@ -420,8 +425,17 @@ class AaveGraphInquirer(AaveInquirer):
                             # not really the log index, but should also be unique
                             log_index=action.log_index + 1,
                         )
-                        if interest_event not in db_interest_events:
-                            interest_events.append(interest_event)
+                        if interest_event in db_interest_events:
+                            # This should not really happen since we already query
+                            # historical atoken balance history in the new range
+                            log.warning(
+                                f'During aave subgraph query interest and profit calculation '
+                                f'tried to generate interest event {interest_event} that '
+                                f'already existed in the DB ',
+                            )
+                            continue
+
+                        interest_events.append(interest_event)
                         total_earned[asset] += earned_balance
 
                     # and once done break off the loop
@@ -437,21 +451,20 @@ class AaveGraphInquirer(AaveInquirer):
                         atoken_balances[action.asset] -= action.value.amount
 
         # Take aave unpaid interest into account
-        for atoken, earn_entry in total_earned.items():
-            lending_balance = balances.lending.get(atoken.identifier, None)
-            if lending_balance is not None:
-                principal_balance = self.ethereum.call_contract(
-                    contract_address=atoken.ethereum_address,
-                    abi=ATOKEN_ABI,
-                    method_name='principalBalanceOf',
-                    arguments=[user_address],
-                )
-                unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.decimals)))  # noqa: E501
-                usd_price = Inquirer().find_usd_price(atoken)
-                earn_entry += Balance(
-                    amount=unpaid_interest,
-                    usd_value=unpaid_interest * usd_price,
-                )
+        for symbol, lending_balance in balances.lending.items():
+            atoken = EthereumToken('a' + symbol)
+            principal_balance = self.ethereum.call_contract(
+                contract_address=atoken.ethereum_address,
+                abi=ATOKEN_ABI,
+                method_name='principalBalanceOf',
+                arguments=[user_address],
+            )
+            unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.decimals)))  # noqa: E501
+            usd_price = Inquirer().find_usd_price(atoken)
+            total_earned[atoken] += Balance(
+                amount=unpaid_interest,
+                usd_value=unpaid_interest * usd_price,
+            )
 
         return interest_events, total_earned
 
@@ -468,7 +481,7 @@ class AaveGraphInquirer(AaveInquirer):
             liquidations: List[AaveLiquidationEvent],
             db_events: List[AaveEvent],
             balances: AaveBalances,
-    ) -> Tuple[List[AaveSimpleEvent], Dict[EthereumToken, Balance], Dict[Asset, Balance]]:
+    ) -> Tuple[List[AaveSimpleEvent], Dict[Asset, Balance], Dict[Asset, Balance]]:
         """Calculates the interest events and the total earned from all the given events.
         Also calculates total loss from borrowing and liquidations.
 
@@ -566,6 +579,13 @@ class AaveGraphInquirer(AaveInquirer):
         # Add all new events to the DB
         new_events: List[AaveEvent] = deposits + withdrawals + interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
         self.database.add_aave_events(address, new_events)
+        # After all events have been queried then also update the query range.
+        # Even if no events are found for an address we need to remember the range
+        self.database.update_used_query_range(
+            name=f'aave_events_{address}',
+            start_ts=Timestamp(0),
+            end_ts=now,
+        )
 
         # Sort actions so that actions with same time are sorted deposit -> interest -> withdrawal
         all_events: List[AaveEvent] = new_events + db_events
