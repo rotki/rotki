@@ -90,10 +90,6 @@ class Balancer(EthereumModule):
             create the <BalancerPool>.
             * Return <BalancerBalances> which contains the map address - pools
             balances map, and the known/unknown sets.
-
-        # ! TODO VN PR
-        # ! Add USD value per asset, either via PriceHistorian or The Graph
-        # ! Add Asset instance per asset, at least if exists
         """
         # ! Format addresses, The Graph does not support checksum addresses
         addresses_lower = [address.lower() for address in addresses]
@@ -206,7 +202,7 @@ class Balancer(EthereumModule):
         Get list of tokenPrices filtering by token id
 
         # ! TODO VN PR
-        # ! Add USD value per asset, either via PriceHistorian or The Graph
+        # ! Add USD value per asset, either via Inquirer or The Graph
         # ! Add Asset instance per asset, at least if exists
         """
         unknown_assets_prices: AssetsPrices = {}
