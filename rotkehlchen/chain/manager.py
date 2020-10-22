@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
+from rotkehlchen.chain.ethereum.balancer import Balancer
 from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
@@ -217,6 +218,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
+                elif given_module == 'balancer':
+                    self.eth_modules['balancer'] = Balancer(
+                        ethereum_manager=ethereum_manager,
+                        database=self.database,
+                        premium=premium,
+                        msg_aggregator=msg_aggregator,
+                    )
                 elif given_module == 'compound':
                     self.eth_modules['compound'] = 'loading'
                     # Since Compound initialization needs a few network calls we do it async
@@ -321,6 +329,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
     @property
     def aave(self) -> Optional[Aave]:
         module = self.eth_modules.get('aave', None)
+        if not module:
+            return None
+
+        return module  # type: ignore
+
+    @property
+    def balancer(self) -> Optional[Balancer]:
+        module = self.eth_modules.get('balancer', None)
         if not module:
             return None
 

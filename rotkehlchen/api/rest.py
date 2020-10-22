@@ -1628,6 +1628,17 @@ class RestAPI():
         )
 
     @require_loggedin_user()
+    def get_balancer_balances(self, async_query: bool) -> Response:
+        # Once that has ran we can be sure that defi_balances mapping is populated
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module='balancer',
+            method='get_balances',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer')
+        )
+
+    @require_loggedin_user()
     def get_compound_balances(self, async_query: bool) -> Response:
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
