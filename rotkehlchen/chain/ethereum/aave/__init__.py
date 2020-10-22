@@ -50,7 +50,7 @@ class Aave(EthereumModule):
             database: DBHandler,
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
-            use_graph: bool = False,
+            use_graph: bool = True,  # by default use graph
     ) -> None:
         self.ethereum = ethereum_manager
         self.database = database

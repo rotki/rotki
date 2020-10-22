@@ -1,7 +1,12 @@
 import pytest
 
 from rotkehlchen.chain.ethereum.manager import NodeName
-from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, YEARN_YCRV_VAULT
+from rotkehlchen.constants.ethereum import (
+    ATOKEN_ABI,
+    ERC20TOKEN_ABI,
+    YEARN_YCRV_VAULT,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
@@ -139,3 +144,48 @@ def test_get_logs(ethereum_manager, call_order, ethereum_manager_connect_at_star
             'removed',  # returned from web3
         ],
     )
+
+
+@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
+def test_get_log_and_receipt_etherscan_bad_tx_index(
+        ethereum_manager,
+        call_order,
+        ethereum_manager_connect_at_start,
+):
+    """
+    https://etherscan.io/tx/0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829
+    contains a log entry which in etherscan has transaction index 0x.
+
+    Our code was not handling this well and was raising ValueError.
+    This is a regression test for that.
+    """
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=ethereum_manager,
+    )
+
+    # Test getting the offending log entry does not raise
+    argument_filters = {
+        'from': ZERO_ADDRESS,
+        'to': '0xbA215F7BE6c620dA3F8240B82741eaF3C5f5D786',
+    }
+    events = ethereum_manager.get_logs(
+        contract_address='0xFC4B8ED459e00e5400be803A9BB3954234FD50e3',
+        abi=ATOKEN_ABI,
+        event_name='Transfer',
+        argument_filters=argument_filters,
+        from_block=10773651,
+        to_block=10773653,
+        call_order=call_order,
+    )
+    assert len(events) == 2
+    assert events[0]['transactionIndex'] == 0
+    assert events[1]['transactionIndex'] == 0
+
+    # Test getting the transaction receipt (also containing the log entries) does not raise
+    # They seem to all be 0
+    result = ethereum_manager.get_transaction_receipt(
+        '0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829',
+        call_order=call_order,
+    )
+    assert all(x['transactionIndex'] == 0 for x in result['logs'])
