@@ -3,7 +3,6 @@
     v-bind="$attrs"
     :value="value"
     class="revealable-input"
-    :append-icon="revealed ? 'mdi-eye' : 'mdi-eye-off'"
     :prepend-icon="prependIcon"
     :type="revealed ? 'text' : 'password'"
     :rules="rules"
@@ -14,8 +13,13 @@
     :error-messages="errorMessages"
     v-on="$listeners"
     @input="input"
-    @click:append="revealed = !revealed"
-  />
+  >
+    <template #append>
+      <v-btn tabindex="-1" icon @click="revealed = !revealed">
+        <v-icon v-text="revealed ? 'mdi-eye' : 'mdi-eye-off'" />
+      </v-btn>
+    </template>
+  </v-text-field>
 </template>
 
 <script lang="ts">

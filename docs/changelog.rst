@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1583` Users will not be taken to the reveal button when pressing tab in a form with a revealable input.
 * :feature:`1122` Users can now import their metamask account addresses to rotki.
 * :feature:`1458` Aave borrowing and liquidations are now also taken into account and displayed to the user. Also for historical aave queries a subgraph is used instead of blockchain event querying which makes the entire process considerably faster.
 * :feature:`1194` Premium users can now manually backup or restore their databases.
