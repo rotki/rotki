@@ -166,6 +166,10 @@ class Aave(EthereumModule):
 
             if self.use_graph:
                 if self.graph_inquirer is None:  # could not initialize graph
+                    log.error(
+                        "Tried to query Aave's history via the subgraph "
+                        "without an initialized graph_inquirer",
+                    )
                     return {}
 
                 aave_balances = self.get_balances(given_defi_balances)
