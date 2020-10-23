@@ -2560,6 +2560,67 @@ Getting blockchain account data
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
 
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/BTC/ HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result" : {
+	      "standalone": [{
+                  "address": "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5",
+                  "label": null,
+                  "tags": ["private"],
+		  }, {
+                  "address": "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra",
+                  "label": "some label",
+                  "tags": null,
+	      }],
+	      "xpubs": [{
+	          "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+		  "derivation_path": "m/0/0",
+		  "label": "ledger xpub",
+		  "tags": ["super secret", "awesome"],
+		  "addresses": [{
+		      "address": "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r",
+		      "label": "derived address",
+		      "tags": ["super secret", "awesome", "derived"]
+		      }, {
+		      "address": "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT",
+		      "label": null,
+		      "tags": null
+		      }]
+		  }, {
+                  "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
+		  "derivation_path": null,
+	          "label": "some label",
+		  "tags": null,
+		  "addresses": null,
+	      }]
+	  },
+           "message": "",
+      }
+
+   :resjson list result: An object with the account data details. Has two attributes. ``"standalone"`` for standalone addresses. That follows the same response format as above. And ``"xpub"`` for bitcoin xpubs. Below we will see the format of the xpub response.
+   :resjsonarr string xpub: The extended public key string
+   :resjsonarr string derivation_path: [Optional] If existing this is the derivation path from which to start deriving accounts from the xpub.
+   :resjsonarr string label: [Optional] The label to describe the xpub. Can also be null.
+   :resjsonarr list tags: [Optional] A list of tags associated with the account. Can also be null.
+   :resjsonarr list addresses: [Optional] A list of address objects  derived by the account. Can also be null. The attributes of each object are as seen in the previous response.
+
+   :statuscode 200: Account data succesfully queried.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+
 Getting all DeFi balances
 =========================
 

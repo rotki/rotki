@@ -21,7 +21,7 @@ def setup_db_for_xpub_tests(data_dir, username):
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     derivation_path = 'm/0/0/0'
     xpub_data1 = XpubData(
-        xpub=HDKey.from_xpub(xpub=xpub),
+        xpub=HDKey.from_xpub(xpub=xpub, path='m'),
         derivation_path=derivation_path,
         label='xpub1',
         tags=['public', 'desktop'],
@@ -60,7 +60,10 @@ def setup_db_for_xpub_tests(data_dir, username):
 
     xpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
     derivation_path = 'm/0'
-    xpub_data2 = XpubData(xpub=HDKey.from_xpub(xpub=xpub), derivation_path=derivation_path)
+    xpub_data2 = XpubData(
+        xpub=HDKey.from_xpub(xpub=xpub, path='m'),
+        derivation_path=derivation_path,
+    )
     data.db.add_bitcoin_xpub(xpub_data2)
     addr1 = 'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5'
     addr2 = 'bc1qnus7355ecckmeyrmvv56mlm42lxvwa4wuq5aev'
@@ -85,7 +88,10 @@ def setup_db_for_xpub_tests(data_dir, username):
     # Finally also add the same xpub as xpub1 with no derivation path
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     derivation_path = None
-    xpub_data3 = XpubData(xpub=HDKey.from_xpub(xpub=xpub), derivation_path=derivation_path)
+    xpub_data3 = XpubData(
+        xpub=HDKey.from_xpub(xpub=xpub, path='m'),
+        derivation_path=derivation_path,
+    )
     data.db.add_bitcoin_xpub(xpub_data3)
 
     return data.db, xpub_data1, xpub_data2, xpub_data3, all_addresses
@@ -106,7 +112,10 @@ def test_get_last_xpub_derived_indices(setup_db_for_xpub_tests):
     # Get index from unknown xpub (not in DB)
     xpub = 'xpub6D1ZRhLSRWWGowFT22WJYYJx3GH5wxidsHcEm6NYeXfMAGxKWiQ5dQ8hSz7gdJsE86Lrjf1MN7SCKowZU8VxZ45Z1KeNP5CZ514JbCamRdC'  # noqa: E501
     derivation_path = 'm/0/0/0'
-    xpub_data = XpubData(xpub=HDKey.from_xpub(xpub=xpub), derivation_path=derivation_path)
+    xpub_data = XpubData(
+        xpub=HDKey.from_xpub(xpub=xpub, path='m'),
+        derivation_path=derivation_path,
+    )
     receiving_idx, change_idx = db.get_last_xpub_derived_indices(xpub_data)
     assert receiving_idx == change_idx == 0
 

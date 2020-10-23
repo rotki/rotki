@@ -6,6 +6,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
 )
+from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.errors import XPUBError
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
@@ -134,6 +135,36 @@ def test_xpub_to_addresses():
         assert child.address() == expected_addresses[i]
 
 
+def test_ypub_to_addresses():
+    """Test vectors from here: https://iancoleman.io/bip39/"""
+    xpub = 'ypub6WkRUvNhspMCJLiLgeP7oL1pzrJ6wA2tpwsKtXnbmpdAGmHHcC6FeZeF4VurGU14dSjGpF2xLavPhgvCQeXd6JxYgSfbaD1wSUi2XmEsx33'  # noqa: E501
+    root = HDKey.from_xpub(xpub=xpub, path='m')
+
+    expected_addresses = [
+        '3C2NiJHhXKvHDkWp2rq8LyE7G1E7VTndst',
+        '34SjMcbLquZ7HmFmQiAHqEHY4mBEbvGeVL',
+        '3J7sT2fbDaF3XrjpWM5GsUyaDr7i7psi88',
+        '36Z62MQfJHF11DWqMMzc3rqLiDFGiVF8CB',
+        '33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP',
+    ]
+
+    for i in range(5):
+        child = root.derive_path(f'm/{i}')
+        assert child.address() == expected_addresses[i]
+
+    expected_addresses = [
+        '3EQR3ogLugdAw6gwdQZGfr6bx7vHLPiZo5',
+        '361gjqdsUY8xBzArsR2ksggEWBaztAqhFL',
+        '3HtN6sDxDA1ddnQsvwhvBtQa7JrkuAiVx3',
+        '3LNXdKxd8c5RDbB5XRvGMwc2wfv4v26knu',
+        '35TfgdHP5zqAQHcFwGCw4n2UigBZYx7dmQ',
+    ]
+
+    for i in range(5):
+        child = root.derive_path(f'm/0/{i}')
+        assert child.address() == expected_addresses[i]
+
+
 def test_zpub_to_addresses():
     """Test vectors from here: https://iancoleman.io/bip39/"""
     zpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
@@ -161,3 +192,25 @@ def test_from_bad_xpub():
         HDKey.from_xpub('xpriv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
     with pytest.raises(XPUBError):
         HDKey.from_xpub('apfiv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
+
+
+def test_xpub_data_comparison():
+    hdkey1 = HDKey.from_xpub('xpub6DCi5iJ57ZPd5qPzvTm5hUt6X23TJdh9H4NjNsNbt7t7UuTMJfawQWsdWRFhfLwkiMkB1rQ4ZJWLB9YBnzR7kbs9N8b2PsKZgKUHQm1X4or')  # noqa: E501
+    hdkey2 = HDKey.from_xpub('xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
+    xpubdata1 = XpubData(xpub=hdkey1)
+    xpubdata2 = XpubData(xpub=hdkey2)
+    mapping = {xpubdata1: 1}
+    assert not(xpubdata1 == xpubdata2)  # there is a reason for both queries. In the first
+    assert xpubdata1 != xpubdata2  # implementation they did not both work correctly
+    assert xpubdata1 in mapping
+    assert xpubdata2 not in mapping
+
+    xpubdata1 = XpubData(xpub=hdkey1)
+    xpubdata2 = XpubData(xpub=hdkey1)
+    assert xpubdata1 == xpubdata2
+    assert not(xpubdata1 != xpubdata2)
+
+    xpubdata1 = XpubData(xpub=hdkey1, derivation_path='m')
+    xpubdata2 = XpubData(xpub=hdkey1, derivation_path='m/0/0')
+    assert xpubdata1 != xpubdata2
+    assert not(xpubdata1 == xpubdata2)
