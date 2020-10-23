@@ -6,11 +6,11 @@ import {
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
+import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import { defaultState } from '@/store/balances/state';
 import { BalanceState } from '@/store/balances/types';
 import {
-  AccountDataMap,
   ExchangeData,
   ExchangeInfo,
   UsdToFiatExchangeRates
@@ -56,10 +56,10 @@ export const mutations: MutationTree<BalanceState> = {
     update[data.name] = data.balances;
     state.exchangeBalances = { ...state.exchangeBalances, ...update };
   },
-  ethAccounts(state: BalanceState, accounts: AccountDataMap) {
+  ethAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
     state.ethAccounts = accounts;
   },
-  btcAccounts(state: BalanceState, accounts: AccountDataMap) {
+  btcAccounts(state: BalanceState, accounts: BtcAccountData) {
     state.btcAccounts = accounts;
   },
   supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {

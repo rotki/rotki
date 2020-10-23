@@ -93,3 +93,22 @@ export interface VersionCheck {
   readonly latest_version?: string;
   readonly download_url?: string;
 }
+
+export interface GeneralAccountData {
+  readonly address: string;
+  readonly label: string | null;
+  readonly tags: string[] | null;
+}
+
+export interface XpubAccountData {
+  readonly xpub: string;
+  readonly derivationPath: string | null;
+  readonly label: string | null;
+  readonly tags: string[] | null;
+  readonly addresses: GeneralAccountData[] | null;
+}
+
+export interface BtcAccountData {
+  readonly standalone: GeneralAccountData[];
+  readonly xpubs: XpubAccountData[];
+}

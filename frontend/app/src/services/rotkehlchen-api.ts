@@ -1,7 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import {
   AccountState,
-  ApiAccountData,
   DBSettings,
   ExternalServiceKeys
 } from '@/model/action-result';
@@ -18,7 +17,9 @@ import { SessionApi } from '@/services/session/session-api';
 import {
   ActionResult,
   AsyncQuery,
+  BtcAccountData,
   DBAssetBalance,
+  GeneralAccountData,
   LocationData,
   Messages,
   NetvalueDataResult,
@@ -47,7 +48,6 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import {
-  AccountData,
   AccountSession,
   Blockchain,
   ExternalServiceKey,
@@ -61,7 +61,6 @@ import {
   TaskResult,
   UnlockPayload
 } from '@/typing/types';
-import { convertAccountData } from '@/utils/conversion';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;
@@ -531,13 +530,13 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async editBlockchainAccount(
+  async editBtcAccount(
     payload: BlockchainAccountPayload
-  ): Promise<AccountData[]> {
-    const { blockchain, address, label, tags } = payload;
+  ): Promise<BtcAccountData> {
+    const { address, label, tags } = payload;
     return this.axios
-      .patch<ActionResult<ApiAccountData[]>>(
-        `/blockchains/${blockchain}`,
+      .patch<ActionResult<BtcAccountData>>(
+        '/blockchains/BTC',
         {
           accounts: [
             {
@@ -551,8 +550,30 @@ export class RotkehlchenApi {
           validateStatus: validWithParamsSessionAndExternalService
         }
       )
-      .then(handleResponse)
-      .then(accounts => accounts.map(convertAccountData));
+      .then(handleResponse);
+  }
+
+  async editEthAccount(
+    payload: BlockchainAccountPayload
+  ): Promise<GeneralAccountData[]> {
+    const { address, label, tags } = payload;
+    return this.axios
+      .patch<ActionResult<GeneralAccountData[]>>(
+        '/blockchains/ETH',
+        {
+          accounts: [
+            {
+              address,
+              label,
+              tags
+            }
+          ]
+        },
+        {
+          validateStatus: validWithParamsSessionAndExternalService
+        }
+      )
+      .then(handleResponse);
   }
 
   async deleteXpub(payload: XpubPayload): Promise<PendingTask> {
@@ -735,13 +756,20 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async accounts(blockchain: Blockchain): Promise<AccountData[]> {
+  async ethAccounts(): Promise<GeneralAccountData[]> {
     return this.axios
-      .get<ActionResult<ApiAccountData[]>>(`/blockchains/${blockchain}`, {
+      .get<ActionResult<GeneralAccountData[]>>('/blockchains/ETH', {
         validateStatus: validWithSessionStatus
       })
-      .then(handleResponse)
-      .then(accounts => accounts.map(convertAccountData));
+      .then(handleResponse);
+  }
+
+  async btcAccounts(): Promise<BtcAccountData> {
+    return this.axios
+      .get<ActionResult<BtcAccountData>>('/blockchains/BTC', {
+        validateStatus: validWithSessionStatus
+      })
+      .then(handleResponse);
   }
 
   async supportedAssets(): Promise<SupportedAssets> {

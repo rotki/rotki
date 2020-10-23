@@ -21,9 +21,8 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     ethAccounts
   }: BalanceState): BlockchainAccountWithBalance[] {
     const accounts: BlockchainAccountWithBalance[] = [];
-    for (const address in ethAccounts) {
-      const data = ethAccounts[address];
-      const accountAssets = eth[address];
+    for (const account of ethAccounts) {
+      const accountAssets = eth[account.address];
       const balance: Balance = accountAssets
         ? {
             amount: accountAssets.assets.ETH.amount,
@@ -32,7 +31,9 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
         : { amount: Zero, usdValue: Zero };
 
       accounts.push({
-        ...data,
+        address: account.address,
+        label: account.label ?? '',
+        tags: account.tags ?? [],
         chain: ETH,
         balance
       });
@@ -46,37 +47,56 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   }: BalanceState): BlockchainAccountWithBalance[] {
     const accounts: BlockchainAccountWithBalance[] = [];
 
-    for (const address in btcAccounts) {
-      const data = btcAccounts[address];
-      const balance = btc.standalone?.[address];
-      if (balance) {
-        accounts.push({
-          ...data,
-          chain: BTC,
-          balance
-        });
+    const { standalone, xpubs } = btcAccounts;
+    const zeroBalance = () => ({
+      amount: Zero,
+      usdValue: Zero
+    });
+
+    for (const account of standalone) {
+      const balance = btc.standalone?.[account.address] ?? zeroBalance();
+      accounts.push({
+        address: account.address,
+        label: account.label ?? '',
+        tags: account.tags ?? [],
+        chain: BTC,
+        balance
+      });
+    }
+
+    for (const account of xpubs) {
+      accounts.push({
+        chain: BTC,
+        xpub: account.xpub,
+        derivationPath: account.derivationPath ?? '',
+        address: '',
+        label: account.label ?? '',
+        tags: account.tags ?? [],
+        balance: zeroBalance()
+      });
+
+      if (!account.addresses) {
         continue;
       }
 
-      const xpubIndex =
-        btc.xpubs?.findIndex(value => value.addresses[address]) ?? -1;
-      if (xpubIndex < 0) {
+      for (const address of account.addresses) {
+        const balanceIndex =
+          btc.xpubs?.findIndex(xpub => xpub.addresses[address.address]) ?? -1;
         accounts.push({
-          ...data,
           chain: BTC,
-          balance: { amount: Zero, usdValue: Zero }
-        });
-      } else {
-        const { xpub, derivationPath, addresses } = btc.xpubs[xpubIndex];
-        accounts.push({
-          ...data,
-          xpub,
-          derivationPath,
-          chain: BTC,
-          balance: addresses[address]
+          xpub: account.xpub,
+          derivationPath: account.derivationPath ?? '',
+          address: address.address,
+          label: address.label ?? '',
+          tags: address.tags ?? [],
+          balance:
+            balanceIndex > 0
+              ? btc.xpubs[balanceIndex].addresses[address.address]
+              : zeroBalance()
         });
       }
     }
+
     return accounts;
   },
 
@@ -253,18 +273,15 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return supportedAssets.find(asset => asset.key === key);
   },
 
-  accounts: ({ ethAccounts, btcAccounts }) => {
-    const accounts: GeneralAccount[] = [];
-
-    for (const account of Object.values(ethAccounts)) {
-      accounts.push({ chain: ETH, ...account });
-    }
-
-    for (const account of Object.values(btcAccounts)) {
-      accounts.push({ chain: BTC, ...account });
-    }
-
-    return accounts;
+  accounts: (_, { ethAccounts, btcAccounts }): GeneralAccount[] => {
+    return ethAccounts
+      .concat(btcAccounts)
+      .map((account: BlockchainAccountWithBalance) => ({
+        chain: account.chain,
+        address: account.address,
+        label: account.label,
+        tags: account.tags
+      }));
   },
 
   account: (_, getters) => (address: string) => {

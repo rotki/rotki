@@ -4,7 +4,7 @@
   </td>
   <fragment v-else>
     <td>
-      <v-btn small icon @click="expandClicked">
+      <v-btn v-if="items.length > 0" small icon @click="expandClicked">
         <v-icon v-if="expanded" small>mdi-chevron-up</v-icon>
         <v-icon v-else small>mdi-chevron-down</v-icon>
       </v-btn>
@@ -69,8 +69,6 @@ import { balanceUsdValueSum } from '@/store/defi/utils';
 export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
   @Prop({ required: true, type: String })
   group!: string;
-  @Prop({ required: true, type: Object })
-  xpub!: XpubPayload;
   @Prop({ required: true, type: Array })
   items!: XpubAccountWithBalance[];
   @Prop({ required: true, type: Boolean })
@@ -81,6 +79,14 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
       this.xpub.xpub,
       truncationPoints[this.$vuetify.breakpoint.name] ?? 4
     );
+  }
+
+  get xpub(): XpubPayload {
+    const split = this.group.split(':');
+    return {
+      xpub: split[0],
+      derivationPath: split[1]
+    };
   }
 
   get sum(): BigNumber {

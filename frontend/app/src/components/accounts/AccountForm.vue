@@ -30,6 +30,7 @@
           class="account-form__xpub-key-type"
           item-value="value"
           item-text="label"
+          :disabled="accountOperation || loading || !!edit"
           :items="keyType"
         />
       </v-col>
@@ -266,6 +267,9 @@ export default class AccountForm extends Vue {
       this.derivationPath = this.edit.derivationPath;
     }
   }
+
+  //TODO: fix paste/input autoselect + prefix detection
+  //TODO: fix edit dialog problems
 
   mounted() {
     this.setEditMode();
