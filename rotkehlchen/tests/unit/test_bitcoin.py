@@ -6,6 +6,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
 )
+from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.errors import XPUBError
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
@@ -161,3 +162,25 @@ def test_from_bad_xpub():
         HDKey.from_xpub('xpriv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
     with pytest.raises(XPUBError):
         HDKey.from_xpub('apfiv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
+
+
+def test_xpub_data_comparison():
+    hdkey1 = HDKey.from_xpub('xpub6DCi5iJ57ZPd5qPzvTm5hUt6X23TJdh9H4NjNsNbt7t7UuTMJfawQWsdWRFhfLwkiMkB1rQ4ZJWLB9YBnzR7kbs9N8b2PsKZgKUHQm1X4or')  # noqa: E501
+    hdkey2 = HDKey.from_xpub('xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
+    xpubdata1 = XpubData(xpub=hdkey1)
+    xpubdata2 = XpubData(xpub=hdkey2)
+    mapping = {xpubdata1: 1}
+    assert not(xpubdata1 == xpubdata2)  # there is a reason for both queries. In the first
+    assert xpubdata1 != xpubdata2  # implementation they did not both work correctly
+    assert xpubdata1 in mapping
+    assert xpubdata2 not in mapping
+
+    xpubdata1 = XpubData(xpub=hdkey1)
+    xpubdata2 = XpubData(xpub=hdkey1)
+    assert xpubdata1 == xpubdata2
+    assert not(xpubdata1 != xpubdata2)
+
+    xpubdata1 = XpubData(xpub=hdkey1, derivation_path='m')
+    xpubdata2 = XpubData(xpub=hdkey1, derivation_path='m/0/0')
+    assert xpubdata1 != xpubdata2
+    assert not(xpubdata1 == xpubdata2)

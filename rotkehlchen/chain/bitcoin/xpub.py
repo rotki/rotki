@@ -37,6 +37,14 @@ class XpubData(NamedTuple):
             'tags': self.tags,
         }
 
+    def __hash__(self) -> int:
+        """For uniqueness of an xpub we consider xpub + derivation path"""
+        return hash(self.xpub.xpub + (self.derivation_path if self.derivation_path else ''))  # type: ignore  # noqa: E501
+
+    def __eq__(self, other: Any) -> bool:
+        """For uniqueness of an xpub we consider xpub + derivation path"""
+        return hash(self) == hash(other)
+
 
 def deserialize_derivation_path_for_db(path: str) -> Optional[str]:
     """
@@ -65,7 +73,6 @@ def _derive_addresses_loop(
     addresses: List[XpubDerivedAddressData] = []
     should_continue = True
     while should_continue:
-        print(f'Account:{account_index} step_index:{step_index}')
         batch_addresses: List[Tuple[int, BTCAddress]] = []
         for idx in range(step_index, step_index + XPUB_ADDRESS_STEP):
             child = root.derive_child(idx)

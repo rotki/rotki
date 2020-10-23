@@ -2411,7 +2411,10 @@ class DBHandler:
                 continue
 
             data[result[0][0]] = XpubData(
-                xpub=HDKey.from_xpub(result[0][1], path='m'),
+                xpub=HDKey.from_xpub(
+                    result[0][1],
+                    path=deserialize_derivation_path_for_db(result[0][2]),
+                ),
                 derivation_path=deserialize_derivation_path_for_db(result[0][2]),
             )
 
