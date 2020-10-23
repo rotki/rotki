@@ -15,6 +15,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     hash160,
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
+    pubkey_to_p2sh_p2wpkh_address,
 )
 from rotkehlchen.errors import XPUBError
 from rotkehlchen.typing import BTCAddress
@@ -31,6 +32,7 @@ class PrefixParsingResult(NamedTuple):
 class BTCAddressType(Enum):
     BASE58 = 1
     BECH32 = 2
+    P2SH_P2WPKH = 3
 
 
 VERSION_BYTES = {
@@ -63,6 +65,16 @@ VERSION_BYTES = {
         is_public=False,
         network='testnet',
         hint='xpub',
+    ),
+    b'\x04\x9d|\xb2': PrefixParsingResult(
+        is_public=True,
+        network='mainnet',
+        hint='ypub',
+    ),
+    b'\x04\x9dxx': PrefixParsingResult(
+        is_public=False,
+        network='mainnet',
+        hint='ypub',
     ),
 }
 
@@ -117,6 +129,9 @@ class HDKey():
         result = _parse_prefix(xpub_bytes[0:4])
         if not result.is_public:
             raise XPUBError('Given xpub is an extended private key')
+
+        if result.network != 'mainnet':
+            raise XPUBError('Given xpub is not for the bitcoin mainnet')
 
         return HDKey(
             path=path,
@@ -337,6 +352,8 @@ class HDKey():
     def generate_specific_address(self, addr_type: BTCAddressType) -> str:
         if addr_type == BTCAddressType.BASE58:
             return pubkey_to_base58_address(self.pubkey.format(COMPRESSED_PUBKEY))
+        elif addr_type == BTCAddressType.P2SH_P2WPKH:
+            return pubkey_to_p2sh_p2wpkh_address(self.pubkey.format(COMPRESSED_PUBKEY))
         else:
             return pubkey_to_bech32_address(
                 data=self.pubkey.format(COMPRESSED_PUBKEY),
@@ -346,6 +363,8 @@ class HDKey():
     def address(self) -> BTCAddress:
         if self.hint == 'xpub':
             return pubkey_to_base58_address(self.pubkey.format(COMPRESSED_PUBKEY))
+        elif self.hint == 'ypub':
+            return pubkey_to_p2sh_p2wpkh_address(self.pubkey.format(COMPRESSED_PUBKEY))
         elif self.hint == 'zpub':
             return pubkey_to_bech32_address(
                 data=self.pubkey.format(COMPRESSED_PUBKEY),

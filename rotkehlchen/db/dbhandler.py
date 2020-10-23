@@ -2365,7 +2365,7 @@ class DBHandler:
         for entry in query:
             tags = deserialize_tags_from_db(entry[3])
             result.append(XpubData(
-                xpub=HDKey.from_xpub(entry[0]),
+                xpub=HDKey.from_xpub(entry[0], path='m'),
                 derivation_path=deserialize_derivation_path_for_db(entry[1]),
                 label=entry[2],
                 tags=tags,
@@ -2411,10 +2411,7 @@ class DBHandler:
                 continue
 
             data[result[0][0]] = XpubData(
-                xpub=HDKey.from_xpub(
-                    result[0][1],
-                    path=deserialize_derivation_path_for_db(result[0][2]),
-                ),
+                xpub=HDKey.from_xpub(result[0][1], path='m'),
                 derivation_path=deserialize_derivation_path_for_db(result[0][2]),
             )
 

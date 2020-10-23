@@ -135,6 +135,36 @@ def test_xpub_to_addresses():
         assert child.address() == expected_addresses[i]
 
 
+def test_ypub_to_addresses():
+    """Test vectors from here: https://iancoleman.io/bip39/"""
+    xpub = 'ypub6WkRUvNhspMCJLiLgeP7oL1pzrJ6wA2tpwsKtXnbmpdAGmHHcC6FeZeF4VurGU14dSjGpF2xLavPhgvCQeXd6JxYgSfbaD1wSUi2XmEsx33'  # noqa: E501
+    root = HDKey.from_xpub(xpub=xpub, path='m')
+
+    expected_addresses = [
+        '3C2NiJHhXKvHDkWp2rq8LyE7G1E7VTndst',
+        '34SjMcbLquZ7HmFmQiAHqEHY4mBEbvGeVL',
+        '3J7sT2fbDaF3XrjpWM5GsUyaDr7i7psi88',
+        '36Z62MQfJHF11DWqMMzc3rqLiDFGiVF8CB',
+        '33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP',
+    ]
+
+    for i in range(5):
+        child = root.derive_path(f'm/{i}')
+        assert child.address() == expected_addresses[i]
+
+    expected_addresses = [
+        '3EQR3ogLugdAw6gwdQZGfr6bx7vHLPiZo5',
+        '361gjqdsUY8xBzArsR2ksggEWBaztAqhFL',
+        '3HtN6sDxDA1ddnQsvwhvBtQa7JrkuAiVx3',
+        '3LNXdKxd8c5RDbB5XRvGMwc2wfv4v26knu',
+        '35TfgdHP5zqAQHcFwGCw4n2UigBZYx7dmQ',
+    ]
+
+    for i in range(5):
+        child = root.derive_path(f'm/0/{i}')
+        assert child.address() == expected_addresses[i]
+
+
 def test_zpub_to_addresses():
     """Test vectors from here: https://iancoleman.io/bip39/"""
     zpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501

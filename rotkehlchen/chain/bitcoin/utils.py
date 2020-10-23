@@ -1,4 +1,5 @@
 import hashlib
+from typing import Tuple
 
 import base58check
 import bech32
@@ -52,6 +53,15 @@ def hash160(msg: bytes) -> bytes:
     return h.digest()
 
 
+def _calculate_hash160_and_checksum(prefix: bytes, data: bytes) -> Tuple[bytes, bytes]:
+    """Calculates the prefixed hash160 and checksum"""
+    s1 = prefix + hash160(data)
+    s2 = hashlib.sha256(s1).digest()
+    checksum = hashlib.sha256(s2).digest()
+
+    return s1, checksum
+
+
 def pubkey_to_base58_address(data: bytes) -> BTCAddress:
     """
     Bitcoin pubkey to base58 address
@@ -63,10 +73,25 @@ def pubkey_to_base58_address(data: bytes) -> BTCAddress:
     May raise:
     - ValueError, TypeError due to b58encode
     """
-    s4 = b'\x00' + hash160(data)
-    s5 = hashlib.sha256(s4).digest()
-    s6 = hashlib.sha256(s5).digest()
-    return BTCAddress(base58check.b58encode(s4 + s6[:4]).decode('ascii'))
+    prefixed_hash, checksum = _calculate_hash160_and_checksum(b'\x00', data)
+    return BTCAddress(base58check.b58encode(prefixed_hash + checksum[:4]).decode('ascii'))
+
+
+def pubkey_to_p2sh_p2wpkh_address(data: bytes) -> BTCAddress:
+    """Bitcoin pubkey to PS2H-P2WPKH
+
+    From here:
+    https://bitcoin.stackexchange.com/questions/75910/how-to-generate-a-native-segwit-address-and-p2sh-segwit-address-from-a-standard
+    """
+    witprog = hash160(data)
+    script = bytes.fromhex('0014') + witprog
+
+    prefix = b'\x05'  # this is mainnet prefix -- we don't care about testnet
+    # prefixed_hash, checksum = _calculate_hash160_and_checksum(prefix, prefix + script)
+    prefixed_hash, checksum = _calculate_hash160_and_checksum(prefix, script)
+    # address = base58check.b58encode(prefix + prefixed_hash + checksum[:4])
+    address = base58check.b58encode(prefixed_hash + checksum[:4])
+    return BTCAddress(address.decode('ascii'))
 
 
 def pubkey_to_bech32_address(data: bytes, witver: int) -> BTCAddress:
