@@ -296,10 +296,49 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
+# TODO: the following fields could be not necessary (but give fee context)
+# * pool_liquidity
+# * pool_total_swap_volume
+# * pool_name (many pools do not have a name)
+# Also if we want to store the historical USD prices of both assets,
+# `asset_in_usd_amount` and `asset_out_usd_amount` should be added
+DB_CREATE_BALANCER_TRADES = """
+CREATE TABLE IF NOT EXISTS balancer_trades (
+    tx_hash VARCHAR[42] NOT NULL,
+    log_index INTEGER NOT NULL,
+    address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    usd_fee TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
+    pool_address VARCHAR[42] NOT NULL,
+    pool_name TEXT,
+    pool_liquidity TEXT NOT NULL,
+    usd_pool_total_swap_fee TEXT NOT NULL,
+    usd_pool_total_swap_volume TEXT NOT NULL,
+    is_asset_in_known INTEGER NOT NULL,
+    asset_in_address VARCHAR[42] NOT NULL,
+    asset_in_symbol TEXT NOT NULL,
+    asset_in_amount TEXT NOT NULL,
+    is_asset_out_known INTEGER NOT NULL,
+    asset_out_address VARCHAR[42] NOT NULL,
+    asset_out_symbol TEXT NOT NULL,
+    asset_out_amount TEXT NOT NULL,
+    PRIMARY KEY (tx_hash, log_index)
+);
+"""
+
+DB_CREATE_INDEXES_BALANCER_TRADES = """
+CREATE INDEX IF NOT EXISTS idx__balancer_trades__timestamp
+ON balancer_trades (timestamp);
+
+CREATE INDEX IF NOT EXISTS idx__balancer_trades__address__timestamp
+ON balancer_trades (address, timestamp);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -326,4 +365,6 @@ PRAGMA foreign_keys=on;
     DB_CREATE_YEARN_VAULT_EVENTS,
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
+    DB_CREATE_BALANCER_TRADES,
+    DB_CREATE_INDEXES_BALANCER_TRADES,
 )

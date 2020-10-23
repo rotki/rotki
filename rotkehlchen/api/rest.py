@@ -1638,6 +1638,18 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer')
         )
 
+    @require_premium_user(active_check=False)
+    @require_loggedin_user()
+    def get_balancer_history(self) -> Response:
+        # Once that has ran we can be sure that defi_balances mapping is populated
+        return self._api_query_for_eth_module(
+            async_query=False,
+            module='balancer',
+            method='get_history',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer'),
+        )
+
     @require_loggedin_user()
     def get_compound_balances(self, async_query: bool) -> Response:
         # Once that has ran we can be sure that defi_balances mapping is populated

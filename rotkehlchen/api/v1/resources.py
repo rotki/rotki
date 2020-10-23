@@ -907,6 +907,21 @@ class BalancerBalancesResource(BaseResource):
         return self.rest_api.get_balancer_balances(async_query=async_query)
 
 
+class BalancerHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(
+        self,
+        async_query: bool,  # pylint: disable=unused-argument
+        reset_db_data: bool,  # pylint: disable=unused-argument
+        from_timestamp: Timestamp,  # pylint: disable=unused-argument
+        to_timestamp: Timestamp,  # pylint: disable=unused-argument
+    ) -> Response:
+        return self.rest_api.get_balancer_history()
+
+
 class CompoundBalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()

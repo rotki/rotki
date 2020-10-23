@@ -21,6 +21,10 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
+from rotkehlchen.chain.ethereum.balancer import (
+    BalancerTrade,
+    balancer_trade_from_db,
+)
 from rotkehlchen.chain.ethereum.structures import (
     AaveEvent,
     YearnVault,
@@ -645,6 +649,96 @@ class DBHandler:
                     f' already existing timestamp {entry.time}. Skipping.',
                 )
                 continue
+        self.conn.commit()
+        self.update_last_write()
+
+    def add_balancer_trades(
+            self,
+            address: ChecksumEthAddress,
+            trades: Sequence[BalancerTrade],
+    ) -> None:
+        cursor = self.conn.cursor()
+        for trade in trades:
+            trade_tuple = trade.to_db_tuple(address)
+            try:
+                cursor.execute(
+                    'INSERT INTO balancer_trades( '
+                    'tx_hash, '
+                    'log_index, '
+                    'address, '
+                    'timestamp, '
+                    'usd_fee, '
+                    'usd_value, '
+                    'pool_address, '
+                    'pool_name, '
+                    'pool_liquidity, '
+                    'usd_pool_total_swap_fee, '
+                    'usd_pool_total_swap_volume, '
+                    'is_asset_in_known, '
+                    'asset_in_address, '
+                    'asset_in_symbol, '
+                    'asset_in_amount, '
+                    'is_asset_out_known, '
+                    'asset_out_address, '
+                    'asset_out_symbol, '
+                    'asset_out_amount) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    trade_tuple,
+                )
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add a balancer trade that already exists in the DB. '
+                    f'Trade data: {trade_tuple}. Skipping...',
+                )
+                continue
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_balancer_trades(
+            self,
+            address: ChecksumEthAddress,
+    ) -> List[BalancerTrade]:
+        cursor = self.conn.cursor()
+        querystr = (
+            'SELECT tx_hash, '
+            'log_index, '
+            'address, '
+            'timestamp, '
+            'usd_fee, '
+            'usd_value, '
+            'pool_address, '
+            'pool_name, '
+            'pool_liquidity, '
+            'usd_pool_total_swap_fee, '
+            'usd_pool_total_swap_volume, '
+            'is_asset_in_known, '
+            'asset_in_address, '
+            'asset_in_symbol, '
+            'asset_in_amount, '
+            'is_asset_out_known, '
+            'asset_out_address, '
+            'asset_out_symbol, '
+            'asset_out_amount '
+            'FROM balancer_trades '
+            'WHERE address = ?;'
+        )
+        query = cursor.execute(querystr, (address,))
+        trades = []
+        for result in query:
+            try:
+                trade = balancer_trade_from_db(result)
+            except DeserializationError:
+                continue  # skip entry. Above function should already log an error
+            trades.append(trade)
+
+        return trades
+
+    def delete_balancer_data(self) -> None:
+        """Delete all historical balancer trades data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM balancer_trades;')
+        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_trades%";')
         self.conn.commit()
         self.update_last_write()
 

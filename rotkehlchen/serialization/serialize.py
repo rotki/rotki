@@ -13,7 +13,12 @@ from rotkehlchen.chain.ethereum.aave import (
     AaveHistory,
     AaveLendingBalance,
 )
-from rotkehlchen.chain.ethereum.balancer import BalancerPool, BalancerPoolAsset
+from rotkehlchen.chain.ethereum.balancer import (
+    BalancerPool,
+    BalancerPoolAsset,
+    BalancerTrade,
+    UnknownEthereumToken,
+)
 from rotkehlchen.chain.ethereum.compound import CompoundBalance, CompoundEvent
 from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
@@ -92,6 +97,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             YearnVaultEvent,
             YearnVaultBalance,
             AaveEvent,
+            UnknownEthereumToken,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (
@@ -112,6 +118,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             BlockchainAccountData,
             BalancerPool,
             BalancerPoolAsset,
+            BalancerTrade,
     )):
         return process_result(entry._asdict())
     elif isinstance(entry, tuple):

@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    Dict,
     List,
     Optional,
     Set,
@@ -10,25 +11,10 @@ from typing import (
 from eth_utils import to_checksum_address
 import gevent
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.balancer.graph_queries import (
-    POOLSHARES_QUERY,
-    TOKENPRICES_QUERY,
-)
-from rotkehlchen.chain.ethereum.balancer.typing import (
-    AddressesBalancerPools,
-    AssetsPrices,
-    BalancerBalances,
-    BalancerPoolAsset,
-    BalancerPoolAssets,
-    BalancerPool,
-    BalancerPools,
-    DDAddressesBalancerPools,
-    KnownAsset,
-)
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.dbhandler import DBHandler
+
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -36,11 +22,34 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
+from .graph import (
+    POOLSHARES_QUERY,
+    TOKENPRICES_QUERY,
+    SWAPS_QUERY,
+    SWAPS_QUERY_FILTERING_BY_TS_GTE,
+)
+from .typing import (
+    AddressesBalancerPools,
+    AddressesBalancerTrades,
+    AssetsPrices,
+    BalancerBalances,
+    BalancerPoolAsset,
+    BalancerPoolAssets,
+    BalancerPool,
+    BalancerPools,
+    BalancerTrade,
+    DDAddressesBalancerPools,
+    KnownAsset,
+    UnknownEthereumToken,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 log = logging.getLogger(__name__)
+
+BALANCER_TRADES_PREFIX = 'balancer_trades'
 
 
 class Balancer(EthereumModule):
@@ -52,7 +61,7 @@ class Balancer(EthereumModule):
     def __init__(
             self,
             ethereum_manager: 'EthereumManager',
-            database: DBHandler,
+            database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
@@ -63,6 +72,14 @@ class Balancer(EthereumModule):
         self.graph = Graph(
             'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer',
         )
+
+    def _convert_addresses_to_lower_case(
+        self,
+        addresses: List[ChecksumEthAddress],
+    ) -> List[str]:
+        return [address.lower() for address in addresses]
+
+    # Get balances private methods
 
     def _get_balances(
             self,
@@ -92,7 +109,7 @@ class Balancer(EthereumModule):
             balances map, and the known/unknown sets.
         """
         # ! Format addresses, The Graph does not support checksum addresses
-        addresses_lower = [address.lower() for address in addresses]
+        addresses_lower = self._convert_addresses_to_lower_case(addresses)
         param_types = {
             '$addresses': '[String!]',
             '$balance': 'BigDecimal!',
@@ -207,7 +224,7 @@ class Balancer(EthereumModule):
         """
         unknown_assets_prices: AssetsPrices = {}
         # ! Format addresses, The Graph does not support checksum addresses
-        token_addresses = [address.lower() for address in unknown_assets]
+        token_addresses = self._convert_addresses_to_lower_case(unknown_assets)
         param_types = {
             '$token_ids': '[ID!]',
         }
@@ -282,6 +299,183 @@ class Balancer(EthereumModule):
 
         return updated_addresses_balancer_pools
 
+    # Get history private methods
+
+    def _get_balancer_trade(
+            self,
+            address: ChecksumEthAddress,
+            trade: Dict,
+    ) -> BalancerTrade:
+        """Given a trade (swap) dict, returns an instance of BalancerTrade"""
+        # Get transaction hash and log index from swap.id
+        tx_hash, log_index = trade['id'].split('-')
+
+        asset_in_address = to_checksum_address(trade['tokenIn'])
+        asset_in_symbol = trade['tokenInSym']
+        asset_out_address = to_checksum_address(trade['tokenOut'])
+        asset_out_symbol = trade['tokenOutSym']
+
+        asset_in, asset_out = None, None
+        is_asset_in_unknown = False
+        is_asset_out_unknown = False
+        # Process asset in either as EthereumToken or UnknownEthereumToken
+        try:
+            asset_in = EthereumToken(asset_in_symbol)
+            # Reconvert to UnknownEthereumToken if contract address does not match
+            if asset_in.ethereum_address != asset_in_address:
+                is_asset_in_unknown = True
+                log.error(
+                    f'Ethereum token contract address mismatch. '
+                    f'Found: {asset_in.ethereum_address}. '
+                    f'Expected: {asset_in_address}.',
+                )
+        except UnknownAsset:
+            is_asset_in_unknown = True
+            log.error(
+                f'Unknown asset_in {asset_in_symbol} with address {asset_in_address} '
+                f'in balancer. Instantiating UnknownEthereumToken',
+            )
+        finally:
+            if is_asset_in_unknown:
+                asset_in = UnknownEthereumToken(
+                    identifier=asset_in_symbol,
+                    ethereum_address=asset_in_address,
+                )
+
+        # Process asset in either as EthereumToken or UnknownEthereumToken
+        try:
+            asset_out = EthereumToken(asset_out_symbol)
+            # Reconvert to UnknownEthereumToken if contract address does not match
+            if asset_out.ethereum_address != asset_out_address:
+                is_asset_out_unknown = True
+                log.error(
+                    f'Ethereum token contract address mismatch. '
+                    f'Found: {asset_out.ethereum_address}. '
+                    f'Expected: {asset_out_address}.',
+                )
+        except UnknownAsset:
+            is_asset_out_unknown = True
+            log.error(
+                f'Unknown asset_out {asset_out_symbol} with address {asset_out_address} '
+                f'in balancer. Instantiating UnknownEthereumToken',
+            )
+        finally:
+            if is_asset_out_unknown:
+                asset_out = UnknownEthereumToken(
+                    identifier=asset_out_symbol,
+                    ethereum_address=asset_out_address,
+                )
+
+        balancer_trade = BalancerTrade(
+            tx_hash=tx_hash,
+            log_index=int(log_index),
+            address=address,
+            timestamp=trade['timestamp'],
+            usd_fee=Price(trade['feeValue']),
+            usd_value=Price(trade['value']),
+            pool_address=to_checksum_address(trade['poolAddress']['id']),
+            pool_name=trade['poolAddress']['name'],
+            pool_liquidity=FVal(trade['poolLiquidity']),
+            usd_pool_total_swap_fee=Price(trade['poolTotalSwapFee']),
+            usd_pool_total_swap_volume=Price(trade['poolTotalSwapVolume']),
+            asset_in=asset_in,
+            asset_in_amount=FVal(trade['tokenAmountIn']),
+            asset_out=asset_out,
+            asset_out_amount=FVal(trade['tokenAmountOut']),
+        )
+        return balancer_trade
+
+    def _get_trades(
+            self,
+            addresses: List[ChecksumEthAddress],
+    ) -> None:
+        """Get the latest addresses' trades (swaps) querying the Balancer
+        subgraph and store them in DB
+
+        Queries
+        -------
+        - Get list of swaps filtering by address, sorted by timestamp in
+        ascending
+
+        - Get list of swaps filtering by address and timestamp (gte `end_ts`,
+        from `used_query_range_balancer_trades_<address>` entry in the
+        `used_query_ranges` table.
+
+        Response process highlights
+        ---------------------------
+        For each address:
+          - Request all trades if there was no record of previous requests in
+          `used_query_ranges` table. Otherwise request all trades from
+          (included) `end_ts`. This current approach has the following flaws:
+            * Rely on timestamps (even filtering by `gte`).
+            * No pagination. Queries could exceed max. limit of results per query
+            and no edges have been defined (e.g. first, after)
+
+          - Instantiate a <BalancerTrade> per swap data.
+
+          - Store address' list of <BalancerTrade> in the DB, and insert or
+          update `used_query_range_balancer_trades_<address>` entry with the
+          first and last swaps timestamps.
+        """
+        # ! Format addresses, The Graph does not support checksum addresses
+        addresses_lower = self._convert_addresses_to_lower_case(addresses)
+
+        for address, address_lower in zip(addresses, addresses_lower):
+            # Get last used query range
+            used_query_range_name = f'{BALANCER_TRADES_PREFIX}_{address}'
+            trades_range = self.database.get_used_query_range(used_query_range_name)
+
+            # All trades
+            if not trades_range:
+                param_types = {'$address': 'String!'}
+                param_values = {'address': address_lower}
+                gql_query = SWAPS_QUERY.format()
+
+            # Trades starting at last used query range
+            else:
+                param_types = {
+                    '$address': 'String!',
+                    '$timestamp': 'Int!',
+                }
+                param_values = {
+                    'address': address_lower,
+                    'timestamp': trades_range[1],  # end_ts for timestamp_gte
+                }
+                gql_query = SWAPS_QUERY_FILTERING_BY_TS_GTE.format()
+
+            # Get address' swaps via Balancer subgraph
+            result = self.graph.query(
+                querystr=gql_query,
+                param_types=param_types,
+                param_values=param_values,
+            )
+            # Get swap BalancerTrade
+            balancer_trades: List[BalancerTrade] = []
+            for trade in result['swaps']:
+                balancer_trade = self._get_balancer_trade(address, trade)
+                balancer_trades.append(balancer_trade)
+
+            if balancer_trades:
+                # Insert or update last used query range
+                self.database.update_used_query_range(
+                    name=used_query_range_name,
+                    start_ts=balancer_trades[0].timestamp,
+                    end_ts=balancer_trades[-1].timestamp,  # response order is asc
+                )
+                # Insert into DB balancer trades
+                self.database.add_balancer_trades(address, balancer_trades)
+
+    def _get_db_trades(
+            self,
+            address: ChecksumEthAddress,
+    ) -> List[BalancerTrade]:
+        """Get address' balancer trades from DB"""
+        db_trades = self.database.get_balancer_trades(address)
+        # ? Sort asc or desc
+        db_trades.sort(key=lambda trade: trade.timestamp)
+
+        return db_trades
+
     def get_balances(
             self,
             addresses: List[ChecksumEthAddress],
@@ -296,7 +490,6 @@ class Balancer(EthereumModule):
         known_assets_prices = self._get_known_assets_prices(known_assets, unknown_assets)
         unknown_assets_prices = self._get_unknown_assets_prices(unknown_assets)
 
-
         updated_addresses_balancer_pools = (
             self._update_assets_prices_in_addresses_balancer_pools(
                 balancer_balances.addresses_balancer_pools,
@@ -305,6 +498,25 @@ class Balancer(EthereumModule):
             )
         )
         return updated_addresses_balancer_pools
+
+    def get_history(
+            self,
+            addresses: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, Dict]:
+        """Get the addresses' history in the Balancer protocol
+
+        Currently, this funcion only returns trades (swaps)
+        """
+        addresses_trades_history: AddressesBalancerTrades = {}
+
+        # Fetch addresses' last trades from Balancer, and store them in DB
+        self._get_trades(addresses)
+
+        for address in addresses:
+            # Fetch addresses' trades from DB
+            addresses_trades_history[address] = self._get_db_trades(address)
+
+        return {'trades': addresses_trades_history}
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
