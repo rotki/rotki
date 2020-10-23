@@ -14,7 +14,10 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import windowStateKeeper from 'electron-window-state';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { startHttp, stopHttp } from '@/electron-main/http';
+import { IPC_RESTART_BACKEND } from '@/electron-main/ipc';
 import { selectPort } from '@/electron-main/port-utils';
+import { assert } from '@/utils/assertions';
+import { CRITICAL, DEBUG, Level } from '@/utils/log-level';
 import PyHandler from './py-handler';
 import Timeout = NodeJS.Timeout;
 
@@ -235,7 +238,12 @@ function createWindow() {
     win = null;
   });
 
-  pyHandler.createPyProc(win).then(() => {
+  let logLevel: Level = DEBUG;
+  if (!isDevelopment) {
+    logLevel = CRITICAL;
+  }
+
+  pyHandler.createPyProc(win, logLevel).then(() => {
     pyHandler.listenForMessages();
   });
 }
@@ -351,6 +359,20 @@ app.on('ready', async () => {
     } catch (e) {
       event.sender.send('METAMASK_IMPORT', { error: e.message });
     }
+  });
+
+  ipcMain.on(IPC_RESTART_BACKEND, async (event, args) => {
+    let success = false;
+    try {
+      assert(win);
+      await pyHandler.exitPyProc();
+      await pyHandler.createPyProc(win, args);
+      success = true;
+    } catch (e) {
+      console.error(e);
+    }
+
+    event.sender.send(IPC_RESTART_BACKEND, success);
   });
   createWindow();
 });

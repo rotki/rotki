@@ -6,6 +6,7 @@ import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
+import { Level } from '@/utils/log-level';
 
 async function streamToString(givenStream: stream.Readable): Promise<string> {
   const bufferChunks: Buffer[] = [];
@@ -100,7 +101,7 @@ export default class PyHandler {
     this.app.quit();
   }
 
-  async createPyProc(window: BrowserWindow) {
+  async createPyProc(window: BrowserWindow, level?: Level) {
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logToFile('Skipped starting python sub-process');
       return;
@@ -123,6 +124,10 @@ export default class PyHandler {
     this._port = port;
     const args: string[] = [];
     this.loadArgumentsFromFile(args);
+
+    if (level) {
+      args.push('--loglevel', level);
+    }
 
     if (this.guessPackaged()) {
       this.startProcessPackaged(port, args);
@@ -257,10 +262,12 @@ export default class PyHandler {
       );
     }
 
+    const allArgs = defaultArgs.concat(args);
     this.logToFile(
-      `Starting non-packaged python subprocess: python ${defaultArgs.join(' ')}`
+      `Starting non-packaged python subprocess: python ${allArgs.join(' ')}`
     );
-    this.childProcess = spawn('python', defaultArgs.concat(args));
+
+    this.childProcess = spawn('python', allArgs);
   }
 
   private startProcessPackaged(port: number, args: string[]) {

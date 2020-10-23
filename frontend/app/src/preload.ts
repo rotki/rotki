@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { Interop, IPC_RESTART_BACKEND } from '@/electron-main/ipc';
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
   return new Promise(resolve => {
@@ -41,5 +42,6 @@ contextBridge.exposeInMainWorld('interop', {
       }
     : undefined,
   serverUrl: (): string => ipcRenderer.sendSync('SERVER_URL'),
-  metamaskImport: () => ipcAction('METAMASK_IMPORT')
-});
+  metamaskImport: () => ipcAction('METAMASK_IMPORT'),
+  restartBackend: level => ipcAction(IPC_RESTART_BACKEND, level)
+} as Interop);

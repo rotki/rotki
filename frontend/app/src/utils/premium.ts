@@ -11,8 +11,8 @@ import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HashLink from '@/components/helper/HashLink.vue';
+import { DebugSettings } from '@/electron-main/ipc';
 import { api } from '@/services/rotkehlchen-api';
-import { DebugSettings } from '@/types';
 
 export const setupPremium = () => {
   window.Vue = Vue;
