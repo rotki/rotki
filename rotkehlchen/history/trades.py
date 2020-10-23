@@ -291,7 +291,7 @@ class TradesHistorian():
                         ))
                         total_amount_per_token[event.asset] += event.value.amount
 
-                for token, balance in aave_history.total_earned.items():
+                for token, balance in aave_history.total_earned_interest.items():
                     # Αdd an extra event per token per address for the remaining not paid amount
                     if token in total_amount_per_token:
                         defi_events.append(DefiEvent(
@@ -301,11 +301,20 @@ class TradesHistorian():
                             amount=balance.amount - total_amount_per_token[token],
                         ))
 
+                # Add all losses from aave borrowing/liquidations
                 for asset, balance in aave_history.total_lost.items():
-                    # Add all losses from aave borrowing/liquidations
                     defi_events.append(DefiEvent(
                         timestamp=now,
                         event_type=DefiEventType.AAVE_LOSS,
+                        asset=asset,
+                        amount=balance.amount,
+                    ))
+
+                # Add earned assets from aave liquidations
+                for asset, balance in aave_history.total_earned_liquidations.items():
+                    defi_events.append(DefiEvent(
+                        timestamp=now,
+                        event_type=DefiEventType.AAVE_LOAN_INTEREST,
                         asset=asset,
                         amount=balance.amount,
                     ))

@@ -136,15 +136,17 @@ def _query_simple_aave_history_test(
             result = assert_proper_response_with_result(response)
 
     assert len(result) == 1
-    assert len(result[AAVE_TEST_ACC_2]) == 3
+    assert len(result[AAVE_TEST_ACC_2]) == 4
     events = result[AAVE_TEST_ACC_2]['events']
-    total_earned = result[AAVE_TEST_ACC_2]['total_earned']
+    total_earned_interest = result[AAVE_TEST_ACC_2]['total_earned_interest']
     total_lost = result[AAVE_TEST_ACC_2]['total_lost']
+    total_earned_liquidations = result[AAVE_TEST_ACC_2]['total_earned_liquidations']
     assert len(total_lost) == 0
-    assert len(total_earned) == 1
-    assert len(total_earned['aDAI']) == 2
-    assert FVal(total_earned['aDAI']['amount']) >= FVal('24.207179802347627414')
-    assert FVal(total_earned['aDAI']['usd_value']) >= FVal('24.580592532348742989192')
+    assert len(total_earned_liquidations) == 0
+    assert len(total_earned_interest) == 1
+    assert len(total_earned_interest['aDAI']) == 2
+    assert FVal(total_earned_interest['aDAI']['amount']) >= FVal('24.207179802347627414')
+    assert FVal(total_earned_interest['aDAI']['usd_value']) >= FVal('24.580592532348742989192')
 
     expected_events = process_result_list(expected_aave_deposit_test_events)
     if use_graph:
@@ -198,15 +200,21 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
         result = assert_proper_response_with_result(response)
 
     assert len(result) == 1
-    assert len(result[AAVE_TEST_ACC_3]) == 3
+    assert len(result[AAVE_TEST_ACC_3]) == 4
     events = result[AAVE_TEST_ACC_3]['events']
-    total_earned = result[AAVE_TEST_ACC_3]['total_earned']
+    total_earned_interest = result[AAVE_TEST_ACC_3]['total_earned_interest']
     total_lost = result[AAVE_TEST_ACC_3]['total_lost']
+    total_earned_liquidations = result[AAVE_TEST_ACC_3]['total_earned_liquidations']
 
-    assert len(total_earned) == 1
-    assert len(total_earned['aWBTC']) == 2
-    assert FVal(total_earned['aWBTC']['amount']) >= FVal('0.00000833')
-    assert FVal(total_earned['aWBTC']['usd_value']) >= ZERO
+    assert len(total_earned_interest) == 1
+    assert len(total_earned_interest['aWBTC']) == 2
+    assert FVal(total_earned_interest['aWBTC']['amount']) >= FVal('0.00000833')
+    assert FVal(total_earned_interest['aWBTC']['usd_value']) >= ZERO
+
+    assert len(total_earned_liquidations) == 1
+    assert len(total_earned_liquidations['ETH']) == 2
+    assert FVal(total_earned_liquidations['ETH']['amount']) >= FVal('9.251070299427409111')
+    assert FVal(total_earned_liquidations['ETH']['usd_value']) >= ZERO
 
     assert len(total_lost) == 3
     eth_lost = total_lost['ETH']
@@ -264,11 +272,13 @@ def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServ
 
     assert len(result) == 1
     result = result[AAVE_TEST_ACC_1]
-    assert len(result) == 3
+    assert len(result) == 4
 
-    for _, entry in result['total_earned'].items():
+    for _, entry in result['total_earned_interest'].items():
         assert FVal(entry['amount']) > ZERO
     for _, entry in result['total_lost'].items():
+        assert FVal(entry['amount']) > ZERO
+    for _, entry in result['total_earned_liquidations'].items():
         assert FVal(entry['amount']) > ZERO
 
     events = result['events']
