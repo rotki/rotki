@@ -143,8 +143,6 @@ export interface AccountData {
   readonly tags: string[];
 }
 
-export type AccountDataMap = { [address: string]: AccountData };
-
 export interface Account {
   readonly chain: Blockchain;
   readonly address: string;

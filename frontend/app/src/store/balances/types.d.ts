@@ -5,10 +5,14 @@ import {
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
-import { Balance, HasBalance } from '@/services/types-api';
+import {
+  Balance,
+  BtcAccountData,
+  GeneralAccountData,
+  HasBalance
+} from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import {
-  AccountDataMap,
   Blockchain,
   ExchangeData,
   GeneralAccount,
@@ -35,8 +39,8 @@ export interface BalanceState {
   usdToFiatExchangeRates: UsdToFiatExchangeRates;
   connectedExchanges: SupportedExchange[];
   exchangeBalances: ExchangeData;
-  ethAccounts: AccountDataMap;
-  btcAccounts: AccountDataMap;
+  ethAccounts: GeneralAccountData[];
+  btcAccounts: BtcAccountData;
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: ManualBalanceByLocation;

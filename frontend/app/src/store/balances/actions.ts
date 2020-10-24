@@ -18,6 +18,7 @@ import {
 import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
+import { XpubAccountData } from '@/services/types-api';
 import {
   AccountPayload,
   AddAccountsPayload,
@@ -36,7 +37,41 @@ import { RotkehlchenState } from '@/store/types';
 import { showError } from '@/store/utils';
 import { Blockchain, BTC, ETH, UsdToFiatExchangeRates } from '@/typing/types';
 import { assert } from '@/utils/assertions';
-import { toMap } from '@/utils/conversion';
+
+function removeTag(tags: string[] | null, tagName: string): string[] | null {
+  if (!tags) {
+    return null;
+  }
+
+  const index = tags.indexOf(tagName);
+
+  if (index < 0) {
+    return null;
+  }
+
+  return [...tags.slice(0, index), ...tags.slice(index + 1)];
+}
+
+function removeTags<T extends { tags: string[] | null }>(
+  data: T[],
+  tagName: string
+): T[] {
+  const accounts = [...data];
+  for (let i = 0; i < accounts.length; i++) {
+    const account = accounts[i];
+    const tags = removeTag(account.tags, tagName);
+
+    if (!tags) {
+      continue;
+    }
+
+    accounts[i] = {
+      ...accounts[i],
+      tags
+    };
+  }
+  return accounts;
+}
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchBalances(
@@ -467,26 +502,25 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
     const { blockchain } = payload;
-    const accountData = await api.editBlockchainAccount(payload);
-    const accountMap = toMap(accountData, 'address');
-    commit(blockchain === ETH ? 'ethAccounts' : 'btcAccounts', accountMap);
+    const isEth = blockchain === ETH;
+    if (isEth) {
+      const accountData = await api.editEthAccount(payload);
+      commit('ethAccounts', accountData);
+    } else {
+      const accountData = await api.editBtcAccount(payload);
+      commit('btcAccounts', accountData);
+    }
   },
 
   async accounts({ commit }) {
     try {
       const [ethAccounts, btcAccounts] = await Promise.all([
-        api.accounts(ETH),
-        api.accounts(BTC)
+        api.ethAccounts(),
+        api.btcAccounts()
       ]);
 
-      commit(
-        'ethAccounts',
-        ethAccounts.length > 0 ? toMap(ethAccounts, 'address') : {}
-      );
-      commit(
-        'btcAccounts',
-        btcAccounts.length > 0 ? toMap(btcAccounts, 'address') : {}
-      );
+      commit('ethAccounts', ethAccounts);
+      commit('btcAccounts', btcAccounts);
     } catch (e) {
       notify(
         `Failed to accounts: ${e}`,
@@ -498,32 +532,25 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
   /* Remove a tag from all accounts of the state */
   async removeTag({ commit, state }, tagName: string) {
-    const updateEth = { ...state.ethAccounts };
-    for (const key in updateEth) {
-      const tags = updateEth[key].tags;
-      const index = tags.indexOf(tagName);
-      updateEth[key] = {
-        ...updateEth[key],
-        tags:
-          index === -1
-            ? tags
-            : [...tags.slice(0, index), ...tags.slice(index + 1)]
-      };
+    commit('ethAccounts', removeTags(state.ethAccounts, tagName));
+    const btcAccounts = state.btcAccounts;
+    const standalone = removeTags(btcAccounts.standalone, tagName);
+
+    const xpubs: XpubAccountData[] = [];
+
+    for (let i = 0; i < btcAccounts.xpubs.length; i++) {
+      const xpub = btcAccounts.xpubs[i];
+      xpubs.push({
+        ...xpub,
+        tags: removeTag(xpub.tags, tagName),
+        addresses: xpub.addresses ? removeTags(xpub.addresses, tagName) : null
+      });
     }
-    const updateBtc = { ...state.btcAccounts };
-    for (const key in updateBtc) {
-      const tags = updateBtc[key].tags;
-      const index = tags.indexOf(tagName);
-      updateBtc[key] = {
-        ...updateBtc[key],
-        tags:
-          index === -1
-            ? tags
-            : [...tags.slice(0, index), ...tags.slice(index + 1)]
-      };
-    }
-    commit('ethAccounts', updateEth);
-    commit('btcAccounts', updateBtc);
+
+    commit('btcAccounts', {
+      standalone,
+      xpubs
+    });
   },
 
   async fetchSupportedAssets({ commit, state }) {

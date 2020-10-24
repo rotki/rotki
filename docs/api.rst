@@ -4377,7 +4377,7 @@ Editing blockchain account data
            "message": "",
       }
 
-   :resjson list result: A list containing the blockchain account data as also defined `here <blockchain_accounts_result_>`_.
+   :resjson list result: A list containing the blockchain account data as also defined `here <blockchain_accounts_result_>`_. Result is different depending on the blockchain type.
 
    :statuscode 200: Accounts succesfully edited
    :statuscode 400: Provided JSON or data is in some way malformed. Given list to edit is empty.

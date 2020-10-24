@@ -10,8 +10,11 @@ export const defaultState = (): BalanceState => ({
   usdToFiatExchangeRates: {},
   connectedExchanges: [],
   exchangeBalances: {},
-  ethAccounts: {},
-  btcAccounts: {},
+  ethAccounts: [],
+  btcAccounts: {
+    standalone: [],
+    xpubs: []
+  },
   supportedAssets: [],
   manualBalances: [],
   manualBalanceByLocation: {}

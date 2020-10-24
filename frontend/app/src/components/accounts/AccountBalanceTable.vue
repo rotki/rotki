@@ -98,11 +98,7 @@
     <template #group.header="{ group, headers, items, isOpen, toggle }">
       <account-group-header
         :group="group ? group : ''"
-        :items="getItems(items[0].xpub, items[0].derivationPath)"
-        :xpub="{
-          xpub: items[0].xpub,
-          derivationPath: items[0].derivationPath
-        }"
+        :items="getItems(group.split(':')[0], group.split(':')[1])"
         :expanded="isOpen"
         @expand-clicked="toggle"
         @delete-clicked="deleteXpub($event)"
@@ -181,11 +177,14 @@ export default class AccountBalanceTable extends Vue {
 
     for (let item of items) {
       const key =
-        'xpub' in item ? groupBy.map(value => item[value]).join('/') : '';
+        'xpub' in item ? groupBy.map(value => item[value]).join(':') : '';
       if (record[key]) {
+        if (!item.address) {
+          continue;
+        }
         record[key].push(item);
       } else {
-        record[key] = [item];
+        record[key] = !item.address ? [] : [item];
       }
     }
 
@@ -218,7 +217,8 @@ export default class AccountBalanceTable extends Vue {
       value =>
         'xpub' in value &&
         xpub === value.xpub &&
-        derivationPath === value?.derivationPath
+        derivationPath === value?.derivationPath &&
+        !!value.address
     );
   }
 

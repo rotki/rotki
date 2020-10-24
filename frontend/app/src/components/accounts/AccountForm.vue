@@ -4,7 +4,7 @@
       <v-col cols="12">
         <v-select
           v-model="blockchain"
-          class="blockchain-balances__chain"
+          class="account-form__chain"
           :items="items"
           :label="$t('account_form.labels.blockchain')"
           :disabled="accountOperation || loading || !!edit"
@@ -23,7 +23,17 @@
         <input-mode-select v-model="inputMode" :blockchain="blockchain" />
       </v-col>
     </v-row>
-    <v-row v-if="isBtc && isXpub" align="center" no-gutters class="mt-2">
+    <v-row v-if="displayXpubInput" align="center" no-gutters class="mt-2">
+      <v-col cols="auto">
+        <v-select
+          v-model="xpubKeyType"
+          class="account-form__xpub-key-type"
+          item-value="value"
+          item-text="label"
+          :disabled="accountOperation || loading || !!edit"
+          :items="keyType"
+        />
+      </v-col>
       <v-col>
         <v-text-field
           v-model="xpub"
@@ -66,7 +76,7 @@
         <v-text-field
           v-if="(!isBtc || (isBtc && !isXpub) || !!edit) && !isMetaMask"
           v-model="address"
-          class="blockchain-balances__address"
+          class="account-form__address"
           :label="$t('account_form.labels.account')"
           :rules="rules"
           :error-messages="errorMessages"
@@ -80,7 +90,7 @@
       <v-col cols="12">
         <v-text-field
           v-model="label"
-          class="blockchain-balances__label"
+          class="account-form__label"
           :label="$t('account_form.labels.label')"
           :disabled="accountOperation || loading"
         />
@@ -93,7 +103,7 @@
     </v-row>
     <v-row no-gutters>
       <v-col cols="12">
-        <div class="blockchain-balances--progress">
+        <div class="account-form--progress">
           <v-progress-linear v-if="accountOperation" indeterminate />
         </div>
       </v-col>
@@ -114,9 +124,9 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import {
-  BlockchainAccountPayload,
-  BlockchainAccount,
   AddAccountsPayload,
+  BlockchainAccount,
+  BlockchainAccountPayload,
   XpubPayload
 } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
@@ -133,6 +143,21 @@ import { trimOnPaste } from '@/utils/event';
 import { getMetamaskAddresses } from '@/utils/metamask';
 
 type ValidationRule = (value: string) => boolean | string;
+type XpubType = {
+  readonly label: string;
+  readonly value: string;
+};
+
+const XPUB_LABEL = 'P2PKH';
+const XPUB_VALUE = 'xpub';
+const YPUB_LABEL = 'P2SH-P2WPKH';
+const YPUB_VALUE = 'ypub';
+const ZPUB_LABEL = 'WPKH';
+const ZPUB_VALUE = 'zpub';
+
+const XPUB_KEY_TYPE = [XPUB_VALUE, YPUB_VALUE, ZPUB_VALUE] as const;
+
+type XpubKeyType = typeof XPUB_KEY_TYPE[number];
 
 @Component({
   components: { InputModeSelect, TagInput },
@@ -155,6 +180,7 @@ export default class AccountForm extends Vue {
   label: string = '';
   tags: string[] = [];
   errorMessages: string[] = [];
+  xpubKeyType: XpubKeyType = XPUB_VALUE;
   account!: (address: string) => GeneralAccount | undefined;
   addAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   addAccounts!: (payload: AddAccountsPayload) => Promise<void>;
@@ -172,6 +198,28 @@ export default class AccountForm extends Vue {
 
   get isMetaMask(): boolean {
     return this.inputMode === METAMASK_IMPORT;
+  }
+
+  get displayXpubInput(): boolean {
+    const edit = !!this.edit;
+    return (!edit && this.isBtc && this.isXpub) || (edit && !!this.xpub);
+  }
+
+  get keyType(): XpubType[] {
+    return [
+      {
+        label: XPUB_LABEL,
+        value: XPUB_VALUE
+      },
+      {
+        label: YPUB_LABEL,
+        value: YPUB_VALUE
+      },
+      {
+        label: ZPUB_LABEL,
+        value: ZPUB_VALUE
+      }
+    ];
   }
 
   get rules(): ValidationRule[] {
@@ -204,7 +252,6 @@ export default class AccountForm extends Vue {
 
   private setEditMode() {
     if (!this.edit) {
-      this.address = '';
       return;
     }
 
@@ -213,7 +260,14 @@ export default class AccountForm extends Vue {
     this.label = this.edit.label;
     this.tags = this.edit.tags;
     if ('xpub' in this.edit) {
-      this.xpub = this.edit.xpub;
+      const match = this.edit.xpub.match(/([xzy]pub)(.*)/);
+      if (match) {
+        this.xpub = match[0];
+        this.xpubKeyType = match[1] as XpubKeyType;
+      } else {
+        this.xpub = this.edit.xpub;
+      }
+
       this.derivationPath = this.edit.derivationPath;
     }
   }
@@ -245,6 +299,25 @@ export default class AccountForm extends Vue {
     }
   }
 
+  @Watch('xpub')
+  onXpubChange(value: string) {
+    if (!value) {
+      return;
+    }
+    this.setXpubKeyType(value);
+  }
+
+  private setXpubKeyType(value: string) {
+    const match = AccountForm.isPrefixed(value);
+    if (match && match.length === 3) {
+      this.xpubKeyType = match[1] as XpubKeyType;
+    }
+  }
+
+  private static isPrefixed(value: string) {
+    return value.match(/([xzy]pub)(.*)/);
+  }
+
   onPasteAddress(event: ClipboardEvent) {
     const paste = trimOnPaste(event);
     if (paste) {
@@ -255,6 +328,7 @@ export default class AccountForm extends Vue {
   onPasteXpub(event: ClipboardEvent) {
     const paste = trimOnPaste(event);
     if (paste) {
+      this.setXpubKeyType(paste);
       this.xpub = paste;
     }
   }
@@ -323,14 +397,18 @@ export default class AccountForm extends Vue {
   }
 
   payload(): BlockchainAccountPayload {
-    let xpub: XpubPayload | undefined;
+    let xpubPayload: XpubPayload | undefined;
     if (this.isBtc && this.isXpub) {
-      xpub = {
-        xpub: this.xpub.trim(),
+      const xpubKey = this.xpub.trim();
+      const xpub = AccountForm.isPrefixed(xpubKey)
+        ? xpubKey
+        : `${this.xpubKeyType}${xpubKey}`;
+      xpubPayload = {
+        xpub: xpub,
         derivationPath: this.derivationPath ?? undefined
       };
     } else {
-      xpub = undefined;
+      xpubPayload = undefined;
     }
 
     return {
@@ -338,7 +416,7 @@ export default class AccountForm extends Vue {
       address: this.address.trim(),
       label: this.label,
       tags: this.tags,
-      xpub: xpub
+      xpub: xpubPayload
     };
   }
 
@@ -408,7 +486,11 @@ export default class AccountForm extends Vue {
 }
 </script>
 <style scoped lang="scss">
-.blockchain-balances {
+.account-form {
+  &__xpub-key-type {
+    max-width: 150px;
+  }
+
   &__buttons {
     &__cancel {
       margin-left: 8px;
