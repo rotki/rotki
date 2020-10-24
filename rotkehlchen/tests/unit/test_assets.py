@@ -77,6 +77,14 @@ def test_tokens_address_is_checksummed():
         assert is_checksum_address(asset_data['ethereum_address']), msg
 
 
+def test_asset_identifiers_are_unique_all_lowercased():
+    """Test that all asset identifiers would be unique if we do a lowercase comparison"""
+    identifier_set = set()
+    for asset_id, _ in AssetResolver().assets.items():
+        assert asset_id.lower() not in identifier_set, f'id {asset_id} already in the assets set'
+        identifier_set.add(asset_id)
+
+
 def test_coingecko_identifiers_are_reachable():
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko

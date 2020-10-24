@@ -128,6 +128,7 @@ class AssetResolver():
     __instance = None
     remote_check_happened: bool = False
     assets: Dict[str, Dict[str, Any]] = {}
+    lowercase_mapping: Dict[str, str] = {}
     eth_token_info: Optional[List[EthTokenInfo]] = None
 
     def __new__(
@@ -161,14 +162,29 @@ class AssetResolver():
             AssetResolver.__instance = object.__new__(cls)
 
         AssetResolver.__instance.assets = assets
+        # Mapping of lowercase identifier to file identifier to make sure our comparisons
+        # are case insensitive. TODO: Eventially we can make this go away. We can achieve that by:
+        # 1. Lowercasing all identifiers in the assets.json file
+        # 2. Writing a DB upgrade to do the same everywhere in the DB where
+        # an asset identifier is used for the user. That last part is doable but
+        # a bit more tricky. See v13_v14 upgrade, plus consider all new tables
+        # which have assets added to them.
+        # 3. Everywhere in the code where we use identifiers such as mappings
+        # we should now use the new lowercase identifiers. This is probably also
+        # PITA.
+        # ---> Think about it and if worth doing it address it
+        AssetResolver.__instance.lowercase_mapping = {k.lower(): k for k, _ in assets.items()}
         AssetResolver.__instance.remote_check_happened = check_happened
 
         return AssetResolver.__instance
 
     @staticmethod
-    def is_identifier_canonical(asset_identifier: str) -> bool:
-        """Checks if an asset identifier is canonical"""
-        return asset_identifier in AssetResolver().assets
+    def is_identifier_canonical(asset_identifier: str) -> Optional[str]:
+        """Checks if an asset identifier exists and if yes returns its canonical form
+
+        The canonical form is the one in the all_assets.json file and in the DB"""
+        instance = AssetResolver()
+        return instance.lowercase_mapping.get(asset_identifier.lower(), None)
 
     @staticmethod
     def get_asset_data(asset_identifier: str) -> AssetData:
