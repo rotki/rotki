@@ -13,6 +13,7 @@ POOLSHARES_QUERY = """poolShares
         tokens {{
             address
             balance
+            decimals
             denormWeight
             name
             symbol

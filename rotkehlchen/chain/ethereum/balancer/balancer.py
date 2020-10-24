@@ -11,7 +11,8 @@ from typing import (
 from eth_utils import to_checksum_address
 import gevent
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.constants import ZERO
 
@@ -34,12 +35,9 @@ from .typing import (
     AssetsPrices,
     BalancerBalances,
     BalancerPoolAsset,
-    BalancerPoolAssets,
     BalancerPool,
-    BalancerPools,
     BalancerTrade,
     DDAddressesBalancerPools,
-    KnownAsset,
     UnknownEthereumToken,
 )
 
@@ -119,72 +117,86 @@ class Balancer(EthereumModule):
             'balance': "0",
         }
         result = self.graph.query(
-            querystr=POOLSHARES_QUERY.format(),  # ! Remove returns in string
+            querystr=POOLSHARES_QUERY.format(),
             param_types=param_types,
             param_values=param_values,
         )
         addresses_balancer_pools: DDAddressesBalancerPools = defaultdict(list)
-        known_assets: Set[KnownAsset] = set()
-        unknown_assets: Set[ChecksumEthAddress] = set()
+        known_assets: Set[EthereumToken] = set()
+        unknown_assets: Set[UnknownEthereumToken] = set()
+
         for pool_share in result['poolShares']:
-            # ! Checksum address
             address = to_checksum_address(pool_share['userAddress']['id'])
             user_pool_balance = FVal(pool_share['balance'])
             pool = pool_share['poolId']
             pool_balance = FVal(pool['totalShares'])
-
             bpool_assets = []
+
             for token in pool['tokens']:
-                # Try to get the token <Asset> and classify as known or unknown
-                # ! Checksum address
+                # Try to get the token <EthereumToken> and classify as known or unknown
                 token_address = to_checksum_address(token['address'])
                 token_symbol = token['symbol']
                 asset = None
+                is_unknown_asset = False
                 try:
-                    # ! TODO VN PR: need optimisations? symbol uniqueness?
-                    asset = Asset(token_symbol)
+                    asset = EthereumToken(token_symbol)
                 except UnknownAsset:
-                    unknown_assets.add(token_address)
-                    log.error(f'Encountered unknown asset {token_symbol} in balancer. Skipping')
+                    is_unknown_asset = True
+                    log.error(
+                        f'Encountered unknown asset {token_symbol} with address '
+                        f'{address} in balancer. Instantiating UnknownEthereumToken',
+                    )
                 else:
-                    known_assets.add(KnownAsset(address=token_address, asset=asset))
+                    if asset.ethereum_address != token_address:
+                        is_unknown_asset = True
+                    else:
+                        known_assets.add(asset)
+                finally:
+                    if is_unknown_asset:
+                        asset = UnknownEthereumToken(
+                            identifier=token_symbol,
+                            ethereum_address=token_address,
+                            # name=token['name'],
+                            # decimals=token['decimals'],
+                        )
+                        unknown_assets.add(asset)
 
                 # Estimate underlying asset balance given user pool balance
                 asset_balance = FVal(token['balance'])
                 user_asset_balance = (user_pool_balance / pool_balance * asset_balance)
 
                 bpool_asset = BalancerPoolAsset(
-                    address=token_address,
                     balance=asset_balance,
                     denorm_weight=FVal(token['denormWeight']),
-                    name=token['name'],
-                    symbol=token_symbol,
-                    user_balance=user_asset_balance,
+                    user_balance=Balance(amount=user_asset_balance),
                     asset=asset,
                 )
                 bpool_assets.append(bpool_asset)
 
+            pool_asset = UnknownEthereumToken(
+                identifier=pool['symbol'],
+                ethereum_address=to_checksum_address(pool['id']),
+            )
             bpool = BalancerPool(
-                address=to_checksum_address(pool['id']),  # ! Checksum address
+                asset=pool_asset,
                 assets=bpool_assets,
                 assets_count=FVal(pool['tokensCount']),
-                symbol=pool['symbol'],
                 balance=pool_balance,
                 weight=FVal(pool['totalWeight']),
-                user_balance=user_pool_balance,
+                user_balance=Balance(amount=user_pool_balance),
             )
             addresses_balancer_pools[address].append(bpool)
 
         return BalancerBalances(
-            addresses_balancer_pools=addresses_balancer_pools,
+            addresses_balancer_pools=dict(addresses_balancer_pools),
             known_assets=known_assets,
             unknown_assets=unknown_assets,
         )
 
     def _get_known_assets_prices(
         self,
-        known_assets: Set[KnownAsset],
-        unknown_assets: Set[ChecksumEthAddress],
+        known_assets: Set[EthereumToken],
+        unknown_assets: Set[UnknownEthereumToken],
     ) -> AssetsPrices:
         """Get the tokens prices via Inquirer
 
@@ -195,36 +207,38 @@ class Balancer(EthereumModule):
         known_assets_ = list(known_assets)  # ! Get a deterministic sequence
         # ! TODO VN PR: consider timeout and list/kill greenlets
         assets_usd_prices = [
-            gevent.spawn(Inquirer().find_usd_price, known_asset.asset)
-            for known_asset in known_assets_
+            gevent.spawn(Inquirer().find_usd_price, known_asset.ethereum_address)
+            for known_asset in known_assets
         ]
         gevent.joinall(assets_usd_prices, timeout=5)
 
         for known_asset, asset_usd_price in zip(known_assets_, assets_usd_prices):
             if asset_usd_price.value != Price(ZERO):
-                known_asset_prices[known_asset.address] = FVal(asset_usd_price.value)
+                known_asset_prices[known_asset.ethereum_address] = FVal(asset_usd_price.value)
             else:
-                unknown_assets.add(known_asset.address)
+                unknown_asset = UnknownEthereumToken(
+                    identifier=known_asset.identifier,
+                    ethereum_address=known_asset.ethereum_address,
+                )
+                unknown_assets.add(unknown_asset)
 
         return known_asset_prices
 
     def _get_unknown_assets_prices(
             self,
-            unknown_assets: Set[ChecksumEthAddress],
+            unknown_assets: Set[UnknownEthereumToken],
     ) -> AssetsPrices:
         """Get the tokens prices via the Balancer subgraph
 
         Query
         -----
         Get list of tokenPrices filtering by token id
-
-        # ! TODO VN PR
-        # ! Add USD value per asset, either via Inquirer or The Graph
-        # ! Add Asset instance per asset, at least if exists
         """
         unknown_assets_prices: AssetsPrices = {}
-        # ! Format addresses, The Graph does not support checksum addresses
-        token_addresses = self._convert_addresses_to_lower_case(unknown_assets)
+
+        unknown_assets_addresses = [asset.ethereum_address for asset in unknown_assets]
+        token_addresses = self._convert_addresses_to_lower_case(unknown_assets_addresses)
+
         param_types = {
             '$token_ids': '[ID!]',
         }
@@ -232,11 +246,10 @@ class Balancer(EthereumModule):
             'token_ids': token_addresses,
         }
         result = self.graph.query(
-            querystr=TOKENPRICES_QUERY.format(),  # ! Remove returns in string
+            querystr=TOKENPRICES_QUERY.format(),
             param_types=param_types,
             param_values=param_values,
         )
-        # ! Checksum address
         unknown_assets_prices = {
             to_checksum_address(token['id']): FVal(token['price'])
             for token in result['tokenPrices']
@@ -248,56 +261,43 @@ class Balancer(EthereumModule):
             addresses_balancer_pools: AddressesBalancerPools,
             known_assets_prices: AssetsPrices,
             unknown_assets_prices: AssetsPrices,
-    ) -> AddressesBalancerPools:
+    ) -> None:
         """Update the pools underlying assets prices in USD (prices obtained
         via Inquirer and the Balancer subgraph)
 
         Process highlights
         ------------------
         Per each <BalancerPoolAsset> in <BalancerPool>.assets:
-            * Replace <BalancerPoolAsset> including the asset USD price if it
-            exists either in `known_assets_prices` or `unknown_assets_prices`.
-            * Replace <BalancerPool> if any underlying asset has been replaced.
+          - Update `asset_usd` and `user_balance.usd_value` if the asset price
+          exists either in `known_assets_prices` or `unknown_assets_prices`.
+
+          - Update the pool `user_balance.usd_value` with the total of the
+          underlying assets.
         """
-        updated_addresses_balancer_pools: AddressesBalancerPools = {}
-        for address, balancer_pools in addresses_balancer_pools.items():
-            updated_balancer_pools: BalancerPools = []
+        for balancer_pools in addresses_balancer_pools.values():
             for balancer_pool in balancer_pools:
-                updated_balancer_pool_assets: BalancerPoolAssets = []
-                is_updated = False
                 # Try to get price from either known or unknown assets prices.
                 # Otherwise keep existing price (zero)
-                # ! Assets prices values are <FVal> (truthy)
+                total_user_balance = FVal(0)
                 for asset in balancer_pool.assets:
-                    if asset.address in known_assets_prices:
-                        asset_usd = known_assets_prices[asset.address]
-                    elif asset.address in unknown_assets_prices:
-                        asset_usd = unknown_assets_prices[asset.address]
-                    else:
-                        asset_usd = ZERO
-
-                    # Replace <BalancerPoolAsset> if asset USD price exists
-                    if asset_usd != ZERO:
-                        updated_balancer_pool_asset = asset._replace(
-                            asset_usd=asset_usd,
-                            user_balance_usd=asset.user_balance * asset_usd,
+                    asset_usd = known_assets_prices.get(
+                        asset.asset.ethereum_address,
+                        unknown_assets_prices.get(
+                            asset.asset.asset.ethereum_address,
+                            ZERO,
                         )
-                        is_updated = True
-                    else:
-                        updated_balancer_pool_asset = asset
+                    )
+                    # Update <BalancerPoolAsset> if asset USD price exists
+                    if asset_usd != ZERO:
+                        asset.asset_usd = Price(asset_usd)
+                        asset.user_balance.usd_value = (
+                            asset.user_balance.amount * asset_usd
+                        )
 
-                    updated_balancer_pool_assets.append(updated_balancer_pool_asset)
+                    total_user_balance += asset.user_balance.usd_value
 
-                # Replace <BalancerPool> if any <BalancerPoolAsset> was replaced
-                updated_balancer_pool = (
-                    balancer_pool._replace(assets=updated_balancer_pool_assets)
-                    if is_updated else balancer_pool
-                )
-                updated_balancer_pools.append(updated_balancer_pool)
-
-            updated_addresses_balancer_pools[address] = updated_balancer_pools
-
-        return updated_addresses_balancer_pools
+                # Update <BalancerPool> total balance in USD
+                balancer_pool.user_balance.usd_value = total_user_balance
 
     # Get history private methods
 
@@ -490,14 +490,12 @@ class Balancer(EthereumModule):
         known_assets_prices = self._get_known_assets_prices(known_assets, unknown_assets)
         unknown_assets_prices = self._get_unknown_assets_prices(unknown_assets)
 
-        updated_addresses_balancer_pools = (
-            self._update_assets_prices_in_addresses_balancer_pools(
-                balancer_balances.addresses_balancer_pools,
-                known_assets_prices,
-                unknown_assets_prices,
-            )
+        self._update_assets_prices_in_addresses_balancer_pools(
+            balancer_balances.addresses_balancer_pools,
+            known_assets_prices,
+            unknown_assets_prices,
         )
-        return updated_addresses_balancer_pools
+        return balancer_balances.addresses_balancer_pools
 
     def get_history(
             self,

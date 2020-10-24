@@ -5,13 +5,13 @@ from typing import (
     Dict,
     List,
     NamedTuple,
-    Optional,
     Set,
     Tuple,
     Union,
 )
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import (
@@ -21,59 +21,14 @@ from rotkehlchen.typing import (
 )
 
 
-# Below set of classes where to store PoolShare, Pool and PoolToken data
-# BalancerPoolAsset stores PoolToken data, and adds custom ones
-class BalancerPoolAsset(NamedTuple):
-    address: ChecksumEthAddress  # PoolToken.id, token contract address
-    balance: FVal  # PoolToken.balance
-    denorm_weight: FVal  # PoolToken.denormWeight
-    name: str  # PoolToken.name
-    symbol: str  # PoolToken.symbol
-    # Custom fields
-    user_balance: FVal  # Estimated token balance
-    user_balance_usd: Optional[FVal] = ZERO  # Estimated token balance in USD
-    asset: Optional[Asset] = None
-    asset_usd: Optional[FVal] = ZERO  # price in USD per token
-
-
-# BalancerPool stores PoolShare and Pool data
-# TODO: currently `asset` field can't be populated with <Asset> or
-# <EthereumToken> because BPT is not a unique symbol for Balancer.
-# Explore something similar to `converters.py`
-class BalancerPool(NamedTuple):
-    address: ChecksumEthAddress  # Pool.id, pool contract address
-    assets: List[BalancerPoolAsset]  # Pool.tokens
-    assets_count: FVal  # Pool.tokensCount
-    symbol: str  # Pool.symbol
-    balance: FVal  # Pool.totalShares
-    weight: FVal  # Pool.totalWeight
-    # Custom fields
-    user_balance: FVal  # PoolShare.balance
-    asset: Optional[Asset] = None
-
-
-class KnownAsset(NamedTuple):
-    address: ChecksumEthAddress
-    asset: Asset
-
-    def __hash__(self) -> int:
-        return hash((self.address, hash(self.asset)))
-
-    def __eq__(self, other: Any) -> bool:
-        if other is None:
-            return False
-        if not isinstance(other, KnownAsset):
-            raise TypeError(f'Invalid type: {type(other)}')
-
-        return self.address == other.address and self.asset == other.asset
-
-
 @dataclass(init=True, repr=True, eq=False, unsafe_hash=False, frozen=True)
-class UnknownEthereumToken():
+class UnknownEthereumToken:
     """Alternative minimal class to EthereumToken for unknown assets"""
     identifier: str
     ethereum_address: ChecksumEthAddress
     symbol: str = field(init=False)
+    # decimals: int = None
+    # name: str = field(init=False)
 
     def __post_init__(self) -> None:
         """Asset post initialization as the frozen property is desirable
@@ -81,7 +36,7 @@ class UnknownEthereumToken():
         object.__setattr__(self, 'symbol', self.identifier)
 
     def __hash__(self) -> int:
-        return hash(self.identifier, self.ethereum_address)
+        return hash((self.identifier, self.ethereum_address))
 
     def __eq__(self, other: Any) -> bool:
         if other is None:
@@ -96,16 +51,69 @@ class UnknownEthereumToken():
 
     def serialize(self):
         return {
-            'identifier': self.identifier,
+            # 'decimals': self.decimals,
             'ethereum_address': self.ethereum_address,
+            'identifier': self.identifier,
+            # 'name': self.name,
             'symbol': self.symbol,
         }
 
 
+# Below set of classes where to store PoolShare, Pool and PoolToken data
+# BalancerPoolAsset stores PoolToken data, and adds custom ones
+@dataclass(init=True, repr=True)
+class BalancerPoolAsset:
+    # address: ChecksumEthAddress  # PoolToken.id, token contract address
+    balance: FVal  # PoolToken.balance
+    denorm_weight: FVal  # PoolToken.denormWeight
+    # name: str  # PoolToken.name
+    # symbol: str  # PoolToken.symbol
+    # Custom fields
+    user_balance: Balance  # Estimated token balance and USD price
+    # user_balance: FVal  # Estimated token balance
+    # user_balance_usd: Price = ZERO  # Estimated token balance in USD
+    asset: Union[EthereumToken, UnknownEthereumToken]
+    asset_usd: Price = Price(ZERO)  # price in USD per token
+
+
+# BalancerPool stores PoolShare and Pool data
+# TODO: currently `asset` field can't be populated with <Asset> or
+# <EthereumToken> because BPT is not a unique symbol for Balancer.
+# Explore something similar to `converters.py`
+@dataclass(init=True, repr=True)
+class BalancerPool:
+    # address: ChecksumEthAddress  # Pool.id, pool contract address
+    asset: UnknownEthereumToken  # Pool.id, Pool.symbol
+    assets: List[BalancerPoolAsset]  # Pool.tokens
+    assets_count: FVal  # Pool.tokensCount
+    # symbol: str  # Pool.symbol
+    balance: FVal  # Pool.totalShares
+    weight: FVal  # Pool.totalWeight
+    # Custom fields
+    user_balance: Balance  # Pool.totalShares and estimated total USD price
+    # asset: Optional[Asset] = None
+
+
+# class KnownAsset(NamedTuple):
+#     address: ChecksumEthAddress
+#     asset: Asset
+
+#     def __hash__(self) -> int:
+#         return hash((self.address, hash(self.asset)))
+
+#     def __eq__(self, other: Any) -> bool:
+#         if other is None:
+#             return False
+#         if not isinstance(other, KnownAsset):
+#             raise TypeError(f'Invalid type: {type(other)}')
+
+#         return self.address == other.address and self.asset == other.asset
+
+
 class BalancerBalances(NamedTuple):
     addresses_balancer_pools: Dict[ChecksumEthAddress, List[BalancerPool]]
-    known_assets: Set[KnownAsset]
-    unknown_assets: Set[ChecksumEthAddress]
+    known_assets: Set[EthereumToken]
+    unknown_assets: Set[UnknownEthereumToken]
 
 
 # Get history

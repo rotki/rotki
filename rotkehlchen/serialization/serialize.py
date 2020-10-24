@@ -98,6 +98,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             YearnVaultBalance,
             AaveEvent,
             UnknownEthereumToken,
+            BalancerPool,
+            BalancerPoolAsset,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (
@@ -116,8 +118,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             DefiProtocolBalances,
             YearnVaultHistory,
             BlockchainAccountData,
-            BalancerPool,
-            BalancerPoolAsset,
             BalancerTrade,
     )):
         return process_result(entry._asdict())
