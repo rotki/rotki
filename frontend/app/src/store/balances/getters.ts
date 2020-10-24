@@ -276,6 +276,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   accounts: (_, { ethAccounts, btcAccounts }): GeneralAccount[] => {
     return ethAccounts
       .concat(btcAccounts)
+      .filter((account: BlockchainAccountWithBalance) => !!account.address)
       .map((account: BlockchainAccountWithBalance) => ({
         chain: account.chain,
         address: account.address,
