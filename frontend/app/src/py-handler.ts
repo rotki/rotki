@@ -178,25 +178,35 @@ export default class PyHandler {
     this.logToFile('The Python sub-process was not successfully started');
   }
 
-  async exitPyProc() {
+  async exitPyProc(restart: boolean = false) {
     this.logToFile('Exiting the application');
     if (this.rpcFailureNotifier) {
       clearInterval(this.rpcFailureNotifier);
     }
     if (process.platform === 'win32') {
-      await this.terminateWindowsProcesses();
-    } else {
-      const client = this.childProcess;
-      if (client) {
-        client.kill();
+      return this.terminateWindowsProcesses(restart);
+    }
+    const client = this.childProcess;
+    if (client) {
+      return this.terminateBackend(client);
+    }
+  }
+
+  private terminateBackend = (client: ChildProcess) =>
+    new Promise((resolve, reject) => {
+      client.on('exit', () => {
         this.logToFile(
           `The Python sub-process was terminated successfully (${client.killed})`
         );
+        resolve();
         this.childProcess = undefined;
         this._port = undefined;
-      }
-    }
-  }
+      });
+      client.on('error', e => {
+        reject(e);
+      });
+      client.kill();
+    });
 
   private guessPackaged() {
     const path = PyHandler.packagedBackendPath();
@@ -297,7 +307,7 @@ export default class PyHandler {
     this.childProcess = execFile(executable, args);
   }
 
-  private async terminateWindowsProcesses() {
+  private async terminateWindowsProcesses(restart: boolean) {
     // For win32 we got two problems:
     // 1. pyProc.kill() does not work due to SIGTERM not really being a signal
     //    in Windows
@@ -339,14 +349,24 @@ export default class PyHandler {
 
     const taskKill = spawn('taskkill', args);
 
-    taskKill.on('exit', () => {
-      this.logToFile('Call to taskkill exited');
-      app.exit();
-    });
+    return new Promise(resolve => {
+      taskKill.on('exit', () => {
+        this.logToFile('Call to taskkill exited');
+        if (!restart) {
+          app.exit();
+        }
+        resolve();
+      });
 
-    taskKill.on('error', err => {
-      this.logToFile(`Call to taskkill failed:\n\n ${err}`);
-      app.exit();
+      taskKill.on('error', err => {
+        this.logToFile(`Call to taskkill failed:\n\n ${err}`);
+        if (!restart) {
+          app.exit();
+        }
+        resolve();
+      });
+
+      setTimeout(() => resolve, 15000);
     });
   }
 

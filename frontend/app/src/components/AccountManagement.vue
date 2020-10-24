@@ -98,7 +98,10 @@ export default class AccountManagement extends Vue {
   }
 
   async changeLogLevel(level: Level) {
+    await this.$store.commit('setConnected', false);
     await this.$interop.restartBackend(level);
+    await this.$store.dispatch('connect');
+    await this.$store.dispatch('version');
   }
 
   async login(credentials: Credentials) {
