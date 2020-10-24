@@ -32,14 +32,14 @@ import {
   AaveLoan,
   BaseDefiBalance,
   Collateral,
-  ProfitLossModel,
   DefiBalance,
   DefiLendingHistory,
   DefiLoan,
   DefiProtocolSummary,
   DefiState,
   LoanSummary,
-  MakerDAOVaultModel
+  MakerDAOVaultModel,
+  ProfitLossModel
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import { RotkehlchenState } from '@/store/types';
@@ -134,12 +134,12 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
 
-    if (showAll || protocols.includes('aave')) {
+    if (showAll || protocols.includes(DEFI_AAVE)) {
       for (const address of Object.keys(aaveHistory)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
         }
-        const totalEarned = aaveHistory[address].totalEarned;
+        const totalEarned = aaveHistory[address].totalEarnedInterest;
         for (const asset of Object.keys(totalEarned)) {
           total = total.plus(totalEarned[asset].usdValue);
         }
@@ -388,41 +388,65 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         selectedLoan = balances.borrowing[asset] ?? selectedLoan;
         lending = balances.lending ?? lending;
       }
-      const { totalLost, events: allEvents } = aaveHistory[owner];
 
       const lost: Writeable<AaveHistoryTotal> = {};
-      for (const event of allEvents) {
-        if (event.eventType !== DEFI_EVENT_LIQUIDATION) {
-          continue;
+      const liquidationEarned: Writeable<AaveHistoryTotal> = {};
+      const events: AaveHistoryEvents[] = [];
+      if (aaveHistory[owner]) {
+        const {
+          totalLost,
+          events: allEvents,
+          totalEarnedLiquidations
+        } = aaveHistory[owner];
+
+        for (const event of allEvents) {
+          if (event.eventType !== DEFI_EVENT_LIQUIDATION) {
+            continue;
+          }
+
+          if (event.principalAsset !== asset) {
+            continue;
+          }
+
+          const collateralAsset = event.collateralAsset;
+
+          if (!lost[collateralAsset] && totalLost[collateralAsset]) {
+            lost[collateralAsset] = totalLost[collateralAsset];
+          }
+
+          if (
+            !liquidationEarned[collateralAsset] &&
+            totalEarnedLiquidations[collateralAsset]
+          ) {
+            liquidationEarned[collateralAsset] =
+              totalEarnedLiquidations[collateralAsset];
+          }
         }
 
-        if (event.principalAsset !== asset) {
-          continue;
+        if (totalLost[asset]) {
+          lost[asset] = totalLost[asset];
+        }
+        if (!liquidationEarned[asset] && totalEarnedLiquidations[asset]) {
+          liquidationEarned[asset] = totalEarnedLiquidations[asset];
         }
 
-        const collateralAsset = event.collateralAsset;
-
-        if (!lost[collateralAsset] && totalLost[collateralAsset]) {
-          lost[collateralAsset] = totalLost[collateralAsset];
-        }
-      }
-
-      if (totalLost[asset]) {
-        lost[asset] = totalLost[asset];
-      }
-
-      const events = allEvents.filter(event => {
-        let isAsset: boolean;
-        if (event.eventType != DEFI_EVENT_LIQUIDATION) {
-          isAsset = event.asset === asset;
-        } else {
-          isAsset = event.principalAsset === asset;
-        }
-        return (
-          isAsset &&
-          AAVE_BORROWING_EVENTS.find(eventType => eventType === event.eventType)
+        events.push(
+          ...allEvents.filter(event => {
+            let isAsset: boolean;
+            if (event.eventType != DEFI_EVENT_LIQUIDATION) {
+              isAsset = event.asset === asset;
+            } else {
+              isAsset = event.principalAsset === asset;
+            }
+            return (
+              isAsset &&
+              AAVE_BORROWING_EVENTS.find(
+                eventType => eventType === event.eventType
+              )
+            );
+          })
         );
-      });
+      }
 
       return {
         asset,
@@ -440,6 +464,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           ...lending[asset].balance
         })),
         totalLost: lost,
+        liquidationEarned: liquidationEarned,
         events
       } as AaveLoan;
     }
@@ -1144,7 +1169,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       if (addresses.length > 0 && !addresses.includes(address)) {
         continue;
       }
-      const totalEarned = aaveHistory[address].totalEarned;
+      const totalEarned = aaveHistory[address].totalEarnedInterest;
       for (const asset in totalEarned) {
         const predicate = (e: ProfitLossModel) =>
           e.address === address && e.asset === asset;

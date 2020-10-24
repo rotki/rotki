@@ -41,9 +41,11 @@
           <premium-card v-if="!premium" title="Aave History" />
           <aave-borrowing-details
             v-else
+            :loading="aaveHistoryLoading"
             :events="loan.events"
             :owner="loan.owner"
             :total-lost="loan.totalLost"
+            :liquidation-earned="loan.liquidationEarned"
           />
         </v-col>
       </v-row>
@@ -53,6 +55,7 @@
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
+import { mapGetters } from 'vuex';
 import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
 import LoanCollateral from '@/components/defi/loan/LoanCollateral.vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
@@ -61,6 +64,7 @@ import LoanLiquidation from '@/components/defi/loan/LoanLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import { CompoundLoan } from '@/services/defi/types/compound';
+import { Section, Status } from '@/store/const';
 import {
   AaveBorrowingDetails,
   CompoundBorrowingDetails,
@@ -77,9 +81,18 @@ import {
     PremiumCard,
     VaultEventsList,
     AaveBorrowingDetails
+  },
+  computed: {
+    ...mapGetters(['status'])
   }
 })
 export default class LoanInfo extends Mixins(PremiumMixin, LoanDisplayMixin) {
+  status!: (section: Section) => Status;
+
+  get aaveHistoryLoading(): boolean {
+    return this.status(Section.DEFI_AAVE_HISTORY) === Status.LOADING;
+  }
+
   get assets(): string[] {
     const assets = this.loan?.asset ? [this.loan.asset] : [];
 

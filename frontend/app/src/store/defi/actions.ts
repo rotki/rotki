@@ -544,7 +544,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     await Promise.all([
       dispatch('fetchMakerDAOVaultDetails', refresh),
-      dispatch('fetchCompoundHistory', refresh)
+      dispatch('fetchCompoundHistory', refresh),
+      dispatch('fetchAaveHistory', refresh)
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);

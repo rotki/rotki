@@ -137,7 +137,7 @@
       :profit="yearnVaultsProfit(selectedAddresses)"
     />
     <aave-earned-details
-      v-if="premium && (isYearnVaults || selectedProtocols.length === 0)"
+      v-if="premium && (isAave || selectedProtocols.length === 0)"
       :profit="aaveTotalEarned(selectedAddresses)"
     />
     <v-row class="loans__history">
@@ -288,6 +288,13 @@ export default class Lending extends Mixins(StatusMixin) {
     return (
       this.selectedProtocols.length === 1 &&
       this.selectedProtocols.includes(DEFI_YEARN_VAULTS)
+    );
+  }
+
+  get isAave(): boolean {
+    return (
+      this.selectedProtocols.length === 1 &&
+      this.selectedProtocols.includes(DEFI_AAVE)
     );
   }
 

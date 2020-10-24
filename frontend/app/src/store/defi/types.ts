@@ -120,6 +120,7 @@ export interface AaveLoan
     CollateralizedLoan<Collateral<string>[]> {
   readonly events: AaveHistoryEvents[];
   readonly totalLost: AaveHistoryTotal;
+  readonly liquidationEarned: AaveHistoryTotal;
 }
 
 export interface DefiBalance extends BaseDefiBalance {

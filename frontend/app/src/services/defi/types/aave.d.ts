@@ -86,7 +86,8 @@ export interface AaveHistoryTotal {
 
 interface AaveAccountHistory {
   readonly events: AaveHistoryEvents[];
-  readonly totalEarned: AaveHistoryTotal;
+  readonly totalEarnedInterest: AaveHistoryTotal;
+  readonly totalEarnedLiquidations: AaveHistoryTotal;
   readonly totalLost: AaveHistoryTotal;
 }
 
