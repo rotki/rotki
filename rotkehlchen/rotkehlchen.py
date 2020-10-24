@@ -278,6 +278,7 @@ class Rotkehlchen():
             'Logging out user',
             user=user,
         )
+        self.greenlet_manager.clear()
         del self.chain_manager
         self.exchange_manager.delete_all_exchanges()
 

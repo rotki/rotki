@@ -21,6 +21,10 @@ class GreenletManager():
         greenlet.task_name = task_name
         self.greenlets.append(greenlet)
 
+    def clear(self) -> None:
+        """Clears all tracked greenlets. To be called when logging out or shutting down"""
+        gevent.killall(self.greenlets)
+
     def spawn_and_track(
             self,
             after_seconds: Optional[float],
