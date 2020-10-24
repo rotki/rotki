@@ -9,7 +9,6 @@ from typing import (
 )
 
 from eth_utils import to_checksum_address
-import gevent
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
@@ -106,8 +105,9 @@ class Balancer(EthereumModule):
             * Return <BalancerBalances> which contains the map address - pools
             balances map, and the known/unknown sets.
         """
-        # ! Format addresses, The Graph does not support checksum addresses
+        # Format addresses, The Graph does not support checksum addresses
         addresses_lower = self._convert_addresses_to_lower_case(addresses)
+
         param_types = {
             '$addresses': '[String!]',
             '$balance': 'BigDecimal!',
@@ -156,8 +156,8 @@ class Balancer(EthereumModule):
                         asset = UnknownEthereumToken(
                             identifier=token_symbol,
                             ethereum_address=token_address,
-                            # name=token['name'],
-                            # decimals=token['decimals'],
+                            name=token['name'],
+                            decimals=token['decimals'],
                         )
                         unknown_assets.add(asset)
 
@@ -204,17 +204,12 @@ class Balancer(EthereumModule):
         into `unknown_assets`.
         """
         known_asset_prices: AssetsPrices = {}
-        known_assets_ = list(known_assets)  # ! Get a deterministic sequence
-        # ! TODO VN PR: consider timeout and list/kill greenlets
-        assets_usd_prices = [
-            gevent.spawn(Inquirer().find_usd_price, known_asset.ethereum_address)
-            for known_asset in known_assets
-        ]
-        gevent.joinall(assets_usd_prices, timeout=5)
 
-        for known_asset, asset_usd_price in zip(known_assets_, assets_usd_prices):
-            if asset_usd_price.value != Price(ZERO):
-                known_asset_prices[known_asset.ethereum_address] = FVal(asset_usd_price.value)
+        for known_asset in known_assets:
+            asset_usd_price = Inquirer().find_usd_price(known_asset)
+
+            if asset_usd_price != Price(ZERO):
+                known_asset_prices[known_asset.ethereum_address] = FVal(asset_usd_price)
             else:
                 unknown_asset = UnknownEthereumToken(
                     identifier=known_asset.identifier,
@@ -236,6 +231,7 @@ class Balancer(EthereumModule):
         """
         unknown_assets_prices: AssetsPrices = {}
 
+        # Format addresses, The Graph does not support checksum addresses
         unknown_assets_addresses = [asset.ethereum_address for asset in unknown_assets]
         token_addresses = self._convert_addresses_to_lower_case(unknown_assets_addresses)
 
@@ -280,12 +276,10 @@ class Balancer(EthereumModule):
                 # Otherwise keep existing price (zero)
                 total_user_balance = FVal(0)
                 for asset in balancer_pool.assets:
+                    asset_ethereum_address = asset.asset.ethereum_address
                     asset_usd = known_assets_prices.get(
-                        asset.asset.ethereum_address,
-                        unknown_assets_prices.get(
-                            asset.asset.asset.ethereum_address,
-                            ZERO,
-                        )
+                        asset_ethereum_address,
+                        unknown_assets_prices.get(asset_ethereum_address, ZERO),
                     )
                     # Update <BalancerPoolAsset> if asset USD price exists
                     if asset_usd != ZERO:
@@ -315,7 +309,6 @@ class Balancer(EthereumModule):
         asset_out_address = to_checksum_address(trade['tokenOut'])
         asset_out_symbol = trade['tokenOutSym']
 
-        asset_in, asset_out = None, None
         is_asset_in_unknown = False
         is_asset_out_unknown = False
         # Process asset in either as EthereumToken or UnknownEthereumToken
@@ -417,7 +410,7 @@ class Balancer(EthereumModule):
           update `used_query_range_balancer_trades_<address>` entry with the
           first and last swaps timestamps.
         """
-        # ! Format addresses, The Graph does not support checksum addresses
+        # Format addresses, The Graph does not support checksum addresses
         addresses_lower = self._convert_addresses_to_lower_case(addresses)
 
         for address, address_lower in zip(addresses, addresses_lower):
@@ -500,7 +493,7 @@ class Balancer(EthereumModule):
     def get_history(
             self,
             addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Dict]:
+    ) -> Dict[str, AddressesBalancerTrades]:
         """Get the addresses' history in the Balancer protocol
 
         Currently, this funcion only returns trades (swaps)

@@ -1,3 +1,5 @@
+from eth_utils import to_checksum_address
+
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
@@ -52,7 +54,7 @@ def balancer_trade_from_db(trade_tuple: BalancerTradeDBTuple) -> BalancerTrade:
         asset_in = (
             UnknownEthereumToken(
                 identifier=trade_tuple[13],
-                ethereum_address=trade_tuple[12],
+                ethereum_address=to_checksum_address(trade_tuple[12]),
             )
         )
 
@@ -68,7 +70,7 @@ def balancer_trade_from_db(trade_tuple: BalancerTradeDBTuple) -> BalancerTrade:
         asset_out = (
             UnknownEthereumToken(
                 identifier=trade_tuple[17],
-                ethereum_address=trade_tuple[16],
+                ethereum_address=to_checksum_address(trade_tuple[16]),
             )
         )
 
@@ -77,13 +79,13 @@ def balancer_trade_from_db(trade_tuple: BalancerTradeDBTuple) -> BalancerTrade:
         log_index=int(trade_tuple[1]),
         address=trade_tuple[2],
         timestamp=trade_tuple[3],
-        usd_fee=Price(trade_tuple[4]),
-        usd_value=Price(trade_tuple[5]),
-        pool_address=trade_tuple[6],
+        usd_fee=Price(FVal(trade_tuple[4])),
+        usd_value=Price(FVal(trade_tuple[5])),
+        pool_address=to_checksum_address(trade_tuple[6]),
         pool_name=trade_tuple[7],
-        pool_liquidity=trade_tuple[8],
-        usd_pool_total_swap_fee=Price(trade_tuple[9]),
-        usd_pool_total_swap_volume=Price(trade_tuple[10]),
+        pool_liquidity=FVal(trade_tuple[8]),
+        usd_pool_total_swap_fee=Price(FVal(trade_tuple[9])),
+        usd_pool_total_swap_volume=Price(FVal(trade_tuple[10])),
         asset_in=asset_in,
         asset_in_amount=FVal(trade_tuple[14]),
         asset_out=asset_out,

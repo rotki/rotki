@@ -26,9 +26,9 @@ class UnknownEthereumToken:
     """Alternative minimal class to EthereumToken for unknown assets"""
     identifier: str
     ethereum_address: ChecksumEthAddress
+    name: str = None
+    decimals: int = None
     symbol: str = field(init=False)
-    # decimals: int = None
-    # name: str = field(init=False)
 
     def __post_init__(self) -> None:
         """Asset post initialization as the frozen property is desirable
@@ -49,12 +49,12 @@ class UnknownEthereumToken:
             self.ethereum_address == other.ethereum_address
         )
 
-    def serialize(self):
+    def serialize(self) -> Dict:
         return {
-            # 'decimals': self.decimals,
+            'decimals': self.decimals,
             'ethereum_address': self.ethereum_address,
             'identifier': self.identifier,
-            # 'name': self.name,
+            'name': self.name,
             'symbol': self.symbol,
         }
 
@@ -63,17 +63,20 @@ class UnknownEthereumToken:
 # BalancerPoolAsset stores PoolToken data, and adds custom ones
 @dataclass(init=True, repr=True)
 class BalancerPoolAsset:
-    # address: ChecksumEthAddress  # PoolToken.id, token contract address
     balance: FVal  # PoolToken.balance
     denorm_weight: FVal  # PoolToken.denormWeight
-    # name: str  # PoolToken.name
-    # symbol: str  # PoolToken.symbol
-    # Custom fields
     user_balance: Balance  # Estimated token balance and USD price
-    # user_balance: FVal  # Estimated token balance
-    # user_balance_usd: Price = ZERO  # Estimated token balance in USD
     asset: Union[EthereumToken, UnknownEthereumToken]
     asset_usd: Price = Price(ZERO)  # price in USD per token
+
+    def serialize(self) -> Dict:
+        return {
+            'balance': self.balance,
+            'denorm_weight': self.denorm_weight,
+            'user_balance': self.user_balance.serialize(),
+            'asset': self.asset.serialize(),
+            'asset_usd': self.asset_usd,
+        }
 
 
 # BalancerPool stores PoolShare and Pool data
@@ -82,32 +85,22 @@ class BalancerPoolAsset:
 # Explore something similar to `converters.py`
 @dataclass(init=True, repr=True)
 class BalancerPool:
-    # address: ChecksumEthAddress  # Pool.id, pool contract address
     asset: UnknownEthereumToken  # Pool.id, Pool.symbol
     assets: List[BalancerPoolAsset]  # Pool.tokens
     assets_count: FVal  # Pool.tokensCount
-    # symbol: str  # Pool.symbol
     balance: FVal  # Pool.totalShares
     weight: FVal  # Pool.totalWeight
-    # Custom fields
     user_balance: Balance  # Pool.totalShares and estimated total USD price
-    # asset: Optional[Asset] = None
 
-
-# class KnownAsset(NamedTuple):
-#     address: ChecksumEthAddress
-#     asset: Asset
-
-#     def __hash__(self) -> int:
-#         return hash((self.address, hash(self.asset)))
-
-#     def __eq__(self, other: Any) -> bool:
-#         if other is None:
-#             return False
-#         if not isinstance(other, KnownAsset):
-#             raise TypeError(f'Invalid type: {type(other)}')
-
-#         return self.address == other.address and self.asset == other.asset
+    def serialize(self) -> Dict:
+        return {
+            'asset': self.asset.serialize(),
+            'assets': [asset.serialize() for asset in self.assets],
+            'assets_count': self.assets_count,
+            'balance': self.balance,
+            'weight': self.weight,
+            'user_balance': self.user_balance.serialize(),
+        }
 
 
 class BalancerBalances(NamedTuple):
@@ -145,12 +138,11 @@ BalancerTradeDBTuple = (
 
 
 # BalancerTrade stores swap, userAddress and poolAddress data
-# ! TODO VN PR:
-# ! If storing the USD value of both `asset_in` and `asset_out` is required,
-# ! this should be a dataclass with `asset_in_balance` and `asset_out_balance`
-# ! of type Balance, instead of `asset_in_amount` and `asset_out_amount`.
-# ! Pending to know how to fetch historical usd prices without compromising
-# ! performance... there could be lots of trades.
+# TODO: If storing the USD value of both `asset_in` and `asset_out` is
+# required,this should be a dataclass with `asset_in_balance` and
+# `asset_out_balance` of type Balance, instead of `asset_in_amount` and
+# `asset_out_amount`. Pending to know how to fetch historical usd prices
+# without compromising performance... there could be lots of trades.
 class BalancerTrade(NamedTuple):
     """An trade in the Balancer protocol"""
     tx_hash: str  # from Swap.tx

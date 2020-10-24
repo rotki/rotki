@@ -1638,7 +1638,7 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer')
         )
 
-    @require_premium_user(active_check=False)
+    # @require_premium_user(active_check=False)
     @require_loggedin_user()
     def get_balancer_history(self) -> Response:
         # Once that has ran we can be sure that defi_balances mapping is populated
