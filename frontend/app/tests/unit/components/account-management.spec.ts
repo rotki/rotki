@@ -54,13 +54,9 @@ describe('AccountManagement.vue', () => {
       await flushPromises();
       await wrapper.vm.$nextTick();
 
-      expect(
-        wrapper.find('.account-management__premium-dialog').element
-      ).toBeVisible();
+      expect(wrapper.find('.premium-reminder').element).toBeVisible();
 
-      wrapper
-        .find('.account-management__premium-dialog__buttons__confirm')
-        .trigger('click');
+      wrapper.find('.premium-reminder__buttons__confirm').trigger('click');
 
       await wrapper.vm.$nextTick();
 
@@ -79,9 +75,7 @@ describe('AccountManagement.vue', () => {
       await flushPromises();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
-        false
-      );
+      expect(wrapper.find('.premium-reminder').exists()).toBe(false);
 
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
       expect(wrapper.emitted()['login-complete']).toHaveLength(1);
@@ -98,9 +92,7 @@ describe('AccountManagement.vue', () => {
       await wrapper.vm.createAccount({ username: '1234', password: '1234' });
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
-        false
-      );
+      expect(wrapper.find('.premium-reminder').exists()).toBe(false);
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
       expect(wrapper.emitted()['login-complete']).toHaveLength(1);
       expect(interop.premiumUserLoggedIn).toHaveBeenCalledWith(false);
@@ -116,9 +108,7 @@ describe('AccountManagement.vue', () => {
       await wrapper.vm.createAccount({ username: '1234', password: '1234' });
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.account-management__premium-dialog').exists()).toBe(
-        false
-      );
+      expect(wrapper.find('.premium-reminder').exists()).toBe(false);
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
       expect(wrapper.emitted()['login-complete']).toHaveLength(1);
       expect(interop.premiumUserLoggedIn).toHaveBeenCalledWith(true);

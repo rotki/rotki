@@ -852,5 +852,27 @@
     "xpub_add": {
       "label": "XPUB"
     }
+  },
+  "loglevel": {
+    "tooltip": "Change the backend loglevel. This action will restart the rotki backend"
+  },
+  "premium_reminder": {
+    "title": "Upgrade to Premium",
+    "buttons": {
+      "close": "Close",
+      "upgrade": "Upgrade"
+    },
+    "description": "rotki is open source software and needs your support! Please consider upgrading to premium by purchasing a premium subscription. This way you can help us further develop the software and you can also enjoy additional premium-only features."
+  },
+  "connection_loading": {
+    "message": "Connecting to rotki backend"
+  },
+  "privacy_notice": {
+    "title": "rotki is a local application that respects your privacy.",
+    "message": "rotki accounts are encrypted using your password and saved in your local filesystem."
+  },
+  "app": {
+    "name": "rotki",
+    "moto": "the opensource portfolio manager that respects your privacy"
   }
 }

@@ -1,3 +1,6 @@
+import { assert } from '@/utils/assertions';
+import { Level } from '@/utils/log-level';
+
 export class ElectronInterop {
   private packagedApp: boolean = !!window.interop;
   readonly baseUrl = 'https://rotki.com/';
@@ -51,6 +54,11 @@ export class ElectronInterop {
       }
       return value.addresses;
     });
+  }
+
+  async restartBackend(logLevel: Level): Promise<boolean> {
+    assert(window.interop);
+    return await window.interop.restartBackend(logLevel);
   }
 }
 

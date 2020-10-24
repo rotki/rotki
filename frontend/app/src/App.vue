@@ -1,8 +1,9 @@
 <template>
   <v-app v-if="!isPlayground" id="rotki">
-    <div v-show="logged" class="app__content rotki-light-grey">
+    <div v-if="logged" class="app__content rotki-light-grey">
       <notification-popup />
       <v-navigation-drawer
+        v-if="loginComplete"
         v-model="drawer"
         width="300"
         class="app__navigation-drawer"
@@ -13,7 +14,7 @@
       >
         <div v-if="!mini" class="text-center app__logo" />
         <div v-else class="app__logo-mini">
-          rotki
+          {{ $t('app.name') }}
         </div>
         <navigation-menu :show-tooltips="mini" />
         <v-spacer />
@@ -142,7 +143,7 @@ export default class App extends Vue {
     }
   }
 
-  drawer = true;
+  drawer = false;
   mini = false;
 
   startupError: string = '';
@@ -189,13 +190,8 @@ export default class App extends Vue {
 @import '~@/scss/scroll';
 
 .v-navigation-drawer {
-  &--fixed {
-    z-index: 100 !important;
-  }
-
   &--is-mobile {
-    padding-top: 60px;
-    z-index: 300 !important;
+    padding-top: 60px !important;
   }
 
   @extend .themed-scrollbar;
@@ -240,8 +236,6 @@ export default class App extends Vue {
   }
 
   &__navigation-drawer {
-    box-shadow: 14px 0 10px -10px var(--v-rotki-light-grey-darken1);
-    z-index: 200 !important;
     padding-bottom: 48px;
 
     &__version {
