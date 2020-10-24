@@ -3608,6 +3608,16 @@
         "symbol": "DOS",
         "type": "ethereum token"
     },
+    "DOUGH": {
+        "coingecko": "piedao-dough-v2",
+        "cryptocompare": "",
+        "ethereum_address": "0xad32A8e6220741182940c5aBF610bDE99E737b2D",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO DOUGH v2",
+        "started": 1599823243,
+        "symbol": "DOUGH",
+        "type": "ethereum token"
+    },
     "DOV": {
         "coingecko": "dovu",
         "ethereum_address": "0xac3211a5025414Af2866FF09c23FC18bc97e79b1",

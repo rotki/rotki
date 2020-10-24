@@ -30,6 +30,7 @@ Changelog
   - `Consensus Cell Network (ECELL) <https://www.coingecko.com/en/coins/consensus-cell-network>`__
   - `Maro (MARO) <https://www.coingecko.com/en/coins/maro>`__
   - `Harvest Finance (FARM) <https://www.coingecko.com/en/coins/harvest-finance>`__
+  - `PieDAO DOUGH v2 (DOUGH) <https://www.coingecko.com/en/coins/piedao-dough-v2>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
