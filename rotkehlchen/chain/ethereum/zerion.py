@@ -213,7 +213,8 @@ class Zerion():
         except (UnknownAsset, UnsupportedAsset):
             if not _is_token_non_standard(token_symbol, token_address):
                 self.msg_aggregator.add_warning(
-                    f'Unsupported asset {token_symbol} encountered during DeFi protocol queries',
+                    f'Unsupported asset {token_symbol} with address '
+                    f'{token_address} encountered during DeFi protocol queries',
                 )
             usd_price = Price(ZERO)
 
