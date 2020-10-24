@@ -154,13 +154,23 @@ class AaveUserReserve(NamedTuple):
     symbol: str
 
 
+class AaveEventProcessingResult(NamedTuple):
+    interest_events: List[AaveSimpleEvent]
+    total_earned_interest: Dict[Asset, Balance]
+    total_lost: Dict[Asset, Balance]
+    total_earned_liquidations: Dict[Asset, Balance]
+
+
 def _calculate_loss(
         borrow_actions: List[AaveEvent],
         balances: AaveBalances,
-) -> Dict[Asset, Balance]:
+) -> Tuple[Dict[Asset, Balance], Dict[Asset, Balance]]:
+    """Returns a tuple of mapping of losses due to liquidation/borrowing and
+    earnings due to keeping the principal repaid by the liquidation"""
     borrow_actions.sort(key=lambda event: event.timestamp)
     historical_borrow_balances: Dict[Asset, FVal] = defaultdict(FVal)
     total_lost: Dict[Asset, Balance] = defaultdict(Balance)
+    total_earned: Dict[Asset, Balance] = defaultdict(Balance)
 
     for b_action in borrow_actions:
         if b_action.event_type == 'borrow':
@@ -170,8 +180,9 @@ def _calculate_loss(
         elif b_action.event_type == 'liquidation':
             # At liquidation you lose the collateral asset
             total_lost[b_action.collateral_asset] += b_action.collateral_balance  # type: ignore  # noqa: E501
-            # And your principal asset is repaid
+            # And your principal asset is repaid and you gain it
             historical_borrow_balances[b_action.principal_asset] += b_action.principal_balance.amount  # type: ignore # noqa: E501
+            total_earned[b_action.principal_asset] += b_action.principal_balance  # type: ignore
 
     for b_asset, amount in historical_borrow_balances.items():
         borrow_balance = balances.borrowing.get(b_asset.identifier, None)
@@ -185,7 +196,7 @@ def _calculate_loss(
             usd_value=amount * usd_price,
         )
 
-    return total_lost
+    return total_lost, total_earned
 
 
 def _parse_common_event_data(
@@ -481,7 +492,7 @@ class AaveGraphInquirer(AaveInquirer):
             liquidations: List[AaveLiquidationEvent],
             db_events: List[AaveEvent],
             balances: AaveBalances,
-    ) -> Tuple[List[AaveSimpleEvent], Dict[Asset, Balance], Dict[Asset, Balance]]:
+    ) -> AaveEventProcessingResult:
         """Calculates the interest events and the total earned from all the given events.
         Also calculates total loss from borrowing and liquidations.
 
@@ -513,12 +524,16 @@ class AaveGraphInquirer(AaveInquirer):
             from_ts=from_ts,
             to_ts=to_ts,
         )
-        total_lost = _calculate_loss(
+        total_lost, total_earned_liquidations = _calculate_loss(
             borrow_actions=borrow_actions + borrows + repays + liquidations,  # type: ignore
             balances=balances,
         )
-
-        return interest_events, total_earned, total_lost
+        return AaveEventProcessingResult(
+            interest_events=interest_events,
+            total_earned_interest=total_earned,
+            total_lost=total_lost,
+            total_earned_liquidations=total_earned_liquidations,
+        )
 
     def _get_user_data(
             self,
@@ -562,7 +577,7 @@ class AaveGraphInquirer(AaveInquirer):
                 to_ts,
             )
 
-        interest_events, total_earned, total_lost = self._process_events(
+        result = self._process_events(
             user_address=address,
             user_result=user_result,
             from_ts=from_ts,
@@ -577,7 +592,7 @@ class AaveGraphInquirer(AaveInquirer):
         )
 
         # Add all new events to the DB
-        new_events: List[AaveEvent] = deposits + withdrawals + interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
+        new_events: List[AaveEvent] = deposits + withdrawals + result.interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
         self.database.add_aave_events(address, new_events)
         # After all events have been queried then also update the query range.
         # Even if no events are found for an address we need to remember the range
@@ -593,8 +608,9 @@ class AaveGraphInquirer(AaveInquirer):
         all_events.sort(key=lambda event: sort_map[event.event_type] + event.timestamp)
         return AaveHistory(
             events=all_events,
-            total_earned=total_earned,
-            total_lost=total_lost,
+            total_earned_interest=result.total_earned_interest,
+            total_lost=result.total_lost,
+            total_earned_liquidations=result.total_earned_liquidations,
         )
 
     def _parse_deposits(

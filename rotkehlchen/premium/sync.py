@@ -151,8 +151,12 @@ class PremiumSyncManager():
         if diff < 3600 and not force_upload:
             return False
 
+        try:
+            metadata = self.premium.query_last_data_metadata()
+        except RemoteError as e:
+            log.debug('upload to server -- fetching metadata error', error=str(e))
+            return False
         b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
-        metadata = self.premium.query_last_data_metadata()
 
         log.debug(
             'CAN_PUSH',
