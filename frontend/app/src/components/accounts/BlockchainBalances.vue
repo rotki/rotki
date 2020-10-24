@@ -92,9 +92,12 @@ export default class BlockchainBalances extends Vue {
   }
 
   async clearDialog() {
-    const form = this.$refs.form as AccountForm;
-    await form.reset();
     this.openDialog = false;
+    setTimeout(async () => {
+      const form = this.$refs.form as AccountForm;
+      await form.reset();
+      this.accountToEdit = null;
+    }, 300);
   }
 
   async save() {

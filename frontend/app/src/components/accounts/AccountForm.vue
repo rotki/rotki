@@ -23,7 +23,7 @@
         <input-mode-select v-model="inputMode" :blockchain="blockchain" />
       </v-col>
     </v-row>
-    <v-row v-if="isBtc && isXpub" align="center" no-gutters class="mt-2">
+    <v-row v-if="displayXpubInput" align="center" no-gutters class="mt-2">
       <v-col cols="auto">
         <v-select
           v-model="xpubKeyType"
@@ -124,9 +124,9 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import {
-  BlockchainAccountPayload,
-  BlockchainAccount,
   AddAccountsPayload,
+  BlockchainAccount,
+  BlockchainAccountPayload,
   XpubPayload
 } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
@@ -200,6 +200,11 @@ export default class AccountForm extends Vue {
     return this.inputMode === METAMASK_IMPORT;
   }
 
+  get displayXpubInput(): boolean {
+    const edit = !!this.edit;
+    return (!edit && this.isBtc && this.isXpub) || (edit && !!this.xpub);
+  }
+
   get keyType(): XpubType[] {
     return [
       {
@@ -247,7 +252,6 @@ export default class AccountForm extends Vue {
 
   private setEditMode() {
     if (!this.edit) {
-      this.address = '';
       return;
     }
 
@@ -258,7 +262,7 @@ export default class AccountForm extends Vue {
     if ('xpub' in this.edit) {
       const match = this.edit.xpub.match(/([xzy]pub)(.*)/);
       if (match) {
-        this.xpub = match[2];
+        this.xpub = match[0];
         this.xpubKeyType = match[1] as XpubKeyType;
       } else {
         this.xpub = this.edit.xpub;
@@ -267,9 +271,6 @@ export default class AccountForm extends Vue {
       this.derivationPath = this.edit.derivationPath;
     }
   }
-
-  //TODO: fix paste/input autoselect + prefix detection
-  //TODO: fix edit dialog problems
 
   mounted() {
     this.setEditMode();
@@ -298,6 +299,25 @@ export default class AccountForm extends Vue {
     }
   }
 
+  @Watch('xpub')
+  onXpubChange(value: string) {
+    if (!value) {
+      return;
+    }
+    this.setXpubKeyType(value);
+  }
+
+  private setXpubKeyType(value: string) {
+    const match = AccountForm.isPrefixed(value);
+    if (match && match.length === 3) {
+      this.xpubKeyType = match[1] as XpubKeyType;
+    }
+  }
+
+  private static isPrefixed(value: string) {
+    return value.match(/([xzy]pub)(.*)/);
+  }
+
   onPasteAddress(event: ClipboardEvent) {
     const paste = trimOnPaste(event);
     if (paste) {
@@ -308,13 +328,8 @@ export default class AccountForm extends Vue {
   onPasteXpub(event: ClipboardEvent) {
     const paste = trimOnPaste(event);
     if (paste) {
-      const match = paste.match(/([xzy]pub)(.*)/);
-      if (match && match.length === 3) {
-        this.xpub = match[2];
-        this.xpubKeyType = match[1] as XpubKeyType;
-      } else {
-        this.xpub = paste;
-      }
+      this.setXpubKeyType(paste);
+      this.xpub = paste;
     }
   }
 
@@ -382,14 +397,18 @@ export default class AccountForm extends Vue {
   }
 
   payload(): BlockchainAccountPayload {
-    let xpub: XpubPayload | undefined;
+    let xpubPayload: XpubPayload | undefined;
     if (this.isBtc && this.isXpub) {
-      xpub = {
-        xpub: `${this.xpubKeyType}${this.xpub.trim()}`,
+      const xpubKey = this.xpub.trim();
+      const xpub = AccountForm.isPrefixed(xpubKey)
+        ? xpubKey
+        : `${this.xpubKeyType}${xpubKey}`;
+      xpubPayload = {
+        xpub: xpub,
         derivationPath: this.derivationPath ?? undefined
       };
     } else {
-      xpub = undefined;
+      xpubPayload = undefined;
     }
 
     return {
@@ -397,7 +416,7 @@ export default class AccountForm extends Vue {
       address: this.address.trim(),
       label: this.label,
       tags: this.tags,
-      xpub: xpub
+      xpub: xpubPayload
     };
   }
 
