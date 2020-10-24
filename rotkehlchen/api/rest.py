@@ -1153,33 +1153,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
-        account_data = self.rotkehlchen.data.db.get_blockchain_account_data(blockchain)
-        if blockchain == SupportedBlockchain.BITCOIN:
-            xpub_data = self.rotkehlchen.data.db.get_bitcoin_xpub_data()
-            addresses_to_account_data = {x.address: x for x in account_data}
-            address_to_xpub_mappings = self.rotkehlchen.data.db.get_addresses_to_xpub_mapping(
-                list(addresses_to_account_data.keys()),  # type: ignore
-            )
-
-            xpub_mappings: Dict[XpubData, List[BlockchainAccountData]] = {}
-            for address, xpub_entry in address_to_xpub_mappings.items():
-                if xpub_entry not in xpub_mappings:
-                    xpub_mappings[xpub_entry] = []
-                xpub_mappings[xpub_entry].append(addresses_to_account_data[address])
-
-            data: Dict[str, Any] = {'standalone': [], 'xpubs': []}
-            # Add xpub data
-            for xpub_entry in xpub_data:
-                data_entry = xpub_entry.serialize()
-                addresses = xpub_mappings.get(xpub_entry, None)
-                data_entry['addresses'] = addresses if addresses and len(addresses) != 0 else None
-                data['xpubs'].append(data_entry)
-            # Add standalone addresses
-            for account in account_data:
-                if account.address not in address_to_xpub_mappings:
-                    data['standalone'].append(account)
-        else:
-            data = account_data  # type: ignore
+        data = self.rotkehlchen.get_blockchain_account_data(blockchain)
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
     def _add_blockchain_accounts(
@@ -1250,9 +1224,8 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         # success
-        data = self.rotkehlchen.data.db.get_blockchain_account_data(blockchain)
-        result_dict = _wrap_in_result([entry._asdict() for entry in data], '')
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        data = self.rotkehlchen.get_blockchain_account_data(blockchain)
+        return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
     def _remove_blockchain_accounts(
             self,

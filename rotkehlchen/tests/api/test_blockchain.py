@@ -937,6 +937,10 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
+@pytest.mark.parametrize('btc_accounts', [[
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+]])
 def test_edit_blockchain_accounts(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -1003,6 +1007,34 @@ def test_edit_blockchain_accounts(
     assert_proper_response(response)
     json_data = response.json()
     compare_account_data(json_data['result'], expected_result)
+
+    # Edit a BTC account
+    request_data = {'accounts': [{
+        'address': UNIT_BTC_ADDRESS1,
+        'label': 'BTC account label',
+        'tags': ['public'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='BTC',
+    ), json=request_data)
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 2
+    # Assert the result is in the expected format and is edited
+    standalone = result['standalone']
+    assert len(standalone) == 2
+    assert standalone[0] == {
+        'address': UNIT_BTC_ADDRESS1,
+        'label': 'BTC account label',
+        'tags': ['public'],
+    }
+    assert standalone[1] == {
+        'address': UNIT_BTC_ADDRESS2,
+        'label': None,
+        'tags': None,
+    }
+    assert len(result['xpubs']) == 0
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])

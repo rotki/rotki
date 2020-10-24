@@ -6,7 +6,7 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 from gevent.lock import Semaphore
@@ -65,6 +65,9 @@ from rotkehlchen.typing import (
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import combine_stat_dicts, dict_get_sumof, merge_dicts
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.bitcoin.xpub import XpubData
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -356,6 +359,40 @@ class Rotkehlchen():
                     )
                     xpub_derivation_scheduled = True
                 log.debug('Main loop end')
+
+    def get_blockchain_account_data(
+            self,
+            blockchain: SupportedBlockchain,
+    ) -> Union[List[BlockchainAccountData], Dict[str, Any]]:
+        account_data = self.data.db.get_blockchain_account_data(blockchain)
+        if blockchain != SupportedBlockchain.BITCOIN:
+            return account_data
+
+        xpub_data = self.data.db.get_bitcoin_xpub_data()
+        addresses_to_account_data = {x.address: x for x in account_data}
+        address_to_xpub_mappings = self.data.db.get_addresses_to_xpub_mapping(
+            list(addresses_to_account_data.keys()),  # type: ignore
+        )
+
+        xpub_mappings: Dict['XpubData', List[BlockchainAccountData]] = {}
+        for address, xpub_entry in address_to_xpub_mappings.items():
+            if xpub_entry not in xpub_mappings:
+                xpub_mappings[xpub_entry] = []
+            xpub_mappings[xpub_entry].append(addresses_to_account_data[address])
+
+        data: Dict[str, Any] = {'standalone': [], 'xpubs': []}
+        # Add xpub data
+        for xpub_entry in xpub_data:
+            data_entry = xpub_entry.serialize()
+            addresses = xpub_mappings.get(xpub_entry, None)
+            data_entry['addresses'] = addresses if addresses and len(addresses) != 0 else None
+            data['xpubs'].append(data_entry)
+        # Add standalone addresses
+        for account in account_data:
+            if account.address not in address_to_xpub_mappings:
+                data['standalone'].append(account)
+
+        return data
 
     def add_blockchain_accounts(
             self,
