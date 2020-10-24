@@ -29,6 +29,7 @@ Changelog
   - `Ducato Protocol Token (DUCATO) <https://www.coingecko.com/en/coins/ducato-protocol-token>`__
   - `Consensus Cell Network (ECELL) <https://www.coingecko.com/en/coins/consensus-cell-network>`__
   - `Maro (MARO) <https://www.coingecko.com/en/coins/maro>`__
+  - `Harvest Finance (FARM) <https://www.coingecko.com/en/coins/harvest-finance>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
