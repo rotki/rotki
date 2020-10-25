@@ -7626,6 +7626,16 @@
         "symbol": "MUE",
         "type": "own chain"
     },
+    "mUSD": {
+        "coingecko": "mstable-usd",
+        "cryptocompare": "",
+        "ethereum_address": "0xe2f2a5C287993345a840Db3B0845fbC70f5935a5",
+        "ethereum_token_decimals": 18,
+        "name": "mStable USD",
+        "started": 1590585470,
+        "symbol": "mUSD",
+        "type": "ethereum token"
+    },
     "MUSIC": {
         "coingecko": "",
         "name": "Musicoin",
