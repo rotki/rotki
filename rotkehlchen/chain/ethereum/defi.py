@@ -30,6 +30,7 @@ CURVEFI_BUSDSWAP = EthereumConstants().contract('CURVEFI_BUSDSWAP')
 CURVEFI_RENSWAP = EthereumConstants().contract('CURVEFI_RENSWAP')
 CURVEFI_SRENSWAP = EthereumConstants().contract('CURVEFI_SRENSWAP')
 CURVEFI_SUSDV2SWAP = EthereumConstants().contract('CURVEFI_SUSDV2SWAP')
+CURVEFI_3POOLSWAP = EthereumConstants().contract('CURVEFI_3POOLSWAP')
 YEARN_CONTROLLER = EthereumConstants().contract('YEARN_CONTROLLER')
 
 HARVEST_VAULTS = ('fUSDC', 'fUSDT', 'fDAI', 'fWETH', 'fTUSD', 'fWBTC', 'frenBTC', 'fcrvRenWBTC')
@@ -205,6 +206,9 @@ def handle_defi_price_query(
     elif token_symbol == 'crvPlain3andSUSD':
         token = EthereumToken(token_symbol)
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_SUSDV2SWAP, token.decimals, ONE)
+    elif token_symbol == '3Crv':
+        token = EthereumToken(token_symbol)
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_3POOLSWAP, token.decimals, ONE)
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yBUSD':
         token = EthereumToken(token_symbol)
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP, token.decimals, ONE)

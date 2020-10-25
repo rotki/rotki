@@ -13310,6 +13310,7 @@
     },
     "yaLINK": {
         "coingecko": "aave-link",
+        "cryptocompare": "",
         "ethereum_address": "0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
         "ethereum_token_decimals": 18,
         "name": "yearn Aave Interest bearing LINK",
@@ -13319,6 +13320,7 @@
     },
     "yDAI+yUSDC+yUSDT+yBUSD": {
         "coingecko": "lp-bcurve",
+        "cryptocompare": "",
         "ethereum_address": "0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
@@ -13328,6 +13330,7 @@
     },
     "yDAI+yUSDC+yUSDT+yTUSD": {
         "coingecko": "curve-fi-ydai-yusdc-yusdt-ytusd",
+        "cryptocompare": "",
         "ethereum_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
@@ -13337,6 +13340,7 @@
     },
     "ypaxCrv": {
         "coingecko": "lp-paxcurve",
+        "cryptocompare": "",
         "ethereum_address": "0xD905e2eaeBe188fc92179b6350807D8bd91Db0D8",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi DAI/USDC/USDT/PAX",
@@ -13346,6 +13350,7 @@
     },
     "yUSDT": {
         "coingecko": "tether",
+        "cryptocompare": "",
         "ethereum_address": "0x2f08119C6f07c006695E079AAFc638b8789FAf18",
         "ethereum_token_decimals": 6,
         "name": "yearn Tether USD",
@@ -13355,6 +13360,7 @@
     },
     "yyDAI+yUSDC+yUSDT+yBUSD": {
         "coingecko": "lp-bcurve",
+        "cryptocompare": "",
         "ethereum_address": "0x2994529C0652D127b7842094103715ec5299bBed",
         "ethereum_token_decimals": 18,
         "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
@@ -13364,6 +13370,7 @@
     },
     "yyDAI+yUSDC+yUSDT+yTUSD": {
         "coingecko": "yvault-lp-ycurve",
+        "cryptocompare": "",
         "ethereum_address": "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
         "ethereum_token_decimals": 18,
         "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
@@ -13373,6 +13380,7 @@
     },
     "yDAI": {
         "coingecko": "dai",
+        "cryptocompare": "",
         "ethereum_address": "0xACd43E627e64355f1861cEC6d3a6688B31a6F952",
         "ethereum_token_decimals": 18,
         "name": "yearn Dai Stablecoin",
@@ -13382,6 +13390,7 @@
     },
     "yUSDC": {
         "coingecko": "usd-coin",
+        "cryptocompare": "",
         "ethereum_address": "0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e",
         "ethereum_token_decimals": 6,
         "name": "yearn USD//C",
@@ -13391,6 +13400,7 @@
     },
     "yTUSD": {
         "coingecko": "true-usd",
+        "cryptocompare": "",
         "ethereum_address": "0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a",
         "ethereum_token_decimals": 18,
         "name": "yearn TrueUSD",
@@ -13400,6 +13410,7 @@
     },
     "yYFI": {
         "coingecko": "yearn-finance",
+        "cryptocompare": "",
         "ethereum_address": "0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
         "ethereum_token_decimals": 18,
         "name": "yearn yearn.finance",
@@ -13409,6 +13420,7 @@
     },
     "yWETH": {
         "coingecko": "weth",
+        "cryptocompare": "",
         "ethereum_address": "0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7",
         "ethereum_token_decimals": 18,
         "name": "yearn Wrapped Ether",
@@ -13416,8 +13428,19 @@
         "symbol": "yWETH",
         "type": "ethereum token"
     },
+    "3Crv": {
+        "coingecko": "curve-dao-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi DAI/USDC/USDT",
+        "started": 1599414946,
+        "symbol": "3Crv",
+        "type": "ethereum token"
+    },
     "crvPlain3andSUSD": {
         "coingecko": "lp-scurve",
+        "cryptocompare": "",
         "ethereum_address": "0xC25a3A3b969415c80451098fa907EC722572917F",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi DAI/USDC/USDT/sUSD",
@@ -13427,6 +13450,7 @@
     },
     "crvRenWBTC": {
         "coingecko": "lp-renbtc-curve",
+        "cryptocompare": "",
         "ethereum_address": "0x49849C98ae39Fff122806C06791Fa73784FB3675",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi renBTC/wBTC",
@@ -13436,6 +13460,7 @@
     },
     "crvRenWSBTC": {
         "coingecko": "lp-renbtc-curve",
+        "cryptocompare": "",
         "ethereum_address": "0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi renBTC/wBTC/sBTC",
@@ -13445,6 +13470,7 @@
     },
     "ycrvRenWSBTC": {
         "coingecko": "lp-renbtc-curve",
+        "cryptocompare": "",
         "ethereum_address": "0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6",
         "ethereum_token_decimals": 18,
         "name": "yearn Curve.fi renBTC/wBTC/sBTC",
