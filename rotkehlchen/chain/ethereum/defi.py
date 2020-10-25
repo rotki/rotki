@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.ethereum import (
+    FARM_ASSET_ABI,
     YEARN_ALINK_VAULT,
     YEARN_BCURVE_VAULT,
     YEARN_DAI_VAULT,
@@ -30,6 +31,8 @@ CURVEFI_RENSWAP = EthereumConstants().contract('CURVEFI_RENSWAP')
 CURVEFI_SRENSWAP = EthereumConstants().contract('CURVEFI_SRENSWAP')
 CURVEFI_SUSDV2SWAP = EthereumConstants().contract('CURVEFI_SUSDV2SWAP')
 YEARN_CONTROLLER = EthereumConstants().contract('YEARN_CONTROLLER')
+
+HARVEST_VAULTS = ('fUSDC', 'fUSDT', 'fDAI', 'fWETH', 'fTUSD', 'fWBTC', 'frenBTC', 'fcrvRenWBTC')
 
 
 def _handle_yearn_curve_vault(
@@ -120,6 +123,21 @@ def handle_underlying_price_yearn_vault(
         arguments=[],
     )
     usd_value = FVal(asset_price * price_per_full_share) / 10 ** div_decimals
+    return usd_value
+
+
+def handle_underlying_price_harvest_vault(
+        ethereum: 'EthereumManager',
+        token: EthereumToken,
+        underlying_asset_price: Price,
+) -> FVal:
+    price_per_full_share = ethereum.call_contract(
+        contract_address=token.ethereum_address,
+        abi=FARM_ASSET_ABI,
+        method_name='getPricePerFullShare',
+        arguments=[],
+    )
+    usd_value = FVal(underlying_asset_price * price_per_full_share) / 10 ** token.decimals
     return usd_value
 
 
@@ -252,6 +270,14 @@ def handle_defi_price_query(
             contract=YEARN_TUSD_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
+        )
+    elif token_symbol in HARVEST_VAULTS:
+        assert underlying_asset_price
+        token = EthereumToken(token_symbol)
+        usd_value = handle_underlying_price_harvest_vault(
+            ethereum=ethereum,
+            token=token,
+            underlying_asset_price=underlying_asset_price,
         )
     else:
         return None

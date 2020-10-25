@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1616` Support https://harvest.finance/ stablecoin vaults balance queries and claimable FARM token balance display.
 * :feature:`1456` Take balances shown in DeFi overview into account in the total netvalue worth and in the dashboard and per account ethereum balances table.
 * :feature:`1561` The application will now only log critical errors by default, allowing the user to change that on the log in screen.
 * :bug:`1583` Users will not be taken to the reveal button when pressing tab in a form with a revealable input.
@@ -32,6 +33,7 @@ Changelog
   - `Maro (MARO) <https://www.coingecko.com/en/coins/maro>`__
   - `Harvest Finance (FARM) <https://www.coingecko.com/en/coins/harvest-finance>`__
   - `PieDAO DOUGH v2 (DOUGH) <https://www.coingecko.com/en/coins/piedao-dough-v2>`__
+  - `All Harvest finance stablecoin vault fAssets <https://github.com/harvest-finance/harvest#vaults>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.

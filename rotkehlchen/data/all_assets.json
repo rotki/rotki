@@ -4940,6 +4940,86 @@
         "symbol": "FTXT",
         "type": "ethereum token"
     },
+    "fUSDC": {
+        "coingecko": "usd-coin",
+        "cryptocompare": "",
+        "ethereum_address": "0xf0358e8c3CD5Fa238a29301d0bEa3D63A17bEdBE",
+        "ethereum_token_decimals": 6,
+        "name": "FARM_USDC",
+        "started": 1603116154,
+        "symbol": "fUSDC",
+        "type": "ethereum token"
+    },
+    "fUSDT": {
+        "coingecko": "tether",
+        "cryptocompare": "",
+        "ethereum_address": "0x053c80eA73Dc6941F518a68E2FC52Ac45BDE7c9C",
+        "ethereum_token_decimals": 6,
+        "name": "FARM_USDT",
+        "started": 1603116272,
+        "symbol": "fUSDT",
+        "type": "ethereum token"
+    },
+    "fDAI": {
+        "coingecko": "dai",
+        "cryptocompare": "",
+        "ethereum_address": "0xab7FA2B2985BCcfC13c6D86b1D5A17486ab1e04C",
+        "ethereum_token_decimals": 18,
+        "name": "FARM_DAI",
+        "started": 1603116059,
+        "symbol": "fDAI",
+        "type": "ethereum token"
+    },
+    "fWETH": {
+        "coingecko": "weth",
+        "cryptocompare": "",
+        "ethereum_address": "0xFE09e53A81Fe2808bc493ea64319109B5bAa573e",
+        "ethereum_token_decimals": 18,
+        "name": "FARM_WETH",
+        "started": 1603115998,
+        "symbol": "fWETH",
+        "type": "ethereum token"
+    },
+    "fTUSD": {
+        "coingecko": "true-usd",
+        "cryptocompare": "",
+        "ethereum_address": "0x7674622c63Bee7F46E86a4A5A18976693D54441b",
+        "ethereum_token_decimals": 18,
+        "name": "FARM_TUSD",
+        "started": 1601927319,
+        "symbol": "fTUSD",
+        "type": "ethereum token"
+    },
+    "fWBTC": {
+        "coingecko": "wrapped-bitcoin",
+        "cryptocompare": "",
+        "ethereum_address": "0x5d9d25c7C457dD82fc8668FFC6B9746b674d4EcB",
+        "ethereum_token_decimals": 8,
+        "name": "FARM_WBTC",
+        "started": 1602866633,
+        "symbol": "fWBTC",
+        "type": "ethereum token"
+    },
+    "frenBTC": {
+        "coingecko": "renbtc",
+        "cryptocompare": "",
+        "ethereum_address": "0xC391d1b08c1403313B0c28D47202DFDA015633C4",
+        "ethereum_token_decimals": 8,
+        "name": "FARM_renBTC",
+        "started": 1603116341,
+        "symbol": "frenBTC",
+        "type": "ethereum token"
+    },
+    "fcrvRenWBTC": {
+        "coingecko": "",
+        "cryptocompare": "",
+        "ethereum_address": "0x9aA8F427A17d6B0d91B6262989EdC7D45d6aEdf8",
+        "ethereum_token_decimals": 18,
+        "name": "FARM_crvRenWBTC",
+        "started": 1603116454,
+        "symbol": "fcrvRenWBTC",
+        "type": "ethereum token"
+    },
     "FUCK": {
         "active": false,
         "coingecko": "",

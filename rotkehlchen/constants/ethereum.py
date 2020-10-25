@@ -127,5 +127,6 @@ ATOKEN_ABI = EthereumConstants.abi('ATOKEN')
 ZERION_ABI = EthereumConstants.abi('ZERION_ADAPTER')
 CTOKEN_ABI = EthereumConstants.abi('CTOKEN')
 ERC20TOKEN_ABI = EthereumConstants.abi('ERC20_TOKEN')
+FARM_ASSET_ABI = EthereumConstants.abi('FARM_ASSET')
 
 YEARN_VAULTS_PREFIX = 'yearn_vaults_events'
