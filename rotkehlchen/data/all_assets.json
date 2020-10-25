@@ -13458,6 +13458,16 @@
         "symbol": "crvPlain3andSUSD",
         "type": "ethereum token"
     },
+    "gusd3CRV": {
+        "coingecko": "curve-dao-token",
+        "cryptocompare": "",
+        "ethereum_address": "0xD2967f45c4f384DEEa880F807Be904762a3DeA07",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi GUSD/3Crv",
+        "started": 1602032874,
+        "symbol": "gusd3CRV",
+        "type": "ethereum token"
+    },
     "crvRenWBTC": {
         "coingecko": "lp-renbtc-curve",
         "cryptocompare": "",

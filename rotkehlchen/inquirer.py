@@ -45,6 +45,7 @@ SPECIAL_SYMBOLS = (
     'yDAI+yUSDC+yUSDT+yTUSD',
     'ycrvRenWSBTC',
     'ypaxCrv',
+    'gusd3CRV',
     '3Crv',
     'crvRenWBTC',
     'crvRenWSBTC',
