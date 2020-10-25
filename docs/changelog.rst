@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1456` Take balances shown in DeFi overview into account in the total netvalue worth and in the dashboard and per account ethereum balances table.
 * :feature:`1561` The application will now only log critical errors by default, allowing the user to change that on the log in screen.
 * :bug:`1583` Users will not be taken to the reveal button when pressing tab in a form with a revealable input.
 * :feature:`1122` Users can now import their metamask account addresses to rotki.
