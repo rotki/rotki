@@ -709,9 +709,13 @@ class Kraken(ExchangeInterface):
         for movement in result:
             try:
                 asset = asset_from_kraken(movement['asset'])
+                movement_type = movement['type']
+                if movement_type not in ('deposit', 'withdrawal'):
+                    # Other known types: 'transfer'
+                    continue  # Can be for moving funds from spot to stake etc.
                 movements.append(AssetMovement(
                     location=Location.KRAKEN,
-                    category=deserialize_asset_movement_category(movement['type']),
+                    category=deserialize_asset_movement_category(movement_type),
                     timestamp=deserialize_timestamp_from_kraken(movement['time']),
                     address=None,  # no data from kraken ledger endpoint
                     transaction_id=None,  # no data from kraken ledger endpoint
