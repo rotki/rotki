@@ -125,6 +125,12 @@ def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
 
     Can throw DeserializationError if the data is not as expected
     """
+    # Seems that poloniex added milliseconds in their timestamps.
+    # https://github.com/rotki/rotki/issues/1631
+    # We don't deal with milliseconds in Rotki times so we can safely remove it
+    splits = date.split('.', 1)
+    if len(splits) == 2:
+        date = splits[0]
     return deserialize_timestamp_from_date(date, '%Y-%m-%d %H:%M:%S', 'poloniex')
 
 
