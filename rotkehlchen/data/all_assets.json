@@ -796,6 +796,16 @@
         "symbol": "AUD",
         "type": "fiat"
     },
+    "AUDIO": {
+        "coingecko": "audius",
+        "cryptocompare": "",
+        "ethereum_address": "0x18aAA7115705e8be94bfFEBDE57Af9BFc265B998",
+        "ethereum_token_decimals": 18,
+        "name": "Audius",
+        "started": 1603333709,
+        "symbol": "AUDIO",
+        "type": "ethereum token"
+    },
     "NZD": {
         "name": "New Zealand Dollar",
         "symbol": "NZD",
