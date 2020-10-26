@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.8.2 <2020-10-27>`
 * :bug:`1631` Fetching poloniex trades will now work properly again after they changed their trade date time format.
 * :feature:`-` Support the following new MakerDAO vault collateral types: ``ETH-B``, ``USDT-A``, ``MANA-A``, ``PAXUSD-A``, ``COMP-A``, ``LRC-A``, ``LINK-A``.
 * :feature:`1616` Support https://harvest.finance/ stablecoin vaults balance queries and claimable FARM token balance display.
