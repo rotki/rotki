@@ -32,7 +32,7 @@
       </v-tooltip>
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'after'"
-        class="ml-2"
+        class="ml-1"
         :asset-padding="assetPadding"
         :show-currency="shownCurrency"
         :currency="currency"

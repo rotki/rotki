@@ -1,7 +1,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import { CompoundProfitAndLoss } from '@/services/defi/types/compound';
 import { HasBalance } from '@/services/types-api';
-import { CompoundProfitLossModel } from '@/store/defi/types';
+import { ProfitLossModel } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
 
 export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {
@@ -12,8 +12,8 @@ export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {
 
 export function toProfitLossModel(
   profitAndLoss: CompoundProfitAndLoss
-): CompoundProfitLossModel[] {
-  const data: CompoundProfitLossModel[] = [];
+): ProfitLossModel[] {
+  const data: ProfitLossModel[] = [];
   for (const address of Object.keys(profitAndLoss)) {
     const assets = profitAndLoss[address];
     for (const asset of Object.keys(assets)) {

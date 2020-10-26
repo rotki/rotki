@@ -4,6 +4,7 @@ import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import {
+  aaveHistoryKeys,
   DEFI_AAVE,
   DEFI_YEARN_VAULTS,
   dsrKeys,
@@ -320,7 +321,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const task = createTask(taskId, taskType, {
         title: i18n.tc('actions.defi.aave_history.task.title'),
         ignoreResult: false,
-        numericKeys: balanceKeys
+        numericKeys: aaveHistoryKeys
       });
 
       commit('tasks/add', task, { root: true });
@@ -543,7 +544,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     await Promise.all([
       dispatch('fetchMakerDAOVaultDetails', refresh),
-      dispatch('fetchCompoundHistory', refresh)
+      dispatch('fetchCompoundHistory', refresh),
+      dispatch('fetchAaveHistory', refresh)
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);

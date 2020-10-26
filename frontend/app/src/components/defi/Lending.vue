@@ -136,6 +136,10 @@
       v-if="premium && (isYearnVaults || selectedProtocols.length === 0)"
       :profit="yearnVaultsProfit(selectedAddresses)"
     />
+    <aave-earned-details
+      v-if="premium && (isAave || selectedProtocols.length === 0)"
+      :profit="aaveTotalEarned(selectedAddresses)"
+    />
     <v-row class="loans__history">
       <v-col cols="12">
         <premium-card v-if="!premium" :title="$t('lending.history')" />
@@ -180,9 +184,10 @@ import {
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
-import { BaseDefiBalance } from '@/store/defi/types';
+import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
 import {
+  AaveEarnedDetails,
   CompoundLendingDetails,
   LendingHistory,
   YearnVaultsProfitDetails
@@ -206,6 +211,7 @@ import {
     StatCardWide,
     ProgressScreen,
     PremiumLock,
+    AaveEarnedDetails,
     LendingHistory
   },
   computed: {
@@ -218,7 +224,8 @@ import {
       'effectiveInterestRate',
       'aggregatedLendingBalances',
       'lendingHistory',
-      'yearnVaultsProfit'
+      'yearnVaultsProfit',
+      'aaveTotalEarned'
     ])
   },
   methods: {
@@ -250,6 +257,7 @@ export default class Lending extends Mixins(StatusMixin) {
     addresses: string[]
   ) => BigNumber;
   yearnVaultsProfit!: (addresses: string[]) => YearnVaultProfitLoss[];
+  aaveTotalEarned!: (addresses: string[]) => ProfitLossModel[];
 
   section = Section.DEFI_LENDING;
   secondSection = Section.DEFI_LENDING_HISTORY;
@@ -280,6 +288,13 @@ export default class Lending extends Mixins(StatusMixin) {
     return (
       this.selectedProtocols.length === 1 &&
       this.selectedProtocols.includes(DEFI_YEARN_VAULTS)
+    );
+  }
+
+  get isAave(): boolean {
+    return (
+      this.selectedProtocols.length === 1 &&
+      this.selectedProtocols.includes(DEFI_AAVE)
     );
   }
 
