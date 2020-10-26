@@ -81,4 +81,4 @@ def test_detected_tokens_cache(ethtokens, inquirer):  # pylint: disable=unused-a
             eth_map_entry = eth_map[key]
             assert len(entry) == len(eth_map_entry)
             for token, val in entry.items():
-                assert token_normalized_value(eth_map_entry[token], token.decimals) == val
+                assert token_normalized_value(eth_map_entry[token], token) == val

@@ -85,7 +85,7 @@ class EthereumConstants():
         return abi
 
 # Latest contract addresses are in the makerdao changelog. These values are taken from here:
-# https://changelog.makerdao.com/releases/mainnet/1.0.6/contracts.json
+# https://changelog.makerdao.com/releases/mainnet/1.1.3/contracts.json
 
 
 MAKERDAO_DAI_JOIN = EthereumConstants().contract('MAKERDAO_DAI_JOIN')
@@ -96,13 +96,20 @@ MAKERDAO_SPOT = EthereumConstants().contract('MAKERDAO_SPOT')
 MAKERDAO_POT = EthereumConstants().contract('MAKERDAO_POT')
 MAKERDAO_VAT = EthereumConstants().contract('MAKERDAO_VAT')
 MAKERDAO_ETH_A_JOIN = EthereumConstants().contract('MAKERDAO_ETH_A_JOIN')
+MAKERDAO_ETH_B_JOIN = EthereumConstants().contract('MAKERDAO_ETH_B_JOIN')
 MAKERDAO_BAT_A_JOIN = EthereumConstants().contract('MAKERDAO_BAT_A_JOIN')
 MAKERDAO_USDC_A_JOIN = EthereumConstants().contract('MAKERDAO_USDC_A_JOIN')
 MAKERDAO_USDC_B_JOIN = EthereumConstants().contract('MAKERDAO_USDC_B_JOIN')
+MAKERDAO_USDT_A_JOIN = EthereumConstants().contract('MAKERDAO_USDT_A_JOIN')
 MAKERDAO_WBTC_A_JOIN = EthereumConstants().contract('MAKERDAO_WBTC_A_JOIN')
 MAKERDAO_KNC_A_JOIN = EthereumConstants().contract('MAKERDAO_KNC_A_JOIN')
+MAKERDAO_MANA_A_JOIN = EthereumConstants().contract('MAKERDAO_MANA_A_JOIN')
 MAKERDAO_TUSD_A_JOIN = EthereumConstants().contract('MAKERDAO_TUSD_A_JOIN')
 MAKERDAO_ZRX_A_JOIN = EthereumConstants().contract('MAKERDAO_ZRX_A_JOIN')
+MAKERDAO_PAXUSD_A_JOIN = EthereumConstants().contract('MAKERDAO_PAXUSD_A_JOIN')
+MAKERDAO_COMP_A_JOIN = EthereumConstants().contract('MAKERDAO_COMP_A_JOIN')
+MAKERDAO_LRC_A_JOIN = EthereumConstants().contract('MAKERDAO_LRC_A_JOIN')
+MAKERDAO_LINK_A_JOIN = EthereumConstants().contract('MAKERDAO_LINK_A_JOIN')
 
 MAKERDAO_CAT = EthereumConstants().contract('MAKERDAO_CAT')
 MAKERDAO_JUG = EthereumConstants().contract('MAKERDAO_JUG')

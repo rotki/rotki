@@ -209,7 +209,7 @@ class EthTokens():
                 token_amount = result[acc_idx][tk_idx]
                 if token_amount != 0:
                     balances[token.identifier][account] = token_normalized_value(
-                        token_amount, token.decimals,
+                        token_amount=token_amount, token=token,
                     )
         return balances
 
@@ -246,5 +246,5 @@ class EthTokens():
         for tk_idx, token in enumerate(tokens):
             token_amount = result[tk_idx]
             if token_amount != 0:
-                balances[token.identifier] = token_normalized_value(token_amount, token.decimals)
+                balances[token.identifier] = token_normalized_value(token_amount, token)
         return balances

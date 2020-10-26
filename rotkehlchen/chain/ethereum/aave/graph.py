@@ -23,7 +23,7 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveRepayEvent,
     AaveSimpleEvent,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.ethereum import ATOKEN_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset
@@ -257,7 +257,7 @@ def _parse_atoken_balance_history(
             continue
 
         _, decimals = _get_reserve_address_decimals(asset.identifier)
-        balance = token_normalized_value(int(entry['balance']), token_decimals=decimals)
+        balance = token_normalized_value_decimals(int(entry['balance']), token_decimals=decimals)
         result.append(ATokenBalanceHistory(
             reserve_address=reserve_address,
             balance=balance,
@@ -737,11 +737,11 @@ class AaveGraphInquirer(AaveInquirer):
             if result is None:
                 continue  # problem parsing, error already logged
             asset, decimals = result
-            amount_after_fee = token_normalized_value(
+            amount_after_fee = token_normalized_value_decimals(
                 int(entry['amountAfterFee']),
                 token_decimals=decimals,
             )
-            fee = token_normalized_value(int(entry['fee']), token_decimals=decimals)
+            fee = token_normalized_value_decimals(int(entry['fee']), token_decimals=decimals)
             usd_price = query_usd_price_zero_if_error(
                 asset=asset,
                 time=timestamp,
@@ -845,7 +845,7 @@ class AaveGraphInquirer(AaveInquirer):
         if result is None:
             return None
         asset, decimals = result
-        amount = token_normalized_value(
+        amount = token_normalized_value_decimals(
             token_amount=int(entry[amount_key]),
             token_decimals=decimals,
         )

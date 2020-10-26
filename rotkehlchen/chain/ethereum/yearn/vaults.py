@@ -275,8 +275,8 @@ class YearnVaults(EthereumModule):
         for deposit_event in deposit_events:
             timestamp = self.ethereum.get_event_timestamp(deposit_event)
             deposit_amount = token_normalized_value(
-                hex_or_bytes_to_int(deposit_event['data']),
-                vault.underlying_token.decimals,
+                token_amount=hex_or_bytes_to_int(deposit_event['data']),
+                token=vault.underlying_token,
             )
             tx_hash = deposit_event['transactionHash']
             tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
@@ -294,8 +294,8 @@ class YearnVaults(EthereumModule):
                 if found_event:
                     # found the mint log
                     mint_amount = token_normalized_value(
-                        hex_or_bytes_to_int(log['data']),
-                        vault.token.decimals,
+                        token_amount=hex_or_bytes_to_int(log['data']),
+                        token=vault.token,
                     )
 
             if mint_amount is None:
@@ -359,8 +359,8 @@ class YearnVaults(EthereumModule):
         for withdraw_event in withdraw_events:
             timestamp = self.ethereum.get_event_timestamp(withdraw_event)
             withdraw_amount = token_normalized_value(
-                hex_or_bytes_to_int(withdraw_event['data']),
-                vault.token.decimals,
+                token_amount=hex_or_bytes_to_int(withdraw_event['data']),
+                token=vault.token,
             )
             tx_hash = withdraw_event['transactionHash']
             tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
@@ -378,8 +378,8 @@ class YearnVaults(EthereumModule):
                 if found_event:
                     # found the burn log
                     burn_amount = token_normalized_value(
-                        hex_or_bytes_to_int(log['data']),
-                        vault.token.decimals,
+                        token_amount=hex_or_bytes_to_int(log['data']),
+                        token=vault.token,
                     )
 
             if burn_amount is None:

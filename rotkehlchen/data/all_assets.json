@@ -8508,7 +8508,7 @@
         "type": "ethereum token"
     },
     "PAX": {
-        "coingecko": "payperex",
+        "coingecko": "paxos-standard",
         "ethereum_address": "0x8E870D67F660D95d5be530380D0eC0bd388289E1",
         "ethereum_token_decimals": 18,
         "name": "Paxos Standard Token",

@@ -7,7 +7,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
@@ -192,7 +192,7 @@ class Zerion():
         metadata = entry[0]
         balance_value = entry[1]
         decimals = metadata[3]
-        normalized_value = token_normalized_value(balance_value, decimals)
+        normalized_value = token_normalized_value_decimals(balance_value, decimals)
         token_symbol = metadata[2]
         token_address = to_checksum_address(metadata[0])
         token_name = metadata[1]
