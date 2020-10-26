@@ -47,6 +47,8 @@ Changelog
   - `Easyfi (EASY) <https://www.coingecko.com/en/coins/easyfi>`__
   - `Binance leveraged token FILDOWN (FILDOWN) <https://www.cryptocompare.com/coins/fildown>`__
   - `Binance leveraged token FILUP (FILUP) <https://www.cryptocompare.com/coins/filup/>`__
+  - `Binance leveraged token YFIDOWN (YFIDOWN) <https://www.cryptocompare.com/coins/yfidown>`__
+  - `Binance leveraged token YFIUP (YFIUP) <https://www.cryptocompare.com/coins/yfiup/>`__
   - `Injective Token (INJ) <https://www.coingecko.com/en/coins/injective-protocol>`__
 
 * :release:`1.8.1 <2020-10-05>`

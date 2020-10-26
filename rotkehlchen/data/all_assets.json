@@ -12857,6 +12857,20 @@
         "symbol": "YFI",
         "type": "ethereum token"
     },
+    "YFIDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token YFIDOWN",
+        "started": 1603152000,
+        "symbol": "YFIDOWN",
+        "type": "own chain"
+    },
+    "YFIUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token YFIUP",
+        "started": 1603152000,
+        "symbol": "YFIUP",
+        "type": "own chain"
+    },
     "YFII": {
         "coingecko": "yfii-finance",
         "ethereum_address": "0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83",
