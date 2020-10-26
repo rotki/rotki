@@ -6098,6 +6098,15 @@
         "symbol": "ING",
         "type": "ethereum token"
     },
+    "INJ": {
+        "coingecko": "injective-protocol",
+        "ethereum_address": "0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30",
+        "ethereum_token_decimals": 18,
+        "name": "Injective Token",
+        "started": 1602922956,
+        "symbol": "INJ",
+        "type": "ethereum token"
+    },
     "INS": {
         "coingecko": "insolar-old",
         "ethereum_address": "0x5B2e4a700dfBc560061e957edec8F6EeEb74a320",

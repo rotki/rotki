@@ -47,6 +47,7 @@ Changelog
   - `Easyfi (EASY) <https://www.coingecko.com/en/coins/easyfi>`__
   - `Binance leveraged token FILDOWN (FILDOWN) <https://www.cryptocompare.com/coins/fildown>`__
   - `Binance leveraged token FILUP (FILUP) <https://www.cryptocompare.com/coins/filup/>`__
+  - `Injective Token (INJ) <https://www.coingecko.com/en/coins/injective-protocol>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
