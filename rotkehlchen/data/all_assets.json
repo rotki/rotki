@@ -8632,6 +8632,15 @@
         "symbol": "PHX",
         "type": "neo token"
     },
+    "PICKLE": {
+        "coingecko": "pickle-finance",
+        "ethereum_address": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
+        "ethereum_token_decimals": 18,
+        "name": "PickleToken",
+        "started": 1599694316,
+        "symbol": "PICKLE",
+        "type": "ethereum token"
+    },
     "PIGGY": {
         "active": true,
         "coingecko": "",
