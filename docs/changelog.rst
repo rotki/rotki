@@ -44,6 +44,7 @@ Changelog
   - `Aave Interest bearing Aave Token (aAAVE) <https://etherscan.io/address/0xba3d9687cf50fe253cd2e1cfeede1d6787344ed5>`__
   - `Bidao (BID) <https://www.coingecko.com/en/coins/bidao>`__
   - `Audius (AUDIO) <https://www.coingecko.com/en/coins/audius>`__
+  - `Easyfi (EASY) <https://www.coingecko.com/en/coins/easyfi>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.

@@ -3901,6 +3901,15 @@
         "symbol": "EARTH",
         "type": "ethereum token"
     },
+    "EASY": {
+        "coingecko": "easyfi",
+        "ethereum_address": "0x913D8ADf7CE6986a8CbFee5A54725D9Eea4F0729",
+        "ethereum_token_decimals": 18,
+        "name": "EASY",
+        "started": 1601459453,
+        "symbol": "EASY",
+        "type": "ethereum token"
+    },
     "EBC": {
         "coingecko": "ebcoin",
         "ethereum_address": "0x31f3D9D1BeCE0c033fF78fA6DA60a6048F3E13c5",
