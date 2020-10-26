@@ -39,6 +39,7 @@ Changelog
   - `Yearn Gemini USD vault (yGUSD) <https://etherscan.io/address/0xec0d8D3ED5477106c6D4ea27D90a60e594693C90>`__
   - `yearn Curve.fi DAI/USDC/USDT vault (y3Crv) <https://etherscan.io/address/0x9cA85572E6A3EbF24dEDd195623F188735A5179f>`__
   - `mStable USD (mUSD) <https://www.coingecko.com/en/coins/mstable-usd>`__
+  - `Aave Interest bearing Aave Token (aAAVE) <https://etherscan.io/address/0xba3d9687cf50fe253cd2e1cfeede1d6787344ed5>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.

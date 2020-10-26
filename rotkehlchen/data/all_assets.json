@@ -13029,6 +13029,16 @@
         "symbol": "aBAT",
         "type": "ethereum token"
     },
+    "aAAVE": {
+        "coingecko": "aave",
+        "cryptocompare": "AAVE",
+        "ethereum_address": "0xba3D9687Cf50fE253cd2e1cFeEdE1d6787344Ed5",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing Aave Token",
+        "started": 1603204313,
+        "symbol": "aAAVE",
+        "type": "ethereum token"
+    },
     "aBUSD": {
         "coingecko": "aave-busd",
         "cryptocompare": "BUSD",
