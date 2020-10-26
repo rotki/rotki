@@ -4656,6 +4656,20 @@
         "symbol": "FIL",
         "type": "own chain"
     },
+    "FILDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token FILDOWN",
+        "started": 1603152000,
+        "symbol": "FILDOWN",
+        "type": "own chain"
+    },
+    "FILUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token FILUP",
+        "started": 1603152000,
+        "symbol": "FILUP",
+        "type": "own chain"
+    },
     "FIO": {
         "coingecko": "fio-protocol",
         "name": "FIO Protocol",
