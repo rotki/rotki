@@ -1,5 +1,5 @@
 <template>
-  <v-overlay opacity="1" color="grey lighten-4" absolute>
+  <v-overlay opacity="1" color="grey lighten-4">
     <div class="account-management__loading" />
     <div v-if="!premiumVisible">
       <v-card class="account-management__card pb-6" width="500px" light>

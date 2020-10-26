@@ -60,4 +60,11 @@ export class RotkiApp {
       .then(() => cb())
       .catch(() => cb());
   }
+
+  drawerIsVisible(isVisible: boolean) {
+    cy.get('.account-management__loading').should('not.be.visible');
+    cy.get('.app__navigation-drawer').should(
+      isVisible ? 'be.visible' : 'not.be.visible'
+    );
+  }
 }

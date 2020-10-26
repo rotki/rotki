@@ -6,6 +6,7 @@ describe('Accounts', () => {
   let app: RotkiApp;
 
   const viewPortSizes = [
+    [1280, 720, 'HD Ready'],
     [1000, 660, 'Cypress default viewport'],
     [800, 600, 'Rotki minimum supported resolution'],
     [640, 480, 'Small res to simulate high app scaling or zoom']
@@ -25,6 +26,7 @@ describe('Accounts', () => {
       it('create account', () => {
         app.visit();
         app.createAccount(username);
+        app.drawerIsVisible(size[1] >= 720);
         app.logout();
       });
 
