@@ -4084,6 +4084,13 @@
         "symbol": "EKT",
         "type": "ethereum token"
     },
+    "ELA": {
+        "coingecko": "elastos",
+        "name": "Elastos",
+        "started": 1518134400,
+        "symbol": "ELA",
+        "type": "own chain"
+    },
     "ELAMA": {
         "coingecko": "elamachain",
         "ethereum_address": "0xFb444c1f2B718dDfC385cB8Fd9f2D1D776b24668",

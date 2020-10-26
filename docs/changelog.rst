@@ -51,6 +51,7 @@ Changelog
   - `Binance leveraged token YFIUP (YFIUP) <https://www.cryptocompare.com/coins/yfiup/>`__
   - `Injective Token (INJ) <https://www.coingecko.com/en/coins/injective-protocol>`__
   - `Celo dollar (CUSD) <https://www.cryptocompare.com/coins/celousd/overview>`__
+  - `Elastos (ELA) <https://www.coingecko.com/en/coins/elastos>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.
