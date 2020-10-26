@@ -1278,6 +1278,15 @@
         "symbol": "BHPC",
         "type": "ethereum token"
     },
+    "BID": {
+        "coingecko": "bidao",
+        "ethereum_address": "0x25e1474170c4c0aA64fa98123bdc8dB49D7802fa",
+        "ethereum_token_decimals": 18,
+        "name": "Bidao",
+        "started": 1600933448,
+        "symbol": "BID",
+        "type": "ethereum token"
+    },
     "BIDR": {
         "coingecko": "binanceidr",
         "name": "Binance IDR Stable Coin",
