@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.ethereum import (
     FARM_ASSET_ABI,
+    YEARN_3CRV_VAULT,
     YEARN_ALINK_VAULT,
     YEARN_BCURVE_VAULT,
     YEARN_DAI_VAULT,
@@ -180,6 +181,14 @@ def handle_defi_price_query(
             yearn_contract=YEARN_SRENCURVE_VAULT,
             div_decimals=36,
             asset_price=underlying_asset_price,
+        )
+    elif token_symbol == 'y3Crv':
+        usd_value = _handle_yearn_curve_vault(
+            ethereum=ethereum,
+            curve_contract=CURVEFI_3POOLSWAP,
+            yearn_contract=YEARN_3CRV_VAULT,
+            div_decimals=36,
+            asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
     elif token_symbol == 'yDAI+yUSDC+yUSDT+yTUSD':
         token = EthereumToken(token_symbol)

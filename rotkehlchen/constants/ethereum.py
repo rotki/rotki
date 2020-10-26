@@ -108,6 +108,7 @@ MAKERDAO_CAT = EthereumConstants().contract('MAKERDAO_CAT')
 MAKERDAO_JUG = EthereumConstants().contract('MAKERDAO_JUG')
 
 YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
+YEARN_3CRV_VAULT = EthereumConstants().contract('YEARN_3CRV_VAULT')
 YEARN_DAI_VAULT = EthereumConstants().contract('YEARN_DAI_VAULT')
 YEARN_WETH_VAULT = EthereumConstants().contract('YEARN_WETH_VAULT')
 YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')

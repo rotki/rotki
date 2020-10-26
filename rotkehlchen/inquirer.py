@@ -58,6 +58,7 @@ SPECIAL_SYMBOLS = (
     'yUSDT',
     'yUSDC',
     'yTUSD',
+    'y3Crv',
     'yGUSD',
     'fUSDC',
     'fUSDT',

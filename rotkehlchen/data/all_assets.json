@@ -13428,6 +13428,16 @@
         "symbol": "yGUSD",
         "type": "ethereum token"
     },
+    "y3Crv": {
+        "coingecko": "curve-dao-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x9cA85572E6A3EbF24dEDd195623F188735A5179f",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Curve.fi DAI/USDC/USDT",
+        "started": 1602322413,
+        "symbol": "y3Crv",
+        "type": "ethereum token"
+    },
     "yYFI": {
         "coingecko": "yearn-finance",
         "cryptocompare": "",
