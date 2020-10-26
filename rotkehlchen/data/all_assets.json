@@ -6390,6 +6390,15 @@
         "symbol": "JST",
         "type": "tron token"
     },
+    "KAI": {
+        "coingecko": "kardiachain",
+        "ethereum_address": "0x1410434b0346f5bE678d0FB554E5c7ab620f8f4a",
+        "ethereum_token_decimals": 18,
+        "name": "KardiaChain Token",
+        "started": 1601182047,
+        "symbol": "KAI",
+        "type": "ethereum token"
+    },
     "KAN": {
         "coingecko": "kan",
         "ethereum_address": "0x1410434b0346f5bE678d0FB554E5c7ab620f8f4a",
