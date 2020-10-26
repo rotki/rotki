@@ -16,7 +16,7 @@
       v-if="!!value"
       :style="assetStyle"
       :class="assetPadding ? 'mr-1' : null"
-      class="ml-2 percentage-display__symbol text--secondary"
+      class="ml-1 percentage-display__symbol text--secondary"
       :cols="justify === 'start' ? null : 'auto'"
     >
       {{ $t('percentage_display.symbol') }}
@@ -69,7 +69,7 @@ export default class PercentageDisplay extends Mixins(
   get assetStyle(): { [key: string]: string } {
     if (!this.assetPadding) {
       return {
-        'max-width': '1ch'
+        'max-width': '0ch'
       };
     }
     return {
