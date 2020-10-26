@@ -12,6 +12,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_ALINK_VAULT,
     YEARN_BCURVE_VAULT,
     YEARN_DAI_VAULT,
+    YEARN_GUSD_VAULT,
     YEARN_SRENCURVE_VAULT,
     YEARN_TUSD_VAULT,
     YEARN_USDC_VAULT,
@@ -93,6 +94,12 @@ YEARN_VAULTS = {
         contract=YEARN_TUSD_VAULT,
         underlying_token=EthereumToken('TUSD'),
         token=EthereumToken('yTUSD'),
+    ),
+    'yGUSD': YearnVault(
+        name='GUSD Vault',
+        contract=YEARN_GUSD_VAULT,
+        underlying_token=EthereumToken('GUSD'),
+        token=EthereumToken('yGUSD'),
     ),
     'yyDAI+yUSDC+yUSDT+yBUSD': YearnVault(
         name='YBCURVE Vault',

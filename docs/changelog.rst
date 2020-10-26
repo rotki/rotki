@@ -36,6 +36,7 @@ Changelog
   - `All Harvest finance stablecoin vault fAssets <https://github.com/harvest-finance/harvest#vaults>`__
   - `Curve.fi DAI/USDC/USDT Pool (3Crv) <https://etherscan.io/address/0x6c3f90f043a72fa612cbac8115ee7e52bde6e490>`__
   - `Curve.fi GUSD/3Crv (gusd3CRV) <https://etherscan.io/address/0xD2967f45c4f384DEEa880F807Be904762a3DeA07>`__
+  - `Yearn Gemini USD vault (yGUSD) <https://etherscan.io/address/0xec0d8D3ED5477106c6D4ea27D90a60e594693C90>`__
   - `mStable USD (mUSD) <https://www.coingecko.com/en/coins/mstable-usd>`__
 
 * :release:`1.8.1 <2020-10-05>`

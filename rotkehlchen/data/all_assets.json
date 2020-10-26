@@ -13418,6 +13418,16 @@
         "symbol": "yTUSD",
         "type": "ethereum token"
     },
+    "yGUSD": {
+        "coingecko": "gemini-dollar",
+        "cryptocompare": "",
+        "ethereum_address": "0xec0d8D3ED5477106c6D4ea27D90a60e594693C90",
+        "ethereum_token_decimals": 2,
+        "name": "yearn Gemini dollar",
+        "started": 1602827638,
+        "symbol": "yGUSD",
+        "type": "ethereum token"
+    },
     "yYFI": {
         "coingecko": "yearn-finance",
         "cryptocompare": "",

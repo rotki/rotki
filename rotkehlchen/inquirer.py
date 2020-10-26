@@ -15,6 +15,7 @@ from rotkehlchen.constants.assets import (
     A_BTC,
     A_DAI,
     A_ETH,
+    A_GUSD,
     A_TUSD,
     A_USD,
     A_USDC,
@@ -57,6 +58,7 @@ SPECIAL_SYMBOLS = (
     'yUSDT',
     'yUSDC',
     'yTUSD',
+    'yGUSD',
     'fUSDC',
     'fUSDT',
     'fDAI',
@@ -87,6 +89,8 @@ def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
     price = None
     if token_symbol == 'yaLINK':
         price = Inquirer().find_usd_price(A_ALINK)
+    elif token_symbol == 'yGUSD':
+        price = Inquirer().find_usd_price(A_GUSD)
     elif token_symbol in ('yDAI', 'fDAI'):
         price = Inquirer().find_usd_price(A_DAI)
     elif token_symbol in ('fWETH', 'yWETH'):

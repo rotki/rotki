@@ -115,6 +115,7 @@ YEARN_ALINK_VAULT = EthereumConstants().contract('YEARN_ALINK_VAULT')
 YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
 YEARN_USDC_VAULT = EthereumConstants().contract('YEARN_USDC_VAULT')
 YEARN_TUSD_VAULT = EthereumConstants().contract('YEARN_TUSD_VAULT')
+YEARN_GUSD_VAULT = EthereumConstants().contract('YEARN_GUSD_VAULT')
 YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 YEARN_SRENCURVE_VAULT = EthereumConstants().contract('YEARN_SRENCURVE_VAULT')
 

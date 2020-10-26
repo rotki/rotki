@@ -6,6 +6,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_ALINK_VAULT,
     YEARN_BCURVE_VAULT,
     YEARN_DAI_VAULT,
+    YEARN_GUSD_VAULT,
     YEARN_SRENCURVE_VAULT,
     YEARN_TUSD_VAULT,
     YEARN_USDC_VAULT,
@@ -276,6 +277,15 @@ def handle_defi_price_query(
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_TUSD_VAULT,
+            div_decimals=token.decimals,
+            asset_price=underlying_asset_price,
+        )
+    elif token_symbol == 'yGUSD':
+        assert underlying_asset_price
+        token = EthereumToken(token_symbol)
+        usd_value = handle_underlying_price_yearn_vault(
+            ethereum=ethereum,
+            contract=YEARN_GUSD_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
