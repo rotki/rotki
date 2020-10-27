@@ -2,12 +2,15 @@
 Changelog
 =========
 
+* :bug:`1637` Loading ethereum transactions on the UI should work properly again now
+
 * :release:`1.8.2 <2020-10-27>`
 * :bug:`1631` Fetching poloniex trades will now work properly again after they changed their trade date time format.
 * :feature:`-` Support the following new MakerDAO vault collateral types: ``ETH-B``, ``USDT-A``, ``MANA-A``, ``PAXUSD-A``, ``COMP-A``, ``LRC-A``, ``LINK-A``.
 * :feature:`1616` Support https://harvest.finance/ stablecoin vaults balance queries and claimable FARM token balance display.
 * :feature:`1456` Take balances shown in DeFi overview into account in the total netvalue worth and in the dashboard and per account ethereum balances table.
 * :feature:`1561` The application will now only log critical errors by default, allowing the user to change that on the log in screen.
+* :feature:`1562` Add support for P2SH-P2WPKH and WPKH type of xPubs. User can now choose the xpub type when inputting from the UI.
 * :bug:`1583` Users will not be taken to the reveal button when pressing tab in a form with a revealable input.
 * :feature:`1122` Users can now import their metamask account addresses to rotki.
 * :feature:`1458` Aave borrowing and liquidations are now also taken into account and displayed to the user. Also for historical aave queries a subgraph is used instead of blockchain event querying which makes the entire process considerably faster.
@@ -17,6 +20,7 @@ Changelog
 * :bug:`1571` New user account with new premium keys will no longer fail to create an account the first time if premium keys are given at account creation time.
 * :bug:`1559` Users can now properly refresh the blockchain balances in the Accounts & Balances page.
 * :bug:`1564` Blockchain balances are now properly sorted by fiat currency value.
+* :bug:`1558` Deleting an xPub that has no used derived addresses is now possible.
 * :feature:`1560` Users can now see the total value of the accounts under an xpub.
 * :feature:`-` Added support for the following tokens:
 
