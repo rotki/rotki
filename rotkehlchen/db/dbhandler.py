@@ -2317,9 +2317,13 @@ class DBHandler:
             (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
         )
         if query.fetchone()[0] == 0:
+            derivation_str = (
+                'no derivation path' if xpub_data.derivation_path is None else
+                f'derivation path {xpub_data.derivation_path}'
+            )
             raise InputError(
                 f'Tried to remove non existing xpub {xpub_data.xpub.xpub} '
-                f'with derivation path {xpub_data.derivation_path}',
+                f'with {derivation_str}',
             )
 
         # Delete the tag mappings for all derived addresses
