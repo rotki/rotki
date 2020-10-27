@@ -298,7 +298,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
     const { ethAccounts } = balances!;
-    const addresses = Object.keys(ethAccounts);
+    const addresses = ethAccounts.map(address => address.address);
 
     const fetchAddress: (address: string) => Promise<void> = async address => {
       const { taskId } = await api.history.ethTransactions(address);
