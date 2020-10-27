@@ -371,8 +371,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     if (isTaskRunning(taskType)) {
       return;
     }
-    const existingAddresses = Object.keys(state.ethAccounts).map(address =>
-      address.toLocaleLowerCase()
+    const existingAddresses = state.ethAccounts.map(address =>
+      address.address.toLocaleLowerCase()
     );
     const accounts = payload.filter(
       value => !existingAddresses.includes(value.address.toLocaleLowerCase())
