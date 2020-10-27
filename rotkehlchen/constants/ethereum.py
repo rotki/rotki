@@ -85,7 +85,7 @@ class EthereumConstants():
         return abi
 
 # Latest contract addresses are in the makerdao changelog. These values are taken from here:
-# https://changelog.makerdao.com/releases/mainnet/1.0.6/contracts.json
+# https://changelog.makerdao.com/releases/mainnet/1.1.3/contracts.json
 
 
 MAKERDAO_DAI_JOIN = EthereumConstants().contract('MAKERDAO_DAI_JOIN')
@@ -96,18 +96,26 @@ MAKERDAO_SPOT = EthereumConstants().contract('MAKERDAO_SPOT')
 MAKERDAO_POT = EthereumConstants().contract('MAKERDAO_POT')
 MAKERDAO_VAT = EthereumConstants().contract('MAKERDAO_VAT')
 MAKERDAO_ETH_A_JOIN = EthereumConstants().contract('MAKERDAO_ETH_A_JOIN')
+MAKERDAO_ETH_B_JOIN = EthereumConstants().contract('MAKERDAO_ETH_B_JOIN')
 MAKERDAO_BAT_A_JOIN = EthereumConstants().contract('MAKERDAO_BAT_A_JOIN')
 MAKERDAO_USDC_A_JOIN = EthereumConstants().contract('MAKERDAO_USDC_A_JOIN')
 MAKERDAO_USDC_B_JOIN = EthereumConstants().contract('MAKERDAO_USDC_B_JOIN')
+MAKERDAO_USDT_A_JOIN = EthereumConstants().contract('MAKERDAO_USDT_A_JOIN')
 MAKERDAO_WBTC_A_JOIN = EthereumConstants().contract('MAKERDAO_WBTC_A_JOIN')
 MAKERDAO_KNC_A_JOIN = EthereumConstants().contract('MAKERDAO_KNC_A_JOIN')
+MAKERDAO_MANA_A_JOIN = EthereumConstants().contract('MAKERDAO_MANA_A_JOIN')
 MAKERDAO_TUSD_A_JOIN = EthereumConstants().contract('MAKERDAO_TUSD_A_JOIN')
 MAKERDAO_ZRX_A_JOIN = EthereumConstants().contract('MAKERDAO_ZRX_A_JOIN')
+MAKERDAO_PAXUSD_A_JOIN = EthereumConstants().contract('MAKERDAO_PAXUSD_A_JOIN')
+MAKERDAO_COMP_A_JOIN = EthereumConstants().contract('MAKERDAO_COMP_A_JOIN')
+MAKERDAO_LRC_A_JOIN = EthereumConstants().contract('MAKERDAO_LRC_A_JOIN')
+MAKERDAO_LINK_A_JOIN = EthereumConstants().contract('MAKERDAO_LINK_A_JOIN')
 
 MAKERDAO_CAT = EthereumConstants().contract('MAKERDAO_CAT')
 MAKERDAO_JUG = EthereumConstants().contract('MAKERDAO_JUG')
 
 YEARN_YCRV_VAULT = EthereumConstants().contract('YEARN_YCRV_VAULT')
+YEARN_3CRV_VAULT = EthereumConstants().contract('YEARN_3CRV_VAULT')
 YEARN_DAI_VAULT = EthereumConstants().contract('YEARN_DAI_VAULT')
 YEARN_WETH_VAULT = EthereumConstants().contract('YEARN_WETH_VAULT')
 YEARN_YFI_VAULT = EthereumConstants().contract('YEARN_YFI_VAULT')
@@ -115,6 +123,7 @@ YEARN_ALINK_VAULT = EthereumConstants().contract('YEARN_ALINK_VAULT')
 YEARN_USDT_VAULT = EthereumConstants().contract('YEARN_USDT_VAULT')
 YEARN_USDC_VAULT = EthereumConstants().contract('YEARN_USDC_VAULT')
 YEARN_TUSD_VAULT = EthereumConstants().contract('YEARN_TUSD_VAULT')
+YEARN_GUSD_VAULT = EthereumConstants().contract('YEARN_GUSD_VAULT')
 YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 YEARN_SRENCURVE_VAULT = EthereumConstants().contract('YEARN_SRENCURVE_VAULT')
 
@@ -127,5 +136,6 @@ ATOKEN_ABI = EthereumConstants.abi('ATOKEN')
 ZERION_ABI = EthereumConstants.abi('ZERION_ADAPTER')
 CTOKEN_ABI = EthereumConstants.abi('CTOKEN')
 ERC20TOKEN_ABI = EthereumConstants.abi('ERC20_TOKEN')
+FARM_ASSET_ABI = EthereumConstants.abi('FARM_ASSET')
 
 YEARN_VAULTS_PREFIX = 'yearn_vaults_events'

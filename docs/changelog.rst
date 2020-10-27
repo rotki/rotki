@@ -2,6 +2,11 @@
 Changelog
 =========
 
+* :release:`1.8.2 <2020-10-27>`
+* :bug:`1631` Fetching poloniex trades will now work properly again after they changed their trade date time format.
+* :feature:`-` Support the following new MakerDAO vault collateral types: ``ETH-B``, ``USDT-A``, ``MANA-A``, ``PAXUSD-A``, ``COMP-A``, ``LRC-A``, ``LINK-A``.
+* :feature:`1616` Support https://harvest.finance/ stablecoin vaults balance queries and claimable FARM token balance display.
+* :feature:`1456` Take balances shown in DeFi overview into account in the total netvalue worth and in the dashboard and per account ethereum balances table.
 * :feature:`1561` The application will now only log critical errors by default, allowing the user to change that on the log in screen.
 * :bug:`1583` Users will not be taken to the reveal button when pressing tab in a form with a revealable input.
 * :feature:`1122` Users can now import their metamask account addresses to rotki.
@@ -29,6 +34,27 @@ Changelog
   - `Ducato Protocol Token (DUCATO) <https://www.coingecko.com/en/coins/ducato-protocol-token>`__
   - `Consensus Cell Network (ECELL) <https://www.coingecko.com/en/coins/consensus-cell-network>`__
   - `Maro (MARO) <https://www.coingecko.com/en/coins/maro>`__
+  - `Harvest Finance (FARM) <https://www.coingecko.com/en/coins/harvest-finance>`__
+  - `PieDAO DOUGH v2 (DOUGH) <https://www.coingecko.com/en/coins/piedao-dough-v2>`__
+  - `All Harvest finance stablecoin vault fAssets <https://github.com/harvest-finance/harvest#vaults>`__
+  - `PickleToken (PICKLE) <https://www.coingecko.com/en/coins/pickle-finance>`__
+  - `Curve.fi DAI/USDC/USDT Pool (3Crv) <https://etherscan.io/address/0x6c3f90f043a72fa612cbac8115ee7e52bde6e490>`__
+  - `Curve.fi GUSD/3Crv (gusd3CRV) <https://etherscan.io/address/0xD2967f45c4f384DEEa880F807Be904762a3DeA07>`__
+  - `Yearn Gemini USD vault (yGUSD) <https://etherscan.io/address/0xec0d8D3ED5477106c6D4ea27D90a60e594693C90>`__
+  - `yearn Curve.fi DAI/USDC/USDT vault (y3Crv) <https://etherscan.io/address/0x9cA85572E6A3EbF24dEDd195623F188735A5179f>`__
+  - `mStable USD (mUSD) <https://www.coingecko.com/en/coins/mstable-usd>`__
+  - `Aave Interest bearing Aave Token (aAAVE) <https://etherscan.io/address/0xba3d9687cf50fe253cd2e1cfeede1d6787344ed5>`__
+  - `Bidao (BID) <https://www.coingecko.com/en/coins/bidao>`__
+  - `Audius (AUDIO) <https://www.coingecko.com/en/coins/audius>`__
+  - `Easyfi (EASY) <https://www.coingecko.com/en/coins/easyfi>`__
+  - `Binance leveraged token FILDOWN (FILDOWN) <https://www.cryptocompare.com/coins/fildown>`__
+  - `Binance leveraged token FILUP (FILUP) <https://www.cryptocompare.com/coins/filup/>`__
+  - `Binance leveraged token YFIDOWN (YFIDOWN) <https://www.cryptocompare.com/coins/yfidown>`__
+  - `Binance leveraged token YFIUP (YFIUP) <https://www.cryptocompare.com/coins/yfiup/>`__
+  - `Injective Token (INJ) <https://www.coingecko.com/en/coins/injective-protocol>`__
+  - `Celo dollar (CUSD) <https://www.cryptocompare.com/coins/celousd/overview>`__
+  - `Elastos (ELA) <https://www.coingecko.com/en/coins/elastos>`__
+  - `KardiaChain Token (KAI) <https://www.coingecko.com/en/coins/kardiachain>`__
 
 * :release:`1.8.1 <2020-10-05>`
 * :feature:`1532` Users can now easily open links to external block explorers for their tracked blockchain addresses.

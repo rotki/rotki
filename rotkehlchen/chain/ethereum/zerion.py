@@ -7,7 +7,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
@@ -192,7 +192,7 @@ class Zerion():
         metadata = entry[0]
         balance_value = entry[1]
         decimals = metadata[3]
-        normalized_value = token_normalized_value(balance_value, decimals)
+        normalized_value = token_normalized_value_decimals(balance_value, decimals)
         token_symbol = metadata[2]
         token_address = to_checksum_address(metadata[0])
         token_name = metadata[1]
@@ -213,7 +213,8 @@ class Zerion():
         except (UnknownAsset, UnsupportedAsset):
             if not _is_token_non_standard(token_symbol, token_address):
                 self.msg_aggregator.add_warning(
-                    f'Unsupported asset {token_symbol} encountered during DeFi protocol queries',
+                    f'Unsupported asset {token_symbol} with address '
+                    f'{token_address} encountered during DeFi protocol queries',
                 )
             usd_price = Price(ZERO)
 

@@ -77,6 +77,14 @@ def test_tokens_address_is_checksummed():
         assert is_checksum_address(asset_data['ethereum_address']), msg
 
 
+def test_asset_identifiers_are_unique_all_lowercased():
+    """Test that all asset identifiers would be unique if we do a lowercase comparison"""
+    identifier_set = set()
+    for asset_id, _ in AssetResolver().assets.items():
+        assert asset_id.lower() not in identifier_set, f'id {asset_id} already in the assets set'
+        identifier_set.add(asset_id)
+
+
 def test_coingecko_identifiers_are_reachable():
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
@@ -88,6 +96,7 @@ def test_coingecko_identifiers_are_reachable():
         'GOLOS',
         'NPER',
         'BLN',
+        'ADN',
         'PIX',
         'MTC-2',
         'LKY',
@@ -117,6 +126,8 @@ def test_coingecko_identifiers_are_reachable():
         'ORI',
         'RIPT',
         'SGR',
+        'LOCUS',
+        'REDC',
     ]
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
@@ -146,7 +157,7 @@ def test_coingecko_identifiers_are_reachable():
         suggestions = []
         if not found:
             for entry in all_coins:
-                if entry['symbol'].upper() == asset_data['symbol']:
+                if entry['symbol'].upper() == asset_data['symbol'].upper():
                     suggestions.append((entry['id'], entry['name'], entry['symbol']))
 
         msg = f'Asset {identifier} coingecko mapping does not exist.'
@@ -160,7 +171,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '7172111d5f9d93c18da0d22a5d72c22a', 'version': 19}
+    last_meta = {'md5': '6af1f23b12ca2cc736d53003999f2534', 'version': 20}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

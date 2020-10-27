@@ -217,7 +217,8 @@ def rotkehlchen_api_server(
         eth_rpc_endpoint=ethrpc_endpoint,
         aave_use_graph=aave_use_graph,
     )
-    return api_server
+    yield api_server
+    api_server.stop()
 
 
 @pytest.fixture()
@@ -290,4 +291,5 @@ def rotkehlchen_api_server_with_exchanges(
             msg_aggregator=rotki.msg_aggregator,
         )
 
-    return rotkehlchen_api_server
+    yield rotkehlchen_api_server
+    rotkehlchen_api_server.stop()

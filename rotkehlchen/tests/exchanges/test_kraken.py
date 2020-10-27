@@ -200,14 +200,19 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
     withdraws = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE'
     zero_withdraws = patch(withdraws, new='{"count": 0, "ledger":{}}')
 
-    def query_kraken_and_test(input_ledger, expected_warnings_num, expected_errors_num):
+    def query_kraken_and_test(
+            input_ledger,
+            expected_warnings_num,
+            expected_errors_num,
+            expect_skip=False,
+    ):
         with patch(target, new=input_ledger), zero_withdraws:
             deposits = kraken.query_online_deposits_withdrawals(
                 start_ts=0,
                 end_ts=TEST_END_TS,
             )
 
-        if expected_warnings_num == 0 and expected_errors_num == 0:
+        if not expect_skip and expected_warnings_num == 0 and expected_errors_num == 0:
             assert len(deposits) == 1
             assert deposits[0].category == AssetMovementCategory.DEPOSIT
             assert deposits[0].asset == A_BTC
@@ -228,10 +233,15 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
     input_ledger = input_ledger.replace('1458994442', 'dsadsadad')
     query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
 
-    # Invalid category type
+    # Invalid category type -- is skipped so no errors but a warning
     input_ledger = test_deposits
     input_ledger = input_ledger.replace('deposit', 'drinking')
-    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
+    query_kraken_and_test(
+        input_ledger,
+        expected_warnings_num=0,
+        expected_errors_num=0,
+        expect_skip=True,
+    )
 
     # Invalid asset type
     input_ledger = test_deposits

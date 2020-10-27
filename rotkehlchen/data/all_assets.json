@@ -796,6 +796,16 @@
         "symbol": "AUD",
         "type": "fiat"
     },
+    "AUDIO": {
+        "coingecko": "audius",
+        "cryptocompare": "",
+        "ethereum_address": "0x18aAA7115705e8be94bfFEBDE57Af9BFc265B998",
+        "ethereum_token_decimals": 18,
+        "name": "Audius",
+        "started": 1603333709,
+        "symbol": "AUDIO",
+        "type": "ethereum token"
+    },
     "NZD": {
         "name": "New Zealand Dollar",
         "symbol": "NZD",
@@ -1276,6 +1286,15 @@
         "name": "BHPCash",
         "started": 1521075066,
         "symbol": "BHPC",
+        "type": "ethereum token"
+    },
+    "BID": {
+        "coingecko": "bidao",
+        "ethereum_address": "0x25e1474170c4c0aA64fa98123bdc8dB49D7802fa",
+        "ethereum_token_decimals": 18,
+        "name": "Bidao",
+        "started": 1600933448,
+        "symbol": "BID",
         "type": "ethereum token"
     },
     "BIDR": {
@@ -1773,7 +1792,7 @@
         "type": "own chain"
     },
     "BTCDOWN": {
-        "coingecko": "btcdown",
+        "coingecko": "",
         "name": "Binance leveraged token BTCDOWN",
         "started": 1595367054,
         "symbol": "BTCDOWN",
@@ -1824,7 +1843,7 @@
         "type": "own chain"
     },
     "BTCUP": {
-        "coingecko": "btcup",
+        "coingecko": "",
         "name": "Binance leveraged token BTCUP",
         "started": 1595367054,
         "symbol": "BTCUP",
@@ -2300,6 +2319,14 @@
         "name": "Celo",
         "started": 1590115455,
         "symbol": "CELO",
+        "type": "own chain"
+    },
+    "CUSD": {
+        "coingecko": "",
+        "cryptocompare": "CELOUSD",
+        "name": "Celo USD",
+        "started": 1601337600,
+        "symbol": "CUSD",
         "type": "own chain"
     },
     "CELR": {
@@ -3608,6 +3635,16 @@
         "symbol": "DOS",
         "type": "ethereum token"
     },
+    "DOUGH": {
+        "coingecko": "piedao-dough-v2",
+        "cryptocompare": "",
+        "ethereum_address": "0xad32A8e6220741182940c5aBF610bDE99E737b2D",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO DOUGH v2",
+        "started": 1599823243,
+        "symbol": "DOUGH",
+        "type": "ethereum token"
+    },
     "DOV": {
         "coingecko": "dovu",
         "ethereum_address": "0xac3211a5025414Af2866FF09c23FC18bc97e79b1",
@@ -3872,6 +3909,15 @@
         "symbol": "EARTH",
         "type": "ethereum token"
     },
+    "EASY": {
+        "coingecko": "easyfi",
+        "ethereum_address": "0x913D8ADf7CE6986a8CbFee5A54725D9Eea4F0729",
+        "ethereum_token_decimals": 18,
+        "name": "EASY",
+        "started": 1601459453,
+        "symbol": "EASY",
+        "type": "ethereum token"
+    },
     "EBC": {
         "coingecko": "ebcoin",
         "ethereum_address": "0x31f3D9D1BeCE0c033fF78fA6DA60a6048F3E13c5",
@@ -4037,6 +4083,13 @@
         "started": 1514008091,
         "symbol": "EKT",
         "type": "ethereum token"
+    },
+    "ELA": {
+        "coingecko": "elastos",
+        "name": "Elastos",
+        "started": 1518134400,
+        "symbol": "ELA",
+        "type": "own chain"
     },
     "ELAMA": {
         "coingecko": "elamachain",
@@ -4537,6 +4590,16 @@
         "symbol": "FAIR",
         "type": "ethereum token"
     },
+    "FARM": {
+        "coingecko": "harvest-finance",
+        "cryptocompare": "",
+        "ethereum_address": "0xa0246c9032bC3A600820415aE600c6388619A14D",
+        "ethereum_token_decimals": 18,
+        "name": "Harvest Finance",
+        "started": 1598895285,
+        "symbol": "FARM",
+        "type": "ethereum token"
+    },
     "FCN": {
         "active": false,
         "coingecko": "freelancerchain",
@@ -4606,6 +4669,20 @@
         "name": "Filecoin",
         "started": 1602773100,
         "symbol": "FIL",
+        "type": "own chain"
+    },
+    "FILDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token FILDOWN",
+        "started": 1603152000,
+        "symbol": "FILDOWN",
+        "type": "own chain"
+    },
+    "FILUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token FILUP",
+        "started": 1603152000,
+        "symbol": "FILUP",
         "type": "own chain"
     },
     "FIO": {
@@ -4918,6 +4995,86 @@
         "name": "FUTURAX",
         "started": 1534084234,
         "symbol": "FTXT",
+        "type": "ethereum token"
+    },
+    "fUSDC": {
+        "coingecko": "usd-coin",
+        "cryptocompare": "",
+        "ethereum_address": "0xf0358e8c3CD5Fa238a29301d0bEa3D63A17bEdBE",
+        "ethereum_token_decimals": 6,
+        "name": "FARM_USDC",
+        "started": 1603116154,
+        "symbol": "fUSDC",
+        "type": "ethereum token"
+    },
+    "fUSDT": {
+        "coingecko": "tether",
+        "cryptocompare": "",
+        "ethereum_address": "0x053c80eA73Dc6941F518a68E2FC52Ac45BDE7c9C",
+        "ethereum_token_decimals": 6,
+        "name": "FARM_USDT",
+        "started": 1603116272,
+        "symbol": "fUSDT",
+        "type": "ethereum token"
+    },
+    "fDAI": {
+        "coingecko": "dai",
+        "cryptocompare": "",
+        "ethereum_address": "0xab7FA2B2985BCcfC13c6D86b1D5A17486ab1e04C",
+        "ethereum_token_decimals": 18,
+        "name": "FARM_DAI",
+        "started": 1603116059,
+        "symbol": "fDAI",
+        "type": "ethereum token"
+    },
+    "fWETH": {
+        "coingecko": "weth",
+        "cryptocompare": "",
+        "ethereum_address": "0xFE09e53A81Fe2808bc493ea64319109B5bAa573e",
+        "ethereum_token_decimals": 18,
+        "name": "FARM_WETH",
+        "started": 1603115998,
+        "symbol": "fWETH",
+        "type": "ethereum token"
+    },
+    "fTUSD": {
+        "coingecko": "true-usd",
+        "cryptocompare": "",
+        "ethereum_address": "0x7674622c63Bee7F46E86a4A5A18976693D54441b",
+        "ethereum_token_decimals": 18,
+        "name": "FARM_TUSD",
+        "started": 1601927319,
+        "symbol": "fTUSD",
+        "type": "ethereum token"
+    },
+    "fWBTC": {
+        "coingecko": "wrapped-bitcoin",
+        "cryptocompare": "",
+        "ethereum_address": "0x5d9d25c7C457dD82fc8668FFC6B9746b674d4EcB",
+        "ethereum_token_decimals": 8,
+        "name": "FARM_WBTC",
+        "started": 1602866633,
+        "symbol": "fWBTC",
+        "type": "ethereum token"
+    },
+    "frenBTC": {
+        "coingecko": "renbtc",
+        "cryptocompare": "",
+        "ethereum_address": "0xC391d1b08c1403313B0c28D47202DFDA015633C4",
+        "ethereum_token_decimals": 8,
+        "name": "FARM_renBTC",
+        "started": 1603116341,
+        "symbol": "frenBTC",
+        "type": "ethereum token"
+    },
+    "fcrvRenWBTC": {
+        "coingecko": "",
+        "cryptocompare": "",
+        "ethereum_address": "0x9aA8F427A17d6B0d91B6262989EdC7D45d6aEdf8",
+        "ethereum_token_decimals": 18,
+        "name": "FARM_crvRenWBTC",
+        "started": 1603116454,
+        "symbol": "fcrvRenWBTC",
         "type": "ethereum token"
     },
     "FUCK": {
@@ -5956,6 +6113,15 @@
         "symbol": "ING",
         "type": "ethereum token"
     },
+    "INJ": {
+        "coingecko": "injective-protocol",
+        "ethereum_address": "0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30",
+        "ethereum_token_decimals": 18,
+        "name": "Injective Token",
+        "started": 1602922956,
+        "symbol": "INJ",
+        "type": "ethereum token"
+    },
     "INS": {
         "coingecko": "insolar-old",
         "ethereum_address": "0x5B2e4a700dfBc560061e957edec8F6EeEb74a320",
@@ -6223,6 +6389,15 @@
         "started": 1588862054,
         "symbol": "JST",
         "type": "tron token"
+    },
+    "KAI": {
+        "coingecko": "kardiachain",
+        "ethereum_address": "0x1410434b0346f5bE678d0FB554E5c7ab620f8f4a",
+        "ethereum_token_decimals": 18,
+        "name": "KardiaChain Token",
+        "started": 1601182047,
+        "symbol": "KAI",
+        "type": "ethereum token"
     },
     "KAN": {
         "coingecko": "kan",
@@ -7526,6 +7701,16 @@
         "symbol": "MUE",
         "type": "own chain"
     },
+    "mUSD": {
+        "coingecko": "musd",
+        "cryptocompare": "",
+        "ethereum_address": "0xe2f2a5C287993345a840Db3B0845fbC70f5935a5",
+        "ethereum_token_decimals": 18,
+        "name": "mStable USD",
+        "started": 1590585470,
+        "symbol": "mUSD",
+        "type": "ethereum token"
+    },
     "MUSIC": {
         "coingecko": "",
         "name": "Musicoin",
@@ -8398,7 +8583,7 @@
         "type": "ethereum token"
     },
     "PAX": {
-        "coingecko": "payperex",
+        "coingecko": "paxos-standard",
         "ethereum_address": "0x8E870D67F660D95d5be530380D0eC0bd388289E1",
         "ethereum_token_decimals": 18,
         "name": "Paxos Standard Token",
@@ -8521,6 +8706,15 @@
         "swapped_for": "PHB",
         "symbol": "PHX",
         "type": "neo token"
+    },
+    "PICKLE": {
+        "coingecko": "pickle-finance",
+        "ethereum_address": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
+        "ethereum_token_decimals": 18,
+        "name": "PickleToken",
+        "started": 1599694316,
+        "symbol": "PICKLE",
+        "type": "ethereum token"
     },
     "PIGGY": {
         "active": true,
@@ -12687,6 +12881,20 @@
         "symbol": "YFI",
         "type": "ethereum token"
     },
+    "YFIDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token YFIDOWN",
+        "started": 1603152000,
+        "symbol": "YFIDOWN",
+        "type": "own chain"
+    },
+    "YFIUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token YFIUP",
+        "started": 1603152000,
+        "symbol": "YFIUP",
+        "type": "own chain"
+    },
     "YFII": {
         "coingecko": "yfii-finance",
         "ethereum_address": "0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83",
@@ -12917,6 +13125,16 @@
         "name": "Aave Interest bearing BAT",
         "started": 1578501629,
         "symbol": "aBAT",
+        "type": "ethereum token"
+    },
+    "aAAVE": {
+        "coingecko": "aave",
+        "cryptocompare": "AAVE",
+        "ethereum_address": "0xba3D9687Cf50fE253cd2e1cFeEdE1d6787344Ed5",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing Aave Token",
+        "started": 1603204313,
+        "symbol": "aAAVE",
         "type": "ethereum token"
     },
     "aBUSD": {
@@ -13210,6 +13428,7 @@
     },
     "yaLINK": {
         "coingecko": "aave-link",
+        "cryptocompare": "",
         "ethereum_address": "0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
         "ethereum_token_decimals": 18,
         "name": "yearn Aave Interest bearing LINK",
@@ -13219,6 +13438,7 @@
     },
     "yDAI+yUSDC+yUSDT+yBUSD": {
         "coingecko": "lp-bcurve",
+        "cryptocompare": "",
         "ethereum_address": "0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
@@ -13228,6 +13448,7 @@
     },
     "yDAI+yUSDC+yUSDT+yTUSD": {
         "coingecko": "curve-fi-ydai-yusdc-yusdt-ytusd",
+        "cryptocompare": "",
         "ethereum_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
@@ -13237,6 +13458,7 @@
     },
     "ypaxCrv": {
         "coingecko": "lp-paxcurve",
+        "cryptocompare": "",
         "ethereum_address": "0xD905e2eaeBe188fc92179b6350807D8bd91Db0D8",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi DAI/USDC/USDT/PAX",
@@ -13246,6 +13468,7 @@
     },
     "yUSDT": {
         "coingecko": "tether",
+        "cryptocompare": "",
         "ethereum_address": "0x2f08119C6f07c006695E079AAFc638b8789FAf18",
         "ethereum_token_decimals": 6,
         "name": "yearn Tether USD",
@@ -13255,6 +13478,7 @@
     },
     "yyDAI+yUSDC+yUSDT+yBUSD": {
         "coingecko": "lp-bcurve",
+        "cryptocompare": "",
         "ethereum_address": "0x2994529C0652D127b7842094103715ec5299bBed",
         "ethereum_token_decimals": 18,
         "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
@@ -13264,6 +13488,7 @@
     },
     "yyDAI+yUSDC+yUSDT+yTUSD": {
         "coingecko": "yvault-lp-ycurve",
+        "cryptocompare": "",
         "ethereum_address": "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
         "ethereum_token_decimals": 18,
         "name": "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
@@ -13273,6 +13498,7 @@
     },
     "yDAI": {
         "coingecko": "dai",
+        "cryptocompare": "",
         "ethereum_address": "0xACd43E627e64355f1861cEC6d3a6688B31a6F952",
         "ethereum_token_decimals": 18,
         "name": "yearn Dai Stablecoin",
@@ -13282,6 +13508,7 @@
     },
     "yUSDC": {
         "coingecko": "usd-coin",
+        "cryptocompare": "",
         "ethereum_address": "0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e",
         "ethereum_token_decimals": 6,
         "name": "yearn USD//C",
@@ -13291,6 +13518,7 @@
     },
     "yTUSD": {
         "coingecko": "true-usd",
+        "cryptocompare": "",
         "ethereum_address": "0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a",
         "ethereum_token_decimals": 18,
         "name": "yearn TrueUSD",
@@ -13298,8 +13526,29 @@
         "symbol": "yTUSD",
         "type": "ethereum token"
     },
+    "yGUSD": {
+        "coingecko": "gemini-dollar",
+        "cryptocompare": "",
+        "ethereum_address": "0xec0d8D3ED5477106c6D4ea27D90a60e594693C90",
+        "ethereum_token_decimals": 2,
+        "name": "yearn Gemini dollar",
+        "started": 1602827638,
+        "symbol": "yGUSD",
+        "type": "ethereum token"
+    },
+    "y3Crv": {
+        "coingecko": "curve-dao-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x9cA85572E6A3EbF24dEDd195623F188735A5179f",
+        "ethereum_token_decimals": 18,
+        "name": "yearn Curve.fi DAI/USDC/USDT",
+        "started": 1602322413,
+        "symbol": "y3Crv",
+        "type": "ethereum token"
+    },
     "yYFI": {
         "coingecko": "yearn-finance",
+        "cryptocompare": "",
         "ethereum_address": "0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
         "ethereum_token_decimals": 18,
         "name": "yearn yearn.finance",
@@ -13309,6 +13558,7 @@
     },
     "yWETH": {
         "coingecko": "weth",
+        "cryptocompare": "",
         "ethereum_address": "0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7",
         "ethereum_token_decimals": 18,
         "name": "yearn Wrapped Ether",
@@ -13316,8 +13566,19 @@
         "symbol": "yWETH",
         "type": "ethereum token"
     },
+    "3Crv": {
+        "coingecko": "curve-dao-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi DAI/USDC/USDT",
+        "started": 1599414946,
+        "symbol": "3Crv",
+        "type": "ethereum token"
+    },
     "crvPlain3andSUSD": {
         "coingecko": "lp-scurve",
+        "cryptocompare": "",
         "ethereum_address": "0xC25a3A3b969415c80451098fa907EC722572917F",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi DAI/USDC/USDT/sUSD",
@@ -13325,8 +13586,19 @@
         "symbol": "crvPlain3andSUSD",
         "type": "ethereum token"
     },
+    "gusd3CRV": {
+        "coingecko": "curve-dao-token",
+        "cryptocompare": "",
+        "ethereum_address": "0xD2967f45c4f384DEEa880F807Be904762a3DeA07",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi GUSD/3Crv",
+        "started": 1602032874,
+        "symbol": "gusd3CRV",
+        "type": "ethereum token"
+    },
     "crvRenWBTC": {
         "coingecko": "lp-renbtc-curve",
+        "cryptocompare": "",
         "ethereum_address": "0x49849C98ae39Fff122806C06791Fa73784FB3675",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi renBTC/wBTC",
@@ -13336,6 +13608,7 @@
     },
     "crvRenWSBTC": {
         "coingecko": "lp-renbtc-curve",
+        "cryptocompare": "",
         "ethereum_address": "0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3",
         "ethereum_token_decimals": 18,
         "name": "Curve.fi renBTC/wBTC/sBTC",
@@ -13345,6 +13618,7 @@
     },
     "ycrvRenWSBTC": {
         "coingecko": "lp-renbtc-curve",
+        "cryptocompare": "",
         "ethereum_address": "0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6",
         "ethereum_token_decimals": 18,
         "name": "yearn Curve.fi renBTC/wBTC/sBTC",

@@ -3,7 +3,18 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import gevent
 from typing_extensions import Literal
@@ -23,7 +34,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors import EthSyncError, InputError
+from rotkehlchen.errors import EthSyncError, InputError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
@@ -56,6 +67,13 @@ log = RotkehlchenLogsAdapter(logger)
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
 
+DEFI_PROTOCOLS_TO_SKIP = (
+    'Aave',  # aTokens are already detected at token balance queries
+    'Compound',  # cTokens are already detected at token balance queries
+    'Chi Gastoken by 1inch',  # cTokens are already detected at token balance queries
+    'yearn.finance • Vaults',  # yearn vault balances are detected by the yTokens
+)
+
 
 class AccountAction(Enum):
     QUERY = 1
@@ -68,13 +86,15 @@ Totals = Dict[Asset, Balance]
 
 @dataclass(init=False, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class EthereumAccountBalance:
-    asset_balances: Dict[Asset, Balance]
+    asset_balances: DefaultDict[Asset, Balance]
     total_usd_value: FVal
 
     def __init__(self, start_eth_amount: FVal, start_eth_usd_value: FVal):
-        self.asset_balances = {
-            A_ETH: Balance(amount=start_eth_amount, usd_value=start_eth_usd_value),
-        }
+        self.asset_balances = defaultdict(Balance)
+        self.asset_balances[A_ETH] = Balance(
+            amount=start_eth_amount,
+            usd_value=start_eth_usd_value,
+        )
         self.total_usd_value = start_eth_usd_value
 
     def increase_total_usd_value(self, amount: FVal) -> None:
@@ -675,11 +695,15 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         'an eth account but the chain is not synced.',
                     )
 
-                # Also modify defi balances
+                # Also modify and take into account defi balances
                 if append_or_remove == 'append':
                     balances = zerion.all_balances_for_account(address)
                     if len(balances) != 0:
                         self.defi_balances[address] = balances
+                        self._add_account_defi_balances_to_token_and_totals(
+                            account=address,
+                            balances=balances,
+                        )
                 else:  # remove
                     self.defi_balances.pop(address, None)
                 # For each module run the corresponding callback for the address
@@ -813,9 +837,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 if balance_entry.amount == ZERO:
                     continue
 
-                if A_DAI not in eth_balances[dsr_account].asset_balances:
-                    eth_balances[dsr_account].asset_balances[A_DAI] = Balance()
-
                 eth_balances[dsr_account].asset_balances[A_DAI] += balance_entry
                 eth_balances[dsr_account].increase_total_usd_value(balance_entry.usd_value)
                 additional_total += balance_entry
@@ -879,3 +900,58 @@ class ChainManager(CacheableObject, LockableQueryObject):
             normalized_balances = vaults_module.get_normalized_balances()
             for asset, normalized_vault_balance in normalized_balances.items():
                 self.totals[asset] += normalized_vault_balance
+        self.add_defi_balances_to_token_and_totals()
+
+    def _add_account_defi_balances_to_token_and_totals(
+            self,
+            account: ChecksumEthAddress,
+            balances: List[DefiProtocolBalances],
+    ) -> None:
+        """Add a single account's defi balances to per account and totals"""
+        for entry in balances:
+            # We have to filter out specific balances/protocols here to not get double entries
+            if entry.protocol.name in DEFI_PROTOCOLS_TO_SKIP:
+                continue
+
+            if entry.balance_type == 'Debt':
+                # Ignore for this function. Related: https://github.com/rotki/rotki/issues/1400
+                continue
+
+            if entry.base_balance.token_symbol == 'ETH':
+                # If ETH appears here I am not sure how to handle, so ignore for now
+                log.warning(
+                    f'Found ETH in DeFi balances for account: {account} and '
+                    f'protocol: {entry.protocol.name}. Ignoring ...',
+                )
+                continue
+
+            try:
+                token = EthereumToken(entry.base_balance.token_symbol)
+            except UnknownAsset:
+                log.warning(
+                    f'Found unknown token {entry.base_balance.token_symbol} in DeFi '
+                    f'balances for account: {account} and '
+                    f'protocol: {entry.protocol.name}. Ignoring ...',
+                )
+                continue
+
+            if token.ethereum_address != entry.base_balance.token_address:
+                log.warning(
+                    f'Found token {token.identifier} with address '
+                    f'{entry.base_balance.token_address} instead of expected '
+                    f'{token.ethereum_address} for account: {account} and '
+                    f'protocol: {entry.protocol.name}. Ignoring ...',
+                )
+                continue
+
+            eth_balances = self.balances.eth
+            eth_balances[account].asset_balances[token] += entry.base_balance.balance
+            self.totals[token] += entry.base_balance.balance
+
+    def add_defi_balances_to_token_and_totals(self) -> None:
+        """Take into account defi balances and add them to per account and totals"""
+        for account, defi_balances in self.defi_balances.items():
+            self._add_account_defi_balances_to_token_and_totals(
+                account=account,
+                balances=defi_balances,
+            )

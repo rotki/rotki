@@ -171,10 +171,13 @@ class Asset():
                 'Tried to initialize an asset out of a non-string identifier',
             )
 
-        if not AssetResolver().is_identifier_canonical(self.identifier):
+        canonical_id = AssetResolver().is_identifier_canonical(self.identifier)
+        if canonical_id is None:
             raise UnknownAsset(self.identifier)
-        data = AssetResolver().get_asset_data(self.identifier)
+        # else let's make sure we got the canonical id in our data struct
+        object.__setattr__(self, 'identifier', canonical_id)
 
+        data = AssetResolver().get_asset_data(self.identifier)
         # Ugly hack to set attributes of a frozen data class as post init
         # https://docs.python.org/3/library/dataclasses.html#frozen-instances
         object.__setattr__(self, 'name', data.name)

@@ -3,6 +3,8 @@ from web3 import Web3
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
+    COLLATERAL_TYPE_MAPPING,
+    GEMJOIN_MAPPING,
     MakerDAOVault,
     MakerDAOVaults,
     get_vault_normalized_balance,
@@ -140,3 +142,14 @@ def test_get_vault_normalized_balance(
     )
     expected_result = Balance(amount=FVal('89.9'), usd_value=FVal('17980'))
     assert get_vault_normalized_balance(vault) == expected_result
+
+
+def test_vault_types():
+    assert len(COLLATERAL_TYPE_MAPPING) == len(GEMJOIN_MAPPING)
+    assert set(COLLATERAL_TYPE_MAPPING.keys()) == set(GEMJOIN_MAPPING.keys())
+    for collateral_type, asset in COLLATERAL_TYPE_MAPPING.items():
+        if collateral_type == 'PAXUSD-A':
+            assert asset.identifier == 'PAX'
+            continue
+
+        assert asset.identifier == collateral_type.split('-')[0]

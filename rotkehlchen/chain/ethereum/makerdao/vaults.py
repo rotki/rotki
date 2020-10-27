@@ -15,21 +15,44 @@ from rotkehlchen.chain.ethereum.makerdao.common import (
     WAD,
     MakerDAOCommon,
 )
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_DAI
+from rotkehlchen.constants.assets import (
+    A_BAT,
+    A_COMP,
+    A_DAI,
+    A_ETH,
+    A_KNC,
+    A_LINK,
+    A_LRC,
+    A_MANA,
+    A_PAX,
+    A_TUSD,
+    A_USDC,
+    A_USDT,
+    A_WBTC,
+    A_ZRX,
+)
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_BAT_A_JOIN,
     MAKERDAO_CAT,
     MAKERDAO_CDP_MANAGER,
+    MAKERDAO_COMP_A_JOIN,
     MAKERDAO_DAI_JOIN,
     MAKERDAO_ETH_A_JOIN,
+    MAKERDAO_ETH_B_JOIN,
     MAKERDAO_GET_CDPS,
     MAKERDAO_JUG,
     MAKERDAO_KNC_A_JOIN,
+    MAKERDAO_LINK_A_JOIN,
+    MAKERDAO_LRC_A_JOIN,
+    MAKERDAO_MANA_A_JOIN,
+    MAKERDAO_PAXUSD_A_JOIN,
     MAKERDAO_SPOT,
     MAKERDAO_TUSD_A_JOIN,
     MAKERDAO_USDC_A_JOIN,
     MAKERDAO_USDC_B_JOIN,
+    MAKERDAO_USDT_A_JOIN,
     MAKERDAO_VAT,
     MAKERDAO_WBTC_A_JOIN,
     MAKERDAO_ZRX_A_JOIN,
@@ -53,12 +76,36 @@ log = logging.getLogger(__name__)
 GEMJOIN_MAPPING = {
     'BAT-A': MAKERDAO_BAT_A_JOIN,
     'ETH-A': MAKERDAO_ETH_A_JOIN,
+    'ETH-B': MAKERDAO_ETH_B_JOIN,
     'KNC-A': MAKERDAO_KNC_A_JOIN,
     'TUSD-A': MAKERDAO_TUSD_A_JOIN,
     'USDC-A': MAKERDAO_USDC_A_JOIN,
     'USDC-B': MAKERDAO_USDC_B_JOIN,
+    'USDT-A': MAKERDAO_USDT_A_JOIN,
     'WBTC-A': MAKERDAO_WBTC_A_JOIN,
     'ZRX-A': MAKERDAO_ZRX_A_JOIN,
+    'MANA-A': MAKERDAO_MANA_A_JOIN,
+    'PAXUSD-A': MAKERDAO_PAXUSD_A_JOIN,
+    'COMP-A': MAKERDAO_COMP_A_JOIN,
+    'LRC-A': MAKERDAO_LRC_A_JOIN,
+    'LINK-A': MAKERDAO_LINK_A_JOIN,
+}
+COLLATERAL_TYPE_MAPPING = {
+    'BAT-A': A_BAT,
+    'ETH-A': A_ETH,
+    'ETH-B': A_ETH,
+    'KNC-A': A_KNC,
+    'TUSD-A': A_TUSD,
+    'USDC-A': A_USDC,
+    'USDC-B': A_USDC,
+    'USDT-A': A_USDT,
+    'WBTC-A': A_WBTC,
+    'ZRX-A': A_ZRX,
+    'MANA-A': A_MANA,
+    'PAXUSD-A': A_PAX,
+    'COMP-A': A_COMP,
+    'LRC-A': A_LRC,
+    'LINK-A': A_LINK,
 }
 
 
@@ -71,18 +118,6 @@ def _shift_num_right_by(num: int, digits: int) -> int:
     6.149999999999999e+21   <--- wrong
     """
     return int(str(num)[:-digits])
-
-
-def _normalize_amount(asset_symbol: str, amount: int) -> FVal:
-    """Take in the big integer amount of the asset and normalizes it by decimals"""
-    if asset_symbol in ('ETH', 'BAT', 'DAI', 'KNC', 'ZRX', 'TUSD'):
-        return FVal(amount / WAD)
-    elif asset_symbol == 'USDC':
-        return FVal(amount / int(1e6))
-    elif asset_symbol == 'WBTC':
-        return FVal(amount / int(1e8))
-
-    raise AssertionError('should never reach here')
 
 
 class VaultEventType(Enum):
@@ -230,11 +265,11 @@ class MakerDAOVaults(MakerDAOCommon):
             ilk: bytes,
     ) -> Optional[MakerDAOVault]:
         collateral_type = ilk.split(b'\0', 1)[0].decode()
-        asset_symbol = collateral_type.split('-')[0]
-        if asset_symbol not in ('ETH', 'BAT', 'USDC', 'WBTC', 'KNC', 'ZRX'):
+        asset = COLLATERAL_TYPE_MAPPING.get(collateral_type, None)
+        if asset is None:
             self.msg_aggregator.add_warning(
-                f'Detected vault with {asset_symbol} as collateral. That is not yet '
-                f'supported by rotki',
+                f'Detected vault with collateral_type {collateral_type}. That '
+                f'is not yet supported by rotki. Skipping...',
             )
             return None
 
@@ -265,9 +300,8 @@ class MakerDAOVaults(MakerDAOCommon):
         )
         mat = result[1]
         liquidation_ratio = FVal(mat / RAY)
-        asset = Asset(asset_symbol)
         price = FVal((spot / RAY) * liquidation_ratio)
-        self.usd_price[asset_symbol] = price
+        self.usd_price[asset.identifier] = price
         collateral_value = FVal(price * collateral_amount)
         if debt_value == 0:
             collateralization_ratio = None
@@ -301,7 +335,6 @@ class MakerDAOVaults(MakerDAOCommon):
             proxy: ChecksumEthAddress,
             urn: ChecksumEthAddress,
     ) -> Optional[MakerDAOVaultDetails]:
-        asset_symbol = vault.collateral_asset.identifier
         # They can raise:
         # ConversionError due to hex_or_bytes_to_address, hex_or_bytes_to_int
         # RemoteError due to external query errors
@@ -347,7 +380,14 @@ class MakerDAOVaults(MakerDAOCommon):
         )
         frob_event_tx_hashes = [x['transactionHash'] for x in frob_events]
 
-        gemjoin = GEMJOIN_MAPPING[vault.collateral_type]
+        gemjoin = GEMJOIN_MAPPING.get(vault.collateral_type, None)
+        if gemjoin is None:
+            self.msg_aggregator.add_warning(
+                f'Unknown makerdao vault collateral type detected {vault.collateral_type}.'
+                'Skipping ...',
+            )
+            return None
+
         vault_events = []
         # Get the collateral deposit events
         argument_filters = {
@@ -392,9 +432,9 @@ class MakerDAOVaults(MakerDAOCommon):
                 continue
 
             deposit_tx_hashes.add(tx_hash)
-            amount = _normalize_amount(
-                asset_symbol=asset_symbol,
+            amount = asset_normalized_value(
                 amount=hex_or_bytes_to_int(event['topics'][3]),
+                asset=vault.collateral_asset,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
@@ -427,9 +467,9 @@ class MakerDAOVaults(MakerDAOCommon):
             if tx_hash not in frob_event_tx_hashes:
                 # If there is no corresponding frob event then skip
                 continue
-            amount = _normalize_amount(
-                asset_symbol=asset_symbol,
+            amount = asset_normalized_value(
                 amount=hex_or_bytes_to_int(event['topics'][3]),
+                asset=vault.collateral_asset,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
@@ -465,9 +505,9 @@ class MakerDAOVaults(MakerDAOCommon):
         for event in events:
             given_amount = _shift_num_right_by(hex_or_bytes_to_int(event['topics'][3]), RAY_DIGITS)
             total_dai_wei += given_amount
-            amount = _normalize_amount(
-                asset_symbol='DAI',
-                amount=given_amount,
+            amount = token_normalized_value(
+                token_amount=given_amount,
+                token=A_DAI,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
@@ -499,9 +539,9 @@ class MakerDAOVaults(MakerDAOCommon):
         for event in events:
             given_amount = hex_or_bytes_to_int(event['topics'][3])
             total_dai_wei -= given_amount
-            amount = _normalize_amount(
-                asset_symbol='DAI',
-                amount=given_amount,
+            amount = token_normalized_value(
+                token_amount=given_amount,
+                token=A_DAI,
             )
             if amount == ZERO:
                 # it seems there is a zero DAI value transfer from the urn when
@@ -539,9 +579,9 @@ class MakerDAOVaults(MakerDAOCommon):
                 lot = event['data'][:66]
             else:  # bytes
                 lot = event['data'][:32]
-            amount = _normalize_amount(
-                asset_symbol=asset_symbol,
+            amount = asset_normalized_value(
                 amount=hex_or_bytes_to_int(lot),
+                asset=vault.collateral_asset,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
             sum_liquidation_amount += amount
@@ -560,9 +600,9 @@ class MakerDAOVaults(MakerDAOCommon):
                 tx_hash=event['transactionHash'],
             ))
 
-        total_interest_owed = vault.debt.amount - _normalize_amount(
-            asset_symbol='DAI',
-            amount=total_dai_wei,
+        total_interest_owed = vault.debt.amount - token_normalized_value(
+            token_amount=total_dai_wei,
+            token=A_DAI,
         )
         # sort vault events by timestamp
         vault_events.sort(key=lambda event: event.timestamp)

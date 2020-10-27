@@ -10,6 +10,7 @@ def upgrade_v18_to_v19(db: 'DBHandler') -> None:
     - Deletes all aave historical data and cache since they are going to be requeried via the graph
     - Deletes and recreates the table with the new schema
     https://github.com/rotki/rotki/issues/1494
+    - Deletes all poloniex trades/deposit/withdrawals so they can be requeried after #1631
     """
     cursor = db.conn.cursor()
     cursor.execute('DELETE FROM aave_events;')
@@ -33,4 +34,8 @@ CREATE TABLE IF NOT EXISTS aave_events (
     PRIMARY KEY (event_type, tx_hash, log_index)
 );
 """)
+    # Delete all poloniex trades/deposits/withdrawals so they can be requeried
+    cursor.execute('DELETE FROM trades WHERE location="C";')
+    cursor.execute('DELETE FROM asset_movements WHERE location="C";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "poloniex_%";')
     db.conn.commit()

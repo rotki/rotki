@@ -27,7 +27,7 @@ TEST_PERC_FEE_STR = '0.0015'
 TEST_POLO_TRADE = {
     'globalTradeID': 192167,
     'tradeID': 3727,
-    'date': '2017-07-22 21:18:37',
+    'date': '2017-07-22 21:18:37.000000',
     'rate': TEST_RATE_STR,
     'amount': TEST_AMOUNT_STR,
     'total': '0.14116654',

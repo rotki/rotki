@@ -510,7 +510,7 @@ class Compound(EthereumModule):
         events = []
         for event in comp_events:
             timestamp = self.ethereum.get_event_timestamp(event)
-            amount = token_normalized_value(hex_or_bytes_to_int(event['data']), A_COMP.decimals)
+            amount = token_normalized_value(hex_or_bytes_to_int(event['data']), A_COMP)
             usd_price = query_usd_price_zero_if_error(
                 asset=A_COMP,
                 time=timestamp,
