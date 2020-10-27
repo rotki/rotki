@@ -199,6 +199,7 @@ export class RotkehlchenApi {
       .get<ActionResult<VersionCheck>>('/version')
       .then(handleResponse);
   }
+
   setSettings(settings: SettingsUpdate): Promise<DBSettings> {
     return this.axios
       .put<ActionResult<DBSettings>>(
@@ -547,7 +548,8 @@ export class RotkehlchenApi {
           ]
         },
         {
-          validateStatus: validWithParamsSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
         }
       )
       .then(handleResponse);
@@ -570,7 +572,8 @@ export class RotkehlchenApi {
           ]
         },
         {
-          validateStatus: validWithParamsSessionAndExternalService
+          validateStatus: validWithParamsSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
         }
       )
       .then(handleResponse);
@@ -759,7 +762,8 @@ export class RotkehlchenApi {
   async ethAccounts(): Promise<GeneralAccountData[]> {
     return this.axios
       .get<ActionResult<GeneralAccountData[]>>('/blockchains/ETH', {
-        validateStatus: validWithSessionStatus
+        validateStatus: validWithSessionStatus,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }
@@ -767,7 +771,8 @@ export class RotkehlchenApi {
   async btcAccounts(): Promise<BtcAccountData> {
     return this.axios
       .get<ActionResult<BtcAccountData>>('/blockchains/BTC', {
-        validateStatus: validWithSessionStatus
+        validateStatus: validWithSessionStatus,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }
