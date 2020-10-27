@@ -1,3 +1,4 @@
+import os
 import warnings as test_warnings
 
 import gevent
@@ -8,6 +9,10 @@ from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.tests.utils.ethereum import ETHEREUM_TEST_PARAMETERS
 
 
+@pytest.mark.skipif(
+    'GITHUB_WORKFLOW' in os.environ,
+    reason='For some reason connecting to infura fails in Github actions for this test',
+)
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 def test_ens_lookup(ethereum_manager, call_order):
     """Test that ENS lookup works. Both with etherscan and with querying a real node"""
