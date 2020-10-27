@@ -100,7 +100,7 @@
         :group="group ? group : ''"
         :items="getItems(group.split(':')[0], group.split(':')[1])"
         :expanded="isOpen"
-        @expand-clicked="toggle"
+        @expand-clicked="expandXpub(isOpen, toggle, $event)"
         @delete-clicked="deleteXpub($event)"
       />
     </template>
@@ -128,6 +128,7 @@ import {
 } from '@/store/balances/types';
 import { Properties } from '@/types';
 import { Blockchain, BTC, ETH, Tags } from '@/typing/types';
+import { Zero } from '@/utils/bignumbers';
 
 @Component({
   components: {
@@ -157,8 +158,10 @@ export default class AccountBalanceTable extends Vue {
 
   @Emit()
   deleteClick(_account: string) {}
+
   @Emit()
   editClick(_account: BlockchainAccount) {}
+
   @Emit()
   deleteXpub(_payload: XpubPayload) {}
 
@@ -168,6 +171,28 @@ export default class AccountBalanceTable extends Vue {
   tags!: Tags;
 
   expanded = [];
+
+  collapsedXpubs: XpubPayload[] = [];
+
+  get collapsedKeys(): string[] {
+    return this.collapsedXpubs.map(
+      ({ derivationPath, xpub }) => `${xpub}::${derivationPath}`
+    );
+  }
+
+  expandXpub(isOpen: boolean, toggle: () => void, xpub: XpubPayload) {
+    toggle();
+    if (isOpen) {
+      this.collapsedXpubs.push(xpub);
+    } else {
+      const index = this.collapsedXpubs.findIndex(
+        key =>
+          key.xpub === xpub.xpub && key.derivationPath === xpub.derivationPath
+      );
+
+      this.collapsedXpubs.splice(index, 1);
+    }
+  }
 
   groupBy(
     items: BlockchainAccountWithBalance[],
@@ -229,12 +254,36 @@ export default class AccountBalanceTable extends Vue {
     );
   }
 
+  get nonExpandedBalances(): BlockchainAccountWithBalance[] {
+    return this.balances
+      .filter(balance => {
+        return (
+          !('xpub' in balance) ||
+          ('xpub' in balance &&
+            !this.collapsedKeys.includes(
+              `${balance.xpub}::${balance.derivationPath}`
+            ))
+        );
+      })
+      .concat(
+        this.collapsedXpubs.map(({ derivationPath, xpub }) => ({
+          xpub: xpub,
+          derivationPath: derivationPath,
+          address: '',
+          label: '',
+          tags: [],
+          balance: { amount: Zero, usdValue: Zero },
+          chain: BTC
+        }))
+      );
+  }
+
   get visibleBalances(): BlockchainAccountWithBalance[] {
     if (this.visibleTags.length === 0) {
-      return this.balances;
+      return this.nonExpandedBalances;
     }
 
-    return this.balances.filter(({ tags }) =>
+    return this.nonExpandedBalances.filter(({ tags }) =>
       this.visibleTags.every(tag => tags.includes(tag))
     );
   }

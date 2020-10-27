@@ -4,10 +4,11 @@
   </td>
   <fragment v-else>
     <td>
-      <v-btn v-if="items.length > 0" small icon @click="expandClicked">
+      <v-btn v-if="items.length > 0" small icon @click="expandClicked(xpub)">
         <v-icon v-if="expanded" small>mdi-chevron-up</v-icon>
         <v-icon v-else small>mdi-chevron-down</v-icon>
       </v-btn>
+      <v-btn v-else small icon disabled />
       <span class="font-weight-medium">
         {{ $t('account_group_header.xpub') }}
       </span>
@@ -101,6 +102,6 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
   deleteClicked(_payload: XpubPayload) {}
 
   @Emit()
-  expandClicked() {}
+  expandClicked(_xpub: XpubPayload) {}
 }
 </script>
