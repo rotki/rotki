@@ -257,11 +257,9 @@ export default class AccountBalanceTable extends Vue {
   get nonExpandedBalances(): BlockchainAccountWithBalance[] {
     return this.balances
       .filter(balance => {
-        const xpubBalance = 'xpub' in balance;
-
         return (
-          !xpubBalance ||
-          (xpubBalance &&
+          !('xpub' in balance) ||
+          ('xpub' in balance &&
             !this.collapsedKeys.includes(
               `${balance.xpub}::${balance.derivationPath}`
             ))
