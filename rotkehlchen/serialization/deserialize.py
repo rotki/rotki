@@ -89,6 +89,7 @@ def deserialize_timestamp_from_date(
         date: Optional[str],
         formatstr: str,
         location: str,
+        skip_milliseconds: bool = False,
 ) -> Timestamp:
     """Deserializes a timestamp from a date entry depending on the format str
 
@@ -106,6 +107,14 @@ def deserialize_timestamp_from_date(
         raise DeserializationError(
             f'Failed to deserialize a timestamp from a {type(date)} entry in {location}',
         )
+
+    if skip_milliseconds:
+        # Seems that poloniex added milliseconds in their timestamps.
+        # https://github.com/rotki/rotki/issues/1631
+        # We don't deal with milliseconds in Rotki times so we can safely remove it
+        splits = date.split('.', 1)
+        if len(splits) == 2:
+            date = splits[0]
 
     if formatstr == 'iso8601':
         return iso8601ts_to_timestamp(date)
@@ -125,13 +134,12 @@ def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
 
     Can throw DeserializationError if the data is not as expected
     """
-    # Seems that poloniex added milliseconds in their timestamps.
-    # https://github.com/rotki/rotki/issues/1631
-    # We don't deal with milliseconds in Rotki times so we can safely remove it
-    splits = date.split('.', 1)
-    if len(splits) == 2:
-        date = splits[0]
-    return deserialize_timestamp_from_date(date, '%Y-%m-%d %H:%M:%S', 'poloniex')
+    return deserialize_timestamp_from_date(
+        date,
+        '%Y-%m-%d %H:%M:%S',
+        'poloniex',
+        skip_milliseconds=True,
+    )
 
 
 def deserialize_timestamp_from_kraken(time: Union[str, FVal, int]) -> Timestamp:
