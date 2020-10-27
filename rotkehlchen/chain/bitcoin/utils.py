@@ -1,5 +1,5 @@
 import hashlib
-from typing import Tuple
+from typing import Any, List, Tuple
 
 import base58check
 import bech32
@@ -111,3 +111,38 @@ def pubkey_to_bech32_address(data: bytes, witver: int) -> BTCAddress:
         raise EncodingError('Could not derive bech32 address from given public key')
 
     return BTCAddress(result)
+
+
+def is_valid_derivation_path(path: Any) -> Tuple[bool, str]:
+    """Check if a derivation path can be understood by Rotki
+
+    Returns False, "error message" if not and True, "" if yes
+    """
+    if not isinstance(path, str):
+        return False, 'Derivation path should be a string'
+
+    if not path.startswith('m'):
+        return False, 'Derivation paths accepted by rotki should start with m'
+
+    nodes: List[str] = path.split('/')
+    if nodes[0] != 'm':
+        return False, 'Derivation paths accepted by rotki should start with m'
+    nodes = nodes[1:]
+
+    for node in nodes:
+        if "'" in node:
+            return (
+                False,
+                "Derivation paths accepted by rotki should have no hardened "
+                "nodes. Meaning no nodes with a '",
+            )
+
+        try:
+            value = int(node)
+        except ValueError:
+            return False, f'Found non integer node {node} in xpub derivation path'
+
+        if value < 0:
+            return False, f'Found negative integer node {value} in xpub derivation path'
+
+    return True, ''
