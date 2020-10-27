@@ -1792,7 +1792,7 @@
         "type": "own chain"
     },
     "BTCDOWN": {
-        "coingecko": "btcdown",
+        "coingecko": "",
         "name": "Binance leveraged token BTCDOWN",
         "started": 1595367054,
         "symbol": "BTCDOWN",
@@ -1843,7 +1843,7 @@
         "type": "own chain"
     },
     "BTCUP": {
-        "coingecko": "btcup",
+        "coingecko": "",
         "name": "Binance leveraged token BTCUP",
         "started": 1595367054,
         "symbol": "BTCUP",
@@ -7702,7 +7702,7 @@
         "type": "own chain"
     },
     "mUSD": {
-        "coingecko": "mstable-usd",
+        "coingecko": "musd",
         "cryptocompare": "",
         "ethereum_address": "0xe2f2a5C287993345a840Db3B0845fbC70f5935a5",
         "ethereum_token_decimals": 18,
