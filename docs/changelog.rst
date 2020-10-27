@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1641` Rotki only accepts derivation paths in the form of m/X/Y/Z... where ``X``, ``Y`` and ``Z`` are integers. Anything else is not processable and invalid. We now check that the given path is valid and reject the addition if not. Also the DB is upgraded and any xpubs with such invalid derivation path are automatically deleted.
 * :bug:`1637` Loading ethereum transactions on the UI should work properly again now
 
 * :release:`1.8.2 <2020-10-27>`
