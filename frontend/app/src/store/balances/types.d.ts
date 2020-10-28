@@ -19,7 +19,7 @@ import {
   UsdToFiatExchangeRates
 } from '@/typing/types';
 
-export interface ManualBalancesByLocation {
+export interface LocationBalance {
   readonly location: string;
   readonly usdValue: BigNumber;
 }
@@ -106,3 +106,8 @@ export type AddAccountsPayload = {
   readonly blockchain: Blockchain;
   readonly payload: AccountPayload[];
 };
+
+export interface BlockchainTotal {
+  readonly chain: Blockchain;
+  readonly usdValue: BigNumber;
+}

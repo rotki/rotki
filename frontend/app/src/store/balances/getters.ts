@@ -4,11 +4,13 @@ import map from 'lodash/map';
 import { GetterTree } from 'vuex';
 import { Balance } from '@/services/types-api';
 import {
-  BlockchainAccountWithBalance,
+  AccountWithBalance,
   AssetBalance,
   BalanceState,
+  BlockchainAccountWithBalance,
+  BlockchainTotal,
   ManualBalanceByLocation,
-  ManualBalancesByLocation
+  LocationBalance
 } from '@/store/balances/types';
 import { RotkehlchenState } from '@/store/types';
 import { BTC, ETH, GeneralAccount } from '@/typing/types';
@@ -117,11 +119,13 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
   exchanges: (state: BalanceState) => {
     const balances = state.exchangeBalances;
-    return Object.keys(balances).map(value => ({
-      name: value,
-      balances: balances[value],
-      total: assetSum(balances[value])
-    }));
+    return Object.keys(balances)
+      .map(value => ({
+        name: value,
+        balances: balances[value],
+        total: assetSum(balances[value])
+      }))
+      .sort((a, b) => b.total.minus(a.total).toNumber());
   },
 
   exchangeBalances: (state: BalanceState, _, { session }) => (
@@ -171,7 +175,9 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
     totals.forEach((value: AssetBalance) => addToOwned(value));
     manualBalances.forEach(value => addToOwned(value));
-    return Object.values(ownedAssets);
+    return Object.values(ownedAssets).sort((a, b) =>
+      b.usdValue.minus(a.usdValue).toNumber()
+    );
   },
 
   // simplify the manual balances object so that we can easily reduce it
@@ -179,7 +185,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     state: BalanceState,
     { exchangeRate },
     { session }
-  ) => {
+  ): LocationBalance[] => {
     const mainCurrency =
       session?.generalSettings.selectedCurrency.ticker_symbol;
 
@@ -200,7 +206,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
       // to avoid double-conversion, we take as usdValue the amount property when the original asset type and
       // user's main currency coincide
-      const { location, usdValue }: ManualBalancesByLocation = {
+      const { location, usdValue }: LocationBalance = {
         location: perLocationBalance.location,
         usdValue: convertedValue
       };
@@ -209,10 +215,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
 
     // Aggregate all balances per location
     const aggregateManualBalancesByLocation: ManualBalanceByLocation = simplifyManualBalances.reduce(
-      (
-        result: ManualBalanceByLocation,
-        manualBalance: ManualBalancesByLocation
-      ) => {
+      (result: ManualBalanceByLocation, manualBalance: LocationBalance) => {
         if (result[manualBalance.location]) {
           // if the location exists on the reduced object, add the usdValue of the current item to the previous total
           result[manualBalance.location] = result[manualBalance.location].plus(
@@ -228,13 +231,49 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       {}
     );
 
-    return aggregateManualBalancesByLocation;
+    return Object.keys(aggregateManualBalancesByLocation)
+      .map(location => ({
+        location,
+        usdValue: aggregateManualBalancesByLocation[location]
+      }))
+      .sort((a, b) => b.usdValue.minus(a.usdValue).toNumber());
   },
 
   blockchainTotal: (_, getters) => {
     return getters.totals.reduce((sum: BigNumber, asset: AssetBalance) => {
       return sum.plus(asset.usdValue);
     }, Zero);
+  },
+
+  blockchainTotals: (_, getters): BlockchainTotal[] => {
+    const sum = (accounts: BlockchainAccountWithBalance[]): BigNumber => {
+      return accounts.reduce(
+        (sum: BigNumber, { balance }: AccountWithBalance) => {
+          return sum.plus(balance.usdValue);
+        },
+        Zero
+      );
+    };
+
+    const totals: BlockchainTotal[] = [];
+    const ethAccounts: BlockchainAccountWithBalance[] = getters.ethAccounts;
+    const btcAccounts: BlockchainAccountWithBalance[] = getters.btcAccounts;
+
+    if (ethAccounts.length > 0) {
+      totals.push({
+        chain: ETH,
+        usdValue: sum(ethAccounts)
+      });
+    }
+
+    if (btcAccounts.length > 0) {
+      totals.push({
+        chain: BTC,
+        usdValue: sum(btcAccounts)
+      });
+    }
+
+    return totals.sort((a, b) => b.usdValue.minus(a.usdValue).toNumber());
   },
 
   accountAssets: (state: BalanceState, _, { session }) => (account: string) => {

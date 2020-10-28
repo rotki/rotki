@@ -824,7 +824,35 @@
     "title": "Import Data"
   },
   "dashboard": {
-    "title": "Dashboard"
+    "title": "Dashboard",
+    "exchange_balances": {
+      "tooltip": "Aggregate value of all balances in each configured exchange.",
+      "add": "Add an exchange",
+      "title": "exchange"
+    },
+    "blockchain_balances": {
+      "tooltip": "Aggregate value of all configured addresses in each blockchain.",
+      "add": "Add blockchain address",
+      "title": "blockchain"
+    },
+    "manual_balances": {
+      "title": "manual",
+      "card_tooltip": "Aggregate value of manual balances entered. Fiat balances are aggregated in the banks entry.",
+      "tooltip": "Aggregate value of manual balances entered",
+      "add": "Add a manual balance"
+    },
+    "per_asset_balances": {
+      "title": "balance per asset",
+      "search": "Search",
+      "headers": {
+        "asset": "Asset",
+        "amount": "Amount",
+        "value": "{symbol} value",
+        "percentage": "% of net Value"
+      },
+      "total": "Total",
+      "no_search_result": "Your search for \"{search}\" yielded no results."
+    }
   },
   "accounts_balances": {
     "title": "Accounts & Balances"
@@ -874,5 +902,9 @@
   "app": {
     "name": "rotki",
     "moto": "the opensource portfolio manager that respects your privacy"
+  },
+  "blockchains": {
+    "eth": "Ethereum",
+    "btc": "Bitcoin"
   }
 }
