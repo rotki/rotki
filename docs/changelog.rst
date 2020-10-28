@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1635` Application will now continue running when changing log level on Windows.
 * :feature:`1642` Force pull/push buttons for premium sync are now accessible in the floppy disk icon on the toolbar.
 * :bug:`1638` Balances displayed in dashboard cards should now be properly sorted by value in descending order.
 * :bug:`-` If the DB has not been uploaded in this run of Rotki, the last upload time indicator now shows the last time data was uploaded and not "Never".

@@ -140,6 +140,9 @@ export default class App extends Vue {
       this.completeLogin(false);
     } else {
       this.drawer = !this.$vuetify.breakpoint.mobile;
+    }
+
+    if (this.$route.name !== 'dashboard') {
       this.$router.push({ name: 'dashboard' });
     }
   }
