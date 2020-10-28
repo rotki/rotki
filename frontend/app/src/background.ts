@@ -365,7 +365,7 @@ app.on('ready', async () => {
     let success = false;
     try {
       assert(win);
-      await pyHandler.exitPyProc();
+      await pyHandler.exitPyProc(true);
       await pyHandler.createPyProc(win, args);
       success = true;
     } catch (e) {
