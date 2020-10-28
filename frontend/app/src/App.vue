@@ -80,12 +80,12 @@ import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
-import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
+import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import '@/services/task-manager';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
@@ -104,7 +104,7 @@ import { Message } from '@/store/types';
     UpdateIndicator,
     ProgressIndicator,
     NotificationIndicator,
-    BalanceSavedIndicator,
+    BalanceSavedIndicator: SyncIndicator,
     NodeStatusIndicator,
     MessageDialog,
     CurrencyDropDown,

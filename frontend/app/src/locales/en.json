@@ -736,14 +736,6 @@
       "replace": "Replace Key",
       "sync": "Allow data sync with Rotki Server"
     },
-    "upload_confirmation": {
-      "cancel": "Cancel",
-      "action": "Push | Pull",
-      "title": "Force Push | Force Pull",
-      "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
-      "message_download": "By force pulling, your local database will be replaced with data pulled from the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
-      "confirm_check": "I understand"
-    },
     "error": {
       "setting_failed": "Setting the keys was not successful",
       "removing_failed": "Deleting the keys was not successful"
@@ -755,9 +747,7 @@
         "delete": "Delete",
         "cancel": "Cancel"
       }
-    },
-    "upload_tooltip": "Push your local database to the server and replace all data there",
-    "download_tooltip": "Pull the saved data from the server and replace your local database"
+    }
   },
   "account_group_header": {
     "copy_tooltip": "Copy the xpub to the clipboard",
@@ -858,15 +848,28 @@
     "title": "Accounts & Balances"
   },
   "api_keys": {
-    "title": "API Keys"
+    "title": "API Keys",
+    "tabs": {
+      "premium": "Rotki Premium",
+      "exchanges": "Exchanges",
+      "external_services": "External Services"
+    }
   },
-  "balances_saved_indicator": {
+  "sync_indicator": {
     "menu_tooltip": "View the date of the last balances snapshot | View the date of the last balances snapshot, and the time of the last premium database sync",
     "snapshot_title": "Last balances snapshot",
     "never_saved": "Never",
     "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited.",
     "force_save": "Force save",
-    "last_data_upload": "Last premium database sync"
+    "last_data_upload": "Last premium database sync",
+    "upload_confirmation": {
+      "cancel": "Cancel",
+      "action": "Push | Pull",
+      "title": "Force Push | Force Pull",
+      "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
+      "message_download": "By force pulling, your local database will be replaced with data pulled from the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
+      "confirm_check": "I understand"
+    }
   },
   "input_mode_select": {
     "metamask_import": {
@@ -906,5 +909,11 @@
   "blockchains": {
     "eth": "Ethereum",
     "btc": "Bitcoin"
+  },
+  "sync_buttons": {
+    "upload_tooltip": "Push your local database to the server and replace all data there",
+    "download_tooltip": "Pull the saved data from the server and replace your local database",
+    "push": "Push",
+    "pull": "Pull"
   }
 }

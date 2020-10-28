@@ -25,15 +25,15 @@ import TabNavigation, {
 export default class ApiKeys extends Vue {
   readonly apiKeysTabs: TabContent[] = [
     {
-      name: 'Rotki Premium',
+      name: this.$tc('api_keys.tabs.premium'),
       routeTo: '/settings/api-keys/rotki-premium'
     },
     {
-      name: 'Exchanges',
+      name: this.$tc('api_keys.tabs.exchanges'),
       routeTo: '/settings/api-keys/exchanges'
     },
     {
-      name: 'External Services',
+      name: this.$tc('api_keys.tabs.external_services'),
       routeTo: '/settings/api-keys/external-services'
     }
   ];
