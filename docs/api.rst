@@ -4242,7 +4242,7 @@ Adding BTC xpubs
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal Rotki error
-   :statuscode 502: Error occured with some external service query such as blockcypher. Check message for details.
+   :statuscode 502: Error occured with some external service query such as blockstream. Check message for details.
 
 Deleting BTC xpubs
 ========================
@@ -4323,7 +4323,7 @@ Deleting BTC xpubs
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal Rotki error
-   :statuscode 502: Error occured with some external service query such as blockcypher. Check message for details.
+   :statuscode 502: Error occured with some external service query such as blockstream. Check message for details.
 
 Editing blockchain account data
 =================================

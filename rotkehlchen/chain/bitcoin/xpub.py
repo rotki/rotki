@@ -67,7 +67,7 @@ def _derive_addresses_loop(
         root: HDKey,
 ) -> List[XpubDerivedAddressData]:
     """May raise:
-    - RemoteError: if blockcypher/blockchain.info can't be reached
+    - RemoteError: if blockstream/blockchain.info can't be reached
     """
     step_index = start_index
     addresses: List[XpubDerivedAddressData] = []
@@ -120,7 +120,7 @@ def derive_addresses_from_xpub_data(
     This is to make it easier to later derive and check more addresses
 
     May raise:
-    - RemoteError: if blockcypher/blockchain.info and others can't be reached
+    - RemoteError: if blockstream/blockchain.info and others can't be reached
     """
     if xpub_data.derivation_path is not None:
         account_xpub = xpub_data.xpub.derive_path(xpub_data.derivation_path)
@@ -158,7 +158,7 @@ class XpubManager():
         have not had any transactions to the tracked bitcoin addresses
 
         May raise:
-        - RemoteError: if blockcypher/blockchain.info and others can't be reached
+        - RemoteError: if blockstream/blockchain.info and others can't be reached
         """
         last_receiving_idx, last_change_idx = self.db.get_last_xpub_derived_indices(xpub_data)
         derived_addresses_data = derive_addresses_from_xpub_data(
@@ -220,7 +220,7 @@ class XpubManager():
         May raise:
         - InputError: If the xpub already exists in the DB
         - TagConstraintError if any of the given account data contain unknown tags.
-        - RemoteError if an external service such as blockcypher is queried and
+        - RemoteError if an external service such as blockstream is queried and
           there is a problem with its query.
         """
         # First try to add the xpub, and if it already exists raise

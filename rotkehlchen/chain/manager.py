@@ -409,10 +409,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
         return self.get_balances_update()
 
     def query_btc_balances(self) -> None:
-        """Queries blockchain.info/blockcypher for the balance of all BTC accounts
+        """Queries blockchain.info/blockstream for the balance of all BTC accounts
 
         May raise:
-        - RemotError if there is a problem querying blockchain.info or cryptocompare
+        - RemotError if there is a problem querying any remote
         """
         if len(self.accounts.btc) == 0:
             return

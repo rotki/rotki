@@ -90,7 +90,7 @@ def timestamp_to_iso8601(ts: Timestamp, utc_as_z: bool = False) -> str:
     return res if utc_as_z is False else res.replace('+00:00', 'Z')
 
 
-def satoshis_to_btc(satoshis: FVal) -> FVal:
+def satoshis_to_btc(satoshis: Union[int, FVal]) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
