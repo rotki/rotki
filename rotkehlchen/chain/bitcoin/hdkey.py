@@ -246,7 +246,7 @@ class HDKey():
         # If the first node is not m, error.
         # TODO: allow partial path knowledge
         if nodes[0] != 'm':
-            raise XPUBError('Got bad xpub path. Got: {}'.format(derivation_path))
+            raise XPUBError(f'Got bad xpub path {derivation_path} for xpub')
 
         # Go over all other nodes, and convert to indexes
         nodes = nodes[1:]

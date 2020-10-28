@@ -12,7 +12,7 @@ from webargs.compat import MARSHMALLOW_VERSION_INFO
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
-from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address
+from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, is_valid_derivation_path
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -605,6 +605,22 @@ class XpubField(fields.Field):
         return hdkey
 
 
+class DerivationPathField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        valid, msg = is_valid_derivation_path(value)
+        if not valid:
+            raise ValidationError(msg)
+
+        return value
+
+
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(missing=False)
@@ -933,7 +949,7 @@ class BlockchainAccountDataSchema(Schema):
 
 class BaseXpubSchema(Schema):
     xpub = XpubField(required=True)
-    derivation_path = fields.String(missing=None)
+    derivation_path = DerivationPathField(missing=None)
     async_query = fields.Boolean(missing=False)
 
 

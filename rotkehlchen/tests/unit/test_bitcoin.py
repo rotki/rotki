@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import (
     is_valid_btc_address,
+    is_valid_derivation_path,
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
 )
@@ -214,3 +215,41 @@ def test_xpub_data_comparison():
     xpubdata2 = XpubData(xpub=hdkey1, derivation_path='m/0/0')
     assert xpubdata1 != xpubdata2
     assert not(xpubdata1 == xpubdata2)
+
+
+def test_is_valid_derivation_path():
+    valid, msg = is_valid_derivation_path('m')
+    assert valid
+    assert msg == ''
+    valid, msg = is_valid_derivation_path('m/0')
+    assert valid
+    assert msg == ''
+    valid, msg = is_valid_derivation_path('m/0/1/49')
+    assert valid
+    assert msg == ''
+    valid, msg = is_valid_derivation_path('m/1/13/1')
+    assert valid
+    assert msg == ''
+
+    valid, msg = is_valid_derivation_path(55)
+    assert not valid
+    assert msg == 'Derivation path should be a string'
+    valid, msg = is_valid_derivation_path('masdsd')
+    assert not valid
+    assert msg == 'Derivation paths accepted by rotki should start with m'
+    valid, msg = is_valid_derivation_path('masd/0/1')
+    assert not valid
+    assert msg == 'Derivation paths accepted by rotki should start with m'
+    valid, msg = is_valid_derivation_path('m/0/a')
+    assert not valid
+    assert msg == 'Found non integer node a in xpub derivation path'
+    valid, msg = is_valid_derivation_path('m/1/-1/0')
+    assert not valid
+    assert msg == 'Found negative integer node -1 in xpub derivation path'
+    valid, msg = is_valid_derivation_path("m/0/40/15'")
+    expected_msg = (
+        "Derivation paths accepted by rotki should have no hardened nodes. "
+        "Meaning no nodes with a '"
+    )
+    assert not valid
+    assert msg == expected_msg

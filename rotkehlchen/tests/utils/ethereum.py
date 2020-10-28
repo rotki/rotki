@@ -1,4 +1,5 @@
 import logging
+import os
 
 import gevent
 
@@ -10,16 +11,25 @@ log = logging.getLogger(__name__)
 
 INFURA_TEST = 'https://mainnet.infura.io/v3/66302b8fb9874614905a3cbe903a0dbb'
 
-ETHEREUM_TEST_PARAMETERS = ['ethrpc_endpoint,ethereum_manager_connect_at_start, call_order', [
-    # Query etherscan only
-    ('', (), (NodeName.ETHERSCAN,)),
-    # For "our own" node querying use infura
-    (
-        INFURA_TEST,
-        (NodeName.OWN,),
-        (NodeName.OWN,),
-    ),
-]]
+if 'GITHUB_WORKFLOW' in os.environ:
+    # For Github actions don't use infura. It seems that connecting to it
+    # from Github actions hangs and times out
+    ETHEREUM_TEST_PARAMETERS = ['ethrpc_endpoint,ethereum_manager_connect_at_start, call_order', [
+        # Query etherscan only
+        ('', (), (NodeName.ETHERSCAN,)),
+    ]]
+else:
+    # For Travis and local tests also use Infura, works fine
+    ETHEREUM_TEST_PARAMETERS = ['ethrpc_endpoint,ethereum_manager_connect_at_start, call_order', [
+        # Query etherscan only
+        ('', (), (NodeName.ETHERSCAN,)),
+        # For "our own" node querying use infura
+        (
+            INFURA_TEST,
+            (NodeName.OWN,),
+            (NodeName.OWN,),
+        ),
+    ]]
 
 
 def wait_until_all_nodes_connected(
