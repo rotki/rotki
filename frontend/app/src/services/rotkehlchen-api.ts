@@ -579,11 +579,15 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async deleteXpub(payload: XpubPayload): Promise<PendingTask> {
+  async deleteXpub({
+    derivationPath,
+    xpub
+  }: XpubPayload): Promise<PendingTask> {
     return this.axios
       .delete<ActionResult<PendingTask>>(`/blockchains/BTC/xpub`, {
         data: axiosSnakeCaseTransformer({
-          ...payload,
+          xpub,
+          derivationPath: derivationPath ? derivationPath : undefined,
           asyncQuery: true
         }),
         validateStatus: validWithParamsSessionAndExternalService,
