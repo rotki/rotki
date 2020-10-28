@@ -38,7 +38,8 @@ class SyncCheckResult(NamedTuple):
 class PremiumSyncManager():
 
     def __init__(self, data: DataHandler, password: str) -> None:
-        self.last_data_upload_ts = 0
+        # Initialize this with the value saved in the DB
+        self.last_data_upload_ts = data.db.get_last_data_upload_ts()
         self.data = data
         self.password = password
         self.premium: Optional[Premium] = None
@@ -171,14 +172,20 @@ class PremiumSyncManager():
         our_last_write_ts = self.data.db.get_last_write_ts()
         if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
             # Server's DB was modified after our local DB
-            log.debug('upload to server stopped -- remote db more recent than local')
+            log.debug(
+                f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
+                f'more recent than local({our_last_write_ts})',
+            )
             return False
 
         data_bytes_size = len(base64.b64decode(b64_encoded_data))
         if data_bytes_size < metadata.data_size and not force_upload:
             # Let's be conservative.
             # TODO: Here perhaps prompt user in the future
-            log.debug('upload to server stopped -- remote db bigger than local')
+            log.debug(
+                f'upload to server stopped -- remote db({metadata.data_size}) '
+                f'bigger than local({data_bytes_size})',
+            )
             return False
 
         try:
