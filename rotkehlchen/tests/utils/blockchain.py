@@ -547,21 +547,13 @@ def mock_bitcoin_balances_query(
                 if idx < len(addresses) - 1:
                     response += ','
             response += ']}'
-        elif 'blockcypher.com' in url:
-            addresses = url.split('addrs/')[1].split('/balance')[0].split(';')
-            response = '['
-            for idx, address in enumerate(addresses):
-                balance = btc_map.get(address, '0')
-                entry = f'{{"address": "{address}", "final_balance": {balance}}}'
-                if len(addresses) == 1:
-                    response = entry
-                else:
-                    response += entry
-                if idx < len(addresses) - 1:
-                    response += ','
-
-            if len(addresses) > 1:
-                response += ']'
+        elif 'blockstream.info' in url:
+            split_result = url.rsplit('/', 1)
+            if len(split_result) != 2:
+                raise AssertionError(f'Could not find bitcoin address at url {url}')
+            address = split_result[1]
+            balance = btc_map.get(address, '0')
+            response = f"""{{"address":"{address}","chain_stats":{{"funded_txo_count":1,"funded_txo_sum":{balance},"spent_txo_count":0,"spent_txo_sum":0,"tx_count":1}},"mempool_stats":{{"funded_txo_count":0,"funded_txo_sum":0,"spent_txo_count":0,"spent_txo_sum":0,"tx_count":0}}}}"""  # noqa: E501
         else:
             return original_requests_get(url, *args, **kwargs)
 

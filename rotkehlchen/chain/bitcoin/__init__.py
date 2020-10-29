@@ -5,23 +5,7 @@ import requests
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import BTCAddress
-from rotkehlchen.utils.misc import request_get, request_get_dict, satoshis_to_btc
-
-
-def _prepare_blockcypher_accounts(accounts: List[BTCAddress]) -> List[BTCAddress]:
-    """bech32 accounts have to be given lowercase to the blockcypher query.
-
-    No idea why.
-    """
-    new_accounts: List[BTCAddress] = []
-    for x in accounts:
-        lowered = x.lower()
-        if lowered[0:3] == 'bc1':
-            new_accounts.append(BTCAddress(lowered))
-        else:
-            new_accounts.append(x)
-
-    return new_accounts
+from rotkehlchen.utils.misc import request_get_dict, satoshis_to_btc
 
 
 def _have_bc1_accounts(accounts: List[BTCAddress]) -> bool:
@@ -29,41 +13,24 @@ def _have_bc1_accounts(accounts: List[BTCAddress]) -> bool:
 
 
 def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddress, FVal]:
-    """Queries blockchain.info or blockcypher for the balances of accounts
+    """Queries blockchain.info or blockstream for the balances of accounts
 
     May raise:
-    - RemotError if there is a problem querying blockchain.info or blockcypher
+    - RemotError if there is a problem querying blockchain.info or blockstream
     """
     source = 'blockchain.info'
-    balances = {}
+    balances: Dict[BTCAddress, FVal] = {}
     try:
         if _have_bc1_accounts(accounts):
-            # if 1 account is bech32 we have to query blockcypher. blockchaininfo won't work
-            source = 'blockcypher.com'
-            new_accounts = _prepare_blockcypher_accounts(accounts)
-
-            # blockcypher's batching takes up as many api queries as the batch,
-            # and the api rate limit is 3 requests per second. So we should make
-            # sure each batch is of max size 3
-            # https://www.blockcypher.com/dev/bitcoin/#batching
-            batches = [new_accounts[x: x + 3] for x in range(0, len(new_accounts), 3)]
-            total_idx = 0
-            for batch in batches:
-                params = ';'.join(batch)
-                url = f'https://api.blockcypher.com/v1/btc/main/addrs/{params}/balance'
-                response_data = request_get(url=url, handle_429=True, backoff_in_seconds=4)
-
-                if isinstance(response_data, dict):
-                    # If only one account was requested put it in a list so the
-                    # rest of the code works
-                    response_data = [response_data]
-
-                for idx, entry in enumerate(response_data):
-                    # we don't use the returned address as it may be lowercased
-                    balances[accounts[total_idx + idx]] = satoshis_to_btc(
-                        FVal(entry['final_balance']),
-                    )
-                total_idx += len(batch)
+            # if 1 account is bech32 we have to query blockstream. blockchaininfo won't work
+            source = 'blockstream'
+            balances = {}
+            for account in accounts:
+                url = f'https://blockstream.info/api/address/{account}'
+                response_data = request_get_dict(url=url, handle_429=True, backoff_in_seconds=4)
+                stats = response_data['chain_stats']
+                balance = int(stats['funded_txo_sum']) - int(stats['spent_txo_sum'])
+                balances[account] = satoshis_to_btc(balance)
         else:
             params = '|'.join(accounts)
             btc_resp = request_get_dict(
@@ -80,42 +47,28 @@ def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddres
             UnableToDecryptRemoteData,
             requests.exceptions.Timeout,
     ) as e:
-        raise RemoteError(f'bitcoin external API request for balances failed due to {str(e)}')
+        raise RemoteError(f'bitcoin external API request for balances failed due to {str(e)}') from e  # noqa: E501
     except KeyError as e:
         raise RemoteError(
             f'Malformed response when querying bitcoin blockchain via {source}.'
             f'Did not find key {e}',
-        )
+        ) from e
 
     return balances
 
 
-def _check_blockcypher_for_transactions(
+def _check_blockstream_for_transactions(
         accounts: List[BTCAddress],
 ) -> Dict[BTCAddress, Tuple[bool, FVal]]:
+    """May raise connection errors or KeyError"""
     have_transactions = {}
-    new_accounts = _prepare_blockcypher_accounts(accounts)
-    # blockcypher's batching takes up as many api queries as the batch,
-    # and the api rate limit is 3 requests per second. So we should make
-    # sure each batch is of max size 3
-    # https://www.blockcypher.com/dev/bitcoin/#batching
-    batches = [new_accounts[x: x + 3] for x in range(0, len(new_accounts), 3)]
-    total_idx = 0
-    for batch in batches:
-        params = ';'.join(batch)
-        url = f'https://api.blockcypher.com/v1/btc/main/addrs/{params}/balance'
-        response_data = request_get(url=url, handle_429=True, backoff_in_seconds=4)
-
-        if isinstance(response_data, dict):
-            # If only one account was requested put it in a list so the
-            # rest of the code works
-            response_data = [response_data]
-
-        for idx, entry in enumerate(response_data):
-            balance = satoshis_to_btc(FVal(entry['final_balance']))
-            # we don't use the returned address as it may be lowercased
-            have_transactions[accounts[total_idx + idx]] = (entry['final_n_tx'] != 0, balance)
-        total_idx += len(batch)
+    for account in accounts:
+        url = f'https://blockstream.info/api/address/{account}'
+        response_data = request_get_dict(url=url, handle_429=True, backoff_in_seconds=4)
+        stats = response_data['chain_stats']
+        balance = satoshis_to_btc(int(stats['funded_txo_sum']) - int(stats['spent_txo_sum']))
+        have_txs = stats['tx_count'] != 0
+        have_transactions[account] = (have_txs, balance)
 
     return have_transactions
 
@@ -123,6 +76,7 @@ def _check_blockcypher_for_transactions(
 def _check_blockchaininfo_for_transactions(
         accounts: List[BTCAddress],
 ) -> Dict[BTCAddress, Tuple[bool, FVal]]:
+    """May raise connection errors or KeyError"""
     have_transactions = {}
     params = '|'.join(accounts)
     btc_resp = request_get_dict(
@@ -149,14 +103,21 @@ def have_bitcoin_transactions(accounts: List[BTCAddress]) -> Dict[BTCAddress, Tu
     """
     try:
         if _have_bc1_accounts(accounts):
-            have_transactions = _check_blockcypher_for_transactions(accounts)
+            source = 'blockstream'
+            have_transactions = _check_blockstream_for_transactions(accounts)
         else:
+            source = 'blockchain.info'
             have_transactions = _check_blockchaininfo_for_transactions(accounts)
     except (
             requests.exceptions.ConnectionError,
             UnableToDecryptRemoteData,
             requests.exceptions.Timeout,
     ) as e:
-        raise RemoteError(f'bitcoin external API request for transactions failed due to {str(e)}')
+        raise RemoteError(f'bitcoin external API request for transactions failed due to {str(e)}') from e  # noqa: E501
+    except KeyError as e:
+        raise RemoteError(
+            f'Malformed response when querying bitcoin blockchain via {source}.'
+            f'Did not find key {str(e)}',
+        ) from e
 
     return have_transactions

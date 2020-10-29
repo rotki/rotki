@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`1635` Application will now continue running when changing log level on Windows.
 * :feature:`1642` Force pull/push buttons for premium sync are now accessible in the floppy disk icon on the toolbar.
+* :bug:`1639` Native segwit xpubs will now properly query and display the balances of their derived addresses. Rotki switched to using blockstream's API instead of blockcypher for native segwit addresses.
 * :bug:`1638` Balances displayed in dashboard cards should now be properly sorted by value in descending order.
 * :bug:`-` If the DB has not been uploaded in this run of Rotki, the last upload time indicator now shows the last time data was uploaded and not "Never".
 * :bug:`1641` Rotki only accepts derivation paths in the form of m/X/Y/Z... where ``X``, ``Y`` and ``Z`` are integers. Anything else is not processable and invalid. We now check that the given path is valid and reject the addition if not. Also the DB is upgraded and any xpubs with such invalid derivation path are automatically deleted.

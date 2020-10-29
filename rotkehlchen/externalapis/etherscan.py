@@ -457,4 +457,10 @@ class Etherscan(ExternalServiceWithApiKey):
             action='getblocknobytime',
             options=options,
         )
+        if not isinstance(result, int):
+            # At this point the blocknumber string returned by etherscan should be an int
+            raise RemoteError(
+                f'Got unexpected etherscan response: {result} to getblocknobytime call',
+            )
+
         return result
