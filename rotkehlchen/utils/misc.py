@@ -228,8 +228,8 @@ def request_get(
 
     try:
         result = rlk_jsonloads(response.text)
-    except json.decoder.JSONDecodeError:
-        raise UnableToDecryptRemoteData(f'{url} returned malformed json')
+    except json.decoder.JSONDecodeError as e:
+        raise UnableToDecryptRemoteData(f'{url} returned malformed json. Error: {str(e)}') from e
 
     return result
 
