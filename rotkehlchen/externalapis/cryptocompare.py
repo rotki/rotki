@@ -12,7 +12,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_USD, A_USDT, A_WETH
+from rotkehlchen.constants.assets import A_BTC, A_COMP, A_DAI, A_USD, A_USDT, A_WETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
@@ -46,6 +46,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('TLN'): A_WETH,
     Asset('BLY'): A_USDT,
     Asset('cDAI'): A_DAI,
+    Asset('cCOMP'): A_COMP,
     Asset('cBAT'): Asset('BAT'),
     Asset('cREP'): Asset('REP'),
     Asset('cSAI'): Asset('SAI'),

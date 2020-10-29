@@ -13363,6 +13363,15 @@
         "symbol": "cREP",
         "type": "ethereum token"
     },
+    "cCOMP": {
+        "coingecko": "ccomp",
+        "ethereum_address": "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4",
+        "ethereum_token_decimals": 8,
+        "name": "Compound Collateral",
+        "started": 1601419265,
+        "symbol": "cCOMP",
+        "type": "ethereum token"
+    },
     "cSAI": {
         "coingecko": "compound-sai",
         "ethereum_address": "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC",
