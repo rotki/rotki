@@ -153,10 +153,12 @@ if [[ "$PLATFORM" == "linux" ]]; then
   export APPIMAGE_CHECKSUM
   export TAR_CHECKSUM
 elif [[ "$PLATFORM" == "darwin" ]]; then
+  DMG=$(find "$(pwd)" -name "*.dmg"  | head -n 1)
   generate_checksum "$PLATFORM" "*.dmg" DMG_CHECKSUM
   generate_checksum "$PLATFORM" "*.zip" ZIP_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
+    echo "::set-output name=binary::$DMG"
     echo "::set-output name=binary_checksum::$DMG_CHECKSUM"
     echo "::set-output name=binary_checksum_name::${DMG_CHECKSUM##*/}"
     echo "::set-output name=archive_checksum::$ZIP_CHECKSUM"

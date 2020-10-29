@@ -144,9 +144,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up python
-        uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
+        run: packaging/setup-osx.sh
       - name: Setup node
         uses: actions/setup-node@v1
         with:
@@ -174,7 +172,11 @@ jobs:
           brew install sqlcipher
       - name: Package
         id: packaging
-        run: ./package.sh
+        run: |
+          pip3 install virtualenv
+          python3 -m virtualenv ~/venv
+          source ~/venv/bin/activate
+          ./package.sh
       - name: Upload dmg sha512 checksum file
         uses: actions/upload-release-asset@v1
         env:
