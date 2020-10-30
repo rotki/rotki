@@ -859,7 +859,7 @@
         "type": "ethereum token"
     },
     "AVAX": {
-        "coingecko": "avalanche",
+        "coingecko": "avalanche-2",
         "name": "Avalanche",
         "started": 1600646400,
         "symbol": "AVAX",
