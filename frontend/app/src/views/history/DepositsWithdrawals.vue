@@ -6,7 +6,10 @@
     {{ $t('deposits_withdrawals.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
-    <trade-location-selector v-model="location" />
+    <trade-location-selector
+      v-model="location"
+      :available-locations="availableLocations"
+    />
     <v-row>
       <v-col cols="12">
         <v-card>
@@ -113,7 +116,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { SupportedExchange } from '@/services/balances/types';
-import { AssetMovement } from '@/services/history/types';
+import { AssetMovement, TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
 
 @Component({
@@ -183,6 +186,12 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
       return;
     }
     this.page = 1;
+  }
+
+  get availableLocations(): TradeLocation[] {
+    return this.assetMovements
+      .map(movement => movement.location)
+      .filter((value, index, array) => array.indexOf(value) === index);
   }
 
   get movements(): AssetMovement[] {

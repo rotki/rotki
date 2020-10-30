@@ -51,9 +51,9 @@ export default class TradeLocationSelector extends Vue {
   readonly tradeLocations = tradeLocations;
 
   get locations(): TradeLocationData[] {
-    return this.showExternal
-      ? tradeLocations
-      : tradeLocations.filter(location => location.identifier !== 'external');
+    return tradeLocations.filter(location =>
+      this.availableLocations.includes(location.identifier)
+    );
   }
 
   get name(): string {
@@ -66,8 +66,8 @@ export default class TradeLocationSelector extends Vue {
   @Prop({ required: true })
   value!: TradeLocation;
 
-  @Prop({ required: false, type: Boolean, default: false })
-  showExternal!: boolean;
+  @Prop({ required: false, type: Array, default: () => [] })
+  availableLocations!: TradeLocation[];
 
   @Emit()
   input(_value: TradeLocation) {}
