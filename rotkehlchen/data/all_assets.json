@@ -859,7 +859,7 @@
         "type": "ethereum token"
     },
     "AVAX": {
-        "coingecko": "avalanche",
+        "coingecko": "avalanche-2",
         "name": "Avalanche",
         "started": 1600646400,
         "symbol": "AVAX",
@@ -1627,6 +1627,15 @@
         "started": 1400112000,
         "symbol": "BOST",
         "type": "own chain"
+    },
+    "BOT": {
+        "coingecko": "bounce-token",
+        "ethereum_address": "0x5bEaBAEBB3146685Dd74176f68a0721F91297D37",
+        "ethereum_token_decimals": 18,
+        "name": "Bounce Token",
+        "started": 1596425092,
+        "symbol": "BOT",
+        "type": "ethereum token"
     },
     "BOU": {
         "coingecko": "",
@@ -2979,6 +2988,13 @@
         "started": 1524930693,
         "symbol": "CST",
         "type": "ethereum token"
+    },
+    "CTK": {
+        "coingecko": "certik",
+        "name": "Certik",
+        "started": 1603756800,
+        "symbol": "CTK",
+        "type": "own chain"
     },
     "CTR": {
         "active": false,
@@ -13361,6 +13377,15 @@
         "name": "Compound Augur",
         "started": 1557192288,
         "symbol": "cREP",
+        "type": "ethereum token"
+    },
+    "cCOMP": {
+        "coingecko": "ccomp",
+        "ethereum_address": "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4",
+        "ethereum_token_decimals": 8,
+        "name": "Compound Collateral",
+        "started": 1601419265,
+        "symbol": "cCOMP",
         "type": "ethereum token"
     },
     "cSAI": {

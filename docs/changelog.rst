@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.8.3 <2020-10-30>`
 * :bug:`1636` Users running earlier OSX versions than Catalina can again start the application properly.
 * :bug:`1635` Application will now continue running when changing log level on Windows.
 * :feature:`1642` Force pull/push buttons for premium sync are now accessible in the floppy disk icon on the toolbar.
@@ -10,6 +11,12 @@ Changelog
 * :bug:`-` If the DB has not been uploaded in this run of Rotki, the last upload time indicator now shows the last time data was uploaded and not "Never".
 * :bug:`1641` Rotki only accepts derivation paths in the form of m/X/Y/Z... where ``X``, ``Y`` and ``Z`` are integers. Anything else is not processable and invalid. We now check that the given path is valid and reject the addition if not. Also the DB is upgraded and any xpubs with such invalid derivation path are automatically deleted.
 * :bug:`1637` Loading ethereum transactions on the UI should work properly again now
+
+* :feature:`-` Added support for the following tokens:
+
+  - `Compound Collateral (cCOMP) <https://www.coingecko.com/en/coins/ccomp>`__
+  - `Certik (CTK) <https://www.coingecko.com/en/coins/certik>`__
+  - `Bounce Token (BOT) <https://www.coingecko.com/en/coins/bounce-token>`__
 
 * :release:`1.8.2 <2020-10-27>`
 * :bug:`1631` Fetching poloniex trades will now work properly again after they changed their trade date time format.

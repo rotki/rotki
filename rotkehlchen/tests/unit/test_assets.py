@@ -128,6 +128,9 @@ def test_coingecko_identifiers_are_reachable():
         'SGR',
         'LOCUS',
         'REDC',
+        'SGN',
+        'SOAR',
+        'YUP',
     ]
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
@@ -159,6 +162,11 @@ def test_coingecko_identifiers_are_reachable():
             for entry in all_coins:
                 if entry['symbol'].upper() == asset_data['symbol'].upper():
                     suggestions.append((entry['id'], entry['name'], entry['symbol']))
+                    continue
+
+                if entry['name'].upper() == asset_data['symbol'].upper():
+                    suggestions.append((entry['id'], entry['name'], entry['symbol']))
+                    continue
 
         msg = f'Asset {identifier} coingecko mapping does not exist.'
         if len(suggestions) != 0:
@@ -171,7 +179,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '6af1f23b12ca2cc736d53003999f2534', 'version': 20}
+    last_meta = {'md5': 'dc0b782707fe6ff747b5b7fc740613ef', 'version': 21}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
