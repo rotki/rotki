@@ -1628,6 +1628,15 @@
         "symbol": "BOST",
         "type": "own chain"
     },
+    "BOT": {
+        "coingecko": "bounce-token",
+        "ethereum_address": "0x5bEaBAEBB3146685Dd74176f68a0721F91297D37",
+        "ethereum_token_decimals": 18,
+        "name": "Bounce Token",
+        "started": 1596425092,
+        "symbol": "BOT",
+        "type": "ethereum token"
+    },
     "BOU": {
         "coingecko": "",
         "ethereum_address": "0xC2C63F23ec5E97efbD7565dF9Ec764FDc7d4e91d",

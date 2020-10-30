@@ -15,6 +15,7 @@ Changelog
 
   - `Compound Collateral (cCOMP) <https://www.coingecko.com/en/coins/ccomp>`__
   - `Certik (CTK) <https://www.coingecko.com/en/coins/certik>`__
+  - `Bounce Token (BOT) <https://www.coingecko.com/en/coins/bounce-token>`__
 
 * :release:`1.8.2 <2020-10-27>`
 * :bug:`1631` Fetching poloniex trades will now work properly again after they changed their trade date time format.
