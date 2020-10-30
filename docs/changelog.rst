@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1636` Users running earlier OSX versions than Catalina can again start the application properly.
 * :bug:`1635` Application will now continue running when changing log level on Windows.
 * :feature:`1642` Force pull/push buttons for premium sync are now accessible in the floppy disk icon on the toolbar.
 * :bug:`1638` Balances displayed in dashboard cards should now be properly sorted by value in descending order.
