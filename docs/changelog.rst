@@ -14,6 +14,7 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Compound Collateral (cCOMP) <https://www.coingecko.com/en/coins/ccomp>`__
+  - `Certik (CTK) <https://www.coingecko.com/en/coins/certik>`__
 
 * :release:`1.8.2 <2020-10-27>`
 * :bug:`1631` Fetching poloniex trades will now work properly again after they changed their trade date time format.

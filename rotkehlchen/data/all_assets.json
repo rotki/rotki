@@ -2980,6 +2980,13 @@
         "symbol": "CST",
         "type": "ethereum token"
     },
+    "CTK": {
+        "coingecko": "certik",
+        "name": "Certik",
+        "started": 1603756800,
+        "symbol": "CTK",
+        "type": "own chain"
+    },
     "CTR": {
         "active": false,
         "coingecko": "",
