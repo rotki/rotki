@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1636` Users running earlier OSX versions than Catalina can again start the application properly.
 * :bug:`1635` Application will now continue running when changing log level on Windows.
 * :feature:`1642` Force pull/push buttons for premium sync are now accessible in the floppy disk icon on the toolbar.
 * :bug:`1639` Native segwit xpubs will now properly query and display the balances of their derived addresses. Rotki switched to using blockstream's API instead of blockcypher for native segwit addresses.
