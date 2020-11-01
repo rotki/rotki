@@ -6,7 +6,10 @@
     {{ $t('trade_history.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
-    <trade-location-selector v-model="selectedLocation" show-external />
+    <trade-location-selector
+      v-model="selectedLocation"
+      :available-locations="availableLocations"
+    />
     <open-trades v-if="preview" :data="openTrades" />
     <closed-trades
       class="mt-8"
@@ -50,6 +53,12 @@ export default class TradeHistory extends Mixins(StatusMixin) {
 
   get preview(): boolean {
     return !!process.env.VUE_APP_TRADES_PREVIEW;
+  }
+
+  get availableLocations(): TradeLocation[] {
+    return this.trades
+      .map(trade => trade.location)
+      .filter((value, index, array) => array.indexOf(value) === index);
   }
 
   get closedTrades(): Trade[] {

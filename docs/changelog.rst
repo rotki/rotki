@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`1414` Users will now be shown only the available locations when filtering trades.
+
 * :release:`1.8.3 <2020-10-30>`
 * :bug:`1636` Users running earlier OSX versions than Catalina can again start the application properly.
 * :bug:`1635` Application will now continue running when changing log level on Windows.
