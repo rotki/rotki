@@ -7,11 +7,9 @@ import requests
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 
-from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
@@ -253,33 +251,6 @@ class Etherscan(ExternalServiceWithApiKey):
             return result
 
         return result
-
-    def get_token_balance(
-            self,
-            token: EthereumToken,
-            account: ChecksumEthAddress,
-    ) -> FVal:
-        """Gets the token balance of the given account.
-        The returned balance is adjusted for token decimals.
-
-        May raise:
-        - RemoteError due to self._query(). Also if the returned result
-        is not in the expected format
-        """
-        result = self._query(
-            module='account',
-            action='tokenbalance',
-            options={'contractaddress': token.ethereum_address, 'address': account},
-        )
-
-        try:
-            token_amount = FVal(result)
-        except ValueError:
-            raise RemoteError(
-                f'Etherscan returned non-numeric result for account token balance {result}',
-            )
-
-        return token_amount / (FVal(10) ** FVal(token.decimals))
 
     def get_transactions(
             self,

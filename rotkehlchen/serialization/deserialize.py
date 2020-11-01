@@ -191,15 +191,6 @@ def deserialize_timestamp_from_binance(time: int) -> Timestamp:
     return Timestamp(int(time / 1000))
 
 
-def deserialize_fval(amount: AcceptableFValInitInput) -> FVal:
-    try:
-        result = FVal(amount)
-    except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {str(e)}')
-
-    return result
-
-
 def deserialize_optional_fval(
         value: Optional[AcceptableFValInitInput],
         name: str,
