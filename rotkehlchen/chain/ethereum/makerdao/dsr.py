@@ -17,25 +17,14 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import (
-    BlockchainQueryError,
-    ConversionError,
-    DeserializationError,
-    RemoteError,
-)
+from rotkehlchen.errors import BlockchainQueryError, ConversionError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import (
-    hex_or_bytes_to_address,
-    hex_or_bytes_to_int,
-    hex_or_bytes_to_str,
-    ts_now,
-)
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hexstr_to_int, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -127,12 +116,8 @@ def _find_closest_event(
         found_event = join_events[index]
     if len(exit_events) != 0:
         if found_event:
-            try:
-                join_number = deserialize_blocknumber(found_event['blockNumber'])
-                exit_number = deserialize_blocknumber(exit_events[index]['blockNumber'])
-            except DeserializationError as e:
-                msg = f'Error at reading DSR drip event block number. {str(e)}'
-                raise ChiRetrievalError(msg)
+            join_number = found_event['blockNumber']
+            exit_number = exit_events[index]['blockNumber']
 
             if comparison(exit_number, join_number):
                 found_event = exit_events[index]
@@ -259,7 +244,7 @@ class MakerDAODSR(MakerDAOCommon):
                         'the same transaction',
                     )
                 try:
-                    value = hex_or_bytes_to_int(event['topics'][3])
+                    value = hexstr_to_int(event['topics'][3])
                     break
                 except ConversionError:
                     value = None
@@ -294,7 +279,7 @@ class MakerDAODSR(MakerDAOCommon):
         )
         for join_event in join_events:
             try:
-                wad_val = hex_or_bytes_to_int(join_event['topics'][2])
+                wad_val = hexstr_to_int(join_event['topics'][2])
             except ConversionError as e:
                 msg = f'Error at reading DSR join event topics. {str(e)}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
@@ -302,12 +287,7 @@ class MakerDAODSR(MakerDAOCommon):
             join_normalized_balances.append(wad_val)
 
             # and now get the deposit amount
-            try:
-                block_number = deserialize_blocknumber(join_event['blockNumber'])
-            except DeserializationError as e:
-                msg = f'Error at reading DSR join event block number. {str(e)}. Skipping event...'
-                self.msg_aggregator.add_error(msg)
-                continue
+            block_number = join_event['blockNumber']
             dai_value = self._get_vat_join_exit_at_transaction(
                 movement_type='join',
                 proxy_address=proxy,
@@ -334,7 +314,7 @@ class MakerDAODSR(MakerDAOCommon):
                     normalized_balance=wad_val,
                     amount=dai_value,
                     amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
-                    block_number=deserialize_blocknumber(join_event['blockNumber']),
+                    block_number=join_event['blockNumber'],
                     timestamp=timestamp,
                     tx_hash=join_event['transactionHash'],
                 ),
@@ -353,20 +333,14 @@ class MakerDAODSR(MakerDAOCommon):
         )
         for exit_event in exit_events:
             try:
-                wad_val = hex_or_bytes_to_int(exit_event['topics'][2])
+                wad_val = hexstr_to_int(exit_event['topics'][2])
             except ConversionError as e:
                 msg = f'Error at reading DSR exit event topics. {str(e)}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
                 continue
             exit_normalized_balances.append(wad_val)
 
-            try:
-                block_number = deserialize_blocknumber(exit_event['blockNumber'])
-            except DeserializationError as e:
-                msg = f'Error at reading DSR exit event block number. {str(e)}. Skipping event...'
-                self.msg_aggregator.add_error(msg)
-                continue
-
+            block_number = exit_event['blockNumber']
             # and now get the withdrawal amount
             dai_value = self._get_vat_join_exit_at_transaction(
                 movement_type='exit',
@@ -394,7 +368,7 @@ class MakerDAODSR(MakerDAOCommon):
                     normalized_balance=wad_val,
                     amount=dai_value,
                     amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
-                    block_number=deserialize_blocknumber(exit_event['blockNumber']),
+                    block_number=exit_event['blockNumber'],
                     timestamp=timestamp,
                     tx_hash=exit_event['transactionHash'],
                 ),
@@ -595,12 +569,8 @@ class MakerDAODSR(MakerDAOCommon):
             found_event = forward_event
         else:
             # We have both backward and forward events, get the one closer to block number
-            try:
-                back_block_number = deserialize_blocknumber(back_event['blockNumber'])  # type: ignore  # noqa: E501
-                forward_block_number = deserialize_blocknumber(forward_event['blockNumber'])  # type: ignore  # noqa: E501
-            except DeserializationError as e:
-                msg = f'Error at reading DSR drip event block number. {str(e)}'
-                raise ChiRetrievalError(msg)
+            back_block_number = back_event['blockNumber']  # type: ignore
+            forward_block_number = forward_event['blockNumber']  # type: ignore
 
             if block_number - back_block_number <= forward_block_number - block_number:
                 found_event = back_event
@@ -608,8 +578,8 @@ class MakerDAODSR(MakerDAOCommon):
                 found_event = forward_event
 
         assert found_event, 'at this point found_event should be populated'  # helps mypy
-        event_block_number = deserialize_blocknumber(found_event['blockNumber'])
-        first_topic = hex_or_bytes_to_str(found_event['topics'][0])
+        event_block_number = found_event['blockNumber']
+        first_topic = found_event['topics'][0]
 
         amount = self._get_vat_join_exit_at_transaction(
             movement_type='join' if first_topic.startswith('0x049878f3') else 'exit',
@@ -622,7 +592,7 @@ class MakerDAODSR(MakerDAOCommon):
                 f'Found no VAT.move events around timestamp {time}. Cant query chi.',
             )
 
-        wad_val = hex_or_bytes_to_int(found_event['topics'][2])
+        wad_val = hexstr_to_int(found_event['topics'][2])
         chi = FVal(amount) / FVal(wad_val)
         return chi
 

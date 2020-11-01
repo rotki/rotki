@@ -18,14 +18,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import (
-    deserialize_blocknumber,
-    deserialize_int_from_hex_or_int,
-)
 from rotkehlchen.typing import BalanceType, ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import hex_or_bytes_to_int
+from rotkehlchen.utils.misc import hexstr_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -37,7 +33,6 @@ ETH_MANTISSA = 10**18
 A_COMP = EthereumToken('COMP')
 
 COMPTROLLER_PROXY = EthereumConstants().contract('COMPTROLLER_PROXY')
-COMPTROLLER_ABI = EthereumConstants.abi('COMPTROLLER_IMPLEMENTATION')
 COMP_DEPLOYED_BLOCK = 9601359
 
 
@@ -510,7 +505,7 @@ class Compound(EthereumModule):
         events = []
         for event in comp_events:
             timestamp = self.ethereum.get_event_timestamp(event)
-            amount = token_normalized_value(hex_or_bytes_to_int(event['data']), A_COMP)
+            amount = token_normalized_value(hexstr_to_int(event['data']), A_COMP)
             usd_price = query_usd_price_zero_if_error(
                 asset=A_COMP,
                 time=timestamp,
@@ -521,7 +516,7 @@ class Compound(EthereumModule):
             events.append(CompoundEvent(
                 event_type='comp',
                 address=address,
-                block_number=deserialize_blocknumber(event['blockNumber']),
+                block_number=event['blockNumber'],
                 timestamp=timestamp,
                 asset=A_COMP,
                 value=value,
@@ -529,7 +524,7 @@ class Compound(EthereumModule):
                 to_value=None,
                 realized_pnl=value,
                 tx_hash=event['transactionHash'],
-                log_index=deserialize_int_from_hex_or_int(event['logIndex'], 'comp log index'),
+                log_index=event['logIndex'],
             ))
 
         return events

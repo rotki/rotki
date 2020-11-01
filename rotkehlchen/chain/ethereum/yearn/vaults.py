@@ -29,14 +29,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import SPECIAL_SYMBOLS, Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import (
-    deserialize_blocknumber,
-    deserialize_int_from_hex_or_int,
-)
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import address_to_bytes32, hex_or_bytes_to_int, ts_now
+from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -275,15 +271,12 @@ class YearnVaults(EthereumModule):
         for deposit_event in deposit_events:
             timestamp = self.ethereum.get_event_timestamp(deposit_event)
             deposit_amount = token_normalized_value(
-                token_amount=hex_or_bytes_to_int(deposit_event['data']),
+                token_amount=hexstr_to_int(deposit_event['data']),
                 token=vault.underlying_token,
             )
             tx_hash = deposit_event['transactionHash']
             tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
-            deposit_index = deserialize_int_from_hex_or_int(
-                deposit_event['logIndex'],
-                'yearn deposit log index',
-            )
+            deposit_index = deposit_event['logIndex']
             mint_amount = None
             for log in tx_receipt['logs']:
                 found_event = (
@@ -294,7 +287,7 @@ class YearnVaults(EthereumModule):
                 if found_event:
                     # found the mint log
                     mint_amount = token_normalized_value(
-                        token_amount=hex_or_bytes_to_int(log['data']),
+                        token_amount=hexstr_to_int(log['data']),
                         token=vault.token,
                     )
 
@@ -319,7 +312,7 @@ class YearnVaults(EthereumModule):
             )
             events.append(YearnVaultEvent(
                 event_type='deposit',
-                block_number=deserialize_blocknumber(deposit_event['blockNumber']),
+                block_number=deposit_event['blockNumber'],
                 timestamp=timestamp,
                 from_asset=vault.underlying_token,
                 from_value=Balance(
@@ -359,15 +352,12 @@ class YearnVaults(EthereumModule):
         for withdraw_event in withdraw_events:
             timestamp = self.ethereum.get_event_timestamp(withdraw_event)
             withdraw_amount = token_normalized_value(
-                token_amount=hex_or_bytes_to_int(withdraw_event['data']),
+                token_amount=hexstr_to_int(withdraw_event['data']),
                 token=vault.token,
             )
             tx_hash = withdraw_event['transactionHash']
             tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
-            withdraw_index = deserialize_int_from_hex_or_int(
-                withdraw_event['logIndex'],
-                'yearn withdraw log index',
-            )
+            withdraw_index = withdraw_event['logIndex']
             burn_amount = None
             for log in tx_receipt['logs']:
                 found_event = (
@@ -378,7 +368,7 @@ class YearnVaults(EthereumModule):
                 if found_event:
                     # found the burn log
                     burn_amount = token_normalized_value(
-                        token_amount=hex_or_bytes_to_int(log['data']),
+                        token_amount=hexstr_to_int(log['data']),
                         token=vault.token,
                     )
 
@@ -403,7 +393,7 @@ class YearnVaults(EthereumModule):
             )
             events.append(YearnVaultEvent(
                 event_type='withdraw',
-                block_number=deserialize_blocknumber(withdraw_event['blockNumber']),
+                block_number=withdraw_event['blockNumber'],
                 timestamp=timestamp,
                 from_asset=vault.token,
                 from_value=Balance(

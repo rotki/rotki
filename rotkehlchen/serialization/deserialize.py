@@ -191,15 +191,6 @@ def deserialize_timestamp_from_binance(time: int) -> Timestamp:
     return Timestamp(int(time / 1000))
 
 
-def deserialize_fval(amount: AcceptableFValInitInput) -> FVal:
-    try:
-        result = FVal(amount)
-    except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {str(e)}')
-
-    return result
-
-
 def deserialize_optional_fval(
         value: Optional[AcceptableFValInitInput],
         name: str,
@@ -567,13 +558,3 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
         )
 
     return result
-
-
-def deserialize_blocknumber(symbol: Union[str, int]) -> int:
-    """Takes a block number value which can either be an int or a hex string and
-    turns it into an integer block number value
-
-    May Raise:
-    - DeserializationError if the given data are in an unexpected format.
-    """
-    return deserialize_int_from_hex_or_int(symbol, 'block_number')

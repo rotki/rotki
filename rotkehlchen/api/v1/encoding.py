@@ -9,7 +9,7 @@ from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, is_valid_derivation_path
@@ -200,22 +200,6 @@ class AmountField(fields.Field):
         return amount
 
 
-class PositiveOrZeroAmountField(AmountField):
-
-    def _deserialize(
-            self,
-            value: Union[str, int],
-            attr: Optional[str],
-            data: Optional[Mapping[str, Any]],
-            **kwargs: Any,
-    ) -> AssetAmount:
-        amount = super()._deserialize(value, attr, data, **kwargs)
-        if amount < ZERO:
-            raise ValidationError(f'Negative amount {value} given. Amount should be >= 0')
-
-        return amount
-
-
 class PositiveAmountField(AmountField):
 
     def _deserialize(
@@ -343,32 +327,6 @@ class FiatAssetField(AssetField):
             raise ValidationError(f'Asset {asset.identifier} is not a FIAT asset')
 
         return asset
-
-
-class EthereumTokenAssetField(AssetField):
-
-    @staticmethod
-    def _serialize(  # type: ignore
-            value: EthereumToken,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value.identifier)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Asset:
-        try:
-            token = EthereumToken(value)
-        except (DeserializationError, UnknownAsset) as e:
-            raise ValidationError(str(e))
-
-        return token
 
 
 class EthereumAddressField(fields.Field):

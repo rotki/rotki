@@ -14,13 +14,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import (
-    deserialize_blocknumber,
-    deserialize_int_from_hex_or_int,
-)
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hexstr_to_int
 
 from .common import (
     ATOKENS_LIST,
@@ -236,19 +232,17 @@ class AaveBlockchainInquirer(AaveInquirer):
         mint_data = set()
         mint_data_to_log_index = {}
         for event in mint_events:
-            amount = hex_or_bytes_to_int(event['data'])
+            amount = hexstr_to_int(event['data'])
             if amount == 0:
                 continue  # first mint can be for 0. Ignore
             entry = (
-                deserialize_blocknumber(event['blockNumber']),
+                event['blockNumber'],
                 amount,
                 self.ethereum.get_event_timestamp(event),
                 event['transactionHash'],
             )
             mint_data.add(entry)
-            mint_data_to_log_index[entry] = deserialize_int_from_hex_or_int(
-                event['logIndex'], 'aave log index',
-            )
+            mint_data_to_log_index[entry] = event['logIndex']
 
         reserve_asset = _atoken_to_reserve_asset(atoken)
         reserve_address, decimals = _get_reserve_address_decimals(reserve_asset.identifier)
@@ -256,11 +250,11 @@ class AaveBlockchainInquirer(AaveInquirer):
         for event in deposit_events:
             if hex_or_bytes_to_address(event['topics'][1]) == reserve_address:
                 # first 32 bytes of the data are the amount
-                deposit = hex_or_bytes_to_int(event['data'][:66])
-                block_number = deserialize_blocknumber(event['blockNumber'])
+                deposit = hexstr_to_int(event['data'][:66])
+                block_number = event['blockNumber']
                 timestamp = self.ethereum.get_event_timestamp(event)
                 tx_hash = event['transactionHash']
-                log_index = deserialize_int_from_hex_or_int(event['logIndex'], 'aave log index')
+                log_index = event['logIndex']
                 # If there is a corresponding deposit event remove the minting event data
                 entry = (block_number, deposit, timestamp, tx_hash)
                 if entry in mint_data:
@@ -311,8 +305,8 @@ class AaveBlockchainInquirer(AaveInquirer):
         for event in withdraw_events:
             if hex_or_bytes_to_address(event['topics'][1]) == reserve_address:
                 # first 32 bytes of the data are the amount
-                withdrawal = hex_or_bytes_to_int(event['data'][:66])
-                block_number = deserialize_blocknumber(event['blockNumber'])
+                withdrawal = hexstr_to_int(event['data'][:66])
+                block_number = event['blockNumber']
                 timestamp = self.ethereum.get_event_timestamp(event)
                 tx_hash = event['transactionHash']
                 usd_price = query_usd_price_zero_if_error(
@@ -332,7 +326,7 @@ class AaveBlockchainInquirer(AaveInquirer):
                     block_number=block_number,
                     timestamp=timestamp,
                     tx_hash=tx_hash,
-                    log_index=deserialize_int_from_hex_or_int(event['logIndex'], 'aave log index'),
+                    log_index=event['logIndex'],
                 ))
 
         return aave_events
