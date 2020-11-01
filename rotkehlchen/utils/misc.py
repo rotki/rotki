@@ -354,6 +354,21 @@ def write_history_data_in_file(
         outfile.write(rlk_jsondumps(history_dict))
 
 
+def hexstr_to_int(value: str) -> int:
+    """Turns a hexstring into an int
+
+    May raise:
+    - ConversionError if it can't convert a value to an int or if an unexpected
+    type is given.
+    """
+    try:
+        int_value = int(value, 16)
+    except ValueError:
+        raise ConversionError(f'Could not convert string "{value}" to an int')
+
+    return int_value
+
+
 def hex_or_bytes_to_int(value: Union[bytes, str]) -> int:
     """Turns a bytes/HexBytes or a hexstring into an int
 
@@ -364,10 +379,7 @@ def hex_or_bytes_to_int(value: Union[bytes, str]) -> int:
     if isinstance(value, bytes):
         int_value = int.from_bytes(value, byteorder='big', signed=False)
     elif isinstance(value, str):
-        try:
-            int_value = int(value, 16)
-        except ValueError:
-            raise ConversionError(f'Could not convert string "{value}" to an int')
+        int_value = hexstr_to_int(value)
     else:
         raise ConversionError(f'Unexpected type {type(value)} given to hex_or_bytes_to_int()')
 

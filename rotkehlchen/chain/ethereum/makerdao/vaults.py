@@ -65,7 +65,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import address_to_bytes32, hex_or_bytes_to_int, ts_now
+from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -336,7 +336,7 @@ class MakerDAOVaults(MakerDAOCommon):
             urn: ChecksumEthAddress,
     ) -> Optional[MakerDAOVaultDetails]:
         # They can raise:
-        # ConversionError due to hex_or_bytes_to_address, hex_or_bytes_to_int
+        # ConversionError due to hex_or_bytes_to_address, hexstr_to_int
         # RemoteError due to external query errors
         events = self.ethereum.get_logs(
             contract_address=MAKERDAO_CDP_MANAGER.address,
@@ -433,7 +433,7 @@ class MakerDAOVaults(MakerDAOCommon):
 
             deposit_tx_hashes.add(tx_hash)
             amount = asset_normalized_value(
-                amount=hex_or_bytes_to_int(event['topics'][3]),
+                amount=hexstr_to_int(event['topics'][3]),
                 asset=vault.collateral_asset,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
@@ -468,7 +468,7 @@ class MakerDAOVaults(MakerDAOCommon):
                 # If there is no corresponding frob event then skip
                 continue
             amount = asset_normalized_value(
-                amount=hex_or_bytes_to_int(event['topics'][3]),
+                amount=hexstr_to_int(event['topics'][3]),
                 asset=vault.collateral_asset,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
@@ -503,7 +503,7 @@ class MakerDAOVaults(MakerDAOCommon):
             from_block=MAKERDAO_VAT.deployed_block,
         )
         for event in events:
-            given_amount = _shift_num_right_by(hex_or_bytes_to_int(event['topics'][3]), RAY_DIGITS)
+            given_amount = _shift_num_right_by(hexstr_to_int(event['topics'][3]), RAY_DIGITS)
             total_dai_wei += given_amount
             amount = token_normalized_value(
                 token_amount=given_amount,
@@ -537,7 +537,7 @@ class MakerDAOVaults(MakerDAOCommon):
             from_block=MAKERDAO_DAI_JOIN.deployed_block,
         )
         for event in events:
-            given_amount = hex_or_bytes_to_int(event['topics'][3])
+            given_amount = hexstr_to_int(event['topics'][3])
             total_dai_wei -= given_amount
             amount = token_normalized_value(
                 token_amount=given_amount,
@@ -580,7 +580,7 @@ class MakerDAOVaults(MakerDAOCommon):
             else:  # bytes
                 lot = event['data'][:32]
             amount = asset_normalized_value(
-                amount=hex_or_bytes_to_int(lot),
+                amount=hexstr_to_int(lot),
                 asset=vault.collateral_asset,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
