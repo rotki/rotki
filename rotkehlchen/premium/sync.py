@@ -121,7 +121,9 @@ class PremiumSyncManager():
         coming from  decompress_and_decrypt_db. This happens when the given password
         does not match the one on the saved DB.
         """
-        assert self.premium, 'This function has to be called with a not None premium'
+        if self.premium is None:
+            return False, 'Pulling failed. User does not have active premium.'
+
         try:
             result = self.premium.pull_data()
         except RemoteError as e:
@@ -206,7 +208,6 @@ class PremiumSyncManager():
         return True
 
     def sync_data(self, action: Literal['upload', 'download']) -> Tuple[bool, str]:
-        assert self.premium, 'This function has to be called with a not None premium'
         msg = ''
 
         if action == 'upload':
