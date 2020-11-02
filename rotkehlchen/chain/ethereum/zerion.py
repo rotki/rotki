@@ -152,7 +152,6 @@ class Zerion():
             method_name='getBalances',
             arguments=[account],
         )
-        log.info("result: {}".format(result))
         protocol_balances = []
         for entry in result:
             protocol = DefiProtocol(

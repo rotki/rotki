@@ -379,7 +379,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         module = self.eth_modules.get('uniswap', None)
         if not module:
             return None
-            
+
         return module  # type: ignore
 
     @property

@@ -28,8 +28,6 @@ from rotkehlchen.api.v1.resources import (
     BTCXpubResource,
     CompoundBalancesResource,
     CompoundHistoryResource,
-    UniswapBalancesResource,
-    UniswapHistoryResource,
     DataImportResource,
     DefiBalancesResource,
     EthereumTransactionsResource,
@@ -67,6 +65,7 @@ from rotkehlchen.api.v1.resources import (
     WatchersResource,
     YearnVaultsBalancesResource,
     YearnVaultsHistoryResource,
+    UniswapBalancesResource,
     create_blueprint,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -141,10 +140,9 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/aave/history', AaveHistoryResource),
     ('/blockchains/ETH/modules/compound/balances', CompoundBalancesResource),
     ('/blockchains/ETH/modules/compound/history', CompoundHistoryResource),
+    ('/blockchains/ETH/modules/uniswap/balances', UniswapBalancesResource),
     ('/blockchains/ETH/modules/yearn/vaults/balances', YearnVaultsBalancesResource),
     ('/blockchains/ETH/modules/yearn/vaults/history', YearnVaultsHistoryResource),
-    ('/blockchains/ETH/modules/uniswap/balances', UniswapBalancesResource),
-    ('/blockchains/ETH/modules/uniswap/history', UniswapHistoryResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/blockchains/BTC/xpub', BTCXpubResource),
     ('/assets', OwnedAssetsResource),

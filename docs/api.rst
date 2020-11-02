@@ -3695,6 +3695,83 @@ Getting compound historical data
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
+Getting Uniswap balances
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/balances
+
+   Doing a GET on the uniswap balances resource will return the balances locked in Uniswap Liquidity Pools (LPs or pools).
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/uniswap/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "0xcf2B8EeC2A9cE682822b252a1e9B78EedebEFB02": [
+            {
+              "address": "0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae",
+              "assets": [
+                {
+                  "asset": {
+                    "ethereum_address": "0x364A7381A5b378CeD7AB33d1CDf6ff1bf162Bfd6",
+                    "name": "DeFi-X Token",
+                    "symbol": "TGX"
+                  },
+                  "total_amount": "9588317.030426553444567747",
+                  "usd_price": "0.3015901111469715543448531276626107",
+                  "user_balance": {
+                    "amount": "4424094.631122964837017895643",
+                    "usd_value": "1334263.191525095084350185834"
+                  }
+                },
+                {
+                  "asset": "USDT",
+                  "total_amount": "2897321.681999",
+                  "usd_price": "1.001",
+                  "user_balance": {
+                    "amount": "1336837.868136041506994516873",
+                    "usd_value": "1338174.706004177548501511390"
+                  }
+                }
+              ],
+              "total_supply": "5.255427314262137581",
+              "user_balance": {
+                "amount": "2.424878911648769806",
+                "usd_value": "2672437.897529272632851697224"
+              }
+            }
+          ],
+        },
+        "message": "",
+      }
+
+   :resjson object result: A mapping between accounts and their Uniswap balances (represented by a list where each item is a LP).
+   :resjson string address: The LP contract address.
+   :resjson list[object] assets: A list with the LP underlying tokens data. Per item, when ``"asset"`` is an object, it means the token is unknown to Rotki. ``"total_amount"`` is the total amount of this token the pool has. ``"usd_price"`` is the token USD price. ``"user_balance"`` contains the user token balance and its estimated USD value.
+   :resjson string total_supply: The total amount of liquidity tokens the LP has.
+   :resjson object user_balance: The liquidity token user balance and its USD value.
+
+   :statuscode 200: Uniswap balances succesfully queried.
+   :statuscode 409: User is not logged in. Or Uniswap module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+
 Getting yearn finance vaults balances
 ==========================================
 

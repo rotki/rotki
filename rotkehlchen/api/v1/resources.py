@@ -13,6 +13,7 @@ from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
+    AsyncGraphQuerySchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -955,32 +956,20 @@ class YearnVaultsHistoryResource(BaseResource):
             to_timestamp=to_timestamp,
         )
 
+
 class UniswapBalancesResource(BaseResource):
 
-    get_schema = AsyncQueryArgumentSchema()
-
-    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_uniswap_balances(async_query)
-
-
-class UniswapHistoryResource(BaseResource):
-
-    get_schema = AsyncHistoricalQuerySchema()
+    get_schema = AsyncGraphQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
+        self,
+        async_query: bool,
+        is_graph_query: bool,
     ) -> Response:
-        return self.rest_api.get_uniswap_history(
+        return self.rest_api.get_uniswap_balances(
             async_query=async_query,
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
+            is_graph_query=is_graph_query,
         )
 
 
