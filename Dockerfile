@@ -36,6 +36,11 @@ RUN pip install -e . && \
 
 FROM nginx:stable as runtime
 
+RUN apt-get update && \
+    apt-get install -y procps && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=backend-build-stage /tmp/dist /opt/rotki
 COPY --from=frontend-build-stage /app/dist /opt/rotki/frontend
 
@@ -50,3 +55,5 @@ EXPOSE 80
 COPY ./packaging/docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./packaging/docker/docker-entrypoint.sh ./opt/rotki
 CMD ["sh", "-c", "exec /opt/rotki/docker-entrypoint.sh"]
+
+HEALTHCHECK CMD curl --fail http://localhost/api/1/users || exit 1
