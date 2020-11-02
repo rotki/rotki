@@ -533,7 +533,7 @@
     "compound_loan": "Compound Loan ({asset})"
   },
   "borrowing": {
-    "loading": "Please wait while your vaults are getting loaded...",
+    "loading": "Please wait while your liabilities are getting loaded...",
     "header": "Collateralized Loans",
     "total_collateral_locked": "Total collateral locked",
     "total_outstanding_debt": "Total outstanding debt",
