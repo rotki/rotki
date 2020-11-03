@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple
 
+from gevent.lock import Semaphore
+
 from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.db.utils import insert_tag_mappings
@@ -152,6 +154,7 @@ class XpubManager():
     def __init__(self, chain_manager: 'ChainManager'):
         self.chain_manager = chain_manager
         self.db = chain_manager.database
+        self.lock = Semaphore()
 
     def _derive_xpub_addresses(self, xpub_data: XpubData, new_xpub: bool) -> None:
         """Derives new xpub addresses, and adds all those until the addresses that
@@ -223,15 +226,17 @@ class XpubManager():
         - RemoteError if an external service such as blockstream is queried and
           there is a problem with its query.
         """
-        # First try to add the xpub, and if it already exists raise
-        self.db.add_bitcoin_xpub(xpub_data)
-        # Then add tags if not existing
-        self.db.ensure_tags_exist(
-            given_data=[xpub_data],
-            action='adding',
-            data_type='bitcoin xpub',
-        )
-        self._derive_xpub_addresses(xpub_data, new_xpub=True)
+        with self.lock:
+            # First try to add the xpub, and if it already exists raise
+            self.db.add_bitcoin_xpub(xpub_data)
+            # Then add tags if not existing
+            self.db.ensure_tags_exist(
+                given_data=[xpub_data],
+                action='adding',
+                data_type='bitcoin xpub',
+            )
+            self._derive_xpub_addresses(xpub_data, new_xpub=True)
+
         if not self.chain_manager.balances.is_queried(SupportedBlockchain.BITCOIN):
             self.chain_manager.query_balances(SupportedBlockchain.BITCOIN, ignore_cache=True)
         return self.chain_manager.get_balances_update()
@@ -242,9 +247,11 @@ class XpubManager():
         May raise:
         - InputError: If the xpub does not exist in the DB
         """
-        # First try to delete the xpub, and if it does not exist raise InputError
-        self.db.delete_bitcoin_xpub(xpub_data)
-        self.chain_manager.sync_btc_accounts_with_db()
+        with self.lock:
+            # First try to delete the xpub, and if it does not exist raise InputError
+            self.db.delete_bitcoin_xpub(xpub_data)
+            self.chain_manager.sync_btc_accounts_with_db()
+
         return self.chain_manager.get_balances_update()
 
     def check_for_new_xpub_addresses(self) -> None:
@@ -252,16 +259,18 @@ class XpubManager():
         If they did it adds them for tracking.
         """
         xpubs = self.db.get_bitcoin_xpub_data()
-        for xpub_data in xpubs:
-            try:
-                self._derive_xpub_addresses(xpub_data, new_xpub=False)
-            except RemoteError as e:
-                log.warning(
-                    f'Failed to derive new xpub addresses from xpub: {xpub_data.xpub.xpub} '
-                    f'and derivation_path: {xpub_data.derivation_path} due to: {str(e)}',
-                )
-                continue
-            log.debug(
-                f'Attempt to derive new addresses from xpub: {xpub_data.xpub.xpub} '
-                f'and derivation_path: {xpub_data.derivation_path} finished',
-            )
+        with self.lock:
+            for xpub_data in xpubs:
+                try:
+                    self._derive_xpub_addresses(xpub_data, new_xpub=False)
+                except RemoteError as e:
+                    log.warning(
+                        f'Failed to derive new xpub addresses from xpub: {xpub_data.xpub.xpub} '
+                        f'and derivation_path: {xpub_data.derivation_path} due to: {str(e)}',
+                    )
+                    continue
+
+        log.debug(
+            f'Attempt to derive new addresses from xpub: {xpub_data.xpub.xpub} '
+            f'and derivation_path: {xpub_data.derivation_path} finished',
+        )
