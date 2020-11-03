@@ -270,7 +270,7 @@ class XpubManager():
                     )
                     continue
 
-        log.debug(
-            f'Attempt to derive new addresses from xpub: {xpub_data.xpub.xpub} '
-            f'and derivation_path: {xpub_data.derivation_path} finished',
-        )
+                log.debug(
+                    f'Attempt to derive new addresses from xpub: {xpub_data.xpub.xpub} '
+                    f'and derivation_path: {xpub_data.derivation_path} finished',
+                )
