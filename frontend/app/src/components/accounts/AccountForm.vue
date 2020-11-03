@@ -399,12 +399,11 @@ export default class AccountForm extends Vue {
   payload(): BlockchainAccountPayload {
     let xpubPayload: XpubPayload | undefined;
     if (this.isBtc && this.isXpub) {
-      const xpubKey = this.xpub.trim();
-      const xpub = AccountForm.isPrefixed(xpubKey)
-        ? xpubKey
-        : `${this.xpubKeyType}${xpubKey}`;
+      const trimmedKey = this.xpub.trim();
+      const key = AccountForm.isPrefixed(trimmedKey);
+      const xpubKey = key && key.length === 3 ? key[2] : trimmedKey;
       xpubPayload = {
-        xpub: xpub,
+        xpub: `${this.xpubKeyType}${xpubKey}`,
         derivationPath: this.derivationPath ?? undefined
       };
     } else {
