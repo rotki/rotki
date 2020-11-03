@@ -4,6 +4,7 @@ import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
+import { Section, Status } from '@/store/const';
 import store from '@/store/store';
 import '../../i18n';
 
@@ -40,6 +41,10 @@ describe('AccountBalances.vue', () => {
       }
     };
     store.commit('tasks/add', payload);
+    store.commit('setStatus', {
+      section: Section.BLOCKCHAIN_ETH,
+      status: Status.LOADING
+    });
     await wrapper.vm.$nextTick();
 
     expect(
@@ -55,6 +60,10 @@ describe('AccountBalances.vue', () => {
     );
 
     store.commit('tasks/remove', 1);
+    store.commit('setStatus', {
+      section: Section.BLOCKCHAIN_ETH,
+      status: Status.LOADED
+    });
     await wrapper.vm.$nextTick();
 
     expect(
