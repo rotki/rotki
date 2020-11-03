@@ -111,6 +111,7 @@ export type AddAccountsPayload = {
 export interface BlockchainTotal {
   readonly chain: Blockchain;
   readonly usdValue: BigNumber;
+  readonly loading: boolean;
 }
 
 export type ChainSections = {

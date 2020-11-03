@@ -12,6 +12,7 @@ import {
   ManualBalanceByLocation,
   LocationBalance
 } from '@/store/balances/types';
+import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { BTC, ETH, GeneralAccount } from '@/typing/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
@@ -243,7 +244,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }, Zero);
   },
 
-  blockchainTotals: (_, getters): BlockchainTotal[] => {
+  blockchainTotals: (_, getters, _rootState, { status }): BlockchainTotal[] => {
     const sum = (accounts: BlockchainAccountWithBalance[]): BigNumber => {
       return accounts.reduce(
         (sum: BigNumber, { balance }: AccountWithBalance) => {
@@ -258,16 +259,20 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     const btcAccounts: BlockchainAccountWithBalance[] = getters.btcAccounts;
 
     if (ethAccounts.length > 0) {
+      const ethStatus = status(Section.BLOCKCHAIN_ETH);
       totals.push({
         chain: ETH,
-        usdValue: sum(ethAccounts)
+        usdValue: sum(ethAccounts),
+        loading: ethStatus === Status.NONE || ethStatus === Status.LOADING
       });
     }
 
     if (btcAccounts.length > 0) {
+      const btcStatus = status(Section.BLOCKCHAIN_BTC);
       totals.push({
         chain: BTC,
-        usdValue: sum(btcAccounts)
+        usdValue: sum(btcAccounts),
+        loading: btcStatus === Status.NONE || btcStatus === Status.LOADING
       });
     }
 

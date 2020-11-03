@@ -57,6 +57,7 @@
               :key="total.chain"
               :chain="total.chain"
               :name="name(total.chain)"
+              :loading="total.loading"
               :amount="total.usdValue"
             />
           </div>
