@@ -159,6 +159,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$DMG"
+    echo "::set-output name=binary_name::${DMG##*/}"
     echo "::set-output name=binary_checksum::$DMG_CHECKSUM"
     echo "::set-output name=binary_checksum_name::${DMG_CHECKSUM##*/}"
     echo "::set-output name=archive_checksum::$ZIP_CHECKSUM"

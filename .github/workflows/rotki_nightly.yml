@@ -18,7 +18,7 @@ jobs:
       - name: Download Geth
         run: |
           .travis/download_geth.sh ${{ matrix.os }}
-          echo "::add-path::$HOME/.bin"
+          echo "PATH=$HOME/.bin:$PATH" >> $GITHUB_ENV
         env:
           GETH_URL_LINUX: https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz
           GETH_URL_MACOS: https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.13-225171a4.tar.gz
@@ -77,6 +77,7 @@ jobs:
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash) -F backend
+
   test-integration:
     needs: [test-backend]
     env:
@@ -90,99 +91,165 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - name: check if ui tests should run
-        id: check
-        run: |
-          readonly local last_log=$(git log -1 --pretty=format:"%s")
-          readonly local count=$(echo "${last_log}" | grep -c "${FILTER}" )
-          if [[ "${count}" -eq 0 ]]; then
-              echo "skipping job, ${FILTER} not found"
-          else
-              echo "::set-output name=ui-tests::true"
-          fi
       - name: Set up python
-        if: contains(steps.check.outputs.ui-tests, true)
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
       - uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux') && contains(steps.check.outputs.ui-tests, true)
         with:
-          path: ~/.cache/pip
+          path: |
+            ~/.cache/pip
+            ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'macOS') && contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux') && contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'macOS') && contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: ~/Library/Caches/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
       - uses: actions/cache@v2
         if: contains(steps.check.outputs.ui-tests, true)
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            ~/.cache/Cypress
           key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - uses: actions/cache@v2
-        if: contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: ~/.cache/.rotkehlchen-test-dir
-          key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-testdir-
       - name: Setup SQLCipher
-        if: contains(steps.check.outputs.ui-tests, true)
         run: |
-          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
-          then
-            sudo apt-get update
-            sudo apt-get install libxml2-utils
-            ./install_deps.sh
-            sudo ldconfig
-          fi
-          if [ ${{ matrix.os }} == 'macos-latest' ];
-          then
-            brew install sqlcipher
-          fi
+          sudo apt-get update
+          sudo apt-get install libxml2-utils
+          ./install_deps.sh
+          sudo ldconfig
       - name: Setup backend
-        if: contains(steps.check.outputs.ui-tests, true)
         run: |
           pip install -r requirements.txt
           pip install -e .
       - name: Run integration tests
-        if: contains(steps.check.outputs.ui-tests, true)
         working-directory: ./frontend/app
         run: |
-          npm ci
+          if ! npm ci --exit-code; then
+           npm ci
+          fi
           npm run test:integration-ci
       - name: Upload coverage
-        if: contains(steps.check.outputs.ui-tests, true)
         working-directory: ./frontend/app
         run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_integration
       - uses: actions/upload-artifact@v1
-        if: failure() && contains(steps.check.outputs.ui-tests, true)
+        if: failure()
         with:
           name: screenshots-${{ runner.os }}
           path: ./frontend/app/tests/e2e/screenshots
       - uses: actions/upload-artifact@v1
-        if: always() && contains(steps.check.outputs.ui-tests, true)
+        if: always()
         with:
           name: videos-${{ runner.os }}
           path: ./frontend/app/tests/e2e/videos
+
+  build-linux:
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        python-version: [ 3.7 ]
+        node-version: [ 12.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: pip cache persistence
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-packaging-
+      - name: npm cache persistence
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.npm
+            ~/cache/Cypress
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node--packaging-
+      - name: Setup SQLCipher
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxml2-utils
+          ./install_deps.sh
+          sudo ldconfig
+      - name: Package
+        id: packaging
+        run: ./package.sh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: nightly-linux
+          path: |
+            ${{ steps.packaging.outputs.binary }}
+            ${{ steps.packaging.outputs.binary_checksum }}
+
+  build-osx:
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      matrix:
+        os: [ macos-latest ]
+        python-version: [ 3.7 ]
+        node-version: [ 12.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        run: packaging/setup-osx.sh
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: pip cache persistence
+        uses: actions/cache@v2
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-packaging-
+      - name: npm cache persistence
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.npm
+            ~/Library/Caches/Cypress
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node--packaging-
+      - name: Setup SQLCipher
+        run: |
+          cd "$(brew --repo homebrew/core)"
+          git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
+          brew install sqlcipher
+      - name: Package
+        id: packaging
+        run: |
+          pip3 install virtualenv
+          python3 -m virtualenv ~/venv
+          source ~/venv/bin/activate
+          ./package.sh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: nightly-osx
+          path: |
+            ${{ steps.packaging.outputs.binary }}
+            ${{ steps.packaging.outputs.binary_checksum }}
