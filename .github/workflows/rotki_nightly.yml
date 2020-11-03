@@ -77,6 +77,7 @@ jobs:
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash) -F backend
+
   test-integration:
     needs: [test-backend]
     env:
@@ -186,3 +187,115 @@ jobs:
         with:
           name: videos-${{ runner.os }}
           path: ./frontend/app/tests/e2e/videos
+
+  linux:
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        python-version: [ 3.7 ]
+        node-version: [ 12.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: pip cache persistence
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-packaging-
+      - name: npm cache persistence
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.npm
+            ~/cache/Cypress
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node--packaging-
+      - name: Setup SQLCipher
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxml2-utils
+          ./install_deps.sh
+          sudo ldconfig
+      - name: Package
+        id: packaging
+        run: ./package.sh
+      - name: Upload artifcat
+        uses: actions/upload-artifact@v2
+        with:
+          name: nightly
+          path: |
+            ${{ steps.packaging.outputs.binary }}
+            ${{ steps.packaging.outputs.binary_checksum }}
+
+
+  osx:
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      matrix:
+        os: [ macos-latest ]
+        python-version: [ 3.7 ]
+        node-version: [ 12.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        run: packaging/setup-osx.sh
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: pip cache persistence
+        uses: actions/cache@v2
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-packaging-
+      - name: npm cache persistence
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.npm
+            ~/Library/Caches/Cypress
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node--packaging-
+      - name: Setup SQLCipher
+        run: |
+          cd "$(brew --repo homebrew/core)"
+          git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
+          brew install sqlcipher
+      - name: Package
+        id: packaging
+        run: |
+          pip3 install virtualenv
+          python3 -m virtualenv ~/venv
+          source ~/venv/bin/activate
+          ./package.sh
+      - name: Upload artifcat
+        uses: actions/upload-artifact@v2
+        with:
+          name: nightly
+          path: |
+            ${{ steps.packaging.outputs.binary }}
+            ${{ steps.packaging.outputs.binary_checksum }}
