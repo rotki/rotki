@@ -26,7 +26,9 @@ export enum Section {
   DEFI_MAKERDAO_VAULT_DETAILS = 'defi_makerdao_vault_details',
   DEFI_MAKERDAO_VAULTS = 'defi_makerdao_vaults',
   DEFI_YEARN_VAULTS_HISTORY = 'defi_yearn_vaults_history',
-  DEFI_YEARN_VAULTS_BALANCES = 'defi_yearn_vaults_balances'
+  DEFI_YEARN_VAULTS_BALANCES = 'defi_yearn_vaults_balances',
+  BLOCKCHAIN_BTC = 'blockchain_btc',
+  BLOCKCHAIN_ETH = 'blockchain_eth'
 }
 
 export const defiSections: Section[] = [

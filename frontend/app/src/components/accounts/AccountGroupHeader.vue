@@ -32,13 +32,14 @@
       </span>
     </td>
     <td class="text-end">
-      <amount-display :value="sum" />
+      <amount-display :value="sum" :loading="loading" />
     </td>
     <td class="text-end">
       <amount-display
         fiat-currency="USD"
         show-currency="symbol"
         :value="usdSum"
+        :loading="loading"
       />
     </td>
     <td class="text-end">
@@ -74,6 +75,8 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
   items!: XpubAccountWithBalance[];
   @Prop({ required: true, type: Boolean })
   expanded!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  loading!: boolean;
 
   get displayXpub(): string {
     return truncateAddress(

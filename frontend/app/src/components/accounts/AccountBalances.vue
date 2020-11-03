@@ -26,7 +26,6 @@
     </v-row>
     <account-balance-table
       :blockchain="blockchain"
-      :loading="isLoading"
       :balances="balances"
       :visible-tags="visibleTags"
       @delete-click="toDeleteAccount = $event"

@@ -55,50 +55,48 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       usdValue: Zero
     });
 
-    for (const account of standalone) {
-      const balance = btc.standalone?.[account.address] ?? zeroBalance();
+    for (const { address, label, tags } of standalone) {
+      const balance = btc.standalone?.[address] ?? zeroBalance();
       accounts.push({
-        address: account.address,
-        label: account.label ?? '',
-        tags: account.tags ?? [],
+        address,
+        label: label ?? '',
+        tags: tags ?? [],
         chain: BTC,
         balance
       });
     }
 
-    for (const account of xpubs) {
+    for (const { addresses, derivationPath, label, tags, xpub } of xpubs) {
       accounts.push({
         chain: BTC,
-        xpub: account.xpub,
-        derivationPath: account.derivationPath ?? '',
+        xpub,
+        derivationPath: derivationPath ?? '',
         address: '',
-        label: account.label ?? '',
-        tags: account.tags ?? [],
+        label: label ?? '',
+        tags: tags ?? [],
         balance: zeroBalance()
       });
 
-      if (!account.addresses) {
+      if (!addresses) {
         continue;
       }
 
-      for (const address of account.addresses) {
-        const balanceIndex =
-          btc.xpubs?.findIndex(xpub => xpub.addresses[address.address]) ?? -1;
+      for (const { address, label, tags } of addresses) {
+        const { xpubs } = btc;
+        const index = xpubs?.findIndex(xpub => xpub.addresses[address]) ?? -1;
+        const balance =
+          index >= 0 ? xpubs[index].addresses[address] : zeroBalance();
         accounts.push({
           chain: BTC,
-          xpub: account.xpub,
-          derivationPath: account.derivationPath ?? '',
-          address: address.address,
-          label: address.label ?? '',
-          tags: address.tags ?? [],
-          balance:
-            balanceIndex > 0
-              ? btc.xpubs[balanceIndex].addresses[address.address]
-              : zeroBalance()
+          xpub: xpub,
+          derivationPath: derivationPath ?? '',
+          address: address,
+          label: label ?? '',
+          tags: tags ?? [],
+          balance: balance
         });
       }
     }
-
     return accounts;
   },
 

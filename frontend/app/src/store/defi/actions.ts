@@ -38,15 +38,7 @@ import {
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
-import { setStatus } from '@/store/utils';
-
-function isLoading(status: Status): boolean {
-  return (
-    status === Status.LOADING ||
-    status === Status.PARTIALLY_LOADED ||
-    status == Status.REFRESHING
-  );
-}
+import { isLoading, setStatus } from '@/store/utils';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
   async fetchDSRBalances(

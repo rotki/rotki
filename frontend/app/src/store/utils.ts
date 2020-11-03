@@ -36,3 +36,11 @@ export const setStatus: (
   };
   commit('setStatus', payload, { root: true });
 };
+
+export function isLoading(status: Status): boolean {
+  return (
+    status === Status.LOADING ||
+    status === Status.PARTIALLY_LOADED ||
+    status == Status.REFRESHING
+  );
+}

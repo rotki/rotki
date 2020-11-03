@@ -3,7 +3,7 @@
     v-bind="$attrs"
     :headers="headers"
     :items="visibleBalances"
-    :loading="accountOperation || loading"
+    :loading="accountOperation || refreshing"
     :loading-text="$t('account_balances.data_table.loading')"
     single-expand
     item-key="address"
@@ -45,13 +45,14 @@
       </v-row>
     </template>
     <template #item.balance.amount="{ item }">
-      <amount-display :value="item.balance.amount" />
+      <amount-display :value="item.balance.amount" :loading="loading" />
     </template>
     <template #item.balance.usdValue="{ item }">
       <amount-display
         fiat-currency="USD"
         :value="item.balance.usdValue"
         show-currency="symbol"
+        :loading="loading"
       />
     </template>
     <template #item.actions="{ item }">
@@ -59,7 +60,7 @@
         class="account-balance-table__actions"
         :edit-tooltip="$t('account_balances.edit_tooltip')"
         :delete-tooltip="$t('account_balances.delete_tooltip')"
-        :disabled="accountOperation || loading"
+        :disabled="accountOperation || refreshing"
         @delete-click="deleteClick(item.address)"
         @edit-click="editClick(item)"
       />
@@ -69,11 +70,13 @@
         <td>{{ $t('account_balances.total') }}</td>
         <td class="text-end">
           <amount-display
+            :loading="loading"
             :value="visibleBalances.map(val => val.balance.amount) | balanceSum"
           />
         </td>
         <td class="text-end">
           <amount-display
+            :loading="loading"
             fiat-currency="USD"
             show-currency="symbol"
             :value="
@@ -100,6 +103,7 @@
         :group="group ? group : ''"
         :items="getItems(group.split(':')[0], group.split(':')[1])"
         :expanded="isOpen"
+        :loading="loading"
         @expand-clicked="expandXpub(isOpen, toggle, $event)"
         @delete-clicked="deleteXpub($event)"
       />
@@ -108,7 +112,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 
@@ -119,8 +123,10 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { footerProps } from '@/config/datatable.common';
+import StatusMixin from '@/mixins/status-mixin';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
+import { chainSection } from '@/store/balances/const';
 import {
   BlockchainAccount,
   BlockchainAccountWithBalance,
@@ -146,13 +152,11 @@ import { Zero } from '@/utils/bignumbers';
     ...mapState('session', ['tags'])
   }
 })
-export default class AccountBalanceTable extends Vue {
+export default class AccountBalanceTable extends Mixins(StatusMixin) {
   @Prop({ required: true })
   balances!: BlockchainAccountWithBalance[];
   @Prop({ required: true })
   blockchain!: Blockchain;
-  @Prop({ required: true, type: Boolean })
-  loading!: boolean;
   @Prop({ required: true, type: Array })
   visibleTags!: string[];
 
@@ -165,6 +169,7 @@ export default class AccountBalanceTable extends Vue {
   @Emit()
   deleteXpub(_payload: XpubPayload) {}
 
+  section = chainSection[this.blockchain];
   currency!: Currency;
   isTaskRunning!: (type: TaskType) => boolean;
   hasTokens!: (account: string) => boolean;

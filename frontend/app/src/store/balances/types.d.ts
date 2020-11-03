@@ -12,6 +12,7 @@ import {
   HasBalance
 } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
+import { Section } from '@/store/const';
 import {
   Blockchain,
   ExchangeData,
@@ -111,3 +112,7 @@ export interface BlockchainTotal {
   readonly chain: Blockchain;
   readonly usdValue: BigNumber;
 }
+
+export type ChainSections = {
+  readonly [chain in Blockchain]: Section;
+};
