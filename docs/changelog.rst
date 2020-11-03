@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`1668` Refreshing BTC balances now, will not clear any other assets from the state.
+* :bug:`1669` Users will now see a loading indicator when balances are loading and proper non-zero values after loading.
 * :bug:`1678` Selected type will now not be ignored, when adding an xpub that already contains an x/y/zpub prefix.
 * :feature:`1414` Users will now be shown only the available locations when filtering trades.
 
