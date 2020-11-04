@@ -23,10 +23,9 @@ from rotkehlchen.utils.misc import get_chunks
 root_path = Path(__file__).resolve().parent.parent.parent
 
 
-def pairs_from_ethereum(rpcendpoint: str) -> Dict[str, Any]:
+def pairs_from_ethereum(rpcendpoint: str, use_other_nodes: bool) -> Dict[str, Any]:
     """Detect the uniswap v2 pool tokens by using an ethereum node"""
-    # nodes_to_connect = ETHEREUM_NODES_TO_CONNECT_AT_START
-    nodes_to_connect = (NodeName.OWN,)
+    nodes_to_connect = ETHEREUM_NODES_TO_CONNECT_AT_START if use_other_nodes else (NodeName.OWN,)
     msg_aggregator = MessagesAggregator()
     etherscan = Etherscan(database=None, msg_aggregator=msg_aggregator)
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
@@ -160,6 +159,11 @@ if __name__ == "__main__":
         help='The eth rpc endpoint',
     )
     parser.add_argument(
+        '--use-other-nodes',
+        action='store_true',
+        help='If given then other open nodes are also used',
+    )
+    parser.add_argument(
         '--source',
         help='The source to use. If both then result of 1 verifies the other',
         choices=['ethereum', 'graph', 'both'],
@@ -173,7 +177,10 @@ if __name__ == "__main__":
         write_result_to_file(result, 'uniswap_lp_tokens_graph.json')
 
     if args['source'] in ('ethereum', 'both'):
-        result = pairs_from_ethereum(args['eth_rpc_endpoint'])
+        result = pairs_from_ethereum(
+            rpc_endpoint=args['eth_rpc_endpoint'],
+            use_other_nodes=args['use_other_nodes'],
+        )
         results['ethereum'] = result
         write_result_to_file(result, 'uniswap_lp_tokens_ethereum.json')
 
