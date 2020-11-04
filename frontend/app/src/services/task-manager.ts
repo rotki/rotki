@@ -48,7 +48,7 @@ class TaskManager {
         continue;
       }
       const task = taskMap[id];
-      if (task.id == null) {
+      if (task.id === null) {
         notify(
           `Task ${task.type} -> ${task.meta.description} had a null identifier`,
           'Invalid task found',
@@ -92,7 +92,7 @@ class TaskManager {
       return;
     }
 
-    if (result == null) {
+    if (result === null) {
       return;
     }
 

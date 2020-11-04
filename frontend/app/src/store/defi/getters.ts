@@ -433,7 +433,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         events.push(
           ...allEvents.filter(event => {
             let isAsset: boolean;
-            if (event.eventType != DEFI_EVENT_LIQUIDATION) {
+            if (event.eventType !== DEFI_EVENT_LIQUIDATION) {
               isAsset = event.asset === asset;
             } else {
               isAsset = event.principalAsset === asset;

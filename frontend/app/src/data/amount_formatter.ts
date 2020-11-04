@@ -1,9 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 
 export class AmountFormatter {
-  private numberPartsRegex = /(%T.*)(%U.*)(%D)/g;
-  private amountRegex = /%T.*%U.*%D/g;
-
   format(
     amount: BigNumber,
     precision: number,
@@ -13,7 +10,7 @@ export class AmountFormatter {
   ) {
     return amount.toFormat(
       precision,
-      roundingMode == undefined ? BigNumber.ROUND_DOWN : roundingMode,
+      roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode,
       {
         groupSize: 3,
         groupSeparator: thousandSeparator,

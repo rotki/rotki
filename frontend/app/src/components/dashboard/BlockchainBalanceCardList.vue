@@ -18,6 +18,7 @@
             show-currency="symbol"
             fiat-currency="USD"
             :value="amount"
+            :loading="loading"
           />
         </span>
       </v-list-item-title>
@@ -43,6 +44,8 @@ export default class BlockchainBalanceCardList extends Vue {
   amount!: BigNumber;
   @Prop({ required: true, type: String })
   chain!: Blockchain;
+  @Prop({ required: true, type: Boolean })
+  loading!: boolean;
 
   zero = Zero;
 }

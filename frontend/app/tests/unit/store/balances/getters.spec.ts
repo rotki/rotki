@@ -1,11 +1,14 @@
 import sortBy from 'lodash/sortBy';
+import { BtcBalances } from '@/services/balances/types';
+import { BtcAccountData } from '@/services/types-api';
 import { Location } from '@/services/types-common';
 import { SupportedAsset } from '@/services/types-model';
 import { getters } from '@/store/balances/getters';
 import { AssetBalance, BalanceState } from '@/store/balances/types';
 import { SessionState } from '@/store/session/types';
+import store from '@/store/store';
 import { RotkehlchenState } from '@/store/types';
-import { bigNumberify } from '@/utils/bignumbers';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { stub } from '../../../common/utils';
 
 describe('balances:getters', () => {
@@ -160,5 +163,104 @@ describe('balances:getters', () => {
     });
     expect(actual('ETH')).toMatchObject(eth);
     expect(actual('BTC')).toBeUndefined();
+  });
+
+  test('btcAccounts', () => {
+    const accounts: BtcAccountData = {
+      standalone: [
+        {
+          address: '123',
+          tags: null,
+          label: null
+        }
+      ],
+      xpubs: [
+        {
+          xpub: 'xpub123',
+          addresses: [
+            {
+              address: '1234',
+              tags: null,
+              label: null
+            }
+          ],
+          tags: null,
+          label: null,
+          derivationPath: 'm'
+        },
+        {
+          xpub: 'xpub1234',
+          derivationPath: null,
+          label: '123',
+          tags: ['a'],
+          addresses: null
+        }
+      ]
+    };
+    const balances: BtcBalances = {
+      standalone: {
+        '123': { usdValue: bigNumberify(10), amount: bigNumberify(10) }
+      },
+      xpubs: [
+        {
+          xpub: 'xpub123',
+          derivationPath: 'm',
+          addresses: {
+            '1234': { usdValue: bigNumberify(10), amount: bigNumberify(10) }
+          }
+        }
+      ]
+    };
+    store.commit('balances/btcAccounts', accounts);
+    store.commit('balances/updateBtc', balances);
+
+    expect(store.getters['balances/btcAccounts']).toEqual([
+      {
+        address: '123',
+        balance: {
+          amount: bigNumberify(10),
+          usdValue: bigNumberify(10)
+        },
+        chain: 'BTC',
+        label: '',
+        tags: []
+      },
+      {
+        address: '',
+        balance: {
+          amount: Zero,
+          usdValue: Zero
+        },
+        chain: 'BTC',
+        derivationPath: 'm',
+        label: '',
+        tags: [],
+        xpub: 'xpub123'
+      },
+      {
+        address: '1234',
+        balance: {
+          amount: bigNumberify(10),
+          usdValue: bigNumberify(10)
+        },
+        chain: 'BTC',
+        derivationPath: 'm',
+        label: '',
+        tags: [],
+        xpub: 'xpub123'
+      },
+      {
+        address: '',
+        balance: {
+          amount: Zero,
+          usdValue: Zero
+        },
+        chain: 'BTC',
+        derivationPath: '',
+        label: '123',
+        tags: ['a'],
+        xpub: 'xpub1234'
+      }
+    ]);
   });
 });

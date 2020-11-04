@@ -19,6 +19,7 @@ import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { XpubAccountData } from '@/services/types-api';
+import { chainSection } from '@/store/balances/const';
 import {
   AccountPayload,
   AddAccountsPayload,
@@ -31,11 +32,18 @@ import {
   ExchangePayload,
   XpubPayload
 } from '@/store/balances/types';
+import { Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
-import { showError } from '@/store/utils';
-import { Blockchain, BTC, ETH, UsdToFiatExchangeRates } from '@/typing/types';
+import { isLoading, setStatus, showError } from '@/store/utils';
+import {
+  Blockchain,
+  BTC,
+  ETH,
+  SupportedBlockchains,
+  UsdToFiatExchangeRates
+} from '@/typing/types';
 import { assert } from '@/utils/assertions';
 
 function removeTag(tags: string[] | null, tagName: string): string[] | null {
@@ -185,28 +193,42 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
   async fetchBlockchainBalances(
-    { commit, rootGetters, dispatch },
+    { commit, rootGetters: { status }, dispatch },
     payload: BlockchainBalancePayload = {
       ignoreCache: false
     }
   ): Promise<void> {
     const { blockchain, ignoreCache } = payload;
-    try {
-      const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
-      const isTaskRunning = rootGetters['tasks/isTaskRunning'];
-      const taskMetadata = rootGetters['tasks/metadata'];
 
-      const metadata: BlockchainMetadata = taskMetadata(taskType);
-      if (isTaskRunning(taskType) && metadata.blockchain === blockchain) {
+    const chains: Blockchain[] = [];
+    if (!blockchain) {
+      chains.push(...SupportedBlockchains);
+    } else {
+      chains.push(blockchain);
+    }
+
+    const fetch: (chain: Blockchain) => Promise<void> = async (
+      chain: Blockchain
+    ) => {
+      const section = chainSection[chain];
+      const currentStatus = status(section);
+
+      if (isLoading(currentStatus)) {
         return;
       }
+
+      const newStatus =
+        currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
+      setStatus(newStatus, section, status, commit);
+
       const { taskId } = await api.balances.queryBlockchainBalances(
         ignoreCache,
-        blockchain
+        chain
       );
+      const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
       const task = createTask(taskId, taskType, {
-        blockchain,
-        title: `Query ${blockchain || 'Blockchain'} Balances`,
+        chain,
+        title: `Query ${chain} Balances`,
         ignoreResult: false,
         numericKeys: blockchainBalanceKeys
       } as BlockchainMetadata);
@@ -215,12 +237,26 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const { result } = await taskCompletion<
         BlockchainBalances,
         BlockchainMetadata
-      >(taskType);
-      await dispatch('updateBalances', { balances: result });
+      >(taskType, taskId.toString());
+      await dispatch('updateBalances', {
+        chain: chain,
+        balances: result
+      });
+      setStatus(Status.LOADED, section, status, commit);
+    };
+    try {
+      await Promise.all(chains.map(fetch));
     } catch (e) {
+      const message = i18n.tc(
+        'actions.balances.blockchain.error.description',
+        0,
+        {
+          error: e.message
+        }
+      );
       notify(
-        `Error at querying blockchain balances: ${e}`,
-        'Querying blockchain balances',
+        message,
+        i18n.tc('actions.balances.blockchain.error.title'),
         Severity.ERROR,
         true
       );

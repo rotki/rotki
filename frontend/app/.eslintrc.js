@@ -68,6 +68,7 @@ module.exports = {
       }
     ],
     'no-else-return': 'error',
+    eqeqeq: ['error', 'always'],
     'import/order': [
       'error',
       {

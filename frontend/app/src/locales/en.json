@@ -415,6 +415,12 @@
           "title": "Adding {blockchain} accounts",
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}"
         }
+      },
+      "blockchain": {
+        "error": {
+          "description": "Error at querying blockchain balances: {error}",
+          "title": "Querying blockchain balances"
+        }
       }
     },
     "session": {
