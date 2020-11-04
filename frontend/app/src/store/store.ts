@@ -11,6 +11,7 @@ import { notifications } from '@/store/notifications';
 import { reports } from '@/store/reports';
 import { session } from '@/store/session';
 import { settings } from '@/store/settings';
+import { statistics } from '@/store/statistics';
 import { tasks } from '@/store/tasks';
 import {
   Message,
@@ -136,7 +137,8 @@ const store: StoreOptions<RotkehlchenState> = {
     history,
     session,
     reports,
-    settings
+    settings,
+    statistics
   },
   plugins: storePlugins()
 };

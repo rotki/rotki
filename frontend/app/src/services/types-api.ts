@@ -77,7 +77,7 @@ export interface PeriodicClientQueryResult {
   readonly lastDataUploadTs: number;
 }
 
-export interface NetvalueDataResult {
+export interface NetValue {
   readonly times: number[];
   readonly data: number[];
 }

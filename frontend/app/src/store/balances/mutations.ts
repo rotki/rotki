@@ -6,11 +6,7 @@ import {
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
-import {
-  BtcAccountData,
-  GeneralAccountData,
-  NetvalueDataResult
-} from '@/services/types-api';
+import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import { defaultState } from '@/store/balances/state';
 import { BalanceState } from '@/store/balances/types';
@@ -74,9 +70,6 @@ export const mutations: MutationTree<BalanceState> = {
     manualBalances: ManualBalanceWithValue[]
   ) {
     state.manualBalances = manualBalances;
-  },
-  netvalueData(state: BalanceState, netvalueData: NetvalueDataResult) {
-    state.netvalueData = netvalueData;
   },
   reset(state: BalanceState) {
     Object.assign(state, defaultState());

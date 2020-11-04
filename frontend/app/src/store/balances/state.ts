@@ -17,8 +17,7 @@ export const defaultState = (): BalanceState => ({
   },
   supportedAssets: [],
   manualBalances: [],
-  manualBalanceByLocation: {},
-  netvalueData: { times: [], data: [] }
+  manualBalanceByLocation: {}
 });
 
 export const state: BalanceState = defaultState();

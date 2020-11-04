@@ -1,22 +1,24 @@
 <template>
-  <v-card class="overall-balances mt-3 mb-6" :loading="isLoading">
+  <v-card class="overall-balances mt-3 mb-6" :loading="anyLoading">
     <v-row no-gutters class="pa-5">
-      <v-col cols="12" md="4" lg="4" class="d-flex flex-column al">
-        <div class="overall-balances__networth text-center font-weight-medium">
+      <v-col
+        cols="12"
+        md="4"
+        lg="4"
+        class="d-flex flex-column align-center justify-center"
+      >
+        <div
+          class="overall-balances__net-worth text-center font-weight-medium mb-2"
+        >
           <amount-display
             show-currency="symbol"
             :fiat-currency="currency.ticker_symbol"
-            :value="totalNetworth"
+            :value="totalNetWorth"
           />
         </div>
-        <div class="overall-balances__networth-change py-2">
-          <span
-            :class="
-              balanceDelta.isNegative() ? 'rotki-red lighten-1' : 'rotki-green'
-            "
-            class="pa-1 px-2"
-          >
-            {{ balanceDelta.isNegative() ? '▼' : '▲' }}
+        <div class="overall-balances__net-worth-change py-2">
+          <span :class="balanceClass" class="pa-1 px-2">
+            {{ indicator }}
             <amount-display
               show-currency="symbol"
               :fiat-currency="currency.ticker_symbol"
@@ -35,24 +37,26 @@
             "
             class="ma-2"
             small
-            @click="setActiveTimeframe(timeframe.text)"
+            @click="activeTimeframe = timeframe.text"
           >
             {{ timeframe.text }}
           </v-chip>
         </div>
       </v-col>
       <v-col cols="12" md="8" lg="8" class="d-flex">
-        <div class="d-flex justify-center align-center flex-grow-1">
-          <networth-chart
-            v-if="!isLoading"
-            :chart-data="chartData"
-            :timeframe="activeTimeframe"
+        <div
+          class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
+        >
+          <net-worth-chart
+            v-if="!anyLoading"
+            :chart-data="timeframeData"
+            :timeframe="selection"
             :timeframes="timeframes"
           />
-          <div v-else class="overall-balances__networth-chart__loader">
+          <div v-else class="overall-balances__net-worth-chart__loader">
             <v-progress-circular indeterminate class="align-self-center" />
             <div class="pt-5 caption">
-              LOADING
+              {{ $t('overall_balances.loading') }}
             </div>
           </div>
         </div>
@@ -63,155 +67,85 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import moment from 'moment';
-import { Component, Vue, Prop } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { Component, Mixins } from 'vue-property-decorator';
+import { mapActions, mapGetters } from 'vuex';
 
-import NetworthChart from '@/components/dashboard/NetworthChart.vue';
+import {
+  TIMEFRAME_ALL,
+  TIMEFRAME_WEEK,
+  timeframes
+} from '@/components/dashboard/const';
+import NetWorthChart from '@/components/dashboard/NetworthChart.vue';
+import { TimeFramePeriod, Timeframes } from '@/components/dashboard/types';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 
-import { aggregateTotal } from '@/filters';
+import PremiumMixin from '@/mixins/premium-mixin';
+import StatusMixin from '@/mixins/status-mixin';
 import { Currency } from '@/model/currency';
-import { AssetBalance } from '@/store/balances/types';
+import { NetValue } from '@/services/types-api';
+import { Section } from '@/store/const';
 import { bigNumberify } from '@/utils/bignumbers';
 
-const { mapState } = createNamespacedHelpers('session');
-const { mapGetters } = createNamespacedHelpers('session');
-const {
-  mapGetters: mapBalanceGetters,
-  mapState: mapBalanceState
-} = createNamespacedHelpers('balances');
-
-export interface NetvalueData {
-  readonly times: number[];
-  readonly data: string[];
-}
-
-export interface ChartData {
-  readonly times: number[];
-  readonly data: number[];
-}
-
-export interface TimeframeProps {
-  readonly text: string;
-  startingDate: number; // Unix timestamp
-  xAxisTimeUnit: string;
-  xAxisStepSize: number;
-  xAxisLabelDisplayFormat: string;
-  tooltipTimeFormat: string;
-}
-
 @Component({
-  components: { AmountDisplay, NetworthChart },
+  components: { AmountDisplay, NetWorthChart },
   computed: {
-    ...mapState(['premium']),
-    ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapBalanceGetters(['aggregatedBalances', 'exchangeRate']),
-    ...mapBalanceState(['netvalueData'])
+    ...mapGetters('session', ['currency']),
+    ...mapGetters('statistics', ['netValue', 'totalNetWorth'])
+  },
+  methods: {
+    ...mapActions('statistics', ['fetchNetValue'])
   }
 })
-export default class OverallBox extends Vue {
-  @Prop({ required: false, default: false })
-  isLoading!: boolean;
-
-  premium!: boolean;
+export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   currency!: Currency;
-  floatingPrecision!: number;
-  exchangeRate!: (currency: string) => number;
+  netValue!: (startingDate: number) => NetValue;
+  totalNetWorth!: BigNumber;
+  fetchNetValue!: () => Promise<void>;
 
-  aggregatedBalances!: AssetBalance[];
-  netvalueData!: NetvalueData;
+  activeTimeframe: TimeFramePeriod = TIMEFRAME_ALL;
 
-  activeTimeframe: string = 'All'; // TODO: set the default based on user setting?
+  section = Section.BLOCKCHAIN_ETH;
+  secondSection = Section.BLOCKCHAIN_BTC;
 
-  timeframes: { [timeframe: string]: TimeframeProps } = {
-    'All': { // eslint-disable-line
-      text: 'All',
-      startingDate: 0, // unix time
-      xAxisTimeUnit: 'month',
-      xAxisStepSize: 1,
-      xAxisLabelDisplayFormat: 'MMMM YYYY',
-      tooltipTimeFormat: 'MMMM D, YYYY'
-    },
-    '1M': {
-      text: '1M',
-      startingDate: moment().subtract(1, 'month').startOf('day').unix(),
-      xAxisTimeUnit: 'week',
-      xAxisStepSize: 1,
-      xAxisLabelDisplayFormat: 'MMM D',
-      tooltipTimeFormat: 'MMM D'
-    },
-    '1W': {
-      text: '1W',
-      startingDate: moment().subtract(1, 'week').startOf('day').unix(),
-      xAxisTimeUnit: 'day',
-      xAxisStepSize: 1,
-      xAxisLabelDisplayFormat: 'ddd',
-      tooltipTimeFormat: 'ddd'
-    },
-    '1D': {
-      text: '1D',
-      startingDate: moment().subtract(1, 'day').startOf('day').unix(),
-      xAxisTimeUnit: 'hour',
-      xAxisStepSize: 4,
-      xAxisLabelDisplayFormat: 'HH:mm',
-      tooltipTimeFormat: 'HH:mm'
+  get indicator(): string {
+    if (this.anyLoading) {
+      return '';
     }
-  };
-
-  get currentNetWorth(): { time: number; value: number } {
-    return { time: moment().unix(), value: this.totalNetworth.toNumber() };
+    return this.balanceDelta.isNegative() ? '▼' : '▲';
   }
 
-  get chartData(): ChartData {
-    if (this.isLoading) {
-      return { times: [], data: [] };
+  get selection(): TimeFramePeriod {
+    if (!this.premium) {
+      return TIMEFRAME_WEEK;
     }
-
-    let filteredData: ChartData = { times: [], data: [] };
-
-    this.netvalueData.times.forEach((entry, index) => {
-      if (entry > this.timeframes[this.activeTimeframe].startingDate) {
-        filteredData.times.push(entry);
-        filteredData.data.push(
-          bigNumberify(this.netvalueData.data[index])
-            .multipliedBy(this.exchangeRate(this.currency.ticker_symbol))
-            .toNumber()
-        );
-      }
-    });
-
-    return {
-      times: [...filteredData.times, this.currentNetWorth.time],
-      data: [...filteredData.data, this.currentNetWorth.value]
-    };
+    return this.activeTimeframe;
   }
 
-  get totalNetworth(): BigNumber {
-    return aggregateTotal(
-      this.aggregatedBalances,
-      this.currency.ticker_symbol,
-      this.exchangeRate(this.currency.ticker_symbol),
-      this.floatingPrecision
-    );
+  get balanceClass(): string {
+    if (this.anyLoading) {
+      return 'rotki-grey lighten-3';
+    }
+    return this.balanceDelta.isNegative()
+      ? 'rotki-red lighten-1'
+      : 'rotki-green';
+  }
+
+  get timeframes(): Timeframes {
+    return timeframes;
   }
 
   get balanceDelta(): BigNumber {
-    return this.totalNetworth.minus(this.startingBalance);
+    const start = this.timeframeData.data[0];
+    return this.totalNetWorth.minus(bigNumberify(start));
   }
 
-  get startingBalance(): BigNumber {
-    return bigNumberify(this.chartData.data[0]);
-  }
-
-  setActiveTimeframe(timeframe: string) {
-    this.activeTimeframe = timeframe;
+  get timeframeData(): NetValue {
+    const startingDate = timeframes[this.activeTimeframe].startingDate();
+    return this.netValue(startingDate);
   }
 
   mounted() {
-    if (this.premium) {
-      this.$store.dispatch('balances/fetchNetvalueData');
-    }
+    this.fetchNetValue();
   }
 }
 </script>
@@ -223,11 +157,12 @@ export default class OverallBox extends Vue {
     align-items: baseline;
   }
 
-  &__networth {
+  &__net-worth {
     ::v-deep {
       .amount-display {
         &__value {
           font-size: 3.5em;
+          line-height: 4rem;
         }
 
         &__currency {
@@ -237,7 +172,7 @@ export default class OverallBox extends Vue {
     }
   }
 
-  &__networth-change {
+  &__net-worth-change {
     display: flex;
     justify-content: center;
     align-items: baseline;
@@ -259,7 +194,9 @@ export default class OverallBox extends Vue {
     }
   }
 
-  &__networth-chart {
+  &__net-worth-chart {
+    width: 100%;
+
     &__loader {
       display: flex;
       height: 100%;

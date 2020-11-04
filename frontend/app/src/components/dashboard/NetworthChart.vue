@@ -1,57 +1,100 @@
 <template>
-  <div class="networth-chart__chart">
-    <canvas id="networth-chart__chart" />
-    <div id="networth-chart__tooltip">
+  <div class="net-worth-chart__chart">
+    <canvas id="net-worth-chart__chart" />
+    <div id="net-worth-chart__tooltip">
       <div
-        class="networth-chart__tooltip__value font-weight-bold text-center"
+        class="net-worth-chart__tooltip__value font-weight-bold text-center"
       />
-      <div class="networth-chart__tooltip__time rotki-grey--text text-center" />
+      <div
+        class="net-worth-chart__tooltip__time rotki-grey--text text-center"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import BigNumber from 'bignumber.js';
-import { Chart } from 'chart.js';
+import { default as BigNumber } from 'bignumber.js';
+import {
+  Chart,
+  ChartConfiguration,
+  ChartDataSets,
+  ChartElementsOptions,
+  ChartOptions,
+  ChartTooltipModel,
+  ChartTooltipOptions,
+  ChartXAxe,
+  ChartYAxe,
+  LinearScale,
+  TimeDisplayFormat,
+  TimeScale,
+  TimeUnit
+} from 'chart.js';
 
 import moment from 'moment';
-import { Component, Vue, Prop, Watch } from 'vue-property-decorator';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import { mapGetters } from 'vuex';
+import {
+  TIMEFRAME_ALL,
+  TIMEFRAME_DAY,
+  TIMEFRAME_MONTH,
+  TIMEFRAME_PERIOD,
+  TIMEFRAME_WEEK
+} from '@/components/dashboard/const';
+import {
+  Timeframe,
+  TimeFramePeriod,
+  Timeframes
+} from '@/components/dashboard/types';
+import { Currency } from '@/model/currency';
+import { NetValue } from '@/services/types-api';
+import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
-
-export interface ChartData {
-  readonly times: number[];
-  readonly data: number[];
-}
 
 export interface ValueOverTime {
   readonly x: Date;
   readonly y: number;
 }
 
-export interface TimeframeProps {
-  readonly startingDate: number; // Unix timestamp
-  xAxisTimeUnit: string;
-  xAxisStepSize: number;
-  xAxisLabelDisplayFormat: string;
-  tooltipTimeFormat: string;
-}
+@Component({
+  computed: {
+    ...mapGetters('session', ['currency'])
+  }
+})
+export default class NetWorthChart extends Vue {
+  @Prop({
+    required: true,
+    type: String,
+    validator: value => TIMEFRAME_PERIOD.includes(value)
+  })
+  timeframe!: TimeFramePeriod;
+  @Prop({ required: true, type: Object })
+  timeframes!: Timeframes;
+  @Prop({ required: true, type: Object })
+  chartData!: NetValue;
 
-@Component({})
-export default class NetworthChart extends Vue {
-  @Prop({ required: true })
-  timeframe!: string;
-  @Prop({ required: true })
-  timeframes!: { [timeframe: string]: TimeframeProps };
-  @Prop({ required: true })
-  chartData!: ChartData;
+  currency!: Currency;
 
   chart: Chart | null = null;
   times: number[] = [];
   data: number[] = [];
   filteredData: ValueOverTime[] = [];
 
-  get activeTimeframe(): TimeframeProps {
+  @Watch('chartData')
+  onData() {
+    this.clearData();
+    this.updateChart();
+  }
+
+  get activeTimeframe(): Timeframe {
     return this.timeframes[this.timeframe];
+  }
+
+  get xAxisStepSize(): number {
+    return this.activeTimeframe.xAxisStepSize;
+  }
+
+  get xAxisTimeUnit(): TimeUnit {
+    return this.activeTimeframe.xAxisTimeUnit;
   }
 
   clearData() {
@@ -61,10 +104,15 @@ export default class NetworthChart extends Vue {
   }
 
   transformData() {
-    // set the x-axis units and stepsize
-    this.chart!.options!.scales!.xAxes![0].time!.unit! = this.activeTimeframe
-      .xAxisTimeUnit as Chart.TimeUnit;
-    this.chart!.options!.scales!.xAxes![0].time!.stepSize = this.activeTimeframe.xAxisStepSize;
+    const chart = this.chart;
+    assert(chart, 'chart was null');
+    const options = chart.options!;
+    const scales: LinearScale = options.scales!;
+    const chartXAx = scales.xAxes![0];
+    const time = chartXAx.time;
+    assert(time, 'time was null');
+    time.unit = this.xAxisTimeUnit;
+    time.stepSize = this.xAxisStepSize;
 
     // set the data
     for (let i = 0; i < this.times.length; i++) {
@@ -75,19 +123,17 @@ export default class NetworthChart extends Vue {
       });
     }
 
-    this.chart!!.update();
+    chart.update();
   }
 
   canvasContext(elementId: string): CanvasRenderingContext2D {
     const canvas = document.getElementById(elementId);
-    if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
-      throw new Error('Canvas could not be found');
-    }
+    assert(
+      canvas && canvas instanceof HTMLCanvasElement,
+      'Canvas could not be found'
+    );
     const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('Context could not be found');
-    }
-
+    assert(context, 'Context could not be found');
     return context;
   }
 
@@ -98,126 +144,173 @@ export default class NetworthChart extends Vue {
     }
   }
 
-  createChart() {
-    const chartCanvas = this.canvasContext('networth-chart__chart');
-    const areaGradient = chartCanvas.createLinearGradient(0, 0, 0, 160);
-    areaGradient.addColorStop(0, 'rgba(228,83,37,0.647)');
-    areaGradient.addColorStop(1, 'white');
-
-    return new Chart(chartCanvas, {
+  createChart(): Chart {
+    const chartCanvas = this.canvasContext('net-worth-chart__chart');
+    const datasets = this.datasets(chartCanvas);
+    const elements = this.elementOptions();
+    const tooltips: ChartTooltipOptions = this.tooltipOptions();
+    const scales: LinearScale = this.createScale();
+    const chartOptions: ChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      hover: { intersect: false },
+      legend: { display: false },
+      elements: elements,
+      tooltips: tooltips,
+      scales: scales
+    };
+    const options: ChartConfiguration = {
       type: 'line',
       data: {
-        datasets: [
-          {
-            data: this.filteredData,
-            lineTension: 0,
-            backgroundColor: areaGradient,
-            borderColor: 'rgba(228,83,37,0.647)',
-            borderWidth: 2,
-            pointHoverBorderWidth: 2,
-            pointHoverBorderColor: 'white',
-            pointBackgroundColor: 'white',
-            pointHoverBackgroundColor: 'rgba(228,83,37,0.647)'
-          }
-        ]
+        datasets: datasets
       },
+      options: chartOptions
+    };
+    return new Chart(chartCanvas, options);
+  }
 
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        hover: { intersect: false },
-        legend: {
-          display: false
-        },
-        // hide points and only show on hover
-        elements: {
-          point: {
-            radius: 0,
-            hoverRadius: 6,
-            pointStyle: 'circle'
-          }
-        },
-        tooltips: {
-          enabled: false,
-          mode: 'index',
-          intersect: false,
-          custom: tooltipModel => {
-            // Tooltip Element
-            let tooltipEl = document.getElementById('networth-chart__tooltip');
+  private createScale(): LinearScale {
+    const labelFormat: (period: TimeFramePeriod) => string = period => {
+      return this.timeframes[period].xAxisLabelDisplayFormat;
+    };
 
-            // Hide if no tooltip
-            if (tooltipModel.opacity === 0) {
-              tooltipEl!.style.opacity = '0';
-              return;
-            }
+    const displayFormats: TimeDisplayFormat = {
+      month: labelFormat(TIMEFRAME_ALL),
+      week: labelFormat(TIMEFRAME_MONTH),
+      day: labelFormat(TIMEFRAME_WEEK),
+      hour: labelFormat(TIMEFRAME_DAY)
+    };
 
-            // Set caret Position
-            tooltipEl!.classList.remove('above', 'below', 'no-transform');
-            if (tooltipModel.yAlign) {
-              tooltipEl!.classList.add(tooltipModel.yAlign);
-            } else {
-              tooltipEl!.classList.add('no-transform');
-            }
+    const time: TimeScale = {
+      unit: this.xAxisTimeUnit,
+      stepSize: this.xAxisStepSize,
+      displayFormats: displayFormats
+    };
 
-            // Content
-            let tooltipValueHtml = '';
-            const tooltipValue = tooltipEl!.querySelector(
-              '.networth-chart__tooltip__value'
-            );
-            const networthValue = bigNumberify(
-              tooltipModel.dataPoints[0].value!
-            ).toFormat(2, BigNumber.ROUND_DOWN);
-            tooltipValueHtml = `${networthValue}`;
-            tooltipValue!.innerHTML = tooltipValueHtml;
+    const xAxes: ChartXAxe = {
+      type: 'time',
+      gridLines: { display: false },
+      time: time
+    };
 
-            let tooltipTimeHtml = '';
-            const tooltipTime = tooltipEl!.querySelector(
-              '.networth-chart__tooltip__time'
-            );
-            const time = moment(
-              tooltipModel.dataPoints[0].label,
-              'MMM DD, YYYY, h:mm:ss a'
-            ).format(this.activeTimeframe.tooltipTimeFormat);
-            tooltipTimeHtml = `${time}`;
-            tooltipTime!.innerHTML = tooltipTimeHtml;
+    const yAxes: ChartYAxe = {
+      display: false
+    };
 
-            // Element display & positioning. Styling is in css below
-            tooltipEl!.style.opacity = '0.9';
+    return {
+      xAxes: [xAxes],
+      yAxes: [yAxes]
+    };
+  }
 
-            const tooltipXOffset = -130;
-            const tooltipYOffset = -20;
-            tooltipEl!.style.position = 'absolute';
-            tooltipEl!.style.left = tooltipModel.caretX + tooltipXOffset + 'px';
-            tooltipEl!.style.top = tooltipModel.caretY + tooltipYOffset + 'px';
-          }
-        },
-        scales: {
-          xAxes: [
-            {
-              type: 'time',
-              gridLines: {
-                display: false
-              },
-              time: {
-                unit: this.activeTimeframe.xAxisTimeUnit as Chart.TimeUnit,
-                stepSize: this.activeTimeframe.xAxisStepSize,
-                displayFormats: {
-                  month: this.timeframes['All'].xAxisLabelDisplayFormat,
-                  week: this.timeframes['1M'].xAxisLabelDisplayFormat,
-                  day: this.timeframes['1W'].xAxisLabelDisplayFormat,
-                  hour: this.timeframes['1D'].xAxisLabelDisplayFormat
-                }
-              }
-            }
-          ],
-          yAxes: [
-            {
-              display: false
-            }
-          ]
-        }
+  private tooltipOptions(): ChartTooltipOptions {
+    const symbol = () => this.currency.unicode_symbol;
+
+    const setCaretPosition = (
+      classList: DOMTokenList,
+      tooltipModel: Chart.ChartTooltipModel
+    ) => {
+      classList.remove('above', 'below', 'no-transform');
+      if (tooltipModel.yAlign) {
+        classList.add(tooltipModel.yAlign);
+      } else {
+        classList.add('no-transform');
       }
-    });
+    };
+
+    function updateTooltip(
+      element: HTMLElement,
+      netWorth: string,
+      time: string
+    ) {
+      const tooltipValue = element.querySelector(
+        '.net-worth-chart__tooltip__value'
+      );
+      const tooltipTime = element.querySelector(
+        '.net-worth-chart__tooltip__time'
+      );
+
+      assert(tooltipValue, 'tooltip value element was not found');
+      assert(tooltipTime, 'tooltip time element was not found');
+
+      tooltipValue!.innerHTML = `${netWorth} ${symbol()}`;
+      tooltipTime!.innerHTML = `${time}`;
+    }
+
+    function displayTooltip(
+      style: CSSStyleDeclaration,
+      tooltipModel: Chart.ChartTooltipModel
+    ) {
+      const tooltipXOffset = -130;
+      const tooltipYOffset = -20;
+
+      style.opacity = '0.9';
+      style.position = 'absolute';
+      style.left = `${tooltipModel.caretX + tooltipXOffset}px`;
+      style.top = `${tooltipModel.caretY + tooltipYOffset}px`;
+    }
+
+    const custom: (tooltipModel: ChartTooltipModel) => void = tooltipModel => {
+      const element = document.getElementById('net-worth-chart__tooltip');
+      assert(element, 'No tooltip element found');
+
+      if (tooltipModel.opacity === 0) {
+        element.style.opacity = '0';
+        return;
+      }
+
+      setCaretPosition(element.classList, tooltipModel);
+
+      const item = tooltipModel.dataPoints[0];
+      const netWorth = bigNumberify(item.value!).toFormat(
+        2,
+        BigNumber.ROUND_DOWN
+      );
+
+      const time = moment(item.label, 'MMM DD, YYYY, h:mm:ss a').format(
+        this.activeTimeframe.tooltipTimeFormat
+      );
+
+      updateTooltip(element, netWorth, time);
+      displayTooltip(element.style, tooltipModel);
+    };
+
+    return {
+      enabled: false,
+      mode: 'index',
+      intersect: false,
+      custom
+    };
+  }
+
+  private elementOptions = (): ChartElementsOptions => ({
+    point: {
+      radius: 0,
+      hoverRadius: 6,
+      pointStyle: 'circle'
+    }
+  });
+
+  private datasets(chartCanvas: CanvasRenderingContext2D): ChartDataSets[] {
+    const color = String(this.$vuetify.theme.currentTheme['rotki-light-blue']);
+
+    const areaGradient = chartCanvas.createLinearGradient(0, 0, 0, 160);
+    areaGradient.addColorStop(0, color);
+    areaGradient.addColorStop(1, 'white');
+
+    const dataset: ChartDataSets = {
+      data: this.filteredData,
+      lineTension: 0,
+      backgroundColor: areaGradient,
+      borderColor: color,
+      borderWidth: 2,
+      pointHoverBorderWidth: 2,
+      pointHoverBorderColor: 'white',
+      pointBackgroundColor: 'white',
+      pointHoverBackgroundColor: color
+    };
+
+    return [dataset];
   }
 
   @Watch('timeframe')
@@ -232,6 +325,10 @@ export default class NetworthChart extends Vue {
     Chart.defaults.global.defaultFontFamily = 'Roboto';
     this.clearData();
     this.chart = this.createChart();
+    this.updateChart();
+  }
+
+  private updateChart() {
     this.times.push(...this.chartData.times);
     this.data.push(...this.chartData.data);
     this.transformData();
@@ -239,22 +336,26 @@ export default class NetworthChart extends Vue {
 }
 </script>
 <style scoped lang="scss">
-#networth-chart__tooltip {
+#net-worth-chart__tooltip {
   opacity: 0;
   background-color: white;
   padding: 8px 15px;
   font-family: 'Roboto', sans-serif;
   font-size: 14px;
   border-radius: 15px;
-  box-shadow: 0px 0px 8px var(--v-rotki-grey-base);
+  box-shadow: 0 0 8px var(--v-rotki-grey-base);
   pointer-events: none;
 }
 
-.networth-chart {
+.net-worth-chart {
+  &__tooltip {
+    margin-top: -10px;
+  }
+
   &__chart {
     position: relative;
     height: 200px;
-    width: 99%; // when we set to 100% it's glithcy (sometimes extends past the container div), so keep it < 100%
+    width: 100%;
   }
 }
 </style>

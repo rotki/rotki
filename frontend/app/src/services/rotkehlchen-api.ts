@@ -22,7 +22,7 @@ import {
   GeneralAccountData,
   LocationData,
   Messages,
-  NetvalueDataResult,
+  NetValue,
   PendingTask,
   PeriodicClientQueryResult,
   SingleAssetBalance,
@@ -274,9 +274,9 @@ export class RotkehlchenApi {
       });
   }
 
-  queryNetvalueData(): Promise<NetvalueDataResult> {
+  queryNetvalueData(): Promise<NetValue> {
     return this.axios
-      .get<ActionResult<NetvalueDataResult>>('/statistics/netvalue', {
+      .get<ActionResult<NetValue>>('/statistics/netvalue', {
         validateStatus: validStatus
       })
       .then(handleResponse);

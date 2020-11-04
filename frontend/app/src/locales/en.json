@@ -921,5 +921,8 @@
     "download_tooltip": "Pull the saved data from the server and replace your local database",
     "push": "Push",
     "pull": "Pull"
+  },
+  "overall_balances": {
+    "loading": "LOADING"
   }
 }

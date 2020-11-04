@@ -9,8 +9,7 @@ import {
   Balance,
   BtcAccountData,
   GeneralAccountData,
-  HasBalance,
-  NetvalueDataResult
+  HasBalance
 } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import { Section } from '@/store/const';
@@ -46,7 +45,6 @@ export interface BalanceState {
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: ManualBalanceByLocation;
-  netvalueData: NetvalueDataResult;
 }
 
 export interface ExchangePayload {
