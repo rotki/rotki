@@ -41,6 +41,6 @@ export function isLoading(status: Status): boolean {
   return (
     status === Status.LOADING ||
     status === Status.PARTIALLY_LOADED ||
-    status == Status.REFRESHING
+    status === Status.REFRESHING
   );
 }

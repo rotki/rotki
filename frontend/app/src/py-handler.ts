@@ -47,7 +47,7 @@ export default class PyHandler {
   private backendOutput: string = '';
 
   get port(): number {
-    assert(this._port != null);
+    assert(this._port);
     return this._port;
   }
 
@@ -88,7 +88,7 @@ export default class PyHandler {
   listenForMessages() {
     // Listen for ack messages from renderer process
     ipcMain.on('ack', (event, ...args) => {
-      if (args[0] == 1) {
+      if (args[0] === 1) {
         clearInterval(this.rpcFailureNotifier);
       } else {
         this.logToFile(`Warning: unknown ack code ${args[0]}`);

@@ -123,7 +123,7 @@ export default class DateTimePicker extends Vue {
       if (formattedDate !== this.dateModel) {
         this.dateModel = formattedDate;
       }
-      if (time != this.timeModel) {
+      if (time !== this.timeModel) {
         this.timeModel = time;
       }
     }
