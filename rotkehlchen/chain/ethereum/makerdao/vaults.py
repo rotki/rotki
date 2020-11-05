@@ -247,12 +247,7 @@ class MakerDAOVaults(MakerDAOCommon):
         if ilk in self.ilk_to_stability_fee:
             return self.ilk_to_stability_fee[ilk]
 
-        result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_JUG.address,
-            abi=MAKERDAO_JUG.abi,
-            method_name='ilks',
-            arguments=[ilk],
-        )
+        result = MAKERDAO_JUG.call(self.ethereum, 'ilks', arguments=[ilk])
         # result[0] is the duty variable of the ilks in the contract
         stability_fee = FVal(result[0] / RAY) ** (YEAR_IN_SECONDS) - 1
         return stability_fee
@@ -273,31 +268,16 @@ class MakerDAOVaults(MakerDAOCommon):
             )
             return None
 
-        result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_VAT.address,
-            abi=MAKERDAO_VAT.abi,
-            method_name='urns',
-            arguments=[ilk, urn],
-        )
+        result = MAKERDAO_VAT.call(self.ethereum, 'urns', arguments=[ilk, urn])
         # also known as ink in their contract
         collateral_amount = FVal(result[0] / WAD)
         normalized_debt = result[1]  # known as art in their contract
-        result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_VAT.address,
-            abi=MAKERDAO_VAT.abi,
-            method_name='ilks',
-            arguments=[ilk],
-        )
+        result = MAKERDAO_VAT.call(self.ethereum, 'ilks', arguments=[ilk])
         rate = result[1]  # Accumulated Rates
         spot = FVal(result[2])  # Price with Safety Margin
         # How many DAI owner needs to pay back to the vault
         debt_value = FVal(((normalized_debt / WAD) * rate) / RAY)
-        result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_SPOT.address,
-            abi=MAKERDAO_SPOT.abi,
-            method_name='ilks',
-            arguments=[ilk],
-        )
+        result = MAKERDAO_SPOT.call(self.ethereum, 'ilks', arguments=[ilk])
         mat = result[1]
         liquidation_ratio = FVal(mat / RAY)
         price = FVal((spot / RAY) * liquidation_ratio)
@@ -628,9 +608,8 @@ class MakerDAOVaults(MakerDAOCommon):
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
-        result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_GET_CDPS.address,
-            abi=MAKERDAO_GET_CDPS.abi,
+        result = MAKERDAO_GET_CDPS.call(
+            ethereum=self.ethereum,
             method_name='getCdpsAsc',
             arguments=[MAKERDAO_CDP_MANAGER.address, proxy_address],
         )

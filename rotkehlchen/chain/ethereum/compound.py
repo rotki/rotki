@@ -140,9 +140,8 @@ class Compound(EthereumModule):
                 f'Probably will get fixed with time. If not report it to Rotkis support channel ',
             )
 
-        self.comptroller_address = to_checksum_address(self.ethereum.call_contract(
-            contract_address=COMPTROLLER_PROXY.address,
-            abi=COMPTROLLER_PROXY.abi,
+        self.comptroller_address = to_checksum_address(COMPTROLLER_PROXY.call(
+            ethereum=self.ethereum,
             method_name='comptrollerImplementation',
         ))
 

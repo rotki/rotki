@@ -53,12 +53,7 @@ class MakerDAOCommon(EthereumModule):
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
-        result = self.ethereum.call_contract(
-            contract_address=MAKERDAO_PROXY_REGISTRY.address,
-            abi=MAKERDAO_PROXY_REGISTRY.abi,
-            method_name='proxies',
-            arguments=[address],
-        )
+        result = MAKERDAO_PROXY_REGISTRY.call(self.ethereum, 'proxies', arguments=[address])
         if int(result, 16) != 0:
             return to_checksum_address(result)
         return None

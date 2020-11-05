@@ -122,9 +122,8 @@ class Aave(EthereumModule):
 
                 reserve_data = reserve_cache.get(reserve_address, None)
                 if reserve_data is None:
-                    reserve_data = self.ethereum.call_contract(
-                        contract_address=AAVE_LENDING_POOL.address,
-                        abi=AAVE_LENDING_POOL.abi,
+                    reserve_data = AAVE_LENDING_POOL.call(
+                        ethereum=self.ethereum,
                         method_name='getReserveData',
                         arguments=[reserve_address],
                     )
