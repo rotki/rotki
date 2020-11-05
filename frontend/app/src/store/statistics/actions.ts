@@ -6,10 +6,7 @@ import { StatisticsState } from '@/store/statistics/types';
 import { RotkehlchenState } from '@/store/types';
 
 export const actions: ActionTree<StatisticsState, RotkehlchenState> = {
-  async fetchNetValue({ commit, rootState: { session } }) {
-    if (!session?.premium) {
-      return;
-    }
+  async fetchNetValue({ commit }) {
     try {
       const netValue = await api.queryNetvalueData();
       commit('netValue', netValue);

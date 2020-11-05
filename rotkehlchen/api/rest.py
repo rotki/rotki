@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import json
 import logging
@@ -984,9 +985,16 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    @require_premium_user(active_check=False)
     def query_netvalue_data(self) -> Response:
-        data = self.rotkehlchen.data.db.get_netvalue_data()
+        from_ts = Timestamp(0)
+        premium = self.rotkehlchen.premium
+
+        if premium is None or not premium.is_active():
+            today = datetime.datetime.today()
+            start_of_day_today = datetime.datetime(today.year, today.month, today.day)
+            from_ts = Timestamp(int((start_of_day_today - datetime.timedelta(days=7)).timestamp()))
+
+        data = self.rotkehlchen.data.db.get_netvalue_data(from_ts)
         result = process_result({'times': data[0], 'data': data[1]})
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 

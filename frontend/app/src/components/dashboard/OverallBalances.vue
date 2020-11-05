@@ -10,6 +10,10 @@
         <div
           class="overall-balances__net-worth text-center font-weight-medium mb-2"
         >
+          <loading
+            v-if="anyLoading"
+            class="overall-balances__net-worth__loading text-start ms-2"
+          />
           <amount-display
             show-currency="symbol"
             :fiat-currency="currency.ticker_symbol"
@@ -17,25 +21,45 @@
           />
         </div>
         <div class="overall-balances__net-worth-change py-2">
-          <span :class="balanceClass" class="pa-1 px-2">
-            {{ indicator }}
+          <span
+            :class="balanceClass"
+            class="pa-1 px-2 d-flex flex-row overall-balances__net-worth-change__pill"
+          >
+            <span class="me-2">{{ indicator }}</span>
             <amount-display
+              v-if="!anyLoading"
               show-currency="symbol"
               :fiat-currency="currency.ticker_symbol"
               :value="balanceDelta"
             />
+            <percentage-display
+              v-if="!anyLoading"
+              class="ms-2 px-1 text--secondary pe-2"
+              :value="percentage"
+            />
           </span>
         </div>
+
         <div class="overall-balances__timeframe-chips text-center">
+          <v-tooltip v-if="!premium" top>
+            <template #activator="{ on, attrs }">
+              <v-icon
+                class="overall-balances__premium"
+                small
+                v-bind="attrs"
+                v-on="on"
+              >
+                mdi-lock
+              </v-icon>
+            </template>
+            <span v-text="$t('overall_balances.premium_hint')" />
+          </v-tooltip>
           <v-chip
             v-for="(timeframe, i) in timeframes"
             :key="i"
-            :class="
-              timeframe.text === activeTimeframe
-                ? 'overall-balances__timeframe-chips--active'
-                : ''
-            "
+            :class="activeClass(timeframe.text)"
             class="ma-2"
+            :disabled="!premium && !activeClass(timeframe.text)"
             small
             @click="activeTimeframe = timeframe.text"
           >
@@ -67,7 +91,7 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Mixins } from 'vue-property-decorator';
+import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 
 import {
@@ -79,6 +103,7 @@ import NetWorthChart from '@/components/dashboard/NetworthChart.vue';
 import { TimeFramePeriod, Timeframes } from '@/components/dashboard/types';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 
+import Loading from '@/components/helper/Loading.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Currency } from '@/model/currency';
@@ -87,7 +112,7 @@ import { Section } from '@/store/const';
 import { bigNumberify } from '@/utils/bignumbers';
 
 @Component({
-  components: { AmountDisplay, NetWorthChart },
+  components: { Loading, AmountDisplay, NetWorthChart },
   computed: {
     ...mapGetters('session', ['currency']),
     ...mapGetters('statistics', ['netValue', 'totalNetWorth'])
@@ -130,22 +155,40 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
       : 'rotki-green';
   }
 
+  activeClass(timeframePeriod: string): string {
+    return timeframePeriod === this.selection
+      ? 'overall-balances__timeframe-chips--active'
+      : '';
+  }
+
   get timeframes(): Timeframes {
     return timeframes;
   }
 
-  get balanceDelta(): BigNumber {
+  get startingValue(): BigNumber {
     const start = this.timeframeData.data[0];
-    return this.totalNetWorth.minus(bigNumberify(start));
+    return bigNumberify(start);
+  }
+
+  get balanceDelta(): BigNumber {
+    return this.totalNetWorth.minus(this.startingValue);
+  }
+
+  get percentage(): string {
+    return this.balanceDelta
+      .div(this.startingValue)
+      .multipliedBy(100)
+      .toFormat(2);
   }
 
   get timeframeData(): NetValue {
-    const startingDate = timeframes[this.activeTimeframe].startingDate();
+    const startingDate = timeframes[this.selection].startingDate();
     return this.netValue(startingDate);
   }
 
-  mounted() {
-    this.fetchNetValue();
+  @Watch('premium')
+  async onPremiumChange() {
+    await this.fetchNetValue();
   }
 }
 </script>
@@ -170,6 +213,12 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
         }
       }
     }
+
+    &__loading {
+      font-size: 1.5em;
+      line-height: 1em;
+      margin-bottom: -10px;
+    }
   }
 
   &__net-worth-change {
@@ -177,9 +226,15 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
     justify-content: center;
     align-items: baseline;
     margin-bottom: 1em;
+    min-height: 32px;
 
     span {
       border-radius: 0.75em;
+    }
+
+    &__pill {
+      min-height: 32px;
+      min-width: 170px;
     }
   }
 
@@ -205,6 +260,10 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
       justify-content: center;
       text-align: center;
     }
+  }
+
+  &__premium {
+    margin-left: -16px;
   }
 }
 </style>

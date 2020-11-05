@@ -923,6 +923,7 @@
     "pull": "Pull"
   },
   "overall_balances": {
-    "loading": "LOADING"
+    "loading": "LOADING",
+    "premium_hint": "Get the full experience by upgrading to rotki premium"
   }
 }

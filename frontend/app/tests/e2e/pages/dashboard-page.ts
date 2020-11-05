@@ -10,7 +10,7 @@ export class DashboardPage {
   getOverallBalance() {
     let overallBalance: BigNumber = Zero;
     const balance = cy
-      .get('.overall-balances-box .amount-display__value')
+      .get('.overall-balances__net-worth .amount-display__value')
       .then($amount => {
         overallBalance = bigNumberify($amount.text().replace(',', ''));
         return overallBalance;

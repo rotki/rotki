@@ -73,26 +73,22 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('tags', await api.getTags());
       commit('login', { username, newAccount: create });
 
+      const options = {
+        root: true
+      };
       const async = [
         dispatch('fetchIgnoredAssets'),
-        dispatch('balances/fetchSupportedAssets', null, {
-          root: true
-        }),
-        dispatch('session/fetchWatchers', null, {
-          root: true
-        }),
-        dispatch('balances/fetchManualBalances', null, {
-          root: true
-        }),
+        dispatch('balances/fetchSupportedAssets', null, options),
+        dispatch('session/fetchWatchers', null, options),
+        dispatch('balances/fetchManualBalances', null, options),
+        dispatch('statistics/fetchNetValue', null, options),
         dispatch(
           'balances/fetch',
           {
             newUser: create,
             exchanges
           },
-          {
-            root: true
-          }
+          options
         )
       ];
 
@@ -181,6 +177,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('tasks/reset', payload, opts);
     commit('settings/reset', payload, opts);
     commit('history/reset', payload, opts);
+    commit('statistics/reset', payload, opts);
     commit('reset', payload, opts);
   },
 

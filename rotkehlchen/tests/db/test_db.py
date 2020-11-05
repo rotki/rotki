@@ -596,7 +596,7 @@ def test_get_netvalue_data(data_dir, username):
     data.unlock(username, '123', create_new=True)
     add_starting_balances(data)
 
-    times, values = data.db.get_netvalue_data()
+    times, values = data.db.get_netvalue_data(Timestamp(0))
     assert len(times) == 3
     assert times[0] == 1451606400
     assert times[1] == 1461606500
@@ -605,6 +605,19 @@ def test_get_netvalue_data(data_dir, username):
     assert values[0] == '1500'
     assert values[1] == '4500'
     assert values[2] == '10700.5'
+
+
+def test_get_netvalue_data_from_date(data_dir, username):
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    add_starting_balances(data)
+
+    times, values = data.db.get_netvalue_data(Timestamp(1491607800))
+    assert len(times) == 1
+    assert times[0] == 1491607800
+    assert len(values) == 1
+    assert values[0] == '10700.5'
 
 
 def test_add_trades(data_dir, username):
