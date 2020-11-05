@@ -123,6 +123,7 @@ YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 YEARN_SRENCURVE_VAULT = EthereumConstants().contract('YEARN_SRENCURVE_VAULT')
 
 ETH_SCAN = EthereumConstants().contract('ETH_SCAN')
+ETH_MULTICALL = EthereumConstants().contract('ETH_MULTICALL')
 
 
 AAVE_LENDING_POOL = EthereumConstants().contract('AAVE_LENDING_POOL')

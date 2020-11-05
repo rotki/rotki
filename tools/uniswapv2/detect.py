@@ -2,18 +2,18 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from eth_utils.address import to_checksum_address
-from web3 import Web3
-from web3._utils.abi import get_abi_output_types
 
+from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
     EthereumManager,
     NodeName,
 )
+from rotkehlchen.chain.ethereum.utils import multicall_specific
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
@@ -23,7 +23,7 @@ from rotkehlchen.utils.misc import get_chunks
 root_path = Path(__file__).resolve().parent.parent.parent
 
 
-def pairs_from_ethereum(rpcendpoint: str, use_other_nodes: bool) -> Dict[str, Any]:
+def pairs_from_ethereum(rpc_endpoint: str, use_other_nodes: bool) -> Dict[str, Any]:
     """Detect the uniswap v2 pool tokens by using an ethereum node"""
     nodes_to_connect = ETHEREUM_NODES_TO_CONNECT_AT_START if use_other_nodes else (NodeName.OWN,)
     msg_aggregator = MessagesAggregator()
@@ -32,7 +32,7 @@ def pairs_from_ethereum(rpcendpoint: str, use_other_nodes: bool) -> Dict[str, An
     greenlet_manager = GreenletManager(msg_aggregator=msg_aggregator)
     etherscan.api_key = api_key
     ethereum = EthereumManager(
-        ethrpc_endpoint=rpcendpoint,
+        ethrpc_endpoint=rpc_endpoint,
         etherscan=etherscan,
         database=None,
         msg_aggregator=msg_aggregator,
@@ -48,36 +48,18 @@ def pairs_from_ethereum(rpcendpoint: str, use_other_nodes: bool) -> Dict[str, An
     with contracts_file.open('r') as f:
         contracts = json.loads(f.read())
 
-    factory = contracts['UNISWAPV2FACTORY']
-    multicall = contracts['ETH_MULTICALL']
-    web3 = Web3()
-    pairs_num = ethereum.call_contract(
-        contract_address=factory['address'],
-        abi=factory['abi'],
-        method_name='allPairsLength',
+    univ2factory = EthereumContract(
+        address=contracts['UNISWAPV2FACTORY']['address'],
+        abi=contracts['UNISWAPV2FACTORY']['abi'],
+        deployed_block=0,  # whatever
     )
-    contract = web3.eth.contract(address=factory['address'], abi=factory['abi'])
+    pairs_num = univ2factory.call(ethereum, 'allPairsLength')
     chunks = list(get_chunks(list(range(pairs_num)), n=500))
     pairs = []
     for idx, chunk in enumerate(chunks):
         print(f'Querying univ2 pairs chunk {idx + 1} / {len(chunks)}')
-        calls = [(factory['address'], contract.encodeABI('allPairs', args=[i])) for i in chunk]
-        multicall_result = ethereum.call_contract(
-            contract_address=multicall['address'],
-            abi=multicall['abi'],
-            method_name='aggregate',
-            arguments=[calls],
-        )
-        block, output = multicall_result
-        for x in output:
-            fn_abi = contract._find_matching_fn_abi(
-                fn_identifier='allPairs',
-                args=[1],
-            )
-            output_types = get_abi_output_types(fn_abi)
-            output_data = web3.codec.decode_abi(output_types, x)
-
-            pairs.append(to_checksum_address(output_data[0]))
+        result = multicall_specific(ethereum, univ2factory, 'allPairs', chunk)
+        pairs.extend([to_checksum_address(x[0]) for x in result])
 
     return pairs
 
@@ -146,6 +128,16 @@ def write_result_to_file(result: Any, name: str) -> None:
         f.write(json.dumps(result))
 
 
+def read_file_if_exists(name: str) -> Optional[Dict[str, Any]]:
+    filepath = root_path / 'rotkehlchen' / 'data' / name
+    data = None
+    if filepath.exists():
+        with filepath.open(mode='r') as f:
+            data = json.loads(f.read())
+
+    return data
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog='Uniswap LP tokens address extractor',
@@ -168,22 +160,35 @@ if __name__ == "__main__":
         help='The source to use. If both then result of 1 verifies the other',
         choices=['ethereum', 'graph', 'both'],
     )
+    parser.add_argument(
+        '--force-query',
+        help='Even if the results have been saved in a file requery',
+        action='store_true',
+    )
     args = parser.parse_args()
 
     results = {}
-    if args['source'] in ('graph', 'both'):
-        result = pairs_and_token_details_from_graph()
-        results['graph'] = result
-        write_result_to_file(result, 'uniswap_lp_tokens_graph.json')
+    if args.source in ('graph', 'both'):
+        saved_data = read_file_if_exists('uniswap_lp_tokens_graph.json')
+        if saved_data and args.force_query is False:
+            results['graph'] = saved_data
+        else:
+            result = pairs_and_token_details_from_graph()
+            results['graph'] = result
+            write_result_to_file(result, 'uniswap_lp_tokens_graph.json')
 
-    if args['source'] in ('ethereum', 'both'):
-        result = pairs_from_ethereum(
-            rpc_endpoint=args['eth_rpc_endpoint'],
-            use_other_nodes=args['use_other_nodes'],
-        )
-        results['ethereum'] = result
-        write_result_to_file(result, 'uniswap_lp_tokens_ethereum.json')
+    if args.source in ('ethereum', 'both'):
+        saved_data = read_file_if_exists('uniswap_lp_tokens_ethereum.json')
+        if saved_data and args.force_query is False:
+            results['ethereum'] = saved_data
+        else:
+            result = pairs_from_ethereum(
+                rpc_endpoint=args.eth_rpc_endpoint,
+                use_other_nodes=args.use_other_nodes,
+            )
+            results['ethereum'] = result
+            write_result_to_file(result, 'uniswap_lp_tokens_ethereum.json')
 
-    if args['source'] == 'both':
+    if args.source == 'both':
         for entry in results['graph']:
             assert entry['address'] in results['ethereum']
