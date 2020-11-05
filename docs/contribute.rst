@@ -60,7 +60,7 @@ To add new assets to rotki you need to edit `all assets file <https://github.com
 As an example look above. The key should be unique as it's the unique identifier for each asset. Then the possible keys are:
 
 - ``coingecko``: The coingecko identifier for the asset. It's used to pull coingecko logo and prices. If not supported by coingecko it should be an empty string.
-- ``cryptoocompare``: This is an optional entry. If it's missing the cryptocompare identifier is considered the same as as the asset key. If not supported by cryptocompare the empty string should be given.
+- ``cryptocompare``: This is an optional entry. If it's missing the cryptocompare identifier is considered the same as as the asset key. If not supported by cryptocompare the empty string should be given.
 - ``ethereum_address``: If this is an ethereum token give the checksummed ethereum address here
 - ``ethereum_token_decimal``: If this is an ethereum token give the ERC20 decimals here
 - ``name``: Give the name of the asset here
@@ -82,6 +82,18 @@ Then that means you have to check the cryptocompare page and compare directly wi
 
 Hopefully this situation with cryptocompare is temporary and they will remove the need for these special mappings soon.
 
+Code Testing
+***********************
+
+Python
+========
+
+In order to run the python test suite, first make sure the virtual environment is activated, the developer requirements are installed, and then do:
+
+::
+    python pytestgeventwrapper.py -xs rotkehlchen/tests
+
+For running the tests with a more specific usage and invocation, please refer to the `pytest <https://docs.pytest.org/en/stable/usage.html>`__ documentation.
 
 Manual Testing
 ***********************
@@ -178,7 +190,7 @@ Ethereum Tokens
 
 Bitcoin accounts
 ----------------
-  
+
 - Add a bitcoin account and see it works
 - Add an invalid bitcoin account and see it is handled properly
 - Remove a bitcoin account and see it works
