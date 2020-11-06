@@ -5,6 +5,7 @@ Changelog
 * :bug:`1668` Refreshing BTC balances now, will not clear any other assets from the state.
 * :bug:`1669` Users will now see a loading indicator when balances are loading and proper non-zero values after loading.
 * :bug:`1678` Selected type will now not be ignored, when adding an xpub that already contains an x/y/zpub prefix.
+* :bug:`1686` Compound historical interest profit is now shown correctly if theuser still has assets locked in compound.
 * :feature:`1414` Users will now be shown only the available locations when filtering trades.
 
 * :release:`1.8.3 <2020-10-30>`

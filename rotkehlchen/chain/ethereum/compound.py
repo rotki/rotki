@@ -608,7 +608,22 @@ class Compound(EthereumModule):
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():
-                profit_so_far[address][asset] += entry.balance
+                profit_amount = (
+                    profit_so_far[address][asset].amount +
+                    entry.balance.amount +
+                    assets[address][asset].amount
+                )
+                if profit_amount < 0:
+                    log.error(
+                        f'In compound we calculated negative profit. Should not happen. '
+                        f'address: {address} asset: {asset} ',
+                    )
+                else:
+                    usd_price = Inquirer().find_usd_price(Asset(asset))
+                    profit_so_far[address][asset] = Balance(
+                        amount=profit_amount,
+                        usd_value=profit_amount * usd_price,
+                    )
 
             for asset, entry in bentry['borrowing'].items():
                 remaining = entry.balance + loss_assets[address][asset]
