@@ -17,6 +17,7 @@ from typing import (
 )
 
 import gevent
+from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
@@ -208,6 +209,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
+        self.defi_lock = Semaphore()
+
         # Per account balances
         self.balances = BlockchainBalances(db=database)
         # Per asset total balances
@@ -852,19 +855,20 @@ class ChainManager(CacheableObject, LockableQueryObject):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        if ts_now() - self.defi_balances_last_query_ts < DEFI_BALANCES_REQUERY_SECONDS:
+        with self.defi_lock:
+            if ts_now() - self.defi_balances_last_query_ts < DEFI_BALANCES_REQUERY_SECONDS:
+                return self.defi_balances
+
+            # query zerion for defi balances
+            self.defi_balances = {}
+            zerion = self.get_zerion()
+            for account in self.accounts.eth:
+                balances = zerion.all_balances_for_account(account)
+                if len(balances) != 0:
+                    self.defi_balances[account] = balances
+
+            self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances
-
-        # query zerion for defi balances
-        self.defi_balances = {}
-        zerion = self.get_zerion()
-        for account in self.accounts.eth:
-            balances = zerion.all_balances_for_account(account)
-            if len(balances) != 0:
-                self.defi_balances[account] = balances
-
-        self.defi_balances_last_query_ts = ts_now()
-        return self.defi_balances
 
     def query_ethereum_balances(self, force_token_detection: bool) -> None:
         """Queries all the ethereum balances and populates the state
