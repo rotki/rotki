@@ -160,6 +160,8 @@ class XpubManager():
         """Derives new xpub addresses, and adds all those until the addresses that
         have not had any transactions to the tracked bitcoin addresses
 
+        Should be called with the lock acquired
+
         May raise:
         - RemoteError: if blockstream/blockchain.info and others can't be reached
         """
