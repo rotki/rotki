@@ -167,7 +167,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     with etherscan_patch, ethtokens_max_chunks_patch, defi_balances_mock, add_defi_mock:
         greenlets = [
             gevent.spawn_later(0.01 * x, blockchain.query_ethereum_balances, False)
-            for x in range(20)
+            for x in range(5)
         ]
         gevent.joinall(greenlets)
 
