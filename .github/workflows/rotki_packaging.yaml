@@ -27,9 +27,9 @@ jobs:
 
             For more information check the detailed changelog below :point_down:
 
-            # Binaries
+            # Downloads
 
-            Upgrade is highly recommended. Choose your binary from below:
+            Upgrade is highly recommended. Download the binary for your OS from below:
 
             - **Linux**
               - [AppImage](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage)

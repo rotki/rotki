@@ -17,6 +17,7 @@ from typing import (
 )
 
 import gevent
+from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
@@ -208,6 +209,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
+        self.defi_lock = Semaphore()
+
         # Per account balances
         self.balances = BlockchainBalances(db=database)
         # Per asset total balances
@@ -408,6 +411,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         return self.get_balances_update()
 
+    @protect_with_lock(arguments_matter=False)
     def query_btc_balances(self) -> None:
         """Queries blockchain.info/blockstream for the balance of all BTC accounts
 
@@ -827,23 +831,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
             del self.totals[token]
         self._query_ethereum_tokens(action=AccountAction.QUERY, force_detection=force_detection)
 
-        # If we have anything in DSR also count it towards total blockchain balances
-        eth_balances = self.balances.eth
-        if self.makerdao_dsr:
-            additional_total = Balance()
-            current_dsr_report = self.makerdao_dsr.get_current_dsr()
-            for dsr_account, balance_entry in current_dsr_report.balances.items():
-
-                if balance_entry.amount == ZERO:
-                    continue
-
-                eth_balances[dsr_account].asset_balances[A_DAI] += balance_entry
-                eth_balances[dsr_account].increase_total_usd_value(balance_entry.usd_value)
-                additional_total += balance_entry
-
-            if additional_total.amount != ZERO:
-                self.totals[A_DAI] += additional_total
-
     def query_defi_balances(self) -> Dict[ChecksumEthAddress, List[DefiProtocolBalances]]:
         """Queries DeFi balances from Zerion contract and updates the state
 
@@ -852,20 +839,22 @@ class ChainManager(CacheableObject, LockableQueryObject):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        if ts_now() - self.defi_balances_last_query_ts < DEFI_BALANCES_REQUERY_SECONDS:
+        with self.defi_lock:
+            if ts_now() - self.defi_balances_last_query_ts < DEFI_BALANCES_REQUERY_SECONDS:
+                return self.defi_balances
+
+            # query zerion for defi balances
+            self.defi_balances = {}
+            zerion = self.get_zerion()
+            for account in self.accounts.eth:
+                balances = zerion.all_balances_for_account(account)
+                if len(balances) != 0:
+                    self.defi_balances[account] = balances
+
+            self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances
 
-        # query zerion for defi balances
-        self.defi_balances = {}
-        zerion = self.get_zerion()
-        for account in self.accounts.eth:
-            balances = zerion.all_balances_for_account(account)
-            if len(balances) != 0:
-                self.defi_balances[account] = balances
-
-        self.defi_balances_last_query_ts = ts_now()
-        return self.defi_balances
-
+    @protect_with_lock(arguments_matter=False)
     def query_ethereum_balances(self, force_token_detection: bool) -> None:
         """Queries all the ethereum balances and populates the state
 
@@ -890,16 +879,40 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 start_eth_amount=balance,
                 start_eth_usd_value=usd_value,
             )
-
         self.totals[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
 
         self.query_defi_balances()
         self.query_ethereum_tokens(force_token_detection)
+        self._add_protocol_balances()
+
+    def _add_protocol_balances(self) -> None:
+        """Also count token balances that may come from various protocols"""
+        # If we have anything in DSR also count it towards total blockchain balances
+        eth_balances = self.balances.eth
+        dsr_module = self.makerdao_dsr
+        if dsr_module is not None:
+            additional_total = Balance()
+            current_dsr_report = dsr_module.get_current_dsr()
+            for dsr_account, balance_entry in current_dsr_report.balances.items():
+
+                if balance_entry.amount == ZERO:
+                    continue
+
+                eth_balances[dsr_account].asset_balances[A_DAI] += balance_entry
+                eth_balances[dsr_account].increase_total_usd_value(balance_entry.usd_value)
+                additional_total += balance_entry
+
+            if additional_total.amount != ZERO:
+                self.totals[A_DAI] += additional_total
+
+        # Also count the normalized vault balance and add it to the totals
         vaults_module = self.makerdao_vaults
         if vaults_module is not None:
             normalized_balances = vaults_module.get_normalized_balances()
             for asset, normalized_vault_balance in normalized_balances.items():
                 self.totals[asset] += normalized_vault_balance
+
+        # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_token_and_totals()
 
     def _add_account_defi_balances_to_token_and_totals(
