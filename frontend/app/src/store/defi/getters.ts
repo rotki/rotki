@@ -29,6 +29,13 @@ import {
 import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
+  AAVE,
+  COMPOUND,
+  getProtcolIcon,
+  MAKERDAO,
+  YEARN_FINANCE_VAULTS
+} from '@/store/defi/const';
+import {
   AaveLoan,
   BaseDefiBalance,
   Collateral,
@@ -39,6 +46,7 @@ import {
   DefiState,
   LoanSummary,
   MakerDAOVaultModel,
+  OverviewDefiProtocol,
   ProfitLossModel
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
@@ -909,9 +917,8 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
   ) => {
     const protocolSummary = (
       protocol: SupportedDefiProtocols,
-      icon: string,
       section: Section,
-      name?: string,
+      name: OverviewDefiProtocol,
       noLiabilities?: boolean
     ): DefiProtocolSummary | undefined => {
       const currentStatus = status(section);
@@ -927,8 +934,8 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         : loanSummary(filter);
       return {
         protocol: {
-          name: name ?? protocol,
-          icon: icon
+          name: name,
+          icon: getProtcolIcon(name)
         },
         assets: [],
         liabilitiesUrl: noLiabilities
@@ -948,11 +955,11 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
         const entry = protocols[i];
         const protocol = entry.protocol.name;
 
-        if (protocol === 'Aave') {
+        if (protocol === AAVE) {
           const aaveSummary = protocolSummary(
             DEFI_AAVE,
-            entry.protocol.icon,
-            Section.DEFI_AAVE_BALANCES
+            Section.DEFI_AAVE_BALANCES,
+            protocol
           );
 
           if (aaveSummary) {
@@ -961,10 +968,9 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           continue;
         }
 
-        if (protocol === 'Compound') {
+        if (protocol === COMPOUND) {
           const compoundSummary = protocolSummary(
             DEFI_COMPOUND,
-            entry.protocol.icon,
             Section.DEFI_COMPOUND_BALANCES,
             protocol
           );
@@ -975,10 +981,9 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
           continue;
         }
 
-        if (protocol === 'yearn.finance • Vaults') {
+        if (protocol === YEARN_FINANCE_VAULTS) {
           const compoundSummary = protocolSummary(
             DEFI_YEARN_VAULTS,
-            entry.protocol.icon,
             Section.DEFI_YEARN_VAULTS_BALANCES,
             protocol,
             true
@@ -992,7 +997,10 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
         if (!summary[protocol]) {
           summary[protocol] = {
-            protocol: { ...entry.protocol },
+            protocol: {
+              ...entry.protocol,
+              icon: getProtcolIcon(protocol)
+            },
             tokenInfo: {
               tokenName: entry.baseBalance.tokenName,
               tokenSymbol: entry.baseBalance.tokenSymbol
@@ -1032,12 +1040,12 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
     }
 
     if (status === Status.LOADED || status === Status.REFRESHING) {
-      const filter: SupportedDefiProtocols[] = ['makerdao'];
+      const filter: SupportedDefiProtocols[] = [DEFI_MAKERDAO];
       const { totalCollateralUsd, totalDebt } = loanSummary(filter);
-      summary['makerdao'] = {
+      summary[DEFI_MAKERDAO] = {
         protocol: {
-          name: 'MakerDAO',
-          icon: ''
+          name: MAKERDAO,
+          icon: getProtcolIcon(name)
         },
         assets: [],
         liabilitiesUrl: '/defi/liabilities?protocol=makerdao',

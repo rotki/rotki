@@ -25,6 +25,9 @@ import {
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { Balance, HasBalance } from '@/services/types-api';
+import { OVERVIEW_PROTOCOLS } from '@/store/defi/const';
+
+export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
 export interface DefiState {
   dsrHistory: DSRHistory;
@@ -174,7 +177,7 @@ export interface DefiLoan {
 }
 
 interface DefiProtocolInfo {
-  readonly name: string;
+  readonly name: OverviewDefiProtocol;
   readonly icon: string;
 }
 
