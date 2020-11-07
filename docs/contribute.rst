@@ -91,7 +91,10 @@ Python
 In order to run the python test suite, first make sure the virtual environment is activated, the developer requirements are installed, and then do:
 
 ::
+
     python pytestgeventwrapper.py -xs rotkehlchen/tests
+
+We require this wrapper as a drop-in replacement of pytest due to quirks of gevent and monkeypatching.
 
 For running the tests with a more specific usage and invocation, please refer to the `pytest <https://docs.pytest.org/en/stable/usage.html>`__ documentation.
 
