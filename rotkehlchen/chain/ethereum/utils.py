@@ -39,14 +39,14 @@ def multicall(
         ethereum: 'EthereumManager',
         calls: List[Tuple[ChecksumEthAddress, str]],
         call_order: Optional[Sequence['NodeName']] = None,
-):
+) -> Any:
     multicall_result = ETH_MULTICALL.call(
         ethereum=ethereum,
         method_name='aggregate',
         arguments=[calls],
         call_order=call_order,
     )
-    block, output = multicall_result
+    _, output = multicall_result
     return output
 
 
@@ -56,10 +56,10 @@ def multicall_specific(
         method_name: str,
         arguments: List[Any],
         call_order: Optional[Sequence['NodeName']] = None,
-):
+) -> Any:
     calls = [(
         contract.address,
-        contract.encode(method_name=method_name, arguments=[i]),
+        contract.encode(method_name=method_name, arguments=i),
     ) for i in arguments]
     output = multicall(ethereum, calls, call_order)
-    return [contract.decode(x, method_name, [arguments[0]]) for x in output]
+    return [contract.decode(x, method_name, arguments[0]) for x in output]
