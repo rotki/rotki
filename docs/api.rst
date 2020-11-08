@@ -1462,20 +1462,28 @@ Querying onchain balances
                            "ETH": {"amount": "10", "usd_value": "1650.53"},
                            "DAI": {"amount": "15", "usd_value": "15.21"}
                        },
-                       "total_usd_value": "1665.74"
+		       "liabilities": {
+		           "DAI": {"amount": "20", "usd_value": "20.35", "location": "makerdao_vaults"}
+		       },
+                       "total_usd_value": "1645.39"
                   }}
               },
               "totals": {
-                  "BTC": {"amount": "1", "usd_value": "7540.15"},
-                  "ETH": {"amount": "10", "usd_value": "1650.53"},
-                  "DAI": {"amount": "15", "usd_value": "15.21"}
+	          "assets": {
+		      "BTC": {"amount": "1", "usd_value": "7540.15"},
+		      "ETH": {"amount": "10", "usd_value": "1650.53"},
+		      "DAI": {"amount": "15", "usd_value": "15.21"}
+		  },
+		  "liabilities": {
+		      "DAI": {"amount": "20", "usd_value": "20.35", "location": "makerdao_vaults"}
+		  }
               }
           },
           "message": ""
       }
 
-   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has an asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
-   :resjson object total: The blockchain balances in total per asset. The format is the same as defined `here <balances_result_>`_.
+   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has a blockchain asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. ETH accounts may have an optional liabilities key. This would be the same as assets but for liabilities with the extra key ``"location"``. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
+   :resjson object total: The blockchain balances in total per asset. Has 2 keys. One for assets and one for liabilities. The liabilities key may be missing if no liabilities exist.
 
    :statuscode 200: Balances succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
@@ -1497,7 +1505,7 @@ Querying all balances
 
 .. http:get:: /api/(version)/balances/
 
-   Doing a GET on the balances endpoint will query all balances across all locations for the user. That is exchanges, blockchains and all manually tracked balances. And it will return an overview of all queried balances.
+   Doing a GET on the balances endpoint will query all balances/debt across all locations for the user. That is exchanges, blockchains and all manually tracked balances. And it will return an overview of all queried balances. This also includes any debt/liabilities.
 
 
    **Example Request**:
@@ -1526,21 +1534,29 @@ Querying all balances
 
       {
           "result": {
-              "ETH": {
-                  "amount": "1",
-                  "percentage_of_net_value": "9.5%",
-                  "usd_value": "180"
-               },
-               "BTC": {
-                  "amount": "0.5",
-                  "percentage_of_net_value": "90%",
-                  "usd_value": "4000"
-               },
-               "EUR": {
-                  "amount": "2",
-                  "percentage_of_net_value": "0.5%",
-                  "usd_value": "2.8"
-               }
+	      "assets": {
+		  "ETH": {
+		      "amount": "1",
+		      "percentage_of_net_value": "9.5%",
+		      "usd_value": "180"
+		   },
+		   "BTC": {
+		      "amount": "0.5",
+		      "percentage_of_net_value": "90%",
+		      "usd_value": "4000"
+		   },
+		   "EUR": {
+		      "amount": "2",
+		      "percentage_of_net_value": "0.5%",
+		      "usd_value": "2.8"
+		   },
+	       "liabilities": {
+	           "DAI": {
+		       "amount": 100",
+		       "usd_value": "102.5",
+		       "percentage_of_net_value": "1%",
+		   }
+	       },
                "location": {
                    "banks": {
                        "percentage_of_net_value": "0.5%",
@@ -1560,7 +1576,7 @@ Querying all balances
           "message": ""
       }
 
-   :resjson object result: Each key of the result object is an asset. Each asset's value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset represents. And finally ``"usd_value"`` is the total $ value this asset is worth as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above.
+   :resjson object result: The result object has two main subkeys. Assets and liabilities. Both assets and liabilities value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset or owed in total as a liablity. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset or liability represents. And finally ``"usd_value"`` is the total $ value this asset/liability is worth as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above.
    :statuscode 200: Balances succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in.
@@ -4290,10 +4306,12 @@ Adding blockchain accounts
                   }}
               },
               "totals": {
-                  "BTC": {"amount": "1", "usd_value": "7540.15"},
-                  "ETH": {"amount": "10", "usd_value": "1650.53"},
-                  "RDN": {"amount": "1", "usd_value": "1.5"},
-                  "GNO": {"amount": "1", "usd_value": "50"}
+	          "assets": {
+		      "BTC": {"amount": "1", "usd_value": "7540.15"},
+		      "ETH": {"amount": "10", "usd_value": "1650.53"},
+		      "RDN": {"amount": "1", "usd_value": "1.5"},
+		      "GNO": {"amount": "1", "usd_value": "50"}
+		  }
           },
           "message": ""
       }
@@ -4386,10 +4404,15 @@ Adding BTC xpubs
                   }}
               },
               "totals": {
-                  "BTC": {"amount": "1", "usd_value": "7540.15"},
-                  "ETH": {"amount": "10", "usd_value": "1650.53"},
-                  "RDN": {"amount": "1", "usd_value": "1.5"},
-                  "GNO": {"amount": "1", "usd_value": "50"}
+	          "assets": {
+		      "BTC": {"amount": "1", "usd_value": "7540.15"},
+		      "ETH": {"amount": "10", "usd_value": "1650.53"},
+		      "RDN": {"amount": "1", "usd_value": "1.5"},
+		      "GNO": {"amount": "1", "usd_value": "50"}
+		  },
+		  "liabilities": {
+		      "DAI": {"amount": "10", "usd_value": "10.2", "location": "makerdao_vaults"}
+		  }
           },
           "message": ""
       }
@@ -4557,10 +4580,12 @@ Deleting BTC xpubs
                   }}
               },
               "totals": {
-                  "BTC": {"amount": "1", "usd_value": "7540.15"},
-                  "ETH": {"amount": "10", "usd_value": "1650.53"},
-                  "RDN": {"amount": "1", "usd_value": "1.5"},
-                  "GNO": {"amount": "1", "usd_value": "50"}
+	          "assets": {
+		      "BTC": {"amount": "1", "usd_value": "7540.15"},
+		      "ETH": {"amount": "10", "usd_value": "1650.53"},
+		      "RDN": {"amount": "1", "usd_value": "1.5"},
+		      "GNO": {"amount": "1", "usd_value": "50"}
+		  }
           },
           "message": ""
       }
@@ -4695,7 +4720,7 @@ Removing blockchain accounts
                           }}]
               }},
               "totals": {
-                  "BTC": {"amount": "1", "usd_value": "7540.15"},
+                  "assets": {"BTC": {"amount": "1", "usd_value": "7540.15"}}
               }
           },
           "message": ""
