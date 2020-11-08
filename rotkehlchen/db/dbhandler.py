@@ -1287,7 +1287,7 @@ class DBHandler:
         cursor.execute('DROP TABLE IF EXISTS timed_unique_data')
         self.conn.commit()
 
-    def write_balances_data(self, data: BalancesData, timestamp: Timestamp) -> None:
+    def save_balances_data(self, data: BalancesData, timestamp: Timestamp) -> None:
         """ The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance

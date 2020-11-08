@@ -726,7 +726,7 @@ class Rotkehlchen():
         if problem_free and allowed_to_save:
             if not timestamp:
                 timestamp = Timestamp(int(time.time()))
-            self.data.save_balances_data(data=result_dict, timestamp=timestamp)
+            self.data.db.save_balances_data(data=result_dict, timestamp=timestamp)
             log.debug('query_balances data saved')
         else:
             log.debug(
