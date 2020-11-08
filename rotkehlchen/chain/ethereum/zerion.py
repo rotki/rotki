@@ -6,6 +6,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
@@ -17,6 +18,7 @@ from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -254,3 +256,68 @@ class Zerion():
             token_symbol=token_symbol,
             balance=Balance(amount=normalized_balance, usd_value=normalized_balance * usd_price),
         )
+
+
+# -- The below should be moved and integrated to the uniswap module
+
+class UniLPBalance(NamedTuple):
+    pool: DefiBalance
+    token0: DefiBalance
+    token1: DefiBalance
+
+
+def _decode_token(entry: Tuple) -> DefiBalance:
+    # TODO: This would need work to also calculate the usd value of the balance
+    decimals = entry[0][3]
+    return DefiBalance(
+        token_address=entry[0][0],
+        token_name=entry[0][1],
+        token_symbol=entry[0][2],
+        balance=Balance(
+            amount=token_normalized_value_decimals(entry[1], decimals),
+            usd_value=ZERO,
+        ),
+    )
+
+
+def _decode_result(data: Tuple) -> UniLPBalance:
+    pool_token = _decode_token(data[0])
+    token0 = _decode_token(data[1][0])
+    token1 = _decode_token(data[1][1])
+    return UniLPBalance(pool=pool_token, token0=token0, token1=token1)
+
+
+def uniswap_lp_token_balances(
+        address: ChecksumEthAddress,
+        ethereum: 'EthereumManager',
+        zerion: Zerion,
+        lp_addresses: List[ChecksumEthAddress],
+) -> List[UniLPBalance]:
+    """Query uniswap token balances from ethereum
+
+    The number of addresses to query in one call depends a lot on the node used.
+    With an infura node we saw the following:
+    500 addresses per call took on average 43 seconds for 20450 addresses
+    2000 addresses per call took on average 36 seconds for 20450 addresses
+    4000 addresses per call took on average 32.6 seconds for 20450 addresses
+    5000 addresses timed out a few times
+    """
+    zerion_contract = EthereumContract(
+        address=zerion.contract_address,
+        abi=ZERION_ABI,
+        deployed_block=0,
+    )
+    chunks = list(get_chunks(lp_addresses, n=4000))
+    balances = []
+    for idx, chunk in enumerate(chunks):
+        print(f'Querying univ2 token balances for {address} {idx + 1} / {len(chunks)}')
+        result = zerion_contract.call(
+            ethereum=ethereum,
+            method_name='getAdapterBalance',
+            arguments=[address, '0x4EdBac5c8cb92878DD3fd165e43bBb8472f34c3f', chunk],
+        )
+
+        for entry in result[1]:
+            balances.append(_decode_result(entry))
+
+    return balances
