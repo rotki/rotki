@@ -383,9 +383,8 @@ class EthereumManager():
             'Querying ethereum chain for ETH balance',
             eth_addresses=accounts,
         )
-        result = self.call_contract(
-            contract_address=ETH_SCAN.address,
-            abi=ETH_SCAN.abi,
+        result = ETH_SCAN.call(
+            ethereum=self,
             method_name='etherBalances',
             arguments=[accounts],
             call_order=call_order if call_order is not None else self.default_call_order(),

@@ -2,20 +2,15 @@
 
 import json
 import os
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, Optional
 
+from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.typing import ChecksumEthAddress
 
 MAX_BLOCKTIME_CACHE = 250  # 55 mins with 13 secs avg block time
 ZERO_ADDRESS = deserialize_ethereum_address('0x0000000000000000000000000000000000000000')
 AAVE_ETH_RESERVE_ADDRESS = deserialize_ethereum_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 
-
-class EthereumContract(NamedTuple):
-    address: ChecksumEthAddress
-    abi: List[Dict[str, Any]]
-    deployed_block: int
 
 
 class EthereumConstants():
@@ -128,6 +123,7 @@ YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 YEARN_SRENCURVE_VAULT = EthereumConstants().contract('YEARN_SRENCURVE_VAULT')
 
 ETH_SCAN = EthereumConstants().contract('ETH_SCAN')
+ETH_MULTICALL = EthereumConstants().contract('ETH_MULTICALL')
 
 
 AAVE_LENDING_POOL = EthereumConstants().contract('AAVE_LENDING_POOL')

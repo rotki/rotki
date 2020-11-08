@@ -88,6 +88,9 @@ def test_call_contract(ethereum_manager, call_order, ethereum_manager_connect_at
         call_order=call_order,
     )
     assert result == 'yyDAI+yUSDC+yUSDT+yTUSD'
+    # also test that doing contract.call() has the same result
+    result2 = YEARN_YCRV_VAULT.call(ethereum_manager, 'symbol', call_order=call_order)
+    assert result == result2
     result = ethereum_manager.call_contract(
         contract_address=YEARN_YCRV_VAULT.address,
         abi=YEARN_YCRV_VAULT.abi,

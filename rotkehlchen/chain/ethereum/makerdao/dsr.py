@@ -170,31 +170,18 @@ class MakerDAODSR(MakerDAOCommon):
             except RemoteError:
                 current_dai_price = Price(FVal(1))
             for account, proxy in proxy_mappings.items():
-                guy_slice = self.ethereum.call_contract(
-                    contract_address=MAKERDAO_POT.address,
-                    abi=MAKERDAO_POT.abi,
-                    method_name='pie',
-                    arguments=[proxy],
-                )
+                guy_slice = MAKERDAO_POT.call(self.ethereum, 'pie', arguments=[proxy])
                 if guy_slice == 0:
                     # no current DSR balance for this proxy
                     continue
-                chi = self.ethereum.call_contract(
-                    contract_address=MAKERDAO_POT.address,
-                    abi=MAKERDAO_POT.abi,
-                    method_name='chi',
-                )
+                chi = MAKERDAO_POT.call(self.ethereum, 'chi')
                 dai_balance = _dsrdai_to_dai(guy_slice * chi)
                 balances[account] = Balance(
                     amount=dai_balance,
                     usd_value=current_dai_price * dai_balance,
                 )
 
-            current_dsr = self.ethereum.call_contract(
-                contract_address=MAKERDAO_POT.address,
-                abi=MAKERDAO_POT.abi,
-                method_name='dsr',
-            )
+            current_dsr = MAKERDAO_POT.call(self.ethereum, 'dsr')
             # Calculation is from here:
             # https://docs.makerdao.com/smart-contract-modules/rates-module#a-note-on-setting-rates
             current_dsr_percentage = ((FVal(current_dsr / RAY) ** 31622400) % 1) * 100
@@ -410,11 +397,7 @@ class MakerDAODSR(MakerDAOCommon):
                 amount_in_dsr -= m.amount
                 normalized_balance -= m.normalized_balance
 
-        chi = self.ethereum.call_contract(
-            contract_address=MAKERDAO_POT.address,
-            abi=MAKERDAO_POT.abi,
-            method_name='chi',
-        )
+        chi = MAKERDAO_POT.call(self.ethereum, 'chi')
         normalized_balance = normalized_balance * chi
         gain = normalized_balance - amount_in_dsr
         try:

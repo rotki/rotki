@@ -1,9 +1,14 @@
-from typing import Union
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.contracts import EthereumContract
+from rotkehlchen.constants.ethereum import ETH_MULTICALL
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import AssetType, EthTokenInfo
+from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 
 
 def token_normalized_value_decimals(token_amount: int, token_decimals: int) -> FVal:
@@ -28,3 +33,33 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
         decimals = asset.decimals  # type: ignore
 
     return token_normalized_value_decimals(amount, decimals)
+
+
+def multicall(
+        ethereum: 'EthereumManager',
+        calls: List[Tuple[ChecksumEthAddress, str]],
+        call_order: Optional[Sequence['NodeName']] = None,
+) -> Any:
+    multicall_result = ETH_MULTICALL.call(
+        ethereum=ethereum,
+        method_name='aggregate',
+        arguments=[calls],
+        call_order=call_order,
+    )
+    _, output = multicall_result
+    return output
+
+
+def multicall_specific(
+        ethereum: 'EthereumManager',
+        contract: EthereumContract,
+        method_name: str,
+        arguments: List[Any],
+        call_order: Optional[Sequence['NodeName']] = None,
+) -> Any:
+    calls = [(
+        contract.address,
+        contract.encode(method_name=method_name, arguments=i),
+    ) for i in arguments]
+    output = multicall(ethereum, calls, call_order)
+    return [contract.decode(x, method_name, arguments[0]) for x in output]

@@ -63,18 +63,8 @@ def _handle_yearn_curve_vault(
     pool you should follow the same approach with the weights and average or
     just take the current price of BTC. Same for other assets.
     """
-    virtual_price = ethereum.call_contract(
-        contract_address=curve_contract.address,
-        abi=curve_contract.abi,
-        method_name='get_virtual_price',
-        arguments=[],
-    )
-    price_per_full_share = ethereum.call_contract(
-        contract_address=yearn_contract.address,
-        abi=yearn_contract.abi,
-        method_name='getPricePerFullShare',
-        arguments=[],
-    )
+    virtual_price = curve_contract.call(ethereum, 'get_virtual_price')
+    price_per_full_share = yearn_contract.call(ethereum, 'getPricePerFullShare')
     usd_value = FVal(virtual_price * price_per_full_share) / 10 ** div_decimals
     return usd_value * asset_price
 
@@ -101,12 +91,7 @@ def _handle_curvepool_price(
     pool you should follow the same approach with the weights and average or
     just take the current price of BTC. Same for other assets.
     """
-    virtual_price = ethereum.call_contract(
-        contract_address=contract.address,
-        abi=contract.abi,
-        method_name='get_virtual_price',
-        arguments=[],
-    )
+    virtual_price = contract.call(ethereum, 'get_virtual_price')
     usd_value = (asset_price * FVal(virtual_price)) / (10 ** div_decimals)
     return usd_value
 
@@ -120,12 +105,7 @@ def handle_underlying_price_yearn_vault(
     # TODO This needs to change. Either make it constant for all vaults of this type
     # or understand why yUSDC and yUSDT which have 6 decimals don't work correctly
     div_decimals = 18
-    price_per_full_share = ethereum.call_contract(
-        contract_address=contract.address,
-        abi=contract.abi,
-        method_name='getPricePerFullShare',
-        arguments=[],
-    )
+    price_per_full_share = contract.call(ethereum, 'getPricePerFullShare')
     usd_value = FVal(asset_price * price_per_full_share) / 10 ** div_decimals
     return usd_value
 

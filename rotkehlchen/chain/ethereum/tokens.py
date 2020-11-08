@@ -198,9 +198,8 @@ class EthTokens():
             tokens_num=len(tokens),
         )
         balances: Dict[str, Dict[ChecksumEthAddress, FVal]] = defaultdict(dict)
-        result = self.ethereum.call_contract(
-            contract_address=ETH_SCAN.address,
-            abi=ETH_SCAN.abi,
+        result = ETH_SCAN.call(
+            ethereum=self.ethereum,
             method_name='tokensBalances',
             arguments=[accounts, [x.address for x in tokens]],
         )
@@ -236,9 +235,8 @@ class EthTokens():
             tokens_num=len(tokens),
         )
         balances: Dict[str, FVal] = {}
-        result = self.ethereum.call_contract(
-            contract_address=ETH_SCAN.address,
-            abi=ETH_SCAN.abi,
+        result = ETH_SCAN.call(
+            ethereum=self.ethereum,
             method_name='tokensBalance',
             arguments=[account, [x.address for x in tokens]],
             call_order=call_order,
