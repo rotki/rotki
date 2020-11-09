@@ -844,7 +844,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             if additional_total.amount != ZERO:
                 self.totals.assets[A_DAI] += additional_total
 
-        # Also count the normalized vault balance and add it to the totals
+        # Also count the vault balance and add it to the totals
         vaults_module = self.makerdao_vaults
         if vaults_module is not None:
             balances = vaults_module.get_balances()

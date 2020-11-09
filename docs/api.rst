@@ -1463,7 +1463,7 @@ Querying onchain balances
                            "DAI": {"amount": "15", "usd_value": "15.21"}
                        },
 		       "liabilities": {
-		           "DAI": {"amount": "20", "usd_value": "20.35", "location": "makerdao_vaults"}
+		           "DAI": {"amount": "20", "usd_value": "20.35"}
 		       }
                   }}
               },
@@ -1474,14 +1474,14 @@ Querying onchain balances
 		      "DAI": {"amount": "15", "usd_value": "15.21"}
 		  },
 		  "liabilities": {
-		      "DAI": {"amount": "20", "usd_value": "20.35", "location": "makerdao_vaults"}
+		      "DAI": {"amount": "20", "usd_value": "20.35"}
 		  }
               }
           },
           "message": ""
       }
 
-   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has a blockchain asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. ETH accounts may have an optional liabilities key. This would be the same as assets but for liabilities with the extra key ``"location"``. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
+   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has a blockchain asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. ETH accounts may have an optional liabilities key. This would be the same as assets. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
    :resjson object total: The blockchain balances in total per asset. Has 2 keys. One for assets and one for liabilities. The liabilities key may be missing if no liabilities exist.
 
    :statuscode 200: Balances succesfully queried.
@@ -4411,7 +4411,7 @@ Adding BTC xpubs
 		      "GNO": {"amount": "1", "usd_value": "50"}
 		  },
 		  "liabilities": {
-		      "DAI": {"amount": "10", "usd_value": "10.2", "location": "makerdao_vaults"}
+		      "DAI": {"amount": "10", "usd_value": "10.2"}
 		  }
           },
           "message": ""
