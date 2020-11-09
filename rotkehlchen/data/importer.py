@@ -208,7 +208,8 @@ class DataImporter():
         description = csv_row['Transaction Description']
         notes = f'{description}\nSource: crypto.com (CSV import)'
 
-        # No fees info for now (Aug 2020) on crypto.com, so we put 0 fees
+        # No fees info until (Nov 2020) on crypto.com
+        # fees are not displayed in the export data
         fee = Fee(ZERO)
         fee_currency = A_USD  # whatever (used only if there is no fee)
 
@@ -216,7 +217,11 @@ class DataImporter():
             'crypto_purchase',
             'crypto_exchange',
             'referral_gift',
+            'referral_bonus',
             'crypto_earn_interest_paid',
+            'referral_card_cashback',
+            'card_cashback_reverted',
+            'reimbursement',
         ):
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -258,6 +263,29 @@ class DataImporter():
             )
             self.db.add_trades([trade])
 
+        elif row_type == 'crypto_withdrawal' or row_type == 'crypto_deposit':
+            if row_type == 'crypto_withdrawal':
+                category = AssetMovementCategory.WITHDRAWAL
+                amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
+            else:
+                category = AssetMovementCategory.DEPOSIT
+                amount = deserialize_asset_amount(csv_row['Amount'])
+
+            asset = Asset(csv_row['Currency'])
+            asset_movement = AssetMovement(
+                location=Location.CRYPTOCOM,
+                category=category,
+                address=None,
+                transaction_id=None,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=fee,
+                fee_asset=asset,
+                link='',
+            )
+            self.db.add_asset_movements([asset_movement])
+
         elif row_type in (
             'crypto_earn_program_created',
             'lockup_lock',
@@ -267,9 +295,13 @@ class DataImporter():
             'crypto_wallet_swap_credited',
             'lockup_swap_debited',
             'lockup_swap_credited',
+            'lockup_swap_rebate',
             'dynamic_coin_swap_debited',
             'dynamic_coin_swap_credited',
             'dynamic_coin_swap_bonus_exchange_deposit',
+            # we don't handle cryto.com exchange yet
+            'crypto_to_exchange_transfer',
+            'exchange_to_crypto_transfer',
         ):
             # those types are ignored because it doesn't affect the wallet balance
             # or are not handled here
