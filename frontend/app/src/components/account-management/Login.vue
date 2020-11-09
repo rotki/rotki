@@ -41,9 +41,9 @@
             type="info"
             icon="fa-cloud-download"
           >
-            <h3 class="login__sync-error__header">
+            <div class="login__sync-error__header text-h3">
               {{ $t('login.sync_error.title') }}
-            </h3>
+            </div>
             <div class="login__sync-error__body mt-2">
               <div>
                 <div>{{ syncConflict.message }}</div>

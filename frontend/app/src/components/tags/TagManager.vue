@@ -23,7 +23,7 @@
 
       <v-row no-gutters justify="space-between" align="end">
         <v-col cols="8">
-          <h3>My Tags</h3>
+          <div class="text-h5">My Tags</div>
         </v-col>
         <v-col cols="4">
           <v-text-field
@@ -142,7 +142,7 @@ export default class TagManager extends Vue {
 </script>
 
 <style scoped lang="scss">
-@import '@/scss/scroll';
+@import '~@/scss/scroll';
 
 ::v-deep {
   .v-dialog {

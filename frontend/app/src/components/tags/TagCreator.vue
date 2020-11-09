@@ -47,7 +47,7 @@
       <v-col cols="6">
         <v-row>
           <v-col cols="12">
-            <h3 class="text-center">Foreground</h3>
+            <div class="text-h6 text-center">Foreground</div>
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -68,7 +68,7 @@
       <v-col cols="6">
         <v-row>
           <v-col cols="12">
-            <h3 class="text-center">Background</h3>
+            <div class="text-h6 text-center">Background</div>
           </v-col>
         </v-row>
         <v-row no-gutters>

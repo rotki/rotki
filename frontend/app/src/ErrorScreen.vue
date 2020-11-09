@@ -4,7 +4,7 @@
       <v-icon size="120" color="error">fa-exclamation-circle</v-icon>
     </div>
     <div class="error-screen__title">
-      <h1>Rotki failed to start</h1>
+      <div class="text-h1">Rotki failed to start</div>
     </div>
 
     <v-btn depressed color="primary" @click="terminate()">
@@ -80,7 +80,7 @@ export default class ErrorScreen extends Vue {
 
   &__title {
     margin-top: 25px;
-    margin-bottom: 5px;
+    margin-bottom: 20px;
   }
 
   &__copy-area {

@@ -1,8 +1,8 @@
 <template>
   <v-container>
-    <h2 class="mt-1 mb-2">
+    <div class="mt-2 mb-4 text-h4">
       {{ $t('transaction_details.title') }}
-    </h2>
+    </div>
     <v-row>
       <v-col cols="2" class="font-weight-medium">
         {{ $t('transaction_details.gas') }}
