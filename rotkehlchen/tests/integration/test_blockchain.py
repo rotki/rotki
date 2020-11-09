@@ -172,4 +172,4 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         gevent.joinall(greenlets)
 
     assert blockchain.totals['DAI'].amount == 2
-    assert blockchain.balances.eth[addr1].asset_balances['DAI'].amount == 2
+    assert blockchain.balances.eth[addr1].assets['DAI'].amount == 2

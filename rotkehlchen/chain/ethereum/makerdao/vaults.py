@@ -1,12 +1,12 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional
 
 from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.makerdao.common import (
     MAKERDAO_REQUERY_PERIOD,
@@ -197,6 +197,12 @@ class MakerDAOVault(NamedTuple):
         """Returns the collateral type string encoded into bytes32, known as ilk in makerdao"""
         return self.collateral_type.encode('utf-8').ljust(32, b'\x00')
 
+    def get_balance(self) -> BalanceSheet:
+        return BalanceSheet(
+            assets=defaultdict(Balance, {self.collateral_asset: self.collateral}),
+            liabilities=defaultdict(Balance, {A_DAI: self.debt}),
+        )
+
 
 class MakerDAOVaultDetails(NamedTuple):
     identifier: int
@@ -208,17 +214,6 @@ class MakerDAOVaultDetails(NamedTuple):
     # The total amount/usd_value of collateral that got liquidated
     total_liquidated: Balance
     events: List[VaultEvent]
-
-
-def get_vault_normalized_balance(vault: MakerDAOVault) -> Balance:
-    """Get the balance in the vault's collateral asset after deducting the generated debt"""
-    collateral_usd_price = Inquirer().find_usd_price(vault.collateral_asset)
-    normalized_usd_value = vault.collateral.usd_value - vault.debt.usd_value
-
-    return Balance(
-        amount=normalized_usd_value / collateral_usd_price,
-        usd_value=normalized_usd_value,
-    )
 
 
 class MakerDAOVaults(MakerDAOCommon):
@@ -705,18 +700,13 @@ class MakerDAOVaults(MakerDAOCommon):
         self.last_vault_details_query_ts = ts_now()
         return self.vault_details
 
-    def get_normalized_balances(self) -> Dict[Asset, Balance]:
-        """Return a mapping of asset to balance indicating all normalized balances in vaults
-
-        Normalized balance is defined as the balance of the collateral asset minus
-        that of the generated debt.
+    def get_balances(self) -> Dict[ChecksumEthAddress, BalanceSheet]:
+        """Return a mapping of all assets locked as collateral in the vaults and
+        all DAI owed as debt
         """
-        vaults = self.get_vaults()
-        balances: Dict[Asset, Balance] = defaultdict(Balance)
-        for vault in vaults:
-            normalized_balance = get_vault_normalized_balance(vault)
-            balances[vault.collateral_asset] += normalized_balance
-
+        balances: DefaultDict[ChecksumEthAddress, BalanceSheet] = defaultdict(BalanceSheet)
+        for vault in self.get_vaults():
+            balances[vault.owner] += vault.get_balance()
         return balances
 
     # -- Methods following the EthereumModule interface -- #

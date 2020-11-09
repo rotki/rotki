@@ -7,12 +7,12 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    DefaultDict,
     Dict,
     Iterator,
     List,
     Optional,
     Tuple,
+    TypeVar,
     Union,
 )
 
@@ -21,8 +21,8 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
-from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.accounting.structures import Balance, BalanceSheet
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
@@ -78,53 +78,24 @@ DEFI_PROTOCOLS_TO_SKIP = (
 )
 
 
+T = TypeVar('T')
+AddOrSub = Callable[[T, T], T]
+
+
 class AccountAction(Enum):
     QUERY = 1
     APPEND = 2
     REMOVE = 3
 
 
-Totals = Dict[Asset, Balance]
-
-
-@dataclass(init=False, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class EthereumAccountBalance:
-    asset_balances: DefaultDict[Asset, Balance]
-    total_usd_value: FVal
-
-    def __init__(self, start_eth_amount: FVal, start_eth_usd_value: FVal):
-        self.asset_balances = defaultdict(Balance)
-        self.asset_balances[A_ETH] = Balance(
-            amount=start_eth_amount,
-            usd_value=start_eth_usd_value,
-        )
-        self.total_usd_value = start_eth_usd_value
-
-    def increase_total_usd_value(self, amount: FVal) -> None:
-        self.total_usd_value += amount
-
-    def decrease_total_usd_value(self, amount: FVal) -> None:
-        self.total_usd_value -= amount
-
-
-EthBalances = Dict[ChecksumEthAddress, EthereumAccountBalance]
-
-
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BlockchainBalances:
     db: DBHandler  # Need this to serialize BTC accounts with xpub mappings
-    eth: EthBalances = field(default_factory=dict)
+    eth: Dict[ChecksumEthAddress, BalanceSheet] = field(default_factory=dict)
     btc: Dict[BTCAddress, Balance] = field(default_factory=dict)
 
     def serialize(self) -> Dict[str, Dict]:
-        eth_balances: Dict[ChecksumEthAddress, Dict] = {}
-        for account, ethereum_balance in self.eth.items():
-            eth_balances[account] = {}
-            eth_balances[account]['assets'] = {}
-            for asset, balance_entry in ethereum_balance.asset_balances.items():
-                eth_balances[account]['assets'][asset.identifier] = balance_entry.serialize()
-            eth_balances[account]['total_usd_value'] = str(ethereum_balance.total_usd_value)
-
+        eth_balances = {k: v.serialize() for k, v in self.eth.items()}
         btc_balances: Dict[str, Any] = {}
         xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.btc.keys()))
         for btc_account, balances in self.btc.items():
@@ -178,15 +149,12 @@ class BlockchainBalances:
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class BlockchainBalancesUpdate:
     per_account: BlockchainBalances
-    totals: Totals
+    totals: BalanceSheet
 
     def serialize(self) -> Dict[str, Dict]:
         return {
             'per_account': self.per_account.serialize(),
-            'totals': {
-                asset: balance.serialize()
-                for asset, balance in self.totals.items() if balance != {}
-            },
+            'totals': self.totals.serialize(),
         }
 
 
@@ -217,7 +185,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Per account balances
         self.balances = BlockchainBalances(db=database)
         # Per asset total balances
-        self.totals: Totals = defaultdict(Balance)
+        self.totals: BalanceSheet
         # TODO: Perhaps turn this mapping into a typed dict?
         self.eth_modules: Dict[str, Union[EthereumModule, Literal['loading']]] = {}
         if eth_modules:
@@ -423,7 +391,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 amount=balance,
                 usd_value=balance * btc_usd_price,
             )
-        self.totals[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
+        self.totals.assets[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
 
     def sync_btc_accounts_with_db(self) -> None:
         """Call this function after having deleted BTC accounts from the DB to
@@ -452,7 +420,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self,
             account: BTCAddress,
             append_or_remove: str,
-            add_or_sub: Callable[[FVal, FVal], FVal],
+            add_or_sub: AddOrSub,
             already_queried_balance: Optional[FVal] = None,
     ) -> None:
         """Either appends or removes a BTC acccount.
@@ -490,11 +458,12 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         if len(self.balances.btc) == 0:
             # If the last account was removed balance should be 0
-            self.totals[A_BTC].amount = ZERO
-            self.totals[A_BTC].usd_value = ZERO
+            self.totals.assets[A_BTC] = Balance()
         else:
-            self.totals[A_BTC].amount = add_or_sub(self.totals[A_BTC].amount, balance)
-            self.totals[A_BTC].usd_value = add_or_sub(self.totals[A_BTC].usd_value, usd_balance)
+            self.totals.assets[A_BTC] = add_or_sub(
+                self.totals.assets[A_BTC],
+                Balance(balance, usd_balance),
+            )
 
         # At the very end add/remove it from the accounts
         getattr(self.accounts.btc, append_or_remove)(account)
@@ -528,9 +497,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         if append_or_remove == 'append':
             self.accounts.eth.append(account)
-            self.balances.eth[account] = EthereumAccountBalance(
-                start_eth_amount=amount,
-                start_eth_usd_value=usd_value,
+            self.balances.eth[account] = BalanceSheet(
+                assets=defaultdict(Balance, {A_ETH: Balance(amount, usd_value)}),
             )
             # Check if the new account has any staked eth2 deposits
             self.account_for_staked_eth2_balance(account)
@@ -550,10 +518,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         if len(self.balances.eth) == 0:
             # If the last account was removed balance should be 0
-            self.totals[A_ETH].amount = ZERO
-            self.totals[A_ETH].usd_value = ZERO
+            self.totals.assets[A_ETH] = Balance()
         elif append_or_remove == 'append':
-            self.totals[A_ETH] += Balance(amount, usd_value)
+            self.totals.assets[A_ETH] += Balance(amount, usd_value)
             self._query_ethereum_tokens(
                 action=AccountAction.APPEND,
                 given_accounts=[account],
@@ -652,7 +619,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
             append_or_remove: str,
-            add_or_sub: Callable[[FVal, FVal], FVal],
+            add_or_sub: AddOrSub,
             already_queried_balances: Optional[List[FVal]] = None,
     ) -> BlockchainBalancesUpdate:
         """Add or remove a list of blockchain account
@@ -771,21 +738,20 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
                 token_totals[token] += token_balance
                 usd_value = token_balance * token_usd_price[token]
-                eth_balances[account].asset_balances[token] = Balance(
+                eth_balances[account].assets[token] = Balance(
                     amount=token_balance,
                     usd_value=usd_value,
                 )
-                eth_balances[account].increase_total_usd_value(usd_value)
 
         # Update the totals
         for token, token_total_balance in token_totals.items():
             if action == AccountAction.QUERY:
-                self.totals[token] = Balance(
+                self.totals.assets[token] = Balance(
                     amount=token_total_balance,
                     usd_value=token_total_balance * token_usd_price[token],
                 )
             else:  # addition
-                self.totals[token] += Balance(
+                self.totals.assets[token] += Balance(
                     amount=token_total_balance,
                     usd_value=token_total_balance * token_usd_price[token],
                 )
@@ -799,10 +765,12 @@ class ChainManager(CacheableObject, LockableQueryObject):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        # Clear out all previous token balances. If token is "tracked" via the owned
-        # tokens just zero out its balance
-        for token in [x for x, _ in self.totals.items() if isinstance(x, EthereumToken)]:
-            del self.totals[token]
+        # Clear out all previous token balances
+        for token in [x for x, _ in self.totals.assets.items() if isinstance(x, EthereumToken)]:
+            del self.totals.assets[token]
+        for token in [x for x, _ in self.totals.liabilities.items() if isinstance(x, EthereumToken)]:  # noqa: E501
+            del self.totals.liabilities[token]
+
         self._query_ethereum_tokens(action=AccountAction.QUERY, force_detection=force_detection)
 
     def query_defi_balances(self) -> Dict[ChecksumEthAddress, List[DefiProtocolBalances]]:
@@ -848,11 +816,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
         for account, balance in balances.items():
             eth_total += balance
             usd_value = balance * eth_usd_price
-            self.balances.eth[account] = EthereumAccountBalance(
-                start_eth_amount=balance,
-                start_eth_usd_value=usd_value,
+            self.balances.eth[account] = BalanceSheet(
+                assets=defaultdict(Balance, {A_ETH: Balance(balance, usd_value)}),
             )
-        self.totals[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
+        self.totals.assets[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
 
         self.query_defi_balances()
         self.query_ethereum_tokens(force_token_detection)
@@ -871,19 +838,25 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 if balance_entry.amount == ZERO:
                     continue
 
-                eth_balances[dsr_account].asset_balances[A_DAI] += balance_entry
-                eth_balances[dsr_account].increase_total_usd_value(balance_entry.usd_value)
+                eth_balances[dsr_account].assets[A_DAI] += balance_entry
                 additional_total += balance_entry
 
             if additional_total.amount != ZERO:
-                self.totals[A_DAI] += additional_total
+                self.totals.assets[A_DAI] += additional_total
 
         # Also count the normalized vault balance and add it to the totals
         vaults_module = self.makerdao_vaults
         if vaults_module is not None:
-            normalized_balances = vaults_module.get_normalized_balances()
-            for asset, normalized_vault_balance in normalized_balances.items():
-                self.totals[asset] += normalized_vault_balance
+            balances = vaults_module.get_balances()
+            for address, entry in balances.items():
+                if address not in eth_balances:
+                    self.msg_aggregator.add_error(
+                        f'The owner of a vault {address} was not in the tracked addresses.'
+                        f' This should not happen and is probably a bug. Please report it.',
+                    )
+                else:
+                    eth_balances[address] += entry
+                    self.totals += entry
 
         # Count ETH staked in Eth2 beacon chain
         self.get_staked_eth2_balances()
@@ -933,8 +906,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 continue
 
             eth_balances = self.balances.eth
-            eth_balances[account].asset_balances[token] += entry.base_balance.balance
-            self.totals[token] += entry.base_balance.balance
+            eth_balances[account].assets[token] += entry.base_balance.balance
+            self.totals.assets[token] += entry.base_balance.balance
 
     def add_defi_balances_to_token_and_totals(self) -> None:
         """Take into account defi balances and add them to per account and totals"""

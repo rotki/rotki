@@ -1464,8 +1464,7 @@ Querying onchain balances
                        },
 		       "liabilities": {
 		           "DAI": {"amount": "20", "usd_value": "20.35", "location": "makerdao_vaults"}
-		       },
-                       "total_usd_value": "1645.39"
+		       }
                   }}
               },
               "totals": {
@@ -4302,7 +4301,7 @@ Adding blockchain accounts
                            "GNO": {"amount": "1", "usd_value": "50"},
                            "RDN": {"amount": "1", "usd_value": "1.5"}
                        },
-                       "total_usd_value": "1807.03",
+		  "liabilities": {}
                   }}
               },
               "totals": {
@@ -4311,7 +4310,8 @@ Adding blockchain accounts
 		      "ETH": {"amount": "10", "usd_value": "1650.53"},
 		      "RDN": {"amount": "1", "usd_value": "1.5"},
 		      "GNO": {"amount": "1", "usd_value": "50"}
-		  }
+		  },
+		  "liabilities": {}
           },
           "message": ""
       }
@@ -4400,7 +4400,7 @@ Adding BTC xpubs
                            "GNO": {"amount": "1", "usd_value": "50"},
                            "RDN": {"amount": "1", "usd_value": "1.5"}
                        },
-                       "total_usd_value": "1807.03",
+          	      "liabilities": {}
                   }}
               },
               "totals": {
@@ -4576,7 +4576,7 @@ Deleting BTC xpubs
                            "GNO": {"amount": "1", "usd_value": "50"},
                            "RDN": {"amount": "1", "usd_value": "1.5"}
                        },
-                       "total_usd_value": "1807.03",
+          	       "liabilities": {}
                   }}
               },
               "totals": {
@@ -4585,7 +4585,8 @@ Deleting BTC xpubs
 		      "ETH": {"amount": "10", "usd_value": "1650.53"},
 		      "RDN": {"amount": "1", "usd_value": "1.5"},
 		      "GNO": {"amount": "1", "usd_value": "50"}
-		  }
+		  },
+		  "liabilities": {}
           },
           "message": ""
       }
@@ -4720,7 +4721,8 @@ Removing blockchain accounts
                           }}]
               }},
               "totals": {
-                  "assets": {"BTC": {"amount": "1", "usd_value": "7540.15"}}
+                  "assets": {"BTC": {"amount": "1", "usd_value": "7540.15"}},
+		  "liabilities": {}
               }
           },
           "message": ""

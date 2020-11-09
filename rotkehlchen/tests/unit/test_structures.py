@@ -72,6 +72,27 @@ def test_balance_sheet_addition():
     assert a + b == c
 
 
+def test_default_balance_sheet():
+    a = BalanceSheet(
+        assets={
+            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
+            A_ETH: Balance(amount=FVal('1.5'), usd_value=FVal('450')),
+        },
+        liabilities={
+            A_DAI: Balance(amount=FVal('5'), usd_value=FVal('5.1')),
+            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
+        },
+    )
+    b = BalanceSheet()  # test no args init gives empty default dicts properly
+    assert isinstance(b.assets, dict)
+    assert len(b.assets) == 0
+    assert isinstance(b.liabilities, dict)
+    assert len(b.liabilities) == 0
+    assert a != b
+    b += a
+    assert a == b
+
+
 def test_balance_sheet_subtraction():
     a = BalanceSheet(
         assets={
@@ -120,7 +141,7 @@ def test_balance_sheet_serialize():
             A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
         },
     )
-    a.serialize() == {
+    assert a.serialize() == {
         'assets': {
             'USD': {'amount': '2', 'usd_value': '2'},
             'ETH': {'amount': '3', 'usd_value': '900'},
@@ -128,7 +149,7 @@ def test_balance_sheet_serialize():
         'liabilities': {
             'DAI': {'amount': '5', 'usd_value': '5.1'},
             'ETH': {'amount': '0.5', 'usd_value': '150'},
-        }
+        },
     }
 
 
@@ -143,7 +164,7 @@ def test_balance_sheet_to_dict():
             A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
         },
     )
-    a.to_dict() == {
+    assert a.to_dict() == {
         'assets': {
             'USD': {'amount': FVal('2'), 'usd_value': FVal('2')},
             'ETH': {'amount': FVal('3'), 'usd_value': FVal('900')},
@@ -151,5 +172,5 @@ def test_balance_sheet_to_dict():
         'liabilities': {
             'DAI': {'amount': FVal('5'), 'usd_value': FVal('5.1')},
             'ETH': {'amount': FVal('0.5'), 'usd_value': FVal('150')},
-        }
+        },
     }

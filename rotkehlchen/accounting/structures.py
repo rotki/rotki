@@ -121,19 +121,19 @@ def _evaluate_balance_input(other: Any, operation: str) -> Balance:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BalanceSheet:
-    assets: DefaultDict[Asset, Balance] = field(default_factory=defaultdict(Balance))
-    liabilities: DefaultDict[Asset, Balance] = field(default_factory=defaultdict(Balance))
+    assets: DefaultDict[Asset, Balance] = field(default_factory=lambda: defaultdict(Balance))
+    liabilities: DefaultDict[Asset, Balance] = field(default_factory=lambda: defaultdict(Balance))
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self) -> Dict[str, Dict]:
         return {
-            'assets': {k: v.serialize() for k, v in self.assets.items()},
-            'liabilities': {k: v.serialize() for k, v in self.liabilities.items()}
+            'assets': {k.serialize(): v.serialize() for k, v in self.assets.items()},
+            'liabilities': {k: v.serialize() for k, v in self.liabilities.items()},
         }
 
-    def to_dict(self) -> Dict[str, FVal]:
+    def to_dict(self) -> Dict[str, Dict]:
         return {
             'assets': {k: v.to_dict() for k, v in self.assets.items()},
-            'liabilities': {k: v.to_dict() for k, v in self.liabilities.items()}
+            'liabilities': {k: v.to_dict() for k, v in self.liabilities.items()},
         }
 
     def __add__(self, other: Any) -> 'BalanceSheet':
@@ -156,12 +156,12 @@ def _evaluate_balance_sheet_input(other: Any, operation: str) -> BalanceSheet:
     if isinstance(other, dict):
         if len(other) == 2 and 'assets' in other and 'liabilities' in other:
             try:
-                assets = {}
-                liabilities = {}
+                assets = defaultdict(Balance)
+                liabilities = defaultdict(Balance)
                 for asset, entry in other['assets'].items():
-                    assets[asset] = _evaluate_balance_input(entry)
+                    assets[asset] = _evaluate_balance_input(entry, operation)
                 for asset, entry in other['liabilities'].items():
-                    liabilities[asset] = _evaluate_balance_input(entry)
+                    liabilities[asset] = _evaluate_balance_input(entry, operation)
             except InputError as e:
                 raise InputError(
                     f'Found valid dict object but with invalid values '

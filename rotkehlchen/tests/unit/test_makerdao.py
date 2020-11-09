@@ -1,15 +1,16 @@
+from collections import defaultdict
+
 import pytest
 from web3 import Web3
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
     COLLATERAL_TYPE_MAPPING,
     GEMJOIN_MAPPING,
     MakerDAOVault,
     MakerDAOVaults,
-    get_vault_normalized_balance,
 )
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
@@ -122,16 +123,17 @@ def test_get_vaults(makerdao_vaults, makerdao_test_data):
     'ETH': FVal('200'),
     'DAI': FVal('1.01'),
 }])
-def test_get_vault_normalized_balance(
+def test_get_vault_balance(
         inquirer,  # pylint: disable=unused-argument
         mocked_current_prices,
 ):
     debt_value = FVal('2000')
+    owner = make_ethereum_address()
     vault = MakerDAOVault(
         identifier=1,
         collateral_type='ETH-A',
         collateral_asset=A_ETH,
-        owner=make_ethereum_address(),
+        owner=owner,
         collateral=Balance(FVal('100'), FVal('20000')),
         debt=Balance(debt_value, debt_value * mocked_current_prices['DAI']),
         collateralization_ratio='990%',
@@ -140,8 +142,11 @@ def test_get_vault_normalized_balance(
         urn=make_ethereum_address(),
         stability_fee=ZERO,
     )
-    expected_result = Balance(amount=FVal('89.9'), usd_value=FVal('17980'))
-    assert get_vault_normalized_balance(vault) == expected_result
+    expected_result = BalanceSheet(
+        assets=defaultdict(Balance, {A_ETH: Balance(FVal('100'), FVal('20000'))}),
+        liabilities=defaultdict(Balance, {A_DAI: Balance(FVal('2000'), FVal('2020'))}),
+    )
+    assert vault.get_balance() == expected_result
 
 
 def test_vault_types():

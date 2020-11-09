@@ -323,7 +323,7 @@ def assert_eth_balances_result(
         totals = result['totals']
 
     # Check our owned eth tokens here since the test may have changed their number
-    owned_assets = set(rotki.chain_manager.totals.keys())
+    owned_assets = set(rotki.chain_manager.totals.assets.keys())
     assert len(totals) == len(owned_assets)
 
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
