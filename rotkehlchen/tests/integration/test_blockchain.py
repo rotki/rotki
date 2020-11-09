@@ -115,7 +115,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     def mock_query_defi_balances():
         blockchain.defi_balances = {
             addr1: [DefiProtocolBalances(
-                protocol=DefiProtocol('a', 'b', 'c', 'd', 1),
+                protocol=DefiProtocol('a', 'b', 'c', 1),
                 balance_type='Asset',
                 base_balance=DefiBalance(
                     token_address=A_DAI.ethereum_address,
