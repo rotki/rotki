@@ -41,11 +41,10 @@ class DefiProtocol(NamedTuple):
     name: str
     description: str
     url: str
-    icon_link: str
     version: int
 
     def serialize(self) -> Dict[str, str]:
-        return {'name': self.name, 'icon': self.icon_link}
+        return {'name': self.name}
 
 
 class DefiBalance(NamedTuple):
@@ -158,7 +157,6 @@ class Zerion():
                 name=entry[0][0],
                 description=entry[0][1],
                 url=entry[0][2],
-                icon_link=entry[0][3],
                 version=entry[0][4],
             )
             for adapter_balance in entry[1]:

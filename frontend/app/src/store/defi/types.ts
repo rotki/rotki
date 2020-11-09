@@ -178,6 +178,9 @@ export interface DefiLoan {
 
 interface DefiProtocolInfo {
   readonly name: OverviewDefiProtocol;
+}
+
+interface DefiProtocolInfoWithIcon extends DefiProtocolInfo {
   readonly icon: string;
 }
 
@@ -187,7 +190,7 @@ interface TokenInfo {
 }
 
 export interface DefiProtocolSummary {
-  readonly protocol: DefiProtocolInfo;
+  readonly protocol: DefiProtocolInfoWithIcon;
   readonly balanceUsd?: BigNumber;
   readonly assets: DefiAsset[];
   readonly tokenInfo?: TokenInfo;
