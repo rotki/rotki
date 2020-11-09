@@ -2,13 +2,13 @@
   <v-card>
     <v-card-title>Defi Settings</v-card-title>
     <v-card-text>
-      <h3>Active Defi modules</h3>
+      <div class="title">Active Defi modules</div>
       <p class="text--secondary">
         Only data for the selected modules will be queried. If no modules are
         selected, querying for all the supported modules will be disabled.
       </p>
       <defi-module-selector />
-      <h3 class="mt-6">Selected accounts</h3>
+      <div class="mt-6 title">Selected accounts</div>
       <p class="text--secondary">
         If no accounts are selected for a protocol, data for all accounts will
         be queried for that protocol.

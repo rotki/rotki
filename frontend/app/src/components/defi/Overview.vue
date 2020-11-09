@@ -27,7 +27,9 @@
       />
       <v-divider class="my-4" />
     </div>
-    <h4 class="pb-2 d-flex flex-row justify-space-between">
+    <div
+      class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
+    >
       {{ $t('overview.stat_card.headers.lending') }}
       <v-btn
         v-if="summary.depositsUrl"
@@ -38,7 +40,7 @@
       >
         <v-icon small color="primary">mdi-launch</v-icon>
       </v-btn>
-    </h4>
+    </div>
     <info-row
       :title="$t('overview.stat_card.content.labels.total_deposited')"
       fiat

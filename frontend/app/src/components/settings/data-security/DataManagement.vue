@@ -8,7 +8,7 @@
         </v-card-subtitle>
         <v-form ref="form">
           <v-card-text>
-            <h3>Exchange Data</h3>
+            <div class="title">Exchange Data</div>
             <v-row align="center">
               <v-col>
                 <v-select
@@ -71,7 +71,7 @@
             >
               Purge All Exchanges Cache
             </status-button>
-            <h3>Ethereum Transactions</h3>
+            <div class="title">Ethereum Transactions</div>
             <status-button
               class="data-management__purge-transactions"
               tooltip="Purge the cached ethereum data"
