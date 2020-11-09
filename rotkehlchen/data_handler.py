@@ -10,7 +10,6 @@ from typing import Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import decrypt, encrypt
-from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import AuthenticationError, SystemPermissionError

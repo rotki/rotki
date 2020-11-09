@@ -104,7 +104,10 @@ def from_wei(wei_value: FVal) -> FVal:
 
 def combine_dicts(a: Dict, b: Dict, op: Callable = operator.add) -> Dict:
     new_dict = a.copy()
-    new_dict.update(b)
+    if op == operator.sub:
+        new_dict.update({k: -v for k, v in b.items()})
+    else:
+        new_dict.update(b)
     new_dict.update([(k, op(a[k], b[k])) for k in set(b) & set(a)])
     return new_dict
 
