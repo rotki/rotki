@@ -59,7 +59,7 @@
             :key="i"
             :class="activeClass(timeframe.text)"
             class="ma-2"
-            :disabled="!premium && !activeClass(timeframe.text)"
+            :disabled="!premium && !worksWithoutPremium(timeframe.text)"
             small
             @click="activeTimeframe = timeframe.text"
           >
@@ -96,6 +96,7 @@ import { mapActions, mapGetters } from 'vuex';
 
 import {
   TIMEFRAME_ALL,
+  TIMEFRAME_TWO_WEEKS,
   TIMEFRAME_WEEK,
   timeframes
 } from '@/components/dashboard/const';
@@ -140,9 +141,6 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   }
 
   get selection(): TimeFramePeriod {
-    if (!this.premium) {
-      return TIMEFRAME_WEEK;
-    }
     return this.activeTimeframe;
   }
 
@@ -155,10 +153,14 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
       : 'rotki-green';
   }
 
-  activeClass(timeframePeriod: string): string {
+  activeClass(timeframePeriod: TimeFramePeriod): string {
     return timeframePeriod === this.selection
       ? 'overall-balances__timeframe-chips--active'
       : '';
+  }
+
+  worksWithoutPremium(period: TimeFramePeriod): boolean {
+    return [TIMEFRAME_WEEK, TIMEFRAME_TWO_WEEKS].includes(period);
   }
 
   get timeframes(): Timeframes {
@@ -189,6 +191,12 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   @Watch('premium')
   async onPremiumChange() {
     await this.fetchNetValue();
+  }
+
+  created() {
+    if (!this.premium) {
+      this.activeTimeframe = TIMEFRAME_TWO_WEEKS;
+    }
   }
 }
 </script>

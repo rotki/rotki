@@ -1,13 +1,15 @@
-import { TIMEFRAME_PERIOD } from '@/components/dashboard/const';
+import { TIME_UNITS, TIMEFRAME_PERIOD } from '@/components/dashboard/const';
 
 export interface Timeframe {
   readonly text: TimeFramePeriod;
   readonly startingDate: () => number;
-  readonly xAxisTimeUnit: 'hour' | 'day' | 'week' | 'month';
+  readonly xAxisTimeUnit: TimeUnit;
   readonly xAxisStepSize: number;
   readonly xAxisLabelDisplayFormat: string;
   readonly tooltipTimeFormat: string;
 }
+
+export type TimeUnit = typeof TIME_UNITS[number];
 
 export type Timeframes = {
   readonly [timeframe in TimeFramePeriod]: Timeframe;

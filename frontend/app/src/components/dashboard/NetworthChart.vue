@@ -35,7 +35,6 @@ import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import {
   TIMEFRAME_ALL,
-  TIMEFRAME_DAY,
   TIMEFRAME_MONTH,
   TIMEFRAME_PERIOD,
   TIMEFRAME_WEEK
@@ -178,7 +177,7 @@ export default class NetWorthChart extends Vue {
       month: labelFormat(TIMEFRAME_ALL),
       week: labelFormat(TIMEFRAME_MONTH),
       day: labelFormat(TIMEFRAME_WEEK),
-      hour: labelFormat(TIMEFRAME_DAY)
+      hour: labelFormat(TIMEFRAME_WEEK)
     };
 
     const time: TimeScale = {
