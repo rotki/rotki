@@ -1,4 +1,4 @@
-from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USD
+from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USD, A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
@@ -90,6 +90,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
 def assert_cryptocom_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
     trades = rotki.data.db.get_trades()
+    asset_movements = rotki.data.db.get_asset_movements()
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_warnings()
     assert len(errors) == 0
@@ -175,5 +176,63 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee_currency=A_USD,
         link='',
         notes=get_trade_note('Coin Swap'),
+    ), Trade(
+        timestamp=Timestamp(1599934176),
+        location=Location.CRYPTOCOM,
+        pair=TradePair('CRO_EUR'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('138.256')),
+        rate=Price(FVal('0.1429232727693553986807082514')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes=get_trade_note('Card Rebate: Deliveries'),
+    ), Trade(
+        timestamp=Timestamp(1602515376),
+        location=Location.CRYPTOCOM,
+        pair=TradePair('CRO_EUR'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('52.151')),
+        rate=Price(FVal('0.06692105616383194953116910510')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes=get_trade_note('Card Cashback'),
+    ), Trade(
+        timestamp=Timestamp(1602526176),
+        location=Location.CRYPTOCOM,
+        pair=TradePair('CRO_EUR'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('482.2566417')),
+        rate=Price(FVal('0.08756748243245604635910191136')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes=get_trade_note('Referral Bonus Reward'),
     )]
     assert expected_trades == trades
+
+    expected_movements = [AssetMovement(
+        location=Location.CRYPTOCOM,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=Timestamp(1596992965),
+        address=None,
+        transaction_id=None,
+        asset=A_DAI,
+        amount=AssetAmount(FVal('115')),
+        fee_asset=A_DAI,
+        fee=Fee(ZERO),
+        link='',
+    ), AssetMovement(
+        location=Location.CRYPTOCOM,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1596993025),
+        asset=A_DAI,
+        amount=AssetAmount(FVal('115')),
+        fee_asset=A_DAI,
+        fee=Fee(ZERO),
+        link='',
+    )]
+    assert expected_movements == asset_movements

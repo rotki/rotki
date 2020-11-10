@@ -1,9 +1,17 @@
 ﻿Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind
+2020-10-12 19:10:36,Transfer: Exchange -> App wallet,ETH,0.033,,,EUR,10.75,12.7743325,exchange_to_crypto_transfer
+2020-10-12 19:09:36,Transfer: App wallet -> Exchange,CRO,-161.73231782,,,EUR,-10.71,-12.7268001,crypto_to_exchange_transfer
+2020-10-12 18:09:36,Referral Bonus Reward,CRO,482.2566417,,,EUR,42.23,49.2763433,referral_bonus
+2020-10-12 15:09:36,Card Cashback,CRO,52.151,,,EUR,3.49,4.1472019,referral_card_cashback
+2020-09-12 18:09:36,Card Rebate: Deliveries,CRO,138.256,,,EUR,19.76,23.48,reimbursement
+2020-08-09 17:10:25,Withdraw DAI,DAI,-115,,,EUR,-98.37,-116.8940547,crypto_withdrawal
+2020-08-09 17:09:25,Deposit DAI,DAI,115,,,EUR,98.37,116.8940547,crypto_deposit
 2020-08-06 16:09:25,MCO/CRO Overall Swap,CRO,1301.64,,,EUR,182.23,211.673899,dynamic_coin_swap_credited
 2020-08-06 16:09:25,MCO/CRO Overall Swap,MCO,-50,,,EUR,-159.97,-183.7864,dynamic_coin_swap_debited
 2020-08-06 22:47:56,Early Swap Bonus,CRO,-276.46122951,,,EUR,-37.63,-44.5595645,dynamic_coin_swap_bonus_exchange_deposit
 2020-08-03 14:39:25,MCO/CRO Overall Swap,CRO,1382.306147552291,,,EUR,197.68,234.082772,dynamic_coin_swap_credited
 2020-08-03 14:39:25,MCO/CRO Overall Swap,MCO,-50.00402069,,,EUR,-168.37,-199.3753355,dynamic_coin_swap_debited
+2020-08-03 15:39:25,CRO Stake Rebate,CRO,1382.195,,,EUR,197.66,234.059089,lockup_swap_rebate
 2020-08-03 14:39:25,CRO Stake,CRO,1382.195,,,EUR,197.66,234.059089,lockup_swap_credited
 2020-08-03 14:39:25,MCO Unstake,MCO,-50.0,,,EUR,-168.36,-199.363494,lockup_swap_debited
 2020-08-03 14:39:25,MCO/CRO Wallet Swap,CRO,0.111147552291,,,EUR,0.02,0.023683,crypto_wallet_swap_credited
