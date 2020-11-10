@@ -251,5 +251,8 @@ if ($Env:CI) {
 }
 
 echo "Rotki $SETUP_VERSION was build successfully"
-deactivate
-cd ../../..
+
+if (($env:VIRTUAL_ENV) -and (-not ($Env:CI))) {
+    deactivate
+    cd $PROJECT_DIR
+}
