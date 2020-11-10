@@ -99,26 +99,8 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
     return None
 
 
-# last known zerion adapter address
+# supported zerion adapter address
 ZERION_ADAPTER_ADDRESS = deserialize_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
-
-
-def query_zerion_address(
-        ethereum: 'EthereumManager',
-        msg_aggregator: MessagesAggregator,
-) -> ChecksumEthAddress:
-    """Queries the zerion contract address. If query fails, then last known
-    address is used"""
-    result = ethereum.ens_lookup('api.zerion.eth')
-    if result is None:
-        msg_aggregator.add_error(
-            'Could not query api.zerion.eth address. Using last known address',
-        )
-        contract_address = ZERION_ADAPTER_ADDRESS
-    else:
-        contract_address = result
-
-    return contract_address
 
 
 class Zerion():
@@ -128,26 +110,22 @@ class Zerion():
             self,
             ethereum_manager: 'EthereumManager',
             msg_aggregator: MessagesAggregator,
-            contract_address: Optional[ChecksumEthAddress] = None,
     ) -> None:
         self.ethereum = ethereum_manager
         self.msg_aggregator = msg_aggregator
-
-        if contract_address:
-            self.contract_address = contract_address
-            return
-
-        # else
-        self.contract_address = query_zerion_address(ethereum_manager, msg_aggregator)
+        self.contract = EthereumContract(
+            address=ZERION_ADAPTER_ADDRESS,
+            abi=ZERION_ABI,
+            deployed_block=1586199170,
+        )
 
     def all_balances_for_account(self, account: ChecksumEthAddress) -> List[DefiProtocolBalances]:
         """Calls the contract's getBalances() to get all protocol balances for account
 
         https://docs.zerion.io/smart-contracts/adapterregistry-v3#getbalances
         """
-        result = self.ethereum.call_contract(
-            contract_address=self.contract_address,
-            abi=ZERION_ABI,
+        result = self.contract.call(
+            ethereum=self.ethereum,
             method_name='getBalances',
             arguments=[account],
         )
@@ -288,7 +266,6 @@ def _decode_result(data: Tuple) -> UniLPBalance:
 def uniswap_lp_token_balances(
         address: ChecksumEthAddress,
         ethereum: 'EthereumManager',
-        zerion: Zerion,
         lp_addresses: List[ChecksumEthAddress],
 ) -> List[UniLPBalance]:
     """Query uniswap token balances from ethereum
@@ -301,9 +278,9 @@ def uniswap_lp_token_balances(
     5000 addresses timed out a few times
     """
     zerion_contract = EthereumContract(
-        address=zerion.contract_address,
+        address=ZERION_ADAPTER_ADDRESS,
         abi=ZERION_ABI,
-        deployed_block=0,
+        deployed_block=1586199170,
     )
     chunks = list(get_chunks(lp_addresses, n=4000))
     balances = []
