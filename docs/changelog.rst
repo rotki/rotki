@@ -2,6 +2,16 @@
 Changelog
 =========
 
+* :feature:`-` Added support for the following tokens:
+
+  - `Synthetix sBTC (sBTC) <https://www.coingecko.com/en/coins/sbtc>`__
+  - `Synthetix sETH (sETH) <https://www.coingecko.com/en/coins/seth>`__
+  - `Synthetix sLINK (sLINK) <https://www.coingecko.com/en/coins/slink>`__
+  - `Synthetix sXAU (sXAU) <https://www.coingecko.com/en/coins/sxau>`__
+  - `Synthetix sXAG (sXAG) <https://www.coingecko.com/en/coins/sxag>`__
+  - `Synthetix iBTC (iBTC) <https://www.coingecko.com/en/coins/ibtc>`__
+  - `Synthetix iETH (iETH) <https://www.coingecko.com/en/coins/ieth>`__
+
 * :feature:`1660` Users will now be able to see and edit labels and tags for xpub addresses.
 * :feature:`1227` Users can now see a net worth graph on the dashboard.
 * :bug:`1668` Refreshing BTC balances now, will not clear any other assets from the state.

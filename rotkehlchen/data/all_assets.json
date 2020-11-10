@@ -13451,6 +13451,76 @@
         "symbol": "sUSD",
         "type": "ethereum token"
     },
+    "sBTC": {
+        "coingecko": "sbtc",
+        "cryptocompare": "BTC",
+        "ethereum_address": "0xfE18be6b3Bd88A2D2A7f928d00292E7a9963CfC6",
+        "ethereum_token_decimals": 18,
+        "name": "Synth sBTC",
+        "started": 1569481945,
+        "symbol": "sBTC",
+        "type": "ethereum token"
+    },
+    "sETH": {
+        "coingecko": "seth",
+        "cryptocompare": "ETH",
+        "ethereum_address": "0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb",
+        "ethereum_token_decimals": 18,
+        "name": "Synth sETH",
+        "started": 1568274302,
+        "symbol": "sETH",
+        "type": "ethereum token"
+    },
+    "sLINK": {
+        "coingecko": "slink",
+        "cryptocompare": "LINK",
+        "ethereum_address": "0xbBC455cb4F1B9e4bFC4B73970d360c8f032EfEE6",
+        "ethereum_token_decimals": 18,
+        "name": "Synth sLINK",
+        "started": 1574298261,
+        "symbol": "sLINK",
+        "type": "ethereum token"
+    },
+    "sXAU": {
+        "coingecko": "sxau",
+        "cryptocompare": "",
+        "ethereum_address": "0x261EfCdD24CeA98652B9700800a13DfBca4103fF",
+        "ethereum_token_decimals": 18,
+        "name": "Synth sXAU",
+        "started": 1569481692,
+        "symbol": "sXAU",
+        "type": "ethereum token"
+    },
+    "sXAG": {
+        "coingecko": "sxag",
+        "cryptocompare": "",
+        "ethereum_address": "0x6A22e5e94388464181578Aa7A6B869e00fE27846",
+        "ethereum_token_decimals": 18,
+        "name": "Synth sXAG",
+        "started": 1569481837,
+        "symbol": "sXAG",
+        "type": "ethereum token"
+    },
+    "iBTC": {
+        "coingecko": "ibtc",
+        "cryptocompare": "",
+        "ethereum_address": "0xD6014EA05BDe904448B743833dDF07c3C7837481",
+        "ethereum_token_decimals": 18,
+        "name": "Synth iBTC",
+        "started": 1569482951,
+        "symbol": "iBTC",
+        "type": "ethereum token"
+    },
+    "iETH": {
+        "coingecko": "ieth",
+        "cryptocompare": "",
+        "ethereum_address": "0xA9859874e1743A32409f75bB11549892138BBA1E",
+        "ethereum_token_decimals": 18,
+        "name": "Synth iETH",
+        "started": 1569483200,
+        "symbol": "iETH",
+        "type": "ethereum token"
+    },
     "yaLINK": {
         "coingecko": "aave-link",
         "cryptocompare": "",
