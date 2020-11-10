@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1660` Users will now be able to see and edit labels and tags for xpub addresses.
 * :feature:`1227` Users can now see a net worth graph on the dashboard.
 * :bug:`1668` Refreshing BTC balances now, will not clear any other assets from the state.
 * :bug:`1669` Users will now see a loading indicator when balances are loading and proper non-zero values after loading.
