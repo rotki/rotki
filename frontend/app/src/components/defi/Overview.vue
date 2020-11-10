@@ -125,18 +125,8 @@ export default class Overview extends Vue {
   }
 
   get icon(): string {
-    // until we can check whether a file exists locally, let's make a whitelist of protocols where we prefer our own icon
-    const protocolWhitelist: string[] = ['aave', 'makerdao', 'compound']; // TODO: Use the DEFI_PROTOCOLS constant from services/defi/types once we finalize Compound module
     const protocol = this.summary.protocol;
-
-    const isWhitelisted: boolean = protocolWhitelist.includes(
-      protocol.name.toLowerCase()
-    );
-
-    if (protocol.icon && !isWhitelisted) {
-      return `https://${protocol.icon}`;
-    }
-    return require(`@/assets/images/defi/${protocol.name.toLocaleLowerCase()}.svg`);
+    return require(`@/assets/images/defi/${protocol.icon}`);
   }
 }
 </script>
