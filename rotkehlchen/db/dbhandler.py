@@ -1993,13 +1993,13 @@ class DBHandler:
         else:
             return None
 
-    def get_netvalue_data(self) -> Tuple[List[str], List[str]]:
+    def get_netvalue_data(self, from_ts: Timestamp) -> Tuple[List[str], List[str]]:
         """Get all entries of net value data from the DB"""
         cursor = self.conn.cursor()
         # Get the total location ("H") entries in ascending time
         query = cursor.execute(
-            'SELECT time, usd_value FROM timed_location_data '
-            'WHERE location="H" ORDER BY time ASC;',
+            f'SELECT time, usd_value FROM timed_location_data '
+            f'WHERE location="H" AND time >= {from_ts} ORDER BY time ASC;',
         )
 
         data = []

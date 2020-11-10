@@ -3,7 +3,7 @@
     <base-page-header :text="$t('dashboard.title')" />
     <v-row>
       <v-col cols="12">
-        <overall-balances :is-loading="anyIsLoading" />
+        <overall-balances />
       </v-col>
     </v-row>
     <v-row class="mr--1" justify="center">

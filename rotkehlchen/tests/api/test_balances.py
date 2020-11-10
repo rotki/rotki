@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.exchanges import assert_binance_balances_result
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
-from rotkehlchen.typing import Location
+from rotkehlchen.typing import Location, Timestamp
 
 
 def assert_all_balances(
@@ -96,7 +96,7 @@ def assert_all_balances(
         assert len(rdn_tbalances) == 1
         assert FVal(rdn_tbalances[0].amount) == total_rdn
 
-    times, net_values = db.get_netvalue_data()
+    times, net_values = db.get_netvalue_data(Timestamp(0))
     if not expected_data_in_db:
         assert len(times) == 0
         assert len(net_values) == 0

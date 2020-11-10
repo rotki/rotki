@@ -1,25 +1,88 @@
 <template>
-  <v-card class="overall-balances-box mt-3 mb-6" :loading="isLoading">
-    <v-row no-gutters>
-      <v-col cols="12" md="4" lg="4" class="d-flex flex-column justify-center">
-        <div class="text-h2 pa-5 primary--text font-weight-bold">
-          net worth
-        </div>
-      </v-col>
-      <v-col cols="12" md="8" lg="8">
-        <div class="text-h2 pa-5 d-flex justify-center align-center">
+  <v-card class="overall-balances mt-3 mb-6" :loading="anyLoading">
+    <v-row no-gutters class="pa-5">
+      <v-col
+        cols="12"
+        md="4"
+        lg="4"
+        class="d-flex flex-column align-center justify-center"
+      >
+        <div
+          class="overall-balances__net-worth text-center font-weight-medium mb-2"
+        >
+          <loading
+            v-if="anyLoading"
+            class="overall-balances__net-worth__loading text-start ms-2"
+          />
           <amount-display
             show-currency="symbol"
             :fiat-currency="currency.ticker_symbol"
-            :value="
-              aggregatedBalances
-                | aggregateTotal(
-                  currency.ticker_symbol,
-                  exchangeRate(currency.ticker_symbol),
-                  floatingPrecision
-                )
-            "
+            :value="totalNetWorth"
           />
+        </div>
+        <div class="overall-balances__net-worth-change py-2">
+          <span
+            :class="balanceClass"
+            class="pa-1 px-2 d-flex flex-row overall-balances__net-worth-change__pill"
+          >
+            <span class="me-2">{{ indicator }}</span>
+            <amount-display
+              v-if="!anyLoading"
+              show-currency="symbol"
+              :fiat-currency="currency.ticker_symbol"
+              :value="balanceDelta"
+            />
+            <percentage-display
+              v-if="!anyLoading"
+              class="ms-2 px-1 text--secondary pe-2"
+              :value="percentage"
+            />
+          </span>
+        </div>
+
+        <div class="overall-balances__timeframe-chips text-center">
+          <v-tooltip v-if="!premium" top>
+            <template #activator="{ on, attrs }">
+              <v-icon
+                class="overall-balances__premium"
+                small
+                v-bind="attrs"
+                v-on="on"
+              >
+                mdi-lock
+              </v-icon>
+            </template>
+            <span v-text="$t('overall_balances.premium_hint')" />
+          </v-tooltip>
+          <v-chip
+            v-for="(timeframe, i) in timeframes"
+            :key="i"
+            :class="activeClass(timeframe.text)"
+            class="ma-2"
+            :disabled="!premium && !worksWithoutPremium(timeframe.text)"
+            small
+            @click="activeTimeframe = timeframe.text"
+          >
+            {{ timeframe.text }}
+          </v-chip>
+        </div>
+      </v-col>
+      <v-col cols="12" md="8" lg="8" class="d-flex">
+        <div
+          class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
+        >
+          <net-worth-chart
+            v-if="!anyLoading"
+            :chart-data="timeframeData"
+            :timeframe="selection"
+            :timeframes="timeframes"
+          />
+          <div v-else class="overall-balances__net-worth-chart__loader">
+            <v-progress-circular indeterminate class="align-self-center" />
+            <div class="pt-5 caption">
+              {{ $t('overall_balances.loading') }}
+            </div>
+          </div>
         </div>
       </v-col>
     </v-row>
@@ -27,72 +90,188 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { default as BigNumber } from 'bignumber.js';
+import { Component, Mixins, Watch } from 'vue-property-decorator';
+import { mapActions, mapGetters } from 'vuex';
 
+import {
+  TIMEFRAME_ALL,
+  TIMEFRAME_TWO_WEEKS,
+  TIMEFRAME_WEEK,
+  timeframes
+} from '@/components/dashboard/const';
+import NetWorthChart from '@/components/dashboard/NetworthChart.vue';
+import { TimeFramePeriod, Timeframes } from '@/components/dashboard/types';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { Currency } from '@/model/currency';
-import { AssetBalance } from '@/store/balances/types';
 
-const { mapGetters } = createNamespacedHelpers('session');
-const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
+import Loading from '@/components/helper/Loading.vue';
+import PremiumMixin from '@/mixins/premium-mixin';
+import StatusMixin from '@/mixins/status-mixin';
+import { Currency } from '@/model/currency';
+import { NetValue } from '@/services/types-api';
+import { Section } from '@/store/const';
+import { bigNumberify } from '@/utils/bignumbers';
+
 @Component({
-  components: { AmountDisplay },
+  components: { Loading, AmountDisplay, NetWorthChart },
   computed: {
-    ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapBalanceGetters(['aggregatedBalances', 'exchangeRate'])
+    ...mapGetters('session', ['currency']),
+    ...mapGetters('statistics', ['netValue', 'totalNetWorth'])
+  },
+  methods: {
+    ...mapActions('statistics', ['fetchNetValue'])
   }
 })
-export default class OverallBox extends Vue {
-  @Prop({ required: false, default: false })
-  isLoading!: boolean;
-
+export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   currency!: Currency;
-  aggregatedBalances!: AssetBalance[];
+  netValue!: (startingDate: number) => NetValue;
+  totalNetWorth!: BigNumber;
+  fetchNetValue!: () => Promise<void>;
+
+  activeTimeframe: TimeFramePeriod = TIMEFRAME_ALL;
+
+  section = Section.BLOCKCHAIN_ETH;
+  secondSection = Section.BLOCKCHAIN_BTC;
+
+  get indicator(): string {
+    if (this.anyLoading) {
+      return '';
+    }
+    return this.balanceDelta.isNegative() ? '▼' : '▲';
+  }
+
+  get selection(): TimeFramePeriod {
+    return this.activeTimeframe;
+  }
+
+  get balanceClass(): string {
+    if (this.anyLoading) {
+      return 'rotki-grey lighten-3';
+    }
+    return this.balanceDelta.isNegative()
+      ? 'rotki-red lighten-1'
+      : 'rotki-green';
+  }
+
+  activeClass(timeframePeriod: TimeFramePeriod): string {
+    return timeframePeriod === this.selection
+      ? 'overall-balances__timeframe-chips--active'
+      : '';
+  }
+
+  worksWithoutPremium(period: TimeFramePeriod): boolean {
+    return [TIMEFRAME_WEEK, TIMEFRAME_TWO_WEEKS].includes(period);
+  }
+
+  get timeframes(): Timeframes {
+    return timeframes;
+  }
+
+  get startingValue(): BigNumber {
+    const start = this.timeframeData.data[0];
+    return bigNumberify(start);
+  }
+
+  get balanceDelta(): BigNumber {
+    return this.totalNetWorth.minus(this.startingValue);
+  }
+
+  get percentage(): string {
+    return this.balanceDelta
+      .div(this.startingValue)
+      .multipliedBy(100)
+      .toFormat(2);
+  }
+
+  get timeframeData(): NetValue {
+    const startingDate = timeframes[this.selection].startingDate();
+    return this.netValue(startingDate);
+  }
+
+  @Watch('premium')
+  async onPremiumChange() {
+    await this.fetchNetValue();
+  }
+
+  created() {
+    if (!this.premium) {
+      this.activeTimeframe = TIMEFRAME_TWO_WEEKS;
+    }
+  }
 }
 </script>
 <style scoped lang="scss">
-.overall-balances-box {
+.overall-balances {
   &__balance {
     display: flex;
     justify-content: center;
     align-items: baseline;
+  }
 
-    &__change {
-      display: flex;
-      justify-content: center;
-      align-items: baseline;
-      margin-bottom: 1em;
+  &__net-worth {
+    ::v-deep {
+      .amount-display {
+        &__value {
+          font-size: 3.5em;
+          line-height: 4rem;
+        }
+
+        &__currency {
+          font-size: 3em;
+        }
+      }
+    }
+
+    &__loading {
+      font-size: 1.5em;
+      line-height: 1em;
+      margin-bottom: -10px;
     }
   }
 
-  &__timeframe {
-    ul {
-      display: flex;
-      justify-content: center;
-      padding: 0;
-      font-size: 0.9em;
+  &__net-worth-change {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    margin-bottom: 1em;
+    min-height: 32px;
 
-      li {
-        display: inline;
-        margin-left: 0.2em;
-        margin-right: 0.2em;
-        padding-left: 0.5em;
-        padding-right: 0.5em;
-        border-radius: 0.8em;
-      }
+    span {
+      border-radius: 0.75em;
+    }
 
-      &--selected {
-        background-color: #7e4a3b;
-        color: white;
-      }
+    &__pill {
+      min-height: 32px;
+      min-width: 170px;
     }
   }
 
-  &__currency {
-    &__symbol {
-      font-size: 2.2em;
+  &__timeframe-chips {
+    .v-chip {
+      cursor: pointer;
     }
+
+    &--active {
+      color: white !important;
+      background-color: var(--v-primary-base) !important;
+    }
+  }
+
+  &__net-worth-chart {
+    width: 100%;
+
+    &__loader {
+      display: flex;
+      height: 100%;
+      flex-direction: column;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+    }
+  }
+
+  &__premium {
+    margin-left: -16px;
   }
 }
 </style>
