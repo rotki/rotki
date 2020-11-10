@@ -54,6 +54,7 @@ from rotkehlchen.api.v1.encoding import (
     WatchersAddSchema,
     WatchersDeleteSchema,
     WatchersEditSchema,
+    XpubPatchSchema,
     XpubSchema,
 )
 from rotkehlchen.api.v1.parser import resource_parser
@@ -733,6 +734,7 @@ class BTCXpubResource(BaseResource):
 
     put_schema = XpubSchema()
     delete_schema = BaseXpubSchema()
+    patch_schema = XpubPatchSchema()
 
     @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
@@ -768,6 +770,23 @@ class BTCXpubResource(BaseResource):
                 tags=None,
             ),
             async_query=async_query,
+        )
+
+    @use_kwargs(patch_schema, location='json_and_view_args')  # type: ignore
+    def patch(
+            self,
+            xpub: 'HDKey',
+            derivation_path: Optional[str],
+            label: Optional[str],
+            tags: Optional[List[str]],
+    ) -> Response:
+        return self.rest_api.edit_xpub(
+            xpub_data=XpubData(
+                xpub=xpub,
+                derivation_path=derivation_path,
+                label=label,
+                tags=tags,
+            ),
         )
 
 

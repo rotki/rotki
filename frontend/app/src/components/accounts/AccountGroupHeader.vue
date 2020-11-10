@@ -36,7 +36,12 @@
         </span>
       </div>
       <div v-if="xpubTags.length > 0" class="mt-1 ms-8">
-        <tag-icon v-for="tag in xpubTags" :key="tag" :tag="tags[tag]" />
+        <tag-icon
+          v-for="tag in xpubTags"
+          :key="tag"
+          :tag="tags[tag]"
+          class="mr-1"
+        />
       </div>
     </td>
     <td class="text-end">
@@ -51,6 +56,24 @@
       />
     </td>
     <td class="text-end">
+      <v-tooltip top>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            small
+            v-bind="attrs"
+            icon
+            :disabled="false"
+            class="mx-1"
+            v-on="on"
+            @click="editClicked(xpub)"
+          >
+            <v-icon small>
+              mdi-pencil-outline
+            </v-icon>
+          </v-btn>
+        </template>
+        <span>{{ $t('account_group_header.edit_tooltip') }}</span>
+      </v-tooltip>
       <v-tooltip top open-delay="400">
         <template #activator="{ on }">
           <v-btn small icon class="mr-1" v-on="on" @click="deleteClicked(xpub)">
@@ -94,12 +117,16 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
 
   tags!: Tags;
 
+  get xpub(): XpubAccountWithBalance {
+    return this.items.filter(item => !item.address)[0];
+  }
+
   get label(): string {
-    return this.items.filter(item => !item.address)[0].label;
+    return this.xpub.label;
   }
 
   get xpubTags(): string[] {
-    return this.items.filter(item => !item.address)[0].tags;
+    return this.xpub.tags;
   }
 
   get displayXpub(): string {
@@ -107,14 +134,6 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
       this.xpub.xpub,
       truncationPoints[this.$vuetify.breakpoint.name] ?? 4
     );
-  }
-
-  get xpub(): XpubPayload {
-    const split = this.group.split(':');
-    return {
-      xpub: split[0],
-      derivationPath: split[1]
-    };
   }
 
   get sum(): BigNumber {
@@ -130,5 +149,8 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
 
   @Emit()
   expandClicked(_xpub: XpubPayload) {}
+
+  @Emit()
+  editClicked(_xpub: XpubAccountWithBalance) {}
 }
 </script>

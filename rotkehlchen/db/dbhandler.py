@@ -2358,6 +2358,41 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def edit_bitcoin_xpub(self, xpub_data: XpubData) -> None:
+        """Edit the xpub tags and label
+
+        May raise:
+        - InputError if the xpub data already exist
+        """
+        cursor = self.conn.cursor()
+        key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path_for_db()  # type: ignore
+        try:
+            # Delete the tag mappings for the xpub itself (type ignore is for xpub is not None
+            cursor.execute('DELETE FROM tag_mappings WHERE object_reference=?', (key,))
+
+            insert_tag_mappings(
+                # if we got tags add them to the xpub
+                cursor=cursor,
+                data=[xpub_data],
+                object_reference_keys=['xpub.xpub', 'derivation_path'],
+            )
+
+            cursor.execute(
+                'UPDATE xpubs SET label=? WHERE xpub=? AND derivation_path=?',
+                (
+                    xpub_data.label,
+                    xpub_data.xpub.xpub,
+                    xpub_data.serialize_derivation_path_for_db(),
+                ),
+            )
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            raise InputError(
+                f'Xpub {xpub_data.xpub.xpub} with derivation path '
+                f'{xpub_data.derivation_path} is already tracked',
+            )
+        self.conn.commit()
+        self.update_last_write()
+
     def get_bitcoin_xpub_data(self) -> List[XpubData]:
         cursor = self.conn.cursor()
         query = cursor.execute(
