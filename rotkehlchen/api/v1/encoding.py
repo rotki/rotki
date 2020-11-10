@@ -916,6 +916,13 @@ class XpubSchema(BaseXpubSchema):
     tags = fields.List(fields.String(), missing=None)
 
 
+class XpubPatchSchema(Schema):
+    xpub = XpubField(required=True)
+    derivation_path = DerivationPathField(missing=None)
+    label = fields.String(missing=None)
+    tags = fields.List(fields.String(), missing=None)
+
+
 class BlockchainAccountsGetSchema(Schema):
     blockchain = BlockchainField(required=True)
 

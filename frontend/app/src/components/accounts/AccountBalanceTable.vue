@@ -106,6 +106,7 @@
         :loading="loading"
         @expand-clicked="expandXpub(isOpen, toggle, $event)"
         @delete-clicked="deleteXpub($event)"
+        @edit-clicked="editClick($event)"
       />
     </template>
   </v-data-table>
@@ -128,7 +129,6 @@ import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import { chainSection } from '@/store/balances/const';
 import {
-  BlockchainAccount,
   BlockchainAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
@@ -164,7 +164,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   deleteClick(_account: string) {}
 
   @Emit()
-  editClick(_account: BlockchainAccount) {}
+  editClick(_account: BlockchainAccountWithBalance) {}
 
   @Emit()
   deleteXpub(_payload: XpubPayload) {}
@@ -247,8 +247,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       value =>
         'xpub' in value &&
         xpub === value.xpub &&
-        derivationPath === value?.derivationPath &&
-        !!value.address
+        derivationPath === value?.derivationPath
     );
   }
 
@@ -271,15 +270,26 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
         );
       })
       .concat(
-        this.collapsedXpubs.map(({ derivationPath, xpub }) => ({
-          xpub: xpub,
-          derivationPath: derivationPath,
-          address: '',
-          label: '',
-          tags: [],
-          balance: { amount: Zero, usdValue: Zero },
-          chain: BTC
-        }))
+        this.collapsedXpubs.map(({ derivationPath, xpub }) => {
+          const xpubEntry = this.balances.find(
+            balance =>
+              !balance.address &&
+              'xpub' in balance &&
+              balance.xpub === xpub &&
+              balance.derivationPath === derivationPath
+          );
+          return (
+            xpubEntry ?? {
+              xpub: xpub,
+              derivationPath: derivationPath,
+              address: '',
+              label: '',
+              tags: [],
+              balance: { amount: Zero, usdValue: Zero },
+              chain: BTC
+            }
+          );
+        })
       );
   }
 

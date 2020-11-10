@@ -1160,6 +1160,18 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
+    def edit_xpub(self, xpub_data: 'XpubData') -> Response:
+        try:
+            XpubManager(self.rotkehlchen.chain_manager).edit_bitcoin_xpub(
+                xpub_data=xpub_data,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        data = self.rotkehlchen.get_blockchain_account_data(SupportedBlockchain.BITCOIN)
+        return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
         data = self.rotkehlchen.get_blockchain_account_data(blockchain)
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)

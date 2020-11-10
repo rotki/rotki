@@ -74,7 +74,11 @@
     <v-row no-gutters class="mt-2">
       <v-col cols="12">
         <v-text-field
-          v-if="(!isBtc || (isBtc && !isXpub) || !!edit) && !isMetaMask"
+          v-if="
+            (!isBtc || (isBtc && !isXpub) || !!edit) &&
+            !isMetaMask &&
+            !(isXpub && !!edit)
+          "
           v-model="address"
           class="account-form__address"
           :label="$t('account_form.labels.account')"

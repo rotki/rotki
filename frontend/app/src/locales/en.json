@@ -760,7 +760,8 @@
     "standalone": "Standalone",
     "xpub": "xpub:",
     "derivation_path": "Derivation Path",
-    "delete_tooltip": "Delete the entry and all the accounts underneath it"
+    "delete_tooltip": "Delete the entry and all the accounts underneath it",
+    "edit_tooltip": "Edit the label and tags of the xpub"
   },
   "accounting_settings": {
     "title": "Trade Settings",

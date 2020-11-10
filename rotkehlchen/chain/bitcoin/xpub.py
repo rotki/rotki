@@ -276,3 +276,14 @@ class XpubManager():
                     f'Attempt to derive new addresses from xpub: {xpub_data.xpub.xpub} '
                     f'and derivation_path: {xpub_data.derivation_path} finished',
                 )
+
+    def edit_bitcoin_xpub(self, xpub_data: 'XpubData') -> None:
+        with self.lock:
+            # Update the xpub label
+            self.db.edit_bitcoin_xpub(xpub_data)
+            # Then add tags if not existing
+            self.db.ensure_tags_exist(
+                given_data=[xpub_data],
+                action='editing',
+                data_type='bitcoin xpub',
+            )

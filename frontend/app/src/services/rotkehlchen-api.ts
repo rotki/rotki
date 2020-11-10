@@ -534,19 +534,35 @@ export class RotkehlchenApi {
   async editBtcAccount(
     payload: BlockchainAccountPayload
   ): Promise<BtcAccountData> {
+    let url = '/blockchains/BTC';
     const { address, label, tags } = payload;
+
+    let data: {};
+    if (payload.xpub && !payload.address) {
+      url += '/xpub';
+      const { derivationPath, xpub } = payload.xpub;
+      data = {
+        xpub,
+        derivationPath: derivationPath ? derivationPath : undefined,
+        label,
+        tags
+      };
+    } else {
+      data = {
+        accounts: [
+          {
+            address,
+            label,
+            tags
+          }
+        ]
+      };
+    }
+
     return this.axios
       .patch<ActionResult<BtcAccountData>>(
-        '/blockchains/BTC',
-        {
-          accounts: [
-            {
-              address,
-              label,
-              tags
-            }
-          ]
-        },
+        url,
+        axiosSnakeCaseTransformer(data),
         {
           validateStatus: validWithParamsSessionAndExternalService,
           transformResponse: basicAxiosTransformer
