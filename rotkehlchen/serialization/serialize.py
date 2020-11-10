@@ -5,6 +5,7 @@ from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.aave import (
@@ -22,6 +23,10 @@ from rotkehlchen.chain.ethereum.makerdao.vaults import (
     VaultEventType,
 )
 from rotkehlchen.chain.ethereum.structures import AaveEvent
+from rotkehlchen.chain.ethereum.uniswap import (
+    UniswapPool,
+    UniswapPoolAsset,
+)
 from rotkehlchen.chain.ethereum.yearn.vaults import (
     YearnVaultBalance,
     YearnVaultEvent,
@@ -91,6 +96,9 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             YearnVaultEvent,
             YearnVaultBalance,
             AaveEvent,
+            UniswapPool,
+            UniswapPoolAsset,
+            UnknownEthereumToken,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (

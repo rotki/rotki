@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any, Dict, Optional, Tuple
 
 import requests
@@ -11,6 +12,19 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 log = logging.getLogger(__name__)
+
+
+GRAPH_QUERY_LIMIT = 1000
+RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
+
+
+def format_query_indentation(querystr: str) -> str:
+    """Format a triple quote and indented GraphQL query by:
+    - Removing returns
+    - Replacing multiple inner whitespaces with one
+    - Removing leading and trailing whitespaces
+    """
+    return RE_MULTIPLE_WHITESPACE.sub(' ', querystr).strip()
 
 
 def get_common_params(
