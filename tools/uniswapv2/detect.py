@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.manager import (
     NodeName,
 )
 from rotkehlchen.chain.ethereum.utils import multicall_specific
-from rotkehlchen.chain.ethereum.zerion import Zerion, uniswap_lp_token_balances
+from rotkehlchen.chain.ethereum.zerion import uniswap_lp_token_balances
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
@@ -43,8 +43,7 @@ def init_ethereum(rpc_endpoint: str, use_other_nodes: bool) -> EthereumManager:
         ethereum_manager_connect_at_start=nodes_to_connect,
         ethereum=ethereum,
     )
-    zerion = Zerion(ethereum_manager=ethereum, msg_aggregator=msg_aggregator)
-    return ethereum, zerion
+    return ethereum
 
 
 def pairs_from_ethereum(ethereum: EthereumManager) -> Dict[str, Any]:
@@ -183,7 +182,7 @@ if __name__ == "__main__":
             write_result_to_file(result, 'uniswap_lp_tokens_graph.json')
 
     if args.source in ('ethereum', 'both'):
-        ethereum, zerion = init_ethereum(
+        ethereum = init_ethereum(
             rpc_endpoint=args.eth_rpc_endpoint,
             use_other_nodes=args.use_other_nodes,
         )
@@ -199,7 +198,6 @@ if __name__ == "__main__":
         balances = uniswap_lp_token_balances(
             address='0x1554d34D46842778999cB4eb1381b19f651e4a9d',  # test address
             ethereum=ethereum,
-            zerion=zerion,
             lp_addresses=results['ethereum'],
         )
         end = ts_now()

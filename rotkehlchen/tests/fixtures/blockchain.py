@@ -15,7 +15,6 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.tests import cleanup_tasks
-from rotkehlchen.tests.utils.zerion import create_zerion_patch, wait_until_zerion_is_initialized
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
 
 
@@ -233,16 +232,14 @@ def blockchain(
     if start_with_valid_premium:
         premium = Premium(rotki_premium_credentials)
 
-    with create_zerion_patch():
-        chain_manager = ChainManager(
-            blockchain_accounts=blockchain_accounts,
-            ethereum_manager=ethereum_manager,
-            msg_aggregator=messages_aggregator,
-            database=database,
-            greenlet_manager=greenlet_manager,
-            premium=premium,
-            eth_modules=ethereum_modules,
-        )
-        wait_until_zerion_is_initialized(chain_manager)
+    chain_manager = ChainManager(
+        blockchain_accounts=blockchain_accounts,
+        ethereum_manager=ethereum_manager,
+        msg_aggregator=messages_aggregator,
+        database=database,
+        greenlet_manager=greenlet_manager,
+        premium=premium,
+        eth_modules=ethereum_modules,
+    )
 
     return chain_manager

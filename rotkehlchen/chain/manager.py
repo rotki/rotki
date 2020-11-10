@@ -260,6 +260,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     log.error(f'Unrecognized module value {given_module} given. Skipping...')
 
         self.greenlet_manager = greenlet_manager
+        self.zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
 
         for name, module in self.iterate_modules():
             self.greenlet_manager.spawn_and_track(
@@ -268,17 +269,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 method=module.on_startup,
             )
 
-        # Since Zerion initialization needs a few ENS calls we do it asynchronously
-        self.zerion: Optional[Zerion] = None
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Initialize Zerion object',
-            method=self._initialize_zerion,
-        )
-
-    def _initialize_zerion(self) -> None:
-        self.zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
-
     def _initialize_compound(self, premium: Optional[Premium]) -> None:
         self.eth_modules['compound'] = Compound(
             ethereum_manager=self.ethereum,
@@ -286,23 +276,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
             premium=premium,
             msg_aggregator=self.msg_aggregator,
         )
-
-    def get_zerion(self) -> Zerion:
-        """Returns the initialized zerion. If it's not ready it waits for 5 seconds
-        and then times out. This should really never happen
-
-        May raise:
-        - gevent.Timeout if no result is returned within 5 seconds
-        """
-        if self.zerion is not None:
-            return self.zerion
-
-        with gevent.Timeout(10):
-            while True:
-                if self.zerion is None:
-                    gevent.sleep(0.5)
-                else:
-                    return self.zerion  # type: ignore
 
     def __del__(self) -> None:
         del self.ethereum
@@ -680,7 +653,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
-            zerion = self.get_zerion()
             for account in accounts:
                 address = deserialize_ethereum_address(account)
                 try:
@@ -701,7 +673,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
                 # Also modify and take into account defi balances
                 if append_or_remove == 'append':
-                    balances = zerion.all_balances_for_account(address)
+                    balances = self.zerion.all_balances_for_account(address)
                     if len(balances) != 0:
                         self.defi_balances[address] = balances
                         self._add_account_defi_balances_to_token_and_totals(
@@ -845,9 +817,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
             # query zerion for defi balances
             self.defi_balances = {}
-            zerion = self.get_zerion()
             for account in self.accounts.eth:
-                balances = zerion.all_balances_for_account(account)
+                balances = self.zerion.all_balances_for_account(account)
                 if len(balances) != 0:
                     self.defi_balances[account] = balances
 
