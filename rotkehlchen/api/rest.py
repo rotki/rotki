@@ -1165,8 +1165,6 @@ class RestAPI():
             XpubManager(self.rotkehlchen.chain_manager).edit_bitcoin_xpub(
                 xpub_data=xpub_data,
             )
-        except TagConstraintError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 

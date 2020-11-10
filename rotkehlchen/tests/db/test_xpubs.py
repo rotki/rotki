@@ -5,6 +5,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.utils import insert_tag_mappings
+from rotkehlchen.errors import InputError
 from rotkehlchen.typing import BlockchainAccountData, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -188,3 +189,23 @@ def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
     assert result[1].label == '123'
     assert result[1].derivation_path == xpub.derivation_path
     assert set(result[1].tags) == {'test'}
+
+
+def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
+    """Test that edits bitcoin xpub label and tries to add non existing tag"""
+    db, xpub, _, _, _ = setup_db_for_xpub_tests
+
+    with pytest.raises(InputError):
+        db.edit_bitcoin_xpub(XpubData(
+            xpub=xpub.xpub,
+            derivation_path=xpub.derivation_path,
+            label='123',
+            tags=['test'],
+        ))
+
+    result = db.get_bitcoin_xpub_data()
+
+    assert result[1].xpub == xpub.xpub
+    assert result[1].label == xpub.label
+    assert result[1].derivation_path == xpub.derivation_path
+    assert result[1].tags != {'test'}

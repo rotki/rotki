@@ -4266,7 +4266,7 @@ Editing BTC xpubs
           "tags": ["public", "old"]
       }
 
-   :reqjson string xpub: The extended public key to add
+   :reqjson string xpub: The extended public key to edit
    :reqjsonarr string derivation_path: The derivation path from which to start deriving addresses relative to the xpub.
    :reqjsonarr string[optional] label: An optional label to describe the new extended public key
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub
