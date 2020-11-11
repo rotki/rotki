@@ -51,9 +51,7 @@ def test_get_balances_graph(
 ):
     """Check querying the uniswap balances endpoint works. Uses real data.
 
-    Requires:
-      - Premium credentials
-      - `is_graph_query` query param (default True)
+    Requires the graph available and premium credentials.
 
     TODO: Here we should use a test account for which we will know what
     balances it has and we never modify

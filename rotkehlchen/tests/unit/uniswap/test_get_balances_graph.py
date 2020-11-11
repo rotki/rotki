@@ -50,7 +50,8 @@ def test_multiple_addresses_balances(uniswap_module):
 
         - TEST_ADDRESS_1: has 1 LP (LIQUIDITY_POSITION_1)
         - TEST_ADDRESS_2: has 1 LP (LIQUIDITY_POSITION_2)
-        - TEST_ADDRESS_3: has no LP ([])
+
+    As TEST_ADDRESS_3 has no LPs is not included.
     """
     def fake_graph_query(
         *args,  # pylint: disable=unused-argument
@@ -72,7 +73,6 @@ def test_multiple_addresses_balances(uniswap_module):
         address_balances={
             TEST_ADDRESS_1: [EXP_LIQUIDITY_POOL_1],
             TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2],
-            TEST_ADDRESS_3: [],
         },
         known_assets=EXP_KNOWN_ASSETS_1.union(EXP_KNOWN_ASSETS_2),
         unknown_assets=EXP_UNKNOWN_ASSETS_1.union(EXP_UNKNOWN_ASSETS_2),

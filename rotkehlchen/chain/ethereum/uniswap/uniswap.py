@@ -1,5 +1,6 @@
-import logging
+from collections import defaultdict
 from datetime import datetime, time
+import logging
 from typing import (
     Callable,
     List,
@@ -9,6 +10,7 @@ from typing import (
 )
 
 from eth_utils import to_checksum_address
+from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
@@ -24,19 +26,36 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, Price
+from rotkehlchen.typing import (
+    AssetAmount,
+    ChecksumEthAddress,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from .graph import (
     LIQUIDITY_POSITIONS_QUERY,
+    SWAPS_QUERY,
     TOKEN_DAY_DATAS_QUERY,
 )
 from .typing import (
     AddressBalances,
+    AddressTrades,
     AssetPrice,
+    AssetWrapper,
+    DDAddressBalances,
+    DDAddressTrades,
     LiquidityPool,
     LiquidityPoolAsset,
     ProtocolBalance,
+    ProtocolHistory,
+    SWAP_FEE,
+    Trade,
+    UNISWAP_TRADES_PREFIX,
 )
 
 if TYPE_CHECKING:
@@ -63,6 +82,7 @@ class Uniswap(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
+        self.history_lock = Semaphore()
         try:
             self.graph: Optional[Graph] = Graph(
                 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
@@ -81,8 +101,10 @@ class Uniswap(EthereumModule):
         graph_query: Callable,
     ) -> ProtocolBalance:
         """Get the addresses' pools data querying the Uniswap subgraph
+
+        Each liquidity position is converted into a <LiquidityPool>.
         """
-        address_balances: AddressBalances = {address: [] for address in addresses}
+        address_balances: DDAddressBalances = defaultdict(list)
         known_assets: Set[EthereumToken] = set()
         unknown_assets: Set[UnknownEthereumToken] = set()
 
@@ -98,7 +120,7 @@ class Uniswap(EthereumModule):
             'limit': GRAPH_QUERY_LIMIT,
             'offset': 0,
             'addresses': addresses_lower,
-            'balance': "0",
+            'balance': '0',
         }
         while True:
             result = graph_query(
@@ -170,7 +192,7 @@ class Uniswap(EthereumModule):
             }
 
         protocol_balance = ProtocolBalance(
-            address_balances=address_balances,
+            address_balances=dict(address_balances),
             known_assets=known_assets,
             unknown_assets=unknown_assets,
         )
@@ -219,6 +241,185 @@ class Uniswap(EthereumModule):
                 unknown_assets.add(unknown_asset)
 
         return asset_price
+
+    def _get_trades(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> AddressTrades:
+        """TODO
+        """
+        address_trades: AddressTrades = {}
+        db_address_trades: DDAddressTrades = defaultdict(list)
+        new_addresses: List[ChecksumEthAddress] = []
+        existing_addresses: List[ChecksumEthAddress] = []
+        min_end_ts: Timestamp = to_timestamp
+
+        # Get addresses' last used query range for Uniswap trades
+        for address in addresses:
+            entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
+            trades_range = self.database.get_used_query_range(name=entry_name)
+
+            if not trades_range:
+                new_addresses.append(address)
+            else:
+                existing_addresses.append(address)
+                min_end_ts = min(min_end_ts, trades_range[1])
+
+        # Request new addresses' trades
+        if new_addresses:
+            start_ts = Timestamp(0)
+            new_address_trades = self._get_trades_graph(
+                addresses=new_addresses,
+                graph_query=self.graph.query,  # type: ignore
+                start_ts=start_ts,
+                end_ts=to_timestamp,
+            )
+            address_trades.update(new_address_trades)
+
+            # Insert last used query range for new addresses
+            for address in new_addresses:
+                entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
+                self.database.update_used_query_range(
+                    name=entry_name,
+                    start_ts=start_ts,
+                    end_ts=to_timestamp,
+                )
+
+        # Request existing DB addresses' trades
+        if existing_addresses and min_end_ts <= to_timestamp:
+            address_new_trades = self._get_trades_graph(
+                addresses=existing_addresses,
+                graph_query=self.graph.query,  # type: ignore
+                start_ts=min_end_ts,
+                end_ts=to_timestamp,
+            )
+            address_trades.update(address_new_trades)
+
+            # Insert last used query range for existing addresses
+            for address in existing_addresses:
+                entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
+                self.database.update_used_query_range(
+                    name=entry_name,
+                    start_ts=min_end_ts,
+                    end_ts=to_timestamp,
+                )
+
+        # Insert requested trades in DB
+        for address in filter(lambda address: address in address_trades, addresses):
+            self.database.add_trades(address_trades[address])
+
+        # Fetch all DB Uniswap trades within the time range, and sort them desc
+        db_trades: List[Trade] = self.database.get_trades(
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+            location=Location.UNISWAP,
+        )
+        db_trades.sort(key=lambda trade: trade.timestamp, reverse=True)
+
+        for db_trade in db_trades:
+            db_address_trades[db_trade.address].append(db_trade)
+
+        return dict(db_address_trades)
+
+    @staticmethod
+    def _get_trades_graph(
+            addresses: List[ChecksumEthAddress],
+            graph_query: Callable,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> AddressTrades:
+        """Get the addresses' trades data querying the Uniswap subgraph
+
+        Each trade (swap) is converted into a Uniswap <Trade>.
+        """
+        address_trades: DDAddressTrades = defaultdict(list)
+        addresses_lower = [address.lower() for address in addresses]
+        param_types = {
+            '$limit': 'Int!',
+            '$offset': 'Int!',
+            '$addresses': '[Bytes!]',
+            '$start_ts': 'BigInt!',
+            '$end_ts': 'BigInt!',
+        }
+        param_values = {
+            'limit': GRAPH_QUERY_LIMIT,
+            'offset': 0,
+            'addresses': addresses_lower,
+            'start_ts': str(start_ts),
+            'end_ts': str(end_ts),
+        }
+        querystr = format_query_indentation(SWAPS_QUERY.format())
+
+        while True:
+            result = graph_query(
+                querystr=querystr,
+                param_types=param_types,
+                param_values=param_values,
+            )
+            result_data = result['swaps']
+
+            for swap in result_data:
+                user_address = to_checksum_address(swap['to'])
+                timestamp = int(swap['timestamp'])
+                token0 = swap['pair']['token0']
+                token1 = swap['pair']['token1']
+                base_asset_total_amount = FVal(swap['pair']['reserve0'])
+                quote_asset_total_amount = FVal(swap['pair']['reserve1'])
+                base_asset = get_ethereum_token(
+                    symbol=token0['symbol'],
+                    ethereum_address=to_checksum_address(token0['id']),
+                    name=token0['name'],
+                    decimals=token0['decimals'],
+                )
+                quote_asset = get_ethereum_token(
+                    symbol=token1['symbol'],
+                    ethereum_address=to_checksum_address(token1['id']),
+                    name=token1['name'],
+                    decimals=token1['decimals'],
+                )
+                trade_type = (
+                    TradeType.SELL
+                    if FVal(swap['amount0In']) > ZERO
+                    else TradeType.BUY
+                )
+                amount = (
+                    FVal(swap['amount0In'])
+                    if trade_type == TradeType.SELL
+                    else FVal(swap['amount0Out'])
+                )
+                rate = (
+                    quote_asset_total_amount / base_asset_total_amount
+                    if trade_type == TradeType.SELL
+                    else base_asset_total_amount / quote_asset_total_amount
+                )
+                trade = Trade(
+                    tx_hash=swap['transaction']['id'],
+                    address=user_address,
+                    timestamp=Timestamp(timestamp),
+                    location=Location.UNISWAP,
+                    base_asset=base_asset,
+                    quote_asset=quote_asset,
+                    trade_type=trade_type,
+                    amount=AssetAmount(amount),
+                    rate=Price(rate),
+                    fee=Fee(amount * SWAP_FEE),
+                    fee_currency=AssetWrapper(identifier=base_asset.symbol),
+                )
+                address_trades[user_address].append(trade)
+
+            # Check whether an extra request is needed
+            if len(result_data) < GRAPH_QUERY_LIMIT:
+                break
+
+            # Update pagination step
+            param_values = {
+                **param_values,
+                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+            }
+
+        return dict(address_trades)
 
     @staticmethod
     def _get_unknown_asset_price_graph(
@@ -313,14 +514,13 @@ class Uniswap(EthereumModule):
     def get_balances(
         self,
         addresses: List[ChecksumEthAddress],
-        is_graph_query: bool,
     ) -> AddressBalances:
         """Get the addresses' balances in the Uniswap protocol
 
         Premium users can request balances either via the Uniswap subgraph or
-        Zerion SDK.
+        on-chain.
         """
-        is_graph_mode = self.graph and self.premium and is_graph_query
+        is_graph_mode = self.graph and self.premium
 
         if is_graph_mode:
             protocol_balance = self._get_balances_graph(
@@ -353,6 +553,29 @@ class Uniswap(EthereumModule):
         )
 
         return protocol_balance.address_balances
+
+    def get_history(
+        self,
+        addresses: List[ChecksumEthAddress],
+        reset_db_data: bool,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> ProtocolHistory:
+        """Get the addresses' history (trades & events) in the Uniswap protocol
+        """
+        with self.history_lock:
+            if reset_db_data is True:
+                self.database.delete_uniswap_data()
+
+            protocol_trades = self._get_trades(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        return {
+            'trades': protocol_trades,
+        }
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

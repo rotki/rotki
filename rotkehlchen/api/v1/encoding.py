@@ -1130,11 +1130,3 @@ class AssetIconsSchema(Schema):
         validate=webargs.validate.OneOf(choices=('thumb', 'small', 'large')),
         missing='thumb',
     )
-
-
-class GraphQuerySchema(Schema):
-    is_graph_query = fields.Boolean(missing=True)
-
-
-class AsyncGraphQuerySchema(AsyncQueryArgumentSchema, GraphQuerySchema):
-    pass

@@ -27,6 +27,10 @@ from rotkehlchen.chain.ethereum.structures import (
     YearnVaultEvent,
     aave_event_from_db,
 )
+from rotkehlchen.chain.ethereum.uniswap import (
+    UNISWAP_TRADES_PREFIX,
+    UniswapTrade,
+)
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -728,6 +732,18 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM aave_events;')
         cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_uniswap_data(self) -> None:
+        """Delete all historical Uniswap data"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            f'DELETE FROM trades WHERE location="{Location.UNISWAP.serialize_for_db()}";',
+        )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
+        )
         self.conn.commit()
         self.update_last_write()
 
@@ -1781,6 +1797,9 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="ethtxs_{address}";')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name="{UNISWAP_TRADES_PREFIX}_{address}";',
+        )
         cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         cursor.execute(
@@ -1803,6 +1822,11 @@ class DBHandler:
             f'DELETE FROM ethereum_transactions WHERE '
             f'to_address="{address}" AND from_address NOT IN ({",".join(questionmarks)});',
             other_eth_accounts,
+        )
+        # Delete trades (e.g. Uniswap)
+        cursor.execute(
+            f'DELETE FROM trades WHERE id LIKE "{address}_%" AND '
+            f'location="{Location.UNISWAP.serialize_for_db()}";',
         )
 
         self.conn.commit()
@@ -1914,19 +1938,23 @@ class DBHandler:
 
         trades = []
         for result in results:
+            location = deserialize_location_from_db(result[2])
             try:
-                trade = Trade(
-                    timestamp=deserialize_timestamp(result[1]),
-                    location=deserialize_location_from_db(result[2]),
-                    pair=result[3],
-                    trade_type=deserialize_trade_type_from_db(result[4]),
-                    amount=deserialize_asset_amount(result[5]),
-                    rate=deserialize_price(result[6]),
-                    fee=deserialize_fee(result[7]),
-                    fee_currency=Asset(result[8]),
-                    link=result[9],
-                    notes=result[10],
-                )
+                if location == Location.UNISWAP:
+                    trade = UniswapTrade.get_trade_from_db(result)
+                else:
+                    trade = Trade(
+                        timestamp=deserialize_timestamp(result[1]),
+                        location=deserialize_location_from_db(result[2]),
+                        pair=result[3],
+                        trade_type=deserialize_trade_type_from_db(result[4]),
+                        amount=deserialize_asset_amount(result[5]),
+                        rate=deserialize_price(result[6]),
+                        fee=deserialize_fee(result[7]),
+                        fee_currency=Asset(result[8]),
+                        link=result[9],
+                        notes=result[10],
+                    )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing trade from the DB. Skipping trade. Error was: {str(e)}',
