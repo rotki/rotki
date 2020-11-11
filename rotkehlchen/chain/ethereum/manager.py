@@ -727,14 +727,33 @@ class EthereumManager():
                     from_block=start_block,
                     to_block=end_block,
                 )
+
                 # Turn all Hex ints to ints
                 for e_idx, event in enumerate(new_events):
                     try:
-                        new_events[e_idx]['address'] = to_checksum_address(event['address'])
-                        new_events[e_idx]['blockNumber'] = deserialize_int_from_hex(
+                        block_number = deserialize_int_from_hex(
                             symbol=event['blockNumber'],
                             location='etherscan log query',
                         )
+                        log_index = deserialize_int_from_hex(
+                            symbol=event['logIndex'],
+                            location='etherscan log query',
+                        )
+                        # Try to see if the event is a duplicate that got returned
+                        # in the previous iteration
+                        for previous_event in reversed(events):
+                            if previous_event['blockNumber'] < block_number:
+                                break
+
+                            same_event = (
+                                previous_event['logIndex'] == log_index and
+                                previous_event['transactionHash'] == event['transactionHash']
+                            )
+                            if same_event:
+                                events.pop()
+
+                        new_events[e_idx]['address'] = to_checksum_address(event['address'])
+                        new_events[e_idx]['blockNumber'] = block_number
                         new_events[e_idx]['timeStamp'] = deserialize_int_from_hex(
                             symbol=event['timeStamp'],
                             location='etherscan log query',
@@ -747,10 +766,7 @@ class EthereumManager():
                             symbol=event['gasUsed'],
                             location='etherscan log query',
                         )
-                        new_events[e_idx]['logIndex'] = deserialize_int_from_hex(
-                            symbol=event['logIndex'],
-                            location='etherscan log query',
-                        )
+                        new_events[e_idx]['logIndex'] = log_index
                         new_events[e_idx]['transactionIndex'] = deserialize_int_from_hex(
                             symbol=event['transactionIndex'],
                             location='etherscan log query',
@@ -759,7 +775,14 @@ class EthereumManager():
                         raise RemoteError(
                             'Couldnt decode an etherscan event due to {str(e)}}',
                         ) from e
-                start_block = end_block + 1
+
+                # etherscan will only return 1000 events in one go. If more than 1000
+                # are returned such as when no filter args are provided then continue
+                # the query from the last block
+                if len(new_events) == 1000:
+                    start_block = new_events[-1]['blockNumber']
+                else:
+                    start_block = end_block + 1
                 events.extend(new_events)
 
         return events
