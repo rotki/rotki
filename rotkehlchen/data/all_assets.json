@@ -4376,6 +4376,13 @@
         "symbol": "ETH",
         "type": "own chain"
     },
+    "ETH-B": {
+        "coingecko": "ethereum",
+        "name": "Staked ETH in Phase 0",
+        "started": 1602667372,
+        "symbol": "ETH",
+        "type": "own chain"
+    },
     "ETHB": {
         "coingecko": "",
         "ethereum_address": "0x3a26746Ddb79B1B8e4450e3F4FFE3285A307387E",
