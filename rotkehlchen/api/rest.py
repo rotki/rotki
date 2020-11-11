@@ -1790,7 +1790,7 @@ class RestAPI():
         transactions: Optional[List[EthereumTransaction]]
         try:
             transactions = self.rotkehlchen.chain_manager.ethereum.transactions.query(
-                address=address,
+                addresses=[address],
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 with_limit=self.rotkehlchen.premium is None,

@@ -622,8 +622,10 @@ class EthereumManager():
             argument_filters: Dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
-            call_order: Sequence[NodeName] = (NodeName.OWN, NodeName.ETHERSCAN),
+            call_order: Optional[Sequence[NodeName]] = None,
     ) -> List[Dict[str, Any]]:
+        if call_order is None:  # Default call order for logs
+            call_order = (NodeName.OWN, NodeName.ETHERSCAN)
         return self.query(
             method=self._get_logs,
             call_order=call_order,
