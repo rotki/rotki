@@ -20,13 +20,22 @@ import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
+import { UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
-import { MODULE_YEARN } from '@/services/session/consts';
+import {
+  MODULE_MAKERDAO_VAULTS,
+  MODULE_MAKERDAO_DSR,
+  MODULE_UNISWAP,
+  MODULE_YEARN,
+  MODULE_AAVE,
+  MODULE_COMPOUND
+} from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
+import { uniswapNumericKeys } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import {
   AllDefiProtocols,
@@ -46,7 +55,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes('makerdao_dsr')) {
+    if (!activeModules.includes(MODULE_MAKERDAO_DSR)) {
       return;
     }
     const section = Section.DEFI_DRS_BALANCES;
@@ -93,7 +102,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes('makerdao_dsr') || !session?.premium) {
+    if (!activeModules.includes(MODULE_MAKERDAO_DSR) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_DSR_HISTORY;
@@ -139,7 +148,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes('makerdao_vaults')) {
+    if (!activeModules.includes(MODULE_MAKERDAO_VAULTS)) {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULTS;
@@ -190,7 +199,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes('makerdao_vaults') || !session?.premium) {
+    if (!activeModules.includes(MODULE_MAKERDAO_VAULTS) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULT_DETAILS;
@@ -239,7 +248,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes('aave')) {
+    if (!activeModules.includes(MODULE_AAVE)) {
       return;
     }
     const section = Section.DEFI_AAVE_BALANCES;
@@ -289,7 +298,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     payload: { refresh?: boolean; reset?: boolean }
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes('aave') || !session?.premium) {
+    if (!activeModules.includes(MODULE_AAVE) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_AAVE_HISTORY;
@@ -435,6 +444,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }),
         dispatch('fetchYearnVaultBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        }),
+        dispatch('fetchUniswapBalances', refresh).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
         })
       ]);
 
@@ -548,7 +560,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes('compound')) {
+    if (!activeModules.includes(MODULE_COMPOUND)) {
       return;
     }
 
@@ -600,7 +612,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
   ) {
     const { activeModules } = session!.generalSettings;
 
-    if (!activeModules.includes('compound') || !session?.premium) {
+    if (!activeModules.includes(MODULE_COMPOUND) || !session?.premium) {
       return;
     }
 
@@ -651,7 +663,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(DEFI_YEARN_VAULTS)) {
+    if (!activeModules.includes(MODULE_YEARN)) {
       return;
     }
 
@@ -748,6 +760,57 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
           }
         ),
         i18n.tc('actions.defi.yearn_vaults_history.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
+  },
+
+  async fetchUniswapBalances(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes(MODULE_UNISWAP)) {
+      return;
+    }
+
+    const section = Section.DEFI_UNISWAP_BALANCES;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.DEFI_UNISWAP_BALANCES;
+      const { taskId } = await api.defi.fetchUniswapBalances();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.uniswap.task.title'),
+        ignoreResult: false,
+        numericKeys: uniswapNumericKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<UniswapBalances, TaskMeta>(
+        taskType
+      );
+
+      commit('uniswapBalances', result);
+    } catch (e) {
+      notify(
+        i18n.tc('actions.defi.uniswap.error.description', undefined, {
+          error: e.message
+        }),
+        i18n.tc('actions.defi.uniswap.error.title'),
         Severity.ERROR,
         true
       );

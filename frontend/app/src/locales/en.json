@@ -352,6 +352,15 @@
           "title": "yearn.finance Vaults history",
           "description": "Failed to retrieve yearn.finance Vaults history: {error}"
         }
+      },
+      "uniswap": {
+        "task": {
+          "title": "Querying uniswap balances"
+        },
+        "error": {
+          "title": "Uniswap balances",
+          "description": "Failed to retrieve uniswap balances: {error}"
+        }
       }
     },
     "balances": {

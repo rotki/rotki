@@ -1,3 +1,4 @@
+import { balanceKeys } from '@/services/consts';
 import { OverviewDefiProtocol } from '@/store/defi/types';
 
 const FINNEXUS = 'FinNexus';
@@ -160,3 +161,10 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
 export function getProtcolIcon(name: OverviewDefiProtocol): string {
   return ICON_LIST[name];
 }
+
+export const uniswapNumericKeys = [
+  ...balanceKeys,
+  'usd_price',
+  'total_amount',
+  'total_supply'
+];

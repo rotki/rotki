@@ -19,6 +19,7 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
+import { UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnEventType,
   YearnVaultsBalances,
@@ -41,6 +42,7 @@ export interface DefiState {
   compoundHistory: CompoundHistory;
   yearnVaultsHistory: YearnVaultsHistory;
   yearnVaultsBalances: YearnVaultsBalances;
+  uniswapBalances: UniswapBalances;
 }
 
 export interface DSRBalances {
@@ -154,6 +156,7 @@ interface LendingHistoryExtras {
   readonly makerdao: MakerDAOLendingHistoryExtras;
   readonly compound: HistoryExtras<CompoundEventType>;
   readonly yearn_vaults: HistoryExtras<YearnEventType>;
+  readonly uniswap: {};
 }
 
 export interface DefiLendingHistory<T extends SupportedDefiProtocols> {

@@ -2,8 +2,9 @@ import { Module } from '@/components/defi/wizard/types';
 import {
   MODULE_AAVE,
   MODULE_COMPOUND,
+  MODULE_MAKERDAO_DSR,
   MODULE_MAKERDAO_VAULTS,
-  MODULE_MAKERDARO_DSR,
+  MODULE_UNISWAP,
   MODULE_YEARN
 } from '@/services/session/consts';
 
@@ -19,7 +20,7 @@ export const DEFI_MODULES: Module[] = [
     icon: require('@/assets/images/defi/makerdao.svg')
   },
   {
-    identifier: MODULE_MAKERDARO_DSR,
+    identifier: MODULE_MAKERDAO_DSR,
     name: 'MakerDAO DSR',
     icon: require('@/assets/images/defi/makerdao.svg')
   },
@@ -32,5 +33,10 @@ export const DEFI_MODULES: Module[] = [
     identifier: MODULE_YEARN,
     name: 'yearn.finance',
     icon: require('@/assets/images/defi/yearn_vaults.svg')
+  },
+  {
+    identifier: MODULE_UNISWAP,
+    name: 'Uniswap',
+    icon: require('@/assets/images/defi/uniswap.svg')
   }
 ];
