@@ -10,11 +10,18 @@ from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber
+from eth_utils import to_bytes
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 from web3 import HTTPProvider, Web3
-from web3._utils.abi import get_abi_output_types
+from web3._utils.abi import (
+    exclude_indexed_event_inputs,
+    get_abi_output_types,
+    normalize_event_input_types,
+)
 from web3._utils.contracts import find_matching_event_abi
+from web3._utils.encoding import hexstr_if_str
+from web3._utils.events import get_event_abi_types_for_decoding
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
@@ -42,6 +49,19 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_ETH_RPC_TIMEOUT = 10
+
+
+ABI_CODEC = Web3().codec
+
+
+def decode_event_data(data: str, event_abi: Dict[str, Any]) -> Tuple:
+    """Decode the data of an event according to the event's abi entry"""
+    log_data = hexstr_if_str(to_bytes, data)
+    log_data_abi = exclude_indexed_event_inputs(event_abi)  # type: ignore
+    log_data_normalized_inputs = normalize_event_input_types(log_data_abi)
+    log_data_types = get_event_abi_types_for_decoding(log_data_normalized_inputs)
+    decoded_log_data = ABI_CODEC.decode_abi(log_data_types, log_data)
+    return decoded_log_data
 
 
 def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
