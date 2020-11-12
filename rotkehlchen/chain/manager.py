@@ -26,12 +26,13 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
+from rotkehlchen.chain.ethereum.eth2 import Eth2DepositResult, get_eth2_staked_amount
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
 from rotkehlchen.chain.ethereum.yearn import YearnVaults
 from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances, Zerion
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -267,6 +268,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 else:
                     log.error(f'Unrecognized module value {given_module} given. Skipping...')
 
+        self.premium = premium
         self.greenlet_manager = greenlet_manager
         self.zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
 
@@ -530,6 +532,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 start_eth_amount=amount,
                 start_eth_usd_value=usd_value,
             )
+            # Check if the new account has any staked eth2 deposits
+            self.account_for_staked_eth2_balance(account)
         elif append_or_remove == 'remove':
             if account not in self.accounts.eth:
                 raise InputError('Tried to remove a non existing ETH account')
@@ -899,6 +903,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
             for asset, normalized_vault_balance in normalized_balances.items():
                 self.totals[asset] += normalized_vault_balance
 
+        # Count ETH staked in Eth2 beacon chain
+        self.get_staked_eth2_balances()
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_token_and_totals()
 
@@ -955,3 +961,42 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 account=account,
                 balances=defi_balances,
             )
+
+    @protect_with_lock(arguments_matter=False)
+    def account_for_staked_eth2_balance(self, address: ChecksumEthAddress) -> None:
+        result = get_eth2_staked_amount(
+            ethereum=self.ethereum,
+            addresses=list(self.balances.eth.keys()),
+            has_premium=self.premium is not None,
+            msg_aggregator=self.msg_aggregator,
+        )
+
+        if address not in result.totals:
+            return  # nothing to do, no staked ETH detected
+
+        self.balances.eth[address].asset_balances[A_ETH2] = result.totals[address]
+        self.totals[A_ETH2] += result.totals[address]
+
+    @protect_with_lock(arguments_matter=False)
+    def get_staked_eth2_balances(self) -> Eth2DepositResult:
+        # Before querying the new balances, delete the ones in memory if any
+        self.totals.pop(A_ETH2, None)
+        for _, entry in self.balances.eth.items():
+            if A_ETH2 in entry.asset_balances:
+                del entry.asset_balances[A_ETH2]
+
+        result = get_eth2_staked_amount(
+            ethereum=self.ethereum,
+            addresses=list(self.balances.eth.keys()),
+            has_premium=self.premium is not None,
+            msg_aggregator=self.msg_aggregator,
+        )
+
+        # and now that we queried it update the chain manager's balances
+        total = Balance()
+        for address, balance in result.totals.items():
+            total += balance
+            self.balances.eth[address].asset_balances[A_ETH2] = balance
+        self.totals[A_ETH2] = total
+
+        return result

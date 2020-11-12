@@ -4376,7 +4376,7 @@
         "symbol": "ETH",
         "type": "own chain"
     },
-    "ETH-B": {
+    "ETH2": {
         "coingecko": "ethereum",
         "name": "Staked ETH in Phase 0",
         "started": 1602667372,
