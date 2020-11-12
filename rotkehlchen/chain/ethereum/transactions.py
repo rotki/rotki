@@ -102,7 +102,7 @@ class EthTransactions(LockableQueryObject):
     @protect_with_lock()
     def query(
             self,
-            address: Optional[ChecksumEthAddress],
+            addresses: Optional[List[ChecksumEthAddress]],
             from_ts: Timestamp,
             to_ts: Timestamp,
             with_limit: bool = False,
@@ -122,8 +122,8 @@ class EthTransactions(LockableQueryObject):
         """
         transactions_set: Set[EthereumTransaction] = set()
 
-        if address is not None:
-            accounts = [address]
+        if addresses is not None:
+            accounts = addresses
         else:
             accounts = self.database.get_blockchain_accounts().eth
 

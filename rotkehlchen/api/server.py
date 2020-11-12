@@ -30,6 +30,7 @@ from rotkehlchen.api.v1.resources import (
     CompoundHistoryResource,
     DataImportResource,
     DefiBalancesResource,
+    Eth2StakeResource,
     EthereumTransactionsResource,
     ExchangeBalancesResource,
     ExchangesDataResource,
@@ -56,6 +57,7 @@ from rotkehlchen.api.v1.resources import (
     StatisticsValueDistributionResource,
     TagsResource,
     TradesResource,
+    UniswapBalancesResource,
     UserPasswordChangeResource,
     UserPremiumKeyResource,
     UserPremiumSyncResource,
@@ -65,7 +67,6 @@ from rotkehlchen.api.v1.resources import (
     WatchersResource,
     YearnVaultsBalancesResource,
     YearnVaultsHistoryResource,
-    UniswapBalancesResource,
     create_blueprint,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -131,6 +132,7 @@ URLS_V1: URLS = [
         EthereumTransactionsResource,
         'per_address_ethereum_transactions_resource',
     ),
+    ('/blockchains/ETH2/stake', Eth2StakeResource),
     ('/blockchains/ETH/defi', DefiBalancesResource),
     ('/blockchains/ETH/modules/makerdao/dsrbalance', MakerDAODSRBalanceResource),
     ('/blockchains/ETH/modules/makerdao/dsrhistory', MakerDAODSRHistoryResource),

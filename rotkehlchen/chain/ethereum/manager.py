@@ -10,11 +10,18 @@ from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber
+from eth_utils import to_bytes
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 from web3 import HTTPProvider, Web3
-from web3._utils.abi import get_abi_output_types
+from web3._utils.abi import (
+    exclude_indexed_event_inputs,
+    get_abi_output_types,
+    normalize_event_input_types,
+)
 from web3._utils.contracts import find_matching_event_abi
+from web3._utils.encoding import hexstr_if_str
+from web3._utils.events import get_event_abi_types_for_decoding
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
@@ -42,6 +49,19 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_ETH_RPC_TIMEOUT = 10
+
+
+ABI_CODEC = Web3().codec
+
+
+def decode_event_data(data: str, event_abi: Dict[str, Any]) -> Tuple:
+    """Decode the data of an event according to the event's abi entry"""
+    log_data = hexstr_if_str(to_bytes, data)
+    log_data_abi = exclude_indexed_event_inputs(event_abi)  # type: ignore
+    log_data_normalized_inputs = normalize_event_input_types(log_data_abi)
+    log_data_types = get_event_abi_types_for_decoding(log_data_normalized_inputs)
+    decoded_log_data = ABI_CODEC.decode_abi(log_data_types, log_data)
+    return decoded_log_data
 
 
 def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
@@ -622,8 +642,10 @@ class EthereumManager():
             argument_filters: Dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
-            call_order: Sequence[NodeName] = (NodeName.OWN, NodeName.ETHERSCAN),
+            call_order: Optional[Sequence[NodeName]] = None,
     ) -> List[Dict[str, Any]]:
+        if call_order is None:  # Default call order for logs
+            call_order = (NodeName.OWN, NodeName.ETHERSCAN)
         return self.query(
             method=self._get_logs,
             call_order=call_order,
@@ -705,14 +727,33 @@ class EthereumManager():
                     from_block=start_block,
                     to_block=end_block,
                 )
+
                 # Turn all Hex ints to ints
                 for e_idx, event in enumerate(new_events):
                     try:
-                        new_events[e_idx]['address'] = to_checksum_address(event['address'])
-                        new_events[e_idx]['blockNumber'] = deserialize_int_from_hex(
+                        block_number = deserialize_int_from_hex(
                             symbol=event['blockNumber'],
                             location='etherscan log query',
                         )
+                        log_index = deserialize_int_from_hex(
+                            symbol=event['logIndex'],
+                            location='etherscan log query',
+                        )
+                        # Try to see if the event is a duplicate that got returned
+                        # in the previous iteration
+                        for previous_event in reversed(events):
+                            if previous_event['blockNumber'] < block_number:
+                                break
+
+                            same_event = (
+                                previous_event['logIndex'] == log_index and
+                                previous_event['transactionHash'] == event['transactionHash']
+                            )
+                            if same_event:
+                                events.pop()
+
+                        new_events[e_idx]['address'] = to_checksum_address(event['address'])
+                        new_events[e_idx]['blockNumber'] = block_number
                         new_events[e_idx]['timeStamp'] = deserialize_int_from_hex(
                             symbol=event['timeStamp'],
                             location='etherscan log query',
@@ -725,10 +766,7 @@ class EthereumManager():
                             symbol=event['gasUsed'],
                             location='etherscan log query',
                         )
-                        new_events[e_idx]['logIndex'] = deserialize_int_from_hex(
-                            symbol=event['logIndex'],
-                            location='etherscan log query',
-                        )
+                        new_events[e_idx]['logIndex'] = log_index
                         new_events[e_idx]['transactionIndex'] = deserialize_int_from_hex(
                             symbol=event['transactionIndex'],
                             location='etherscan log query',
@@ -737,7 +775,14 @@ class EthereumManager():
                         raise RemoteError(
                             'Couldnt decode an etherscan event due to {str(e)}}',
                         ) from e
-                start_block = end_block + 1
+
+                # etherscan will only return 1000 events in one go. If more than 1000
+                # are returned such as when no filter args are provided then continue
+                # the query from the last block
+                if len(new_events) == 1000:
+                    start_block = new_events[-1]['blockNumber']
+                else:
+                    start_block = end_block + 1
                 events.extend(new_events)
 
         return events

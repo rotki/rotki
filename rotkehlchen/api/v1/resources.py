@@ -844,6 +844,15 @@ class DataImportResource(BaseResource):
         return self.rest_api.import_data(source=source, filepath=filepath)
 
 
+class Eth2StakeResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_eth2_stake(async_query)
+
+
 class DefiBalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()

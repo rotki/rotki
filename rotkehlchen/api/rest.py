@@ -1470,6 +1470,29 @@ class RestAPI():
             self.rotkehlchen.data_importer.import_cryptocom_csv(filepath)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
+    def _get_eth2_stake(self) -> Dict[str, Any]:
+        try:
+            result = self.rotkehlchen.chain_manager.get_staked_eth2_balances()
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        return {'result': process_result(result), 'message': ''}
+
+    @require_premium_user(active_check=False)
+    def get_eth2_stake(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_eth2_stake')
+
+        response = self._get_eth2_stake()
+        result = response['result']
+        msg = response['message']
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
     def _get_defi_balances(self) -> Dict[str, Any]:
         """
         This returns the typical async response dict but with the
@@ -1790,7 +1813,7 @@ class RestAPI():
         transactions: Optional[List[EthereumTransaction]]
         try:
             transactions = self.rotkehlchen.chain_manager.ethereum.transactions.query(
-                address=address,
+                addresses=[address] if address is not None else None,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 with_limit=self.rotkehlchen.premium is None,

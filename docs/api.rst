@@ -4008,6 +4008,86 @@ Getting yearn finance vaults historical data
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+
+Getting Eth2 Staking details
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH2/stake
+
+   Doing a GET on the ETH2 stake endoint will return detailed information about your ETH2 staking activity.
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH2/stake HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "deposits": [{
+	      "from_address": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
+	      "pubkey": "0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b",
+	      "withdrawal_credentials": "0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499",
+	      "value": {
+	          "amount": "32", "usd_value": "11360"
+	      },
+	      "validator_index": 9,
+	      "tx_hash": "0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1",
+	      "log_index": 22
+	      }, {
+	      "from_address": "0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19",
+	      "pubkey": "0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3",
+	      "withdrawal_credentials": "0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817",
+	      "value": {
+	          "amount": "32", "usd_value": "11860"
+	      },
+	      "validator_index": 1650,
+	      "tx_hash": "0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7",
+	      "log_index": 221
+	  }],
+	  "totals": {
+	      "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397": {
+	          "amount": "32", "usd_value": "11360"
+	      },
+	      "0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19": {
+	          "amount": "128", "usd_value": "58240"
+	      }
+	  }
+	},
+        "message": "",
+      }
+
+   :resjson object result: The result of the Eth2 staking details for all of the user's accounts. Contains two attributes. The deposits and the totals
+			   
+   :resjson from_address: The Eth1 address that made the Eth2 deposit.
+   :resjson pubkey string: The Eth2 public key for which the deposit was made
+   :resjson withdrawal_credentials string: The Eth2 withdrawal credentials with which the deposit was made
+   :resjson validator_index int: The validator index slot for which the deposit was made
+   :resjson tx_hash str: The Eth1 transaction hash in which the deposit was made.
+   :resjson log_index int: The log index of the deposit
+   :resjson object totals: The total balances staked in Eth2 across all Eth1 accounts
+
+   :statuscode 200: Staked balances succesfully queried
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 Get addresses to query per protocol
 =======================================
 
@@ -4567,7 +4647,7 @@ Removing blockchain accounts
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/ETH/tokens HTTP/1.1
+      DELETE /api/1/blockchains/ETH HTTP/1.1
       Host: localhost:5042
 
       {"accounts": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]}
