@@ -13181,7 +13181,7 @@
         "type": "ethereum token"
     },
     "aENJ": {
-        "coingecko": "",
+        "coingecko": "aave-enj",
         "cryptocompare": "ENJ",
         "ethereum_address": "0x712DB54daA836B53Ef1EcBb9c6ba3b9Efb073F40",
         "ethereum_token_decimals": 18,
@@ -13251,7 +13251,7 @@
         "type": "ethereum token"
     },
     "aREN": {
-        "coingecko": "",
+        "coingecko": "aave-ren",
         "cryptocompare": "REN",
         "ethereum_address": "0x69948cC03f478B95283F7dbf1CE764d0fc7EC54C",
         "ethereum_token_decimals": 18,
@@ -13331,7 +13331,7 @@
         "type": "ethereum token"
     },
     "aYFI": {
-        "coingecko": "",
+        "coingecko": "ayfi",
         "cryptocompare": "YFI",
         "ethereum_address": "0x12e51E77DAAA58aA0E9247db7510Ea4B46F9bEAd",
         "ethereum_token_decimals": 18,
@@ -13348,6 +13348,16 @@
         "name": "Aave Interest bearing ZRX",
         "started": 1578502051,
         "symbol": "aZRX",
+        "type": "ethereum token"
+    },
+    "aUNI": {
+        "coingecko": "uniswap",
+        "cryptocompare": "UNI",
+        "ethereum_address": "0xB124541127A0A657f056D9Dd06188c4F1b0e5aab",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing Uniswap",
+        "started": 1603718736,
+        "symbol": "aUNI",
         "type": "ethereum token"
     },
     "cBAT": {

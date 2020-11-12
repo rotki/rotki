@@ -75,6 +75,7 @@ ATOKEN_TO_DEPLOYED_BLOCK = {
     'aYFI': 10748286,
     'aZRX': 9241114,
     'aAAVE': 11093579,
+    'aUNI': 11132284,
 }
 ATOKENS_LIST = [EthereumToken(x) for x in ATOKEN_TO_DEPLOYED_BLOCK]
 

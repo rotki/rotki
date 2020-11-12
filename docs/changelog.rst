@@ -2,6 +2,14 @@
 Changelog
 =========
 
+* :feature:`1660` Users will now be able to see and edit labels and tags for xpub addresses.
+* :feature:`1227` Users can now see a net worth graph on the dashboard.
+* :bug:`1668` Refreshing BTC balances now, will not clear any other assets from the state.
+* :bug:`1669` Users will now see a loading indicator when balances are loading and proper non-zero values after loading.
+* :bug:`1678` Selected type will now not be ignored, when adding an xpub that already contains an x/y/zpub prefix.
+* :bug:`1686` Compound historical interest profit is now shown correctly if theuser still has assets locked in compound.
+* :feature:`1414` Users will now be shown only the available locations when filtering trades.
+
 * :feature:`-` Added support for the following tokens:
 
   - `Synthetix sBTC (sBTC) <https://www.coingecko.com/en/coins/sbtc>`__
@@ -11,14 +19,8 @@ Changelog
   - `Synthetix sXAG (sXAG) <https://www.coingecko.com/en/coins/sxag>`__
   - `Synthetix iBTC (iBTC) <https://www.coingecko.com/en/coins/ibtc>`__
   - `Synthetix iETH (iETH) <https://www.coingecko.com/en/coins/ieth>`__
+  - `Aave Interest bearing Uniswap (aUNI) <https://etherscan.io/address/0xB124541127A0A657f056D9Dd06188c4F1b0e5aab>`__
 
-* :feature:`1660` Users will now be able to see and edit labels and tags for xpub addresses.
-* :feature:`1227` Users can now see a net worth graph on the dashboard.
-* :bug:`1668` Refreshing BTC balances now, will not clear any other assets from the state.
-* :bug:`1669` Users will now see a loading indicator when balances are loading and proper non-zero values after loading.
-* :bug:`1678` Selected type will now not be ignored, when adding an xpub that already contains an x/y/zpub prefix.
-* :bug:`1686` Compound historical interest profit is now shown correctly if theuser still has assets locked in compound.
-* :feature:`1414` Users will now be shown only the available locations when filtering trades.
 
 * :release:`1.8.3 <2020-10-30>`
 * :bug:`1636` Users running earlier OSX versions than Catalina can again start the application properly.
