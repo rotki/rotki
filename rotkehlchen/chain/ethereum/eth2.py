@@ -54,9 +54,6 @@ def get_eth2_staked_amount(
         with_limit=False,
         recent_first=False,
     )
-
-    last_event = events[-1]
-    decoded_data = decode_event_data(last_event['data'], EVENT_ABI)
     totals: DefaultDict[ChecksumEthAddress, int] = defaultdict(int)
     deposits = []
 
