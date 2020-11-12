@@ -132,7 +132,7 @@ class TradesHistorian():
 
         try:
             eth_transactions = self.chain_manager.ethereum.transactions.query(
-                address=None,  # all addresses
+                addresses=None,  # all addresses
                 # We need to have full history of transactions available
                 from_ts=Timestamp(0),
                 to_ts=now,
