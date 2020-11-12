@@ -20,7 +20,11 @@
     <v-row>
       <v-col>
         <div class="d-flex justify-space-between align-center" />
-        <tab-navigation v-if="defiSetupDone" :tab-contents="tabs" />
+        <tab-navigation
+          v-if="defiSetupDone"
+          :tab-contents="tabs"
+          no-content-margin
+        />
         <defi-wizard v-else class="mt-8" />
       </v-col>
     </v-row>
@@ -35,6 +39,7 @@ import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
+import { Routes } from '@/router/routes';
 import { DEFI_SETUP_DONE } from '@/store/settings/consts';
 
 @Component({
@@ -49,18 +54,16 @@ export default class DecentralizedFinance extends Vue {
   readonly tabs: TabContent[] = [
     {
       name: this.$tc('decentralized_finance.tabs.overview'),
-      routeTo: '/defi/overview'
+      routeTo: Routes.DEFI_OVERVIEW
     },
     {
       name: this.$tc('decentralized_finance.tabs.deposits'),
-      routeTo: '/defi/deposits'
+      routeTo: Routes.DEFI_DEPOSITS
     },
     {
       name: this.$tc('decentralized_finance.tabs.liabilities'),
-      routeTo: '/defi/liabilities'
+      routeTo: Routes.DEFI_LIABILITIES
     }
   ];
 }
 </script>
-
-<style scoped></style>

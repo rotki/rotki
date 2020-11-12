@@ -19,7 +19,7 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import { UniswapBalances } from '@/services/defi/types/uniswap';
+import { UniswapAsset, UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnEventType,
   YearnVaultsBalances,
@@ -225,4 +225,12 @@ export interface ProfitLossModel {
   readonly address: string;
   readonly asset: string;
   readonly value: Balance;
+}
+
+export interface UniswapBalance {
+  readonly account: string;
+  readonly assets: UniswapAsset[];
+  readonly poolAddress: string;
+  readonly totalSupply: BigNumber;
+  readonly userBalance: Balance;
 }

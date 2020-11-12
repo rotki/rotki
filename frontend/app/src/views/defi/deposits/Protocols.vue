@@ -9,5 +9,5 @@ import Lending from '@/components/defi/Lending.vue';
 @Component({
   components: { Lending }
 })
-export default class DecentralizedLoans extends Vue {}
+export default class Protocols extends Vue {}
 </script>

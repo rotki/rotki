@@ -101,6 +101,7 @@
         <blockchain-account-selector
           v-model="selectedAccount"
           hint
+          :chains="['ETH']"
           :usable-accounts="defiAccounts(selectedProtocols)"
         />
       </v-col>

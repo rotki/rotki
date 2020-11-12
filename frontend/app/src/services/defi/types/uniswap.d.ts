@@ -17,10 +17,10 @@ interface UniswapAsset {
 interface UniswapBalance {
   readonly address: string;
   readonly assets: UniswapAsset[];
-  readonly totalBalance: BigNumber;
+  readonly totalSupply: BigNumber;
   readonly userBalance: Balance;
 }
 
 export interface UniswapBalances {
-  readonly [address: string]: UniswapBalance;
+  readonly [address: string]: UniswapBalance[];
 }

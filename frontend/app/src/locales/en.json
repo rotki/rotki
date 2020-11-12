@@ -479,7 +479,12 @@
     },
     "defi": "DeFi",
     "statistics": "Statistics",
-    "tax_report": "Tax Report"
+    "tax_report": "Tax Report",
+    "defi_sub": {
+      "overview": "Overview",
+      "deposits": "Deposits",
+      "liabilities": "Liabilities"
+    }
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded...",
@@ -951,5 +956,14 @@
   "account_balance_table": {
     "assets": "Assets",
     "liabilities": "Liabilities"
+  },
+  "decentralized_deposits": {
+    "protocols": "Protocols",
+    "liquidity": "Liquidity Pools"
+  },
+  "uniswap": {
+    "pool_header": "UNI {asset1}/{asset2}",
+    "liquidity": "Liquidity",
+    "balance": "Balances"
   }
 }
