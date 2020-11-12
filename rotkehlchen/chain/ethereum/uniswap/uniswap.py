@@ -22,6 +22,7 @@ from rotkehlchen.chain.ethereum.graph import (
     Graph,
 )
 from rotkehlchen.constants import ZERO
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -46,15 +47,16 @@ from .typing import (
     AddressBalances,
     AddressTrades,
     AssetPrice,
-    AssetWrapper,
+    AMMTrade,
+    AMMTradeIDError,
     DDAddressBalances,
     DDAddressTrades,
+    FakeAsset,
     LiquidityPool,
     LiquidityPoolAsset,
     ProtocolBalance,
     ProtocolHistory,
     SWAP_FEE,
-    Trade,
     UNISWAP_TRADES_PREFIX,
 )
 
@@ -247,10 +249,20 @@ class Uniswap(EthereumModule):
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            db_query_get_used_query_range: Callable,
+            db_query_update_used_query_range: Callable,
+            db_query_get_trades: Callable,
+            db_query_add_trades: Callable,
+            get_ammtrade_from_trade: Callable,
     ) -> AddressTrades:
-        """TODO
+        """Request via graph all trades for new addresses and the latest ones
+        for already existing addresses. Then the requested trade are stored in
+        DB and finally all DB trades are returned.
+
+        Requested trades are managed as <AMMTrade>, whilst trades read from DB
+        and insterted to DB are managed as <Trade> (with a custom identifer).
         """
-        address_trades: AddressTrades = {}
+        address_ammtrades: AddressTrades = {}
         db_address_trades: DDAddressTrades = defaultdict(list)
         new_addresses: List[ChecksumEthAddress] = []
         existing_addresses: List[ChecksumEthAddress] = []
@@ -259,7 +271,7 @@ class Uniswap(EthereumModule):
         # Get addresses' last used query range for Uniswap trades
         for address in addresses:
             entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
-            trades_range = self.database.get_used_query_range(name=entry_name)
+            trades_range = db_query_get_used_query_range(name=entry_name)
 
             if not trades_range:
                 new_addresses.append(address)
@@ -276,12 +288,12 @@ class Uniswap(EthereumModule):
                 start_ts=start_ts,
                 end_ts=to_timestamp,
             )
-            address_trades.update(new_address_trades)
+            address_ammtrades.update(new_address_trades)
 
             # Insert last used query range for new addresses
             for address in new_addresses:
                 entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
-                self.database.update_used_query_range(
+                db_query_update_used_query_range(
                     name=entry_name,
                     start_ts=start_ts,
                     end_ts=to_timestamp,
@@ -295,31 +307,43 @@ class Uniswap(EthereumModule):
                 start_ts=min_end_ts,
                 end_ts=to_timestamp,
             )
-            address_trades.update(address_new_trades)
+            address_ammtrades.update(address_new_trades)
 
             # Insert last used query range for existing addresses
             for address in existing_addresses:
                 entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
-                self.database.update_used_query_range(
+                db_query_update_used_query_range(
                     name=entry_name,
                     start_ts=min_end_ts,
                     end_ts=to_timestamp,
                 )
 
-        # Insert requested trades in DB
-        for address in filter(lambda address: address in address_trades, addresses):
-            self.database.add_trades(address_trades[address])
+        # Insert requested trades ([<AMMTrade>]) in DB as trades ([<Trade>])
+        for address in filter(lambda address: address in address_ammtrades, addresses):
+            address_trades = [
+                trade.get_trade_from_ammtrade()
+                for trade in address_ammtrades[address]
+            ]
+            db_query_add_trades(address_trades)
 
         # Fetch all DB Uniswap trades within the time range, and sort them desc
-        db_trades: List[Trade] = self.database.get_trades(
+        db_trades: List[Trade] = db_query_get_trades(
             from_ts=from_timestamp,
             to_ts=to_timestamp,
             location=Location.UNISWAP,
         )
         db_trades.sort(key=lambda trade: trade.timestamp, reverse=True)
-
         for db_trade in db_trades:
-            db_address_trades[db_trade.address].append(db_trade)
+            # Get <AMMTrade> from <Trade>
+            try:
+                ammtrade = get_ammtrade_from_trade(db_trade)
+            except AMMTradeIDError as e:
+                self.msg_aggregator.add_error(
+                    f'Error converting Trade to AMMTrade. Skipping trade. '
+                    f'Error was: {str(e)}',
+                )
+                continue
+            db_address_trades[ammtrade.address].append(ammtrade)
 
         return dict(db_address_trades)
 
@@ -332,7 +356,18 @@ class Uniswap(EthereumModule):
     ) -> AddressTrades:
         """Get the addresses' trades data querying the Uniswap subgraph
 
-        Each trade (swap) is converted into a Uniswap <Trade>.
+        Each trade (swap) instantiates an <AMMTrade>.
+
+        The trade pair (i.e. BASE_QUOTE) is determined by `reserve0_reserve1`.
+        Translated to Uniswap lingo:
+
+        Trade type BUY:
+        - `asset1In` (QUOTE, reserve1) is gt 0.
+        - `asset0Out` (BASE, reserve0) is gt 0.
+
+        Trade type SELL:
+        - `asset0In` (BASE, reserve0) is gt 0.
+        - `asset1Out` (QUOTE, reserve1) is gt 0.
         """
         address_trades: DDAddressTrades = defaultdict(list)
         addresses_lower = [address.lower() for address in addresses]
@@ -362,11 +397,11 @@ class Uniswap(EthereumModule):
 
             for swap in result_data:
                 user_address = to_checksum_address(swap['to'])
-                timestamp = int(swap['timestamp'])
+                timestamp = swap['timestamp']
                 token0 = swap['pair']['token0']
                 token1 = swap['pair']['token1']
-                base_asset_total_amount = FVal(swap['pair']['reserve0'])
-                quote_asset_total_amount = FVal(swap['pair']['reserve1'])
+                base_asset_rate = swap['pair']['token0Price']
+                quote_asset_rate = swap['pair']['token1Price']
                 base_asset = get_ethereum_token(
                     symbol=token0['symbol'],
                     ethereum_address=to_checksum_address(token0['id']),
@@ -385,27 +420,33 @@ class Uniswap(EthereumModule):
                     else TradeType.BUY
                 )
                 amount = (
-                    FVal(swap['amount0In'])
+                    swap['amount0In']
                     if trade_type == TradeType.SELL
-                    else FVal(swap['amount0Out'])
+                    else swap['amount0Out']
                 )
                 rate = (
-                    quote_asset_total_amount / base_asset_total_amount
+                    quote_asset_rate
                     if trade_type == TradeType.SELL
-                    else base_asset_total_amount / quote_asset_total_amount
+                    else base_asset_rate
                 )
-                trade = Trade(
+                fee_currency_identifier = (
+                    base_asset.symbol
+                    if trade_type == TradeType.SELL
+                    else
+                    quote_asset.symbol
+                )
+                trade = AMMTrade(
                     tx_hash=swap['transaction']['id'],
                     address=user_address,
-                    timestamp=Timestamp(timestamp),
+                    timestamp=Timestamp(int(timestamp)),
                     location=Location.UNISWAP,
                     base_asset=base_asset,
                     quote_asset=quote_asset,
                     trade_type=trade_type,
-                    amount=AssetAmount(amount),
-                    rate=Price(rate),
-                    fee=Fee(amount * SWAP_FEE),
-                    fee_currency=AssetWrapper(identifier=base_asset.symbol),
+                    amount=AssetAmount(FVal(amount)),
+                    rate=Price(FVal(rate)),
+                    fee=Fee(FVal(amount) * SWAP_FEE),
+                    fee_currency=FakeAsset(identifier=fee_currency_identifier),
                 )
                 address_trades[user_address].append(trade)
 
@@ -571,6 +612,11 @@ class Uniswap(EthereumModule):
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
+                db_query_get_used_query_range=self.database.get_used_query_range,
+                db_query_update_used_query_range=self.database.update_used_query_range,
+                db_query_get_trades=self.database.get_trades,
+                db_query_add_trades=self.database.add_trades,
+                get_ammtrade_from_trade=AMMTrade.get_ammtrade_from_trade,
             )
 
         return {

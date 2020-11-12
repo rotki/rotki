@@ -14,6 +14,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.unknown_asset import FakeAsset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import (
@@ -27,10 +28,7 @@ from rotkehlchen.chain.ethereum.structures import (
     YearnVaultEvent,
     aave_event_from_db,
 )
-from rotkehlchen.chain.ethereum.uniswap import (
-    UNISWAP_TRADES_PREFIX,
-    UniswapTrade,
-)
+from rotkehlchen.chain.ethereum.uniswap import UNISWAP_TRADES_PREFIX
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -1940,21 +1938,25 @@ class DBHandler:
         for result in results:
             location = deserialize_location_from_db(result[2])
             try:
-                if location == Location.UNISWAP:
-                    trade = UniswapTrade.get_trade_from_db(result)
-                else:
-                    trade = Trade(
-                        timestamp=deserialize_timestamp(result[1]),
-                        location=deserialize_location_from_db(result[2]),
-                        pair=result[3],
-                        trade_type=deserialize_trade_type_from_db(result[4]),
-                        amount=deserialize_asset_amount(result[5]),
-                        rate=deserialize_price(result[6]),
-                        fee=deserialize_fee(result[7]),
-                        fee_currency=Asset(result[8]),
-                        link=result[9],
-                        notes=result[10],
-                    )
+                # NB: Required for AMM trades (e.g. Uniswap)
+                fee_currency = (
+                    Asset(result[8])
+                    if location != Location.UNISWAP
+                    else FakeAsset(identifier=result[8])
+                )
+                trade = Trade(
+                    timestamp=deserialize_timestamp(result[1]),
+                    location=deserialize_location_from_db(result[2]),
+                    pair=result[3],
+                    trade_type=deserialize_trade_type_from_db(result[4]),
+                    amount=deserialize_asset_amount(result[5]),
+                    rate=deserialize_price(result[6]),
+                    fee=deserialize_fee(result[7]),
+                    fee_currency=fee_currency,  # type: ignore
+                    link=result[9],
+                    notes=result[10],
+                    custom_identifier=result[0],
+                )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing trade from the DB. Skipping trade. Error was: {str(e)}',

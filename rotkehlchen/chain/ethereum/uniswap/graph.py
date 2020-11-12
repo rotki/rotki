@@ -60,8 +60,6 @@ TOKEN_DAY_DATAS_QUERY = (
 
 # Get trades queries
 
-# ! TODO: remove unnecessary fields
-
 SWAPS_QUERY = (
     """
     swaps
@@ -79,8 +77,8 @@ SWAPS_QUERY = (
         }}
         timestamp
         pair {{
-            reserve0
-            reserve1
+            token0Price
+            token1Price
             token0 {{
                 id
                 decimals
@@ -99,7 +97,6 @@ SWAPS_QUERY = (
         amount0Out
         amount1In
         amount1Out
-        amountUSD
     }}}}
     """
 )

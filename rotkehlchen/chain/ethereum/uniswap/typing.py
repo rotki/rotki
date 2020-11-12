@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
+import re
 from typing import (
     Any,
     DefaultDict,
@@ -9,13 +11,19 @@ from typing import (
     NamedTuple,
     Set,
     Tuple,
+    Type,
     Union,
 )
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.unknown_asset import (
+    FakeAsset,
+    UnknownEthereumToken,
+)
 from rotkehlchen.constants import ZERO
+from rotkehlchen.errors import DeserializationError
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
@@ -37,15 +45,32 @@ from rotkehlchen.typing import (
     Price,
     Timestamp,
     TradeID,
+    TradePair,
     TradeType,
 )
 
+log = logging.getLogger(__name__)
 
+
+CUSTOM_TRADE_ID_NO_GROUPS = 10
+# A regex is essential for extracting the custom ID data. `split()` is not
+# reliable due to separator characters in assets names and symbols
+CUSTOM_TRADE_ID_REGEX = re.compile(
+    r'^(0x[a-fA-F0-9]{40})_'  # address
+    r'(0|1)_(0x[a-fA-F0-9]{40})_(.*)_(\d+)_'  # base_asset data
+    r'(0|1)_(0x[a-fA-F0-9]{40})_(.*)_(\d+)_'  # quote_asset data
+    r'(.*)$',  # partial_id
+)
 SWAP_FEE = FVal('0.003')  # 0.3% fee for swapping tokens
 UNISWAP_TRADES_PREFIX = f'{Location.UNISWAP}_trades'
 
 
+class AMMTradeIDError(Exception):
+    pass
+
+
 # Get balances
+
 
 @dataclass(init=True, repr=True)
 class LiquidityPoolAsset:
@@ -122,38 +147,11 @@ TradeDBTuple = (
 )
 
 
-class AssetWrapper(NamedTuple):
-    """A wrapper for <Asset>.identifier (from `<Trade>.fee_currency` as <Asset>)
+class AMMTrade(NamedTuple):
+    """This class aims for a better trades support than the current Trade class
+    in AMMs protocols.
 
-    The`identifier` field is used during DB transactions. This namedtuple aims
-    backwards compatibility without refactoring for <UniswapTrade>.
-    """
-    identifier: str
-
-    def __str__(self) -> str:
-        return self.identifier
-
-
-class Trade(NamedTuple):
-    """Uniswap swaps logic and how it translates to Trade class
-
-    Uniswap underlying token attributes:
-      - asset0In
-      - asset0Out
-      - asset1In
-      - asset1Out
-      - reserve0
-      - reserve1
-
-    The trade pair (i.e. BASE_QUOTE) is determined by `reserve0_reserve1`.
-
-    Trade type BUY:
-      - `asset1In` (QUOTE, reserve1) is gt 0.
-      - `asset0Out` (BASE, reserve0) is gt 0.
-
-    Trade type SELL:
-      - `asset0In` (BASE, reserve0) is gt 0.
-      - `asset1Out` (QUOTE, reserve1) is gt 0.
+    It aims for backwards compatibility with Trade in CRUD DB operations.
     """
     tx_hash: str  # Swap.transaction.id
     address: ChecksumEthAddress  # Swap.to
@@ -162,18 +160,20 @@ class Trade(NamedTuple):
     base_asset: Union[EthereumToken, UnknownEthereumToken]  # Swap.pair.token0
     quote_asset: Union[EthereumToken, UnknownEthereumToken]  # Swap.pair.token1
     amount: AssetAmount  # Swap.amount0In if SELL, Swap.amount0Out if BUY
-    rate: Price  # Swap.reserve1/reserve0 if SELL, Swap.reserve0/reserve1 if BUY
+    rate: Price  # Swap.pair.token0Price if SELL, Swap.pair.token1Price if BUY
     fee: Fee  # amount * 0.3% fee
-    fee_currency: AssetWrapper  # from base_asset.symbol
+    fee_currency: FakeAsset  # from base_asset.symbol
     location: Location = Location.UNISWAP
     notes: str = ''
 
     @classmethod
-    def get_trade_from_db(cls, trade_tuple: TradeDBTuple) -> Trade:
+    def get_ammtrade_from_trade_db_tuple(
+            cls,
+            trade_tuple: TradeDBTuple,
+    ) -> AMMTrade:
         """Turns a tuple read from DB into an appropriate Trade.
 
         May raise a DeserializationError if something is wrong with the DB data
-        for known assets.
 
         Trade_tuple index - Schema columns
         ----------------------------------
@@ -189,7 +189,16 @@ class Trade(NamedTuple):
          9 - link
         10 - notes
         """
-        # Get assets' data from `identifier` (`ba` as base_asset, `qa` as quote_asset)
+        # Get assets' data from `identifier`, `ba` (base) and `qa` (quote)
+        identifier = trade_tuple[0]
+        match = CUSTOM_TRADE_ID_REGEX.match(identifier)
+        if not match or len(match.groups()) != CUSTOM_TRADE_ID_NO_GROUPS:
+            log.error(
+                f'Failed to extract TradeAMM identifier data from existing'
+                f'Trade identifier: {identifier}.',
+            )
+            raise DeserializationError('Failed to deserialize TradeAMM identifier')
+
         (
             address,
             is_ba_unknown,
@@ -201,10 +210,12 @@ class Trade(NamedTuple):
             qa_name,
             qa_decimals,
             _,  # partial_id
-        ) = trade_tuple[0].split('_')
+        ) = match.groups()
+
+        address = deserialize_ethereum_address(address)
 
         # Get assets' instances
-        ba_symbol, qa_symbol = trade_tuple[3].split('_')
+        ba_symbol, qa_symbol = trade_tuple[3].split('_')  # from pair
         base_asset: Union[EthereumToken, UnknownEthereumToken] = (
             deserialize_unknown_ethereum_token_from_db(
                 ethereum_address=ba_address,
@@ -225,9 +236,10 @@ class Trade(NamedTuple):
             if is_qa_unknown
             else deserialize_ethereum_token_from_db(identifier=qa_symbol)
         )
+
         return cls(
             tx_hash=trade_tuple[9],
-            address=deserialize_ethereum_address(address),
+            address=address,
             timestamp=deserialize_timestamp(trade_tuple[1]),
             location=deserialize_location_from_db(trade_tuple[2]),
             base_asset=base_asset,
@@ -236,8 +248,108 @@ class Trade(NamedTuple):
             amount=deserialize_asset_amount(trade_tuple[5]),
             rate=deserialize_price(trade_tuple[6]),
             fee=deserialize_fee(trade_tuple[7]),
-            fee_currency=AssetWrapper(identifier=trade_tuple[8]),
+            fee_currency=FakeAsset(identifier=trade_tuple[8]),
             notes=trade_tuple[10],
+        )
+
+    @classmethod
+    def get_ammtrade_from_trade(cls, trade: Trade) -> AMMTrade:
+        """Turns a Trade to an AMMTrade
+        """
+        # Get assets' data from `identifier`, `ba` (base) and `qa` (quote)
+        match = CUSTOM_TRADE_ID_REGEX.match(trade.identifier)
+        if not match or len(match.groups()) != CUSTOM_TRADE_ID_NO_GROUPS:
+            log.error(
+                f'Failed to extract TradeAMM identifier data from existing'
+                f'Trade identifier: {trade.identifier}.',
+            )
+            raise AMMTradeIDError('Failed to get TradeAMM identifier from Trade identifier')
+
+        (
+            address,
+            is_ba_unknown,
+            ba_address,
+            ba_name,
+            ba_decimals,
+            is_qa_unknown,
+            qa_address,
+            qa_name,
+            qa_decimals,
+            _,  # partial_id
+        ) = match.groups()
+
+        address = deserialize_ethereum_address(address)
+        ba_address = deserialize_ethereum_address(ba_address)
+        qa_address = deserialize_ethereum_address(qa_address)
+
+        # Get assets' instances
+        ba_symbol, qa_symbol = trade.pair.split('_')
+        base_asset: Union[EthereumToken, UnknownEthereumToken] = (
+            UnknownEthereumToken(
+                ethereum_address=ba_address,
+                symbol=ba_symbol,
+                name=ba_name,
+                decimals=int(ba_decimals),
+            )
+            if is_ba_unknown
+            else EthereumToken(identifier=ba_symbol)
+        )
+        quote_asset: Union[EthereumToken, UnknownEthereumToken] = (
+            UnknownEthereumToken(
+                ethereum_address=qa_address,
+                symbol=qa_symbol,
+                name=qa_name,
+                decimals=int(qa_decimals),
+            )
+            if is_qa_unknown
+            else EthereumToken(identifier=qa_symbol)
+        )
+        return cls(
+            tx_hash=trade.link,
+            address=address,
+            timestamp=trade.timestamp,
+            location=trade.location,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
+            trade_type=trade.trade_type,
+            amount=trade.amount,
+            rate=trade.rate,
+            fee=trade.fee,
+            fee_currency=FakeAsset(identifier=trade.fee_currency.identifier),
+            notes=trade.notes,
+        )
+
+    def get_trade_from_ammtrade(self) -> Trade:
+        """Turns an AMMTrade to a Trade
+        """
+        # Get `fee_currency` symbol and class to instantiate
+        fc_class: Union[Type[Asset], Type[FakeAsset]]
+        if self.trade_type == TradeType.SELL:
+            fc_identifier = self.base_asset.symbol
+            fc_class = (
+                Asset
+                if isinstance(self.base_asset, EthereumToken)
+                else FakeAsset
+            )
+        else:
+            fc_identifier = self.quote_asset.symbol
+            fc_class = (
+                Asset
+                if isinstance(self.quote_asset, EthereumToken)
+                else FakeAsset
+            )
+        return Trade(
+            timestamp=self.timestamp,
+            location=self.location,
+            pair=TradePair(self.pair),
+            trade_type=self.trade_type,
+            amount=self.amount,
+            rate=self.rate,
+            fee=self.fee,
+            fee_currency=fc_class(identifier=fc_identifier),  # type: ignore
+            link=self.tx_hash,
+            notes=self.notes,
+            custom_identifier=self.identifier,
         )
 
     @property
@@ -313,22 +425,7 @@ class Trade(NamedTuple):
             'quote_asset': serialized_quote_asset,
         }
 
-    def to_db_tuple_trade(self) -> TradeDBTuple:
-        return (
-            self.identifier,
-            self.timestamp,
-            self.location.serialize_for_db(),
-            self.pair,
-            self.trade_type.serialize_for_db(),
-            str(self.amount),
-            str(self.rate),
-            str(self.fee),
-            self.fee_currency.identifier,
-            self.link,
-            self.notes,
-        )
 
-
-AddressTrades = Dict[ChecksumEthAddress, List[Trade]]
-DDAddressTrades = DefaultDict[ChecksumEthAddress, List[Trade]]
+AddressTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
+DDAddressTrades = DefaultDict[ChecksumEthAddress, List[AMMTrade]]
 ProtocolHistory = Dict[str, Union[AddressTrades]]
