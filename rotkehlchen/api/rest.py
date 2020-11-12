@@ -1813,7 +1813,7 @@ class RestAPI():
         transactions: Optional[List[EthereumTransaction]]
         try:
             transactions = self.rotkehlchen.chain_manager.ethereum.transactions.query(
-                addresses=[address],
+                addresses=[address] if address is not None else None,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 with_limit=self.rotkehlchen.premium is None,
