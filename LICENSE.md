@@ -1,4 +1,5 @@
-Copyright 2017-2018 Karapetsas Eleftherios
+Copyright 2017-2020 Karapetsas Eleftherios
+Copyright 2020 Rotki Solutions GmbH
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
