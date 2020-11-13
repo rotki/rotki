@@ -160,6 +160,13 @@ export default class NavigationMenu extends Vue {
     },
     {
       type: 'item',
+      text: this.$tc('navigation_menu.staking'),
+      route: Routes.STAKING,
+      class: 'staking',
+      icon: 'mdi-inbox-arrow-down'
+    },
+    {
+      type: 'item',
       text: this.$tc('navigation_menu.tax_report'),
       route: '/tax-report',
       class: 'tax-report',

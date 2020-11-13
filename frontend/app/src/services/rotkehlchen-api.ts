@@ -818,6 +818,18 @@ export class RotkehlchenApi {
       )
       .then(handleResponse);
   }
+
+  async eth2Staking(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/blockchains/ETH2/stake', {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true
+        }),
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
 }
 
 export const api = new RotkehlchenApi();

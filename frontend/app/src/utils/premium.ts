@@ -126,8 +126,13 @@ export const YearnVaultsProfitDetails = (): Promise<VueConstructor> => {
 export const AaveBorrowingDetails = (): Promise<VueConstructor> => {
   return load('AaveBorrowingDetails');
 };
+
 export const AaveEarnedDetails = (): Promise<VueConstructor> => {
   return load('AaveEarnedDetails');
+};
+
+export const Eth2Staking = (): Promise<VueConstructor> => {
+  return load('Eth2Staking');
 };
 
 declare global {

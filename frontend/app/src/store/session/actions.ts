@@ -178,6 +178,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('settings/reset', payload, opts);
     commit('history/reset', payload, opts);
     commit('statistics/reset', payload, opts);
+    commit('staking/reset', payload, opts);
     commit('reset', payload, opts);
   },
 

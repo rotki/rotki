@@ -464,6 +464,17 @@
           "message": "The data sync operation was completed successfully."
         }
       }
+    },
+    "staking": {
+      "eth2": {
+        "task": {
+          "title": "Querying Eth2 Staking details"
+        },
+        "error": {
+          "title": "Querying the ETh2 staking details",
+          "description": "Failed to query the Eth2 Staking details: {error}"
+        }
+      }
     }
   },
   "navigation_menu": {
@@ -484,7 +495,8 @@
       "overview": "Overview",
       "deposits": "Deposits",
       "liabilities": "Liabilities"
-    }
+    },
+    "staking": "Staking"
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded...",
@@ -820,8 +832,8 @@
   },
   "statistics": {
     "title": "Statistics",
-    "no_premium": "No premium subscription detected. Statistics are only available to premium users.",
-    "get_premium": "To get a premium subscription please visit our {0}"
+    "no_premium": "@:common.no_premium Statistics are @:common.available_to_premium",
+    "get_premium": "@:common.visit_website"
   },
   "tax_report": {
     "title": "Tax Report",
@@ -967,5 +979,15 @@
     "balance": "Balance",
     "asset_supply": "{asset} supply:",
     "asset_price": "({asset} price: {0})"
+  },
+  "staking": {
+    "title": "Staking",
+    "no_premium": "@:common.no_premium Staking is @:common.available_to_premium",
+    "get_premium": "@:common.visit_website"
+  },
+  "common": {
+    "no_premium": "No premium subscription detected. ",
+    "available_to_premium": "only available to premium users.",
+    "visit_website": "To get a premium subscription please visit our {0}"
   }
 }
