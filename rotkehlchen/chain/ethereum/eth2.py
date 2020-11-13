@@ -1,8 +1,8 @@
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, NamedTuple
+from typing import TYPE_CHECKING, DefaultDict, Dict, List, NamedTuple
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.manager import EthereumManager, decode_event_data
+from rotkehlchen.chain.ethereum.utils import decode_event_data
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.misc import ZERO
@@ -12,6 +12,9 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
 ETH2_DEPLOYED_TS = 1602667372
@@ -35,7 +38,7 @@ class Eth2DepositResult(NamedTuple):
 
 
 def get_eth2_staked_amount(
-        ethereum: EthereumManager,
+        ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
         has_premium: bool,
         msg_aggregator: MessagesAggregator,

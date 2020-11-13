@@ -10742,6 +10742,14 @@
         "symbol": "STX",
         "type": "ethereum token"
     },
+    "STX-2": {
+        "coingecko": "blockstack",
+        "cryptocompare": "BSTX",
+        "name": "Blockstack",
+        "started": 1572048000,
+        "symbol": "STX",
+        "type": "own chain"
+    },
     "SUB": {
         "coingecko": "substratum",
         "ethereum_address": "0x8D75959f1E61EC2571aa72798237101F084DE63a",

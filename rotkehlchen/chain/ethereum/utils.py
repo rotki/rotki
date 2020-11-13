@@ -1,4 +1,10 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+
+from eth_utils import to_bytes
+from web3 import Web3
+from web3._utils.abi import exclude_indexed_event_inputs, normalize_event_input_types
+from web3._utils.encoding import hexstr_if_str
+from web3._utils.events import get_event_abi_types_for_decoding
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -9,6 +15,8 @@ from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+
+ABI_CODEC = Web3().codec
 
 
 def token_normalized_value_decimals(token_amount: int, token_decimals: int) -> FVal:
@@ -63,3 +71,13 @@ def multicall_specific(
     ) for i in arguments]
     output = multicall(ethereum, calls, call_order)
     return [contract.decode(x, method_name, arguments[0]) for x in output]
+
+
+def decode_event_data(data: str, event_abi: Dict[str, Any]) -> Tuple:
+    """Decode the data of an event according to the event's abi entry"""
+    log_data = hexstr_if_str(to_bytes, data)
+    log_data_abi = exclude_indexed_event_inputs(event_abi)  # type: ignore
+    log_data_normalized_inputs = normalize_event_input_types(log_data_abi)
+    log_data_types = get_event_abi_types_for_decoding(log_data_normalized_inputs)
+    decoded_log_data = ABI_CODEC.decode_abi(log_data_types, log_data)
+    return decoded_log_data
