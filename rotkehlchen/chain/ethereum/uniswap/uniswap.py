@@ -21,8 +21,9 @@ from rotkehlchen.chain.ethereum.graph import (
     format_query_indentation,
     Graph,
 )
+from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants import ZERO
-from rotkehlchen.exchanges.data_structures import Trade
+
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -47,11 +48,8 @@ from .typing import (
     AddressBalances,
     AddressTrades,
     AssetPrice,
-    AMMTrade,
-    AMMTradeIDError,
     DDAddressBalances,
     DDAddressTrades,
-    FakeAsset,
     LiquidityPool,
     LiquidityPoolAsset,
     ProtocolBalance,
@@ -249,21 +247,13 @@ class Uniswap(EthereumModule):
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            db_query_get_used_query_range: Callable,
-            db_query_update_used_query_range: Callable,
-            db_query_get_trades: Callable,
-            db_query_add_trades: Callable,
-            get_ammtrade_from_trade: Callable,
     ) -> AddressTrades:
         """Request via graph all trades for new addresses and the latest ones
-        for already existing addresses. Then the requested trade are stored in
-        DB and finally all DB trades are returned.
-
-        Requested trades are managed as <AMMTrade>, whilst trades read from DB
-        and insterted to DB are managed as <Trade> (with a custom identifer).
+        for already existing addresses. Then the requested trade are written in
+        DB and finally all DB trades are read and returned.
         """
-        address_ammtrades: AddressTrades = {}
-        db_address_trades: DDAddressTrades = defaultdict(list)
+        address_amm_trades: AddressTrades = {}
+        db_address_trades: AddressTrades = {}
         new_addresses: List[ChecksumEthAddress] = []
         existing_addresses: List[ChecksumEthAddress] = []
         min_end_ts: Timestamp = to_timestamp
@@ -271,7 +261,7 @@ class Uniswap(EthereumModule):
         # Get addresses' last used query range for Uniswap trades
         for address in addresses:
             entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
-            trades_range = db_query_get_used_query_range(name=entry_name)
+            trades_range = self.database.get_used_query_range(name=entry_name)
 
             if not trades_range:
                 new_addresses.append(address)
@@ -284,16 +274,15 @@ class Uniswap(EthereumModule):
             start_ts = Timestamp(0)
             new_address_trades = self._get_trades_graph(
                 addresses=new_addresses,
-                graph_query=self.graph.query,  # type: ignore
                 start_ts=start_ts,
                 end_ts=to_timestamp,
             )
-            address_ammtrades.update(new_address_trades)
+            address_amm_trades.update(new_address_trades)
 
             # Insert last used query range for new addresses
             for address in new_addresses:
                 entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
-                db_query_update_used_query_range(
+                self.database.update_used_query_range(
                     name=entry_name,
                     start_ts=start_ts,
                     end_ts=to_timestamp,
@@ -303,54 +292,42 @@ class Uniswap(EthereumModule):
         if existing_addresses and min_end_ts <= to_timestamp:
             address_new_trades = self._get_trades_graph(
                 addresses=existing_addresses,
-                graph_query=self.graph.query,  # type: ignore
                 start_ts=min_end_ts,
                 end_ts=to_timestamp,
             )
-            address_ammtrades.update(address_new_trades)
+            address_amm_trades.update(address_new_trades)
 
-            # Insert last used query range for existing addresses
+            # Update last used query range for existing addresses
             for address in existing_addresses:
                 entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
-                db_query_update_used_query_range(
+                self.database.update_used_query_range(
                     name=entry_name,
                     start_ts=min_end_ts,
                     end_ts=to_timestamp,
                 )
 
-        # Insert requested trades ([<AMMTrade>]) in DB as trades ([<Trade>])
-        for address in filter(lambda address: address in address_ammtrades, addresses):
-            address_trades = [
-                trade.get_trade_from_ammtrade()
-                for trade in address_ammtrades[address]
-            ]
-            db_query_add_trades(address_trades)
+        # Insert requested trades in DB
+        for address in filter(lambda address: address in address_amm_trades, addresses):
+            self.database.add_amm_trades(address_amm_trades[address])
 
-        # Fetch all DB Uniswap trades within the time range, and sort them desc
-        db_trades: List[Trade] = db_query_get_trades(
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-            location=Location.UNISWAP,
-        )
-        db_trades.sort(key=lambda trade: trade.timestamp, reverse=True)
-        for db_trade in db_trades:
-            # Get <AMMTrade> from <Trade>
-            try:
-                ammtrade = get_ammtrade_from_trade(db_trade)
-            except AMMTradeIDError as e:
-                self.msg_aggregator.add_error(
-                    f'Error converting Trade to AMMTrade. Skipping trade. '
-                    f'Error was: {str(e)}',
-                )
-                continue
-            db_address_trades[ammtrade.address].append(ammtrade)
+        # Fetch all DB Uniswap trades within the time range
+        for address in addresses:
+            db_trades = self.database.get_amm_trades(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                location=Location.UNISWAP,
+                address=address,
+            )
+            if db_trades:
+                # return trades with most recent first
+                db_trades.sort(key=lambda trade: trade.timestamp, reverse=True)
+                db_address_trades[address] = db_trades
 
-        return dict(db_address_trades)
+        return db_address_trades
 
-    @staticmethod
     def _get_trades_graph(
+            self,
             addresses: List[ChecksumEthAddress],
-            graph_query: Callable,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> AddressTrades:
@@ -388,7 +365,7 @@ class Uniswap(EthereumModule):
         querystr = format_query_indentation(SWAPS_QUERY.format())
 
         while True:
-            result = graph_query(
+            result = self.graph.query(  # type: ignore # caller already checks
                 querystr=querystr,
                 param_types=param_types,
                 param_values=param_values,
@@ -412,7 +389,7 @@ class Uniswap(EthereumModule):
                     symbol=token1['symbol'],
                     ethereum_address=to_checksum_address(token1['id']),
                     name=token1['name'],
-                    decimals=token1['decimals'],
+                    decimals=int(token1['decimals']),
                 )
                 trade_type = (
                     TradeType.SELL
@@ -429,24 +406,18 @@ class Uniswap(EthereumModule):
                     if trade_type == TradeType.SELL
                     else base_asset_rate
                 )
-                fee_currency_identifier = (
-                    base_asset.symbol
-                    if trade_type == TradeType.SELL
-                    else
-                    quote_asset.symbol
-                )
                 trade = AMMTrade(
                     tx_hash=swap['transaction']['id'],
+                    log_index=int(swap['logIndex']),
                     address=user_address,
                     timestamp=Timestamp(int(timestamp)),
                     location=Location.UNISWAP,
+                    trade_type=trade_type,
                     base_asset=base_asset,
                     quote_asset=quote_asset,
-                    trade_type=trade_type,
                     amount=AssetAmount(FVal(amount)),
                     rate=Price(FVal(rate)),
                     fee=Fee(FVal(amount) * SWAP_FEE),
-                    fee_currency=FakeAsset(identifier=fee_currency_identifier),
                 )
                 address_trades[user_address].append(trade)
 
@@ -566,7 +537,7 @@ class Uniswap(EthereumModule):
         if is_graph_mode:
             protocol_balance = self._get_balances_graph(
                 addresses=addresses,
-                graph_query=self.graph.query,  # type: ignore
+                graph_query=self.graph.query,  # type: ignore # caller already checks
             )
         else:
             protocol_balance = self._get_balances_chain(addresses)
@@ -584,7 +555,7 @@ class Uniswap(EthereumModule):
         if is_graph_mode:
             unknown_asset_price = self._get_unknown_asset_price_graph(
                 unknown_assets=unknown_assets,
-                graph_query=self.graph.query,  # type: ignore
+                graph_query=self.graph.query,  # type: ignore # caller already checks
             )
 
         self._update_assets_prices_in_address_balances(
@@ -602,8 +573,12 @@ class Uniswap(EthereumModule):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> ProtocolHistory:
-        """Get the addresses' history (trades & events) in the Uniswap protocol
+        """Get the addresses' history (trades & pool events) in the Uniswap
+        protocol
         """
+        if self.graph is None:  # could not initialize graph
+            return {}
+
         with self.history_lock:
             if reset_db_data is True:
                 self.database.delete_uniswap_data()
@@ -612,11 +587,6 @@ class Uniswap(EthereumModule):
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
-                db_query_get_used_query_range=self.database.get_used_query_range,
-                db_query_update_used_query_range=self.database.update_used_query_range,
-                db_query_get_trades=self.database.get_trades,
-                db_query_add_trades=self.database.add_trades,
-                get_ammtrade_from_trade=AMMTrade.get_ammtrade_from_trade,
             )
 
         return {

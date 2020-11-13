@@ -140,9 +140,6 @@ class Trade(NamedTuple):
     # the exchanges themselves then there is no way to avoid duplicates.
     link: str
     notes: str = ''
-    # NB: custom_identifier is set for trades that store in the ID the base and
-    # quote assets data, e.g. AMMTrade (see `identifier` property below).
-    custom_identifier: TradeID = TradeID('')
 
     @property
     def base_asset(self) -> Asset:
@@ -158,11 +155,6 @@ class Trade(NamedTuple):
     def identifier(self) -> TradeID:
         """Formulates a unique identifier for the trade to become the DB primary key
         """
-        # NB: Returns the custom identifier set at Trade creation, instead of
-        # generating on on the fly.
-        if self.custom_identifier:
-            return self.custom_identifier
-
         string = (
             str(self.location) +
             str(self.timestamp) +

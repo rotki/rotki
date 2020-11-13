@@ -311,10 +311,44 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
+DB_CREATE_AMM_TRADES = """
+CREATE TABLE IF NOT EXISTS amm_trades (
+    tx_hash VARCHAR[42] NOT NULL,
+    log_index INTEGER NOT NULL,
+    address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
+    is_base_asset_unknown INTEGER NOT NULL,
+    base_asset_address VARCHAR[42] NOT NULL,
+    base_asset_symbol TEXT NOT NULL,
+    base_asset_name TEXT,
+    base_asset_decimals INTEGER,
+    is_quote_asset_unknown INTEGER NOT NULL,
+    quote_asset_address VARCHAR[42] NOT NULL,
+    quote_asset_symbol TEXT NOT NULL,
+    quote_asset_name TEXT,
+    quote_asset_decimals INTEGER,
+    amount TEXT,
+    rate TEXT,
+    fee TEXT,
+    notes TEXT,
+    PRIMARY KEY (tx_hash, log_index)
+);
+"""
+
+DB_CREATE_INDEXES_AMM_TRADES = """
+CREATE INDEX IF NOT EXISTS idx__amm_trades__location__timestamp__address
+ON amm_trades (location, timestamp, address);
+
+CREATE INDEX IF NOT EXISTS idx__amm_trades__location__address
+ON amm_trades (location, address);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -342,4 +376,6 @@ PRAGMA foreign_keys=on;
     DB_CREATE_YEARN_VAULT_EVENTS,
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
+    DB_CREATE_AMM_TRADES,
+    DB_CREATE_INDEXES_AMM_TRADES,
 )

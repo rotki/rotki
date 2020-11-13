@@ -57,7 +57,6 @@ from rotkehlchen.api.v1.resources import (
     StatisticsValueDistributionResource,
     TagsResource,
     TradesResource,
-    UniswapBalancesResource,
     UserPasswordChangeResource,
     UserPremiumKeyResource,
     UserPremiumSyncResource,

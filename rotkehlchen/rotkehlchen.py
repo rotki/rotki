@@ -21,6 +21,7 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
+from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ZERO
@@ -524,9 +525,9 @@ class Rotkehlchen():
             self,
             location: Location,
             action_type: Literal['trade'],
-            location_actions: List[Trade],
-            all_actions: List[Trade],
-    ) -> List[Trade]:
+            location_actions: Union[List[Trade], List[AMMTrade]],
+            all_actions: Union[List[Trade], List[AMMTrade]],
+    ) -> Union[List[Trade], List[AMMTrade]]:
         ...
 
     @overload
@@ -543,9 +544,9 @@ class Rotkehlchen():
             self,
             location: Location,
             action_type: Literal['trade', 'asset_movement'],
-            location_actions: Union[List[Trade], List[AssetMovement]],
-            all_actions: Union[List[Trade], List[AssetMovement]],
-    ) -> Union[List[Trade], List[AssetMovement]]:
+            location_actions: Union[List[Trade], List[AMMTrade], List[AssetMovement]],
+            all_actions: Union[List[Trade], List[AMMTrade], List[AssetMovement]],
+    ) -> Union[List[Trade], List[AMMTrade], List[AssetMovement]]:
         """Take as many actions from location actions and add them to all actions as the limit permits
 
         Returns the modified (or not) all_actions
@@ -574,14 +575,14 @@ class Rotkehlchen():
             from_ts: Timestamp,
             to_ts: Timestamp,
             location: Optional[Location],
-    ) -> List[Trade]:
+    ) -> Union[List[Trade], List[AMMTrade]]:
         """Queries trades for the given location and time range.
         If no location is given then all external and all exchange trades are queried.
 
         If the user does not have premium then a trade limit is applied.
 
         May raise:
-        - RemoteError: If there are problems connectingto any of the remote exchanges
+        - RemoteError: If there are problems connecting to any of the remote exchanges
         """
         if location is not None:
             trades = self.query_location_trades(from_ts, to_ts, location)
@@ -608,12 +609,19 @@ class Rotkehlchen():
             from_ts: Timestamp,
             to_ts: Timestamp,
             location: Location,
-    ) -> List[Trade]:
+    ) -> Union[List[Trade], List[AMMTrade]]:
         # clear the trades queried for this location
         self.actions_per_location['trade'][location] = 0
 
+        location_trades: Union[List[Trade], List[AMMTrade]]
         if location == Location.EXTERNAL:
             location_trades = self.data.db.get_trades(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                location=location,
+            )
+        elif location in AMMTradeLocations:
+            location_trades = self.data.db.get_amm_trades(
                 from_ts=from_ts,
                 to_ts=to_ts,
                 location=location,
@@ -626,11 +634,11 @@ class Rotkehlchen():
                     f'Tried to query trades from {location} which is either not an '
                     f'exchange or not an exchange the user has connected to',
                 )
-                return []
+                return []  # type: ignore # Bug in mypy for Union lists with []
 
             location_trades = exchange.query_trade_history(start_ts=from_ts, end_ts=to_ts)
 
-        trades: List[Trade] = []
+        trades: Union[List[Trade], List[AMMTrade]] = []  # type: ignore # Same bug in mypy
         if self.premium is None:
             trades = self._apply_actions_limit(
                 location=location,

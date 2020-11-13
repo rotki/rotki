@@ -75,6 +75,8 @@ SWAPS_QUERY = (
         transaction {{
             id
         }}
+        logIndex
+        to
         timestamp
         pair {{
             token0Price
@@ -92,7 +94,6 @@ SWAPS_QUERY = (
                 symbol
             }}
         }}
-        to
         amount0In
         amount0Out
         amount1In

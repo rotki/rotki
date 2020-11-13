@@ -24,10 +24,10 @@ from rotkehlchen.chain.ethereum.makerdao.vaults import (
     VaultEventType,
 )
 from rotkehlchen.chain.ethereum.structures import AaveEvent
+from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.uniswap import (
     UniswapPool,
     UniswapPoolAsset,
-    UniswapTrade,
 )
 from rotkehlchen.chain.ethereum.yearn.vaults import (
     YearnVaultBalance,
@@ -106,8 +106,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveEvent,
             UniswapPool,
             UniswapPoolAsset,
-            UniswapTrade,
             UnknownEthereumToken,
+            AMMTrade,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (
