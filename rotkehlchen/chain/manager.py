@@ -508,10 +508,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.accounts.eth.remove(account)
             balances = self.balances.eth.get(account, None)
             if balances is not None:
-                for asset, balance in balances.asset_balances.items():
-                    self.totals[asset] -= balance
-                    if self.totals[asset].amount <= ZERO:
-                        self.totals[asset] = Balance()
+                for asset, balance in balances.assets.items():
+                    self.totals.assets[asset] -= balance
+                    if self.totals.assets[asset].amount <= ZERO:
+                        self.totals.assets[asset] = Balance()
             self.balances.eth.pop(account, None)
         else:
             raise AssertionError('Programmer error: Should be append or remove')
@@ -929,16 +929,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
             if address not in result.totals:
                 return  # nothing to do, no staked ETH detected
 
-            self.balances.eth[address].asset_balances[A_ETH2] = result.totals[address]
-            self.totals[A_ETH2] += result.totals[address]
+            self.balances.eth[address].assets[A_ETH2] = result.totals[address]
+            self.totals.assets[A_ETH2] += result.totals[address]
 
     def get_staked_eth2_balances(self) -> Eth2DepositResult:
         with self.eth2_lock:
             # Before querying the new balances, delete the ones in memory if any
-            self.totals.pop(A_ETH2, None)
+            self.totals.assets.pop(A_ETH2, None)
             for _, entry in self.balances.eth.items():
-                if A_ETH2 in entry.asset_balances:
-                    del entry.asset_balances[A_ETH2]
+                if A_ETH2 in entry.assets:
+                    del entry.assets[A_ETH2]
 
             result = get_eth2_staked_amount(
                 ethereum=self.ethereum,
@@ -951,8 +951,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
             total = Balance()
             for address, balance in result.totals.items():
                 total += balance
-                self.balances.eth[address].asset_balances[A_ETH2] = balance
+                self.balances.eth[address].assets[A_ETH2] = balance
             if total.amount > ZERO:
-                self.totals[A_ETH2] = total
+                self.totals.assets[A_ETH2] = total
 
             return result
