@@ -18,6 +18,7 @@ from rotkehlchen.chain.ethereum.makerdao.common import (
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
+    A_BAL,
     A_BAT,
     A_COMP,
     A_DAI,
@@ -31,9 +32,11 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
     A_WBTC,
+    A_YFI,
     A_ZRX,
 )
 from rotkehlchen.constants.ethereum import (
+    MAKERDAO_BAL_A_JOIN,
     MAKERDAO_BAT_A_JOIN,
     MAKERDAO_CAT,
     MAKERDAO_CDP_MANAGER,
@@ -55,6 +58,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_USDT_A_JOIN,
     MAKERDAO_VAT,
     MAKERDAO_WBTC_A_JOIN,
+    MAKERDAO_YFI_A_JOIN,
     MAKERDAO_ZRX_A_JOIN,
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
@@ -89,6 +93,8 @@ GEMJOIN_MAPPING = {
     'COMP-A': MAKERDAO_COMP_A_JOIN,
     'LRC-A': MAKERDAO_LRC_A_JOIN,
     'LINK-A': MAKERDAO_LINK_A_JOIN,
+    'BAL-A': MAKERDAO_BAL_A_JOIN,
+    'YFI-A': MAKERDAO_YFI_A_JOIN,
 }
 COLLATERAL_TYPE_MAPPING = {
     'BAT-A': A_BAT,
@@ -106,6 +112,8 @@ COLLATERAL_TYPE_MAPPING = {
     'COMP-A': A_COMP,
     'LRC-A': A_LRC,
     'LINK-A': A_LINK,
+    'BAL-A': A_BAL,
+    'YFI-A': A_YFI,
 }
 
 
