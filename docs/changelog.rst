@@ -21,6 +21,7 @@ Changelog
   - `Synthetix iBTC (iBTC) <https://www.coingecko.com/en/coins/ibtc>`__
   - `Synthetix iETH (iETH) <https://www.coingecko.com/en/coins/ieth>`__
   - `Aave Interest bearing Uniswap (aUNI) <https://etherscan.io/address/0xB124541127A0A657f056D9Dd06188c4F1b0e5aab>`__
+  - `Blockstack (STX) <https://www.coingecko.com/en/coins/blockstack>`__
 
 
 * :release:`1.8.3 <2020-10-30>`
