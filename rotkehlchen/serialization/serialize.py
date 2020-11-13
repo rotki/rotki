@@ -72,10 +72,16 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'usd_value': entry.usd_value,
         }
     elif isinstance(entry, SingleAssetBalance):
-        return {'time': entry.time, 'amount': entry.amount, 'usd_value': entry.usd_value}
+        return {
+            'time': entry.time,
+            'category': str(entry.category),
+            'amount': entry.amount,
+            'usd_value': entry.usd_value,
+        }
     elif isinstance(entry, AssetBalance):
         return {
             'time': entry.time,
+            'category': str(entry.category),
             'asset': entry.asset.identifier,
             'amount': entry.amount,
             'usd_value': entry.usd_value,

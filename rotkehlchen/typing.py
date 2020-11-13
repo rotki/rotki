@@ -402,19 +402,3 @@ class BlockchainAccountData(NamedTuple):
     address: BlockchainAddress
     label: Optional[str] = None
     tags: Optional[List[str]] = None
-
-
-class BalanceType(Enum):
-    """The type of balance. Asset for lending balances and Debt for borrowing"""
-    ASSET = 1
-    DEBT = 2
-
-    def __str__(self) -> str:
-        if self == BalanceType.ASSET:
-            return 'asset'
-        elif self == BalanceType.DEBT:
-            return 'debt'
-
-        raise RuntimeError(
-            f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
-        )

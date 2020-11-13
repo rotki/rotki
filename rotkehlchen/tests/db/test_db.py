@@ -6,10 +6,11 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -72,6 +73,7 @@ TABLES_AT_INIT = [
     'timed_balances',
     'timed_location_data',
     'asset_movement_category',
+    'balance_category',
     'external_service_credentials',
     'user_credentials',
     'blockchain_accounts',
@@ -448,35 +450,53 @@ def test_sqlcipher_detect_version():
 
 asset_balances = [
     AssetBalance(
+        category=BalanceType.ASSET,
         time=Timestamp(1451606400),
         asset=A_USD,
         amount='10',
         usd_value='10',
     ), AssetBalance(
+        category=BalanceType.ASSET,
         time=Timestamp(1451606401),
         asset=A_ETH,
         amount='2',
         usd_value='1.7068',
     ), AssetBalance(
+        category=BalanceType.ASSET,
         time=Timestamp(1465171200),
         asset=A_USD,
         amount='500',
         usd_value='500',
     ), AssetBalance(
+        category=BalanceType.ASSET,
         time=Timestamp(1465171201),
         asset=A_ETH,
         amount='10',
         usd_value='123',
     ), AssetBalance(
+        category=BalanceType.ASSET,
         time=Timestamp(1485907200),
         asset=A_USD,
         amount='350',
         usd_value='350',
     ), AssetBalance(
+        category=BalanceType.ASSET,
         time=Timestamp(1485907201),
         asset=A_ETH,
         amount='25',
         usd_value='249.5',
+    ), AssetBalance(
+        category=BalanceType.LIABILITY,
+        time=Timestamp(1485907201),
+        asset=A_ETH,
+        amount='1',
+        usd_value='9.98',
+    ), AssetBalance(
+        category=BalanceType.LIABILITY,
+        time=Timestamp(1485907201),
+        asset=A_DAI,
+        amount='10',
+        usd_value='10.11',
     ),
 ]
 
@@ -494,6 +514,7 @@ def test_query_timed_balances(data_dir, username):
     )
     assert len(result) == 1
     assert result[0].time == 1465171200
+    assert result[0].category == BalanceType.ASSET
     assert result[0].amount == '500'
     assert result[0].usd_value == '500'
 
@@ -504,11 +525,22 @@ def test_query_timed_balances(data_dir, username):
     )
     assert len(result) == 2
     assert result[0].time == 1451606401
+    assert result[0].category == BalanceType.ASSET
     assert result[0].amount == '2'
     assert result[0].usd_value == '1.7068'
     assert result[1].time == 1465171201
+    assert result[1].category == BalanceType.ASSET
     assert result[1].amount == '10'
     assert result[1].usd_value == '123'
+
+    result = data.db.query_timed_balances(A_ETH)
+    assert len(result) == 4
+    result = data.db.query_timed_balances(A_ETH, balance_type=BalanceType.LIABILITY)
+    assert len(result) == 1
+    assert result[0].time == 1485907201
+    assert result[0].category == BalanceType.LIABILITY
+    assert result[0].amount == '1'
+    assert result[0].usd_value == '9.98'
 
 
 def test_query_owned_assets(data_dir, username):
@@ -520,12 +552,14 @@ def test_query_owned_assets(data_dir, username):
     balances = deepcopy(asset_balances)
     balances.extend([
         AssetBalance(
+            category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_BTC,
             amount='1',
             usd_value='1222.66',
         ),
         AssetBalance(
+            category=BalanceType.ASSET,
             time=Timestamp(1489326500),
             asset=A_XMR,
             amount='2',
@@ -536,14 +570,14 @@ def test_query_owned_assets(data_dir, username):
     cursor = data.db.conn.cursor()
     cursor.execute(
         'INSERT INTO timed_balances('
-        '    time, currency, amount, usd_value) '
-        ' VALUES(?, ?, ?, ?)',
-        (1469326500, 'ADSADX', '10.1', '100.5'),
+        '    time, currency, amount, usd_value, category) '
+        ' VALUES(?, ?, ?, ?, ?)',
+        (1469326500, 'ADSADX', '10.1', '100.5', 'A'),
     )
     data.db.conn.commit()
 
     assets_list = data.db.query_owned_assets()
-    assert assets_list == [A_USD, A_ETH, A_BTC, A_XMR]
+    assert assets_list == [A_USD, A_ETH, A_DAI, A_BTC, A_XMR]
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
@@ -940,6 +974,56 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
     assert settings.taxfree_after_period is None
 
 
+def test_timed_balances_primary_key_works(user_data_dir):
+    msg_aggregator = MessagesAggregator()
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
+    balances = [
+        AssetBalance(
+            category=BalanceType.ASSET,
+            time=1590676728,
+            asset=A_BTC,
+            amount='1.0',
+            usd_value='8500',
+        ), AssetBalance(
+            category=BalanceType.ASSET,
+            time=1590676728,
+            asset=A_BTC,
+            amount='1.1',
+            usd_value='9100',
+        ),
+    ]
+    db.add_multiple_balances(balances)
+    warnings = msg_aggregator.consume_warnings()
+    errors = msg_aggregator.consume_errors()
+    assert len(warnings) == 1
+    assert len(errors) == 0
+    balances = db.query_timed_balances(asset=A_BTC)
+    assert len(balances) == 1
+
+    balances = [
+        AssetBalance(
+            category=BalanceType.ASSET,
+            time=1590676728,
+            asset=A_ETH,
+            amount='1.0',
+            usd_value='8500',
+        ), AssetBalance(
+            category=BalanceType.LIABILITY,
+            time=1590676728,
+            asset=A_ETH,
+            amount='1.1',
+            usd_value='9100',
+        ),
+    ]
+    db.add_multiple_balances(balances)
+    warnings = msg_aggregator.consume_warnings()
+    errors = msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+    balances = db.query_timed_balances(asset=A_ETH)
+    assert len(balances) == 2
+
+
 def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
     """Test that adding location and balance data with same timestamp does not crash.
 
@@ -950,11 +1034,13 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
 
     balances = [
         AssetBalance(
+            category=BalanceType.ASSET,
             time=1590676728,
             asset=A_BTC,
             amount='1.0',
             usd_value='8500',
         ), AssetBalance(
+            category=BalanceType.ASSET,
             time=1590676728,
             asset=A_BTC,
             amount='1.1',

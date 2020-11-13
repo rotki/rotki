@@ -1,6 +1,7 @@
 from sqlite3 import Cursor
 from typing import TYPE_CHECKING, List, Tuple
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.db.utils import SingleAssetBalance
 from rotkehlchen.fval import FVal
 
@@ -30,7 +31,7 @@ def rename_asset_in_timed_balances(
     # from here and on treat merging of old and new named balances
     to_balances = []
     query = cursor.execute(
-        f'SELECT time, amount, usd_value FROM timed_balances WHERE currency="{to_name}"',
+        f'SELECT time, amount, usd_value, category FROM timed_balances WHERE currency="{to_name}"',
     )
     for entry in query:
         to_balances.append(
@@ -38,12 +39,13 @@ def rename_asset_in_timed_balances(
                 time=entry[0],
                 amount=entry[1],
                 usd_value=entry[2],
+                category=BalanceType.deserialize_from_db(entry[3]),
             ),
         )
 
     from_balances = []
     query = cursor.execute(
-        f'SELECT time, amount, usd_value FROM timed_balances WHERE currency="{from_name}"',
+        f'SELECT time, amount, usd_value , category FROM timed_balances WHERE currency="{from_name}"',  # noqa: E501
     )
     for entry in query:
         from_balances.append(
@@ -51,6 +53,7 @@ def rename_asset_in_timed_balances(
                 time=entry[0],
                 amount=entry[1],
                 usd_value=entry[2],
+                category=BalanceType.deserialize_from_db(entry[3]),
             ),
         )
 
@@ -72,19 +75,20 @@ def rename_asset_in_timed_balances(
                 FVal(to_merge_balance.usd_value) + FVal(from_balance.usd_value),
             )
             from_balance = SingleAssetBalance(
+                category=from_balance.category,
                 time=from_balance.time,
                 amount=amount,
                 usd_value=usd_value,
             )
 
         final_balances.append(
-            (from_balance.time, to_name, from_balance.amount, from_balance.usd_value),
+            (from_balance.time, to_name, from_balance.amount, from_balance.usd_value, from_balance.category.serialize_for_db()),  # noqa: E501
         )
 
     # If any to_balances remain unmerged, also add them to the final balances
     for to_balance in to_balances:
         final_balances.append(
-            (to_balance.time, to_name, to_balance.amount, to_balance.usd_value),
+            (to_balance.time, to_name, to_balance.amount, to_balance.usd_value, to_balance.category.serialize_for_db()),  # noqa: E501
         )
 
     # now delete all the current DB entries
@@ -92,7 +96,7 @@ def rename_asset_in_timed_balances(
     cursor.execute(f'DELETE FROM timed_balances WHERE currency="{to_name}"')
     # and replace with the final merged balances
     cursor.executemany(
-        'INSERT INTO timed_balances(time, currency, amount, usd_value) VALUES (?, ?, ?, ?)',
+        'INSERT INTO timed_balances(time, currency, amount, usd_value, category) VALUES (?, ?, ?, ?, ?)',  # noqa: E501
         final_balances,
     )
 

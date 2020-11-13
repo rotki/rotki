@@ -14,6 +14,7 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -1005,10 +1006,12 @@ class RestAPI():
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
+        # TODO: Think about this, but for now this is only balances, not liabilities
         data = self.rotkehlchen.data.db.query_timed_balances(
             from_ts=from_timestamp,
             to_ts=to_timestamp,
             asset=asset,
+            balance_type=BalanceType.ASSET,
         )
 
         result = process_result_list(data)

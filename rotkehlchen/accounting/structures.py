@@ -6,10 +6,40 @@ from typing import Any, DefaultDict, Dict
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.misc import combine_dicts
+
+
+class BalanceType(Enum):
+    ASSET = 0
+    LIABILITY = 1
+
+    def __str__(self) -> str:
+        if self == BalanceType.ASSET:
+            return 'asset'
+        elif self == BalanceType.LIABILITY:
+            return 'liability'
+
+        raise AssertionError(f'Invalid value {self} for BalanceType')
+
+    @staticmethod
+    def deserialize_from_db(value: str) -> 'BalanceType':
+        if value == 'A':
+            return BalanceType.ASSET
+        elif value == 'B':
+            return BalanceType.LIABILITY
+
+        raise DeserializationError(f'Encountered unknown BalanceType value {value} in the DB')
+
+    def serialize_for_db(self) -> str:
+        if self == BalanceType.ASSET:
+            return 'A'
+        elif self == BalanceType.LIABILITY:
+            return 'B'
+
+        raise AssertionError(f'Invalid value {self} for BalanceType')
 
 
 class DefiEventType(Enum):

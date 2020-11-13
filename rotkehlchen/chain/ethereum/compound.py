@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from eth_utils import to_checksum_address
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -18,7 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import BalanceType, ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hexstr_to_int
@@ -223,7 +223,7 @@ class Compound(EthereumModule):
                         continue
 
                     borrowing_map[asset.identifier] = CompoundBalance(
-                        balance_type=BalanceType.DEBT,
+                        balance_type=BalanceType.LIABILITY,
                         balance=entry.balance,
                         apy=self._get_apy(ctoken.ethereum_address, supply=False),
                     )

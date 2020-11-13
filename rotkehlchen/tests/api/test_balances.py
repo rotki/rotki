@@ -75,21 +75,21 @@ def assert_all_balances(
 
     assert len(result) == expected_result_keys  # 3 or 4 assets + location + net_usd
 
-    eth_tbalances = db.query_timed_balances(from_ts=None, to_ts=None, asset=A_ETH)
+    eth_tbalances = db.query_timed_balances(asset=A_ETH)
     if not expected_data_in_db:
         assert len(eth_tbalances) == 0
     else:
         assert len(eth_tbalances) == 1
         assert FVal(eth_tbalances[0].amount) == total_eth
 
-    btc_tbalances = db.query_timed_balances(from_ts=None, to_ts=None, asset=A_BTC)
+    btc_tbalances = db.query_timed_balances(asset=A_BTC)
     if not expected_data_in_db:
         assert len(btc_tbalances) == 0
     else:
         assert len(btc_tbalances) == 1
         assert FVal(btc_tbalances[0].amount) == total_btc
 
-    rdn_tbalances = db.query_timed_balances(from_ts=None, to_ts=None, asset=A_RDN)
+    rdn_tbalances = db.query_timed_balances(asset=A_RDN)
     if not expected_data_in_db:
         assert len(rdn_tbalances) == 0
     else:

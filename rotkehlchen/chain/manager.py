@@ -185,7 +185,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Per account balances
         self.balances = BlockchainBalances(db=database)
         # Per asset total balances
-        self.totals: BalanceSheet
+        self.totals: BalanceSheet = BalanceSheet()
         # TODO: Perhaps turn this mapping into a typed dict?
         self.eth_modules: Dict[str, Union[EthereumModule, Literal['loading']]] = {}
         if eth_modules:
