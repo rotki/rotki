@@ -28,11 +28,13 @@
       "
       class="tab-navigation__tabs__tab-item"
     >
-      <router-view
-        v-if="
-          $route.path.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab
-        "
-      />
+      <keep-alive>
+        <router-view
+          v-if="
+            $route.path.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab
+          "
+        />
+      </keep-alive>
     </v-tab-item>
   </v-tabs>
 </template>
