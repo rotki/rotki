@@ -1,12 +1,14 @@
 import pytest
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit, get_eth2_staked_amount
+from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit, Eth2DepositResult, get_eth2_staked_amount
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
 )
+from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -184,3 +186,58 @@ def test_get_eth2_staked_amount(  # pylint: disable=unused-argument
     assert result.totals[addr1].amount >= FVal(32)
     assert result.totals[addr2].amount >= FVal(480)
     assert result.totals[addr3].amount >= FVal(480)
+
+
+def test_eth2_result_serialization():
+    addr1 = make_ethereum_address()
+    addr2 = make_ethereum_address()
+    result = Eth2DepositResult(
+        deposits=[
+            Eth2Deposit(
+                from_address=addr1,
+                pubkey='0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
+                withdrawal_credentials='0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499',  # noqa: E501
+                value=Balance(FVal(32), FVal(64)),
+                validator_index=9,
+                tx_hash='0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
+                log_index=22,
+            ), Eth2Deposit(
+                from_address=addr2,
+                pubkey='0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3',  # noqa: E501
+                withdrawal_credentials='0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817',  # noqa: E501
+                value=Balance(FVal(32), FVal(64)),
+                validator_index=1650,
+                tx_hash='0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7',
+                log_index=221,
+            ),
+        ],
+        totals={
+            addr1: Balance(FVal(1), FVal(1)),
+            addr2: Balance(FVal(2), FVal(2)),
+        },
+    )
+
+    serialized = process_result(result)
+    assert serialized == {
+        'deposits': [{
+            'from_address': addr1,
+            'pubkey': '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
+            'withdrawal_credentials': '0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499',  # noqa: E501
+            'value': {'amount': '32', 'usd_value': '64'},
+            'validator_index': 9,
+            'tx_hash': '0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
+            'log_index': 22,
+        }, {
+            'from_address': addr2,
+            'pubkey': '0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3',  # noqa: E501
+            'withdrawal_credentials': '0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817',  # noqa: E501
+            'value': {'amount': '32', 'usd_value': '64'},
+            'validator_index': 1650,
+            'tx_hash': '0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7',
+            'log_index': 221,
+        }],
+        'totals': {
+            addr1: {'amount': '1', 'usd_value': '1'},
+            addr2: {'amount': '2', 'usd_value': '2'},
+        },
+    }

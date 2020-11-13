@@ -15,6 +15,7 @@ from rotkehlchen.chain.ethereum.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.compound import CompoundBalance, CompoundEvent
+from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit, Eth2DepositResult
 from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
     MakerDAOVault,
@@ -23,10 +24,7 @@ from rotkehlchen.chain.ethereum.makerdao.vaults import (
     VaultEventType,
 )
 from rotkehlchen.chain.ethereum.structures import AaveEvent
-from rotkehlchen.chain.ethereum.uniswap import (
-    UniswapPool,
-    UniswapPoolAsset,
-)
+from rotkehlchen.chain.ethereum.uniswap import UniswapPool, UniswapPoolAsset
 from rotkehlchen.chain.ethereum.yearn.vaults import (
     YearnVaultBalance,
     YearnVaultEvent,
@@ -117,6 +115,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             DefiProtocolBalances,
             YearnVaultHistory,
             BlockchainAccountData,
+            Eth2DepositResult,
+            Eth2Deposit,
     )):
         return process_result(entry._asdict())
     elif isinstance(entry, tuple):
