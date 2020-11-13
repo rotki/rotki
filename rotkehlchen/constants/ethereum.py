@@ -105,6 +105,8 @@ MAKERDAO_PAXUSD_A_JOIN = EthereumConstants().contract('MAKERDAO_PAXUSD_A_JOIN')
 MAKERDAO_COMP_A_JOIN = EthereumConstants().contract('MAKERDAO_COMP_A_JOIN')
 MAKERDAO_LRC_A_JOIN = EthereumConstants().contract('MAKERDAO_LRC_A_JOIN')
 MAKERDAO_LINK_A_JOIN = EthereumConstants().contract('MAKERDAO_LINK_A_JOIN')
+MAKERDAO_BAL_A_JOIN = EthereumConstants().contract('MAKERDAO_BAL_A_JOIN')
+MAKERDAO_YFI_A_JOIN = EthereumConstants().contract('MAKERDAO_YFI_A_JOIN')
 
 MAKERDAO_CAT = EthereumConstants().contract('MAKERDAO_CAT')
 MAKERDAO_JUG = EthereumConstants().contract('MAKERDAO_JUG')
