@@ -337,18 +337,10 @@ CREATE TABLE IF NOT EXISTS amm_trades (
 );
 """
 
-DB_CREATE_INDEXES_AMM_TRADES = """
-CREATE INDEX IF NOT EXISTS idx__amm_trades__location__timestamp__address
-ON amm_trades (location, timestamp, address);
-
-CREATE INDEX IF NOT EXISTS idx__amm_trades__location__address
-ON amm_trades (location, address);
-"""
-
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -377,5 +369,4 @@ PRAGMA foreign_keys=on;
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
     DB_CREATE_AMM_TRADES,
-    DB_CREATE_INDEXES_AMM_TRADES,
 )
