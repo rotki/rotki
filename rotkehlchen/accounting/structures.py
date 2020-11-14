@@ -1,12 +1,45 @@
-from dataclasses import dataclass
+import operator
+from collections import defaultdict
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, DefaultDict, Dict
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
+from rotkehlchen.utils.misc import combine_dicts
+
+
+class BalanceType(Enum):
+    ASSET = 0
+    LIABILITY = 1
+
+    def __str__(self) -> str:
+        if self == BalanceType.ASSET:
+            return 'asset'
+        elif self == BalanceType.LIABILITY:
+            return 'liability'
+
+        raise AssertionError(f'Invalid value {self} for BalanceType')
+
+    @staticmethod
+    def deserialize_from_db(value: str) -> 'BalanceType':
+        if value == 'A':
+            return BalanceType.ASSET
+        elif value == 'B':
+            return BalanceType.LIABILITY
+
+        raise DeserializationError(f'Encountered unknown BalanceType value {value} in the DB')
+
+    def serialize_for_db(self) -> str:
+        if self == BalanceType.ASSET:
+            return 'A'
+        elif self == BalanceType.LIABILITY:
+            return 'B'
+
+        raise AssertionError(f'Invalid value {self} for BalanceType')
 
 
 class DefiEventType(Enum):
@@ -92,6 +125,9 @@ class Balance:
             usd_value=self.usd_value - other.usd_value,
         )
 
+    def __neg__(self) -> 'Balance':
+        return Balance(amount=-self.amount, usd_value=-self.usd_value)
+
 
 def _evaluate_balance_input(other: Any, operation: str) -> Balance:
     transformed_input = other
@@ -109,5 +145,62 @@ def _evaluate_balance_input(other: Any, operation: str) -> Balance:
             raise InputError(f'Found invalid dict object during Balance {operation}')
     elif not isinstance(other, Balance):
         raise InputError(f'Found a {type(other)} object during Balance {operation}')
+
+    return transformed_input
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class BalanceSheet:
+    assets: DefaultDict[Asset, Balance] = field(default_factory=lambda: defaultdict(Balance))
+    liabilities: DefaultDict[Asset, Balance] = field(default_factory=lambda: defaultdict(Balance))
+
+    def serialize(self) -> Dict[str, Dict]:
+        return {
+            'assets': {k.serialize(): v.serialize() for k, v in self.assets.items()},
+            'liabilities': {k: v.serialize() for k, v in self.liabilities.items()},
+        }
+
+    def to_dict(self) -> Dict[str, Dict]:
+        return {
+            'assets': {k: v.to_dict() for k, v in self.assets.items()},
+            'liabilities': {k: v.to_dict() for k, v in self.liabilities.items()},
+        }
+
+    def __add__(self, other: Any) -> 'BalanceSheet':
+        other = _evaluate_balance_sheet_input(other, 'addition')
+        return BalanceSheet(
+            assets=combine_dicts(self.assets, other.assets, op=operator.add),
+            liabilities=combine_dicts(self.liabilities, other.liabilities, op=operator.add),
+        )
+
+    def __sub__(self, other: Any) -> 'BalanceSheet':
+        other = _evaluate_balance_sheet_input(other, 'subtraction')
+        return BalanceSheet(
+            assets=combine_dicts(self.assets, other.assets, op=operator.sub),
+            liabilities=combine_dicts(self.liabilities, other.liabilities, op=operator.sub),
+        )
+
+
+def _evaluate_balance_sheet_input(other: Any, operation: str) -> BalanceSheet:
+    transformed_input = other
+    if isinstance(other, dict):
+        if len(other) == 2 and 'assets' in other and 'liabilities' in other:
+            try:
+                assets = defaultdict(Balance)
+                liabilities = defaultdict(Balance)
+                for asset, entry in other['assets'].items():
+                    assets[asset] = _evaluate_balance_input(entry, operation)
+                for asset, entry in other['liabilities'].items():
+                    liabilities[asset] = _evaluate_balance_input(entry, operation)
+            except InputError as e:
+                raise InputError(
+                    f'Found valid dict object but with invalid values '
+                    f'during BalanceSheet {operation}',
+                ) from e
+            transformed_input = BalanceSheet(assets=assets, liabilities=liabilities)
+        else:
+            raise InputError(f'Found invalid dict object during BalanceSheet {operation}')
+    elif not isinstance(other, BalanceSheet):
+        raise InputError(f'Found a {type(other)} object during BalanceSheet {operation}')
 
     return transformed_input

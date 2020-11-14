@@ -102,8 +102,9 @@ def test_query_statistics_asset_balance(
         assert data['message'] == ''
         assert len(data['result']) == 1
         entry = data['result'][0]
-        assert len(entry) == 3
+        assert len(entry) == 4
         assert FVal(entry['amount']) == get_asset_balance_total('ETH', setup)
+        assert entry['category'] == 'asset'
         assert entry['time'] >= start_time
         assert entry['usd_value'] is not None
     else:
@@ -127,9 +128,10 @@ def test_query_statistics_asset_balance(
         assert data['message'] == ''
         assert len(data['result']) == 1
         entry = data['result'][0]
-        assert len(entry) == 3
+        assert len(entry) == 4
         assert FVal(entry['amount']) == get_asset_balance_total('BTC', setup)
         assert entry['time'] >= start_time
+        assert entry['category'] == 'asset'
         assert entry['usd_value'] is not None
     else:
         assert_error_response(
@@ -313,8 +315,9 @@ def test_query_statistics_value_distribution(
             'RDN': get_asset_balance_total('RDN', setup),
         }
         for entry in data['result']:
-            assert len(entry) == 4
+            assert len(entry) == 5
             assert entry['time'] >= start_time
+            assert entry['category'] == 'asset'
             assert entry['usd_value'] is not None
             assert FVal(entry['amount']) == totals[entry['asset']]
     else:

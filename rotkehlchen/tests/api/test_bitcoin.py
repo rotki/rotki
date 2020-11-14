@@ -74,8 +74,9 @@ def _check_xpub_addition_outcome(outcome, xpub):
         assert xpub_data['addresses'][address]['amount'] is not None
         assert xpub_data['addresses'][address]['usd_value'] is not None
 
-    assert outcome['totals']['BTC']['amount'] is not None
-    assert outcome['totals']['BTC']['usd_value'] is not None
+    totals = outcome['totals']['assets']
+    assert totals['BTC']['amount'] is not None
+    assert totals['BTC']['usd_value'] is not None
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -229,8 +230,9 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     assert UNIT_BTC_ADDRESS2 in btc['standalone']
 
     assert 'xpubs' not in btc
-    assert outcome['totals']['BTC']['amount'] is not None
-    assert outcome['totals']['BTC']['usd_value'] is not None
+    totals = outcome['totals']['assets']
+    assert totals['BTC']['amount'] is not None
+    assert totals['BTC']['usd_value'] is not None
 
     # Also make sure all mappings are gone from the DB
     cursor = rotki.data.db.conn.cursor()

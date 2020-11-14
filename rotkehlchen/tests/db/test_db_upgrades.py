@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.data_handler import DataHandler
@@ -28,7 +29,6 @@ from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 creation_patch = patch(
@@ -231,18 +231,19 @@ def populate_db_and_check_for_asset_renaming(
     assert renamed_asset in owned_assets
 
     # Make sure that the merging of both new and old name entry in same timestamp works
-    timed_balances = data.db.query_timed_balances(
-        from_ts=Timestamp(0),
-        to_ts=Timestamp(2556392121),
-        asset=renamed_asset,
+    querystr = (
+        f'SELECT time, amount, usd_value FROM timed_balances WHERE time BETWEEN '
+        f'0 AND 2556392121 AND currency="{renamed_asset.identifier}" ORDER BY time ASC;'
     )
-    assert len(timed_balances) == 2
-    assert timed_balances[0].time == 1557499129
-    assert timed_balances[0].amount == '10.1'
-    assert timed_balances[0].usd_value == '150'
-    assert timed_balances[1].time == 1558499129
-    assert timed_balances[1].amount == '3.3'
-    assert timed_balances[1].usd_value == '40'
+    cursor = data.db.conn.cursor()
+    result = cursor.execute(querystr).fetchall()
+    assert len(result) == 2
+    assert result[0][0] == 1557499129
+    assert result[0][1] == '10.1'
+    assert result[0][2] == '150'
+    assert result[1][0] == 1558499129
+    assert result[1][1] == '3.3'
+    assert result[1][2] == '40'
 
     # Assert that trades got renamed properly
     cursor = data.db.conn.cursor()
@@ -1060,6 +1061,68 @@ def test_upgrade_db_19_to_20(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 20
+
+
+def test_upgrade_db_20_to_21(user_data_dir):
+    """Test upgrading the DB from version 20 to version 21.
+
+    Create a new balance_category table and upgrades the timed
+    balances to also contain the balance type (category). Defaults to asset
+    right now, but opens up the way to store liabilities too
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v20_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=21,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    # if nothing is raised here we are good
+    query = cursor.execute('SELECT * FROM balance_category;')
+    query = cursor.execute(
+        'SELECT category, time, currency, amount, usd_value FROM timed_balances '
+        'ORDER BY time ASC;',
+    )
+    length = 0
+    for entry in query:
+        assert BalanceType.deserialize_from_db(entry[0]) == BalanceType.ASSET
+        # Check the last 3 entries to make sure no data is lost during upgrade
+        if length == 1297:
+            assert entry == (
+                BalanceType.ASSET.serialize_for_db(),
+                1605194428,
+                'yaLINK',
+                '444.562307846438094287',
+                '5843.922363085966843444941265',
+            )
+        elif length == 1298:
+            assert entry == (
+                BalanceType.ASSET.serialize_for_db(),
+                1605194428,
+                'ypaxCrv',
+                '211.750728445895069118',
+                '217.2597399646382941219959776',
+            )
+        elif length == 1299:
+            assert entry == (
+                BalanceType.ASSET.serialize_for_db(),
+                1605194428,
+                'yyDAI+yUSDC+yUSDT+yBUSD',
+                '167.18639752015697023',
+                '185.7646591376060274165290659',
+            )
+        length += 1
+    assert length == 1300
+    assert entry == (
+        BalanceType.ASSET.serialize_for_db(),
+        1605194428,
+        'yyDAI+yUSDC+yUSDT+yBUSD',
+        '167.18639752015697023',
+        '185.7646591376060274165290659',
+    )
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 21
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

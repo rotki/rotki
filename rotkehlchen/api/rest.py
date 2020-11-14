@@ -14,6 +14,7 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -490,12 +491,14 @@ class RestAPI():
             # If only specific input blockchain was given ignore other results
             if blockchain == SupportedBlockchain.ETHEREUM:
                 result['per_account'].pop('BTC', None)
-                result['totals'].pop('BTC', None)
+                result['totals']['assets'].pop('BTC', None)
             elif blockchain == SupportedBlockchain.BITCOIN:
                 val = result['per_account'].get('BTC', None)
                 per_account = {'BTC': val} if val else {}
-                val = result['totals'].get('BTC', None)
-                totals = {'BTC': val} if val else {}
+                val = result['totals']['assets'].get('BTC', None)
+                totals: Dict[str, Any] = {'assets': {}, 'liabilities': {}}
+                if val:
+                    totals['assets'] = {'BTC': val}
                 result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}
@@ -1005,10 +1008,12 @@ class RestAPI():
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
+        # TODO: Think about this, but for now this is only balances, not liabilities
         data = self.rotkehlchen.data.db.query_timed_balances(
             from_ts=from_timestamp,
             to_ts=to_timestamp,
             asset=asset,
+            balance_type=BalanceType.ASSET,
         )
 
         result = process_result_list(data)

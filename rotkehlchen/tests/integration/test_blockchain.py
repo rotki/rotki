@@ -36,14 +36,14 @@ def test_eth_connection_initial_balances(
 
 def test_query_btc_balances(blockchain):
     blockchain.query_btc_balances()
-    assert 'BTC' not in blockchain.totals
+    assert 'BTC' not in blockchain.totals.assets
 
     account = '3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7'
     blockchain.modify_btc_account(account, 'append', operator.add)
 
     blockchain.query_btc_balances()
-    assert blockchain.totals[A_BTC].usd_value is not None
-    assert blockchain.totals[A_BTC].amount is not None
+    assert blockchain.totals.assets[A_BTC].usd_value is not None
+    assert blockchain.totals.assets[A_BTC].amount is not None
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -171,5 +171,5 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         ]
         gevent.joinall(greenlets)
 
-    assert blockchain.totals['DAI'].amount == 2
-    assert blockchain.balances.eth[addr1].asset_balances['DAI'].amount == 2
+    assert blockchain.totals.assets['DAI'].amount == 2
+    assert blockchain.balances.eth[addr1].assets['DAI'].amount == 2

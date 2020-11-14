@@ -1,18 +1,22 @@
 from sqlite3 import Cursor
 from typing import TYPE_CHECKING, List, Tuple
 
-from rotkehlchen.db.utils import SingleAssetBalance
 from rotkehlchen.fval import FVal
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def rename_asset_in_timed_balances(
+def rename_asset_in_timed_balances_before_v21(
         cursor: Cursor,
         from_name: str,
         to_name: str,
 ) -> None:
+    """This function renames assets saved in timed balances before v21
+
+    If we need to rename assets after v21 we need a different version which
+    also takes category into account
+    """
 
     query = cursor.execute(
         f'SELECT COUNT(*) FROM timed_balances WHERE currency="{to_name}"',
@@ -33,71 +37,69 @@ def rename_asset_in_timed_balances(
         f'SELECT time, amount, usd_value FROM timed_balances WHERE currency="{to_name}"',
     )
     for entry in query:
-        to_balances.append(
-            SingleAssetBalance(
-                time=entry[0],
-                amount=entry[1],
-                usd_value=entry[2],
-            ),
-        )
+        to_balances.append((
+            entry[0],
+            entry[1],
+            entry[2],
+        ))
 
     from_balances = []
     query = cursor.execute(
-        f'SELECT time, amount, usd_value FROM timed_balances WHERE currency="{from_name}"',
+        f'SELECT time, amount, usd_value  FROM timed_balances WHERE currency="{from_name}"',  # noqa: E501
     )
     for entry in query:
-        from_balances.append(
-            SingleAssetBalance(
-                time=entry[0],
-                amount=entry[1],
-                usd_value=entry[2],
-            ),
-        )
+        from_balances.append((
+            entry[0],
+            entry[1],
+            entry[2],
+        ))
 
     final_balances = []
     for from_balance in from_balances:
         match_idx = None
 
         for idx, to_balance in enumerate(to_balances):
-            if to_balance.time == from_balance.time:
+            if to_balance[0] == from_balance[0]:  # same time
                 match_idx = idx
                 break
 
         if match_idx is not None:
             to_merge_balance = to_balances.pop(match_idx)
             amount = str(
-                FVal(to_merge_balance.amount) + FVal(from_balance.amount),
+                FVal(to_merge_balance[1]) + FVal(from_balance[1]),
             )
             usd_value = str(
-                FVal(to_merge_balance.usd_value) + FVal(from_balance.usd_value),
+                FVal(to_merge_balance[2]) + FVal(from_balance[2]),
             )
-            from_balance = SingleAssetBalance(
-                time=from_balance.time,
-                amount=amount,
-                usd_value=usd_value,
-            )
+            from_balance = (from_balance[0], amount, usd_value)
 
-        final_balances.append(
-            (from_balance.time, to_name, from_balance.amount, from_balance.usd_value),
-        )
+        final_balances.append((
+            from_balance[0],  # time
+            to_name,
+            from_balance[1],  # amount
+            from_balance[2],  # usd_value
+        ))
 
     # If any to_balances remain unmerged, also add them to the final balances
     for to_balance in to_balances:
-        final_balances.append(
-            (to_balance.time, to_name, to_balance.amount, to_balance.usd_value),
-        )
+        final_balances.append((
+            to_balance[0],  # time
+            to_name,
+            to_balance[1],  # amount
+            to_balance[2],  # usd_value
+        ))
 
     # now delete all the current DB entries
     cursor.execute(f'DELETE FROM timed_balances WHERE currency="{from_name}"')
     cursor.execute(f'DELETE FROM timed_balances WHERE currency="{to_name}"')
     # and replace with the final merged balances
     cursor.executemany(
-        'INSERT INTO timed_balances(time, currency, amount, usd_value) VALUES (?, ?, ?, ?)',
+        'INSERT INTO timed_balances(time, currency, amount, usd_value) VALUES (?, ?, ?, ?)',  # noqa: E501
         final_balances,
     )
 
 
-def rename_assets_in_timed_balances(
+def rename_assets_in_timed_balances_before_v21(
         cursor: Cursor,
         rename_pairs: List[Tuple[str, str]],
 ) -> None:
@@ -109,9 +111,11 @@ def rename_assets_in_timed_balances(
         'UPDATE timed_balances SET currency=? WHERE currency=?',
         changed_symbols,
     )
+
+    Would need to use a different function if we rename assets after v21
     """
     for rename_pair in rename_pairs:
-        rename_asset_in_timed_balances(
+        rename_asset_in_timed_balances_before_v21(
             cursor=cursor,
             from_name=rename_pair[0],
             to_name=rename_pair[1],
@@ -135,7 +139,11 @@ def rename_assets_in_db(db: 'DBHandler', rename_pairs: List[Tuple[str, str]]) ->
         'UPDATE multisettings SET value=? WHERE value=? and name="ignored_asset";',
         changed_symbols,
     )
-    rename_assets_in_timed_balances(cursor, rename_pairs)
+    db_version = db.get_version()
+    if db_version <= 20:
+        rename_assets_in_timed_balances_before_v21(cursor, rename_pairs)
+    else:
+        raise NotImplementedError('Need to implement asset renaming during upgrade for > v21')
 
     replaced_symbols = [e[0] for e in rename_pairs]
     replaced_symbols_q = ['pair LIKE "%' + s + '%"' for s in replaced_symbols]

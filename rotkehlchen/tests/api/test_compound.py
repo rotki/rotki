@@ -513,7 +513,7 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
         eth_balances=['1000000', '2000000', '33000030003', '42323213'],
         token_balances={},
         btc_accounts=None,
-        original_queries=['zerion'],
+        original_queries=['zerion', 'logs', 'blocknobytime'],
     )
     # Since this test can be a bit slow we don't run both async and sync in the same test run
     # Instead we randomly choose one. Eventually both cases will be covered.

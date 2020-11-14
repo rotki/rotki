@@ -66,13 +66,26 @@ INSERT OR IGNORE INTO asset_movement_category(category, seq) VALUES ('A', 1);
 INSERT OR IGNORE INTO asset_movement_category(category, seq) VALUES ('B', 2);
 """
 
+# Custom enum table for Balance categories (asset/liability)
+DB_CREATE_BALANCE_CATEGORY = """
+CREATE TABLE IF NOT EXISTS balance_category (
+  category    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* Asset Category */
+INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('A', 1);
+/* Liability Category */
+INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('B', 2);
+"""
+
 DB_CREATE_TIMED_BALANCES = """
 CREATE TABLE IF NOT EXISTS timed_balances (
+    category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
     time INTEGER,
     currency VARCHAR[12],
     amount TEXT,
     usd_value TEXT,
-    PRIMARY KEY (time, currency)
+    PRIMARY KEY (time, currency, category)
 );
 """
 
@@ -299,13 +312,14 @@ CREATE TABLE IF NOT EXISTS settings (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
     DB_CREATE_TRADE_TYPE,
     DB_CREATE_LOCATION,
     DB_CREATE_ASSET_MOVEMENT_CATEGORY,
+    DB_CREATE_BALANCE_CATEGORY,
     DB_CREATE_TIMED_BALANCES,
     DB_CREATE_TIMED_LOCATION_DATA,
     DB_CREATE_USER_CREDENTIALS,

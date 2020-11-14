@@ -10,7 +10,6 @@ from typing import Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import decrypt, encrypt
-from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import AuthenticationError, SystemPermissionError
@@ -120,10 +119,6 @@ class DataHandler():
 
     def main_currency(self) -> Asset:
         return self.db.get_main_currency()
-
-    def save_balances_data(self, data: BalancesData, timestamp: Timestamp) -> None:
-        """Save the balances data at the given timestamp"""
-        self.db.write_balances_data(data=data, timestamp=timestamp)
 
     def add_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
         """Adds ignored assets to the DB.

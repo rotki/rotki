@@ -6,6 +6,7 @@ Changelog
 * :feature:`1694` Users are now able to track their ETH deposited in Eth2 beacon chain. Premium users can see more details about the activity and their staking gains in the staking menu.
 * :feature:`1660` Users will now be able to see and edit labels and tags for xpub addresses.
 * :feature:`1227` Users can now see a net worth graph on the dashboard.
+* :feature:`1400` Liabilities are now shown on the dashboard and subtracted from the total net value.
 * :bug:`1668` Refreshing BTC balances now, will not clear any other assets from the state.
 * :bug:`1669` Users will now see a loading indicator when balances are loading and proper non-zero values after loading.
 * :bug:`1678` Selected type will now not be ignored, when adding an xpub that already contains an x/y/zpub prefix.

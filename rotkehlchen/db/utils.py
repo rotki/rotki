@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.typing import (
@@ -33,6 +34,7 @@ class BlockchainAccounts(NamedTuple):
 
 
 class AssetBalance(NamedTuple):
+    category: BalanceType
     time: Timestamp
     asset: Asset
     amount: str
@@ -40,6 +42,7 @@ class AssetBalance(NamedTuple):
 
 
 class SingleAssetBalance(NamedTuple):
+    category: BalanceType
     time: Timestamp
     amount: str
     usd_value: str

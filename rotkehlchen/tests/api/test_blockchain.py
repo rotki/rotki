@@ -51,7 +51,7 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert data['result'] == {'per_account': {}, 'totals': {}}
+    assert data['result'] == {'per_account': {}, 'totals': {'assets': {}, 'liabilities': {}}}
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -61,7 +61,7 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert data['result'] == {'per_account': {}, 'totals': {}}
+    assert data['result'] == {'per_account': {}, 'totals': {'assets': {}, 'liabilities': {}}}
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -70,7 +70,7 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert data['result'] == {'per_account': {}, 'totals': {}}
+    assert data['result'] == {'per_account': {}, 'totals': {'assets': {}, 'liabilities': {}}}
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -346,7 +346,7 @@ def _add_blockchain_accounts_test_start(
             result = wait_for_async_task_with_result(
                 api_server,
                 task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
             )
         else:
             result = assert_proper_response_with_result(response)

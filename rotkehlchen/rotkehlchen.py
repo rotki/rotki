@@ -23,6 +23,7 @@ from rotkehlchen.chain.ethereum.manager import (
 )
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.config import default_data_directory
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
@@ -678,9 +679,8 @@ class Rotkehlchen():
                 force_token_detection=ignore_cache,
                 ignore_cache=ignore_cache,
             )
-            balances['blockchain'] = {
-                asset: balance.to_dict() for asset, balance in blockchain_result.totals.items()
-            }
+            serialized_chain_result = blockchain_result.totals.to_dict()
+            balances['blockchain'] = serialized_chain_result['assets']
         except (RemoteError, EthSyncError) as e:
             problem_free = False
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
@@ -689,11 +689,15 @@ class Rotkehlchen():
 
         combined = combine_stat_dicts([v for k, v in balances.items()])
         total_usd_per_location = [(k, dict_get_sumof(v, 'usd_value')) for k, v in balances.items()]
+        liabilities = serialized_chain_result['liabilities']  # atm liabilities only on chain
 
         # calculate net usd value
-        net_usd = FVal(0)
+        net_usd = ZERO
         for _, v in combined.items():
             net_usd += FVal(v['usd_value'])
+        # subtract liabilities
+        liabilities_total_usd = sum(x.usd_value for _, x in liabilities.items())
+        net_usd -= liabilities_total_usd
 
         stats: Dict[str, Any] = {
             'location': {
@@ -703,7 +707,10 @@ class Rotkehlchen():
         for entry in total_usd_per_location:
             name = entry[0]
             total = entry[1]
-            if net_usd != FVal(0):
+            if name == 'blockchain':  # blockchain is the only location with liabilities atm
+                total -= liabilities_total_usd
+
+            if net_usd != ZERO:
                 percentage = (total / net_usd).to_percentage()
             else:
                 percentage = '0%'
@@ -713,20 +720,32 @@ class Rotkehlchen():
             }
 
         for k, v in combined.items():
-            if net_usd != FVal(0):
+            if net_usd != ZERO:
                 percentage = (v['usd_value'] / net_usd).to_percentage()
             else:
                 percentage = '0%'
             combined[k]['percentage_of_net_value'] = percentage
 
-        result_dict = merge_dicts(combined, stats)
+        for k, v in liabilities.items():
+            if net_usd != ZERO:
+                percentage = (v['usd_value'] / net_usd).to_percentage()
+            else:
+                percentage = '0%'
+            liabilities[k]['percentage_of_net_value'] = percentage
+
+        balance_sheet = {
+            'assets': combined,
+            'liabilities': liabilities,
+        }
+
+        result_dict = merge_dicts(balance_sheet, stats)
 
         allowed_to_save = requested_save_data or self.data.should_save_balances()
 
         if problem_free and allowed_to_save:
             if not timestamp:
                 timestamp = Timestamp(int(time.time()))
-            self.data.save_balances_data(data=result_dict, timestamp=timestamp)
+            self.data.db.save_balances_data(data=result_dict, timestamp=timestamp)
             log.debug('query_balances data saved')
         else:
             log.debug(
@@ -734,28 +753,6 @@ class Rotkehlchen():
                 allowed_to_save=allowed_to_save,
                 problem_free=problem_free,
             )
-
-        # After adding it to the saved file we can overlay additional data that
-        # is not required to be saved in the history file
-        try:
-            details = self.accountant.events.details
-            for asset, (tax_free_amount, average_buy_value) in details.items():
-                if asset not in result_dict:
-                    continue
-
-                result_dict[asset]['tax_free_amount'] = tax_free_amount
-                result_dict[asset]['average_buy_value'] = average_buy_value
-
-                current_price = result_dict[asset]['usd_value'] / result_dict[asset]['amount']
-                if average_buy_value != FVal(0):
-                    result_dict[asset]['percent_change'] = (
-                        ((current_price - average_buy_value) / average_buy_value) * 100
-                    )
-                else:
-                    result_dict[asset]['percent_change'] = 'INF'
-
-        except AttributeError:
-            pass
 
         return result_dict
 

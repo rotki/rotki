@@ -12,7 +12,7 @@ from eth_utils import is_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -29,7 +29,6 @@ from rotkehlchen.chain.ethereum.structures import (
 )
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
-from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
@@ -635,9 +634,9 @@ class DBHandler:
             try:
                 cursor.execute(
                     'INSERT INTO timed_balances('
-                    '    time, currency, amount, usd_value) '
-                    ' VALUES(?, ?, ?, ?)',
-                    (entry.time, entry.asset.identifier, entry.amount, entry.usd_value),
+                    '    time, currency, amount, usd_value, category) '
+                    ' VALUES(?, ?, ?, ?, ?)',
+                    (entry.time, entry.asset.identifier, entry.amount, entry.usd_value, entry.category.serialize_for_db()),  # noqa: E501
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 self.msg_aggregator.add_warning(
@@ -1287,7 +1286,7 @@ class DBHandler:
         cursor.execute('DROP TABLE IF EXISTS timed_unique_data')
         self.conn.commit()
 
-    def write_balances_data(self, data: BalancesData, timestamp: Timestamp) -> None:
+    def save_balances_data(self, data: Dict[str, Any], timestamp: Timestamp) -> None:
         """ The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance
@@ -1297,13 +1296,21 @@ class DBHandler:
         balances = []
         locations = []
 
-        for key, val in data.items():
-            if key in ('location', 'net_usd'):
-                continue
-
+        for key, val in data['assets'].items():
             msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
             assert isinstance(key, Asset), msg
             balances.append(AssetBalance(
+                category=BalanceType.ASSET,
+                time=timestamp,
+                asset=key,
+                amount=str(val['amount']),
+                usd_value=str(val['usd_value']),
+            ))
+        for key, val in data['liabilities'].items():
+            msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
+            assert isinstance(key, Asset), msg
+            balances.append(AssetBalance(
+                category=BalanceType.LIABILITY,
                 time=timestamp,
                 asset=key,
                 amount=str(val['amount']),
@@ -2012,22 +2019,30 @@ class DBHandler:
 
     def query_timed_balances(
             self,
-            from_ts: Optional[Timestamp],
-            to_ts: Optional[Timestamp],
             asset: Asset,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            balance_type: Optional[BalanceType] = None,
     ) -> List[SingleAssetBalance]:
-        """Query all balance entries for an asset within a range of timestamps"""
+        """Query all balance entries for an asset within a range of timestamps
+
+        Can optionally filter by balance type
+        """
         if from_ts is None:
             from_ts = Timestamp(0)
         if to_ts is None:
             to_ts = ts_now()
 
-        cursor = self.conn.cursor()
-        results = cursor.execute(
-            f'SELECT time, amount, usd_value FROM timed_balances '
-            f'WHERE time BETWEEN {from_ts} AND {to_ts} AND currency="{asset.identifier}" '
-            f'ORDER BY time ASC;',
+        querystr = (
+            f'SELECT time, amount, usd_value, category FROM timed_balances '
+            f'WHERE time BETWEEN {from_ts} AND {to_ts} AND currency="{asset.identifier}"'
         )
+        if balance_type is not None:
+            querystr += f' AND category="{balance_type.serialize_for_db()}"'
+        querystr += ' ORDER BY time ASC;'
+
+        cursor = self.conn.cursor()
+        results = cursor.execute(querystr)
         results = results.fetchall()
         balances = []
         for result in results:
@@ -2036,13 +2051,17 @@ class DBHandler:
                     time=result[0],
                     amount=result[1],
                     usd_value=result[2],
+                    category=BalanceType.deserialize_from_db(result[3]),
                 ),
             )
 
         return balances
 
     def query_owned_assets(self) -> List[Asset]:
-        """Query the DB for a list of all assets ever owned"""
+        """Query the DB for a list of all assets ever owned
+
+        This list will also include liabilities as owned assets
+        """
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
@@ -2098,13 +2117,16 @@ class DBHandler:
         Returns a list of `AssetBalance` all at the latest timestamp.
         Essentially this returns the distribution of netvalue across all assets
 
+        This will NOT include liabilities
+
         The list is sorted by usd value going from higher to lower
         """
         cursor = self.conn.cursor()
         results = cursor.execute(
-            'SELECT time, currency, amount, usd_value FROM timed_balances WHERE '
-            'time=(SELECT MAX(time) from timed_balances) ORDER BY '
-            'CAST(usd_value AS REAL) DESC;',
+            f'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
+            f'time=(SELECT MAX(time) from timed_balances) AND '
+            f'category="{BalanceType.ASSET.serialize_for_db()}" ORDER BY '
+            f'CAST(usd_value AS REAL) DESC;',
         )
         results = results.fetchall()
         assets = []
@@ -2115,6 +2137,7 @@ class DBHandler:
                     asset=Asset(result[1]),
                     amount=result[2],
                     usd_value=result[3],
+                    category=BalanceType.deserialize_from_db(result[4]),
                 ),
             )
 

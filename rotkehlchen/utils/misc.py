@@ -9,7 +9,7 @@ import sys
 import time
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, TypeVar, Union
+from typing import Any, Callable, DefaultDict, Dict, Iterator, List, TypeVar, Union, overload
 
 import gevent
 import requests
@@ -102,9 +102,34 @@ def from_wei(wei_value: FVal) -> FVal:
     return wei_value / FVal(10 ** 18)
 
 
-def combine_dicts(a: Dict, b: Dict, op: Callable = operator.add) -> Dict:
+K = TypeVar('K')
+V = TypeVar('V')
+
+
+@overload
+def combine_dicts(a: Dict[K, V], b: Dict[K, V], op: Callable = operator.add) -> Dict[K, V]:  # type: ignore[misc] # noqa: E501
+    ...
+
+
+@overload
+def combine_dicts(
+        a: DefaultDict[K, V],
+        b: DefaultDict[K, V],
+        op: Callable = operator.add,
+) -> DefaultDict[K, V]:
+    ...
+
+
+def combine_dicts(
+        a: Union[Dict[K, V], DefaultDict[K, V]],
+        b: Union[Dict[K, V], DefaultDict[K, V]],
+        op: Callable = operator.add,
+) -> Union[Dict[K, V], DefaultDict[K, V]]:
     new_dict = a.copy()
-    new_dict.update(b)
+    if op == operator.sub:
+        new_dict.update({k: -v for k, v in b.items()})  # type: ignore
+    else:
+        new_dict.update(b)
     new_dict.update([(k, op(a[k], b[k])) for k in set(b) & set(a)])
     return new_dict
 

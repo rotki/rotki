@@ -4,6 +4,7 @@ from unittest.mock import _patch, patch
 
 import requests
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
@@ -167,21 +168,25 @@ def add_starting_balances(datahandler) -> List[AssetBalance]:
     """Adds some starting balances and other data to a testing instance"""
     balances = [
         AssetBalance(
+            category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_BTC,
             amount='1',
             usd_value='1222.66',
         ), AssetBalance(
+            category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_ETH,
             amount='10',
             usd_value='4517.4',
         ), AssetBalance(
+            category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_EUR,
             amount='100',
             usd_value='61.5',
         ), AssetBalance(
+            category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_XMR,
             amount='5',

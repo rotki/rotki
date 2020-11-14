@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from functools import total_ordering
-from typing import Any, Optional
+from typing import Any, Optional, Type, TypeVar
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
@@ -286,6 +286,10 @@ class HasEthereumToken(Asset):
         object.__setattr__(self, 'decimals', data.decimals)
 
 
+# Create a generic variable that can be 'EthereumToken', or any subclass.
+T = TypeVar('T', bound='EthereumToken')
+
+
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class EthereumToken(HasEthereumToken):
 
@@ -297,3 +301,11 @@ class EthereumToken(HasEthereumToken):
             name=self.name,
             decimals=self.decimals,
         )
+
+    @classmethod
+    def from_asset(cls: Type[T], asset: Asset) -> Optional[T]:
+        """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
+        try:
+            return cls(asset.identifier)
+        except DeserializationError:
+            return None

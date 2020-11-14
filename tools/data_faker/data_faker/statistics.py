@@ -4,6 +4,7 @@ import random
 import sys
 from typing import Tuple
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.db.dbhandler import DBHandler
@@ -116,6 +117,7 @@ class StatisticsFaker():
         assets_data = []
         for idx, value in enumerate(divide_number_in_parts(starting_amount, len(assets))):
             assets_data.append(AssetBalance(
+                category=BalanceType.ASSET,
                 time=from_ts,
                 asset=assets[idx],
                 amount=str(random.randint(1, 20)),
@@ -171,6 +173,7 @@ class StatisticsFaker():
                 if new_amount < FVal('0'):
                     new_amount = old_amount + FVal('0.01')
                 new_assets_data.append(AssetBalance(
+                    category=BalanceType.ASSET,
                     time=from_ts,
                     asset=assets[idx],
                     amount=str(new_amount),
