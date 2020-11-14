@@ -404,9 +404,13 @@ def mock_etherscan_query(
             # By default when mocking, don't query for transactions
             response = '{"status":"1","message":"OK","result":[]}'
         elif 'api.etherscan.io/api?module=logs&action=getLogs&' in url:
+            if 'logs' in original_queries:
+                return original_requests_get(url, *args, **kwargs)
             # By default when mocking, don't query logs
             response = '{"status":"1","message":"OK","result":[]}'
         elif 'api.etherscan.io/api?module=block&action=getblocknobytime&' in url:
+            if 'blocknobytime' in original_queries:
+                return original_requests_get(url, *args, **kwargs)
             # By default when mocking don't query blocknobytime
             response = '{"status":"1","message":"OK","result":"1"}'
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ZERION_ADAPTER_ADDRESS}' in url:  # noqa: E501

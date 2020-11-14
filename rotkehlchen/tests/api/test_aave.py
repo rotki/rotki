@@ -177,7 +177,7 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_
         rotki,
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
-        original_queries=['zerion'],
+        original_queries=['zerion', 'logs', 'blocknobytime'],
     )
     # Since this test is slow we don't run both async and sync in the same test run
     # Instead we randomly choose one. Eventually both cases will be covered.
@@ -253,7 +253,7 @@ def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_acco
         rotki,
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
-        original_queries=['zerion'],
+        original_queries=['zerion', 'logs', 'blocknobytime'],
     )
     _query_borrowing_aave_history_test(setup, rotkehlchen_api_server)
     # Run it 2 times to make sure that data can be queried properly from the DB
@@ -308,7 +308,7 @@ def test_query_aave_history_no_duplicates(rotkehlchen_api_server, ethereum_accou
         rotki,
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
-        original_queries=['zerion'],
+        original_queries=['zerion', 'logs', 'blocknobytime'],
     )
 
     _test_for_duplicates_and_negatives(setup, rotkehlchen_api_server)

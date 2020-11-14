@@ -414,7 +414,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
         rotki,
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
-        original_queries=['zerion'],
+        original_queries=['zerion', 'logs', 'blocknobytime'],
     )
 
     for _ in range(2):
