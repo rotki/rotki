@@ -2018,40 +2018,6 @@ class DBHandler:
         )
         self.write_tuples(tuple_type='amm_trade', query=query, tuples=trade_tuples)
 
-    def edit_amm_trade(self, trade: AMMTrade) -> Tuple[bool, str]:
-        trade_tuple = trade.to_db_tuple()
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'UPDATE amm_trades SET '
-            'tx_hash=?, '
-            'log_index=?, '
-            'address=?, '
-            'timestamp=?, '
-            'location=?, '
-            'type=?, '
-            'is_base_asset_unknown=?, '
-            'base_asset_address=?, '
-            'base_asset_symbol=?, '
-            'base_asset_name=?, '
-            'base_asset_decimals=?, '
-            'is_quote_asset_unknown=?, '
-            'quote_asset_address=?, '
-            'quote_asset_symbol=?, '
-            'quote_asset_name=?, '
-            'quote_asset_decimals=?, '
-            'amount=?, '
-            'rate=?, '
-            'fee=?, '
-            'notes=? '
-            'WHERE id=?',
-            trade_tuple,
-        )
-        if cursor.rowcount == 0:
-            return False, 'Tried to edit non existing AMM trade id'
-
-        self.conn.commit()
-        return True, ''
-
     def get_amm_trades(
             self,
             from_ts: Optional[Timestamp] = None,
