@@ -70,7 +70,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
 
-DEFI_PROTOCOLS_TO_SKIP = (
+DEFI_PROTOCOLS_TO_SKIP_ASSETS = (
     'Aave',  # aTokens are already detected at token balance queries
     'Compound',  # cTokens are already detected at token balance queries
     'Chi Gastoken by 1inch',  # cTokens are already detected at token balance queries
@@ -871,15 +871,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
         """Add a single account's defi balances to per account and totals"""
         for entry in balances:
             # We have to filter out specific balances/protocols here to not get double entries
-            if entry.protocol.name in DEFI_PROTOCOLS_TO_SKIP:
+            if entry.balance_type == 'Asset' and entry.protocol.name in DEFI_PROTOCOLS_TO_SKIP_ASSETS:  # noqa: E501
                 continue
 
-            if entry.balance_type == 'Debt':
-                # Ignore for this function. Related: https://github.com/rotki/rotki/issues/1400
-                continue
-
-            if entry.base_balance.token_symbol == 'ETH':
-                # If ETH appears here I am not sure how to handle, so ignore for now
+            if entry.balance_type == 'Asset' and entry.base_balance.token_symbol == 'ETH':
+                # If ETH appears as asset here I am not sure how to handle, so ignore for now
                 log.warning(
                     f'Found ETH in DeFi balances for account: {account} and '
                     f'protocol: {entry.protocol.name}. Ignoring ...',
@@ -906,8 +902,18 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 continue
 
             eth_balances = self.balances.eth
-            eth_balances[account].assets[token] += entry.base_balance.balance
-            self.totals.assets[token] += entry.base_balance.balance
+            if entry.balance_type == 'Asset':
+                eth_balances[account].assets[token] += entry.base_balance.balance
+                self.totals.assets[token] += entry.base_balance.balance
+            elif entry.balance_type == 'Debt':
+                eth_balances[account].liabilities[token] += entry.base_balance.balance
+                self.totals.liabilities[token] += entry.base_balance.balance
+            else:
+                log.warning(  # type: ignore # is an unreachable statement but we are defensive
+                    f'Zerion Defi Adapter returned unknown asset type {entry.balance_type}. '
+                    f'Skipping ...',
+                )
+                continue
 
     def add_defi_balances_to_token_and_totals(self) -> None:
         """Take into account defi balances and add them to per account and totals"""
