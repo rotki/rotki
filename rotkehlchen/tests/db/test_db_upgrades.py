@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.data_handler import DataHandler
@@ -1060,6 +1061,68 @@ def test_upgrade_db_19_to_20(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 20
+
+
+def test_upgrade_db_20_to_21(user_data_dir):
+    """Test upgrading the DB from version 20 to version 21.
+
+    Create a new balance_category table and upgrades the timed
+    balances to also contain the balance type (category). Defaults to asset
+    right now, but opens up the way to store liabilities too
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v20_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=21,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    # if nothing is raised here we are good
+    query = cursor.execute('SELECT * FROM balance_category;')
+    query = cursor.execute(
+        'SELECT category, time, currency, amount, usd_value FROM timed_balances '
+        'ORDER BY time ASC;',
+    )
+    length = 0
+    for entry in query:
+        assert BalanceType.deserialize_from_db(entry[0]) == BalanceType.ASSET
+        # Check the last 3 entries to make sure no data is lost during upgrade
+        if length == 1297:
+            assert entry == (
+                BalanceType.ASSET.serialize_for_db(),
+                1605194428,
+                'yaLINK',
+                '444.562307846438094287',
+                '5843.922363085966843444941265',
+            )
+        elif length == 1298:
+            assert entry == (
+                BalanceType.ASSET.serialize_for_db(),
+                1605194428,
+                'ypaxCrv',
+                '211.750728445895069118',
+                '217.2597399646382941219959776',
+            )
+        elif length == 1299:
+            assert entry == (
+                BalanceType.ASSET.serialize_for_db(),
+                1605194428,
+                'yyDAI+yUSDC+yUSDT+yBUSD',
+                '167.18639752015697023',
+                '185.7646591376060274165290659',
+            )
+        length += 1
+    assert length == 1300
+    assert entry == (
+        BalanceType.ASSET.serialize_for_db(),
+        1605194428,
+        'yyDAI+yUSDC+yUSDT+yBUSD',
+        '167.18639752015697023',
+        '185.7646591376060274165290659',
+    )
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 21
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
