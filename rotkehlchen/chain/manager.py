@@ -22,7 +22,7 @@ from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures import Balance, BalanceSheet
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
@@ -883,16 +883,17 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 continue
 
             try:
-                token = EthereumToken(entry.base_balance.token_symbol)
+                asset = Asset(entry.base_balance.token_symbol)
             except UnknownAsset:
                 log.warning(
-                    f'Found unknown token {entry.base_balance.token_symbol} in DeFi '
+                    f'Found unknown asset {entry.base_balance.token_symbol} in DeFi '
                     f'balances for account: {account} and '
                     f'protocol: {entry.protocol.name}. Ignoring ...',
                 )
                 continue
 
-            if token.ethereum_address != entry.base_balance.token_address:
+            token = EthereumToken.from_asset(asset)
+            if token is not None and token.ethereum_address != entry.base_balance.token_address:
                 log.warning(
                     f'Found token {token.identifier} with address '
                     f'{entry.base_balance.token_address} instead of expected '
@@ -903,11 +904,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
             eth_balances = self.balances.eth
             if entry.balance_type == 'Asset':
-                eth_balances[account].assets[token] += entry.base_balance.balance
-                self.totals.assets[token] += entry.base_balance.balance
+                eth_balances[account].assets[asset] += entry.base_balance.balance
+                self.totals.assets[asset] += entry.base_balance.balance
             elif entry.balance_type == 'Debt':
-                eth_balances[account].liabilities[token] += entry.base_balance.balance
-                self.totals.liabilities[token] += entry.base_balance.balance
+                eth_balances[account].liabilities[asset] += entry.base_balance.balance
+                self.totals.liabilities[asset] += entry.base_balance.balance
             else:
                 log.warning(  # type: ignore # is an unreachable statement but we are defensive
                     f'Zerion Defi Adapter returned unknown asset type {entry.balance_type}. '
