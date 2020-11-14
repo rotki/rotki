@@ -180,6 +180,7 @@ def test_add_and_query_manually_tracked_balances(
         else:
             result = assert_proper_response_with_result(response)
 
+    result = result['assets']
     assert result['BTC']['amount'] == '1.425'
     assert result['XMR']['amount'] == '50.315'
     assert result['BNB']['amount'] == '155'

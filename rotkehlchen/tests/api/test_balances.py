@@ -42,20 +42,21 @@ def assert_all_balances(
 
     got_external = any(x.location == Location.EXTERNAL for x in setup.manually_tracked_balances)
 
-    expected_result_keys = 5
-    assert FVal(result['ETH']['amount']) == total_eth
-    assert result['ETH']['usd_value'] is not None
-    assert result['ETH']['percentage_of_net_value'] is not None
-    assert FVal(result['RDN']['amount']) == total_rdn
-    assert result['RDN']['usd_value'] is not None
-    assert result['RDN']['percentage_of_net_value'] is not None
-    assert FVal(result['BTC']['amount']) == total_btc
-    assert result['BTC']['usd_value'] is not None
-    assert result['BTC']['percentage_of_net_value'] is not None
+    assert len(result) == 4
+    assert result['liabilities'] == {}
+    assets = result['assets']
+    assert FVal(assets['ETH']['amount']) == total_eth
+    assert assets['ETH']['usd_value'] is not None
+    assert assets['ETH']['percentage_of_net_value'] is not None
+    assert FVal(assets['RDN']['amount']) == total_rdn
+    assert assets['RDN']['usd_value'] is not None
+    assert assets['RDN']['percentage_of_net_value'] is not None
+    assert FVal(assets['BTC']['amount']) == total_btc
+    assert assets['BTC']['usd_value'] is not None
+    assert assets['BTC']['percentage_of_net_value'] is not None
     if total_eur != ZERO:
-        assert FVal(result['EUR']['amount']) == total_eur
-        assert result['EUR']['percentage_of_net_value'] is not None
-        expected_result_keys += 1
+        assert FVal(assets['EUR']['amount']) == total_eur
+        assert assets['EUR']['percentage_of_net_value'] is not None
 
     assert result['net_usd'] is not None
     # Check that the 4 locations are there
@@ -72,8 +73,6 @@ def assert_all_balances(
     if got_external:
         assert result['location']['external']['usd_value'] is not None
         assert result['location']['external']['percentage_of_net_value'] is not None
-
-    assert len(result) == expected_result_keys  # 3 or 4 assets + location + net_usd
 
     eth_tbalances = db.query_timed_balances(asset=A_ETH)
     if not expected_data_in_db:

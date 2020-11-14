@@ -252,7 +252,10 @@ def assert_btc_balances_result(
         else:
             assert FVal(standalone[account]['usd_value']) > ZERO
 
-    totals = result['totals']
+    if 'assets' in result['totals']:
+        totals = result['totals']['assets']
+    else:
+        totals = result['totals']
     if also_eth:
         assert len(totals) >= 2  # ETH and any other tokens that may exist
     else:
@@ -296,14 +299,12 @@ def assert_eth_balances_result(
                 assert usd_value == ZERO
             else:
                 assert usd_value > ZERO
-            have_tokens = False
             for token, balances in token_balances.items():
                 expected_token_amount = FVal(balances[idx])
                 if expected_token_amount == ZERO:
                     msg = f'{account} should have no entry for {token}'
                     assert token.identifier not in per_account[account], msg
                 else:
-                    have_tokens = True
                     token_amount = FVal(per_account[account]['assets'][token.identifier]['amount'])
                     usd_value = FVal(
                         per_account[account]['assets'][token.identifier]['usd_value'],
@@ -311,16 +312,10 @@ def assert_eth_balances_result(
                     assert token_amount == from_wei(expected_token_amount)
                     assert usd_value > ZERO
 
-            account_total_usd_value = FVal(per_account[account]['total_usd_value'])
-            if amount != ZERO or have_tokens:
-                assert account_total_usd_value > ZERO
-            else:
-                assert account_total_usd_value == ZERO
-
     if totals_only:
         totals = result
     else:
-        totals = result['totals']
+        totals = result['totals']['assets']
 
     # Check our owned eth tokens here since the test may have changed their number
     owned_assets = set(rotki.chain_manager.totals.assets.keys())
@@ -402,7 +397,18 @@ def mock_etherscan_query(
             account = url[131:173]
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
-
+        elif 'api.etherscan.io/api?module=account&action=txlistinternal&' in url:
+            # By default when mocking, don't query for transactions
+            response = '{"status":"1","message":"OK","result":[]}'
+        elif 'api.etherscan.io/api?module=account&action=txlist&' in url:
+            # By default when mocking, don't query for transactions
+            response = '{"status":"1","message":"OK","result":[]}'
+        elif 'api.etherscan.io/api?module=logs&action=getLogs&' in url:
+            # By default when mocking, don't query logs
+            response = '{"status":"1","message":"OK","result":[]}'
+        elif 'api.etherscan.io/api?module=block&action=getblocknobytime&' in url:
+            # By default when mocking don't query blocknobytime
+            response = '{"status":"1","message":"OK","result":"1"}'
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ZERION_ADAPTER_ADDRESS}' in url:  # noqa: E501
             if 'zerion' in original_queries:
                 return original_requests_get(url, *args, **kwargs)
@@ -520,7 +526,6 @@ def mock_etherscan_query(
 
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
-
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
 

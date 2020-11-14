@@ -29,7 +29,6 @@ from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 creation_patch = patch(
@@ -232,18 +231,19 @@ def populate_db_and_check_for_asset_renaming(
     assert renamed_asset in owned_assets
 
     # Make sure that the merging of both new and old name entry in same timestamp works
-    timed_balances = data.db.query_timed_balances(
-        from_ts=Timestamp(0),
-        to_ts=Timestamp(2556392121),
-        asset=renamed_asset,
+    querystr = (
+        f'SELECT time, amount, usd_value FROM timed_balances WHERE time BETWEEN '
+        f'0 AND 2556392121 AND currency="{renamed_asset.identifier}" ORDER BY time ASC;'
     )
-    assert len(timed_balances) == 2
-    assert timed_balances[0].time == 1557499129
-    assert timed_balances[0].amount == '10.1'
-    assert timed_balances[0].usd_value == '150'
-    assert timed_balances[1].time == 1558499129
-    assert timed_balances[1].amount == '3.3'
-    assert timed_balances[1].usd_value == '40'
+    cursor = data.db.conn.cursor()
+    result = cursor.execute(querystr).fetchall()
+    assert len(result) == 2
+    assert result[0][0] == 1557499129
+    assert result[0][1] == '10.1'
+    assert result[0][2] == '150'
+    assert result[1][0] == 1558499129
+    assert result[1][1] == '3.3'
+    assert result[1][2] == '40'
 
     # Assert that trades got renamed properly
     cursor = data.db.conn.cursor()

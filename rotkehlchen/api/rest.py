@@ -491,12 +491,14 @@ class RestAPI():
             # If only specific input blockchain was given ignore other results
             if blockchain == SupportedBlockchain.ETHEREUM:
                 result['per_account'].pop('BTC', None)
-                result['totals'].pop('BTC', None)
+                result['totals']['assets'].pop('BTC', None)
             elif blockchain == SupportedBlockchain.BITCOIN:
                 val = result['per_account'].get('BTC', None)
                 per_account = {'BTC': val} if val else {}
-                val = result['totals'].get('BTC', None)
-                totals = {'BTC': val} if val else {}
+                val = result['totals']['assets'].get('BTC', None)
+                totals: Dict[str, Any] = {'assets': {}, 'liabilities': {}}
+                if val:
+                    totals['assets'] = {'BTC': val}
                 result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}
