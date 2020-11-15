@@ -307,6 +307,61 @@ def test_get_uniswap_trades_history(
     assert len(db_trades) == 23
     # Query a 2nd time to make sure that when retrieving from the database everything works fine
     _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
+
+
+CRAZY_UNISWAP_ADDRESS = '0xB1637bE0173330664adecB343faF112Ca837dA06'
+EXPECTED_CRAZY_TRADES = [AMMTrade(
+    # According to etherscan this should be 2 uniswap trades, but it shows as one from the graph
+    tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
+    log_index=143,
+    address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    timestamp=Timestamp(1605431265),
+    location=Location.UNISWAP,
+    trade_type=TradeType.BUY,
+    base_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+        symbol='🐟',
+        name='Penguin Party Fish',
+    ),
+    quote_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x37236CD05b34Cc79d3715AF2383E96dd7443dCF1'),  # noqa: E501
+        symbol='SLP',
+        name='Small Love Potion',
+    ),
+    amount=AssetAmount(FVal('20.085448793024895802')),
+    rate=Price(FVal('0.02292859451258549749086757991')),
+    fee=Fee(FVal('2.628')),
+    notes='',
+), AMMTrade(
+    tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
+    log_index=20,
+    address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    timestamp=Timestamp(1605420918),
+    location=Location.UNISWAP,
+    trade_type=TradeType.SELL,
+    base_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # noqa: E501
+        symbol='FMK',
+        name='https://t.me/fomok',
+    ),
+    quote_asset=EthereumToken('WETH'),
+    amount=AssetAmount(FVal('1.318527141747939222')),
+    rate=Price(FVal('56.09408723106908869704792258')),
+    fee=Fee(FVal('0.003955581425243817666')),
+    notes='',
+)]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[CRAZY_UNISWAP_ADDRESS]])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_uniswap_exotic_history(
+        rotkehlchen_api_server,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        rotki_premium_credentials,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
+):
+    """Test a uniswap trading address with exotic token swaps (unicode symbol names)"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -332,7 +387,7 @@ def test_get_uniswap_trades_history(
         else:
             result = assert_proper_response_with_result(response)
 
-    for idx, trade in enumerate(result['trades'][AAVE_TEST_ACC_1]):
-        if idx == len(EXPECTED_TRADES):
-            break  # test up to last EXPECTED_TRADES trades from 1605437542
-        assert trade == EXPECTED_TRADES[idx].serialize()
+    for idx, trade in enumerate(result['trades'][CRAZY_UNISWAP_ADDRESS]):
+        if idx == len(EXPECTED_CRAZY_TRADES):
+            break  # test up to last EXPECTED_CRAZY_TRADES trades from 1605437542
+        assert trade == EXPECTED_CRAZY_TRADES[idx].serialize()

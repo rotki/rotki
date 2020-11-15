@@ -127,8 +127,6 @@ def test_trades_from_dictlist(function_scope_messages_aggregator):
     assert isinstance(trades[0], Trade)
 
 
-@pytest.mark.xfail()
-# This test now fails because Trade has the new `custom_identifier` property
 def test_serialize_deserialize_trade():
     trade = Trade(
         timestamp=Timestamp(1537985746),
