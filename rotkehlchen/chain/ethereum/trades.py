@@ -1,7 +1,5 @@
 from typing import Any, Dict, NamedTuple, Tuple, Union
 
-from __future__ import annotations
-
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import FakeAsset, UnknownEthereumToken
 from rotkehlchen.serialization.deserialize import (
@@ -74,7 +72,7 @@ class AMMTrade(NamedTuple):
     def deserialize_from_db(
             cls,
             trade_tuple: AMMTradeDBTuple,
-    ) -> AMMTrade:
+    ) -> 'AMMTrade':
         """Turns a tuple read from DB into an appropriate Trade.
 
         May raise a DeserializationError if something is wrong with the DB data
