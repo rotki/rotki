@@ -255,6 +255,28 @@ EXPECTED_TRADES = [AMMTrade(
 )]
 
 
+def _query_and_assert_simple_uniswap_trades(setup, api_server, async_query):
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            api_server,
+            "uniswaphistoryresource",
+        ), json={'async_query': async_query, 'to_timestamp': 1605437542})
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(api_server, task_id, timeout=120)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    for idx, trade in enumerate(result['trades'][AAVE_TEST_ACC_1]):
+        if idx == len(EXPECTED_TRADES):
+            break  # test up to last EXPECTED_TRADES trades from 1605437542
+        assert trade == EXPECTED_TRADES[idx].serialize()
+
+
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -265,7 +287,26 @@ def test_get_uniswap_trades_history(
         start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test that the last 9/23 uniswap trades of the account since 1605437542
-    are parsed and returned correctly"""
+    are parsed and returned correctly
+
+    Also test that data are written in the DB and properly retrieved afterwards
+    """
+    async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        eth_balances=['33000030003'],
+        token_balances={},
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+    _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
+    # make sure data are written in the DB
+    db_trades = rotki.data.db.get_amm_trades()
+    assert len(db_trades) == 23
+    # Query a 2nd time to make sure that when retrieving from the database everything works fine
+    _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
