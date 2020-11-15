@@ -1,13 +1,7 @@
+import logging
 from collections import defaultdict
 from datetime import datetime, time
-import logging
-from typing import (
-    Callable,
-    List,
-    Optional,
-    Set,
-    TYPE_CHECKING,
-)
+from typing import TYPE_CHECKING, Callable, List, Optional, Set
 
 from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
@@ -16,14 +10,9 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
-from rotkehlchen.chain.ethereum.graph import (
-    GRAPH_QUERY_LIMIT,
-    format_query_indentation,
-    Graph,
-)
+from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants import ZERO
-
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -39,12 +28,11 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from .graph import (
-    LIQUIDITY_POSITIONS_QUERY,
-    SWAPS_QUERY,
-    TOKEN_DAY_DATAS_QUERY,
-)
+
+from .graph import LIQUIDITY_POSITIONS_QUERY, SWAPS_QUERY, TOKEN_DAY_DATAS_QUERY
 from .typing import (
+    SWAP_FEE,
+    UNISWAP_TRADES_PREFIX,
     AddressBalances,
     AddressTrades,
     AssetPrice,
@@ -54,8 +42,6 @@ from .typing import (
     LiquidityPoolAsset,
     ProtocolBalance,
     ProtocolHistory,
-    SWAP_FEE,
-    UNISWAP_TRADES_PREFIX,
 )
 
 if TYPE_CHECKING:
@@ -377,8 +363,6 @@ class Uniswap(EthereumModule):
                 timestamp = swap['timestamp']
                 token0 = swap['pair']['token0']
                 token1 = swap['pair']['token1']
-                base_asset_rate = swap['pair']['token0Price']
-                quote_asset_rate = swap['pair']['token1Price']
                 base_asset = get_ethereum_token(
                     symbol=token0['symbol'],
                     ethereum_address=to_checksum_address(token0['id']),
@@ -396,16 +380,22 @@ class Uniswap(EthereumModule):
                     if FVal(swap['amount0In']) > ZERO
                     else TradeType.BUY
                 )
-                amount = (
+                amount = AssetAmount(FVal(
                     swap['amount0In']
                     if trade_type == TradeType.SELL
-                    else swap['amount0Out']
-                )
-                rate = (
-                    quote_asset_rate
+                    else swap['amount1In'],
+                ))
+                received_amount = AssetAmount(FVal(
+                    swap['amount1Out']
                     if trade_type == TradeType.SELL
-                    else base_asset_rate
+                    else swap['amount0Out'],
+                ))
+                rate = (
+                    received_amount / amount
+                    if trade_type == TradeType.BUY
+                    else amount / received_amount
                 )
+
                 trade = AMMTrade(
                     tx_hash=swap['transaction']['id'],
                     log_index=int(swap['logIndex']),
@@ -415,9 +405,9 @@ class Uniswap(EthereumModule):
                     trade_type=trade_type,
                     base_asset=base_asset,
                     quote_asset=quote_asset,
-                    amount=AssetAmount(FVal(amount)),
-                    rate=Price(FVal(rate)),
-                    fee=Fee(FVal(amount) * SWAP_FEE),
+                    amount=amount if trade_type == TradeType.SELL else received_amount,
+                    rate=Price(rate),
+                    fee=Fee(amount * SWAP_FEE),
                 )
                 address_trades[user_address].append(trade)
 
