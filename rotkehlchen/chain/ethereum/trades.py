@@ -1,18 +1,9 @@
+from typing import Any, Dict, NamedTuple, Tuple, Union
+
 from __future__ import annotations
 
-from typing import (
-    Any,
-    Dict,
-    NamedTuple,
-    Tuple,
-    Union,
-)
-
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import (
-    FakeAsset,
-    UnknownEthereumToken,
-)
+from rotkehlchen.assets.unknown_asset import FakeAsset, UnknownEthereumToken
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_address,
@@ -80,7 +71,7 @@ class AMMTrade(NamedTuple):
     notes: str = ''
 
     @classmethod
-    def get_amm_trade_from_db_tuple(
+    def deserialize_from_db(
             cls,
             trade_tuple: AMMTradeDBTuple,
     ) -> AMMTrade:

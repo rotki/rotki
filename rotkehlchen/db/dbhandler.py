@@ -2070,7 +2070,7 @@ class DBHandler:
         trades = []
         for result in results:
             try:
-                trade = AMMTrade.get_amm_trade_from_db_tuple(result)
+                trade = AMMTrade.deserialize_from_db(result)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing AMM trade from the DB. Skipping trade. '
