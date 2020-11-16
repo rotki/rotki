@@ -33,7 +33,8 @@ export interface BalanceGetters {
   blockchainTotal: BigNumber;
   blockchainTotals: BlockchainTotal[];
   accountAssets: (account: string) => AssetBalance[];
-  hasTokens: (account: string) => boolean;
+  accountLiabilities: (account: string) => AssetBalance[];
+  hasDetails: (account: string) => boolean;
   manualLabels: string[];
   accounts: GeneralAccount[];
   account: (address: string) => GeneralAccount | undefined;
@@ -339,13 +340,36 @@ export const getters: Getters<
       );
   },
 
-  hasTokens: (state: BalanceState) => (account: string) => {
+  accountLiabilities: (state: BalanceState, _, { session }) => (
+    account: string
+  ) => {
+    const ignoredAssets = session!.ignoredAssets;
+    const ethAccount = state.eth[account];
+    if (!ethAccount || isEmpty(ethAccount)) {
+      return [];
+    }
+
+    return Object.entries(ethAccount.liabilities)
+      .filter(([asset]) => !ignoredAssets.includes(asset))
+      .map(
+        ([key, asset_data]) =>
+          ({
+            asset: key,
+            amount: asset_data.amount,
+            usdValue: asset_data.usdValue
+          } as AssetBalance)
+      );
+  },
+
+  hasDetails: (state: BalanceState) => (account: string) => {
     const ethAccount = state.eth[account];
     if (!ethAccount || isEmpty(ethAccount)) {
       return false;
     }
 
-    return Object.entries(ethAccount.assets).length > 1;
+    const assets = Object.entries(ethAccount.assets);
+    const liabilities = Object.entries(ethAccount.liabilities);
+    return assets.length > 1 || liabilities.length > 1;
   },
 
   manualLabels: ({ manualBalances }: BalanceState) => {
