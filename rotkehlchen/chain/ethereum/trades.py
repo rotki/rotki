@@ -58,6 +58,8 @@ class AMMTrade(NamedTuple):
     tx_hash: str
     log_index: int
     address: ChecksumEthAddress
+    from_address: ChecksumEthAddress
+    to_address: ChecksumEthAddress
     timestamp: Timestamp
     location: Location
     trade_type: TradeType
@@ -79,66 +81,72 @@ class AMMTrade(NamedTuple):
 
         Trade_tuple index - Schema columns
         ----------------------------------
-         0 - tx_hash
-         1 - log_index
-         2 - address
-         3 - timestamp
-         4 - location
-         5 - type
-         6 - is_base_asset_unknown
-         7 - base_asset_address
-         8 - base_asset_symbol
-         9 - base_asset_name
-        10 - base_asset_decimals
-        11 - is_quote_asset_unknown
-        12 - quote_asset_address
-        13 - quote_asset_symbol
-        14 - quote_asset_name
-        15 - quote_asset_decimals
-        16 - amount
-        17 - rate
-        18 - fee
-        19 - notes
+        0 - tx_hash
+        1 - log_index
+        2 - address
+        3 - from_address
+        4 - to_address
+        5 - timestamp
+        6 - location
+        7 - type
+        8 - is_base_asset_unknown
+        9 - base_asset_address
+        10 - base_asset_symbol
+        11 - base_asset_name
+        12 - base_asset_decimals
+        13 - is_quote_asset_unknown
+        14 - quote_asset_address
+        15 - quote_asset_symbol
+        16 - quote_asset_name
+        17 - quote_asset_decimals
+        18 - amount
+        19 - rate
+        20 - fee
+        21 - notes
         """
         address = deserialize_ethereum_address(trade_tuple[2])
-        is_base_asset_unknown = trade_tuple[6]
-        is_quote_asset_unknown = trade_tuple[11]
+        from_address = deserialize_ethereum_address(trade_tuple[3])
+        to_address = deserialize_ethereum_address(trade_tuple[4])
+        is_base_asset_unknown = trade_tuple[8]
+        is_quote_asset_unknown = trade_tuple[13]
 
         base_asset: Union[EthereumToken, UnknownEthereumToken]
         quote_asset: Union[EthereumToken, UnknownEthereumToken]
         if is_base_asset_unknown:
             base_asset = deserialize_unknown_ethereum_token_from_db(
-                ethereum_address=trade_tuple[7],
-                symbol=trade_tuple[8],
-                name=trade_tuple[9],
-                decimals=trade_tuple[10],
+                ethereum_address=trade_tuple[9],
+                symbol=trade_tuple[10],
+                name=trade_tuple[11],
+                decimals=trade_tuple[12],
             )
         else:
-            base_asset = deserialize_ethereum_token_from_db(identifier=trade_tuple[8])
+            base_asset = deserialize_ethereum_token_from_db(identifier=trade_tuple[10])
 
         if is_quote_asset_unknown:
             quote_asset = deserialize_unknown_ethereum_token_from_db(
-                ethereum_address=trade_tuple[12],
-                symbol=trade_tuple[13],
-                name=trade_tuple[14],
-                decimals=trade_tuple[15],
+                ethereum_address=trade_tuple[14],
+                symbol=trade_tuple[15],
+                name=trade_tuple[16],
+                decimals=trade_tuple[17],
             )
         else:
-            quote_asset = deserialize_ethereum_token_from_db(identifier=trade_tuple[13])
+            quote_asset = deserialize_ethereum_token_from_db(identifier=trade_tuple[15])
 
         return cls(
             tx_hash=trade_tuple[0],
             log_index=trade_tuple[1],
             address=address,
-            timestamp=deserialize_timestamp(trade_tuple[3]),
-            location=deserialize_location_from_db(trade_tuple[4]),
-            trade_type=deserialize_trade_type_from_db(trade_tuple[5]),
+            from_address=from_address,
+            to_address=to_address,
+            timestamp=deserialize_timestamp(trade_tuple[5]),
+            location=deserialize_location_from_db(trade_tuple[6]),
+            trade_type=deserialize_trade_type_from_db(trade_tuple[7]),
             base_asset=base_asset,
             quote_asset=quote_asset,
-            amount=deserialize_asset_amount(trade_tuple[16]),
-            rate=deserialize_price(trade_tuple[17]),
-            fee=deserialize_fee(trade_tuple[18]),
-            notes=trade_tuple[19],
+            amount=deserialize_asset_amount(trade_tuple[18]),
+            rate=deserialize_price(trade_tuple[19]),
+            fee=deserialize_fee(trade_tuple[20]),
+            notes=trade_tuple[21],
         )
 
     @property
@@ -168,7 +176,8 @@ class AMMTrade(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the trade into a dict matching Trade serialization from
-        `data_structures.py` and adding: address, base_asset, quote_asset.
+        `data_structures.py` and adding: address, base_asset, quote_asset,
+        from_address and to_address
         """
         unknown_asset_keys = ('ethereum_address', 'name', 'symbol')
         serialized_base_asset = (
@@ -196,6 +205,8 @@ class AMMTrade(NamedTuple):
             'notes': self.notes,
             # AMMTrade attributes
             'address': self.address,
+            'from_address': self.from_address,
+            'to_address': self.to_address,
             'base_asset': serialized_base_asset,
             'quote_asset': serialized_quote_asset,
             'tx_hash': self.tx_hash,
@@ -213,6 +224,8 @@ class AMMTrade(NamedTuple):
             self.tx_hash,
             self.log_index,
             str(self.address),
+            str(self.from_address),
+            str(self.to_address),
             int(self.timestamp),
             self.location.serialize_for_db(),
             self.trade_type.serialize_for_db(),

@@ -316,6 +316,8 @@ CREATE TABLE IF NOT EXISTS amm_trades (
     tx_hash VARCHAR[42] NOT NULL,
     log_index INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
+    from_address VARCHAR[42] NOT NULL,
+    to_address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),

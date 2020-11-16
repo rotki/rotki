@@ -73,31 +73,32 @@ SWAPS_QUERY = (
         }}
     ) {{
         transaction {{
-            id
-        }}
-        logIndex
-        to
-        timestamp
-        pair {{
-            token0Price
-            token1Price
-            token0 {{
+            swaps {{
                 id
-                decimals
-                name
-                symbol
-            }}
-            token1 {{
-                id
-                decimals
-                name
-                symbol
+                logIndex
+                sender
+                to
+                timestamp
+                pair {{
+                    token0 {{
+                        id
+                        decimals
+                        name
+                        symbol
+                    }}
+                    token1 {{
+                        id
+                        decimals
+                        name
+                        symbol
+                    }}
+                }}
+                amount0In
+                amount0Out
+                amount1In
+                amount1Out
             }}
         }}
-        amount0In
-        amount0Out
-        amount1In
-        amount1Out
     }}}}
     """
 )

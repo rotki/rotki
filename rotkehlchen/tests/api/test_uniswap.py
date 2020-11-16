@@ -133,6 +133,8 @@ EXPECTED_TRADES = [AMMTrade(
     tx_hash='0x13723c8b286ec56e95b00e091557e6a76f723d20a52503d2e08df5867d942b51',
     log_index=319,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1603180607),
     location=Location.UNISWAP,
     trade_type=TradeType.SELL,
@@ -146,6 +148,8 @@ EXPECTED_TRADES = [AMMTrade(
     tx_hash='0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900',
     log_index=90,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1603056982),
     location=Location.UNISWAP,
     trade_type=TradeType.BUY,
@@ -156,10 +160,30 @@ EXPECTED_TRADES = [AMMTrade(
     fee=Fee(FVal('0.0114')),
     notes='',
 ), AMMTrade(
-    # According to etherscan this should be 2 uniswap trades, but it shows as one from the graph
+    tx_hash='0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6',
+    log_index=98,
+    address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
+    timestamp=Timestamp(1602796833),
+    location=Location.UNISWAP,
+    trade_type=TradeType.SELL,
+    base_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'),  # noqa: E501
+        symbol='ALEPH',
+        name='aleph.im v2',
+    ),
+    quote_asset=EthereumToken('WETH'),
+    amount=AssetAmount(FVal('5634.092979176915803392')),
+    rate=Price(FVal('2336.169422971930807616108754')),
+    fee=Fee(FVal('16.902278937530747410176')),
+    notes='',
+), AMMTrade(
     tx_hash='0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6',
     log_index=101,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1602796833),
     location=Location.UNISWAP,
     trade_type=TradeType.BUY,
@@ -173,6 +197,8 @@ EXPECTED_TRADES = [AMMTrade(
     tx_hash='0x96531b9f02bbb9b3f97e0a761eb49c8fd0752d8cc934dda4c5296e1e35d2b91e',
     log_index=32,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1602796676),
     location=Location.UNISWAP,
     trade_type=TradeType.BUY,
@@ -186,6 +212,8 @@ EXPECTED_TRADES = [AMMTrade(
     tx_hash='0x0b9b335b5a805dc58e330413ef6de52fc13369247978d90bb0436a9aadf98c86',
     log_index=198,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1601858969),
     location=Location.UNISWAP,
     trade_type=TradeType.BUY,
@@ -199,6 +227,8 @@ EXPECTED_TRADES = [AMMTrade(
     tx_hash='0xf3a3be42927fafb244e3968537491c8c5b1e789237e633ae972073726bf185f0',
     log_index=169,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1601851402),
     location=Location.UNISWAP,
     trade_type=TradeType.BUY,
@@ -212,6 +242,8 @@ EXPECTED_TRADES = [AMMTrade(
     tx_hash='0x99a50afa868558ed1a854a124cf3abb1cba3a0bb86a4e0ceef23246154387247',
     log_index=292,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1601847584),
     location=Location.UNISWAP,
     trade_type=TradeType.SELL,
@@ -225,6 +257,8 @@ EXPECTED_TRADES = [AMMTrade(
     tx_hash='0x648ddb305ae1c5b4185bdff50fa81e2f4757d2957c2a369269712529881d41c9',
     log_index=122,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1601547546),
     location=Location.UNISWAP,
     trade_type=TradeType.SELL,
@@ -239,10 +273,30 @@ EXPECTED_TRADES = [AMMTrade(
     fee=Fee(FVal('0.030')),
     notes='',
 ), AMMTrade(
-    # According to etherscan this should be 2 uniswap trades, but it shows as one from the graph
+    tx_hash='0xa1cc9423122b91a688d030dbe640eadf778c3d35c65deb032abebcba853387f5',
+    log_index=74,
+    address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
+    timestamp=Timestamp(1601481706),
+    location=Location.UNISWAP,
+    trade_type=TradeType.BUY,
+    base_asset=EthereumToken('WETH'),
+    quote_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
+        symbol='METRIC',
+        name='Metric.exchange',
+    ),
+    amount=AssetAmount(FVal('0.235217404883028274')),
+    rate=Price(FVal('0.06964233827338962583711401226')),
+    fee=Fee(FVal('0.010132517548146640923')),
+    notes='',
+), AMMTrade(
     tx_hash='0xa1cc9423122b91a688d030dbe640eadf778c3d35c65deb032abebcba853387f5',
     log_index=77,
     address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
     timestamp=Timestamp(1601481706),
     location=Location.UNISWAP,
     trade_type=TradeType.BUY,
@@ -286,7 +340,7 @@ def test_get_uniswap_trades_history(
         rotki_premium_credentials,  # pylint: disable=unused-argument
         start_with_valid_premium,  # pylint: disable=unused-argument
 ):
-    """Test that the last 9/23 uniswap trades of the account since 1605437542
+    """Test that the last 11/23 uniswap trades of the account since 1605437542
     are parsed and returned correctly
 
     Also test that data are written in the DB and properly retrieved afterwards
@@ -304,7 +358,7 @@ def test_get_uniswap_trades_history(
     _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
     # make sure data are written in the DB
     db_trades = rotki.data.db.get_amm_trades()
-    assert len(db_trades) == 23
+    assert len(db_trades) == 36
     # Query a 2nd time to make sure that when retrieving from the database everything works fine
     _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
 

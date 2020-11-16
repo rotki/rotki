@@ -357,59 +357,72 @@ class Uniswap(EthereumModule):
                 param_values=param_values,
             )
             result_data = result['swaps']
+            for entry in result_data:
+                # The user address will always be the "to" of the last swap
+                # This feels like a terrible hack but is probably the only
+                # way to do this until the addition of the "from" is propagated
+                # to the deployed subgraphs
+                # https://github.com/Uniswap/uniswap-v2-subgraph/commit/a9ba250f847222ca2ece76635ea2d11ca06dc281
+                user_address = to_checksum_address(entry['transaction']['swaps'][-1]['to'])
+                for swap in entry['transaction']['swaps']:
+                    # By getting swap sender and swap to we can get some more
+                    # details about each swap, but am not sure how
+                    timestamp = swap['timestamp']
+                    token0 = swap['pair']['token0']
+                    token1 = swap['pair']['token1']
+                    base_asset = get_ethereum_token(
+                        symbol=token0['symbol'],
+                        ethereum_address=to_checksum_address(token0['id']),
+                        name=token0['name'],
+                        decimals=token0['decimals'],
+                    )
+                    quote_asset = get_ethereum_token(
+                        symbol=token1['symbol'],
+                        ethereum_address=to_checksum_address(token1['id']),
+                        name=token1['name'],
+                        decimals=int(token1['decimals']),
+                    )
+                    amount0In = FVal(swap['amount0In'])
+                    amount1In = FVal(swap['amount1In'])
+                    amount0Out = FVal(swap['amount0Out'])
+                    amount1Out = FVal(swap['amount1Out'])
+                    trade_type = (
+                        TradeType.SELL
+                        if amount1Out > ZERO
+                        else TradeType.BUY
+                    )
+                    amount = AssetAmount(
+                        amount0In
+                        if trade_type == TradeType.SELL
+                        else amount1In
+                    )
+                    received_amount = AssetAmount(
+                        amount1Out
+                        if trade_type == TradeType.SELL
+                        else amount0Out
+                    )
+                    rate = (
+                        received_amount / amount
+                        if trade_type == TradeType.BUY
+                        else amount / received_amount
+                    )
 
-            for swap in result_data:
-                user_address = to_checksum_address(swap['to'])
-                timestamp = swap['timestamp']
-                token0 = swap['pair']['token0']
-                token1 = swap['pair']['token1']
-                base_asset = get_ethereum_token(
-                    symbol=token0['symbol'],
-                    ethereum_address=to_checksum_address(token0['id']),
-                    name=token0['name'],
-                    decimals=token0['decimals'],
-                )
-                quote_asset = get_ethereum_token(
-                    symbol=token1['symbol'],
-                    ethereum_address=to_checksum_address(token1['id']),
-                    name=token1['name'],
-                    decimals=int(token1['decimals']),
-                )
-                trade_type = (
-                    TradeType.SELL
-                    if FVal(swap['amount0In']) > ZERO
-                    else TradeType.BUY
-                )
-                amount = AssetAmount(FVal(
-                    swap['amount0In']
-                    if trade_type == TradeType.SELL
-                    else swap['amount1In'],
-                ))
-                received_amount = AssetAmount(FVal(
-                    swap['amount1Out']
-                    if trade_type == TradeType.SELL
-                    else swap['amount0Out'],
-                ))
-                rate = (
-                    received_amount / amount
-                    if trade_type == TradeType.BUY
-                    else amount / received_amount
-                )
-
-                trade = AMMTrade(
-                    tx_hash=swap['transaction']['id'],
-                    log_index=int(swap['logIndex']),
-                    address=user_address,
-                    timestamp=Timestamp(int(timestamp)),
-                    location=Location.UNISWAP,
-                    trade_type=trade_type,
-                    base_asset=base_asset,
-                    quote_asset=quote_asset,
-                    amount=amount if trade_type == TradeType.SELL else received_amount,
-                    rate=Price(rate),
-                    fee=Fee(amount * SWAP_FEE),
-                )
-                address_trades[user_address].append(trade)
+                    trade = AMMTrade(
+                        tx_hash=swap['id'].split('-')[0],
+                        log_index=int(swap['logIndex']),
+                        address=user_address,
+                        from_address=to_checksum_address(swap['sender']),
+                        to_address=to_checksum_address(swap['to']),
+                        timestamp=Timestamp(int(timestamp)),
+                        location=Location.UNISWAP,
+                        trade_type=trade_type,
+                        base_asset=base_asset,
+                        quote_asset=quote_asset,
+                        amount=amount if trade_type == TradeType.SELL else received_amount,
+                        rate=Price(rate),
+                        fee=Fee(amount * SWAP_FEE),
+                    )
+                    address_trades[user_address].append(trade)
 
             # Check whether an extra request is needed
             if len(result_data) < GRAPH_QUERY_LIMIT:

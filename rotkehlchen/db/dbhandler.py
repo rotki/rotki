@@ -1995,6 +1995,8 @@ class DBHandler:
                 tx_hash,
                 log_index,
                 address,
+                from_address,
+                to_address,
                 timestamp,
                 location,
                 type,
@@ -2013,7 +2015,7 @@ class DBHandler:
                 fee,
                 notes
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
         self.write_tuples(tuple_type='amm_trade', query=query, tuples=trade_tuples)
@@ -2034,6 +2036,8 @@ class DBHandler:
             'tx_hash, '
             'log_index, '
             'address, '
+            'from_address, '
+            'to_address, '
             'timestamp, '
             'location, '
             'type, '
