@@ -982,6 +982,7 @@
   },
   "staking": {
     "title": "Staking",
+    "loading":"Please wait while your eth2 staking details are getting loaded...",
     "no_premium": "@:common.no_premium Staking is @:common.available_to_premium",
     "get_premium": "@:common.visit_website"
   },

@@ -24,7 +24,14 @@
           </v-col>
         </v-row>
       </div>
-      <eth2-staking v-else />
+      <div v-else>
+        <progress-screen v-if="loading">
+          <template #message>
+            {{ $t('staking.loading') }}
+          </template>
+        </progress-screen>
+        <eth2-staking v-else />
+      </div>
     </v-container>
   </v-container>
 </template>
@@ -33,13 +40,23 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
+import StatusMixin from '@/mixins/status-mixin';
+import { Section } from '@/store/const';
 import { Eth2Staking } from '@/utils/premium';
 
 @Component({
-  components: { BaseExternalLink, BasePageHeader, Eth2Staking }
+  components: {
+    ProgressScreen,
+    BaseExternalLink,
+    BasePageHeader,
+    Eth2Staking
+  }
 })
-export default class Staking extends Mixins(PremiumMixin) {}
+export default class Staking extends Mixins(PremiumMixin, StatusMixin) {
+  readonly section = Section.STAKING_ETH2;
+}
 </script>
 
 <style scoped lang="scss">

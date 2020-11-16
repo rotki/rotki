@@ -36,7 +36,7 @@
       </template>
       <span>{{ $t('hash_link.copy') }}</span>
     </v-tooltip>
-    <v-tooltip top open-delay="600">
+    <v-tooltip v-if="!noLink" top open-delay="600">
       <template #activator="{ on, attrs }">
         <v-btn
           v-if="!!baseUrl"
@@ -83,6 +83,8 @@ export default class HashLink extends Mixins(ScrambleMixin) {
   fullAddress!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   linkOnly!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  noLink!: boolean;
 
   get displayText(): string {
     if (!this.scrambleData) {
