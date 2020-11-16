@@ -26,6 +26,9 @@ export const mutations: MutationTree<BalanceState> = {
   updateTotals(state: BalanceState, payload: Balances) {
     state.totals = { ...state.totals, ...payload };
   },
+  updateLiabilities(state: BalanceState, payload: Balances) {
+    state.liabilities = { ...state.liabilities, ...payload };
+  },
   usdToFiatExchangeRates(
     state: BalanceState,
     usdToFiatExchangeRates: UsdToFiatExchangeRates

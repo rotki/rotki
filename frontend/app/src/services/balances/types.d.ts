@@ -21,12 +21,17 @@ export interface ManualBalances {
   readonly balances: ManualBalanceWithValue[];
 }
 
+interface BlockchainTotals {
+  readonly assets: Balances;
+  readonly liabilities: Balances;
+}
+
 export interface BlockchainBalances {
   readonly perAccount: {
     ETH: EthBalances;
     BTC: BtcBalances;
   };
-  readonly totals: Balances;
+  readonly totals: BlockchainTotals;
 }
 
 interface XpubBalance {
@@ -42,7 +47,7 @@ interface BtcBalances {
 
 export interface EthBalance {
   readonly assets: Balances;
-  readonly totalUsdValue: BigNumber;
+  readonly liabilities: Balances;
 }
 
 export interface EthBalances {

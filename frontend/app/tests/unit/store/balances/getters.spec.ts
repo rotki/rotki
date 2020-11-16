@@ -3,7 +3,7 @@ import { BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
 import { Location } from '@/services/types-common';
 import { SupportedAsset } from '@/services/types-model';
-import { getters } from '@/store/balances/getters';
+import { BalanceGetters, getters } from '@/store/balances/getters';
 import { AssetBalance, BalanceState } from '@/store/balances/types';
 import { SessionState } from '@/store/session/types';
 import store from '@/store/store';
@@ -79,7 +79,7 @@ describe('balances:getters', () => {
     const actualResult = sortBy(
       getters.aggregatedBalances(
         state,
-        mockGetters,
+        stub<BalanceGetters>(mockGetters),
         stub<RotkehlchenState>({
           session: stub<SessionState>({
             ignoredAssets: []

@@ -1,8 +1,8 @@
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
-import { GetterTree } from 'vuex';
 import { Balance } from '@/services/types-api';
+import { SupportedAsset } from '@/services/types-model';
 import {
   AccountWithBalance,
   AssetBalance,
@@ -14,11 +14,39 @@ import {
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
-import { BTC, ETH, GeneralAccount } from '@/typing/types';
+import { Getters } from '@/store/typing';
+import { BTC, ETH, ExchangeInfo, GeneralAccount } from '@/typing/types';
+import { assert } from '@/utils/assertions';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 
-export const getters: GetterTree<BalanceState, RotkehlchenState> = {
+export interface BalanceGetters {
+  ethAccounts: BlockchainAccountWithBalance[];
+  btcAccounts: BlockchainAccountWithBalance[];
+  totals: AssetBalance[];
+  exchangeRate: (currency: string) => number | undefined;
+  exchanges: ExchangeInfo[];
+  exchangeBalances: (exchange: string) => AssetBalance[];
+  aggregatedBalances: AssetBalance[];
+  liabilities: AssetBalance[];
+  manualBalanceByLocation: LocationBalance[];
+  blockchainTotal: BigNumber;
+  blockchainTotals: BlockchainTotal[];
+  accountAssets: (account: string) => AssetBalance[];
+  hasTokens: (account: string) => boolean;
+  manualLabels: string[];
+  accounts: GeneralAccount[];
+  account: (address: string) => GeneralAccount | undefined;
+  assetInfo: (asset: string) => SupportedAsset | undefined;
+  isEthereumToken: (asset: string) => boolean;
+}
+
+export const getters: Getters<
+  BalanceState,
+  BalanceGetters,
+  RotkehlchenState,
+  any
+> = {
   ethAccounts({
     eth,
     ethAccounts
@@ -26,10 +54,11 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     const accounts: BlockchainAccountWithBalance[] = [];
     for (const account of ethAccounts) {
       const accountAssets = eth[account.address];
+
       const balance: Balance = accountAssets
         ? {
             amount: accountAssets.assets.ETH.amount,
-            usdValue: accountAssets.totalUsdValue
+            usdValue: assetSum(accountAssets.assets)
           }
         : { amount: Zero, usdValue: Zero };
 
@@ -116,7 +145,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return state.usdToFiatExchangeRates[currency];
   },
 
-  exchanges: (state: BalanceState) => {
+  exchanges: (state: BalanceState): ExchangeInfo[] => {
     const balances = state.exchangeBalances;
     return Object.keys(balances)
       .map(value => ({
@@ -179,6 +208,14 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     );
   },
 
+  liabilities: ({ liabilities }) => {
+    return Object.keys(liabilities).map(asset => ({
+      asset,
+      amount: liabilities[asset].amount,
+      usdValue: liabilities[asset].usdValue
+    }));
+  },
+
   // simplify the manual balances object so that we can easily reduce it
   manualBalanceByLocation: (
     state: BalanceState,
@@ -188,9 +225,13 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     const mainCurrency =
       session?.generalSettings.selectedCurrency.ticker_symbol;
 
+    assert(mainCurrency, 'main currency was not properly set');
+
     const manualBalances = state.manualBalances;
     const currentExchangeRate = exchangeRate(mainCurrency);
-
+    if (currentExchangeRate === undefined) {
+      return [];
+    }
     const simplifyManualBalances = manualBalances.map(perLocationBalance => {
       // because we mix different assets we need to convert them before they are aggregated
       // thus in amount display we always pass the manualBalanceByLocation in the user's main currency

@@ -7,6 +7,7 @@ export const defaultState = (): BalanceState => ({
     xpubs: []
   },
   totals: {},
+  liabilities: {},
   usdToFiatExchangeRates: {},
   connectedExchanges: [],
   exchangeBalances: {},

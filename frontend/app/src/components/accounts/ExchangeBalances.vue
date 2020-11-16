@@ -176,7 +176,7 @@ export default class ExchangeBalances extends Vue {
   selectedExchange: string = '';
 
   connectedExchanges!: string[];
-  exchanges!: ExchangeInfo;
+  exchanges!: ExchangeInfo[];
   exchangeBalances!: (exchange: string) => AssetBalance[];
 
   mounted() {

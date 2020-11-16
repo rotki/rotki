@@ -839,16 +839,21 @@
       "add": "Add a manual balance"
     },
     "per_asset_balances": {
-      "title": "balance per asset",
-      "search": "Search",
-      "headers": {
-        "asset": "Asset",
-        "amount": "Amount",
-        "value": "{symbol} value",
-        "percentage": "% of net Value"
-      },
-      "total": "Total",
-      "no_search_result": "Your search for \"{search}\" yielded no results."
+      "title": "balance per asset"
+    },
+    "liabilities": {
+      "title": "Liabilities"
+    }
+  },
+  "dashboard_asset_table": {
+    "total": "Total",
+    "search": "Search",
+    "no_search_result": "Your search for \"{search}\" yielded no results.",
+    "headers": {
+      "asset": "Asset",
+      "amount": "Amount",
+      "value": "{symbol} value",
+      "percentage": "% of net Value"
     }
   },
   "accounts_balances": {
