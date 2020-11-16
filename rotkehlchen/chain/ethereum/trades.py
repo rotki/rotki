@@ -1,22 +1,18 @@
-from typing import Any, Dict, NamedTuple, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Tuple, Union
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import FakeAsset, UnknownEthereumToken
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_address,
     deserialize_ethereum_token_from_db,
-    deserialize_fee,
     deserialize_location_from_db,
-    deserialize_price,
     deserialize_timestamp,
-    deserialize_trade_type_from_db,
     deserialize_unknown_ethereum_token_from_db,
 )
 from rotkehlchen.typing import (
     AssetAmount,
     ChecksumEthAddress,
-    Fee,
     Location,
     Price,
     Timestamp,
@@ -25,35 +21,49 @@ from rotkehlchen.typing import (
 
 # Quick lookup for AMMTrade locations
 AMMTradeLocations = {Location.UNISWAP}
-AMMTradeDBTuple = (
+AMMSwapDBTuple = (
     Tuple[
         str,  # tx_hash
         int,  # log_index
         str,  # address
+        str,  # from_address
+        str,  # to_address
         int,  # timestamp
         str,  # location
-        str,  # type
-        int,  # is_base_asset_unknown
-        str,  # base_asset_address
-        str,  # base_asset_symbol
-        str,  # base_asset_name
-        int,  # base_asset_decimals
-        int,  # is_quote_asset_unknown
-        str,  # quote_asset_address
-        str,  # quote_asset_symbol
-        str,  # quote_asset_name
-        int,  # quote_asset_decimals
-        str,  # amount
-        str,  # rate
-        str,  # fee
-        str,  # notes
+        int,  # is_token0_unknown
+        str,  # token0_address
+        str,  # token0_symbol
+        str,  # token0_name
+        int,  # token0_decimals
+        int,  # is_token1_unknown
+        str,  # token1_address
+        str,  # token1_symbol
+        str,  # token1_name
+        int,  # token1_decimals
+        str,  # amount0_in
+        str,  # amount1_in
+        str,  # amount0_out
+        str,  # amount1_out
     ]
 )
 
+UNKNOWN_ASSET_KEYS = ('ethereum_address', 'name', 'symbol')
 
-class AMMTrade(NamedTuple):
-    """This class aims for a better trades support than the current Trade class
-    in AMMs protocols.
+
+def serialize_known_or_unknown_token(
+        token: Union[EthereumToken, UnknownEthereumToken],
+) -> Union[str, Dict[str, Any]]:
+    return (
+        token.serialize()
+        if isinstance(token, EthereumToken)
+        else token.serialize_as_dict(keys=UNKNOWN_ASSET_KEYS)
+    )
+
+
+class AMMSwap(NamedTuple):
+    """Represents a single AMM swap
+
+    For now only catering to uniswap. We will see for more when we integrate them
     """
     tx_hash: str
     log_index: int
@@ -62,20 +72,22 @@ class AMMTrade(NamedTuple):
     to_address: ChecksumEthAddress
     timestamp: Timestamp
     location: Location
-    trade_type: TradeType
-    base_asset: Union[EthereumToken, UnknownEthereumToken]
-    quote_asset: Union[EthereumToken, UnknownEthereumToken]
-    amount: AssetAmount
-    rate: Price
-    fee: Fee
-    notes: str = ''
+    token0: Union[EthereumToken, UnknownEthereumToken]
+    token1: Union[EthereumToken, UnknownEthereumToken]
+    amount0_in: AssetAmount
+    amount1_in: AssetAmount
+    amount0_out: AssetAmount
+    amount1_out: AssetAmount
+
+    def __hash__(self) -> int:
+        return hash(self.tx_hash + str(self.log_index))
 
     @classmethod
     def deserialize_from_db(
             cls,
-            trade_tuple: AMMTradeDBTuple,
-    ) -> 'AMMTrade':
-        """Turns a tuple read from DB into an appropriate Trade.
+            trade_tuple: AMMSwapDBTuple,
+    ) -> 'AMMSwap':
+        """Turns a tuple read from DB into an appropriate Swap.
 
         May raise a DeserializationError if something is wrong with the DB data
 
@@ -88,49 +100,48 @@ class AMMTrade(NamedTuple):
         4 - to_address
         5 - timestamp
         6 - location
-        7 - type
-        8 - is_base_asset_unknown
-        9 - base_asset_address
-        10 - base_asset_symbol
-        11 - base_asset_name
-        12 - base_asset_decimals
-        13 - is_quote_asset_unknown
-        14 - quote_asset_address
-        15 - quote_asset_symbol
-        16 - quote_asset_name
-        17 - quote_asset_decimals
-        18 - amount
-        19 - rate
-        20 - fee
-        21 - notes
+        7 - is_token0_unknown
+        8 - token0_address
+        9 - token0_symbol
+        10 - token0_name
+        11 - token0_decimals
+        12 - is_token1_unknown
+        13 - token1_address
+        14 - token1_symbol
+        15 - token1_name
+        16 - token1_decimals
+        17 - amount0_in
+        18 - amount1_in
+        19 - amount0_out
+        20 - amount1_out
         """
         address = deserialize_ethereum_address(trade_tuple[2])
         from_address = deserialize_ethereum_address(trade_tuple[3])
         to_address = deserialize_ethereum_address(trade_tuple[4])
-        is_base_asset_unknown = trade_tuple[8]
-        is_quote_asset_unknown = trade_tuple[13]
+        is_token0_unknown = trade_tuple[7]
+        is_token1_unknown = trade_tuple[12]
 
-        base_asset: Union[EthereumToken, UnknownEthereumToken]
-        quote_asset: Union[EthereumToken, UnknownEthereumToken]
-        if is_base_asset_unknown:
-            base_asset = deserialize_unknown_ethereum_token_from_db(
-                ethereum_address=trade_tuple[9],
-                symbol=trade_tuple[10],
-                name=trade_tuple[11],
-                decimals=trade_tuple[12],
+        token0: Union[EthereumToken, UnknownEthereumToken]
+        token1: Union[EthereumToken, UnknownEthereumToken]
+        if is_token0_unknown:
+            token0 = deserialize_unknown_ethereum_token_from_db(
+                ethereum_address=trade_tuple[8],
+                symbol=trade_tuple[9],
+                name=trade_tuple[10],
+                decimals=trade_tuple[11],
             )
         else:
-            base_asset = deserialize_ethereum_token_from_db(identifier=trade_tuple[10])
+            token0 = deserialize_ethereum_token_from_db(identifier=trade_tuple[9])
 
-        if is_quote_asset_unknown:
-            quote_asset = deserialize_unknown_ethereum_token_from_db(
-                ethereum_address=trade_tuple[14],
-                symbol=trade_tuple[15],
-                name=trade_tuple[16],
-                decimals=trade_tuple[17],
+        if is_token1_unknown:
+            token1 = deserialize_unknown_ethereum_token_from_db(
+                ethereum_address=trade_tuple[13],
+                symbol=trade_tuple[14],
+                name=trade_tuple[15],
+                decimals=trade_tuple[16],
             )
         else:
-            quote_asset = deserialize_ethereum_token_from_db(identifier=trade_tuple[15])
+            token1 = deserialize_ethereum_token_from_db(identifier=trade_tuple[14])
 
         return cls(
             tx_hash=trade_tuple[0],
@@ -140,31 +151,96 @@ class AMMTrade(NamedTuple):
             to_address=to_address,
             timestamp=deserialize_timestamp(trade_tuple[5]),
             location=deserialize_location_from_db(trade_tuple[6]),
-            trade_type=deserialize_trade_type_from_db(trade_tuple[7]),
-            base_asset=base_asset,
-            quote_asset=quote_asset,
-            amount=deserialize_asset_amount(trade_tuple[18]),
-            rate=deserialize_price(trade_tuple[19]),
-            fee=deserialize_fee(trade_tuple[20]),
-            notes=trade_tuple[21],
+            token0=token0,
+            token1=token1,
+            amount0_in=deserialize_asset_amount(trade_tuple[17]),
+            amount1_in=deserialize_asset_amount(trade_tuple[18]),
+            amount0_out=deserialize_asset_amount(trade_tuple[19]),
+            amount1_out=deserialize_asset_amount(trade_tuple[20]),
         )
 
-    @property
-    def fee_currency(self) -> FakeAsset:
-        fee_asset = (
-            self.base_asset
-            if self.trade_type == TradeType.SELL
-            else self.quote_asset
+    def serialize(self) -> Dict[str, Any]:
+        """Serialize the swap into the format seen in the frontend"""
+        return {
+            'tx_hash': self.tx_hash,
+            'log_index': self.log_index,
+            'from_address': self.from_address,
+            'to_address': self.to_address,
+            'location': str(self.location),
+            'token0': serialize_known_or_unknown_token(self.token0),
+            'token1': serialize_known_or_unknown_token(self.token1),
+            'amount0_in': str(self.amount0_in),
+            'amount1_in': str(self.amount1_in),
+            'amount0_out': str(self.amount0_out),
+            'amount1_out': str(self.amount1_out),
+        }
+
+    def to_db_tuple(self) -> AMMSwapDBTuple:
+        is_token0_unknown = (
+            1 if isinstance(self.token0, UnknownEthereumToken) else 0
         )
-        return FakeAsset(identifier=fee_asset.symbol)
+        is_token1_unknown = (
+            1 if isinstance(self.token1, UnknownEthereumToken) else 0
+        )
+        db_tuple = (
+            self.tx_hash,
+            self.log_index,
+            str(self.address),
+            str(self.from_address),
+            str(self.to_address),
+            int(self.timestamp),
+            self.location.serialize_for_db(),
+            is_token0_unknown,
+            str(self.token0.ethereum_address),
+            str(self.token0.symbol),
+            str(self.token0.name),
+            self.token0.decimals,
+            is_token1_unknown,
+            str(self.token1.ethereum_address),
+            str(self.token1.symbol),
+            str(self.token1.name),
+            self.token1.decimals,
+            str(self.amount0_in),
+            str(self.amount1_in),
+            str(self.amount0_out),
+            str(self.amount1_out),
+        )
+        return db_tuple  # type: ignore
+
+
+class AMMTrade(NamedTuple):
+    """This class aims for a better trades support than the current Trade class
+    in AMMs protocols.
+    """
+    trade_type: TradeType
+    base_asset: Union[EthereumToken, UnknownEthereumToken]
+    quote_asset: Union[EthereumToken, UnknownEthereumToken]
+    amount: AssetAmount
+    rate: Price
+    swaps: List[AMMSwap]
+    # Since these trades are made up, we need an extra id for uniqueness at construction
+    trade_index: int
+
+    @property
+    def tx_hash(self) -> str:
+        return self.swaps[0].tx_hash
+
+    @property
+    def timestamp(self) -> Timestamp:
+        return self.swaps[0].timestamp
+
+    @property
+    def location(self) -> Location:
+        return self.swaps[0].location
+
+    @property
+    def address(self) -> ChecksumEthAddress:
+        return self.swaps[0].address
 
     @property
     def identifier(self) -> str:
-        return f'{self.tx_hash}-{self.log_index}'
-
-    @property
-    def link(self) -> str:
-        return self.tx_hash
+        """Since these trades are made up, uniqueness needs an extra id"""
+        return f'{self.tx_hash}-{self.trade_index}'
 
     @property
     def pair(self) -> str:
@@ -177,18 +253,11 @@ class AMMTrade(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         """Serialize the trade into a dict matching Trade serialization from
         `data_structures.py` and adding: address, base_asset, quote_asset,
-        from_address and to_address
         """
-        unknown_asset_keys = ('ethereum_address', 'name', 'symbol')
-        serialized_base_asset = (
-            self.base_asset.serialize()
-            if isinstance(self.base_asset, EthereumToken)
-            else self.base_asset.serialize_as_dict(keys=unknown_asset_keys)
-        )
-        serialized_quote_asset = (
-            self.quote_asset.serialize()
+        fee_symbol = (
+            self.quote_asset.identifier
             if isinstance(self.quote_asset, EthereumToken)
-            else self.quote_asset.serialize_as_dict(keys=unknown_asset_keys)
+            else self.quote_asset.symbol
         )
         return {
             # Shared attributes with Trade
@@ -199,49 +268,12 @@ class AMMTrade(NamedTuple):
             'trade_type': str(self.trade_type),
             'amount': str(self.amount),
             'rate': str(self.rate),
-            'fee': str(self.fee),
-            'fee_currency': self.fee_currency.identifier,
-            'link': self.link,
-            'notes': self.notes,
+            'fee': '0',  # Don't bother with a fee at the moment -- too complicated
+            'fee_currency': fee_symbol,
             # AMMTrade attributes
             'address': self.address,
-            'from_address': self.from_address,
-            'to_address': self.to_address,
-            'base_asset': serialized_base_asset,
-            'quote_asset': serialized_quote_asset,
+            'base_asset': serialize_known_or_unknown_token(self.base_asset),
+            'quote_asset': serialize_known_or_unknown_token(self.quote_asset),
             'tx_hash': self.tx_hash,
-            'log_index': self.log_index,
+            'swaps': [x.serialize() for x in self.swaps],
         }
-
-    def to_db_tuple(self) -> AMMTradeDBTuple:
-        is_base_asset_unknown = (
-            1 if isinstance(self.base_asset, UnknownEthereumToken) else 0
-        )
-        is_quote_asset_unknown = (
-            1 if isinstance(self.quote_asset, UnknownEthereumToken) else 0
-        )
-        db_tuple = (
-            self.tx_hash,
-            self.log_index,
-            str(self.address),
-            str(self.from_address),
-            str(self.to_address),
-            int(self.timestamp),
-            self.location.serialize_for_db(),
-            self.trade_type.serialize_for_db(),
-            is_base_asset_unknown,
-            str(self.base_asset.ethereum_address),
-            str(self.base_asset.symbol),
-            str(self.base_asset.name),
-            self.base_asset.decimals,
-            is_quote_asset_unknown,
-            str(self.quote_asset.ethereum_address),
-            str(self.quote_asset.symbol),
-            str(self.quote_asset.name),
-            self.quote_asset.decimals,
-            str(self.amount),
-            str(self.rate),
-            str(self.fee),
-            self.notes,
-        )
-        return db_tuple  # type: ignore

@@ -26,8 +26,8 @@ from rotkehlchen.balances.manual import (
     remove_manually_tracked_balances,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
+from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
@@ -545,9 +545,9 @@ class RestAPI():
                 serialized_trade['trade_id'] = trade.identifier
             trades_result.append(serialized_trade)
 
-        entry_table: Literal['amm_trades', 'trades']
+        entry_table: Literal['amm_swaps', 'trades']
         if location in AMMTradeLocations:
-            entry_table = 'amm_trades'
+            entry_table = 'amm_swaps'
         else:
             entry_table = 'trades'
 

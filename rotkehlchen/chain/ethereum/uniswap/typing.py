@@ -1,16 +1,6 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
 import logging
-from typing import (
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    NamedTuple,
-    Set,
-    Union,
-)
+from dataclasses import dataclass
+from typing import Any, DefaultDict, Dict, List, NamedTuple, Set, Union
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
@@ -18,10 +8,7 @@ from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import (
-    ChecksumEthAddress,
-    Price,
-)
+from rotkehlchen.typing import ChecksumEthAddress, Price
 
 log = logging.getLogger(__name__)
 
@@ -90,5 +77,4 @@ class ProtocolBalance(NamedTuple):
 # Get History
 
 AddressTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
-DDAddressTrades = DefaultDict[ChecksumEthAddress, List[AMMTrade]]
 ProtocolHistory = Dict[str, Union[AddressTrades]]

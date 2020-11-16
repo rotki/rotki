@@ -27,7 +27,7 @@ from rotkehlchen.chain.ethereum.structures import (
     YearnVaultEvent,
     aave_event_from_db,
 )
-from rotkehlchen.chain.ethereum.trades import AMMTrade
+from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.chain.ethereum.uniswap import UNISWAP_TRADES_PREFIX
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
@@ -110,7 +110,7 @@ DBTupleType = Literal[
     'asset_movement',
     'margin_position',
     'ethereum_transaction',
-    'amm_trade',
+    'amm_swap',
 ]
 
 
@@ -167,11 +167,10 @@ def db_tuple_to_str(
     elif tuple_type == 'ethereum_transaction':
         return f'Ethereum transaction with hash "{data[0].hex()}"'
 
-    elif tuple_type == 'amm_trade':
+    elif tuple_type == 'amm_swap':
         return (
-            f'{deserialize_trade_type_from_db(data[5])} AMM trade with id {data[0]}-{data[1]} '
-            f'in {deserialize_location_from_db(data[4])} and pair {data[8]}_{data[13]} '
-            f'at timestamp {data[3]}'
+            f'AMM swap with id {data[0]}-{data[1]} '
+            f'in {deserialize_location_from_db(data[6])} '
         )
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
@@ -750,7 +749,7 @@ class DBHandler:
         """Delete all historical Uniswap data"""
         cursor = self.conn.cursor()
         cursor.execute(
-            f'DELETE FROM amm_trades WHERE location="{Location.UNISWAP.serialize_for_db()}";',
+            f'DELETE FROM amm_swaps WHERE location="{Location.UNISWAP.serialize_for_db()}";',
         )
         cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap%";')
         self.conn.commit()
@@ -1681,7 +1680,7 @@ class DBHandler:
                 'asset_movements',
                 'trades',
                 'ethereum_transactions',
-                'amm_trades',
+                'amm_swaps',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             **kwargs: Any,
@@ -1837,7 +1836,7 @@ class DBHandler:
             f'to_address="{address}" AND from_address NOT IN ({",".join(questionmarks)});',
             other_eth_accounts,
         )
-        cursor.execute('DELETE FROM amm_trades WHERE address=?;', (address,))
+        cursor.execute('DELETE FROM amm_swaps WHERE address=?;', (address,))
 
         self.conn.commit()
         self.update_last_write()
@@ -1984,14 +1983,14 @@ class DBHandler:
         self.conn.commit()
         return True, ''
 
-    def add_amm_trades(self, trades: List[AMMTrade]) -> None:
-        trade_tuples: List[Tuple[Any, ...]] = []
-        for trade in trades:
-            trade_tuples.append(trade.to_db_tuple())
+    def add_amm_swaps(self, swaps: List[AMMSwap]) -> None:
+        swap_tuples: List[Tuple[Any, ...]] = []
+        for swap in swaps:
+            swap_tuples.append(swap.to_db_tuple())
 
         query = (
             """
-            INSERT INTO amm_trades (
+            INSERT INTO amm_swaps (
                 tx_hash,
                 log_index,
                 address,
@@ -1999,35 +1998,34 @@ class DBHandler:
                 to_address,
                 timestamp,
                 location,
-                type,
-                is_base_asset_unknown,
-                base_asset_address,
-                base_asset_symbol,
-                base_asset_name,
-                base_asset_decimals,
-                is_quote_asset_unknown,
-                quote_asset_address,
-                quote_asset_symbol,
-                quote_asset_name,
-                quote_asset_decimals,
-                amount,
-                rate,
-                fee,
-                notes
+                is_token0_unknown,
+                token0_address,
+                token0_symbol,
+                token0_name,
+                token0_decimals,
+                is_token1_unknown,
+                token1_address,
+                token1_symbol,
+                token1_name,
+                token1_decimals,
+                amount0_in,
+                amount1_in,
+                amount0_out,
+                amount1_out
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
-        self.write_tuples(tuple_type='amm_trade', query=query, tuples=trade_tuples)
+        self.write_tuples(tuple_type='amm_swap', query=query, tuples=swap_tuples)
 
-    def get_amm_trades(
+    def get_amm_swaps(
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             location: Optional[Location] = None,
             address: Optional[ChecksumEthAddress] = None,
-    ) -> List[AMMTrade]:
-        """Returns a list of AMM trades optionally filtered by time, location
+    ) -> List[AMMSwap]:
+        """Returns a list of AMM swaps optionally filtered by time, location
         and address
         """
         cursor = self.conn.cursor()
@@ -2040,22 +2038,21 @@ class DBHandler:
             'to_address, '
             'timestamp, '
             'location, '
-            'type, '
-            'is_base_asset_unknown, '
-            'base_asset_address, '
-            'base_asset_symbol, '
-            'base_asset_name, '
-            'base_asset_decimals, '
-            'is_quote_asset_unknown, '
-            'quote_asset_address, '
-            'quote_asset_symbol, '
-            'quote_asset_name, '
-            'quote_asset_decimals, '
-            'amount, '
-            'rate, '
-            'fee, '
-            'notes '
-            'FROM amm_trades '
+            'is_token0_unknown, '
+            'token0_address, '
+            'token0_symbol, '
+            'token0_name, '
+            'token0_decimals, '
+            'is_token1_unknown, '
+            'token1_address, '
+            'token1_symbol, '
+            'token1_name, '
+            'token1_decimals, '
+            'amount0_in, '
+            'amount1_in, '
+            'amount0_out, '
+            'amount1_out '
+            'FROM amm_swaps '
         )
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         filters = []
@@ -2071,31 +2068,31 @@ class DBHandler:
         query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
-        trades = []
+        swaps = []
         for result in results:
             try:
-                trade = AMMTrade.deserialize_from_db(result)
+                swap = AMMSwap.deserialize_from_db(result)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
-                    f'Error deserializing AMM trade from the DB. Skipping trade. '
+                    f'Error deserializing AMM swap from the DB. Skipping swap. '
                     f'Error was: {str(e)}',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
-                    f'Error deserializing AMM trade from the DB. Skipping trade. '
+                    f'Error deserializing AMM swap from the DB. Skipping swap. '
                     f'Unknown asset {e.asset_name} found',
                 )
                 continue
-            trades.append(trade)
+            swaps.append(swap)
 
-        return trades
+        return swaps
 
-    def delete_amm_trade(self, trade_id: str) -> Tuple[bool, str]:
+    def delete_amm_swap(self, swap_id: str) -> Tuple[bool, str]:
         cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM amm_trades WHERE id=?', (trade_id,))
+        cursor.execute('DELETE FROM amm_swaps WHERE id=?', (swap_id,))
         if cursor.rowcount == 0:
-            return False, 'Tried to delete non-existing AMM trade'
+            return False, 'Tried to delete non-existing AMM swap'
         self.conn.commit()
         return True, ''
 

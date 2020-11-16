@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Callable, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Set, Tuple, Union
 
 from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
@@ -11,7 +11,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
-from rotkehlchen.chain.ethereum.trades import AMMTrade
+from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
@@ -20,7 +20,6 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import (
     AssetAmount,
     ChecksumEthAddress,
-    Fee,
     Location,
     Price,
     Timestamp,
@@ -31,13 +30,11 @@ from rotkehlchen.utils.interfaces import EthereumModule
 
 from .graph import LIQUIDITY_POSITIONS_QUERY, SWAPS_QUERY, TOKEN_DAY_DATAS_QUERY
 from .typing import (
-    SWAP_FEE,
     UNISWAP_TRADES_PREFIX,
     AddressBalances,
     AddressTrades,
     AssetPrice,
     DDAddressBalances,
-    DDAddressTrades,
     LiquidityPool,
     LiquidityPoolAsset,
     ProtocolBalance,
@@ -49,6 +46,35 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 log = logging.getLogger(__name__)
+
+
+def add_trades_from_swaps(
+        swaps: List[AMMSwap],
+        trades: List[AMMTrade],
+        both_in: bool,
+        quote_assets: Sequence[Tuple[Any, ...]],
+        token_amount: AssetAmount,
+        token: Union[EthereumToken, UnknownEthereumToken],
+        trade_index: int,
+) -> List[AMMTrade]:
+    bought_amount = AssetAmount(token_amount / 2) if both_in else token_amount
+    for entry in quote_assets:
+        quote_asset = entry[0]
+        sold_amount = entry[1]
+        rate = bought_amount / sold_amount
+        trade = AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=token,
+            quote_asset=quote_asset,
+            amount=bought_amount,
+            rate=rate,
+            swaps=swaps,
+            trade_index=trade_index,
+        )
+        trades.append(trade)
+        trade_index += 1
+
+    return trades
 
 
 class Uniswap(EthereumModule):
@@ -228,6 +254,64 @@ class Uniswap(EthereumModule):
 
         return asset_price
 
+    @staticmethod
+    def _tx_swaps_to_trades(swaps: List[AMMSwap]) -> List[AMMTrade]:
+        """
+        Turns a list of a transaction's swaps into a list of trades, taking into account
+        the first and last swaps only for use with the rest of the rotki accounting.
+
+        TODO: This is not nice, but we are constrained by the 1 token in
+        1 token out concept of a trade we have right now. So if in a swap
+        we have both tokens in we will create two trades, with the final
+        amount being divided between the 2 trades. This is only so that
+        the AMM trade can be processed easily in our current trades
+        accounting.
+        Make issue to process this properly as multitrades when we change
+        the trade format
+        """
+        trades: List[AMMTrade] = []
+        both_in = False
+        both_out = False
+        if swaps[0].amount0_in > ZERO and swaps[0].amount1_in > ZERO:
+            both_in = True
+        if swaps[-1].amount0_out > ZERO and swaps[-1].amount1_out > ZERO:
+            both_out = True
+
+        if both_in:
+            quote_assets = [
+                (swaps[0].token0, swaps[0].amount0_in if not both_out else swaps[0].amount0_in / 2),  # noqa: E501
+                (swaps[0].token1, swaps[0].amount1_in if not both_out else swaps[0].amount1_in / 2),  # noqa: E501
+            ]
+        elif swaps[0].amount0_in > ZERO:
+            quote_assets = [(swaps[0].token0, swaps[0].amount0_in)]
+        else:
+            quote_assets = [(swaps[0].token1, swaps[0].amount1_in)]
+
+        trade_index = 0
+        if swaps[-1].amount0_out > ZERO:
+            trades = add_trades_from_swaps(
+                swaps=swaps,
+                trades=trades,
+                both_in=both_in,
+                quote_assets=quote_assets,
+                token_amount=swaps[-1].amount0_out,
+                token=swaps[-1].token0,
+                trade_index=trade_index,
+            )
+            trade_index += len(trades)
+        if swaps[-1].amount1_out > ZERO:
+            trades = add_trades_from_swaps(
+                swaps=swaps,
+                trades=trades,
+                both_in=both_in,
+                quote_assets=quote_assets,
+                token_amount=swaps[-1].amount1_out,
+                token=swaps[-1].token1,
+                trade_index=trade_index,
+            )
+
+        return trades
+
     def _get_trades(
             self,
             addresses: List[ChecksumEthAddress],
@@ -292,24 +376,47 @@ class Uniswap(EthereumModule):
                     end_ts=to_timestamp,
                 )
 
-        # Insert requested trades in DB
+        # Insert all unique swaps to the D
+        all_swaps = set()
         for address in filter(lambda address: address in address_amm_trades, addresses):
-            self.database.add_amm_trades(address_amm_trades[address])
+            for trade in address_amm_trades[address]:
+                for swap in trade.swaps:
+                    all_swaps.add(swap)
+
+        self.database.add_amm_swaps(list(all_swaps))
 
         # Fetch all DB Uniswap trades within the time range
         for address in addresses:
-            db_trades = self.database.get_amm_trades(
+            db_swaps = self.database.get_amm_swaps(
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 location=Location.UNISWAP,
                 address=address,
             )
+            db_trades = self.swaps_to_trades(db_swaps)
             if db_trades:
-                # return trades with most recent first
-                db_trades.sort(key=lambda trade: trade.timestamp, reverse=True)
                 db_address_trades[address] = db_trades
 
         return db_address_trades
+
+    @staticmethod
+    def swaps_to_trades(swaps: List[AMMSwap]) -> List[AMMTrade]:
+        trades = []
+        # sort by timestamp and then by log index
+        swaps.sort(key=lambda trade: (trade.timestamp, -trade.log_index), reverse=True)
+        last_tx_hash = swaps[0].tx_hash
+        current_swaps: List[AMMSwap] = []
+        for swap in swaps:
+            if swap.tx_hash != last_tx_hash:
+                trades.extend(Uniswap._tx_swaps_to_trades(current_swaps))
+                current_swaps = []
+
+            current_swaps.append(swap)
+            last_tx_hash = swap.tx_hash
+
+        if len(current_swaps) != 0:
+            trades.extend(Uniswap._tx_swaps_to_trades(current_swaps))
+        return trades
 
     def _get_trades_graph(
             self,
@@ -317,7 +424,7 @@ class Uniswap(EthereumModule):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> AddressTrades:
-        address_trades: DDAddressTrades = {}
+        address_trades = {}
         for address in addresses:
             trades = self._get_trades_graph_for_address(address, start_ts, end_ts)
             if len(trades) != 0:
@@ -371,77 +478,28 @@ class Uniswap(EthereumModule):
             )
             result_data = result['swaps']
             for entry in result_data:
+                swaps = []
                 for swap in entry['transaction']['swaps']:
-                    # By getting swap sender and swap to we can get some more
-                    # details about each swap, but am not sure how
                     timestamp = swap['timestamp']
-                    token0 = swap['pair']['token0']
-                    token1 = swap['pair']['token1']
-                    base_asset = get_ethereum_token(
-                        symbol=token0['symbol'],
-                        ethereum_address=to_checksum_address(token0['id']),
-                        name=token0['name'],
-                        decimals=token0['decimals'],
+                    swap_token0 = swap['pair']['token0']
+                    swap_token1 = swap['pair']['token1']
+                    token0 = get_ethereum_token(
+                        symbol=swap_token0['symbol'],
+                        ethereum_address=to_checksum_address(swap_token0['id']),
+                        name=swap_token0['name'],
+                        decimals=swap_token0['decimals'],
                     )
-                    quote_asset = get_ethereum_token(
-                        symbol=token1['symbol'],
-                        ethereum_address=to_checksum_address(token1['id']),
-                        name=token1['name'],
-                        decimals=int(token1['decimals']),
+                    token1 = get_ethereum_token(
+                        symbol=swap_token1['symbol'],
+                        ethereum_address=to_checksum_address(swap_token1['id']),
+                        name=swap_token1['name'],
+                        decimals=int(swap_token1['decimals']),
                     )
                     amount0_in = FVal(swap['amount0In'])
                     amount1_in = FVal(swap['amount1In'])
                     amount0_out = FVal(swap['amount0Out'])
                     amount1_out = FVal(swap['amount1Out'])
-                    if amount0_in > ZERO and amount0_out > ZERO:
-                        if amount1_out > ZERO:
-                            trade_type = TradeType.SELL
-                            received_amount = amount1_out
-                        else:  # amount0_out > 0
-                            trade_type = TradeType.BUY
-                            received_amount = amount0_out
-                        amount = abs(amount0_in - amount0_out)
-                    elif amount1_in > ZERO and amount1_out > ZERO:
-                        if amount0_in > ZERO:
-                            trade_type = TradeType.BUY
-                            received_amount = amount0_in
-                        else:  # amount1_in > 0
-                            trade_type = TradeType.SELL
-                            received_amount = amount1_in
-                        amount = abs(amount1_in - amount1_out)
-                    else:
-                        trade_type = (
-                            TradeType.SELL
-                            if amount1_out > ZERO
-                            else TradeType.BUY
-                        )
-                        amount = AssetAmount(
-                            amount0_in
-                            if trade_type == TradeType.SELL
-                            else amount1_in,
-                        )
-                        received_amount = AssetAmount(
-                            amount1_out
-                            if trade_type == TradeType.SELL
-                            else amount0_out,
-                        )
-
-                    if amount == ZERO:
-                        log.error(f'Encountered uniswap swap {swap} where amount is 0. Skipping..')
-                        continue
-                    elif received_amount == ZERO:
-                        log.error(
-                            f'Encountered uniswap swap {swap} where received amount is 0. '
-                            f'Skipping..',
-                        )
-                        continue
-
-                    rate = (
-                        received_amount / amount
-                        if trade_type == TradeType.BUY
-                        else amount / received_amount
-                    )
-                    trade = AMMTrade(
+                    swaps.append(AMMSwap(
                         tx_hash=swap['id'].split('-')[0],
                         log_index=int(swap['logIndex']),
                         address=address,
@@ -449,14 +507,16 @@ class Uniswap(EthereumModule):
                         to_address=to_checksum_address(swap['to']),
                         timestamp=Timestamp(int(timestamp)),
                         location=Location.UNISWAP,
-                        trade_type=trade_type,
-                        base_asset=base_asset,
-                        quote_asset=quote_asset,
-                        amount=amount if trade_type == TradeType.SELL else received_amount,
-                        rate=Price(rate),
-                        fee=Fee(amount * SWAP_FEE),
-                    )
-                    trades.append(trade)
+                        token0=token0,
+                        token1=token1,
+                        amount0_in=AssetAmount(amount0_in),
+                        amount1_in=AssetAmount(amount1_in),
+                        amount0_out=AssetAmount(amount0_out),
+                        amount1_out=AssetAmount(amount1_out),
+                    ))
+
+                # Now that we got all swaps for a transaction, create the trade object
+                trades.extend(self._tx_swaps_to_trades(swaps))
 
             # Check whether an extra request is needed
             if len(result_data) < GRAPH_QUERY_LIMIT:
@@ -601,6 +661,24 @@ class Uniswap(EthereumModule):
         )
 
         return protocol_balance.address_balances
+
+    def get_trades(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> List[AMMTrade]:
+        with self.history_lock:
+            all_trades = []
+            trade_mapping = self._get_trades(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+            for _, trades in trade_mapping.items():
+                all_trades.extend(trades)
+
+            return all_trades
 
     def get_history(
         self,

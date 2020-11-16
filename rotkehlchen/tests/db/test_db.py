@@ -92,7 +92,7 @@ TABLES_AT_INIT = [
     'tags',
     'xpubs',
     'xpub_mappings',
-    'amm_trades',
+    'amm_swaps',
 ]
 
 

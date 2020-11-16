@@ -311,8 +311,8 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
-DB_CREATE_AMM_TRADES = """
-CREATE TABLE IF NOT EXISTS amm_trades (
+DB_CREATE_AMM_SWAPS = """
+CREATE TABLE IF NOT EXISTS amm_swaps (
     tx_hash VARCHAR[42] NOT NULL,
     log_index INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
@@ -320,21 +320,20 @@ CREATE TABLE IF NOT EXISTS amm_trades (
     to_address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
-    is_base_asset_unknown INTEGER NOT NULL,
-    base_asset_address VARCHAR[42] NOT NULL,
-    base_asset_symbol TEXT NOT NULL,
-    base_asset_name TEXT,
-    base_asset_decimals INTEGER,
-    is_quote_asset_unknown INTEGER NOT NULL,
-    quote_asset_address VARCHAR[42] NOT NULL,
-    quote_asset_symbol TEXT NOT NULL,
-    quote_asset_name TEXT,
-    quote_asset_decimals INTEGER,
-    amount TEXT,
-    rate TEXT,
-    fee TEXT,
-    notes TEXT,
+    is_token0_unknown INTEGER NOT NULL,
+    token0_address VARCHAR[42] NOT NULL,
+    token0_symbol TEXT NOT NULL,
+    token0_name TEXT,
+    token0_decimals INTEGER,
+    is_token1_unknown INTEGER NOT NULL,
+    token1_address VARCHAR[42] NOT NULL,
+    token1_symbol TEXT NOT NULL,
+    token1_name TEXT,
+    token1_decimals INTEGER,
+    amount0_in TEXT,
+    amount1_in TEXT,
+    amount0_out TEXT,
+    amount1_out TEXT,
     PRIMARY KEY (tx_hash, log_index)
 );
 """
@@ -370,5 +369,5 @@ PRAGMA foreign_keys=on;
     DB_CREATE_YEARN_VAULT_EVENTS,
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
-    DB_CREATE_AMM_TRADES,
+    DB_CREATE_AMM_SWAPS,
 )
