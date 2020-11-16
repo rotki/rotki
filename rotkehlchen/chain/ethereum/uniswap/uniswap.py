@@ -418,12 +418,12 @@ class Uniswap(EthereumModule):
                         amount = AssetAmount(
                             amount0_in
                             if trade_type == TradeType.SELL
-                            else amount1_in
+                            else amount1_in,
                         )
                         received_amount = AssetAmount(
                             amount1_out
                             if trade_type == TradeType.SELL
-                            else amount0_out
+                            else amount0_out,
                         )
 
                     if amount == ZERO:

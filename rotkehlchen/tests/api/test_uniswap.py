@@ -466,6 +466,66 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
 )]
 
 
+# Should be trade index 41 in the returned array
+# This is a multi token trade. At log index 166 both amount0In and amount1In are
+# positive. Test that we handle it in some way. Still not 100% sure this is the right way
+# https://etherscan.io/tx/0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017
+BOTH_IN_TRADES = [AMMTrade(
+    tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+    log_index=166,
+    address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+    to_address=deserialize_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
+    timestamp=Timestamp(1604657395),
+    location=Location.UNISWAP,
+    trade_type=TradeType.BUY,
+    base_asset=EthereumToken('WETH'),
+    quote_asset=EthereumToken('aDAI'),
+    amount=AssetAmount(FVal('0.185968722112880576')),
+    rate=Price(FVal('0.002406672755422030353007152562')),
+    fee=Fee(FVal('0.231816380137983561981')),
+    notes='',
+), AMMTrade(
+    tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+    log_index=169,
+    address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+    to_address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    timestamp=Timestamp(1604657395),
+    location=Location.UNISWAP,
+    trade_type=TradeType.BUY,
+    base_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+        symbol='🐟',
+        name='Penguin Party Fish',
+    ),
+    quote_asset=EthereumToken('aDAI'),
+    amount=AssetAmount(FVal('105.454952420015590185')),
+    rate=Price(FVal('1.361568620143536837663969089')),
+    fee=Fee(FVal('0.232353223024995628719')),
+    notes='',
+), AMMTrade(
+    tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+    log_index=172,
+    address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+    to_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+    timestamp=Timestamp(1604657395),
+    location=Location.UNISWAP,
+    trade_type=TradeType.SELL,
+    base_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+        symbol='🐟',
+        name='Penguin Party Fish',
+    ),
+    quote_asset=EthereumToken('WETH'),
+    amount=AssetAmount(FVal('105.454952420015590185')),
+    rate=Price(FVal('494.6694467518978467967819152')),
+    fee=Fee(FVal('0.316364857260046770555')),
+    notes='',
+)]
+
+
 @pytest.mark.parametrize('ethereum_accounts', [[CRAZY_UNISWAP_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -505,3 +565,14 @@ def test_get_uniswap_exotic_history(
         if idx == len(EXPECTED_CRAZY_TRADES):
             break  # test up to last EXPECTED_CRAZY_TRADES trades from 1605437542
         assert trade == EXPECTED_CRAZY_TRADES[idx].serialize()
+
+    found_idx = -1
+    for idx, trade in enumerate(result['trades'][CRAZY_UNISWAP_ADDRESS]):
+        if trade['tx_hash'] == '0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017':  # noqa: E501
+            found_idx = idx
+            break
+    assert found_idx != -1, 'Could not find the transaction hash index'
+
+    # Also test for the swaps that have both tokens at amountIn or amountOut
+    for idx, trade in enumerate(BOTH_IN_TRADES):
+        assert trade.serialize() == result['trades'][CRAZY_UNISWAP_ADDRESS][found_idx + idx]
