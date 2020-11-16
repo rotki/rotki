@@ -317,7 +317,21 @@ class Uniswap(EthereumModule):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> AddressTrades:
-        """Get the addresses' trades data querying the Uniswap subgraph
+        address_trades: DDAddressTrades = {}
+        for address in addresses:
+            trades = self._get_trades_graph_for_address(address, start_ts, end_ts)
+            if len(trades) != 0:
+                address_trades[address] = trades
+
+        return address_trades
+
+    def _get_trades_graph_for_address(
+            self,
+            address: ChecksumEthAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[AMMTrade]:
+        """Get the address' trades data querying the Uniswap subgraph
 
         Each trade (swap) instantiates an <AMMTrade>.
 
@@ -332,19 +346,18 @@ class Uniswap(EthereumModule):
         - `asset0In` (BASE, reserve0) is gt 0.
         - `asset1Out` (QUOTE, reserve1) is gt 0.
         """
-        address_trades: DDAddressTrades = defaultdict(list)
-        addresses_lower = [address.lower() for address in addresses]
+        trades: List[AMMTrade] = []
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
-            '$addresses': '[Bytes!]',
+            '$address': 'Bytes!',
             '$start_ts': 'BigInt!',
             '$end_ts': 'BigInt!',
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
             'offset': 0,
-            'addresses': addresses_lower,
+            'address': address.lower(),
             'start_ts': str(start_ts),
             'end_ts': str(end_ts),
         }
@@ -358,12 +371,6 @@ class Uniswap(EthereumModule):
             )
             result_data = result['swaps']
             for entry in result_data:
-                # The user address will always be the "to" of the last swap
-                # This feels like a terrible hack but is probably the only
-                # way to do this until the addition of the "from" is propagated
-                # to the deployed subgraphs
-                # https://github.com/Uniswap/uniswap-v2-subgraph/commit/a9ba250f847222ca2ece76635ea2d11ca06dc281
-                user_address = to_checksum_address(entry['transaction']['swaps'][-1]['to'])
                 for swap in entry['transaction']['swaps']:
                     # By getting swap sender and swap to we can get some more
                     # details about each swap, but am not sure how
@@ -382,35 +389,62 @@ class Uniswap(EthereumModule):
                         name=token1['name'],
                         decimals=int(token1['decimals']),
                     )
-                    amount0In = FVal(swap['amount0In'])
-                    amount1In = FVal(swap['amount1In'])
-                    amount0Out = FVal(swap['amount0Out'])
-                    amount1Out = FVal(swap['amount1Out'])
-                    trade_type = (
-                        TradeType.SELL
-                        if amount1Out > ZERO
-                        else TradeType.BUY
-                    )
-                    amount = AssetAmount(
-                        amount0In
-                        if trade_type == TradeType.SELL
-                        else amount1In
-                    )
-                    received_amount = AssetAmount(
-                        amount1Out
-                        if trade_type == TradeType.SELL
-                        else amount0Out
-                    )
+                    amount0_in = FVal(swap['amount0In'])
+                    amount1_in = FVal(swap['amount1In'])
+                    amount0_out = FVal(swap['amount0Out'])
+                    amount1_out = FVal(swap['amount1Out'])
+                    if amount0_in > ZERO and amount0_out > ZERO:
+                        if amount1_out > ZERO:
+                            trade_type = TradeType.SELL
+                            received_amount = amount1_out
+                        else:  # amount0_out > 0
+                            trade_type = TradeType.BUY
+                            received_amount = amount0_out
+                        amount = abs(amount0_in - amount0_out)
+                    elif amount1_in > ZERO and amount1_out > ZERO:
+                        if amount0_in > ZERO:
+                            trade_type = TradeType.BUY
+                            received_amount = amount0_in
+                        else:  # amount1_in > 0
+                            trade_type = TradeType.SELL
+                            received_amount = amount1_in
+                        amount = abs(amount1_in - amount1_out)
+                    else:
+                        trade_type = (
+                            TradeType.SELL
+                            if amount1_out > ZERO
+                            else TradeType.BUY
+                        )
+                        amount = AssetAmount(
+                            amount0_in
+                            if trade_type == TradeType.SELL
+                            else amount1_in
+                        )
+                        received_amount = AssetAmount(
+                            amount1_out
+                            if trade_type == TradeType.SELL
+                            else amount0_out
+                        )
+
+                    if amount == ZERO:
+                        log.error(f'Encountered uniswap swap {swap} where amount is 0. Skipping..')
+                        continue
+                    elif received_amount == ZERO:
+                        log.error(
+                            f'Encountered uniswap swap {swap} where received amount is 0. '
+                            f'Skipping..',
+                        )
+                        continue
+
                     rate = (
                         received_amount / amount
                         if trade_type == TradeType.BUY
                         else amount / received_amount
                     )
-
                     trade = AMMTrade(
                         tx_hash=swap['id'].split('-')[0],
                         log_index=int(swap['logIndex']),
-                        address=user_address,
+                        address=address,
                         from_address=to_checksum_address(swap['sender']),
                         to_address=to_checksum_address(swap['to']),
                         timestamp=Timestamp(int(timestamp)),
@@ -422,7 +456,7 @@ class Uniswap(EthereumModule):
                         rate=Price(rate),
                         fee=Fee(amount * SWAP_FEE),
                     )
-                    address_trades[user_address].append(trade)
+                    trades.append(trade)
 
             # Check whether an extra request is needed
             if len(result_data) < GRAPH_QUERY_LIMIT:
@@ -433,8 +467,7 @@ class Uniswap(EthereumModule):
                 **param_values,
                 'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
             }
-
-        return dict(address_trades)
+        return trades
 
     @staticmethod
     def _get_unknown_asset_price_graph(

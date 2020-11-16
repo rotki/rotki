@@ -67,7 +67,7 @@ SWAPS_QUERY = (
         first: $limit,
         skip: $offset,
         where: {{
-            to_in: $addresses,
+            to: $address,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
         }}

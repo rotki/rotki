@@ -365,10 +365,30 @@ def test_get_uniswap_trades_history(
 
 CRAZY_UNISWAP_ADDRESS = '0xB1637bE0173330664adecB343faF112Ca837dA06'
 EXPECTED_CRAZY_TRADES = [AMMTrade(
-    # According to etherscan this should be 2 uniswap trades, but it shows as one from the graph
+    tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
+    log_index=140,
+    address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0x21aD02e972E968D9c76a7081a483d782001d6558'),
+    timestamp=Timestamp(1605431265),
+    location=Location.UNISWAP,
+    trade_type=TradeType.BUY,
+    base_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x37236CD05b34Cc79d3715AF2383E96dd7443dCF1'),  # noqa: E501
+        symbol='SLP',
+        name='Small Love Potion',
+    ),
+    quote_asset=EthereumToken('WETH'),
+    amount=AssetAmount(FVal('876')),
+    rate=Price(FVal('10373.84914626093371082115966')),
+    fee=Fee(FVal('0.000253329305540095989')),
+    notes='',
+), AMMTrade(
     tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
     log_index=143,
     address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
     timestamp=Timestamp(1605431265),
     location=Location.UNISWAP,
     trade_type=TradeType.BUY,
@@ -387,9 +407,30 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
     fee=Fee(FVal('2.628')),
     notes='',
 ), AMMTrade(
+    tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
+    log_index=146,
+    address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0xB8db34F834E9dF42F2002CeB7B829DaD89d08E14'),
+    timestamp=Timestamp(1605431265),
+    location=Location.UNISWAP,
+    trade_type=TradeType.SELL,
+    base_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+        symbol='🐟',
+        name='Penguin Party Fish',
+    ),
+    quote_asset=EthereumToken('WETH'),
+    amount=AssetAmount(FVal('20.085448793024895802')),
+    rate=Price(FVal('227.9730709782008407072746983')),
+    fee=Fee(FVal('0.060256346379074687406')),
+    notes='',
+), AMMTrade(
     tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
     log_index=20,
     address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
     timestamp=Timestamp(1605420918),
     location=Location.UNISWAP,
     trade_type=TradeType.SELL,
@@ -402,6 +443,25 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
     amount=AssetAmount(FVal('1.318527141747939222')),
     rate=Price(FVal('56.09408723106908869704792258')),
     fee=Fee(FVal('0.003955581425243817666')),
+    notes='',
+), AMMTrade(
+    tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
+    log_index=23,
+    address=deserialize_ethereum_address(CRAZY_UNISWAP_ADDRESS),
+    from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+    to_address=deserialize_ethereum_address('0xc61288821b4722Ce29249F0BA03b633F0bE46a5A'),
+    timestamp=Timestamp(1605420918),
+    location=Location.UNISWAP,
+    trade_type=TradeType.BUY,
+    base_asset=UnknownEthereumToken(
+        ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+        symbol='🐟',
+        name='Penguin Party Fish',
+    ),
+    quote_asset=EthereumToken('WETH'),
+    amount=AssetAmount(FVal('5.311132913120564692')),
+    rate=Price(FVal('225.9514753177076002616498735')),
+    fee=Fee(FVal('0.000070516905087510216')),
     notes='',
 )]
 
