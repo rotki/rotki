@@ -14,6 +14,7 @@ interface ApiSupportedAsset {
   readonly started?: number;
   readonly symbol: string;
   readonly type: string;
+  readonly ethereumAddress?: string;
 }
 
 export interface SupportedAssets {

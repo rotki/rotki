@@ -31,22 +31,25 @@
                     })
                   }}
                 </div>
-                <hash-link :text="entry.poolAddress" />
+                <v-row no-gutters align="center">
+                  <v-col cols="auto">
+                    <hash-link :text="entry.poolAddress" />
+                  </v-col>
+                  <v-col class="ms-4">
+                    <span
+                      class="text--secondary"
+                      v-text="$t('uniswap.liquidity')"
+                    />
+                    <amount-display
+                      class="font-weight-medium ms-2"
+                      :value="entry.totalSupply"
+                      :asset-padding="0"
+                    />
+                  </v-col>
+                </v-row>
               </v-col>
             </v-row>
             <v-row class="mt-2">
-              <v-col class="d-flex flex-column">
-                <span
-                  class="text--secondary text-body-1"
-                  v-text="$t('uniswap.liquidity')"
-                />
-                <amount-display
-                  class="text-h4 mt-1 font-weight-medium uniswap__amount"
-                  :value="entry.totalSupply"
-                  :asset-padding="0"
-                  asset="UNI-V2"
-                />
-              </v-col>
               <v-col class="d-flex flex-column">
                 <span
                   :class="$vuetify.breakpoint.mobile ? null : 'text-end'"
@@ -59,7 +62,8 @@
                   no-icon
                   :min-width="0"
                   :no-justify="$vuetify.breakpoint.mobile"
-                  asset="UNI-V2"
+                  asset=""
+                  :asset-padding="0"
                 />
               </v-col>
             </v-row>
@@ -86,12 +90,15 @@
                         show-currency="symbol"
                       />
                     </div>
-                    <div class="d-flex flex-column">
-                      <balance-display
-                        no-icon
-                        :asset="assetName(asset.asset)"
-                        :value="asset.userBalance"
-                      />
+                    <div class="d-flex">
+                      <div>
+                        <balance-display
+                          no-icon
+                          :asset="assetName(asset.asset)"
+                          :value="asset.userBalance"
+                        />
+                      </div>
+                      <hash-link link-only :text="assetAddress(asset.asset)" />
                     </div>
                   </div>
                 </v-list-item-content>
@@ -111,18 +118,21 @@ import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { UniswapAssetDetails } from '@/services/defi/types/uniswap';
+import { SupportedAsset } from '@/services/types-model';
 import { UniswapBalance } from '@/store/defi/types';
 import { DefiAccount, ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
   components: { UniswapPoolAsset, BlockchainAccountSelector },
   computed: {
+    ...mapGetters('balances', ['assetInfo']),
     ...mapGetters('defi', ['defiAccounts', 'uniswapBalances'])
   }
 })
 export default class Uniswap extends Vue {
   readonly ETH = ETH;
   defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
+  assetInfo!: (asset: string) => SupportedAsset | undefined;
   uniswapBalances!: (addresses: string[]) => UniswapBalance[];
   selectedAccount: GeneralAccount | null = null;
 
@@ -141,6 +151,13 @@ export default class Uniswap extends Vue {
       return asset;
     }
     return asset.symbol;
+  }
+
+  assetAddress(asset: UniswapAssetDetails | string) {
+    if (typeof asset === 'string') {
+      return this.assetInfo(asset)?.ethereumAddress ?? '';
+    }
+    return asset.ethereumAddress;
   }
 }
 </script>

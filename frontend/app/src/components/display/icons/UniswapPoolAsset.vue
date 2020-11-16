@@ -20,8 +20,8 @@ export default class UniswapPoolAsset extends Vue {
   height: 52px;
   width: 52px;
   border-radius: 50%;
-  background: url(~@/assets/images/defi/uniswap.svg) no-repeat bottom left;
-  background-size: 24px 24px;
+  background: url(~@/assets/images/defi/uniswap.svg) no-repeat 8px 32px;
+  background-size: 12px 12px;
 
   > * {
     width: 24px;

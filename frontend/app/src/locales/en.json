@@ -962,8 +962,8 @@
     "liquidity": "Liquidity Pools"
   },
   "uniswap": {
-    "pool_header": "UNI {asset1}/{asset2}",
-    "liquidity": "Liquidity",
-    "balance": "Balances"
+    "pool_header": "UNIv2 {asset1}/{asset2}",
+    "liquidity": "Liquidity:",
+    "balance": "Balance"
   }
 }
