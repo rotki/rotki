@@ -1,6 +1,8 @@
+import json
 import logging
 from collections import defaultdict
 from datetime import datetime, time
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Set, Tuple, Union
 
 from eth_utils import to_checksum_address
@@ -39,6 +41,7 @@ from .typing import (
     LiquidityPoolAsset,
     ProtocolBalance,
 )
+from .utils import uniswap_lp_token_balances
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -209,16 +212,30 @@ class Uniswap(EthereumModule):
         )
         return protocol_balance
 
-    @staticmethod
-    def _get_balances_chain(addresses: List[ChecksumEthAddress]) -> ProtocolBalance:
-        """Get the addresses' pools data via Zerion SDK.
+    def get_balances_chain(self, addresses: List[ChecksumEthAddress]) -> ProtocolBalance:
+        """Get the addresses' pools data via chain queries.
         """
-        address_balances: AddressBalances = {address: [] for address in addresses}
         known_assets: Set[EthereumToken] = set()
         unknown_assets: Set[UnknownEthereumToken] = set()
+        root_dir = Path(__file__).resolve().parent.parent.parent
+        lp_file_path = root_dir / 'data' / 'uniswapv2_lp_tokens.json'
+        with open(lp_file_path, 'r') as f:
+            lp_addresses = json.loads(f.read())
+
+        address_mapping = {}
+        for address in addresses:
+            pool_balances = uniswap_lp_token_balances(
+                address=address,
+                ethereum=self.ethereum,
+                lp_addresses=lp_addresses,
+                known_assets=known_assets,
+                unknown_assets=unknown_assets,
+            )
+            if len(pool_balances) != 0:
+                address_mapping[address] = pool_balances
 
         protocol_balance = ProtocolBalance(
-            address_balances=address_balances,
+            address_balances=address_mapping,
             known_assets=known_assets,
             unknown_assets=unknown_assets,
         )
@@ -635,7 +652,7 @@ class Uniswap(EthereumModule):
                 graph_query=self.graph.query,  # type: ignore # caller already checks
             )
         else:
-            protocol_balance = self._get_balances_chain(addresses)
+            protocol_balance = self.get_balances_chain(addresses)
 
         known_assets = protocol_balance.known_assets
         unknown_assets = protocol_balance.unknown_assets

@@ -5,7 +5,6 @@ from http import HTTPStatus
 
 import pytest
 import requests
-from eth_utils.typing import HexAddress, HexStr
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
@@ -23,23 +22,15 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import (
-    AssetAmount,
-    ChecksumEthAddress,
-    Location,
-    Price,
-    Timestamp,
-    TradeType,
-)
+from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
 
 # Addresses
-# Harvest Finance USDC-WETH vault
-TEST_ADDRESS_USDC_WETH = ChecksumEthAddress(
-    HexAddress(HexStr('0xA79a083FDD87F73c2f983c5551EC974685D6bb36')),
-)
+# DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
+# From that pool find a holder and test
+LP_HOLDER_ADDRESS = deserialize_ethereum_address('0x631fdEF0781c00ADd20176f254F5ae5C26Da1c99')
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_USDC_WETH]])
+@pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
 def test_get_balances_module_not_activated(
         rotkehlchen_api_server,
@@ -55,21 +46,19 @@ def test_get_balances_module_not_activated(
     )
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_USDC_WETH]])
+@pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_balances_graph(
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+def test_get_balances(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
         rotki_premium_credentials,
         start_with_valid_premium,
 ):
-    """Check querying the uniswap balances endpoint works. Uses real data.
+    """Check querying the uniswap balances endpoint works. Uses real data
 
-    Requires the graph available and premium credentials.
-
-    TODO: Here we should use a test account for which we will know what
-    balances it has and we never modify
+    Checks the functionality both for the graph queries (when premium) and simple
+    onchain queries (without premium)
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -95,12 +84,11 @@ def test_get_balances_graph(
 
     if len(result) != 1:
         test_warnings.warn(
-            UserWarning(f'Test account {TEST_ADDRESS_USDC_WETH} has no uniswap balances'),
+            UserWarning(f'Test account {LP_HOLDER_ADDRESS} has no uniswap balances'),
         )
         return
 
-    address_balances = result[TEST_ADDRESS_USDC_WETH]
-
+    address_balances = result[LP_HOLDER_ADDRESS]
     for lp in address_balances:
         # LiquidityPool attributes
         assert lp['address'].startswith('0x')

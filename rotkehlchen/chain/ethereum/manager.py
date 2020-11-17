@@ -161,7 +161,7 @@ class EthereumManager():
             NodeName.AVADO_POOL in self.web3_mapping
         )
 
-    def default_call_order(self) -> Sequence[NodeName]:
+    def default_call_order(self, skip_etherscan: bool = False) -> Sequence[NodeName]:
         """Default call order for ethereum nodes
 
         Own node always has preference. Then all other node types are randomly queried
@@ -184,6 +184,9 @@ class EthereumManager():
             result.append(NodeName.OWN)
 
         selection = list(OPEN_NODES)
+        if skip_etherscan:
+            selection.remove(NodeName.ETHERSCAN)
+
         ordered_list = []
         while len(selection) != 0:
             weights = []

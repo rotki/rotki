@@ -3779,8 +3779,8 @@ Getting Uniswap balances
 
    :resjson object result: A mapping between accounts and their Uniswap balances (represented by a list where each item is a LP).
    :resjson string address: The LP contract address.
-   :resjson list[object] assets: A list with the LP underlying tokens data. Per item, when ``"asset"`` is an object, it means the token is unknown to Rotki. ``"total_amount"`` is the total amount of this token the pool has. ``"usd_price"`` is the token USD price. ``"user_balance"`` contains the user token balance and its estimated USD value.
-   :resjson string total_supply: The total amount of liquidity tokens the LP has.
+   :resjson list[object] assets: A list with the LP underlying tokens data. Per item, when ``"asset"`` is an object, it means the token is unknown to Rotki. ``"total_amount"`` is the total amount of this token the pool has. ``"total_amount"`` is only available to premium users. For free users ``null`` is returned. ``"usd_price"`` is the token USD price. ``"user_balance"`` contains the user token balance and its estimated USD value.
+   :resjson optional[string] total_supply: The total amount of liquidity tokens the LP has. Only available for premium users via the graph query. For free users ``null`` is returned.
    :resjson object user_balance: The liquidity token user balance and its USD value.
 
    :statuscode 200: Uniswap balances succesfully queried.
@@ -3920,7 +3920,7 @@ Getting Uniswap trades
        - log_index: The index of the swap in the transaction/trade.
 
 
-   :statuscode 200: Uniswap balances succesfully queried.
+   :statuscode 200: Uniswap trades succesfully queried.
    :statuscode 409: User is not logged in. Or Uniswap module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.

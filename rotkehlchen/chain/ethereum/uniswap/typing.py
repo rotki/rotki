@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, DefaultDict, Dict, List, NamedTuple, Set, Union
+from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Union
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
@@ -21,7 +21,7 @@ UNISWAP_TRADES_PREFIX = 'uniswap_trades'
 @dataclass(init=True, repr=True)
 class LiquidityPoolAsset:
     asset: Union[EthereumToken, UnknownEthereumToken]
-    total_amount: FVal
+    total_amount: Optional[FVal]
     user_balance: Balance
     usd_price: Price = Price(ZERO)
 
@@ -51,7 +51,7 @@ class LiquidityPoolAsset:
 class LiquidityPool:
     address: ChecksumEthAddress
     assets: List[LiquidityPoolAsset]
-    total_supply: FVal
+    total_supply: Optional[FVal]
     user_balance: Balance
 
     def serialize(self) -> Dict[str, Any]:
