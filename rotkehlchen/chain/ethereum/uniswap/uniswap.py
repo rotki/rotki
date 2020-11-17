@@ -400,7 +400,10 @@ class Uniswap(EthereumModule):
 
     @staticmethod
     def swaps_to_trades(swaps: List[AMMSwap]) -> List[AMMTrade]:
-        trades = []
+        trades: List[AMMTrade] = []
+        if not swaps:
+            return trades
+
         # sort by timestamp and then by log index
         swaps.sort(key=lambda trade: (trade.timestamp, -trade.log_index), reverse=True)
         last_tx_hash = swaps[0].tx_hash
