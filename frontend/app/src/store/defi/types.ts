@@ -25,6 +25,7 @@ import {
   YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
+import { TradeType } from '@/services/history/types';
 import { Balance, HasBalance } from '@/services/types-api';
 import { OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 
@@ -233,4 +234,39 @@ export interface UniswapBalance {
   readonly poolAddress: string;
   readonly totalSupply: BigNumber;
   readonly userBalance: Balance;
+}
+
+interface UniswapSwap {
+  readonly amount0In: BigNumber;
+  readonly amount0Out: BigNumber;
+  readonly amount1In: BigNumber;
+  readonly amount1Out: BigNumber;
+  readonly fromAddress: string;
+  readonly location: 'uniswap';
+  readonly logIndex: number;
+  readonly toAddress: string;
+  readonly token0: string;
+  readonly token1: string;
+  readonly txHash: string;
+}
+
+interface UniswapTrade {
+  readonly address: string;
+  readonly amount: BigNumber;
+  readonly baseAsset: string;
+  readonly fee: BigNumber;
+  readonly feeCurrency: string;
+  readonly location: 'uniswap';
+  readonly pair: string;
+  readonly quoteAsset: string;
+  readonly rate: BigNumber;
+  readonly swaps: UniswapSwap[];
+  readonly timestamp: number;
+  readonly tradeId: string;
+  readonly tradeType: TradeType;
+  readonly txHash: string;
+}
+
+export interface UniswapTrades {
+  readonly [address: string]: UniswapTrade[];
 }
