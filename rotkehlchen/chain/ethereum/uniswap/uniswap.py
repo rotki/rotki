@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from datetime import datetime, time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
@@ -29,15 +29,28 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
-from .graph import LIQUIDITY_POSITIONS_QUERY, SWAPS_QUERY, TOKEN_DAY_DATAS_QUERY
+from .graph import (
+    BURNS_QUERY,
+    LIQUIDITY_POSITIONS_QUERY,
+    MINTS_QUERY,
+    SWAPS_QUERY,
+    TOKEN_DAY_DATAS_QUERY,
+)
 from .typing import (
+    UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
     AddressBalances,
+    AddressEvents,
+    AddressEventsBalances,
     AddressTrades,
     AssetPrice,
     DDAddressBalances,
+    DDAddressEvents,
+    EventType,
     LiquidityPool,
     LiquidityPoolAsset,
+    LiquidityPoolEvent,
+    LiquidityPoolEventsBalance,
     ProtocolBalance,
 )
 from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
@@ -109,6 +122,90 @@ class Uniswap(EthereumModule):
                 f'All uniswap historical queries are not functioning until this is fixed. '
                 f'Probably will get fixed with time. If not report it to Rotkis support channel ',
             )
+
+    @staticmethod
+    def _calculate_events_balances(
+            address: ChecksumEthAddress,
+            events: List[LiquidityPoolEvent],
+            balances: List[LiquidityPool],
+    ) -> List[LiquidityPoolEventsBalance]:
+        """Given an address and its LP events and LPs, process each LP event
+        (grouped by pool) aggregating the token0, token1, usd and LP token
+        amounts. Factorise in the aggregation the current protocol balances
+        (if `balances` != [], all events case). Finally return the profit/loss
+        totals and the LP events (grouped by pool) in
+        <LiquidityPoolEventsBalance>.
+        """
+        events_balances: List[LiquidityPoolEventsBalance] = []
+        pool_balance: Dict[ChecksumEthAddress, LiquidityPool] = (
+            {pool.address: pool for pool in balances}
+        )
+        # quick lookup, `agg` from aggregated
+        pool_events_agg_balance: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
+        # Populate `pool_events_agg_balance` dict, being the keys the pools'
+        # addresses and the values their aggregated balances from their events
+        for event in events:
+            pool = event.pool_address
+
+            if pool not in pool_events_agg_balance:
+                # Default dictionary for amounts aggregation
+                pool_events_agg_balance[pool] = {
+                    'events': [],
+                    'profit_loss0': ZERO,
+                    'profit_loss1': ZERO,
+                    'usd_profit_loss': ZERO,
+                    'lp_profit_loss': ZERO,
+                }
+
+            pool_events_agg_balance[pool]['events'].append(event)
+
+            if event.event_type == EventType.MINT:
+                pool_events_agg_balance[pool]['profit_loss0'] += FVal(event.amount0)
+                pool_events_agg_balance[pool]['profit_loss1'] += FVal(event.amount1)
+                pool_events_agg_balance[pool]['usd_profit_loss'] += FVal(event.usd_price)
+                pool_events_agg_balance[pool]['lp_profit_loss'] += FVal(event.lp_amount)
+            else:  # event_type == EventType.BURN
+                pool_events_agg_balance[pool]['profit_loss0'] -= FVal(event.amount0)
+                pool_events_agg_balance[pool]['profit_loss1'] -= FVal(event.amount1)
+                pool_events_agg_balance[pool]['usd_profit_loss'] -= FVal(event.usd_price)
+                pool_events_agg_balance[pool]['lp_profit_loss'] -= FVal(event.lp_amount)
+
+        # Instantiate `LiquidityPoolEventsBalance` per pool using
+        # `pool_events_agg_balance`. If `pool_balance` exist (all events case),
+        # factorise in the current pool balances in the totals.
+        for pool, events_agg_balance in pool_events_agg_balance.items():
+            profit_loss0 = events_agg_balance['profit_loss0']
+            profit_loss1 = events_agg_balance['profit_loss1']
+            usd_profit_loss = events_agg_balance['usd_profit_loss']
+            lp_profit_loss = events_agg_balance['lp_profit_loss']
+
+            # Aggregate current pool balances looking up the pool
+            if pool in pool_balance:
+                token0 = pool_balance[pool].assets[0].asset
+                token1 = pool_balance[pool].assets[1].asset
+                profit_loss0 -= FVal(pool_balance[pool].assets[0].user_balance.amount)
+                profit_loss1 -= FVal(pool_balance[pool].assets[1].user_balance.amount)
+                usd_profit_loss -= FVal(pool_balance[pool].user_balance.usd_value)
+                lp_profit_loss -= FVal(pool_balance[pool].user_balance.amount)
+            else:
+                # NB: get `token0` and `token1` from any pool event
+                token0 = events_agg_balance['events'][0].token0
+                token1 = events_agg_balance['events'][0].token1
+
+            events_balance = LiquidityPoolEventsBalance(
+                address=address,
+                pool_address=pool,
+                token0=token0,
+                token1=token1,
+                events=events_agg_balance['events'],
+                profit_loss0=profit_loss0,
+                profit_loss1=profit_loss1,
+                usd_profit_loss=usd_profit_loss,
+                lp_profit_loss=lp_profit_loss,
+            )
+            events_balances.append(events_balance)
+
+        return events_balances
 
     @staticmethod
     def _get_balances_graph(
@@ -325,6 +422,198 @@ class Uniswap(EthereumModule):
             )
 
         return trades
+
+    def _get_events_balances(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> AddressEventsBalances:
+        """Request via graph all events for new addresses and the latest ones
+        for already existing addresses. Then the requested events are written
+        in DB and finally all DB events are read, and processed for calculating
+        total profit/loss per LP (stored within <LiquidityPoolEventsBalance>).
+        """
+        address_events_balances: AddressEventsBalances = {}
+        address_events: DDAddressEvents = defaultdict(list)
+        db_address_events: AddressEvents = {}
+        new_addresses: List[ChecksumEthAddress] = []
+        existing_addresses: List[ChecksumEthAddress] = []
+        min_end_ts: Timestamp = to_timestamp
+
+        # Get addresses' last used query range for Uniswap events
+        for address in addresses:
+            entry_name = f'{UNISWAP_EVENTS_PREFIX}_{address}'
+            events_range = self.database.get_used_query_range(name=entry_name)
+
+            if not events_range:
+                new_addresses.append(address)
+            else:
+                existing_addresses.append(address)
+                min_end_ts = min(min_end_ts, events_range[1])
+
+        # Request new addresses' events
+        if new_addresses:
+            start_ts = Timestamp(0)
+            for address in new_addresses:
+                for event_type in EventType:
+                    new_address_events = self._get_events_graph(
+                        address=address,
+                        start_ts=start_ts,
+                        end_ts=to_timestamp,
+                        event_type=event_type,
+                    )
+                    if new_address_events:
+                        address_events[address].extend(new_address_events)
+
+                # Insert new address' last used query range
+                self.database.update_used_query_range(
+                    name=f'{UNISWAP_EVENTS_PREFIX}_{address}',
+                    start_ts=start_ts,
+                    end_ts=to_timestamp,
+                )
+
+        # Request existing DB addresses' events
+        if existing_addresses and min_end_ts <= to_timestamp:
+            for address in existing_addresses:
+                for event_type in EventType:
+                    address_new_events = self._get_events_graph(
+                        address=address,
+                        start_ts=min_end_ts,
+                        end_ts=to_timestamp,
+                        event_type=event_type,
+                    )
+                    if address_new_events:
+                        address_events[address].extend(address_new_events)
+
+                # Update existing address' last used query range
+                self.database.update_used_query_range(
+                    name=f'{UNISWAP_EVENTS_PREFIX}_{address}',
+                    start_ts=min_end_ts,
+                    end_ts=to_timestamp,
+                )
+
+        # Insert requested events in DB
+        all_events = []
+        for address in filter(lambda address: address in address_events, addresses):
+            all_events.extend(address_events[address])
+
+        self.database.add_uniswap_events(all_events)
+
+        # Fetch all DB events within the time range
+        for address in addresses:
+            db_events = self.database.get_uniswap_events(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                address=address,
+            )
+            if db_events:
+                # return events with the oldest first
+                db_events.sort(key=lambda event: (event.timestamp, event.log_index))
+                db_address_events[address] = db_events
+
+        # Request addresses' current balances (UNI-V2s and underlying tokens)
+        # if there is no specific time range in this endpoint call (i.e. all
+        # events). Current balances in the protocol are needed for an accurate
+        # profit/loss calculation.
+        # TODO: when this endpoint is called with a specific time range,
+        # getting the balances and underlying tokens within that time range
+        # requires an archive node. Feature pending to be developed.
+        address_balances: AddressBalances = {}  # Empty when specific time range
+        if from_timestamp == Timestamp(0):
+            address_balances = self.get_balances(addresses)
+
+        # Calculate addresses' event balances (i.e. profit/loss per pool)
+        for address, events in db_address_events.items():
+            balances = address_balances.get(address, [])  # Empty when specific time range
+            events_balances = self._calculate_events_balances(
+                address=address,
+                events=events,
+                balances=balances,
+            )
+            address_events_balances[address] = events_balances
+
+        return address_events_balances
+
+    def _get_events_graph(
+            self,
+            address: ChecksumEthAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_type: EventType,
+    ) -> List[LiquidityPoolEvent]:
+        """Get the address' events (mints & burns) querying the Uniswap subgraph
+        Each event data is stored in a <LiquidityPoolEvent>.
+        """
+        address_events = []
+        param_types = {
+            '$limit': 'Int!',
+            '$offset': 'Int!',
+            '$address': 'Bytes!',
+            '$start_ts': 'BigInt!',
+            '$end_ts': 'BigInt!',
+        }
+        param_values = {
+            'limit': GRAPH_QUERY_LIMIT,
+            'offset': 0,
+            'address': address.lower(),
+            'start_ts': str(start_ts),
+            'end_ts': str(end_ts),
+        }
+        query = MINTS_QUERY if event_type == EventType.MINT else BURNS_QUERY
+        querystr = format_query_indentation(query.format())
+        query_schema = 'mints' if event_type == EventType.MINT else 'burns'
+
+        while True:
+            result = self.graph.query(  # type: ignore # caller already checks
+                querystr=querystr,
+                param_types=param_types,
+                param_values=param_values,
+            )
+            result_data = result[query_schema]
+
+            for event in result_data:
+                token0_ = event['pair']['token0']
+                token1_ = event['pair']['token1']
+                token0 = get_ethereum_token(
+                    symbol=token0_['symbol'],
+                    ethereum_address=to_checksum_address(token0_['id']),
+                    name=token0_['name'],
+                    decimals=token0_['decimals'],
+                )
+                token1 = get_ethereum_token(
+                    symbol=token1_['symbol'],
+                    ethereum_address=to_checksum_address(token1_['id']),
+                    name=token1_['name'],
+                    decimals=int(token1_['decimals']),
+                )
+                lp_event = LiquidityPoolEvent(
+                    tx_hash=event['transaction']['id'],
+                    log_index=int(event['logIndex']),
+                    address=address,
+                    timestamp=Timestamp(int(event['timestamp'])),
+                    event_type=event_type,
+                    pool_address=to_checksum_address(event['pair']['id']),
+                    token0=token0,
+                    token1=token1,
+                    amount0=AssetAmount(event['amount0']),
+                    amount1=AssetAmount(event['amount1']),
+                    usd_price=Price(event['amountUSD']),
+                    lp_amount=AssetAmount(event['liquidity']),
+                )
+                address_events.append(lp_event)
+
+            # Check whether an extra request is needed
+            if len(result_data) < GRAPH_QUERY_LIMIT:
+                break
+
+            # Update pagination step
+            param_values = {
+                **param_values,
+                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+            }
+
+        return address_events
 
     def _get_trades(
             self,
@@ -679,6 +968,30 @@ class Uniswap(EthereumModule):
 
         return protocol_balance.address_balances
 
+    def get_events_history(
+        self,
+        addresses: List[ChecksumEthAddress],
+        reset_db_data: bool,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> AddressEventsBalances:
+        """Get the addresses' events balances history in the Uniswap protocol
+        """
+        if self.graph is None:  # could not initialize graph
+            return {}
+
+        with self.trades_lock:
+            if reset_db_data is True:
+                self.database.delete_uniswap_events_data()
+
+            address_events_balances = self._get_events_balances(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        return address_events_balances
+
     def get_trades(
             self,
             addresses: List[ChecksumEthAddress],
@@ -704,15 +1017,14 @@ class Uniswap(EthereumModule):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> AddressTrades:
-        """Get the addresses' history (trades & pool events) in the Uniswap
-        protocol
+        """Get the addresses' trades history in the Uniswap protocol
         """
         if self.graph is None:  # could not initialize graph
             return {}
 
         with self.trades_lock:
             if reset_db_data is True:
-                self.database.delete_uniswap_data()
+                self.database.delete_uniswap_trades_data()
 
             trades = self._get_trades(
                 addresses=addresses,

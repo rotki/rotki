@@ -10,10 +10,16 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
+from rotkehlchen.chain.ethereum.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance
+from rotkehlchen.chain.ethereum.uniswap.typing import UNISWAP_EVENTS_PREFIX, EventType
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
+    deserialize_ethereum_address,
+    deserialize_price,
+)
 from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -30,6 +36,10 @@ from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeTyp
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
 # From that pool find a holder and test
 LP_HOLDER_ADDRESS = deserialize_ethereum_address('0x631fdEF0781c00ADd20176f254F5ae5C26Da1c99')
+# Uniswap Factory contract
+TEST_ADDRESS_FACTORY_CONTRACT = (
+    deserialize_ethereum_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f')
+)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
@@ -732,3 +742,385 @@ def test_get_uniswap_exotic_history(
     # Also test for the swaps that have both tokens at amountIn or amountOut
     for idx, trade in enumerate(BOTH_IN_TRADES):
         assert trade.serialize() == result[CRAZY_UNISWAP_ADDRESS][found_idx + idx]
+
+
+# Get events history tests
+
+TEST_EVENTS_ADDRESS_1 = "0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F"
+EXPECTED_EVENTS_BALANCES_1 = [
+    UniswapPoolEventsBalance(
+        address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+        pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        token0=EthereumToken('$BASED'),
+        token1=EthereumToken('WETH'),
+        events=[
+            UniswapPoolEvent(
+                tx_hash='0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
+                log_index=263,
+                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                timestamp=Timestamp(1604273256),
+                event_type=EventType.MINT,
+                pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+                token0=EthereumToken('$BASED'),
+                token1=EthereumToken('WETH'),
+                amount0=deserialize_asset_amount('605.773209925184996494'),
+                amount1=deserialize_asset_amount('1.106631443395672732'),
+                usd_price=deserialize_price('872.4689300619698095220125311431804'),
+                lp_amount=deserialize_asset_amount('1.220680531244355402'),
+            ),
+            UniswapPoolEvent(
+                tx_hash='0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
+                log_index=66,
+                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                timestamp=Timestamp(1604283808),
+                event_type=EventType.BURN,
+                pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+                token0=EthereumToken('$BASED'),
+                token1=EthereumToken('WETH'),
+                amount0=deserialize_asset_amount('641.26289347330654345'),
+                amount1=deserialize_asset_amount('1.046665027131675546'),
+                usd_price=deserialize_price('837.2737746532695970921908229899852'),
+                lp_amount=deserialize_asset_amount('1.220680531244355402'),
+            ),
+        ],
+        profit_loss0=deserialize_asset_amount('-35.489683548121546956'),
+        profit_loss1=deserialize_asset_amount('0.059966416263997186'),
+        usd_profit_loss=deserialize_price('35.19515540870021242982170811'),
+        lp_profit_loss=deserialize_asset_amount('0E-18'),
+    ),
+]
+EXPECTED_EVENTS_BALANCES_2 = [
+    # Response index 0
+    UniswapPoolEventsBalance(
+        address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+        pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
+        token0=EthereumToken('WETH'),
+        token1=UnknownEthereumToken(
+            ethereum_address=deserialize_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
+            symbol='DICE',
+            name='DICE.FINANCE TOKEN',
+        ),
+        events=[
+            UniswapPoolEvent(
+                tx_hash='0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4',
+                log_index=99,
+                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                timestamp=Timestamp(1598270334),
+                event_type=EventType.MINT,
+                pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+                token0=EthereumToken('WETH'),
+                token1=UnknownEthereumToken(
+                    ethereum_address=deserialize_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
+                    symbol='DICE',
+                    name='DICE.FINANCE TOKEN',
+                ),
+                amount0=deserialize_asset_amount('1.580431277572006656'),
+                amount1=deserialize_asset_amount('3'),
+                usd_price=deserialize_price('1281.249386421513581165086356450817'),
+                lp_amount=deserialize_asset_amount('2.074549918528068811'),
+            ),
+            UniswapPoolEvent(
+                tx_hash='0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
+                log_index=208,
+                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                timestamp=Timestamp(1599000975),
+                event_type=EventType.BURN,
+                pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+                token0=EthereumToken('WETH'),
+                token1=UnknownEthereumToken(
+                    ethereum_address=deserialize_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
+                    symbol='DICE',
+                    name='DICE.FINANCE TOKEN',
+                ),
+                amount0=deserialize_asset_amount('0.970300671842796406'),
+                amount1=deserialize_asset_amount('4.971799615456732408'),
+                usd_price=deserialize_price('928.8590296681781753390482605315881'),
+                lp_amount=deserialize_asset_amount('2.074549918528068811'),
+            ),
+        ],
+        profit_loss0=deserialize_asset_amount('0.610130605729210250'),
+        profit_loss1=deserialize_asset_amount('-1.971799615456732408'),
+        usd_profit_loss=deserialize_price('352.3903567533354058260380955'),
+        lp_profit_loss=deserialize_asset_amount('0E-18'),
+    ),
+    # Response index 3
+    UniswapPoolEventsBalance(
+        address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+        pool_address=deserialize_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+        token0=UnknownEthereumToken(
+            ethereum_address=deserialize_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
+            symbol='DGVC',
+            name='DegenVC',
+        ),
+        token1=EthereumToken('WETH'),
+        events=[
+            UniswapPoolEvent(
+                tx_hash='0xc612f05bf9f3d814ffbe3649feacbf5bda213297bf7af53a56956814652fe9cc',
+                log_index=171,
+                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                timestamp=Timestamp(1598391968),
+                event_type=EventType.MINT,
+                pool_address=deserialize_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+                token0=UnknownEthereumToken(
+                    ethereum_address=deserialize_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
+                    symbol='DGVC',
+                    name='DegenVC',
+                ),
+                token1=EthereumToken('WETH'),
+                amount0=deserialize_asset_amount('322.230285353834005677'),
+                amount1=deserialize_asset_amount('1.247571217823345601'),
+                usd_price=deserialize_price('945.2160925652988117900888961551871'),
+                lp_amount=deserialize_asset_amount('18.297385821424685079'),
+            ),
+            UniswapPoolEvent(
+                tx_hash='0x597f8790a3b9353114b364777c9d32373930e5ad6b8c8f97a58cd2dd58f12b89',
+                log_index=201,
+                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                timestamp=Timestamp(1598607431),
+                event_type=EventType.BURN,
+                pool_address=deserialize_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+                token0=UnknownEthereumToken(
+                    ethereum_address=deserialize_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
+                    symbol='DGVC',
+                    name='DegenVC',
+                ),
+                token1=EthereumToken('WETH'),
+                amount0=deserialize_asset_amount('224.7799861151427733'),
+                amount1=deserialize_asset_amount('1.854907037058682998'),
+                usd_price=deserialize_price('1443.169924855633931959022716230101'),
+                lp_amount=deserialize_asset_amount('18.297385821424685079'),
+            ),
+        ],
+        profit_loss0=deserialize_asset_amount('97.450299238691232377'),
+        profit_loss1=deserialize_asset_amount('-0.607335819235337397'),
+        usd_profit_loss=deserialize_price('-497.9538322903351201689338200'),
+        lp_profit_loss=deserialize_asset_amount('0E-18'),
+    ),
+]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_events_history_filtering_by_timestamp_case1(
+        rotkehlchen_api_server,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        rotki_premium_credentials,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
+):
+    """Test the events balances from 1604273256 to 1604283808 (both included).
+
+    LPs involved by the address within this time range: 1, $BASED-WETH
+
+    By calling the endpoint with a specific time range:
+      - Not all the events are queried.
+      - The events balances do not factorise the current balances in the
+      protocol (meaning the response amounts should be assertable).
+    """
+    # Call time range
+    from_timestamp = 1604273256
+    to_timestamp = 1604283808
+
+    async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        eth_balances=['33000030003'],
+        token_balances={},
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+    # Force insert address' last used query range, for avoiding query all
+    rotki.data.db.update_used_query_range(
+        name=f'{UNISWAP_EVENTS_PREFIX}_{TEST_EVENTS_ADDRESS_1}',
+        start_ts=Timestamp(0),
+        end_ts=from_timestamp,
+    )
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'uniswapeventshistoryresource',
+            ),
+            json={
+                'async_query': async_query,
+                'from_timestamp': from_timestamp,
+                'to_timestamp': to_timestamp,
+            },
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    events_balances = result[TEST_EVENTS_ADDRESS_1]
+
+    assert len(events_balances) == 1
+    assert EXPECTED_EVENTS_BALANCES_1[0].serialize() == events_balances[0]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_events_history_filtering_by_timestamp_case2(
+        rotkehlchen_api_server,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        rotki_premium_credentials,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
+):
+    """Test the events balances from 1598270334 to 1599000975 (both included).
+
+    LPs involved by the address within this time range: 4, only 2 tested.
+      - 0: WETH-DICE (tested)
+      - 1: DAI-ZOMBIE
+      - 2: SHRIMP-WETH
+      - 3: DGVC-WETH (tested)
+
+    By calling the endpoint with a specific time range:
+      - Not all the events are queried.
+      - The events balances do not factorise the current balances in the
+      protocol (meaning the response amounts should be assertable).
+    """
+    # Call time range
+    from_timestamp = 1598270334
+    to_timestamp = 1599000975
+
+    async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        eth_balances=['33000030003'],
+        token_balances={},
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+    # Force insert address' last used query range, for avoiding query all
+    rotki.data.db.update_used_query_range(
+        name=f'{UNISWAP_EVENTS_PREFIX}_{TEST_EVENTS_ADDRESS_1}',
+        start_ts=Timestamp(0),
+        end_ts=from_timestamp,
+    )
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'uniswapeventshistoryresource',
+            ),
+            json={
+                'async_query': async_query,
+                'from_timestamp': from_timestamp,
+                'to_timestamp': to_timestamp,
+            },
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    events_balances = result[TEST_EVENTS_ADDRESS_1]
+
+    assert len(events_balances) == 4
+    assert EXPECTED_EVENTS_BALANCES_2[0].serialize() == events_balances[0]
+    assert EXPECTED_EVENTS_BALANCES_2[1].serialize() == events_balances[3]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_events_history_get_all_events(
+        rotkehlchen_api_server,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        rotki_premium_credentials,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
+):
+    """Test get all the events balances
+
+    LPs involved by the address: minimum 6
+
+    By calling the endpoint without a specific time range:
+      - All the events are queried.
+      - The events balances factorise in the current balances in the
+      protocol (do not assert amounts).
+
+    As the structures are already tested in the tests above, only the response
+    length is tested.
+    """
+    async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        eth_balances=['33000030003'],
+        token_balances={},
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server, 'uniswapeventshistoryresource'),
+            json={'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    events_balances = result[AAVE_TEST_ACC_1]
+
+    assert len(events_balances) >= 6
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_FACTORY_CONTRACT]])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_events_history_get_all_events_empty(
+        rotkehlchen_api_server,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        rotki_premium_credentials,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
+):
+    """Test get all the events balances for an address without events.
+    """
+    async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        eth_balances=['33000030003'],
+        token_balances={},
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server, 'uniswapeventshistoryresource'),
+            json={'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    assert result == {}
