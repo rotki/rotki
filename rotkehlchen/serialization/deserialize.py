@@ -2,7 +2,8 @@ from typing import Tuple, Union
 
 from eth_utils.typing import HexAddress, HexStr
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     ConversionError,
@@ -332,6 +333,8 @@ def deserialize_location(symbol: str) -> Location:
         return Location.COMMODITIES
     elif symbol == 'crypto.com':
         return Location.CRYPTOCOM
+    elif symbol == 'uniswap':
+        return Location.UNISWAP
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -424,6 +427,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.COMMODITIES
     elif symbol == 'P':
         return Location.CRYPTOCOM
+    elif symbol == 'Q':
+        return Location.UNISWAP
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -558,3 +563,41 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
         )
 
     return result
+
+
+def deserialize_ethereum_token_from_db(identifier: str) -> EthereumToken:
+    """Takes an identifier and returns the <EthereumToken>"""
+    try:
+        ethereum_token = EthereumToken(identifier=identifier)
+    except UnknownAsset as e:
+        raise DeserializationError(
+            f'Unknown ethereum token {e.asset_name} found',
+        )
+
+    return ethereum_token
+
+
+def deserialize_unknown_ethereum_token_from_db(
+        ethereum_address: str,
+        symbol: str,
+        name: Optional[str],
+        decimals: Optional[int],
+) -> UnknownEthereumToken:
+    """Takes at least an ethereum address and a symbol, and returns an
+    <UnknownEthereumToken>
+    """
+    try:
+        unknown_ethereum_token = UnknownEthereumToken(
+            ethereum_address=deserialize_ethereum_address(ethereum_address),
+            symbol=symbol,
+            name=name,
+            decimals=decimals,
+        )
+    except Exception:
+        raise DeserializationError(
+            f'Failed deserializing an unknown ethereum token with '
+            f'address {ethereum_address}, symbol {symbol}, name {name}, '
+            f'decimals {decimals}.',
+        )
+
+    return unknown_ethereum_token

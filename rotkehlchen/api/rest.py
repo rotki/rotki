@@ -26,6 +26,7 @@ from rotkehlchen.balances.manual import (
     remove_manually_tracked_balances,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -537,13 +538,22 @@ class RestAPI():
 
         trades_result = []
         for trade in trades:
-            serialized_trade = self.trade_schema.dump(trade)
-            serialized_trade['trade_id'] = trade.identifier
+            if isinstance(trade, AMMTrade):
+                serialized_trade = trade.serialize()
+            else:
+                serialized_trade = self.trade_schema.dump(trade)
+                serialized_trade['trade_id'] = trade.identifier
             trades_result.append(serialized_trade)
+
+        entry_table: Literal['amm_swaps', 'trades']
+        if location in AMMTradeLocations:
+            entry_table = 'amm_swaps'
+        else:
+            entry_table = 'trades'
 
         result = {
             'entries': trades_result,
-            'entries_found': self.rotkehlchen.data.db.get_entries_count('trades'),
+            'entries_found': self.rotkehlchen.data.db.get_entries_count(entry_table),
             'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
@@ -1750,14 +1760,32 @@ class RestAPI():
         )
 
     @require_loggedin_user()
-    def get_uniswap_balances(self, async_query: bool, is_graph_query: bool) -> Response:
+    def get_uniswap_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
             module='uniswap',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
-            is_graph_query=is_graph_query,
+        )
+
+    @require_premium_user(active_check=False)
+    def get_uniswap_trades_history(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module='uniswap',
+            method='get_trades_history',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
         )
 
     def _watcher_query(

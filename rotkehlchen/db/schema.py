@@ -52,6 +52,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('N', 14);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('O', 15);
 /* Crypto.com */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('P', 16);
+/* Uniswap */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('Q', 17);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
@@ -309,10 +311,37 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
+DB_CREATE_AMM_SWAPS = """
+CREATE TABLE IF NOT EXISTS amm_swaps (
+    tx_hash VARCHAR[42] NOT NULL,
+    log_index INTEGER NOT NULL,
+    address VARCHAR[42] NOT NULL,
+    from_address VARCHAR[42] NOT NULL,
+    to_address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    is_token0_unknown INTEGER NOT NULL,
+    token0_address VARCHAR[42] NOT NULL,
+    token0_symbol TEXT NOT NULL,
+    token0_name TEXT,
+    token0_decimals INTEGER,
+    is_token1_unknown INTEGER NOT NULL,
+    token1_address VARCHAR[42] NOT NULL,
+    token1_symbol TEXT NOT NULL,
+    token1_name TEXT,
+    token1_decimals INTEGER,
+    amount0_in TEXT,
+    amount1_in TEXT,
+    amount0_out TEXT,
+    amount1_out TEXT,
+    PRIMARY KEY (tx_hash, log_index)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -340,4 +369,5 @@ PRAGMA foreign_keys=on;
     DB_CREATE_YEARN_VAULT_EVENTS,
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
+    DB_CREATE_AMM_SWAPS,
 )

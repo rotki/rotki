@@ -9,7 +9,8 @@ LIQUIDITY_POSITIONS_QUERY = (
         where: {{
             user_in: $addresses,
             liquidityTokenBalance_gt: $balance,
-        }}) {{
+        }}
+    ) {{
         id
         liquidityTokenBalance
         pair {{
@@ -46,12 +47,58 @@ TOKEN_DAY_DATAS_QUERY = (
         where: {{
             token_in: $token_ids,
             date: $datetime,
-        }}) {{
+        }}
+    ) {{
         date
         token {{
             id
         }}
         priceUSD
+    }}}}
+    """
+)
+
+# Get trades queries
+
+SWAPS_QUERY = (
+    """
+    swaps
+    (
+        first: $limit,
+        skip: $offset,
+        where: {{
+            to: $address,
+            timestamp_gte: $start_ts,
+            timestamp_lte: $end_ts,
+        }}
+    ) {{
+        transaction {{
+            swaps {{
+                id
+                logIndex
+                sender
+                to
+                timestamp
+                pair {{
+                    token0 {{
+                        id
+                        decimals
+                        name
+                        symbol
+                    }}
+                    token1 {{
+                        id
+                        decimals
+                        name
+                        symbol
+                    }}
+                }}
+                amount0In
+                amount0Out
+                amount1In
+                amount1Out
+            }}
+        }}
     }}}}
     """
 )

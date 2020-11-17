@@ -3,6 +3,7 @@ from typing import (
     Any,
     Dict,
     List,
+    NamedTuple,
     Optional,
     Set,
     Tuple,
@@ -13,6 +14,22 @@ from rotkehlchen.typing import ChecksumEthAddress
 
 
 SerializeAsDictKeys = Union[List[str], Tuple[str, ...], Set[str]]
+
+
+class FakeAsset(NamedTuple):
+    """A class that fakes Asset properties when the class can't be
+    instantiated (i.e. the identifier belongs to an unknown ethereum token).
+
+    For instance this happens with DB trades entries whose `fee_currency` is an
+    unknown ethereum token and Trade can't be instantiated.
+    """
+    identifier: str
+
+    def __str__(self) -> str:
+        return self.identifier
+
+    def to_binance(self) -> str:
+        return self.identifier
 
 
 @dataclass(init=True, repr=True, eq=False, unsafe_hash=False, frozen=True)

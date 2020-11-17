@@ -1548,12 +1548,13 @@ Querying all balances
 		      "amount": "2",
 		      "percentage_of_net_value": "0.5%",
 		      "usd_value": "2.8"
-		   },
+		   }
+	       },
 	       "liabilities": {
 	           "DAI": {
-		       "amount": 100",
+		       "amount": "100",
 		       "usd_value": "102.5",
-		       "percentage_of_net_value": "1%",
+		       "percentage_of_net_value": "1%"
 		   }
 	       },
                "location": {
@@ -3781,6 +3782,143 @@ Getting Uniswap balances
    :resjson list[object] assets: A list with the LP underlying tokens data. Per item, when ``"asset"`` is an object, it means the token is unknown to Rotki. ``"total_amount"`` is the total amount of this token the pool has. ``"usd_price"`` is the token USD price. ``"user_balance"`` contains the user token balance and its estimated USD value.
    :resjson string total_supply: The total amount of liquidity tokens the LP has.
    :resjson object user_balance: The liquidity token user balance and its USD value.
+
+   :statuscode 200: Uniswap balances succesfully queried.
+   :statuscode 409: User is not logged in. Or Uniswap module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+
+Getting Uniswap trades
+=========================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/history/trades
+
+   Doing a GET on the uniswap trades history resource will return the history of all uniswap trades
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/uniswap/history/trades HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "0x21d05071cA08593e13cd3aFD0b4869537e015C92": [{
+	      "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
+	      "amount": "1411.453463704718081611",
+	      "base_asset": "DAI",
+	      "fee": "0",
+	      "fee_currency": "WETH",
+	      "location": "uniswap",
+	      "pair": "DAI_WETH",
+	      "quote_asset": "WETH",
+	      "rate": "371.4351220275573898976315789",
+              "swaps": [{
+	          "amount0_in": "0",
+                  "amount0_out": "1411.453463704718081611",
+                  "amount1_in": "3.8",
+                  "amount1_out": "0",
+                  "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+                  "location": "uniswap",
+                  "log_index": 90,
+                  "to_address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
+                  "token0": "DAI",
+                  "token1": "WETH",
+                  "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}],
+	      "timestamp": 1603056982,
+	      "trade_id": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900-0",
+	      "trade_type": "buy",
+	      "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}, {
+	      "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
+	      "amount": "904.171423330858608178",
+	      "base_asset": "DAI",
+	      "fee": "0",
+	      "fee_currency": "ALEPH",
+	      "location": "uniswap",
+	      "pair": "DAI_ALEPH",
+	      "quote_asset": {
+	          "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
+		  "name": "aleph.im v2",
+		  "symbol": "ALEPH"
+	      },
+	      "rate": "0.1604821621994156262081817395",
+	      "swaps": [{
+	          "amount0_in": "5634.092979176915803392",
+                  "amount0_out": "0",
+                  "amount1_in": "0",
+                  "amount1_out": "2.411679959413889526",
+                  "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+                  "location": "uniswap",
+                  "log_index": 98,
+                  "to_address": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
+                  "token0": {"ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628", "name": "aleph.im v2", "symbol": "ALEPH"},
+                  "token1": "WETH",
+                  "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}, {
+		  "amount0_in": "0",
+                  "amount0_out": "904.171423330858608178",
+                  "amount1_in": "2.411679959413889526",
+                  "amount1_out": "0",
+                  "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+                  "location": "uniswap",
+                  "log_index": 101,
+                  "to_address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
+                  "token0": "DAI",
+                  "token1": "WETH",
+                  "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}],
+	      "timestamp": 1602796833,
+	      "trade_id": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6-0",
+	      "trade_type": "buy",
+	      "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}
+          ],
+        },
+        "message": "",
+      }
+
+   :resjson object result: A mapping between accounts and their Uniswap trades history
+   :resjson string address: The address of the user who initiated the trade
+   :resjson object base_asset: Either an identifier if it's a known token or the address/symbol/name object for the base asset of the trade. That which is bought.
+   :resjson object quote_asset: Either an identifier if it's a known token or the address/symbol/name object for the quote asset of the trade. That which is sold to buy the base asset.
+   :resjson string amount: In case of a trade_type buy (and for uniswap all are buys) this is the amount of ``"base_asset"`` that is bought.
+   :resjson string rate: How much of each quote asset was given for the base asset amount. Essentially ``"amount"`` / ``"rate"`` will give you what you paid in ``"quote_asset"``.
+   :resjson string location: Always uniswap.
+   :resjson string fee: Always 0 for now.
+   :resjson string fee_currency: Always quote_asset.
+   :resjson string pair: BASE_ASSET_QUOTE_ASSET
+   :resjson int timestamp: The timestamp of the trade
+   :resjson string trade_id: A combination of transaction hash plus a unique id (for custom trades that are virtually made by us)
+   :resjson string trade_type: Always buy
+   :resjson string tx_hash: The transaction hash
+   :resjson list[object] swaps: A list of all the swaps that the trade is made of. Each swap is an object with the following attributes:
+				
+       - token0: Either an identifier if it's a known token or the address/symbol/name object for token0 of the swap.
+       - token1: Either an identifier if it's a known token or the address/symbol/name object for token1 of the swap.
+       - amount0_in: The amount (can be zero) of token0 that the user is putting in the swap.
+       - amount1_in: The amount (can be zero) of token1 that the user is putting in the swap.
+       - amount0_out: The amount (can be zero) of token0 that the user is getting out of the swap.
+       - amount1_out: The amount (can be zero) of token1 that the user is getting out of the swap.
+       - from_address: The address that is putting tokens in the swap. Can be many different parties in a multi swap.
+       - to_address: The address that is getting tokens out of the swap. Can be many different parties in a multi swap.
+       - address: Always the same address of the user, associated with the trade the swaps belong to.
+       - location: Always uniswap.
+       - tx_hash: The transaction hash of the swap (always the same for swaps of the same transaction/trade).
+       - log_index: The index of the swap in the transaction/trade.
+
 
    :statuscode 200: Uniswap balances succesfully queried.
    :statuscode 409: User is not logged in. Or Uniswap module is not activated.

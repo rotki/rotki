@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset

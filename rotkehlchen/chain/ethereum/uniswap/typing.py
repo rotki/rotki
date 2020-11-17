@@ -1,22 +1,21 @@
+import logging
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Dict,
-    List,
-    NamedTuple,
-    Set,
-    Union,
-)
+from typing import Any, DefaultDict, Dict, List, NamedTuple, Set, Union
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import (
-    ChecksumEthAddress,
-    Price,
-)
+from rotkehlchen.typing import ChecksumEthAddress, Price
+
+log = logging.getLogger(__name__)
+
+SWAP_FEE = FVal('0.003')  # 0.3% fee for swapping tokens
+UNISWAP_TRADES_PREFIX = 'uniswap_trades'
+
+# Get balances
 
 
 @dataclass(init=True, repr=True)
@@ -32,8 +31,8 @@ class LiquidityPoolAsset:
         if isinstance(self.asset, EthereumToken):
             serialized_asset = self.asset.serialize()
         elif isinstance(self.asset, UnknownEthereumToken):
-            keys = ('ethereum_address', 'name', 'symbol')
-            serialized_asset = self.asset.serialize_as_dict(keys=keys)
+            unknown_asset_keys = ('ethereum_address', 'name', 'symbol')
+            serialized_asset = self.asset.serialize_as_dict(keys=unknown_asset_keys)
         else:
             raise AssertionError(
                 f'Got type {type(self.asset)} for a LiquidityPool Asset. '
@@ -65,6 +64,7 @@ class LiquidityPool:
 
 
 AddressBalances = Dict[ChecksumEthAddress, List[LiquidityPool]]
+DDAddressBalances = DefaultDict[ChecksumEthAddress, List[LiquidityPool]]
 AssetPrice = Dict[ChecksumEthAddress, Price]
 
 
@@ -72,3 +72,8 @@ class ProtocolBalance(NamedTuple):
     address_balances: AddressBalances
     known_assets: Set[EthereumToken]
     unknown_assets: Set[UnknownEthereumToken]
+
+
+# Get History
+
+AddressTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
