@@ -1,4 +1,5 @@
 import { default as BigNumber } from 'bignumber.js';
+import { aggregateTotal } from '@/filters';
 import { NetValue } from '@/services/types-api';
 import { AssetBalance } from '@/store/balances/types';
 import { StatisticsState } from '@/store/statistics/types';
@@ -9,6 +10,7 @@ import { bigNumberify, Zero } from '@/utils/bignumbers';
 interface StatisticsGetters {
   netValue: (startingDate: number) => NetValue;
   totalNetWorth: BigNumber;
+  totalNetWorthUsd: BigNumber;
 }
 
 export const getters: Getters<
@@ -55,11 +57,41 @@ export const getters: Getters<
 
     return {
       times: [...netValue.times, new Date().getTime() / 1000],
-      data: [...netValue.data, convert(getters.totalNetWorth)]
+      data: [...netValue.data, getters.totalNetWorth.toNumber()]
     };
   },
 
   totalNetWorth: (
+    state,
+    getters,
+    _rootState,
+    {
+      'balances/aggregatedBalances': aggregatedBalances,
+      'balances/liabilities': liabilities,
+      'balances/exchangeRate': exchangeRate,
+      'session/floatingPrecision': floatingPrecision,
+      'session/currencySymbol': mainCurrency
+    }
+  ) => {
+    const balances = aggregatedBalances as AssetBalance[];
+    const totalLiabilities = liabilities as AssetBalance[];
+
+    const assetSum = aggregateTotal(
+      balances,
+      mainCurrency,
+      exchangeRate(mainCurrency),
+      floatingPrecision
+    );
+    const liabilitySum = aggregateTotal(
+      totalLiabilities,
+      mainCurrency,
+      exchangeRate(mainCurrency),
+      floatingPrecision
+    );
+    return assetSum.minus(liabilitySum);
+  },
+
+  totalNetWorthUsd: (
     state,
     getters,
     _rootState,

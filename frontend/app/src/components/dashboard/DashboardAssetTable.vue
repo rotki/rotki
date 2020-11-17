@@ -95,7 +95,7 @@ import { AssetBalance } from '@/store/balances/types';
   computed: {
     ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
     ...mapGetters('balances', ['exchangeRate']),
-    ...mapGetters('statistics', ['totalNetWorth'])
+    ...mapGetters('statistics', ['totalNetWorthUsd'])
   }
 })
 export default class DashboardAssetTable extends Vue {
@@ -106,7 +106,7 @@ export default class DashboardAssetTable extends Vue {
   @Prop({ required: true, type: Array })
   balances!: AssetBalance[];
 
-  totalNetWorth!: BigNumber;
+  totalNetWorthUsd!: BigNumber;
   floatingPrecision!: number;
   currencySymbol!: string;
   exchangeRate!: (currency: string) => number | undefined;
@@ -138,7 +138,7 @@ export default class DashboardAssetTable extends Vue {
   ];
 
   percentage(value: BigNumber): string {
-    return value.div(this.totalNetWorth).multipliedBy(100).toFixed(2);
+    return value.div(this.totalNetWorthUsd).multipliedBy(100).toFixed(2);
   }
 }
 </script>
