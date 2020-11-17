@@ -388,7 +388,7 @@ def _query_and_assert_simple_uniswap_trades(setup, api_server, async_query):
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             api_server,
-            "uniswaphistoryresource",
+            'uniswaptradeshistoryresource',
         ), json={'async_query': async_query, 'to_timestamp': 1605437542})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -398,7 +398,7 @@ def _query_and_assert_simple_uniswap_trades(setup, api_server, async_query):
         else:
             result = assert_proper_response_with_result(response)
 
-    for idx, trade in enumerate(result['trades'][AAVE_TEST_ACC_1]):
+    for idx, trade in enumerate(result[AAVE_TEST_ACC_1]):
         if idx == len(EXPECTED_TRADES):
             break  # test up to last EXPECTED_TRADES trades from 1605437542
         assert trade == EXPECTED_TRADES[idx].serialize()
@@ -705,7 +705,7 @@ def test_get_uniswap_exotic_history(
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "uniswaphistoryresource",
+            'uniswaptradeshistoryresource',
         ), json={'async_query': async_query, 'to_timestamp': 1605437542})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -715,13 +715,13 @@ def test_get_uniswap_exotic_history(
         else:
             result = assert_proper_response_with_result(response)
 
-    for idx, trade in enumerate(result['trades'][CRAZY_UNISWAP_ADDRESS]):
+    for idx, trade in enumerate(result[CRAZY_UNISWAP_ADDRESS]):
         if idx == len(EXPECTED_CRAZY_TRADES):
             break  # test up to last EXPECTED_CRAZY_TRADES trades from 1605437542
         assert trade == EXPECTED_CRAZY_TRADES[idx].serialize()
 
     found_idx = -1
-    for idx, trade in enumerate(result['trades'][CRAZY_UNISWAP_ADDRESS]):
+    for idx, trade in enumerate(result[CRAZY_UNISWAP_ADDRESS]):
         if trade['tx_hash'] == '0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017':  # noqa: E501
             found_idx = idx
             break
@@ -729,4 +729,4 @@ def test_get_uniswap_exotic_history(
 
     # Also test for the swaps that have both tokens at amountIn or amountOut
     for idx, trade in enumerate(BOTH_IN_TRADES):
-        assert trade.serialize() == result['trades'][CRAZY_UNISWAP_ADDRESS][found_idx + idx]
+        assert trade.serialize() == result[CRAZY_UNISWAP_ADDRESS][found_idx + idx]

@@ -1770,7 +1770,7 @@ class RestAPI():
         )
 
     @require_premium_user(active_check=False)
-    def get_uniswap_history(
+    def get_uniswap_trades_history(
             self,
             async_query: bool,
             reset_db_data: bool,
@@ -1780,7 +1780,7 @@ class RestAPI():
         return self._api_query_for_eth_module(
             async_query=async_query,
             module='uniswap',
-            method='get_history',
+            method='get_trades_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
             reset_db_data=reset_db_data,

@@ -77,4 +77,3 @@ class ProtocolBalance(NamedTuple):
 # Get History
 
 AddressTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
-ProtocolHistory = Dict[str, Union[AddressTrades]]

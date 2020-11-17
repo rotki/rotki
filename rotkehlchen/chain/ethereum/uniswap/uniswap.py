@@ -38,7 +38,6 @@ from .typing import (
     LiquidityPool,
     LiquidityPoolAsset,
     ProtocolBalance,
-    ProtocolHistory,
 )
 
 if TYPE_CHECKING:
@@ -94,7 +93,7 @@ class Uniswap(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
-        self.history_lock = Semaphore()
+        self.trades_lock = Semaphore()
         try:
             self.graph: Optional[Graph] = Graph(
                 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
@@ -668,7 +667,7 @@ class Uniswap(EthereumModule):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> List[AMMTrade]:
-        with self.history_lock:
+        with self.trades_lock:
             all_trades = []
             trade_mapping = self._get_trades(
                 addresses=addresses,
@@ -680,32 +679,30 @@ class Uniswap(EthereumModule):
 
             return all_trades
 
-    def get_history(
+    def get_trades_history(
         self,
         addresses: List[ChecksumEthAddress],
         reset_db_data: bool,
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
-    ) -> ProtocolHistory:
+    ) -> AddressTrades:
         """Get the addresses' history (trades & pool events) in the Uniswap
         protocol
         """
         if self.graph is None:  # could not initialize graph
             return {}
 
-        with self.history_lock:
+        with self.trades_lock:
             if reset_db_data is True:
                 self.database.delete_uniswap_data()
 
-            protocol_trades = self._get_trades(
+            trades = self._get_trades(
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
             )
 
-        return {
-            'trades': protocol_trades,
-        }
+        return trades
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

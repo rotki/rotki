@@ -993,7 +993,7 @@ class UniswapBalancesResource(BaseResource):
         return self.rest_api.get_uniswap_balances(async_query=async_query)
 
 
-class UniswapHistoryResource(BaseResource):
+class UniswapTradesHistoryResource(BaseResource):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1005,7 +1005,7 @@ class UniswapHistoryResource(BaseResource):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
-        return self.rest_api.get_uniswap_history(
+        return self.rest_api.get_uniswap_trades_history(
             async_query=async_query,
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
