@@ -30,7 +30,7 @@
             {{ $t('staking.loading') }}
           </template>
         </progress-screen>
-        <eth2-staking v-else />
+        <eth2-staking v-else :refreshing="refreshing" />
       </div>
     </v-container>
   </v-container>
@@ -38,6 +38,7 @@
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -52,10 +53,18 @@ import { Eth2Staking } from '@/utils/premium';
     BaseExternalLink,
     BasePageHeader,
     Eth2Staking
+  },
+  methods: {
+    ...mapActions('staking', ['fetchStakingDetails'])
   }
 })
 export default class Staking extends Mixins(PremiumMixin, StatusMixin) {
   readonly section = Section.STAKING_ETH2;
+  fetchStakingDetails!: (refresh: boolean) => Promise<void>;
+
+  async mounted() {
+    await this.fetchStakingDetails(false);
+  }
 }
 </script>
 

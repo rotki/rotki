@@ -23,7 +23,10 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     const section = Section.STAKING_ETH2;
     const currentStatus = status(section);
 
-    if (isLoading(currentStatus) || currentStatus === Status.LOADED) {
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
       return;
     }
 
