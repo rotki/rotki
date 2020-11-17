@@ -8,6 +8,7 @@ import requests
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -21,6 +22,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
 
@@ -48,7 +50,13 @@ def test_get_balances_module_not_activated(
 
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
-@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+@pytest.mark.parametrize(  # Force infura and another web3 node for chain query
+    'start_with_valid_premium,ethrpc_endpoint,ethereum_manager_connect_at_start',
+    [
+        (False, INFURA_TEST, (NodeName.OWN, NodeName.MYCRYPTO)),
+        (True, '', ())
+    ]
+)
 def test_get_balances(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
@@ -93,7 +101,10 @@ def test_get_balances(
         # LiquidityPool attributes
         assert lp['address'].startswith('0x')
         assert len(lp['assets']) == 2
-        assert lp['total_supply']
+        if start_with_valid_premium:
+            assert lp['total_supply'] is not None
+        else:
+            assert lp['total_supply'] is None
         assert lp['user_balance']['amount']
         assert lp['user_balance']['usd_value']
 
@@ -110,7 +121,10 @@ def test_get_balances(
             else:
                 assert not lp_asset['asset'].startswith('0x')
 
-            assert lp_asset['total_amount']
+            if start_with_valid_premium:
+                assert lp_asset['total_amount'] is not None
+            else:
+                assert lp_asset['total_amount'] is None
             assert lp_asset['usd_price']
             assert len(lp_asset['user_balance']) == 2
             assert lp_asset['user_balance']['amount']

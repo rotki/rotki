@@ -217,7 +217,7 @@ class Uniswap(EthereumModule):
         """
         known_assets: Set[EthereumToken] = set()
         unknown_assets: Set[UnknownEthereumToken] = set()
-        root_dir = Path(__file__).resolve().parent.parent.parent
+        root_dir = Path(__file__).resolve().parent.parent.parent.parent
         lp_file_path = root_dir / 'data' / 'uniswapv2_lp_tokens.json'
         with open(lp_file_path, 'r') as f:
             lp_addresses = json.loads(f.read())
