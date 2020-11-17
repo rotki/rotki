@@ -47,7 +47,7 @@
           />
         </template>
         <template #item.percentage="{ item }">
-          <percentage-display :value="percentage(item.usdValue, total)" />
+          <percentage-display :value="percentage(item.usdValue)" />
         </template>
         <template #no-results>
           <span class="grey--text text--darken-2">
@@ -90,12 +90,12 @@ import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
 import { footerProps } from '@/config/datatable.common';
 import { AssetBalance } from '@/store/balances/types';
-import { Zero } from '@/utils/bignumbers';
 
 @Component({
   computed: {
     ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
-    ...mapGetters('balances', ['exchangeRate'])
+    ...mapGetters('balances', ['exchangeRate']),
+    ...mapGetters('statistics', ['totalNetWorth'])
   }
 })
 export default class DashboardAssetTable extends Vue {
@@ -106,6 +106,7 @@ export default class DashboardAssetTable extends Vue {
   @Prop({ required: true, type: Array })
   balances!: AssetBalance[];
 
+  totalNetWorth!: BigNumber;
   floatingPrecision!: number;
   currencySymbol!: string;
   exchangeRate!: (currency: string) => number | undefined;
@@ -136,12 +137,8 @@ export default class DashboardAssetTable extends Vue {
     }
   ];
 
-  percentage(value: BigNumber, total: BigNumber): string {
-    return value.div(total).multipliedBy(100).toFixed(2);
-  }
-
-  get total(): BigNumber {
-    return this.balances.reduce((sum, asset) => sum.plus(asset.usdValue), Zero);
+  percentage(value: BigNumber): string {
+    return value.div(this.totalNetWorth).multipliedBy(100).toFixed(2);
   }
 }
 </script>

@@ -16,7 +16,7 @@
           />
           <amount-display
             show-currency="symbol"
-            :fiat-currency="currency.ticker_symbol"
+            fiat-currency="USD"
             :value="totalNetWorth"
           />
         </div>
@@ -29,7 +29,7 @@
             <amount-display
               v-if="!anyLoading"
               show-currency="symbol"
-              :fiat-currency="currency.ticker_symbol"
+              fiat-currency="USD"
               :value="balanceDelta"
             />
             <percentage-display
@@ -216,8 +216,8 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
           line-height: 4rem;
         }
 
-        &__currency {
-          font-size: 3em;
+        .amount-currency {
+          font-size: 2rem;
         }
       }
     }

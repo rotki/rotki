@@ -839,7 +839,7 @@
       "add": "Add a manual balance"
     },
     "per_asset_balances": {
-      "title": "balance per asset"
+      "title": "Assets"
     },
     "liabilities": {
       "title": "Liabilities"
