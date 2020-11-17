@@ -964,6 +964,8 @@
   "uniswap": {
     "pool_header": "UNIv2 {asset1}/{asset2}",
     "liquidity": "Liquidity:",
-    "balance": "Balance"
+    "balance": "Balance",
+    "asset_supply": "{asset} supply:",
+    "asset_price": "({asset} price: {0})"
   }
 }

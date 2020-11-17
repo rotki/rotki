@@ -35,17 +35,6 @@
                   <v-col cols="auto">
                     <hash-link :text="entry.poolAddress" />
                   </v-col>
-                  <v-col class="ms-4">
-                    <span
-                      class="text--secondary"
-                      v-text="$t('uniswap.liquidity')"
-                    />
-                    <amount-display
-                      class="font-weight-medium ms-2"
-                      :value="entry.totalSupply"
-                      :asset-padding="0"
-                    />
-                  </v-col>
                 </v-row>
               </v-col>
             </v-row>
@@ -70,40 +59,74 @@
 
             <v-divider />
 
-            <v-list>
-              <v-list-item
-                v-for="asset in entry.assets"
-                :key="assetName(asset.asset) + entry.poolAddress"
-              >
-                <v-list-item-icon>
-                  <crypto-icon :symbol="assetName(asset.asset)" size="32px" />
-                </v-list-item-icon>
-                <v-list-item-content class="d-flex flex-column">
-                  <div
-                    class="d-flex flex-row uniswap__asset-details justify-space-between align-center"
-                  >
-                    <div class="d-flex flex-column">
-                      <amount-display :value="asset.totalAmount" />
-                      <amount-display
-                        class="text--secondary"
-                        :value="asset.usdPrice"
-                        show-currency="symbol"
-                      />
-                    </div>
-                    <div class="d-flex">
-                      <div>
-                        <balance-display
-                          no-icon
-                          :asset="assetName(asset.asset)"
-                          :value="asset.userBalance"
-                        />
-                      </div>
-                      <hash-link link-only :text="assetAddress(asset.asset)" />
-                    </div>
-                  </div>
-                </v-list-item-content>
-              </v-list-item>
-            </v-list>
+            <v-row
+              v-for="asset in entry.assets"
+              :key="`${assetName(asset.asset)}-${entry.poolAddress}-balances`"
+              align="center"
+              justify="end"
+            >
+              <v-col cols="auto">
+                <crypto-icon :symbol="assetName(asset.asset)" size="32px" />
+              </v-col>
+              <v-col class="d-flex" cols="auto">
+                <div>
+                  <balance-display
+                    no-icon
+                    :asset="assetName(asset.asset)"
+                    :value="asset.userBalance"
+                  />
+                </div>
+                <hash-link link-only :text="assetAddress(asset.asset)" />
+              </v-col>
+            </v-row>
+
+            <v-divider />
+
+            <v-row no-gutters class="mt-2 mb-1">
+              <v-col>
+                <span
+                  class="text--secondary"
+                  v-text="$t('uniswap.liquidity')"
+                />
+                <amount-display
+                  class="font-weight-medium ms-2"
+                  :value="entry.totalSupply"
+                  :asset-padding="0"
+                />
+              </v-col>
+            </v-row>
+
+            <v-row
+              v-for="asset in entry.assets"
+              :key="`${assetName(asset.asset)}-${entry.poolAddress}-details`"
+              no-gutters
+            >
+              <v-col
+                cols="auto"
+                class="text--secondary"
+                v-text="
+                  $t('uniswap.asset_supply', { asset: assetName(asset.asset) })
+                "
+              />
+              <v-col class="font-weight-medium d-flex ms-3" cols="auto">
+                <amount-display :value="asset.totalAmount" />
+              </v-col>
+              <v-col cols="auto">
+                <i18n
+                  tag="div"
+                  path="uniswap.asset_price"
+                  class="text--secondary ms-2"
+                  :places="{ asset: assetName(asset.asset) }"
+                >
+                  <amount-display
+                    class="font-weight-medium"
+                    :value="asset.usdPrice"
+                    show-currency="symbol"
+                    fiat-currency="USD"
+                  />
+                </i18n>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
       </v-col>
@@ -125,6 +148,7 @@ import { DefiAccount, ETH, GeneralAccount } from '@/typing/types';
 @Component({
   components: { UniswapPoolAsset, BlockchainAccountSelector },
   computed: {
+    ...mapGetters('session', ['currencySymbol']),
     ...mapGetters('balances', ['assetInfo']),
     ...mapGetters('defi', ['defiAccounts', 'uniswapBalances'])
   }
@@ -133,6 +157,7 @@ export default class Uniswap extends Vue {
   readonly ETH = ETH;
   defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
   assetInfo!: (asset: string) => SupportedAsset | undefined;
+  currencySymbol!: string;
   uniswapBalances!: (addresses: string[]) => UniswapBalance[];
   selectedAccount: GeneralAccount | null = null;
 
