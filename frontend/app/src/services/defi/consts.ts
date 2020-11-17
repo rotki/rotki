@@ -4,12 +4,14 @@ export const DEFI_YEARN_VAULTS = 'yearn_vaults';
 export const DEFI_AAVE = 'aave';
 export const DEFI_MAKERDAO = 'makerdao';
 export const DEFI_COMPOUND = 'compound';
+export const DEFI_UNISWAP = 'uniswap';
 
 export const DEFI_PROTOCOLS = [
   DEFI_AAVE,
   DEFI_MAKERDAO,
   DEFI_COMPOUND,
-  DEFI_YEARN_VAULTS
+  DEFI_YEARN_VAULTS,
+  DEFI_UNISWAP
 ] as const;
 
 export const DEFI_EVENT_REPAY = 'repay';

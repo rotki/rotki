@@ -28,7 +28,8 @@ export enum Section {
   DEFI_YEARN_VAULTS_HISTORY = 'defi_yearn_vaults_history',
   DEFI_YEARN_VAULTS_BALANCES = 'defi_yearn_vaults_balances',
   BLOCKCHAIN_BTC = 'blockchain_btc',
-  BLOCKCHAIN_ETH = 'blockchain_eth'
+  BLOCKCHAIN_ETH = 'blockchain_eth',
+  DEFI_UNISWAP_BALANCES = 'defi_uniswap_balances'
 }
 
 export const defiSections: Section[] = [

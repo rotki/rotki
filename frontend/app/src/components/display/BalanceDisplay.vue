@@ -46,8 +46,8 @@ export default class BalanceDisplay extends Vue {
   noJustify!: boolean;
   @Prop({ required: false, type: String, default: '' })
   mode!: 'gain' | 'loss' | '';
-
-  readonly assetPadding: number = 5;
+  @Prop({ required: false, type: Number, default: 5 })
+  assetPadding!: number;
 }
 </script>
 

@@ -800,7 +800,8 @@ export class RotkehlchenApi {
   async supportedAssets(): Promise<SupportedAssets> {
     return this.axios
       .get<ActionResult<SupportedAssets>>('assets/all', {
-        validateStatus: validWithSessionAndExternalService
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }

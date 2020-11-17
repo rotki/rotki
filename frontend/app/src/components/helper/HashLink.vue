@@ -1,21 +1,23 @@
 <template>
-  <div class="d-flex flex-row shrink">
-    <span v-if="fullAddress" :class="privacyMode ? 'blur-content' : null">
-      {{ displayText }}
+  <div class="d-flex flex-row shrink align-center">
+    <span v-if="!linkOnly">
+      <span v-if="fullAddress" :class="privacyMode ? 'blur-content' : null">
+        {{ displayText }}
+      </span>
+      <v-tooltip v-else top open-delay="400">
+        <template #activator="{ on, attrs }">
+          <span
+            :class="privacyMode ? 'blur-content' : null"
+            v-bind="attrs"
+            v-on="on"
+          >
+            {{ displayText | truncateAddress }}
+          </span>
+        </template>
+        <span> {{ displayText }} </span>
+      </v-tooltip>
     </span>
-    <v-tooltip v-else top open-delay="400">
-      <template #activator="{ on, attrs }">
-        <span
-          :class="privacyMode ? 'blur-content' : null"
-          v-bind="attrs"
-          v-on="on"
-        >
-          {{ displayText | truncateAddress }}
-        </span>
-      </template>
-      <span> {{ displayText }} </span>
-    </v-tooltip>
-    <v-tooltip top open-delay="600">
+    <v-tooltip v-if="!linkOnly" top open-delay="600">
       <template #activator="{ on, attrs }">
         <v-btn
           x-small
@@ -79,6 +81,8 @@ export default class HashLink extends Mixins(ScrambleMixin) {
   baseUrl!: string | null;
   @Prop({ required: false, type: Boolean, default: false })
   fullAddress!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  linkOnly!: boolean;
 
   get displayText(): string {
     if (!this.scrambleData) {

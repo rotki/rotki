@@ -1,6 +1,5 @@
 import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
-import { GetterTree } from 'vuex';
 import { truncateAddress } from '@/filters';
 import {
   AAVE_BORROWING_EVENTS,
@@ -47,10 +46,12 @@ import {
   LoanSummary,
   MakerDAOVaultModel,
   OverviewDefiProtocol,
-  ProfitLossModel
+  ProfitLossModel,
+  UniswapBalance
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import { RotkehlchenState } from '@/store/types';
+import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
 import { DefiAccount, ETH } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
@@ -103,23 +104,15 @@ interface DefiGetters {
   defiOverview: DefiProtocolSummary[];
   compoundRewards: ProfitLossModel[];
   compoundInterestProfit: ProfitLossModel[];
+  compoundLiquidationProfit: ProfitLossModel[];
   compoundDebtLoss: ProfitLossModel[];
   yearnVaultsProfit: (addresses: string[]) => YearnVaultProfitLoss[];
   yearnVaultsAssets: (addresses: string[]) => YearnVaultBalance[];
   aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
+  uniswapBalances: (addresses: string[]) => UniswapBalance[];
 }
 
-type GettersDefinition = {
-  [P in keyof DefiGetters]: (
-    state: DefiState,
-    getters: DefiGetters,
-    rootState: RotkehlchenState,
-    rootGetters: any
-  ) => DefiGetters[P];
-};
-
-export const getters: GetterTree<DefiState, RotkehlchenState> &
-  GettersDefinition = {
+export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   totalUsdEarned: ({
     dsrHistory,
     aaveHistory,
@@ -195,7 +188,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
   }: DefiState) => (protocols: SupportedDefiProtocols[]): DefiAccount[] => {
     const aaveAddresses: string[] = [];
     const makerAddresses: string[] = [];
-    if (protocols.length === 0 || protocols.includes('aave')) {
+    if (protocols.length === 0 || protocols.includes(DEFI_AAVE)) {
       const uniqueAddresses: string[] = [
         ...Object.keys(aaveBalances),
         ...Object.keys(aaveHistory)
@@ -203,7 +196,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       aaveAddresses.push(...uniqueAddresses);
     }
 
-    if (protocols.length === 0 || protocols.includes('makerdao')) {
+    if (protocols.length === 0 || protocols.includes(DEFI_MAKERDAO)) {
       const uniqueAddresses: string[] = [
         ...Object.keys(dsrHistory),
         ...Object.keys(dsrBalances.balances)
@@ -213,10 +206,10 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
 
     const accounts: DefiAccount[] = [];
     for (const address of aaveAddresses) {
-      const protocols: SupportedDefiProtocols[] = ['aave'];
+      const protocols: SupportedDefiProtocols[] = [DEFI_AAVE];
       const index = makerAddresses.indexOf(address);
       if (index >= 0) {
-        protocols.push('makerdao');
+        protocols.push(DEFI_MAKERDAO);
         makerAddresses.splice(index, 1);
       }
       accounts.push({
@@ -230,7 +223,7 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       accounts.push({
         address,
         chain: ETH,
-        protocols: ['makerdao']
+        protocols: [DEFI_MAKERDAO]
       });
     }
 
@@ -1197,5 +1190,34 @@ export const getters: GetterTree<DefiState, RotkehlchenState> &
       }
     }
     return earned;
+  },
+
+  uniswapBalances: ({ uniswapBalances }) => (
+    addresses: string[]
+  ): UniswapBalance[] => {
+    const balances: UniswapBalance[] = [];
+    for (const account in uniswapBalances) {
+      if (addresses.length > 0 && !addresses.includes(account)) {
+        continue;
+      }
+      const accountBalances = uniswapBalances[account];
+      if (!accountBalances || accountBalances.length === 0) {
+        continue;
+      }
+      for (const {
+        userBalance,
+        totalSupply,
+        assets,
+        address
+      } of accountBalances)
+        balances.push({
+          account,
+          userBalance,
+          totalSupply,
+          assets,
+          poolAddress: address
+        });
+    }
+    return balances;
   }
 };

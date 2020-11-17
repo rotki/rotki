@@ -2,6 +2,7 @@
 
 import Vue from 'vue';
 import Router from 'vue-router';
+import { Routes } from '@/router/routes';
 
 Vue.use(Router);
 
@@ -138,22 +139,37 @@ export default new Router({
       ]
     },
     {
-      path: '/defi',
-      name: 'defi',
+      path: Routes.DEFI,
       component: () => import('../views/defi/DecentralizedFinance.vue'),
       children: [
         {
-          path: '/defi/overview',
-          name: 'defi-overview',
+          path: '',
+          redirect: Routes.DEFI_OVERVIEW
+        },
+        {
+          path: Routes.DEFI_OVERVIEW,
           component: () => import('../views/defi/DecentralizedOverview.vue')
         },
         {
-          path: '/defi/deposits/',
-          name: 'defi-deposits',
-          component: () => import('../views/defi/DecentralizedLending.vue')
+          path: Routes.DEFI_DEPOSITS,
+          component: () => import('../views/defi/DecentralizedDeposits.vue'),
+          children: [
+            {
+              path: '',
+              redirect: Routes.DEFI_DEPOSITS_PROTOCOLS
+            },
+            {
+              path: Routes.DEFI_DEPOSITS_PROTOCOLS,
+              component: () => import('../views/defi/deposits/Protocols.vue')
+            },
+            {
+              path: Routes.DEFI_DEPOSITS_LIQUIDITY,
+              component: () => import('../views/defi/deposits/Liquidity.vue')
+            }
+          ]
         },
         {
-          path: '/defi/liabilities',
+          path: Routes.DEFI_LIABILITIES,
           name: 'defi-liabilities',
           component: () => import('../views/defi/DecentralizedBorrowing.vue')
         }

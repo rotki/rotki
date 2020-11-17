@@ -21,13 +21,20 @@
       v-for="tab of tabContents"
       :key="tab.id"
       :value="tab.routeTo"
+      :class="
+        !noContentMargin
+          ? 'tab-navigation__tabs__tab-item--content-margin'
+          : null
+      "
       class="tab-navigation__tabs__tab-item"
     >
-      <router-view
-        v-if="
-          $route.path.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab
-        "
-      />
+      <keep-alive>
+        <router-view
+          v-if="
+            $route.path.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab
+          "
+        />
+      </keep-alive>
     </v-tab-item>
   </v-tabs>
 </template>
@@ -45,6 +52,9 @@ export interface TabContent {
 export default class TabNavigation extends Vue {
   @Prop({ required: true, type: Array })
   tabContents!: TabContent[];
+  @Prop({ required: false, type: Boolean, default: false })
+  noContentMargin!: boolean;
+
   selectedTab: string = '';
 
   get visibleTabs(): TabContent[] {
@@ -81,7 +91,9 @@ export default class TabNavigation extends Vue {
     }
 
     &__tab-item {
-      margin-top: 50px;
+      &--content-margin {
+        margin-top: 50px;
+      }
     }
 
     &__tab {

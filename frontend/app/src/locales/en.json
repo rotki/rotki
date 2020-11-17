@@ -352,6 +352,15 @@
           "title": "yearn.finance Vaults history",
           "description": "Failed to retrieve yearn.finance Vaults history: {error}"
         }
+      },
+      "uniswap": {
+        "task": {
+          "title": "Querying uniswap balances"
+        },
+        "error": {
+          "title": "Uniswap balances",
+          "description": "Failed to retrieve uniswap balances: {error}"
+        }
       }
     },
     "balances": {
@@ -470,7 +479,12 @@
     },
     "defi": "DeFi",
     "statistics": "Statistics",
-    "tax_report": "Tax Report"
+    "tax_report": "Tax Report",
+    "defi_sub": {
+      "overview": "Overview",
+      "deposits": "Deposits",
+      "liabilities": "Liabilities"
+    }
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded...",
@@ -942,5 +956,16 @@
   "account_balance_table": {
     "assets": "Assets",
     "liabilities": "Liabilities"
+  },
+  "decentralized_deposits": {
+    "protocols": "Protocols",
+    "liquidity": "Liquidity Pools"
+  },
+  "uniswap": {
+    "pool_header": "UNIv2 {asset1}/{asset2}",
+    "liquidity": "Liquidity:",
+    "balance": "Balance",
+    "asset_supply": "{asset} supply:",
+    "asset_price": "({asset} price: {0})"
   }
 }

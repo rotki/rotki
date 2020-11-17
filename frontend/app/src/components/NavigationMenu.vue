@@ -53,6 +53,7 @@
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
+import { Routes } from '@/router/routes';
 
 type NavItemDetails = {
   readonly text: string;
@@ -121,11 +122,34 @@ export default class NavigationMenu extends Vue {
       ]
     },
     {
-      type: 'item',
+      type: 'group',
       text: this.$tc('navigation_menu.defi'),
-      route: '/defi/overview',
+      route: Routes.DEFI_OVERVIEW,
       icon: 'mdi-finance',
-      class: 'defi'
+      class: 'defi',
+      items: [
+        {
+          type: 'item',
+          text: this.$tc('navigation_menu.defi_sub.overview'),
+          route: Routes.DEFI_OVERVIEW,
+          icon: 'mdi-chart-box',
+          class: 'defi-overview'
+        },
+        {
+          type: 'item',
+          text: this.$tc('navigation_menu.defi_sub.deposits'),
+          route: Routes.DEFI_DEPOSITS,
+          icon: 'mdi-bank-transfer-in',
+          class: 'defi-deposits'
+        },
+        {
+          type: 'item',
+          text: this.$tc('navigation_menu.defi_sub.liabilities'),
+          route: Routes.DEFI_LIABILITIES,
+          icon: 'mdi-bank-transfer-out',
+          class: 'defi-liabilities'
+        }
+      ]
     },
     {
       type: 'item',

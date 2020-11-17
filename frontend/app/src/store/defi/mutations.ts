@@ -4,6 +4,7 @@ import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
+import { UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnVaultsBalances,
   YearnVaultsHistory
@@ -54,6 +55,9 @@ export const mutations: MutationTree<DefiState> = {
   },
   yearnVaultsBalances(state: DefiState, balances: YearnVaultsBalances) {
     state.yearnVaultsBalances = balances;
+  },
+  uniswapBalances(state: DefiState, balances: UniswapBalances) {
+    state.uniswapBalances = balances;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());
