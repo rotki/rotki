@@ -82,6 +82,12 @@ class AMMSwap(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.tx_hash + str(self.log_index))
 
+    def __eq__(self, other: Any) -> bool:
+        if other is None:
+            return False
+
+        return hash(self) == hash(other)
+
     @classmethod
     def deserialize_from_db(
             cls,
