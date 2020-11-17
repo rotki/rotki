@@ -724,7 +724,7 @@ class Rotkehlchen():
         for _, v in combined.items():
             net_usd += FVal(v['usd_value'])
         # subtract liabilities
-        liabilities_total_usd = sum(x.usd_value for _, x in liabilities.items())
+        liabilities_total_usd = sum(x['usd_value'] for _, x in liabilities.items())
         net_usd -= liabilities_total_usd
 
         stats: Dict[str, Any] = {

@@ -16,7 +16,7 @@
           />
           <amount-display
             show-currency="symbol"
-            :fiat-currency="currency.ticker_symbol"
+            :fiat-currency="currencySymbol"
             :value="totalNetWorth"
           />
         </div>
@@ -29,7 +29,7 @@
             <amount-display
               v-if="!anyLoading"
               show-currency="symbol"
-              :fiat-currency="currency.ticker_symbol"
+              :fiat-currency="currencySymbol"
               :value="balanceDelta"
             />
             <percentage-display
@@ -107,7 +107,6 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import Loading from '@/components/helper/Loading.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
-import { Currency } from '@/model/currency';
 import { NetValue } from '@/services/types-api';
 import { Section } from '@/store/const';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -115,7 +114,7 @@ import { bigNumberify } from '@/utils/bignumbers';
 @Component({
   components: { Loading, AmountDisplay, NetWorthChart },
   computed: {
-    ...mapGetters('session', ['currency']),
+    ...mapGetters('session', ['currencySymbol']),
     ...mapGetters('statistics', ['netValue', 'totalNetWorth'])
   },
   methods: {
@@ -123,7 +122,7 @@ import { bigNumberify } from '@/utils/bignumbers';
   }
 })
 export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
-  currency!: Currency;
+  currencySymbol!: string;
   netValue!: (startingDate: number) => NetValue;
   totalNetWorth!: BigNumber;
   fetchNetValue!: () => Promise<void>;
@@ -216,8 +215,8 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
           line-height: 4rem;
         }
 
-        &__currency {
-          font-size: 3em;
+        .amount-currency {
+          font-size: 2rem;
         }
       }
     }

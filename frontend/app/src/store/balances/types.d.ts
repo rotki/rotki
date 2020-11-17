@@ -37,6 +37,7 @@ export interface BalanceState {
   eth: EthBalances;
   btc: BtcBalances;
   totals: AssetBalances;
+  liabilities: AssetBalances;
   usdToFiatExchangeRates: UsdToFiatExchangeRates;
   connectedExchanges: SupportedExchange[];
   exchangeBalances: ExchangeData;

@@ -305,7 +305,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('updateBtc', btcBalances ?? {});
     }
 
-    commit('updateTotals', totals);
+    commit('updateTotals', totals.assets);
+    commit('updateLiabilities', totals.liabilities);
     dispatch('accounts').then();
   },
 

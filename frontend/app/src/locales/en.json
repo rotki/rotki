@@ -839,16 +839,21 @@
       "add": "Add a manual balance"
     },
     "per_asset_balances": {
-      "title": "balance per asset",
-      "search": "Search",
-      "headers": {
-        "asset": "Asset",
-        "amount": "Amount",
-        "value": "{symbol} value",
-        "percentage": "% of net Value"
-      },
-      "total": "Total",
-      "no_search_result": "Your search for \"{search}\" yielded no results."
+      "title": "Assets"
+    },
+    "liabilities": {
+      "title": "Liabilities"
+    }
+  },
+  "dashboard_asset_table": {
+    "total": "Total",
+    "search": "Search",
+    "no_search_result": "Your search for \"{search}\" yielded no results.",
+    "headers": {
+      "asset": "Asset",
+      "amount": "Amount",
+      "value": "{symbol} value",
+      "percentage": "% of net Value"
     }
   },
   "accounts_balances": {
@@ -926,5 +931,16 @@
   "overall_balances": {
     "loading": "LOADING",
     "premium_hint": "Get the full experience by upgrading to rotki premium"
+  },
+  "account_asset_balance": {
+    "headers": {
+      "asset": "Asset",
+      "amount": "Amount",
+      "value": "{symbol} Value"
+    }
+  },
+  "account_balance_table": {
+    "assets": "Assets",
+    "liabilities": "Liabilities"
   }
 }

@@ -88,12 +88,20 @@
     </template>
     <template #expanded-item="{ headers, item }">
       <td :colspan="headers.length" class="account-balance-table__expanded">
-        <account-asset-balances :account="item.address" />
+        <account-asset-balances
+          :title="$t('account_balance_table.assets')"
+          :assets="accountAssets(item.address)"
+        />
+        <account-asset-balances
+          v-if="accountLiabilities(item.address).length > 0"
+          :title="$t('account_balance_table.liabilities')"
+          :assets="accountLiabilities(item.address)"
+        />
       </td>
     </template>
     <template #item.expand="{ item }">
       <row-expander
-        v-if="expandable && hasTokens(item.address)"
+        v-if="expandable && hasDetails(item.address)"
         :expanded="expanded.includes(item)"
         @click="expanded = expanded.includes(item) ? [] : [item]"
       />
@@ -129,6 +137,7 @@ import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import { chainSection } from '@/store/balances/const';
 import {
+  AssetBalances,
   BlockchainAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
@@ -148,7 +157,11 @@ import { Zero } from '@/utils/bignumbers';
   computed: {
     ...mapGetters('tasks', ['isTaskRunning']),
     ...mapGetters('session', ['currency']),
-    ...mapGetters('balances', ['hasTokens']),
+    ...mapGetters('balances', [
+      'hasDetails',
+      'accountAssets',
+      'accountLiabilities'
+    ]),
     ...mapState('session', ['tags'])
   }
 })
@@ -172,7 +185,9 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   section = chainSection[this.blockchain];
   currency!: Currency;
   isTaskRunning!: (type: TaskType) => boolean;
-  hasTokens!: (account: string) => boolean;
+  accountAssets!: (account: string) => AssetBalances[];
+  accountLiabilities!: (account: string) => AssetBalances[];
+  hasDetails!: (account: string) => boolean;
   tags!: Tags;
 
   expanded = [];
