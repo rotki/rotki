@@ -227,6 +227,7 @@ def blockchain(
         start_with_valid_premium,
         rotki_premium_credentials,
         database,
+        data_dir,
 ):
     premium = None
     if start_with_valid_premium:
@@ -240,6 +241,7 @@ def blockchain(
         greenlet_manager=greenlet_manager,
         premium=premium,
         eth_modules=ethereum_modules,
+        data_directory=data_dir,
     )
 
     return chain_manager

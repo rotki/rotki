@@ -1066,16 +1066,11 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def get_tokens_for_address_if_time(
+    def _get_address_details_if_time(
             self,
             address: ChecksumEthAddress,
             current_time: Timestamp,
-    ) -> Optional[List[EthereumToken]]:
-        """Gets the detected tokens for the given address if the given current time
-        is recent enough.
-
-        If not, or if there is no saved entry, return None
-        """
+    ) -> Optional[Dict[str, Any]]:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT tokens_list, time FROM ethereum_accounts_details WHERE account = ?',
@@ -1091,20 +1086,102 @@ class DBHandler:
             json_ret = json.loads(result[0][0])
         except json.decoder.JSONDecodeError as e:
             # This should never happen
-            self.msg_aggregator.add_error(
-                f'Found undecodeable tokens_list {result[0][0]} in the DB for {address}.'
+            self.msg_aggregator.add_warning(
+                f'Found undecodeable json {result[0][0]} in the DB for {address}.'
                 f'Error: {str(e)}',
             )
             return None
 
-        if not isinstance(json_ret, list):
+        if not isinstance(json_ret, dict):
+            # This can happen if the DB is old and still has only a list of saved tokens
+            return None  # In that case just consider it outdated
+
+        return json_ret
+
+    def get_tokens_for_address_if_time(
+            self,
+            address: ChecksumEthAddress,
+            current_time: Timestamp,
+    ) -> Optional[List[EthereumToken]]:
+        """Gets the detected tokens for the given address if the given current time
+        is recent enough.
+
+        If not, or if there is no saved entry, return None
+        """
+        json_ret = self._get_address_details_if_time(address, current_time)
+        if json_ret is None:
+            return None
+        tokens_list = json_ret.get('tokens', None)
+        if tokens_list is None:
+            return None
+
+        if not isinstance(tokens_list, list):
             # This should never happen
-            self.msg_aggregator.add_error(
+            self.msg_aggregator.add_warning(
                 f'Found non-list tokens_list {json_ret} in the DB for {address}.',
             )
             return None
 
-        return [EthereumToken(x) for x in json_ret]
+        returned_list = []
+        for x in tokens_list:
+            try:
+                returned_list.append(EthereumToken(x))
+            except (DeserializationError, UnknownAsset):
+                self.msg_aggregator.add_warning(
+                    f'Could not deserialize {x} as a token when reading latest '
+                    f'tokens list of {address}',
+                )
+                continue
+
+        return returned_list
+
+    def get_univ2_lp_tokens_for_address_if_time(
+            self,
+            address: ChecksumEthAddress,
+            current_time: Timestamp,
+    ) -> Optional[List[ChecksumEthAddress]]:
+        """Gets the detected uniswap v2 lp tokens for the given address if the
+        given current time is recent enough.
+
+        If not, or if there is no saved entry, return None
+        """
+        json_ret = self._get_address_details_if_time(address, current_time)
+        if json_ret is None:
+            return None
+        addresses_list = json_ret.get('univ2_lp_tokens', None)
+        if addresses_list is None:
+            return None
+
+        if not isinstance(addresses_list, list):
+            # This should never happen
+            self.msg_aggregator.add_warning(
+                f'Found non-list univ2_lp_tokens {json_ret} in the DB for {address}.',
+            )
+            return None
+
+        return addresses_list  # Should we check everything is an address?
+
+    def _get_address_details_json(self, address: ChecksumEthAddress) -> Optional[Dict[str, Any]]:
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT tokens_list, time FROM ethereum_accounts_details WHERE account = ?',
+            (address,),
+        )
+        result = query.fetchall()
+        if len(result) == 0:
+            return None  # no saved entry
+
+        try:
+            json_ret = json.loads(result[0][0])
+        except json.decoder.JSONDecodeError as e:
+            # This should never happen
+            self.msg_aggregator.add_warning(
+                f'Found undecodeable json {result[0][0]} in the DB for {address}.'
+                f'Error: {str(e)}',
+            )
+            return None
+
+        return json_ret
 
     def save_tokens_for_address(
             self,
@@ -1112,12 +1189,38 @@ class DBHandler:
             tokens: List[EthereumToken],
     ) -> None:
         """Saves detected tokens for an address"""
+        old_details = self._get_address_details_json(address)
+        new_details = {}
+        if old_details and 'univ2_lp_tokens' in old_details:
+            new_details['univ2_lp_tokens'] = old_details['univ2_lp_tokens']
+        new_details['tokens'] = [x.identifier for x in tokens]
         now = ts_now()
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO ethereum_accounts_details '
             '(account, tokens_list, time) VALUES (?, ?, ?)',
-            (address, json.dumps([x.identifier for x in tokens]), now),
+            (address, json.dumps(new_details), now),
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def save_univ2_lp_tokens_for_address(
+            self,
+            address: ChecksumEthAddress,
+            tokens: List[ChecksumEthAddress],
+    ) -> None:
+        """Saves detected univ2 lp tokens for an address"""
+        old_details = self._get_address_details_json(address)
+        new_details = {}
+        if old_details and 'tokens' in old_details:
+            new_details['tokens'] = old_details['tokens']
+        new_details['univ2_lp_tokens'] = tokens
+        now = ts_now()
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO ethereum_accounts_details '
+            '(account, tokens_list, time) VALUES (?, ?, ?)',
+            (address, json.dumps(new_details), now),
         )
         self.conn.commit()
         self.update_last_write()

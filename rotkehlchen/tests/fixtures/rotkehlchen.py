@@ -132,7 +132,6 @@ def initialize_mock_rotkehlchen_instance(
         mocked_price_queries=mocked_price_queries,
         default_mock_value=default_mock_price_value,
     )
-
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         ethereum=rotki.chain_manager.ethereum,
