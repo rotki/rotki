@@ -887,7 +887,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             double_entry = (
                 entry.balance_type == 'Asset' and
                 skip_list and
-                (skip_list is True or entry.base_balance.token_symbol in skip_list)
+                (skip_list is True or entry.base_balance.token_symbol in skip_list)  # type: ignore
             )
 
             # We have to filter out specific balances/protocols here to not get double entries

@@ -7,6 +7,9 @@ from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.utils import get_ethereum_token
+from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.typing import AssetType
@@ -237,3 +240,28 @@ def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disa
     # After the test runs we must reset the asset resolver so that it goes back to
     # the normal list of assets
     AssetResolver._AssetResolver__instance = None
+
+
+def test_get_ethereum_token():
+    assert A_DAI == get_ethereum_token(
+        symbol='DAI',
+        ethereum_address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
+    )
+    unknown_token = UnknownEthereumToken(
+        symbol='DAI',
+        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
+        decimals=18,
+    )
+    assert unknown_token == get_ethereum_token(
+        symbol='DAI',
+        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
+    ), 'correct symbol but wrong address should result in unknown token'
+    unknown_token = UnknownEthereumToken(
+        symbol='DOT',
+        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
+        decimals=18,
+    )
+    assert unknown_token == get_ethereum_token(
+        symbol='DOT',
+        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
+    ), 'symbol of normal chain (polkadot here) should result in unknown token'
