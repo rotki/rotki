@@ -75,7 +75,7 @@
     }
   },
   "closed_trades": {
-    "title":  "Closed Orders",
+    "title": "Closed Orders",
     "headers": {
       "location": "Location",
       "action": "Action",
@@ -218,13 +218,13 @@
     }
   },
   "actions": {
-    "manual_balances":  {
+    "manual_balances": {
       "task": {
         "title": "Retrieving manual balances"
       }
     },
     "asset_movements": {
-      "task" : {
+      "task": {
         "title": "Deposits & withdrawals",
         "description": "Retrieving deposits & withdrawals for {exchange}"
       },
@@ -233,7 +233,7 @@
         "title": "Deposits & withdrawals for {exchange}"
       }
     },
-    "trades" : {
+    "trades": {
       "task": {
         "title": "Trades",
         "description": "Retrieving trades for {exchange}"
@@ -335,6 +335,15 @@
           "description": "Failed to retrieve Aave history: {error}"
         }
       },
+      "uniswap_trades": {
+        "task": {
+          "title": "Querying Uniswap trades"
+        },
+        "error": {
+          "title": "Querying Uniswap trades",
+          "description": "Failed to retrieve Uniswap trades: {error}"
+        }
+      },
       "yearn_vaults": {
         "task": {
           "title": "Querying yearn.finance Vaults balances"
@@ -373,7 +382,7 @@
         "description": "The removal of {exchange} failed due to: {error}"
       },
       "blockchain_account_removal": {
-        "task" : {
+        "task": {
           "title": "Removing {blockchain} account",
           "description": "{address} is being removed"
         },
@@ -383,7 +392,7 @@
         }
       },
       "blockchain_account_add": {
-        "task" : {
+        "task": {
           "title": "Adding {blockchain} account",
           "description": "{address} is being added"
         },

@@ -168,3 +168,13 @@ export const uniswapNumericKeys = [
   'total_amount',
   'total_supply'
 ];
+
+export const uniswapTradeNumericKeys = [
+  'amount',
+  'fee',
+  'rate',
+  'amount0In',
+  'amount0Out',
+  'amount1In',
+  'amount1Out'
+];

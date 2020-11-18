@@ -25,6 +25,7 @@ import {
   YearnVaultBalance,
   YearnVaultProfitLoss
 } from '@/services/defi/types/yearn';
+import { Trade } from '@/services/history/types';
 import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
@@ -47,7 +48,8 @@ import {
   MakerDAOVaultModel,
   OverviewDefiProtocol,
   ProfitLossModel,
-  UniswapBalance
+  UniswapBalance,
+  UniswapTrade
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import { RotkehlchenState } from '@/store/types';
@@ -110,6 +112,8 @@ interface DefiGetters {
   yearnVaultsAssets: (addresses: string[]) => YearnVaultBalance[];
   aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
   uniswapBalances: (addresses: string[]) => UniswapBalance[];
+  uniswapTrades: (addresses: string[]) => Trade[];
+  dexTrades: (addresses: string[]) => UniswapTrade[];
 }
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
@@ -1219,5 +1223,40 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         });
     }
     return balances;
+  },
+  uniswapTrades: ({ uniswapTrades }) => (addresses): Trade[] => {
+    const trades: Trade[] = [];
+    for (const address in uniswapTrades) {
+      if (addresses.length > 0 && !addresses.includes(address)) {
+        continue;
+      }
+      const uniswapTrade = uniswapTrades[address];
+      const convertedTrades: Trade[] = uniswapTrade.map(trade => ({
+        tradeId: trade.tradeId,
+        location: 'uniswap',
+        amount: trade.amount,
+        fee: trade.fee,
+        feeCurrency: trade.feeCurrency,
+        timestamp: trade.timestamp,
+        pair: trade.pair,
+        rate: trade.rate,
+        tradeType: 'buy',
+        link: '',
+        notes: ''
+      }));
+      trades.push(...convertedTrades);
+    }
+
+    return sortBy(trades, 'timestamp').reverse();
+  },
+  dexTrades: ({ uniswapTrades }) => (addresses): UniswapTrade[] => {
+    const trades: UniswapTrade[] = [];
+    for (const address in uniswapTrades) {
+      if (addresses.length > 0 && !addresses.includes(address)) {
+        continue;
+      }
+      trades.push(...uniswapTrades[address]);
+    }
+    return sortBy(trades, 'timestamp').reverse();
   }
 };

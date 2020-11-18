@@ -44,6 +44,7 @@ export interface DefiState {
   yearnVaultsHistory: YearnVaultsHistory;
   yearnVaultsBalances: YearnVaultsBalances;
   uniswapBalances: UniswapBalances;
+  uniswapTrades: UniswapTrades;
 }
 
 export interface DSRBalances {
@@ -250,7 +251,7 @@ interface UniswapSwap {
   readonly txHash: string;
 }
 
-interface UniswapTrade {
+export interface UniswapTrade {
   readonly address: string;
   readonly amount: BigNumber;
   readonly baseAsset: string;

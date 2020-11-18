@@ -35,14 +35,18 @@ import {
   MODULE_COMPOUND
 } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
-import { uniswapNumericKeys } from '@/store/defi/const';
+import {
+  uniswapNumericKeys,
+  uniswapTradeNumericKeys
+} from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import {
   AllDefiProtocols,
   DefiState,
   DSRBalances,
   DSRHistory,
-  MakerDAOVaultDetails
+  MakerDAOVaultDetails,
+  UniswapTrades
 } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -811,6 +815,57 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
           error: e.message
         }),
         i18n.tc('actions.defi.uniswap.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
+  },
+
+  async fetchUniswapTrades(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes(MODULE_UNISWAP) || !session!.premium) {
+      return;
+    }
+
+    const section = Section.DEFI_UNISWAP_TRADES;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.DEFI_UNISWAP_TRADES;
+      const { taskId } = await api.defi.fetchUniswapTrades();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.uniswap_trades.task.title'),
+        ignoreResult: false,
+        numericKeys: uniswapTradeNumericKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<UniswapTrades, TaskMeta>(
+        taskType
+      );
+
+      commit('uniswapTrades', result);
+    } catch (e) {
+      notify(
+        i18n.tc('actions.defi.uniswap_trades.error.description', undefined, {
+          error: e.message
+        }),
+        i18n.tc('actions.defi.uniswap_trades.error.title'),
         Severity.ERROR,
         true
       );

@@ -22,7 +22,8 @@ export const defaultState = (): DefiState => ({
   },
   yearnVaultsHistory: {},
   yearnVaultsBalances: {},
-  uniswapBalances: {}
+  uniswapBalances: {},
+  uniswapTrades: {}
 });
 
 export const state: DefiState = defaultState();

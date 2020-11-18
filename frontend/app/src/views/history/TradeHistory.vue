@@ -41,12 +41,14 @@ import { Section } from '@/store/const';
     ...mapGetters('history', ['trades'])
   },
   methods: {
-    ...mapActions('history', ['fetchTrades', 'deleteExternalTrade'])
+    ...mapActions('history', ['fetchTrades', 'deleteExternalTrade']),
+    ...mapActions('defi', ['fetchUniswapTrades'])
   }
 })
 export default class TradeHistory extends Mixins(StatusMixin) {
   selectedLocation: TradeLocation | null = null;
   fetchTrades!: (refresh: boolean) => Promise<void>;
+  fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
   trades!: Trade[];
   openTrades: Trade[] = [];
   section = Section.TRADES;
@@ -71,8 +73,11 @@ export default class TradeHistory extends Mixins(StatusMixin) {
     );
   }
 
-  mounted() {
-    this.fetchTrades(false);
+  async mounted() {
+    await Promise.all([
+      this.fetchTrades(false),
+      this.fetchUniswapTrades(false)
+    ]);
   }
 }
 </script>

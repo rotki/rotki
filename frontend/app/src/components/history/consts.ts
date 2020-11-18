@@ -44,6 +44,11 @@ export const tradeLocations: TradeLocationData[] = [
     icon: require('@/assets/images/coinbasepro.png')
   },
   {
+    identifier: 'uniswap',
+    name: 'Uniswap',
+    icon: require('@/assets/images/defi/uniswap.svg')
+  },
+  {
     identifier: 'external',
     name: 'External'
   }

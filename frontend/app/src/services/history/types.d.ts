@@ -28,7 +28,8 @@ export type TradeLocation =
   | SupportedExchange
   | 'ethereum'
   | 'bitcoin'
-  | 'external';
+  | 'external'
+  | 'uniswap';
 
 type MovementCategory = 'deposit' | 'withdrawal';
 
