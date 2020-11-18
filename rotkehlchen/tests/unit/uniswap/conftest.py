@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -13,6 +13,7 @@ def uniswap_module(
         start_with_valid_premium,
         rotki_premium_credentials,
         function_scope_messages_aggregator,
+        data_dir,
 ) -> Uniswap:
     premium = None
 
@@ -24,6 +25,7 @@ def uniswap_module(
         database=database,
         premium=premium,
         msg_aggregator=function_scope_messages_aggregator,
+        data_directory=data_dir,
     )
     return uniswap
 

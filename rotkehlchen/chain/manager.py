@@ -3,6 +3,7 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -168,6 +169,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             database: DBHandler,
             greenlet_manager: GreenletManager,
             premium: Optional[Premium],
+            data_directory: Path,
             eth_modules: Optional[List[str]] = None,
     ):
         log.debug('Initializing ChainManager')
@@ -176,6 +178,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
+        self.data_directory = data_directory
 
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
@@ -226,6 +229,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         database=self.database,
                         premium=premium,
                         msg_aggregator=msg_aggregator,
+                        data_directory=self.data_directory,
                     )
                 elif given_module == 'yearn_vaults':
                     self.eth_modules['yearn_vaults'] = YearnVaults(

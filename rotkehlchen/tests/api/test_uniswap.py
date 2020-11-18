@@ -54,8 +54,8 @@ def test_get_balances_module_not_activated(
     'start_with_valid_premium,ethrpc_endpoint,ethereum_manager_connect_at_start',
     [
         (False, INFURA_TEST, (NodeName.OWN, NodeName.MYCRYPTO)),
-        (True, '', ())
-    ]
+        (True, '', ()),
+    ],
 )
 def test_get_balances(
         rotkehlchen_api_server,

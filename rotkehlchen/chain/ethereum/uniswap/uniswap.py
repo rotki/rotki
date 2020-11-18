@@ -1,4 +1,3 @@
-import json
 import logging
 from collections import defaultdict
 from datetime import datetime, time
@@ -41,7 +40,7 @@ from .typing import (
     LiquidityPoolAsset,
     ProtocolBalance,
 )
-from .utils import uniswap_lp_token_balances
+from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -91,11 +90,13 @@ class Uniswap(EthereumModule):
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
+            data_directory: Path,
     ) -> None:
         self.ethereum = ethereum_manager
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
+        self.data_directory = data_directory
         self.trades_lock = Semaphore()
         try:
             self.graph: Optional[Graph] = Graph(
@@ -217,10 +218,7 @@ class Uniswap(EthereumModule):
         """
         known_assets: Set[EthereumToken] = set()
         unknown_assets: Set[UnknownEthereumToken] = set()
-        root_dir = Path(__file__).resolve().parent.parent.parent.parent
-        lp_file_path = root_dir / 'data' / 'uniswapv2_lp_tokens.json'
-        with open(lp_file_path, 'r') as f:
-            lp_addresses = json.loads(f.read())
+        lp_addresses = get_latest_lp_addresses(self.data_directory)
 
         address_mapping = {}
         for address in addresses:

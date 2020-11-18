@@ -263,6 +263,7 @@ class Rotkehlchen():
             greenlet_manager=self.greenlet_manager,
             premium=self.premium,
             eth_modules=settings.active_modules,
+            data_directory=self.data_dir,
         )
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
