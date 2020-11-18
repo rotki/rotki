@@ -1,191 +1,387 @@
+from datetime import datetime
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit, Eth2DepositResult, get_eth2_staked_amount
+from rotkehlchen.chain.ethereum.eth2 import (
+    Eth2Deposit,
+    Eth2DepositResult,
+    _get_eth2_staked_amount_onchain,
+    get_eth2_staked_amount,
+)
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
+ADDR1 = deserialize_ethereum_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
+ADDR2 = deserialize_ethereum_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
+ADDR3 = deserialize_ethereum_address('0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c')
 
+# List of ADDR1, ADDR2 and ADDR3 deposit events from 1604506685 to 1605044577
+# sorted by (timestamp, log_index).
+EXPECTED_DEPOSITS = [
+    Eth2Deposit(
+        from_address=ADDR1,
+        pubkey='0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
+        withdrawal_credentials='0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=9,
+        tx_hash='0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
+        log_index=22,
+        timestamp=Timestamp(int(1604506685)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x90b2f65cb43d9cdb2279af9f76010d667b9d8d72e908f2515497a7102820ce6bb15302fe2b8dc082fce9718569344ad8',  # noqa: E501
+        withdrawal_credentials='0x00a257d19e1650dec1ab59fc9e1cb9a9fc2fe7265b0f27e7d79ff61aeff0a1f0',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=993,
+        tx_hash='0x3403bd94a1bf185ee18a525499e408a1b9b7d801cff6418e31efda346762e754',
+        log_index=266,
+        timestamp=Timestamp(int(1604611131)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0xb4610a24815f1874a12eba7ea9b77126ca16c0aa29a127ba14ba4ee179834f4feb0aa4497baaa50985ad748d15a286cf',  # noqa: E501
+        withdrawal_credentials='0x00f7ce43bfb18009abe0e8e5b3a8c0da3c014bc80e4a0a8dccda647f48ea8547',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=994,
+        tx_hash='0x89b3b87c8841950893a4752ab03cbb835a1b5593a5d68cd343663824bf2d311e',
+        log_index=141,
+        timestamp=Timestamp(int(1604611169)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0xa96352b921bcc4b1a90a7aeb68739b6a5508079a63158ca84786241da247142173f9b38d553de899c1778de4f83e6c6c',  # noqa: E501
+        withdrawal_credentials='0x0062a11c0395b8379bff5310398be82ee6d950d397899f7d39751d5721c01d9e',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=995,
+        tx_hash='0x1a228f3421f5b18904c92a21690b188d05a47bfbcfbe2175cbfdf27e2cd6ea53',
+        log_index=62,
+        timestamp=Timestamp(int(1604611182)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x911cba78efe677a502a3995060e2389e2d16d03f989c87f1a0fdf82345a77dfd3b9476720825ea5f5a374bd386301b60',  # noqa: E501
+        withdrawal_credentials='0x0007b5cf7558a6ee86d2dbf69227dfee28783d36fc6d18b30bda7ffc385fe27a',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=996,
+        tx_hash='0xae84e32268d21ca03559d03abc769eaeaff2409ce282e7a1b9a3015a9cdb9357',
+        log_index=63,
+        timestamp=Timestamp(int(1604611182)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x946ec21927a99d0c86cd63a0fd37cc378f869aae83098fac68d41e3fb58326ce2e9f81f1d116d14d1c0bd50cb61f0e35',  # noqa: E501
+        withdrawal_credentials='0x00c988827cb5ce8a4a33e67bf5e61457949d9935cd21d44e15d5751c91a2c177',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=997,
+        tx_hash='0x7cb53c523001273ada3623edfdc32838683b3820589be2a450b1d527e8851070',
+        log_index=64,
+        timestamp=Timestamp(int(1604611182)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x89da8cb17b203eefacc8346e1ee718a305b622028dc77913d3b26f2034f92693d305a630f45c76b781ef68cd4640253e',  # noqa: E501
+        withdrawal_credentials='0x00df23e0483e4b77609b849368b6f84cc5b0a55bd7bcd95374ed1a59cc73fc28',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=998,
+        tx_hash='0xf2174fbaaf45204a178652ce28567d398a8afb3699b5bd34b5bbb7b33a3b8c34',
+        log_index=65,
+        timestamp=Timestamp(int(1604611182)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x930a90c7f0b00ce4c7d7994652f1e301753c084d5499de31abadb2e3913cba2eb4026de8d49ea35294db10119b83b2e1',  # noqa: E501
+        withdrawal_credentials='0x00b522800f977a14d8eae22d675d241b53807c6d75ba1e180f8ac52d9600322c',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=999,
+        tx_hash='0x187bef85f7797f4f42534fcfa080ed28ab77491b79fe9e9be8039416eebab6bc',
+        log_index=66,
+        timestamp=Timestamp(int(1604611182)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0xb18e1737e1a1a76b8dff905ba7a4cb1ff5c526a4b7b0788188aade0488274c91e9c797e75f0f8452384ff53d44fad3df',  # noqa: E501
+        withdrawal_credentials='0x000c0efd86dba58898debd8e80fa1d7d88bc2b7b1237d32485b2c9101edba203',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1000,
+        tx_hash='0xcb929eb5425743eb039edd03495a53141643f8e341483d7c8319d55a746a3e7d',
+        log_index=298,
+        timestamp=Timestamp(int(1604612368)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x976c5c76f3cbc10d22ac50c27f816b82d91192f6b6177857a89a0349fcecaa8301469ab1d303e381e630c591456e0e54',  # noqa: E501
+        withdrawal_credentials='0x00cd586bed9443813cf4778a71224ceaef520419afc803fd720a0f4b068ee839',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1040,
+        tx_hash='0x64a66740ae4cf64e8735271f94fa9c763e9a68c506292671041301196f6f2d70',
+        log_index=172,
+        timestamp=Timestamp(int(1604641797)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x85a82370ef68f52209d3a07f5cca32b0bbe4d2d39574f39beab746d54e696831a02a95f3dcea25f1fba766bdb5048a09',  # noqa: E501
+        withdrawal_credentials='0x007e6a2f6fa852677aa4239cc753240421993f931feeab37c5d654739ea30bfc',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1041,
+        tx_hash='0xccd2ddb9827a39bb30fd1a2166f40d2d571feab375e0d6469ba749d86e3f4e0b',
+        log_index=246,
+        timestamp=Timestamp(int(1604641801)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0xb347f7421cec107e1cdf3ae9b6308c577fc6c1c254fa44552be97db3eccdac667dc6d6e5409f8e546c9dcbcef47c83f3',  # noqa: E501
+        withdrawal_credentials='0x00477a22f13287589a64ee40b8674a43c4fbf381e2e842b9814dfc4f75c7a10c',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1042,
+        tx_hash='0x721a69c5bd3b697827eabd44d7176e95ba803a462d99e74f62299111e8c516b1',
+        log_index=256,
+        timestamp=Timestamp(int(1604641801)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x965f40c2a6f004d4457a89e7b49ea5d101367cd31c86836d6551ea504e55ee3e32aed8b2615ee1c13212db46fb411a7a',  # noqa: E501
+        withdrawal_credentials='0x006483a6a77c286cdc1711d67631244a2d4441babca4fd82acef4bb6c6be5a50',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1043,
+        tx_hash='0xedf5930af6dd9efd54787d57acb250aff72ecb9a697b4abefa87274035343787',
+        log_index=8,
+        timestamp=Timestamp(int(1604641860)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x90d4b57b88eb613737c1bb2e79f8ed8f2abd1c5e31cea9aa741f16cb777716d2fc1cabf9e15d3c15edf8091533916eb5',  # noqa: E501
+        withdrawal_credentials='0x00cd969a3cfd32e0db1b11041e53e971961ff9500e1deaf7d8ebb3bbe0de540c',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1044,
+        tx_hash='0x92f90a1271a184e1c5ee1e468f391bab5749108effb2c57a49f2cef153f9bc58',
+        log_index=44,
+        timestamp=Timestamp(int(1604641860)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0x92a5d445d10ce8d413c506a012ef92719ca230ab0fd4066e2968df8adb52bb112ee080a3267f282f09db94dc59a3ec77',  # noqa: E501
+        withdrawal_credentials='0x001badfb8f47cd4650788335cd314f6aa4be2350fe2313d2a7add27e63535d3a',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1045,
+        tx_hash='0x7c2f5f1ade5b7df58eebbe3c76b8cb038936e0f7fb4479ab5ac9df7a6f0fbd41',
+        log_index=62,
+        timestamp=Timestamp(int(1604641860)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR3,
+        pubkey='0xb44383a9ce75b90cc8248bdd46d02a2a309117bbfdbe9fd05743def6d483549072c3285ae4953f48b1d17c9787697764',  # noqa: E501
+        withdrawal_credentials='0x00c45ca431dfbe790525de640d928e0dfdd9c08e93a69482a3c2adedb379d874',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1046,
+        tx_hash='0x5722e35df3387aa21c825b0d8ddea3cf168d421a31edfe63c73ffc028df2a4f1',
+        log_index=74,
+        timestamp=Timestamp(int(1604641860)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR2,
+        pubkey='0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3',  # noqa: E501
+        withdrawal_credentials='0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1650,
+        tx_hash='0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7',
+        log_index=221,
+        timestamp=Timestamp(int(1605043544)),
+    ),
+    Eth2Deposit(
+        from_address=ADDR2,
+        pubkey='0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475',  # noqa: E501
+        withdrawal_credentials='0x0082add39f581048857972a9bac9ae5f5c42b23c947281e4ca30953386c866ed',  # noqa: E501
+        value=Balance(FVal(32), FVal(64)),
+        validator_index=1651,
+        tx_hash='0xc114753fb5d11a94a95dd980cff9f26693632550de56b5291201774686ddba3f',
+        log_index=145,
+        timestamp=Timestamp(int(1605044577)),
+    ),
+]
+
+
+@pytest.mark.freeze_time(datetime(2020, 11, 10, 21, 42, 57))
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 @pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
-def test_get_eth2_staked_amount(  # pylint: disable=unused-argument
+def test_get_eth2_staked_amount_onchain(  # pylint: disable=unused-argument
         ethereum_manager,
         call_order,
         ethereum_manager_connect_at_start,
         inquirer,
         price_historian,
 ):
+    """
+    Test on-chain request of deposit events for ADDR1, ADDR2 and ADDR3 in a
+    specific time range:
+      - From ts:   1604506685 (from EXPECTED_DEPOSITS[0].timestamp)
+      - To ts:     1605044577 (from EXPECTED_DEPOSITS[-1].timestamp)
+
+    NB: Using `to_ts` from datetime now is for showing usefulness of freezegun
+    """
+    from_ts = EXPECTED_DEPOSITS[0].timestamp  # 1604506685
+    to_ts = int(datetime.now().timestamp())  # 1605044577
+
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         ethereum=ethereum_manager,
     )
-
-    addr1 = '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397'
-    addr2 = '0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19'
-    addr3 = '0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c'
-    result = get_eth2_staked_amount(
+    # Main call
+    deposits = _get_eth2_staked_amount_onchain(
         ethereum=ethereum_manager,
-        addresses=[addr1, addr2, addr3],
+        addresses=[ADDR1, ADDR2, ADDR3],
         has_premium=True,
         msg_aggregator=MessagesAggregator(),
+        from_ts=from_ts,
+        to_ts=to_ts,
+    )
+    # Querying filtering by a timestamp range and specific addresses, and
+    # having replicated the deposits in EXPECTED_DEPOSITS allows to assert the
+    # length. Due to `_get_eth2_staked_amount_onchain()` does not implement
+    # sorting deposits by (timestamp, log_index), asserting both lists against
+    # each other is discarded
+    assert len(deposits) == len(EXPECTED_DEPOSITS)
+
+    for expected_deposit in EXPECTED_DEPOSITS:
+        assert expected_deposit in deposits
+
+    total_addr1 = sum(
+        deposit.value.amount for deposit in deposits if deposit.from_address == ADDR1
+    )
+    total_addr2 = sum(
+        deposit.value.amount for deposit in deposits if deposit.from_address == ADDR2
+    )
+    total_addr3 = sum(
+        deposit.value.amount for deposit in deposits if deposit.from_address == ADDR3
     )
 
-    # Just check deposit details for addr1 and addr2. addr3 is there only since it's
-    # the address at the 1000th event which hits the etherscan api limit. So we can
-    # test if we handle it correctly
-    expected_deposits = [
-        Eth2Deposit(
-            from_address=addr1,
-            pubkey='0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
-            withdrawal_credentials='0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=9,
-            tx_hash='0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
-            log_index=22,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3',  # noqa: E501
-            withdrawal_credentials='0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1650,
-            tx_hash='0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7',
-            log_index=221,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475',  # noqa: E501
-            withdrawal_credentials='0x0082add39f581048857972a9bac9ae5f5c42b23c947281e4ca30953386c866ed',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1651,
-            tx_hash='0xc114753fb5d11a94a95dd980cff9f26693632550de56b5291201774686ddba3f',
-            log_index=145,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xa4918ed06ecb0434dfd33f24359a6b5a44fb4ff9349aa457e6b4f2719e144ec0d422c19186c0b5a5c69a03390f438578',  # noqa: E501
-            withdrawal_credentials='0x005bf4c77ca464dad7b33f17b4ffdbbf19be8988127ab499e3fcc2b3b2018826',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1654,
-            tx_hash='0x53d9e52be1b5d4eef338e848dc7e3c6889d531459fbb13de217ad0620f7b941c',
-            log_index=202,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xa10f75fd8c2259c0127693f47d98c7230a05c8898401a1dfdad079d090d47148fc0df08ed93283ea64e49430d4861c62',  # noqa: E501
-            withdrawal_credentials='0x001f854631835e9a80188e27722ffa1392f8956a27a24dddbe861bd613d24588',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1656,
-            tx_hash='0x97907cadefa0e69ae55d52ece77ac6d4a3e66f8a0e9c428e4ee7b92a9541959f',
-            log_index=265,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0x845d0685badf5dd6584ca45e112349f9a5764bec838319154f3fa7589284d6b553a24d8fcddca5ecb1c8b5809d44d560',  # noqa: E501
-            withdrawal_credentials='0x008b89c9ebf58ef79afe622842bfb8ff9cec509efd447c483db6b079bfc69f69',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1657,
-            tx_hash='0x19b08cbca1a3997e00af386b553ce3b0adc1d57074bec7d6729e55013a5e1932',
-            log_index=176,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0x8e9cbfc8c2cd9e1a296f5e66b7b4c7ba9cee3827622b7ff3711393e9b3db4ccc64c9134b3fee730ce61d924579a98575',  # noqa: E501
-            withdrawal_credentials='0x00d874c1d4624e0aa290b2a4bdc5cb31777b6701cfc942e6617c296a97474ea9',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1760,
-            tx_hash='0x6f66bc1df2a09cd972e0ae5376cb0e20c55f5538e733bca2e50f611c664768d8',
-            log_index=214,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xac3d4d453d58c6e6fd5186d8f231eb00ff5a753da3669c208157419055c7c562b7e317654d8c67783c656a956927209d',  # noqa: E501
-            withdrawal_credentials='0x00ae3a65e5f59b9d132da0fc7be6b702a786101d30d4377d9f3888d5723541f0',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1761,
-            tx_hash='0x6aa4a54e0ae20a1cd9294c2280f31cdf87370ec1f91be233c1270da6c1bcf2bc',
-            log_index=192,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xa8283f7f5f41ff131e21681eac5c34cb0f2fbe70c420e7f5a052676c82a3cab6f82c288c39247765c562b21127f6009a',  # noqa: E501
-            withdrawal_credentials='0x00abc2b9a0aeda2d5179cb7ee86e8dbb9f7c94d297f9b4840ce4bae62fca562e',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1762,
-            tx_hash='0xdb95189911a63c8183c32f39c61db0b857d43b60002a8f3afc5884084075bb48',
-            log_index=229,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0x930f9209433e6d49087799905a741d19d435c1f9d64ddeeb70235c50b591217f0dfb14626d5a04e1e260726c74e429c7',  # noqa: E501
-            withdrawal_credentials='0x003abed7dc3a73eba5f4f9886e394a6065b9d8c6e487d4082d3ee129eb28caeb',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1763,
-            tx_hash='0xde72f3981d327899f5316e0bc3ba2e673a8dfe76519be15e793ee2ea460e878f',
-            log_index=140,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0x8c4186ba72f9b0657bfd5f2428809fcab6247a52b4a15eaac9a553ea5bbf98a64c43c9e1793ba9bc296a93af1b02e28b',  # noqa: E501
-            withdrawal_credentials='0x0084aa7a0faa703177e3fe6a046832e8b41df8d96b116eb50db06e97a1173988',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1766,
-            tx_hash='0x3440477c79a489767e6b10d59ccf331417ef3fe1fe55ef178d7fdd1d96bf4356',
-            log_index=206,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xad0ebf2d6ae9e9003d27d075a90f017d88c1a1d239ece43674e736f9106946adaf81ba774117cf6cf188bd8117a2deff',  # noqa: E501
-            withdrawal_credentials='0x003650c59f8f3ee090f944b8c68c85add63acaf4998159c29bb08ec810348709',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1767,
-            tx_hash='0x9c199a1a570e5c0e5efcfa8bd0b2fbffc0e7847b72680dee161de15d57bc9eef',
-            log_index=244,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0x8209a3cd141f3ccc9e60df64a76334c1306f857b471ef4ad50eca889f2e4f8e03ae24f5c48a07b53266d373c8929fc37',  # noqa: E501
-            withdrawal_credentials='0x005c1ba1222d4b6ba8fa7c77ecefbc33fde0dd69127bb00189e247a8febdce13',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1768,
-            tx_hash='0x8cfb18653dde780b922c2f2a1e45314b7613810b35a46ab15f630c7577eb3f16',
-            log_index=299,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xb0e6c52bc96ea0574edfb9f1c5350a85d28113d418af6accc53c0bb14407be68ecc426a5208a882859068758643a2e8c',  # noqa: E501
-            withdrawal_credentials='0x004767c06d7caf85f970c9f62e3ca4d02392ccdccc97e90abe858604d6779a01',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1769,
-            tx_hash='0x91b77d3c38b272af7c236903370bbc26ed5a23ff4d59e61762ea13a763a959ec',
-            log_index=229,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0xa96f99e00213be6b0c9c7491589177e7406f811d7b687e14ed68bc51c713859fd44d35360b9c84cb4479f538b94b83d6',  # noqa: E501
-            withdrawal_credentials='0x00c35e1ba0626bcb4ca2ca6ffd1ae44816578d2a6e6cbdb8e98251cd4ab09f7c',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1770,
-            tx_hash='0x82ac4855470afc09dd498b59affe7de755ac3ae5fad75d49b627d0c0f31e4d8e',
-            log_index=265,
-        ), Eth2Deposit(
-            from_address=addr2,
-            pubkey='0x8baf860d88a3c3bb2d5228680782242294b50378ded9988698b98c478f45e895047e6399a953e918bb47821e8debe031',  # noqa: E501
-            withdrawal_credentials='0x00a74306e6546011277c9d97477a991b8c02b465b5eae65faaa5682258a8e0cf',  # noqa: E501
-            value=Balance(FVal(32), FVal(64)),
-            validator_index=1771,
-            tx_hash='0x5b64fbf67b652b446ce9dabc084cd7766cc15325afd79c0525dab9d29cce250c',
-            log_index=257,
-        ),
+    assert total_addr1 == FVal(32)
+    assert total_addr2 == FVal(64)
+    assert total_addr3 == FVal(480)
+
+
+@pytest.mark.freeze_time(datetime(2020, 11, 4, 16, 18, 5))
+@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
+@pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
+def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argument
+        ethereum_manager,
+        call_order,
+        ethereum_manager_connect_at_start,
+        inquirer,
+        price_historian,
+        freezer,
+):
+    """
+    Test new on-chain requests for existing addresses start from last used
+    query range `end_ts`, to "now".
+
+    For avoiding request since ETH2 deposit contract deployment timestamp
+    (1602667372) the following steps are done:
+
+      1. Freeze test time at 2020-11-04T16:18:05 (1604506685), from
+      EXPECTED_DEPOSITS[0].timestamp. "Now" is 1604506685.
+
+      2. Mock 1st `get_used_query_range()` call for returning:
+        - start_ts = 1604506683 (ts_now - 2)
+        - end_ts = 1604506684 (ts_now - 1)
+
+      3. Mock 2nd `get_used_query_range()` call for returning:
+        - start_ts = 1604506684 (ts_now - 1)
+        - end_ts = 1604506685 (ts_now)
+
+      4. Execute the 1st `get_eth2_staked_amount()` call. Expected timestamp
+      arguments for `_get_eth2_staked_amount_onchain()`:
+        - start_ts = 1604506684
+        - end_ts = 1604506685
+
+      5. Move forward time 1 second ("now" is 1604506686)
+
+      6. Execute the 2nd `get_eth2_staked_amount()` call. Expected timestamp
+      arguments for `_get_eth2_staked_amount_onchain()`:
+        - start_ts = 1604506685
+        - end_ts = 1604506686
+    """
+    ts_now = int(datetime.now().timestamp())  # 1604506685
+
+    database = MagicMock()
+    database.get_used_query_range.side_effect = [
+        (Timestamp(ts_now - 2), Timestamp(ts_now - 1)),  # 1604506683 - 1604506684
+        (Timestamp(ts_now - 1), Timestamp(ts_now)),  # 1604506684 - 1604506685
     ]
+    database.get_eth2_deposits.side_effect = [
+        [EXPECTED_DEPOSITS[0]],
+        [EXPECTED_DEPOSITS[0]],
+    ]
+    expected_balance = {ADDR1: Balance(amount=FVal(32), usd_value=FVal(48))}
 
-    # not checking list equality since more deposits may have been sent after the test was written
-    for deposit in expected_deposits:
-        assert deposit in result.deposits
+    with patch(
+        'rotkehlchen.chain.ethereum.eth2._get_eth2_staked_amount_onchain',
+    ) as mock_get_eth2_staked_amount_onchain:
+        mock_get_eth2_staked_amount_onchain.side_effect = [
+            [EXPECTED_DEPOSITS[0]],
+            [],
+        ]
+        wait_until_all_nodes_connected(
+            ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+            ethereum=ethereum_manager,
+        )
+        message_aggregator = MessagesAggregator()
 
-    # Make sure that the 1000th deposit event which is the one from addr3 appears only once
-    count = 0
-    for deposit in result.deposits:
-        if deposit.pubkey == '0x930a90c7f0b00ce4c7d7994652f1e301753c084d5499de31abadb2e3913cba2eb4026de8d49ea35294db10119b83b2e1':  # noqa: E501
-            count += 1
-    assert count == 1
-    # finally make sure the totals add up
-    assert len(result.totals) == 3
-    assert result.totals[addr1].amount >= FVal(32)
-    assert result.totals[addr2].amount >= FVal(480)
-    assert result.totals[addr3].amount >= FVal(480)
+        # First call
+        deposit_results_onchain = get_eth2_staked_amount(
+            ethereum=ethereum_manager,
+            addresses=[ADDR1],
+            has_premium=True,
+            msg_aggregator=message_aggregator,
+            database=database,
+        )
+        # Assert deposit results
+        assert deposit_results_onchain.deposits == [EXPECTED_DEPOSITS[0]]
+        assert deposit_results_onchain.totals == expected_balance
+
+        # Assert `mock_get_eth2_staked_amount_onchain` timestamp arguments
+        mock_get_eth2_staked_amount_onchain.assert_called_with(
+            ethereum=ethereum_manager,
+            addresses=[ADDR1],
+            has_premium=True,
+            msg_aggregator=message_aggregator,
+            from_ts=Timestamp(ts_now - 1),  # 1604506684
+            to_ts=Timestamp(ts_now),  # 1604506685
+        )
+
+        # NB: Move time 1s forward
+        freezer.move_to(datetime(2020, 11, 4, 16, 18, 6))  # 1604506686
+
+        # Second call
+        deposit_results_onchain = get_eth2_staked_amount(
+            ethereum=ethereum_manager,
+            addresses=[ADDR1],
+            has_premium=True,
+            msg_aggregator=message_aggregator,
+            database=database,
+        )
+        assert deposit_results_onchain.deposits == [EXPECTED_DEPOSITS[0]]
+        assert deposit_results_onchain.totals == expected_balance
+
+        # Assert `mock_get_eth2_staked_amount_onchain` timestamp arguments
+        mock_get_eth2_staked_amount_onchain.assert_called_with(
+            ethereum=ethereum_manager,
+            addresses=[ADDR1],
+            has_premium=True,
+            msg_aggregator=message_aggregator,
+            from_ts=Timestamp(ts_now),  # 1604506685
+            to_ts=Timestamp(ts_now + 1),  # 1604506686
+        )
 
 
 def test_eth2_result_serialization():
@@ -201,6 +397,7 @@ def test_eth2_result_serialization():
                 validator_index=9,
                 tx_hash='0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
                 log_index=22,
+                timestamp=Timestamp(int(1604506685)),
             ), Eth2Deposit(
                 from_address=addr2,
                 pubkey='0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3',  # noqa: E501
@@ -209,6 +406,7 @@ def test_eth2_result_serialization():
                 validator_index=1650,
                 tx_hash='0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7',
                 log_index=221,
+                timestamp=Timestamp(int(1605043544)),
             ),
         ],
         totals={
@@ -219,23 +417,27 @@ def test_eth2_result_serialization():
 
     serialized = process_result(result)
     assert serialized == {
-        'deposits': [{
-            'from_address': addr1,
-            'pubkey': '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
-            'withdrawal_credentials': '0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499',  # noqa: E501
-            'value': {'amount': '32', 'usd_value': '64'},
-            'validator_index': 9,
-            'tx_hash': '0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
-            'log_index': 22,
-        }, {
-            'from_address': addr2,
-            'pubkey': '0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3',  # noqa: E501
-            'withdrawal_credentials': '0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817',  # noqa: E501
-            'value': {'amount': '32', 'usd_value': '64'},
-            'validator_index': 1650,
-            'tx_hash': '0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7',
-            'log_index': 221,
-        }],
+        'deposits': [
+            {
+                'from_address': addr1,
+                'pubkey': '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
+                'withdrawal_credentials': '0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499',  # noqa: E501
+                'value': {'amount': '32', 'usd_value': '64'},
+                'validator_index': 9,
+                'tx_hash': '0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
+                'log_index': 22,
+                'timestamp': 1604506685,
+            }, {
+                'from_address': addr2,
+                'pubkey': '0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3',  # noqa: E501
+                'withdrawal_credentials': '0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817',  # noqa: E501
+                'value': {'amount': '32', 'usd_value': '64'},
+                'validator_index': 1650,
+                'tx_hash': '0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7',
+                'log_index': 221,
+                'timestamp': 1605043544,
+            },
+        ],
         'totals': {
             addr1: {'amount': '1', 'usd_value': '1'},
             addr2: {'amount': '2', 'usd_value': '2'},

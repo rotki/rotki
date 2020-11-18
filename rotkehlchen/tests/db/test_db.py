@@ -94,6 +94,7 @@ TABLES_AT_INIT = [
     'xpub_mappings',
     'amm_swaps',
     'uniswap_events',
+    'eth2_deposits',
 ]
 
 

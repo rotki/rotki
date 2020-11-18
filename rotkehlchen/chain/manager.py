@@ -951,6 +951,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 addresses=list(self.balances.eth.keys()),
                 has_premium=self.premium is not None,
                 msg_aggregator=self.msg_aggregator,
+                database=self.database,
             )
 
             if address not in result.totals:
@@ -972,6 +973,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 addresses=list(self.balances.eth.keys()),
                 has_premium=self.premium is not None,
                 msg_aggregator=self.msg_aggregator,
+                database=self.database,
             )
 
             # and now that we queried it update the chain manager's balances

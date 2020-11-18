@@ -364,10 +364,24 @@ CREATE TABLE IF NOT EXISTS uniswap_events (
 );
 """
 
+DB_CREATE_ETH2_DEPOSITS = """
+CREATE TABLE IF NOT EXISTS eth2_deposits (
+    tx_hash VARCHAR[42] NOT NULL,
+    log_index INTEGER NOT NULL,
+    from_address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    pubkey TEXT NOT NULL,
+    withdrawal_credentials TEXT NOT NULL,
+    value TEXT NOT NULL,
+    validator_index INTEGER NOT NULL,
+    PRIMARY KEY (tx_hash, log_index)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -397,4 +411,5 @@ PRAGMA foreign_keys=on;
     DB_CREATE_XPUB_MAPPINGS,
     DB_CREATE_AMM_SWAPS,
     DB_CREATE_UNISWAP_EVENTS,
+    DB_CREATE_ETH2_DEPOSITS,
 )
