@@ -1,12 +1,11 @@
 import logging
 from typing import Optional, Union
 
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.typing import ChecksumEthAddress
 
 from .asset import EthereumToken
 from .unknown_asset import UnknownEthereumToken
-
 
 log = logging.getLogger(__name__)
 
@@ -25,14 +24,14 @@ def get_ethereum_token(
 
     try:
         ethereum_token = EthereumToken(symbol)
-    except UnknownAsset:
+    except (UnknownAsset, DeserializationError):
         is_unknown_asset = True
     else:
         if ethereum_token.ethereum_address != ethereum_address:
             is_unknown_asset = True
 
     if is_unknown_asset:
-        log.error(
+        log.warning(
             f'Encountered unknown asset {symbol} with address '
             f'{ethereum_address}. Instantiating UnknownEthereumToken',
         )

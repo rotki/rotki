@@ -46,6 +46,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
+    AssetType,
     BTCAddress,
     ChecksumEthAddress,
     ListOfBlockchainAddresses,
@@ -71,12 +72,19 @@ log = RotkehlchenLogsAdapter(logger)
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
 
-DEFI_PROTOCOLS_TO_SKIP_ASSETS = (
-    'Aave',  # aTokens are already detected at token balance queries
-    'Compound',  # cTokens are already detected at token balance queries
-    'Chi Gastoken by 1inch',  # cTokens are already detected at token balance queries
-    'yearn.finance • Vaults',  # yearn vault balances are detected by the yTokens
-)
+# Mapping to token symbols to ignore. True means all
+DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
+    # aTokens are already detected at token balance queries
+    'Aave': True,  # None means all
+    # cTokens are already detected at token balance queries
+    'Compound': True,  # None means all
+    # Chitoken is in our all_assets.json
+    'Chi Gastoken by 1inch': True,  # None means all
+    # yearn vault balances are detected by the yTokens
+    'yearn.finance • Vaults': True,
+    # Synthetix SNX token is in all_assets.json
+    'Synthetix': ['SNX'],
+}
 
 
 T = TypeVar('T')
@@ -375,7 +383,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         return self.get_balances_update()
 
-    @protect_with_lock(arguments_matter=False)
+    @protect_with_lock()
     def query_btc_balances(self) -> None:
         """Queries blockchain.info/blockstream for the balance of all BTC accounts
 
@@ -770,9 +778,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
         client and the chain is not synced
         """
         # Clear out all previous token balances
-        for token in [x for x, _ in self.totals.assets.items() if isinstance(x, EthereumToken)]:
+        for token in [x for x, _ in self.totals.assets.items() if x.asset_type == AssetType.ETH_TOKEN]:  # noqa: E501
             del self.totals.assets[token]
-        for token in [x for x, _ in self.totals.liabilities.items() if isinstance(x, EthereumToken)]:  # noqa: E501
+        for token in [x for x, _ in self.totals.liabilities.items() if x.asset_type == AssetType.ETH_TOKEN]:  # noqa: E501
             del self.totals.liabilities[token]
 
         self._query_ethereum_tokens(action=AccountAction.QUERY, force_detection=force_detection)
@@ -799,7 +807,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances
 
-    @protect_with_lock(arguments_matter=False)
+    @protect_with_lock()
     def query_ethereum_balances(self, force_token_detection: bool) -> None:
         """Queries all the ethereum balances and populates the state
 
@@ -874,8 +882,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
     ) -> None:
         """Add a single account's defi balances to per account and totals"""
         for entry in balances:
+
+            skip_list = DEFI_PROTOCOLS_TO_SKIP_ASSETS.get(entry.protocol.name, None)
+            double_entry = (
+                entry.balance_type == 'Asset' and
+                skip_list and
+                (skip_list is True or entry.base_balance.token_symbol in skip_list)  # type: ignore
+            )
+
             # We have to filter out specific balances/protocols here to not get double entries
-            if entry.balance_type == 'Asset' and entry.protocol.name in DEFI_PROTOCOLS_TO_SKIP_ASSETS:  # noqa: E501
+            if double_entry:
                 continue
 
             if entry.balance_type == 'Asset' and entry.base_balance.token_symbol == 'ETH':

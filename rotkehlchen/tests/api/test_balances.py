@@ -491,3 +491,56 @@ def test_multiple_balance_queries_not_concurrent(
         token_balances=setup.token_balances,
         also_btc=True,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_balances_caching_mixup(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    """Test that querying the balances in a specific order does not mix up the caches.
+
+    This tests for the problem seen where the bitcoin balances being empty and
+    queried first returned an empty result for the ethereum balances.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        eth_balances=['1000000000000000000'],
+        token_balances={A_RDN: ['2000000000000000000']},
+        original_queries=['zerion'],
+    )
+
+    # Test all balances request by requesting to not save the data
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response_btc = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "named_blockchain_balances_resource",
+            blockchain='BTC',
+        ), json={'async_query': True})
+        response_eth = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "named_blockchain_balances_resource",
+            blockchain='ETH',
+        ), json={'async_query': True})
+        task_id_btc = assert_ok_async_response(response_btc)
+        task_id_eth = assert_ok_async_response(response_eth)
+        result_btc = wait_for_async_task_with_result(
+            rotkehlchen_api_server,
+            task_id_btc,
+        )
+        result_eth = wait_for_async_task_with_result(
+            rotkehlchen_api_server,
+            task_id_eth,
+        )
+        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['ETH']['amount'] == '1'  # noqa: E501
+        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['RDN']['amount'] == '2'  # noqa: E501
+        assert result_eth['totals']['assets']['ETH']['amount'] == '1'
+        assert result_eth['totals']['assets']['RDN']['amount'] == '2'
+        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['RDN']['amount'] == '2'  # noqa: E501
+        assert result_btc['per_account'] == {}
+        assert result_btc['totals']['assets'] == {}
+        assert result_btc['totals']['liabilities'] == {}
