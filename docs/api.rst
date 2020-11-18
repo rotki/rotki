@@ -3845,7 +3845,6 @@ Getting Uniswap events
                               "usd_price": "1336.795325171526015938992923665357"
                           }
                       ],
-                      "lp_profit_loss": "0E-18",
                       "pool_address": "0x2C7a51A357d5739C5C74Bf3C96816849d2c9F726",
                       "profit_loss0": "264.089867496935331902",
                       "profit_loss1": "88.677078283001177264",
@@ -3871,10 +3870,9 @@ Getting Uniswap events
        - amount1: The amount of token1 involved in the event.
        - lp_amount: The amount of liquidity token (i.e. UNI-V2) involved in the event.
        - usd_price: The USD amount involved in the event.
-       - log_index: The index of the event in the transaction/event.
+       - log_index: The index of the event in the transaction.
        - tx_hash: The transaction hash of the event.
 
-   :resjson string lp_profit_loss: The total profit/loss in liquidity token.
    :resjson string pool_address: The contract address of the pool.
    :resjson string profit_loss0: The token0 profit/loss.
    :resjson string profit_loss1: The token1 profit/loss.
@@ -3883,7 +3881,7 @@ Getting Uniswap events
    :resjson string usd_profit_loss: The total profit/loss in USD.
 
 
-   :statuscode 200: Uniswap balances succesfully queried.
+   :statuscode 200: Uniswap events succesfully queried.
    :statuscode 409: User is not logged in. Or Uniswap module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
@@ -3893,7 +3891,7 @@ Getting Uniswap trades
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/history/trades
 
-   Doing a GET on the uniswap trades history resource will return the history of all uniswap trades
+   Doing a GET on the uniswap trades history resource will return the history of all uniswap trades.
 
    .. note::
       This endpoint is only available for premium users

@@ -43,6 +43,7 @@ from .typing import (
     AddressEvents,
     AddressEventsBalances,
     AddressTrades,
+    AggregatedAmount,
     AssetPrice,
     DDAddressBalances,
     DDAddressEvents,
@@ -129,79 +130,69 @@ class Uniswap(EthereumModule):
             events: List[LiquidityPoolEvent],
             balances: List[LiquidityPool],
     ) -> List[LiquidityPoolEventsBalance]:
-        """Given an address and its LP events and LPs, process each LP event
-        (grouped by pool) aggregating the token0, token1, usd and LP token
-        amounts. Factorise in the aggregation the current protocol balances
-        (if `balances` != [], all events case). Finally return the profit/loss
-        totals and the LP events (grouped by pool) in
-        <LiquidityPoolEventsBalance>.
+        """Given an address, its LP events and the current LPs participating in
+        (`balances`), process each event (grouped by pool) aggregating the
+        token0, token1 and USD amounts for calculating the profit/loss in the
+        pool. Finally return a list of <LiquidityPoolEventsBalance>, where each
+        contains the profit/loss and events per pool.
+
+        If `balances` is empty that means either the address does not have
+        balances in the protocol or the endpoint has been called with a
+        specific time range.
         """
         events_balances: List[LiquidityPoolEventsBalance] = []
         pool_balance: Dict[ChecksumEthAddress, LiquidityPool] = (
             {pool.address: pool for pool in balances}
         )
-        # quick lookup, `agg` from aggregated
-        pool_events_agg_balance: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
-        # Populate `pool_events_agg_balance` dict, being the keys the pools'
-        # addresses and the values their aggregated balances from their events
+        pool_aggregated_amount: Dict[ChecksumEthAddress, AggregatedAmount] = {}
+        # Populate `pool_aggregated_amount` dict, being the keys the pools'
+        # addresses and the values the aggregated amounts from their events
         for event in events:
             pool = event.pool_address
 
-            if pool not in pool_events_agg_balance:
-                # Default dictionary for amounts aggregation
-                pool_events_agg_balance[pool] = {
-                    'events': [],
-                    'profit_loss0': ZERO,
-                    'profit_loss1': ZERO,
-                    'usd_profit_loss': ZERO,
-                    'lp_profit_loss': ZERO,
-                }
+            if pool not in pool_aggregated_amount:
+                pool_aggregated_amount[pool] = AggregatedAmount()
 
-            pool_events_agg_balance[pool]['events'].append(event)
+            pool_aggregated_amount[pool].events.append(event)
 
             if event.event_type == EventType.MINT:
-                pool_events_agg_balance[pool]['profit_loss0'] += FVal(event.amount0)
-                pool_events_agg_balance[pool]['profit_loss1'] += FVal(event.amount1)
-                pool_events_agg_balance[pool]['usd_profit_loss'] += FVal(event.usd_price)
-                pool_events_agg_balance[pool]['lp_profit_loss'] += FVal(event.lp_amount)
+                pool_aggregated_amount[pool].profit_loss0 += FVal(event.amount0)
+                pool_aggregated_amount[pool].profit_loss1 += FVal(event.amount1)
+                pool_aggregated_amount[pool].usd_profit_loss += FVal(event.usd_price)
             else:  # event_type == EventType.BURN
-                pool_events_agg_balance[pool]['profit_loss0'] -= FVal(event.amount0)
-                pool_events_agg_balance[pool]['profit_loss1'] -= FVal(event.amount1)
-                pool_events_agg_balance[pool]['usd_profit_loss'] -= FVal(event.usd_price)
-                pool_events_agg_balance[pool]['lp_profit_loss'] -= FVal(event.lp_amount)
+                pool_aggregated_amount[pool].profit_loss0 -= FVal(event.amount0)
+                pool_aggregated_amount[pool].profit_loss1 -= FVal(event.amount1)
+                pool_aggregated_amount[pool].usd_profit_loss -= FVal(event.usd_price)
 
         # Instantiate `LiquidityPoolEventsBalance` per pool using
-        # `pool_events_agg_balance`. If `pool_balance` exist (all events case),
+        # `pool_aggregated_amount`. If `pool_balance` exists (all events case),
         # factorise in the current pool balances in the totals.
-        for pool, events_agg_balance in pool_events_agg_balance.items():
-            profit_loss0 = events_agg_balance['profit_loss0']
-            profit_loss1 = events_agg_balance['profit_loss1']
-            usd_profit_loss = events_agg_balance['usd_profit_loss']
-            lp_profit_loss = events_agg_balance['lp_profit_loss']
+        for pool, aggregated_amount in pool_aggregated_amount.items():
+            profit_loss0 = aggregated_amount.profit_loss0
+            profit_loss1 = aggregated_amount.profit_loss1
+            usd_profit_loss = aggregated_amount.usd_profit_loss
 
-            # Aggregate current pool balances looking up the pool
+            # Add current pool balances looking up the pool
             if pool in pool_balance:
                 token0 = pool_balance[pool].assets[0].asset
                 token1 = pool_balance[pool].assets[1].asset
                 profit_loss0 -= FVal(pool_balance[pool].assets[0].user_balance.amount)
                 profit_loss1 -= FVal(pool_balance[pool].assets[1].user_balance.amount)
                 usd_profit_loss -= FVal(pool_balance[pool].user_balance.usd_value)
-                lp_profit_loss -= FVal(pool_balance[pool].user_balance.amount)
             else:
                 # NB: get `token0` and `token1` from any pool event
-                token0 = events_agg_balance['events'][0].token0
-                token1 = events_agg_balance['events'][0].token1
+                token0 = aggregated_amount.events[0].token0
+                token1 = aggregated_amount.events[0].token1
 
             events_balance = LiquidityPoolEventsBalance(
                 address=address,
                 pool_address=pool,
                 token0=token0,
                 token1=token1,
-                events=events_agg_balance['events'],
+                events=aggregated_amount.events,
                 profit_loss0=profit_loss0,
                 profit_loss1=profit_loss1,
                 usd_profit_loss=usd_profit_loss,
-                lp_profit_loss=lp_profit_loss,
             )
             events_balances.append(events_balance)
 
@@ -545,7 +536,17 @@ class Uniswap(EthereumModule):
         """Get the address' events (mints & burns) querying the Uniswap subgraph
         Each event data is stored in a <LiquidityPoolEvent>.
         """
-        address_events = []
+        address_events: List[LiquidityPoolEvent] = []
+        if event_type == EventType.MINT:
+            query = MINTS_QUERY
+            query_schema = 'mints'
+        elif event_type == EventType.BURN:
+            query = BURNS_QUERY
+            query_schema = 'burns'
+        else:
+            log.error(f'Unexpected event_type: {event_type}. Skipping events query.')
+            return address_events
+
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
@@ -560,9 +561,7 @@ class Uniswap(EthereumModule):
             'start_ts': str(start_ts),
             'end_ts': str(end_ts),
         }
-        query = MINTS_QUERY if event_type == EventType.MINT else BURNS_QUERY
         querystr = format_query_indentation(query.format())
-        query_schema = 'mints' if event_type == EventType.MINT else 'burns'
 
         while True:
             result = self.graph.query(  # type: ignore # caller already checks
@@ -975,7 +974,7 @@ class Uniswap(EthereumModule):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> AddressEventsBalances:
-        """Get the addresses' events balances history in the Uniswap protocol
+        """Get the addresses' events history in the Uniswap protocol
         """
         if self.graph is None:  # could not initialize graph
             return {}

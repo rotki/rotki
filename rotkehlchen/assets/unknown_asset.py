@@ -1,17 +1,11 @@
-from dataclasses import dataclass, asdict
-from typing import (
-    Any,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 from rotkehlchen.typing import ChecksumEthAddress
 
+# The most common keys for serializing an <UnknownEthereumToken> via
+# `serialize_as_dict()`
+UNKNOWN_TOKEN_KEYS = ('ethereum_address', 'name', 'symbol')
 
 SerializeAsDictKeys = Union[List[str], Tuple[str, ...], Set[str]]
 

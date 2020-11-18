@@ -344,7 +344,7 @@ CREATE TABLE IF NOT EXISTS uniswap_events (
     log_index INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,
-    type CHAR(1) NOT NULL,
+    type TEXT NOT NULL,
     pool_address VARCHAR[42] NOT NULL,
     is_token0_unknown INTEGER NOT NULL,
     token0_address VARCHAR[42] NOT NULL,

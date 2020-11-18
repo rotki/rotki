@@ -786,7 +786,6 @@ EXPECTED_EVENTS_BALANCES_1 = [
         profit_loss0=deserialize_asset_amount('-35.489683548121546956'),
         profit_loss1=deserialize_asset_amount('0.059966416263997186'),
         usd_profit_loss=deserialize_price('35.19515540870021242982170811'),
-        lp_profit_loss=deserialize_asset_amount('0E-18'),
     ),
 ]
 EXPECTED_EVENTS_BALANCES_2 = [
@@ -841,7 +840,6 @@ EXPECTED_EVENTS_BALANCES_2 = [
         profit_loss0=deserialize_asset_amount('0.610130605729210250'),
         profit_loss1=deserialize_asset_amount('-1.971799615456732408'),
         usd_profit_loss=deserialize_price('352.3903567533354058260380955'),
-        lp_profit_loss=deserialize_asset_amount('0E-18'),
     ),
     # Response index 3
     UniswapPoolEventsBalance(
@@ -894,7 +892,6 @@ EXPECTED_EVENTS_BALANCES_2 = [
         profit_loss0=deserialize_asset_amount('97.450299238691232377'),
         profit_loss1=deserialize_asset_amount('-0.607335819235337397'),
         usd_profit_loss=deserialize_price('-497.9538322903351201689338200'),
-        lp_profit_loss=deserialize_asset_amount('0E-18'),
     ),
 ]
 
@@ -1059,6 +1056,14 @@ def test_get_events_history_get_all_events(
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Set module premium is required for calling `get_balances()`
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
+
+    rotki.chain_manager.uniswap.premium = premium
+
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,
@@ -1100,6 +1105,14 @@ def test_get_events_history_get_all_events_empty(
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Set module premium is required for calling `get_balances()`
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
+
+    rotki.chain_manager.uniswap.premium = premium
+
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,

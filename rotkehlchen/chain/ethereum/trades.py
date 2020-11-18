@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, NamedTuple, Tuple, Union
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.unknown_asset import UNKNOWN_TOKEN_KEYS, UnknownEthereumToken
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_address,
@@ -47,8 +47,6 @@ AMMSwapDBTuple = (
     ]
 )
 
-UNKNOWN_ASSET_KEYS = ('ethereum_address', 'name', 'symbol')
-
 
 def serialize_known_or_unknown_token(
         token: Union[EthereumToken, UnknownEthereumToken],
@@ -56,7 +54,7 @@ def serialize_known_or_unknown_token(
     return (
         token.serialize()
         if isinstance(token, EthereumToken)
-        else token.serialize_as_dict(keys=UNKNOWN_ASSET_KEYS)
+        else token.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
     )
 
 
