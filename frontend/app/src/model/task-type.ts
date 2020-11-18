@@ -21,5 +21,6 @@ export enum TaskType {
   DEFI_YEARN_VAULT_HISTORY = 'defi_yearn_vault_history',
   DEFI_YEARN_VAULT_BALANCES = 'defi_yearn_vault_balances',
   FORCE_SYNC = 'force_sync',
-  DEFI_UNISWAP_BALANCES = 'uniswap_balances'
+  DEFI_UNISWAP_BALANCES = 'uniswap_balances',
+  STAKING_ETH2 = 'staking_eth2'
 }

@@ -175,6 +175,10 @@ export default new Router({
         }
       ]
     },
+    {
+      path: Routes.STAKING,
+      component: () => import('../views/Staking.vue')
+    },
     ...(process.env.NODE_ENV === 'development'
       ? [
           {
