@@ -13,12 +13,12 @@ from rotkehlchen.utils.misc import ts_now
 def _function_sig_key(name: str, arguments_matter: bool, *args: Any, **kwargs: Any) -> int:
     """Return a unique int identifying a function's call signature"""
     function_sig = name
-    for arg in args:
-        function_sig += str(arg)
-
     if arguments_matter:
+        for arg in args:
+            function_sig += str(arg)
         for _, value in kwargs.items():
             function_sig += str(value)
+
     return hash(function_sig)
 
 
@@ -36,7 +36,7 @@ class CacheableObject():
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
 
 
-def cache_response_timewise() -> Callable:
+def cache_response_timewise(arguments_matter: bool = True) -> Callable:
     """ This is a decorator for caching results of functions of objects.
     The objects must adhere to the CachableOject interface.
 
@@ -52,7 +52,7 @@ def cache_response_timewise() -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableObject, *args: Any, **kwargs: Any) -> Any:
             ignore_cache = kwargs.pop('ignore_cache', False)
-            cache_key = _function_sig_key(f.__name__, False, *args, **kwargs)
+            cache_key = _function_sig_key(f.__name__, arguments_matter, *args, **kwargs)
             now = ts_now()
             if ignore_cache is False:
                 # Check the cache

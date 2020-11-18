@@ -180,6 +180,7 @@ class Foo(CacheableObject):
 
         self.do_sum_call_count = 0
         self.do_something_call_count = 0
+        self.do_something_arguments_dont_matter_count = 0
 
     @cache_response_timewise()
     def do_sum(self, arg1, arg2, **kwargs):  # pylint: disable=no-self-use, unused-argument
@@ -190,6 +191,11 @@ class Foo(CacheableObject):
     def do_something(self, **kwargs):  # pylint: disable=unused-argument
         self.do_something_call_count += 1
         return 5
+
+    @cache_response_timewise(arguments_matter=False)
+    def do_something_arguments_dont_matter(self, arg1, arg2, **kwargs):  # pylint: disable=unused-argument  # noqa: E501
+        self.do_something_arguments_dont_matter_count += 1
+        return arg1 + arg2
 
 
 def test_cache_response_timewise():
@@ -225,6 +231,19 @@ def test_cache_response_timewise_ignore_cache():
     assert instance.do_sum(1, 1) == 2
     assert instance.do_sum(1, 1, ignore_cache=True) == 2
     assert instance.do_sum_call_count == 2
+
+
+def test_cache_response_timewise_with_arguments_matter_false():
+    """Test that arguments_matter works as expected and if false we always get same result"""
+    instance = Foo()
+
+    assert instance.do_something_arguments_dont_matter(5, 6) == 11
+    assert instance.do_something_arguments_dont_matter(1, 2) == 11
+    assert instance.do_something_arguments_dont_matter(3, 4) == 11
+    assert instance.do_something_arguments_dont_matter_count == 1
+
+    assert instance.do_something_arguments_dont_matter(1, 2, ignore_cache=True) == 3
+    assert instance.do_something_arguments_dont_matter_count == 2
 
 
 def test_convert_to_int():

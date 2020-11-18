@@ -375,7 +375,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         return self.get_balances_update()
 
-    @protect_with_lock(arguments_matter=False)
+    @protect_with_lock()
     def query_btc_balances(self) -> None:
         """Queries blockchain.info/blockstream for the balance of all BTC accounts
 
@@ -799,7 +799,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances
 
-    @protect_with_lock(arguments_matter=False)
+    @protect_with_lock()
     def query_ethereum_balances(self, force_token_detection: bool) -> None:
         """Queries all the ethereum balances and populates the state
 
