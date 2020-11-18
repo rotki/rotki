@@ -11,6 +11,7 @@ import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import { DebugSettings } from '@/electron-main/ipc';
 import { api } from '@/services/rotkehlchen-api';
@@ -22,7 +23,7 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 2
+    version: 4
   };
   // Globally registered components are also provided to the premium components.
   Vue.component('AmountDisplay', AmountDisplay);
@@ -37,6 +38,8 @@ export const setupPremium = () => {
   Vue.component('BalanceDisplay', BalanceDisplay);
   // version: 3
   Vue.component('PercentageDisplay', PercentageDisplay);
+  // version: 4
+  Vue.component('BlockchainAccountSelector', BlockchainAccountSelector);
 };
 
 function findComponents(): string[] {
