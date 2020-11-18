@@ -1123,7 +1123,7 @@ class DBHandler:
             return None
 
         returned_list = []
-        for x in json_ret:
+        for x in tokens_list:
             try:
                 returned_list.append(EthereumToken(x))
             except (DeserializationError, UnknownAsset):
@@ -1148,18 +1148,18 @@ class DBHandler:
         json_ret = self._get_address_details_if_time(address, current_time)
         if json_ret is None:
             return None
-        tokens_list = json_ret.get('univ2_lp_tokens', None)
-        if tokens_list is None:
+        addresses_list = json_ret.get('univ2_lp_tokens', None)
+        if addresses_list is None:
             return None
 
-        if not isinstance(tokens_list, list):
+        if not isinstance(addresses_list, list):
             # This should never happen
             self.msg_aggregator.add_warning(
                 f'Found non-list univ2_lp_tokens {json_ret} in the DB for {address}.',
             )
             return None
 
-        return tokens_list  # Should we check everything is an address?
+        return addresses_list  # Should we check everything is an address?
 
     def _get_address_details_json(self, address: ChecksumEthAddress) -> Optional[Dict[str, Any]]:
         cursor = self.conn.cursor()
