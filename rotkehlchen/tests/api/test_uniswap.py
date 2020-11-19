@@ -15,11 +15,7 @@ from rotkehlchen.chain.ethereum.uniswap.typing import UNISWAP_EVENTS_PREFIX, Eve
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_ethereum_address,
-    deserialize_price,
-)
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -763,10 +759,10 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
                 token0=EthereumToken('$BASED'),
                 token1=EthereumToken('WETH'),
-                amount0=deserialize_asset_amount('605.773209925184996494'),
-                amount1=deserialize_asset_amount('1.106631443395672732'),
-                usd_price=deserialize_price('872.4689300619698095220125311431804'),
-                lp_amount=deserialize_asset_amount('1.220680531244355402'),
+                amount0=AssetAmount(FVal('605.773209925184996494')),
+                amount1=AssetAmount(FVal('1.106631443395672732')),
+                usd_price=Price(FVal('872.4689300619698095220125311431804')),
+                lp_amount=AssetAmount(FVal('1.220680531244355402')),
             ),
             UniswapPoolEvent(
                 tx_hash='0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
@@ -777,15 +773,15 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
                 token0=EthereumToken('$BASED'),
                 token1=EthereumToken('WETH'),
-                amount0=deserialize_asset_amount('641.26289347330654345'),
-                amount1=deserialize_asset_amount('1.046665027131675546'),
-                usd_price=deserialize_price('837.2737746532695970921908229899852'),
-                lp_amount=deserialize_asset_amount('1.220680531244355402'),
+                amount0=AssetAmount(FVal('641.26289347330654345')),
+                amount1=AssetAmount(FVal('1.046665027131675546')),
+                usd_price=Price(FVal('837.2737746532695970921908229899852')),
+                lp_amount=AssetAmount(FVal('1.220680531244355402')),
             ),
         ],
-        profit_loss0=deserialize_asset_amount('-35.489683548121546956'),
-        profit_loss1=deserialize_asset_amount('0.059966416263997186'),
-        usd_profit_loss=deserialize_price('35.19515540870021242982170811'),
+        profit_loss0=AssetAmount(FVal('-35.489683548121546956')),
+        profit_loss1=AssetAmount(FVal('0.059966416263997186')),
+        usd_profit_loss=Price(FVal('35.19515540870021242982170811')),
     ),
 ]
 EXPECTED_EVENTS_BALANCES_2 = [
@@ -813,10 +809,10 @@ EXPECTED_EVENTS_BALANCES_2 = [
                     symbol='DICE',
                     name='DICE.FINANCE TOKEN',
                 ),
-                amount0=deserialize_asset_amount('1.580431277572006656'),
-                amount1=deserialize_asset_amount('3'),
-                usd_price=deserialize_price('1281.249386421513581165086356450817'),
-                lp_amount=deserialize_asset_amount('2.074549918528068811'),
+                amount0=AssetAmount(FVal('1.580431277572006656')),
+                amount1=AssetAmount(FVal('3')),
+                usd_price=Price(FVal('1281.249386421513581165086356450817')),
+                lp_amount=AssetAmount(FVal('2.074549918528068811')),
             ),
             UniswapPoolEvent(
                 tx_hash='0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
@@ -831,15 +827,15 @@ EXPECTED_EVENTS_BALANCES_2 = [
                     symbol='DICE',
                     name='DICE.FINANCE TOKEN',
                 ),
-                amount0=deserialize_asset_amount('0.970300671842796406'),
-                amount1=deserialize_asset_amount('4.971799615456732408'),
-                usd_price=deserialize_price('928.8590296681781753390482605315881'),
-                lp_amount=deserialize_asset_amount('2.074549918528068811'),
+                amount0=AssetAmount(FVal('0.970300671842796406')),
+                amount1=AssetAmount(FVal('4.971799615456732408')),
+                usd_price=Price(FVal('928.8590296681781753390482605315881')),
+                lp_amount=AssetAmount(FVal('2.074549918528068811')),
             ),
         ],
-        profit_loss0=deserialize_asset_amount('0.610130605729210250'),
-        profit_loss1=deserialize_asset_amount('-1.971799615456732408'),
-        usd_profit_loss=deserialize_price('352.3903567533354058260380955'),
+        profit_loss0=AssetAmount(FVal('0.610130605729210250')),
+        profit_loss1=AssetAmount(FVal('-1.971799615456732408')),
+        usd_profit_loss=Price(FVal('352.3903567533354058260380955')),
     ),
     # Response index 3
     UniswapPoolEventsBalance(
@@ -865,10 +861,10 @@ EXPECTED_EVENTS_BALANCES_2 = [
                     name='DegenVC',
                 ),
                 token1=EthereumToken('WETH'),
-                amount0=deserialize_asset_amount('322.230285353834005677'),
-                amount1=deserialize_asset_amount('1.247571217823345601'),
-                usd_price=deserialize_price('945.2160925652988117900888961551871'),
-                lp_amount=deserialize_asset_amount('18.297385821424685079'),
+                amount0=AssetAmount(FVal('322.230285353834005677')),
+                amount1=AssetAmount(FVal('1.247571217823345601')),
+                usd_price=Price(FVal('945.2160925652988117900888961551871')),
+                lp_amount=AssetAmount(FVal('18.297385821424685079')),
             ),
             UniswapPoolEvent(
                 tx_hash='0x597f8790a3b9353114b364777c9d32373930e5ad6b8c8f97a58cd2dd58f12b89',
@@ -883,15 +879,15 @@ EXPECTED_EVENTS_BALANCES_2 = [
                     name='DegenVC',
                 ),
                 token1=EthereumToken('WETH'),
-                amount0=deserialize_asset_amount('224.7799861151427733'),
-                amount1=deserialize_asset_amount('1.854907037058682998'),
-                usd_price=deserialize_price('1443.169924855633931959022716230101'),
-                lp_amount=deserialize_asset_amount('18.297385821424685079'),
+                amount0=AssetAmount(FVal('224.7799861151427733')),
+                amount1=AssetAmount(FVal('1.854907037058682998')),
+                usd_price=Price(FVal('1443.169924855633931959022716230101')),
+                lp_amount=AssetAmount(FVal('18.297385821424685079')),
             ),
         ],
-        profit_loss0=deserialize_asset_amount('97.450299238691232377'),
-        profit_loss1=deserialize_asset_amount('-0.607335819235337397'),
-        usd_profit_loss=deserialize_price('-497.9538322903351201689338200'),
+        profit_loss0=AssetAmount(FVal('97.450299238691232377')),
+        profit_loss1=AssetAmount(FVal('-0.607335819235337397')),
+        usd_profit_loss=Price(FVal('-497.9538322903351201689338200')),
     ),
 ]
 
