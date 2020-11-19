@@ -1,5 +1,10 @@
 <template>
-  <v-container class="uniswap">
+  <progress-screen v-if="loading">
+    <template #message>
+      {{ $t('uniswap.loading') }}
+    </template>
+  </progress-screen>
+  <v-container v-else class="uniswap">
     <blockchain-account-selector
       v-model="selectedAccount"
       hint
@@ -12,6 +17,7 @@
         :key="entry.poolAddress"
         cols="12"
         sm="6"
+        lg="6"
         xl="4"
       >
         <v-card>
@@ -41,7 +47,7 @@
             <v-row class="mt-2">
               <v-col class="d-flex flex-column">
                 <span
-                  :class="$vuetify.breakpoint.mobile ? null : 'text-end'"
+                  :class="'text-end'"
                   class="text--secondary text-body-1"
                   v-text="$t('uniswap.balance')"
                 />
@@ -50,7 +56,6 @@
                   :value="entry.userBalance"
                   no-icon
                   :min-width="0"
-                  :no-justify="$vuetify.breakpoint.mobile"
                   asset=""
                   :asset-padding="0"
                 />
@@ -82,7 +87,7 @@
 
             <v-divider />
 
-            <v-row no-gutters class="mt-2 mb-1">
+            <v-row v-if="!!entry.totalSupply" no-gutters class="mt-2 mb-1">
               <v-col>
                 <span
                   class="text--secondary"
@@ -102,13 +107,18 @@
               no-gutters
             >
               <v-col
+                v-if="!!asset.totalAmount"
                 cols="auto"
                 class="text--secondary"
                 v-text="
                   $t('uniswap.asset_supply', { asset: assetName(asset.asset) })
                 "
               />
-              <v-col class="font-weight-medium d-flex ms-3" cols="auto">
+              <v-col
+                v-if="!!asset.totalAmount"
+                class="font-weight-medium d-flex ms-3"
+                cols="auto"
+              >
                 <amount-display :value="asset.totalAmount" />
               </v-col>
               <v-col cols="auto">
@@ -135,29 +145,31 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import StatusMixin from '@/mixins/status-mixin';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { UniswapAssetDetails } from '@/services/defi/types/uniswap';
 import { SupportedAsset } from '@/services/types-model';
+import { Section } from '@/store/const';
 import { UniswapBalance } from '@/store/defi/types';
 import { DefiAccount, ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
-  components: { UniswapPoolAsset, BlockchainAccountSelector },
+  components: { ProgressScreen, UniswapPoolAsset, BlockchainAccountSelector },
   computed: {
-    ...mapGetters('session', ['currencySymbol']),
     ...mapGetters('balances', ['assetInfo']),
     ...mapGetters('defi', ['defiAccounts', 'uniswapBalances'])
   }
 })
-export default class Uniswap extends Vue {
+export default class Uniswap extends Mixins(StatusMixin) {
   readonly ETH = ETH;
+  section = Section.DEFI_UNISWAP_BALANCES;
   defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
   assetInfo!: (asset: string) => SupportedAsset | undefined;
-  currencySymbol!: string;
   uniswapBalances!: (addresses: string[]) => UniswapBalance[];
   selectedAccount: GeneralAccount | null = null;
 
