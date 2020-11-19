@@ -175,6 +175,21 @@ export class DefiApi {
       .then(handleResponse);
   }
 
+  async fetchUniswapTrades(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>(
+        'blockchains/ETH/modules/uniswap/history/trades',
+        {
+          validateStatus: validWithSessionAndExternalService,
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true
+          }),
+          transformResponse: this.baseTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
   async fetchUniswapBalances(): Promise<PendingTask> {
     return this.axios
       .get<ActionResult<PendingTask>>(

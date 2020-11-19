@@ -148,6 +148,13 @@ export default class NavigationMenu extends Vue {
           route: Routes.DEFI_LIABILITIES,
           icon: 'mdi-bank-transfer-out',
           class: 'defi-liabilities'
+        },
+        {
+          type: 'item',
+          text: this.$tc('navigation_menu.defi_sub.dex_trades'),
+          route: Routes.DEFI_DEX_TRADES,
+          icon: 'mdi-shuffle-variant',
+          class: 'defi-dex-trades'
         }
       ]
     },

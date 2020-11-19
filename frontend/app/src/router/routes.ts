@@ -5,5 +5,6 @@ export const Routes = {
   DEFI: '/defi',
   DEFI_DEPOSITS_PROTOCOLS: '/defi/deposits/protocols',
   DEFI_DEPOSITS_LIQUIDITY: '/defi/deposits/liquidity',
+  DEFI_DEX_TRADES: '/defi/dex-trades',
   STAKING: '/staking'
 };

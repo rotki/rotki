@@ -16,7 +16,8 @@ import {
   DSRBalances,
   DSRHistory,
   MakerDAOVault,
-  MakerDAOVaultDetails
+  MakerDAOVaultDetails,
+  UniswapTrades
 } from '@/store/defi/types';
 
 export const mutations: MutationTree<DefiState> = {
@@ -58,6 +59,9 @@ export const mutations: MutationTree<DefiState> = {
   },
   uniswapBalances(state: DefiState, balances: UniswapBalances) {
     state.uniswapBalances = balances;
+  },
+  uniswapTrades(state: DefiState, trades: UniswapTrades) {
+    state.uniswapTrades = trades;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

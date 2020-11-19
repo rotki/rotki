@@ -19,12 +19,17 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import { UniswapAsset, UniswapBalances } from '@/services/defi/types/uniswap';
+import {
+  UniswapAsset,
+  UniswapAssetDetails,
+  UniswapBalances
+} from '@/services/defi/types/uniswap';
 import {
   YearnEventType,
   YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
+import { TradeType } from '@/services/history/types';
 import { Balance, HasBalance } from '@/services/types-api';
 import { OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 
@@ -43,6 +48,7 @@ export interface DefiState {
   yearnVaultsHistory: YearnVaultsHistory;
   yearnVaultsBalances: YearnVaultsBalances;
   uniswapBalances: UniswapBalances;
+  uniswapTrades: UniswapTrades;
 }
 
 export interface DSRBalances {
@@ -233,4 +239,39 @@ export interface UniswapBalance {
   readonly poolAddress: string;
   readonly totalSupply: BigNumber;
   readonly userBalance: Balance;
+}
+
+interface UniswapSwap {
+  readonly amount0In: BigNumber;
+  readonly amount0Out: BigNumber;
+  readonly amount1In: BigNumber;
+  readonly amount1Out: BigNumber;
+  readonly fromAddress: string;
+  readonly location: 'uniswap';
+  readonly logIndex: number;
+  readonly toAddress: string;
+  readonly token0: UniswapAssetDetails | string;
+  readonly token1: UniswapAssetDetails | string;
+  readonly txHash: string;
+}
+
+export interface UniswapTrade {
+  readonly address: string;
+  readonly amount: BigNumber;
+  readonly baseAsset: UniswapAssetDetails | string;
+  readonly fee: BigNumber;
+  readonly feeCurrency: string;
+  readonly location: 'uniswap';
+  readonly pair: string;
+  readonly quoteAsset: UniswapAssetDetails | string;
+  readonly rate: BigNumber;
+  readonly swaps: UniswapSwap[];
+  readonly timestamp: number;
+  readonly tradeId: string;
+  readonly tradeType: TradeType;
+  readonly txHash: string;
+}
+
+export interface UniswapTrades {
+  readonly [address: string]: UniswapTrade[];
 }

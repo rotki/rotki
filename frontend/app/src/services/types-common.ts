@@ -13,5 +13,6 @@ export enum Location {
   EQUITIES = 'equities',
   REALESTATE = 'real estate',
   COMMODITIES = 'commodities',
-  CRYPTOCOM = 'crypto.com'
+  CRYPTOCOM = 'crypto.com',
+  UNISWAP = 'uniswap'
 }

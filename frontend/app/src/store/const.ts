@@ -30,6 +30,7 @@ export enum Section {
   BLOCKCHAIN_BTC = 'blockchain_btc',
   BLOCKCHAIN_ETH = 'blockchain_eth',
   DEFI_UNISWAP_BALANCES = 'defi_uniswap_balances',
+  DEFI_UNISWAP_TRADES = 'defi_uniswap_trades',
   STAKING_ETH2 = 'staking_eth2'
 }
 
@@ -50,5 +51,6 @@ export const defiSections: Section[] = [
   Section.DEFI_MAKERDAO_VAULTS,
   Section.DEFI_YEARN_VAULTS_BALANCES,
   Section.DEFI_YEARN_VAULTS_HISTORY,
-  Section.DEFI_UNISWAP_BALANCES
+  Section.DEFI_UNISWAP_BALANCES,
+  Section.DEFI_UNISWAP_TRADES
 ];

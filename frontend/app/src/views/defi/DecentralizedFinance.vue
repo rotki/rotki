@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container class="decentralized-finance">
     <base-page-header :text="$t('decentralized_finance.title')">
       <v-tooltip v-if="defiSetupDone" top>
         <template #activator="{ on, attrs }">
@@ -63,7 +63,17 @@ export default class DecentralizedFinance extends Vue {
     {
       name: this.$tc('decentralized_finance.tabs.liabilities'),
       routeTo: Routes.DEFI_LIABILITIES
+    },
+    {
+      name: this.$tc('decentralized_finance.tabs.dex_trades'),
+      routeTo: Routes.DEFI_DEX_TRADES
     }
   ];
 }
 </script>
+
+<style scoped lang="scss">
+.decentralized-finance {
+  height: 100%;
+}
+</style>

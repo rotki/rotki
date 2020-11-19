@@ -1,9 +1,12 @@
 import { BalanceState } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
+import { DefiState } from '@/store/defi/types';
+import { HistoryState } from '@/store/history/types';
 import { NotificationState } from '@/store/notifications/state';
 import { TaxReportState } from '@/store/reports/state';
 import { SessionState } from '@/store/session/types';
 import { SettingsState } from '@/store/settings/types';
+import { StatisticsState } from '@/store/statistics/types';
 import { TaskState } from '@/store/tasks/state';
 
 export interface ActionStatus {
@@ -35,6 +38,9 @@ export interface RotkehlchenState {
   reports?: TaxReportState;
   balances?: BalanceState;
   settings?: SettingsState;
+  defi?: DefiState;
+  statistics?: StatisticsState;
+  history?: HistoryState;
 }
 
 export interface Message {

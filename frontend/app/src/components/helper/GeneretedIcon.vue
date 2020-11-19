@@ -4,7 +4,7 @@
     class="d-flex align-center justify-center generated-icon"
     :class="currency ? ' font-weight-medium' : 'font-weight-bold'"
   >
-    <span>
+    <span class="d-flex align-center justify-center" :style="circle">
       <span :style="textStyle">
         {{ text }}
       </span>
@@ -23,7 +23,7 @@ type Dimension = { value: number; unit: string };
 export default class GeneretedIcon extends Vue {
   @Prop({ required: true })
   size!: string;
-  @Prop({ required: false, default: '#7e7d7c' })
+  @Prop({ required: false, default: '#fff' })
   backgroundColor!: string;
   @Prop({ required: true })
   asset!: string;
@@ -31,13 +31,12 @@ export default class GeneretedIcon extends Vue {
   currency!: boolean;
 
   get textStyle(): Style {
-    const { value, unit } = this.dimensions;
-    const fontSize = this.currency
-      ? value * 0.65
-      : (value * 0.9) / this.text.length;
+    const { value } = this.dimensions;
+    const scale = this.currency || this.asset.length <= 2 ? 1 : 0.58;
+
     return {
-      'font-size': `${fontSize}${unit}`,
-      'line-height': this.size
+      transform: `scale(${scale})`,
+      'line-height': `${value - 4}px`
     };
   }
 
@@ -48,6 +47,10 @@ export default class GeneretedIcon extends Vue {
       background: this.backgroundColor,
       color: this.textColor
     };
+  }
+
+  get circle(): Style {
+    return { width: this.size, height: this.size };
   }
 
   get text(): string {
@@ -74,6 +77,7 @@ export default class GeneretedIcon extends Vue {
 </script>
 <style scoped lang="scss">
 .generated-icon {
+  border: black solid 1.9px;
   border-radius: 50%;
   display: inline-block;
 }

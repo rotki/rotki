@@ -1,4 +1,5 @@
 import { GetterTree } from 'vuex';
+import { Trade } from '@/services/history/types';
 import { RotkehlchenState } from '@/store/types';
 import { toUnit, Unit } from '@/utils/calculation';
 import { HistoryState } from './types';
@@ -13,8 +14,13 @@ export const getters: GetterTree<HistoryState, RotkehlchenState> = {
   assetMovementsLimit: ({ assetMovements }) => {
     return assetMovements.limit;
   },
-  trades: ({ trades }) => {
-    return trades.data;
+  trades: ({ trades }, _, _rs, { 'defi/uniswapTrades': uniswapTrades }) => {
+    let uniTrades: Trade[] = [];
+    if (trades.limit === -1) {
+      uniTrades = uniswapTrades([]);
+    }
+
+    return trades.data.concat(...uniTrades);
   },
   tradesTotal: ({ trades }) => {
     return trades.found;
