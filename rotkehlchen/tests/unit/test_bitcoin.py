@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.chain.bitcoin.hdkey import HDKey
+from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
     is_valid_btc_address,
     is_valid_derivation_path,
@@ -104,6 +104,39 @@ def test_pubkey_to_bech32_address():
         witver=0,
     )
     assert address == 'bc1q7zxvguxdazzjd4m7d7ahlt03nnakc9fhxhskd5'
+
+
+def test_from_xpub_with_conversion():
+    legacy_xpub = 'xpub6CjniigyzMWgVDHvDpgvsroPkTJeqUbrHJaLHARHmAM8zuAbCjmHpp3QhKTcnnscd6iBDrqmABCJjnpwUW42cQjtvKjaEZRcShHKEVh35Y8'  # noqa: E501
+    legacy_xpub_hdkey = HDKey.from_xpub(xpub=legacy_xpub, path='m')
+
+    converted_ypub_hdkey = HDKey.from_xpub(
+        xpub=legacy_xpub,
+        xpub_type=XpubType.P2SH_P2WPKH,
+        path='m',
+    )
+    assert legacy_xpub_hdkey.network == converted_ypub_hdkey.network
+    assert legacy_xpub_hdkey.depth == converted_ypub_hdkey.depth
+    assert legacy_xpub_hdkey.parent_fingerprint == converted_ypub_hdkey.parent_fingerprint
+    assert legacy_xpub_hdkey.chain_code == converted_ypub_hdkey.chain_code
+    assert legacy_xpub_hdkey.fingerprint == converted_ypub_hdkey.fingerprint
+    assert legacy_xpub_hdkey.pubkey == converted_ypub_hdkey.pubkey
+    assert converted_ypub_hdkey.xpub == 'ypub6Xa42PMu934ALWV34BUZ5wttvRT6n6bMCR6Z4ZKB9Aj23zypTPvrSshYiXRCnhXY2jpyyLSKcqYrd5SWCCU3QeRVnfRzpUF6iRLxd55duzL'  # noqa: E501
+    assert converted_ypub_hdkey.hint == 'ypub'
+
+    converted_zpub_hdkey = HDKey.from_xpub(
+        xpub=legacy_xpub,
+        xpub_type=XpubType.WPKH,
+        path='m',
+    )
+    assert legacy_xpub_hdkey.network == converted_zpub_hdkey.network
+    assert legacy_xpub_hdkey.depth == converted_zpub_hdkey.depth
+    assert legacy_xpub_hdkey.parent_fingerprint == converted_zpub_hdkey.parent_fingerprint
+    assert legacy_xpub_hdkey.chain_code == converted_zpub_hdkey.chain_code
+    assert legacy_xpub_hdkey.fingerprint == converted_zpub_hdkey.fingerprint
+    assert legacy_xpub_hdkey.pubkey == converted_zpub_hdkey.pubkey
+    assert converted_zpub_hdkey.xpub == 'zpub6rQKL42pHibeBog9tYGBJ2zQ6PbYiiar7XcmqxD4XB6u76o3i46R4wMgjjNnncBTSNwnip2t5VuQWN44utt4Ct76f18RQP4az9Qc1eUEkSY'  # noqa: E501
+    assert converted_zpub_hdkey.hint == 'zpub'
 
 
 def test_xpub_to_addresses():

@@ -285,15 +285,65 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('btc_accounts', [[
-    UNIT_BTC_ADDRESS1,
-    UNIT_BTC_ADDRESS2,
-]])
-def test_add_xpub_with_invalid_derivation_path_fails(rotkehlchen_api_server):
+def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
+    """Test that an xpub is being converted to ypub/zpub if the prefix does not match"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
 
+    # Test xpub asking conversion to ypub
+    xpub = 'xpub6CjniigyzMWgVDHvDpgvsroPkTJeqUbrHJaLHARHmAM8zuAbCjmHpp3QhKTcnnscd6iBDrqmABCJjnpwUW42cQjtvKjaEZRcShHKEVh35Y8'  # noqa : E501
+    json_data = {
+        'xpub': xpub,
+        'xpub_type': 'p2sh_p2wpkh',
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "btcxpubresource",
+    ), json=json_data)
+    assert_proper_response_with_result(response)
+    saved_xpubs = rotki.data.db.get_bitcoin_xpub_data()
+    assert len(saved_xpubs) == 1
+    assert saved_xpubs[0].xpub.hint == 'ypub'
+    assert saved_xpubs[0].xpub.xpub == 'ypub6Xa42PMu934ALWV34BUZ5wttvRT6n6bMCR6Z4ZKB9Aj23zypTPvrSshYiXRCnhXY2jpyyLSKcqYrd5SWCCU3QeRVnfRzpUF6iRLxd55duzL'  # noqa: E501
+
+    # Test xpub asking conversion to zpub
+    json_data['xpub_type'] = 'wpkh'
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "btcxpubresource",
+    ), json=json_data)
+    assert_proper_response_with_result(response)
+    saved_xpubs = rotki.data.db.get_bitcoin_xpub_data()
+    assert len(saved_xpubs) == 2
+    assert saved_xpubs[1].xpub.hint == 'zpub'
+    assert saved_xpubs[1].xpub.xpub == 'zpub6rQKL42pHibeBog9tYGBJ2zQ6PbYiiar7XcmqxD4XB6u76o3i46R4wMgjjNnncBTSNwnip2t5VuQWN44utt4Ct76f18RQP4az9Qc1eUEkSY'  # noqa: E501
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_xpub_addition_errors(rotkehlchen_api_server):
+    """Test that errors at xpub addition are handled correctly"""
+    # Disable caching of query results
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.chain_manager.cache_ttl_secs = 0
+
+    # illegal xpub type
+    xpub = 'xpub6CjniigyzMWgVDHvDpgvsroPkTJeqUbrHJaLHARHmAM8zuAbCjmHpp3QhKTcnnscd6iBDrqmABCJjnpwUW42cQjtvKjaEZRcShHKEVh35Y8'  # noqa : E501
+    json_data = {
+        'xpub': xpub,
+        'xpub_type': 'whatever',
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "btcxpubresource",
+    ), json=json_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='"xpub_type": ["Must be one of: p2pkh, p2sh_p2wpkh, wpkh."]}',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # invalid derivation path
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa : E501
     derivation_path = "49'/0'/0'"
     json_data = {
@@ -304,9 +354,21 @@ def test_add_xpub_with_invalid_derivation_path_fails(rotkehlchen_api_server):
         rotkehlchen_api_server,
         "btcxpubresource",
     ), json=json_data)
-    # outcome = assert_proper_response_with_result(response)
     assert_error_response(
         response=response,
         contained_in_msg='Derivation paths accepted by rotki should start with m',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # not a valid xpub string
+    xpub = 'foo'
+    json_data = {'xpub': xpub}
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "btcxpubresource",
+    ), json=json_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='"xpub": ["Failed to initialize an xpub due to Given XPUB foo is too small"',  # noqa: E501
         status_code=HTTPStatus.BAD_REQUEST,
     )

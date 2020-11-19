@@ -4580,6 +4580,7 @@ Adding BTC xpubs
 
       {
           "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+	  "xpub_type": "p2sh_p2wpkh",
           "derivation_path": "m/0/0",
           "label": "my electrum xpub",
           "tags": ["public", "old"]
@@ -4587,6 +4588,7 @@ Adding BTC xpubs
 
    :reqjson string xpub: The extended public key to add
    :reqjsonarr string derivation_path: The derivation path from which to start deriving addresses relative to the xpub.
+   :reqjsonarr string[optional] xpub_type: An optional type to denote the type of the given xpub. If omitted the prefix xpub/ypub/zpub is used to determine the type. The valid xpub types are: ``"p2pkh"``, ``"p2sh_p2wpkh"`` and ``"wpkh"``.
    :reqjsonarr string[optional] label: An optional label to describe the new extended public key
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not

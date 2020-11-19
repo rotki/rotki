@@ -54,8 +54,8 @@ from rotkehlchen.api.v1.encoding import (
     WatchersAddSchema,
     WatchersDeleteSchema,
     WatchersEditSchema,
+    XpubAddSchema,
     XpubPatchSchema,
-    XpubSchema,
 )
 from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.assets.asset import Asset
@@ -732,7 +732,7 @@ class BlockchainsAccountsResource(BaseResource):
 
 class BTCXpubResource(BaseResource):
 
-    put_schema = XpubSchema()
+    put_schema = XpubAddSchema()
     delete_schema = BaseXpubSchema()
     patch_schema = XpubPatchSchema()
 
