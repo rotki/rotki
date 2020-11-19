@@ -338,10 +338,36 @@ CREATE TABLE IF NOT EXISTS amm_swaps (
 );
 """
 
+DB_CREATE_UNISWAP_EVENTS = """
+CREATE TABLE IF NOT EXISTS uniswap_events (
+    tx_hash VARCHAR[42] NOT NULL,
+    log_index INTEGER NOT NULL,
+    address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    pool_address VARCHAR[42] NOT NULL,
+    is_token0_unknown INTEGER NOT NULL,
+    token0_address VARCHAR[42] NOT NULL,
+    token0_symbol TEXT NOT NULL,
+    token0_name TEXT,
+    token0_decimals INTEGER,
+    is_token1_unknown INTEGER NOT NULL,
+    token1_address VARCHAR[42] NOT NULL,
+    token1_symbol TEXT NOT NULL,
+    token1_name TEXT,
+    token1_decimals INTEGER,
+    amount0 TEXT,
+    amount1 TEXT,
+    usd_price TEXT,
+    lp_amount TEXT,
+    PRIMARY KEY (tx_hash, log_index)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -370,4 +396,5 @@ PRAGMA foreign_keys=on;
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
     DB_CREATE_AMM_SWAPS,
+    DB_CREATE_UNISWAP_EVENTS,
 )

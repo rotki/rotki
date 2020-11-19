@@ -28,6 +28,7 @@ from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.uniswap import (
     UniswapPool,
     UniswapPoolAsset,
+    UniswapPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.yearn.vaults import (
     YearnVaultBalance,
@@ -108,6 +109,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             UniswapPoolAsset,
             UnknownEthereumToken,
             AMMTrade,
+            UniswapPoolEventsBalance,
     )):
         return process_result(entry.serialize())
     elif isinstance(entry, (

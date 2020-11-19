@@ -2,8 +2,9 @@
 Changelog
 =========
 
-* :bug:`1740` SNX token and some other token balances should no longer be double counted
-* :feature:`1724` YFI and BAL are now supported as collateral for makerdao vaults
+* :feature:`717` Add support for Uniswap v2 balances, swaps history and LP events history.
+* :bug:`1740` SNX token and some other token balances should no longer be double counted.
+* :feature:`1724` YFI and BAL are now supported as collateral for makerdao vaults.
 * :feature:`1694` Users are now able to track their ETH deposited in Eth2 beacon chain. Premium users can see more details about the activity and their staking gains in the staking menu.
 * :feature:`1660` Users will now be able to see and edit labels and tags for xpub addresses.
 * :feature:`1227` Users can now see a net worth graph on the dashboard.

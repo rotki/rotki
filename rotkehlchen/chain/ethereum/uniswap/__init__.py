@@ -1,14 +1,20 @@
 
-from .uniswap import Uniswap  # noqa: F401
 from .typing import (  # noqa: F401
+    UNISWAP_EVENTS_PREFIX,
+    UNISWAP_TRADES_PREFIX,
     LiquidityPool as UniswapPool,
     LiquidityPoolAsset as UniswapPoolAsset,
-    UNISWAP_TRADES_PREFIX,
+    LiquidityPoolEvent as UniswapPoolEvent,
+    LiquidityPoolEventsBalance as UniswapPoolEventsBalance,
 )
+from .uniswap import Uniswap  # noqa: F401
 
 __all__ = [
-    'Uniswap',
+    'UNISWAP_EVENTS_PREFIX',
+    'UNISWAP_TRADES_PREFIX',
     'UniswapPool',
     'UniswapPoolAsset',
-    'UNISWAP_TRADES_PREFIX',
+    'UniswapPoolEvent',
+    'UniswapPoolEventsBalance',
+    'Uniswap',
 ]

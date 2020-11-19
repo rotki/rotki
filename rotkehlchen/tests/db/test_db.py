@@ -93,6 +93,7 @@ TABLES_AT_INIT = [
     'xpubs',
     'xpub_mappings',
     'amm_swaps',
+    'uniswap_events',
 ]
 
 

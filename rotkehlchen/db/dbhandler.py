@@ -28,7 +28,11 @@ from rotkehlchen.chain.ethereum.structures import (
     aave_event_from_db,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap
-from rotkehlchen.chain.ethereum.uniswap import UNISWAP_TRADES_PREFIX
+from rotkehlchen.chain.ethereum.uniswap import (
+    UNISWAP_EVENTS_PREFIX,
+    UNISWAP_TRADES_PREFIX,
+    UniswapPoolEvent,
+)
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -745,13 +749,134 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def delete_uniswap_data(self) -> None:
-        """Delete all historical Uniswap data"""
+    def add_uniswap_events(self, events: Sequence[UniswapPoolEvent]) -> None:
+        query = (
+            """
+            INSERT INTO uniswap_events (
+                tx_hash,
+                log_index,
+                address,
+                timestamp,
+                type,
+                pool_address,
+                is_token0_unknown,
+                token0_address,
+                token0_symbol,
+                token0_name,
+                token0_decimals,
+                is_token1_unknown,
+                token1_address,
+                token1_symbol,
+                token1_name,
+                token1_decimals,
+                amount0,
+                amount1,
+                usd_price,
+                lp_amount
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+        )
+        cursor = self.conn.cursor()
+        for event in events:
+            event_tuple = event.to_db_tuple()
+            try:
+                cursor.execute(query, event_tuple)
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add a Uniswap event that already exists in the DB. '
+                    f'Event data: {event_tuple}. Skipping event.',
+                )
+                continue
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_uniswap_events(
+            self,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            address: Optional[ChecksumEthAddress] = None,
+    ) -> List[UniswapPoolEvent]:
+        """Returns a list of Uniswap events optionally filtered by time, location
+        and address
+        """
+        cursor = self.conn.cursor()
+        query = (
+            'SELECT '
+            'tx_hash, '
+            'log_index, '
+            'address, '
+            'timestamp, '
+            'type, '
+            'pool_address, '
+            'is_token0_unknown, '
+            'token0_address, '
+            'token0_symbol, '
+            'token0_name, '
+            'token0_decimals, '
+            'is_token1_unknown, '
+            'token1_address, '
+            'token1_symbol, '
+            'token1_name, '
+            'token1_decimals, '
+            'amount0, '
+            'amount1, '
+            'usd_price, '
+            'lp_amount '
+            'FROM uniswap_events '
+        )
+        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
+        filters = []
+        if address is not None:
+            filters.append(f'address="{address}" ')
+
+        if filters:
+            query += 'WHERE '
+            query += 'AND '.join(filters)
+
+        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
+        results = cursor.execute(query, bindings)
+
+        events = []
+        for event_tuple in results:
+            try:
+                event = UniswapPoolEvent.deserialize_from_db(event_tuple)
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing Uniswap event from the DB. Skipping event. '
+                    f'Error was: {str(e)}',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing Uniswap event from the DB. Skipping event. '
+                    f'Unknown asset {e.asset_name} found',
+                )
+                continue
+            events.append(event)
+
+        return events
+
+    def delete_uniswap_trades_data(self) -> None:
+        """Delete all historical Uniswap trades data"""
         cursor = self.conn.cursor()
         cursor.execute(
             f'DELETE FROM amm_swaps WHERE location="{Location.UNISWAP.serialize_for_db()}";',
         )
-        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap%";')
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_uniswap_events_data(self) -> None:
+        """Delete all historical Uniswap events data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM uniswap_events;')
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
+        )
         self.conn.commit()
         self.update_last_write()
 
@@ -1914,10 +2039,14 @@ class DBHandler:
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="ethtxs_{address}";')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
         cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name="{UNISWAP_EVENTS_PREFIX}_{address}";',
+        )
+        cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name="{UNISWAP_TRADES_PREFIX}_{address}";',
         )
         cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
+        cursor.execute('DELETE FROM uniswap_events WHERE address=?;', (address,))
         cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
             (address,),

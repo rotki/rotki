@@ -1,14 +1,9 @@
 import pytest
 
 from rotkehlchen.fval import FVal
+from rotkehlchen.typing import Price
 
-from .utils import (
-    ASSET_SHUF,
-    ASSET_TGX,
-    TOKEN_DAY_DATA_SHUF,
-    TOKEN_DAY_DATA_TGX,
-    store_call_args,
-)
+from .utils import ASSET_SHUF, ASSET_TGX, TOKEN_DAY_DATA_SHUF, TOKEN_DAY_DATA_TGX, store_call_args
 
 
 def test_unknown_asset_does_not_have_usd_price(uniswap_module):
@@ -51,7 +46,7 @@ def test_unknown_asset_has_usd_price(uniswap_module):
     )
 
     exp_asset_price = {
-        ASSET_TGX.ethereum_address: FVal(TOKEN_DAY_DATA_TGX['priceUSD']),
+        ASSET_TGX.ethereum_address: Price(FVal(TOKEN_DAY_DATA_TGX['priceUSD'])),
     }
     assert asset_price == exp_asset_price
 

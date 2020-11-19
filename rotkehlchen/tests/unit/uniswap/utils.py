@@ -1,55 +1,49 @@
 import functools
 
-from eth_utils.typing import HexAddress, HexStr
-
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.constants import ZERO
-from rotkehlchen.fval import FVal
-from rotkehlchen.typing import (
-    ChecksumEthAddress,
-    Price,
-)
 from rotkehlchen.chain.ethereum.uniswap.typing import (
+    EventType,
     LiquidityPool,
     LiquidityPoolAsset,
+    LiquidityPoolEvent,
+    LiquidityPoolEventsBalance,
 )
-
+from rotkehlchen.constants import ZERO
+from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.typing import AssetAmount, Price, Timestamp
 
 # Logic: Get balances
 
 # Addresses
-TEST_ADDRESS_1 = ChecksumEthAddress(
-    HexAddress(HexStr('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')),
-)
-TEST_ADDRESS_2 = ChecksumEthAddress(
-    HexAddress(HexStr('0xcf2B8EeC2A9cE682822b252a1e9B78EedebEFB02')),
-)
-TEST_ADDRESS_3 = ChecksumEthAddress(
-    HexAddress(HexStr('0x7777777777777777777777777777777777777777')),
-)
+TEST_ADDRESS_1 = deserialize_ethereum_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
+TEST_ADDRESS_2 = deserialize_ethereum_address('0xcf2B8EeC2A9cE682822b252a1e9B78EedebEFB02')
+TEST_ADDRESS_3 = deserialize_ethereum_address('0x7777777777777777777777777777777777777777')
 
 # Known tokens
 ASSET_USDT = EthereumToken('USDT')
 ASSET_WETH = EthereumToken('WETH')
+TOKEN_BASED = EthereumToken('$BASED')
 
 # Unknown tokens
 ASSET_SHUF = UnknownEthereumToken(
-    ethereum_address=ChecksumEthAddress(
-        HexAddress(HexStr('0x3A9FfF453d50D4Ac52A6890647b823379ba36B9E')),
-    ),
+    ethereum_address=deserialize_ethereum_address('0x3A9FfF453d50D4Ac52A6890647b823379ba36B9E'),
     symbol='SHUF',
     name='Shuffle.Monster V3',
     decimals=18,
 )
 ASSET_TGX = UnknownEthereumToken(
-    ethereum_address=ChecksumEthAddress(
-        HexAddress(HexStr('0x364A7381A5b378CeD7AB33d1CDf6ff1bf162Bfd6')),
-    ),
+    ethereum_address=deserialize_ethereum_address('0x364A7381A5b378CeD7AB33d1CDf6ff1bf162Bfd6'),
     symbol='TGX',
     name='DeFi-X Token',
     decimals=18,
+)
+TOKEN_DICE = UnknownEthereumToken(
+    ethereum_address=deserialize_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),
+    symbol='DICE',
+    name='DICE.FINANCE TOKEN',
 )
 
 # Method: `_get_balances_graph`
@@ -110,9 +104,7 @@ LIQUIDITY_POSITION_2 = {
 # Expected <LiquidityPool> for LIQUIDITY_POSITION_1
 EXP_LIQUIDITY_POOL_1 = (
     LiquidityPool(
-        address=ChecksumEthAddress(
-            HexAddress(HexStr('0x260E069deAd76baAC587B5141bB606Ef8b9Bab6c')),
-        ),
+        address=deserialize_ethereum_address('0x260E069deAd76baAC587B5141bB606Ef8b9Bab6c'),
         assets=[
             LiquidityPoolAsset(
                 asset=ASSET_SHUF,
@@ -144,9 +136,7 @@ EXP_LIQUIDITY_POOL_1 = (
 # Get balances expected <LiquidityPool> for LIQUIDITY_POSITION_2
 EXP_LIQUIDITY_POOL_2 = (
     LiquidityPool(
-        address=ChecksumEthAddress(
-            HexAddress(HexStr('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae')),
-        ),
+        address=deserialize_ethereum_address('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae'),
         assets=[
             LiquidityPoolAsset(
                 asset=ASSET_TGX,
@@ -206,9 +196,7 @@ USD_PRICE_TGX = Price(FVal('0.2635575008126147388714187358722384'))
 # LIQUIDITY_POOL_1 with all the USD price/value fields updated
 UPDATED_LIQUIDITY_POOL_1 = (
     LiquidityPool(
-        address=ChecksumEthAddress(
-            HexAddress(HexStr('0x260E069deAd76baAC587B5141bB606Ef8b9Bab6c')),
-        ),
+        address=deserialize_ethereum_address('0x260E069deAd76baAC587B5141bB606Ef8b9Bab6c'),
         assets=[
             LiquidityPoolAsset(
                 asset=ASSET_SHUF,
@@ -240,9 +228,7 @@ UPDATED_LIQUIDITY_POOL_1 = (
 # LIQUIDITY_POOL_2 with all the USD price/value fields updated
 UPDATED_LIQUIDITY_POOL_2 = (
     LiquidityPool(
-        address=ChecksumEthAddress(
-            HexAddress(HexStr('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae')),
-        ),
+        address=deserialize_ethereum_address('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae'),
         assets=[
             LiquidityPoolAsset(
                 asset=ASSET_TGX,
@@ -274,9 +260,7 @@ UPDATED_LIQUIDITY_POOL_2 = (
 # LIQUIDITY_POOL_1 with only the USDT USD price/value fields updated
 UPDATED_LIQUIDITY_POOL_2_ONLY_USDT = (
     LiquidityPool(
-        address=ChecksumEthAddress(
-            HexAddress(HexStr('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae')),
-        ),
+        address=deserialize_ethereum_address('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae'),
         assets=[
             LiquidityPoolAsset(
                 asset=ASSET_TGX,
@@ -302,6 +286,165 @@ UPDATED_LIQUIDITY_POOL_2_ONLY_USDT = (
             amount=FVal('1.935956370962755013'),
             usd_value=FVal('996821.9019340162801694087585'),  # Updated (USDT)
         ),
+    )
+)
+
+# Method: `_calculate_events_balances`
+
+LP_1_EVENTS = [
+    LiquidityPoolEvent(
+        tx_hash='0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
+        log_index=263,
+        address=TEST_ADDRESS_1,
+        timestamp=Timestamp(1604273256),
+        event_type=EventType.MINT,
+        pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+        token0=TOKEN_BASED,
+        token1=ASSET_WETH,
+        amount0=AssetAmount(FVal('605.773209925184996494')),
+        amount1=AssetAmount(FVal('1.106631443395672732')),
+        usd_price=Price(FVal('872.4689300619698095220125311431804')),
+        lp_amount=AssetAmount(FVal('1.220680531244355402')),
+    ),
+    LiquidityPoolEvent(
+        tx_hash='0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
+        log_index=66,
+        address=TEST_ADDRESS_1,
+        timestamp=Timestamp(1604283808),
+        event_type=EventType.BURN,
+        pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+        token0=TOKEN_BASED,
+        token1=ASSET_WETH,
+        amount0=AssetAmount(FVal('641.26289347330654345')),
+        amount1=AssetAmount(FVal('1.046665027131675546')),
+        usd_price=Price(FVal('837.2737746532695970921908229899852')),
+        lp_amount=AssetAmount(FVal('1.220680531244355402')),
+    ),
+]
+LP_2_EVENTS = [
+    LiquidityPoolEvent(
+        tx_hash='0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4',
+        log_index=99,
+        address=TEST_ADDRESS_1,
+        timestamp=Timestamp(1598270334),
+        event_type=EventType.MINT,
+        pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+        token0=ASSET_WETH,
+        token1=TOKEN_DICE,
+        amount0=AssetAmount(FVal('1.580431277572006656')),
+        amount1=AssetAmount(FVal('3')),
+        usd_price=Price(FVal('1281.249386421513581165086356450817')),
+        lp_amount=AssetAmount(FVal('2.074549918528068811')),
+    ),
+    LiquidityPoolEvent(
+        tx_hash='0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
+        log_index=208,
+        address=TEST_ADDRESS_1,
+        timestamp=Timestamp(1599000975),
+        event_type=EventType.BURN,
+        pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+        token0=ASSET_WETH,
+        token1=TOKEN_DICE,
+        amount0=AssetAmount(FVal('0.970300671842796406')),
+        amount1=AssetAmount(FVal('4.971799615456732408')),
+        usd_price=Price(FVal('928.8590296681781753390482605315881')),
+        lp_amount=AssetAmount(FVal('2.074549918528068811')),
+    ),
+]
+LP_1_EVENTS_BALANCE = (
+    LiquidityPoolEventsBalance(
+        address=TEST_ADDRESS_1,
+        pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        token0=TOKEN_BASED,
+        token1=ASSET_WETH,
+        events=LP_1_EVENTS,
+        profit_loss0=AssetAmount(FVal('-35.489683548121546956')),
+        profit_loss1=AssetAmount(FVal('0.059966416263997186')),
+        usd_profit_loss=Price(FVal('35.19515540870021242982170811')),
+    )
+)
+LP_2_EVENTS_BALANCE = (
+    LiquidityPoolEventsBalance(
+        address=TEST_ADDRESS_1,
+        pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
+        token0=ASSET_WETH,
+        token1=TOKEN_DICE,
+        events=LP_2_EVENTS,
+        profit_loss0=AssetAmount(FVal('0.610130605729210250')),
+        profit_loss1=AssetAmount(FVal('-1.971799615456732408')),
+        usd_profit_loss=Price(FVal('352.3903567533354058260380955')),
+    )
+)
+LP_3_EVENTS = [
+    LiquidityPoolEvent(
+        tx_hash='0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
+        log_index=263,
+        address=TEST_ADDRESS_1,
+        timestamp=Timestamp(1604273256),
+        event_type=EventType.MINT,
+        pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+        token0=TOKEN_BASED,
+        token1=ASSET_WETH,
+        amount0=AssetAmount(FVal('605.773209925184996494')),
+        amount1=AssetAmount(FVal('1.106631443395672732')),
+        usd_price=Price(FVal('872.4689300619698095220125311431804')),
+        lp_amount=AssetAmount(FVal('1.220680531244355402')),
+    ),
+    LiquidityPoolEvent(
+        tx_hash='0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
+        log_index=66,
+        address=TEST_ADDRESS_1,
+        timestamp=Timestamp(1604283808),
+        event_type=EventType.BURN,
+        pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+        token0=TOKEN_BASED,
+        token1=ASSET_WETH,
+        amount0=AssetAmount(FVal('600')),
+        amount1=AssetAmount(FVal('1')),
+        usd_price=Price(FVal('800')),
+        lp_amount=AssetAmount(FVal('1')),
+    ),
+]
+LP_3_BALANCE = (
+    LiquidityPool(
+        address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        assets=[
+            LiquidityPoolAsset(
+                asset=TOKEN_BASED,
+                total_amount=FVal('13364.706850726724616147'),
+                user_balance=Balance(
+                    amount=FVal('5'),
+                    usd_value=FVal('0.876854'),  # Updated
+                ),
+                usd_price=Price(FVal('4.38427')),  # Updated
+            ),
+            LiquidityPoolAsset(
+                asset=ASSET_WETH,
+                total_amount=FVal('24.831854200785672749'),
+                user_balance=Balance(
+                    amount=FVal('0.05'),
+                    usd_value=FVal('23.573'),  # Updated
+                ),
+                usd_price=Price(FVal('471.46')),  # Updated
+            ),
+        ],
+        total_supply=FVal('27.12436225218922874'),
+        user_balance=Balance(
+            amount=FVal('0.11'),
+            usd_value=FVal('36.23'),  # Updated
+        ),
+    )
+)
+LP_3_EVENTS_BALANCE = (
+    LiquidityPoolEventsBalance(
+        address=TEST_ADDRESS_1,
+        pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        token0=TOKEN_BASED,
+        token1=ASSET_WETH,
+        events=LP_3_EVENTS,
+        profit_loss0=AssetAmount(FVal('0.773209925184996494')),
+        profit_loss1=AssetAmount(FVal('0.056631443395672732')),
+        usd_profit_loss=Price(FVal('36.2389300619698095220125311')),
     )
 )
 
