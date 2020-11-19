@@ -19,7 +19,11 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import { UniswapAsset, UniswapBalances } from '@/services/defi/types/uniswap';
+import {
+  UniswapAsset,
+  UniswapAssetDetails,
+  UniswapBalances
+} from '@/services/defi/types/uniswap';
 import {
   YearnEventType,
   YearnVaultsBalances,
@@ -246,20 +250,20 @@ interface UniswapSwap {
   readonly location: 'uniswap';
   readonly logIndex: number;
   readonly toAddress: string;
-  readonly token0: string;
-  readonly token1: string;
+  readonly token0: UniswapAssetDetails | string;
+  readonly token1: UniswapAssetDetails | string;
   readonly txHash: string;
 }
 
 export interface UniswapTrade {
   readonly address: string;
   readonly amount: BigNumber;
-  readonly baseAsset: string;
+  readonly baseAsset: UniswapAssetDetails | string;
   readonly fee: BigNumber;
   readonly feeCurrency: string;
   readonly location: 'uniswap';
   readonly pair: string;
-  readonly quoteAsset: string;
+  readonly quoteAsset: UniswapAssetDetails | string;
   readonly rate: BigNumber;
   readonly swaps: UniswapSwap[];
   readonly timestamp: number;

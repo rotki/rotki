@@ -172,6 +172,10 @@ export default new Router({
           path: Routes.DEFI_LIABILITIES,
           name: 'defi-liabilities',
           component: () => import('../views/defi/DecentralizedBorrowing.vue')
+        },
+        {
+          path: Routes.DEFI_DEX_TRADES,
+          component: () => import('../views/defi/DexTrades.vue')
         }
       ]
     },

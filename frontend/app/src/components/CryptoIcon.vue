@@ -44,6 +44,9 @@ export default class CryptoIcon extends Vue {
   }
 
   get url(): string {
+    if (this.symbol === 'WETH') {
+      return require(`@/assets/images/defi/weth.svg`);
+    }
     return `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.symbol}/icon/small`;
   }
 }

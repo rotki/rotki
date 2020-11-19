@@ -14,7 +14,7 @@
       />
       <v-icon v-else color="accent">mdi-book-open</v-icon>
     </span>
-    <span :class="horizontal ? 'ml-2' : null">
+    <span :class="horizontal ? 'ml-2' : null" class="mt-2">
       {{ item.name }}
     </span>
   </span>

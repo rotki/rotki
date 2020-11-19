@@ -1,4 +1,3 @@
-import sortBy from 'lodash/sortBy';
 import { GetterTree } from 'vuex';
 import { Trade } from '@/services/history/types';
 import { RotkehlchenState } from '@/store/types';
@@ -19,11 +18,9 @@ export const getters: GetterTree<HistoryState, RotkehlchenState> = {
     let uniTrades: Trade[] = [];
     if (trades.limit === -1) {
       uniTrades = uniswapTrades([]);
-    } else if (trades.limit - trades.data.length > 0) {
-      uniTrades = uniswapTrades([]).slice(0, trades.limit - trades.data.length);
     }
 
-    return sortBy(trades.data.concat(...uniTrades), 'timestamp').reverse();
+    return trades.data.concat(...uniTrades);
   },
   tradesTotal: ({ trades }) => {
     return trades.found;

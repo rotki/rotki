@@ -25,6 +25,12 @@
       "button_create": "Create"
     }
   },
+  "dex_trade": {
+    "title": "DEX Trades"
+  },
+  "dex_trades": {
+    "loading": "@:common.loading.please_wait DEX Trades are @:common.loading.getting_loaded"
+  },
   "helpers": {
     "refresh_header": {
       "tooltip": "Refresh {title} data"
@@ -503,7 +509,8 @@
     "defi_sub": {
       "overview": "Overview",
       "deposits": "Deposits",
-      "liabilities": "Liabilities"
+      "liabilities": "Liabilities",
+      "dex_trades": "DEX Trades"
     },
     "staking": "Staking"
   },
@@ -709,7 +716,8 @@
     "tabs": {
       "overview": "Overview",
       "deposits": "Deposits",
-      "liabilities": "Liabilities"
+      "liabilities": "Liabilities",
+      "dex_trades": "DEX Trades"
     }
   },
   "decentralized_overview": {
@@ -991,13 +999,19 @@
   },
   "staking": {
     "title": "Staking",
-    "loading":"Please wait while your eth2 staking details are getting loaded...",
-    "no_premium": "@:common.no_premium Staking is @:common.available_to_premium",
-    "get_premium": "@:common.visit_website"
+    "loading":"Please wait while your eth2 staking details are getting loaded..."
   },
   "common": {
     "no_premium": "No premium subscription detected. ",
     "available_to_premium": "only available to premium users.",
-    "visit_website": "To get a premium subscription please visit our {0}"
+    "visit_website": "To get a premium subscription please visit our {0}",
+    "loading": {
+      "please_wait": "Please wait while your",
+      "getting_loaded": "getting loaded..."
+    }
+  },
+  "no_premium_placeholder":{
+    "get_premium": "@:common.visit_website",
+    "no_premium": "@:common.no_premium {text} @:common.available_to_premium"
   }
 }

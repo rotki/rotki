@@ -173,8 +173,8 @@ export const uniswapTradeNumericKeys = [
   'amount',
   'fee',
   'rate',
-  'amount0In',
-  'amount0Out',
-  'amount1In',
-  'amount1Out'
+  'amount0_in',
+  'amount0_out',
+  'amount1_in',
+  'amount1_out'
 ];

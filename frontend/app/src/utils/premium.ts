@@ -7,12 +7,15 @@ import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import HashLink from '@/components/helper/HashLink.vue';
+import RefreshHeader from '@/components/helper/RefreshHeader.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { DebugSettings } from '@/electron-main/ipc';
 import { api } from '@/services/rotkehlchen-api';
 
@@ -40,6 +43,9 @@ export const setupPremium = () => {
   Vue.component('PercentageDisplay', PercentageDisplay);
   // version: 4
   Vue.component('BlockchainAccountSelector', BlockchainAccountSelector);
+  Vue.component('DateDisplay', DateDisplay);
+  Vue.component('LocationDisplay', LocationDisplay);
+  Vue.component('RefreshHeader', RefreshHeader);
 };
 
 function findComponents(): string[] {
@@ -136,6 +142,10 @@ export const AaveEarnedDetails = (): Promise<VueConstructor> => {
 
 export const Eth2Staking = (): Promise<VueConstructor> => {
   return load('Eth2Staking');
+};
+
+export const DexTradesTable = (): Promise<VueConstructor> => {
+  return load('DexTradesTable');
 };
 
 declare global {
