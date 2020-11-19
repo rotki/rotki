@@ -60,9 +60,11 @@ export default class PercentageDisplay extends Mixins(
     if (this.scrambleData) {
       return (Math.random() * 100 + 1).toFixed(2);
     }
+
     if (!this.value) {
       return '-';
     }
+
     return this.value.replace('%', '');
   }
 
