@@ -18,6 +18,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.api import (
+    ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
@@ -90,7 +91,11 @@ def test_get_balances(
     )
     if async_query:
         task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        outcome = wait_for_async_task(
+            server=rotkehlchen_api_server,
+            task_id=task_id,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
+        )
         assert outcome['message'] == ''
         result = outcome['result']
     else:
