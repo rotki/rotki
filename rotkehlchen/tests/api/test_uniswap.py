@@ -57,10 +57,11 @@ def test_get_balances_module_not_activated(
 
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
-@pytest.mark.parametrize(  # Force infura and another web3 node for chain query
+@pytest.mark.parametrize(
     'start_with_valid_premium,ethrpc_endpoint,ethereum_manager_connect_at_start',
-    [
+    [  # Test with infura (as own node), many open nodes, and premium + graph
         (False, INFURA_TEST, (NodeName.OWN, NodeName.MYCRYPTO)),
+        (False, '', (NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.AVADO_POOL)),
         (True, '', ()),
     ],
 )
@@ -94,7 +95,7 @@ def test_get_balances(
         outcome = wait_for_async_task(
             server=rotkehlchen_api_server,
             task_id=task_id,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
         )
         assert outcome['message'] == ''
         result = outcome['result']

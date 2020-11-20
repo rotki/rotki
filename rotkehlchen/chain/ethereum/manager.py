@@ -1,6 +1,5 @@
 import logging
 import random
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from urllib.parse import urlparse
 
@@ -38,6 +37,8 @@ from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str, request_get_dict
 
+from .typing import NodeName
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -62,42 +63,6 @@ def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
         return False, message
 
     return True, message
-
-
-class NodeName(Enum):
-    OWN = 0
-    ETHERSCAN = 1
-    MYCRYPTO = 2
-    BLOCKSCOUT = 3
-    AVADO_POOL = 4
-
-    def __str__(self) -> str:
-        if self == NodeName.OWN:
-            return 'own node'
-        elif self == NodeName.ETHERSCAN:
-            return 'etherscan'
-        elif self == NodeName.MYCRYPTO:
-            return 'mycrypto'
-        elif self == NodeName.BLOCKSCOUT:
-            return 'blockscout'
-        elif self == NodeName.AVADO_POOL:
-            return 'avado pool'
-
-        raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
-
-    def endpoint(self, own_rpc_endpoint: str) -> str:
-        if self == NodeName.OWN:
-            return own_rpc_endpoint
-        elif self == NodeName.ETHERSCAN:
-            raise TypeError('Called endpoint for etherscan')
-        elif self == NodeName.MYCRYPTO:
-            return 'https://api.mycryptoapi.com/eth'
-        elif self == NodeName.BLOCKSCOUT:
-            return 'https://mainnet-nethermind.blockscout.com/'
-        elif self == NodeName.AVADO_POOL:
-            return 'https://mainnet.eth.cloud.ava.do/'
-
-        raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
 
 
 OPEN_NODES = (
@@ -161,7 +126,7 @@ class EthereumManager():
             NodeName.AVADO_POOL in self.web3_mapping
         )
 
-    def default_call_order(self, skip_etherscan: bool = False) -> Sequence[NodeName]:
+    def default_call_order(self, skip_etherscan: bool = False) -> List[NodeName]:
         """Default call order for ethereum nodes
 
         Own node always has preference. Then all other node types are randomly queried

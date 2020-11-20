@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
+from rotkehlchen.chain.ethereum.typing import NodeName
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.ethereum import ZERION_ABI
@@ -103,14 +104,20 @@ def uniswap_lp_token_balances(
         abi=ZERION_ABI,
         deployed_block=1586199170,
     )
-    chunks = list(get_chunks(lp_addresses, n=4000))
+    if NodeName.OWN in ethereum.web3_mapping:
+        chunks = list(get_chunks(lp_addresses, n=4000))
+        call_order = [NodeName.OWN]
+    else:
+        chunks = list(get_chunks(lp_addresses, n=700))
+        call_order = ethereum.default_call_order(skip_etherscan=True)
+
     balances = []
     for chunk in chunks:
         result = zerion_contract.call(
             ethereum=ethereum,
             method_name='getAdapterBalance',
             arguments=[address, '0x4EdBac5c8cb92878DD3fd165e43bBb8472f34c3f', chunk],
-            call_order=ethereum.default_call_order(skip_etherscan=True),
+            call_order=call_order,
         )
 
         for entry in result[1]:
