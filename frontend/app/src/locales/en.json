@@ -991,6 +991,7 @@
     "liquidity": "Liquidity Pools"
   },
   "uniswap": {
+    "loading":"Please wait while your liquidity pools are getting loaded...",
     "pool_header": "UNIv2 {asset1}/{asset2}",
     "liquidity": "Liquidity:",
     "balance": "Balance",

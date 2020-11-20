@@ -325,6 +325,17 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   get expandable(): boolean {
     return this.blockchain === ETH;
   }
+
+  removeCollapsed({ derivationPath, xpub }: XpubPayload) {
+    const index = this.collapsedXpubs.findIndex(
+      collapsed =>
+        collapsed.derivationPath === derivationPath && collapsed.xpub === xpub
+    );
+
+    if (index >= 0) {
+      this.collapsedXpubs.splice(index, 1);
+    }
+  }
 }
 </script>
 

@@ -237,7 +237,7 @@ export interface UniswapBalance {
   readonly account: string;
   readonly assets: UniswapAsset[];
   readonly poolAddress: string;
-  readonly totalSupply: BigNumber;
+  readonly totalSupply: BigNumber | null;
   readonly userBalance: Balance;
 }
 

@@ -25,6 +25,7 @@
       </v-col>
     </v-row>
     <account-balance-table
+      ref="balances"
       :blockchain="blockchain"
       :balances="balances"
       :visible-tags="visibleTags"
@@ -127,6 +128,7 @@ export default class AccountBalances extends Vue {
       const payload = { ...this.xpubToDelete };
       this.xpubToDelete = null;
       await this.$store.dispatch('balances/deleteXpub', payload);
+      (this.$refs.balances as AccountBalanceTable).removeCollapsed(payload);
     }
   }
 

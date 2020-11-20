@@ -9,7 +9,7 @@ interface UniswapAssetDetails {
 
 interface UniswapAsset {
   readonly asset: UniswapAssetDetails | string;
-  readonly totalAmount: BigNumber;
+  readonly totalAmount: BigNumber | null;
   readonly usdPrice: BigNumber;
   readonly userBalance: Balance;
 }
@@ -17,7 +17,7 @@ interface UniswapAsset {
 interface UniswapBalance {
   readonly address: string;
   readonly assets: UniswapAsset[];
-  readonly totalSupply: BigNumber;
+  readonly totalSupply: BigNumber | null;
   readonly userBalance: Balance;
 }
 

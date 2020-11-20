@@ -167,7 +167,16 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   }
 
   get startingValue(): BigNumber {
-    const start = this.timeframeData.data[0];
+    const data = this.timeframeData.data;
+    let start = data[0];
+    if (start === 0) {
+      for (let i = 1; i < data.length; i++) {
+        if (data[i] > 0) {
+          start = data[i];
+          break;
+        }
+      }
+    }
     return bigNumberify(start);
   }
 
@@ -176,10 +185,11 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   }
 
   get percentage(): string {
-    return this.balanceDelta
+    const bigNumber = this.balanceDelta
       .div(this.startingValue)
-      .multipliedBy(100)
-      .toFormat(2);
+      .multipliedBy(100);
+
+    return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
   }
 
   get timeframeData(): NetValue {

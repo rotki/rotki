@@ -32,7 +32,7 @@ import {
   ExchangePayload,
   XpubPayload
 } from '@/store/balances/types';
-import { Status } from '@/store/const';
+import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
@@ -271,8 +271,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       } as ExchangeBalancePayload);
     }
   },
+
   async fetch(
-    { dispatch },
+    { commit, dispatch },
     payload: { newUser: boolean; exchanges: string[] }
   ): Promise<void> {
     const { exchanges, newUser } = payload;
@@ -286,6 +287,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     if (!newUser) {
       await dispatch('fetchBlockchainBalances');
+    } else {
+      const loaded = Status.LOADED;
+      const oldStatus = () => Status.NONE;
+      setStatus(loaded, Section.BLOCKCHAIN_ETH, oldStatus, commit);
+      setStatus(loaded, Section.BLOCKCHAIN_BTC, oldStatus, commit);
     }
   },
 
