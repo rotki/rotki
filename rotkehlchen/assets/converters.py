@@ -407,6 +407,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'INX',
     'MFA',
     'FCT2',  # neither in coingecko nor cryptocompare
+    'UPXAU',  # neither in coingecko nor cryptocompare
 )
 
 
@@ -427,6 +428,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'UNIUP',  # no cryptocompare/coingecko data
     'SXPDOWN',  # no cryptocompare/coingecko data
     'SXPUP',  # no cryptocompare/coingecko data
+    'UAH',  # no cryptocompare/coingecko data
 )
 
 
