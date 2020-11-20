@@ -36,6 +36,7 @@ import {
 } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import {
+  uniswapEventsNumericKeys,
   uniswapNumericKeys,
   uniswapTradeNumericKeys
 } from '@/store/defi/const';
@@ -46,6 +47,7 @@ import {
   DSRBalances,
   DSRHistory,
   MakerDAOVaultDetails,
+  UniswapEvents,
   UniswapTrades
 } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
@@ -473,7 +475,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchDSRHistory', refresh),
       dispatch('fetchAaveHistory', { refresh }),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchYearnVaultsHistory', { refresh })
+      dispatch('fetchYearnVaultsHistory', { refresh }),
+      dispatch('fetchUniswapEvents', refresh)
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);
@@ -866,6 +869,57 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
           error: e.message
         }),
         i18n.tc('actions.defi.uniswap_trades.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
+  },
+
+  async fetchUniswapEvents(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean = false
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes(MODULE_UNISWAP) || !session!.premium) {
+      return;
+    }
+
+    const section = Section.DEFI_UNISWAP_EVENTS;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.DEFI_UNISWAP_EVENTS;
+      const { taskId } = await api.defi.fetchUniswapEvents();
+      const task = createTask(taskId, taskType, {
+        title: i18n.tc('actions.defi.uniswap_events.task.title'),
+        ignoreResult: false,
+        numericKeys: uniswapEventsNumericKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<UniswapEvents, TaskMeta>(
+        taskType
+      );
+
+      commit('uniswapEvents', result);
+    } catch (e) {
+      notify(
+        i18n.tc('actions.defi.uniswap_events.error.description', undefined, {
+          error: e.message
+        }),
+        i18n.tc('actions.defi.uniswap_events.error.title'),
         Severity.ERROR,
         true
       );

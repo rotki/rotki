@@ -5,11 +5,17 @@
     </template>
   </progress-screen>
   <v-container v-else class="uniswap">
+    <refresh-header
+      :title="$t('uniswap.title')"
+      :loading="anyRefreshing"
+      @refresh="refresh()"
+    />
     <blockchain-account-selector
       v-model="selectedAccount"
+      class="mt-4"
       hint
       :chains="[ETH]"
-      :usable-addresses="addresses"
+      :usable-addresses="uniswapAddresses"
     />
     <v-row class="mt-4">
       <v-col
@@ -141,60 +147,76 @@
         </v-card>
       </v-col>
     </v-row>
+    <uniswap-details
+      :loading="secondaryLoading"
+      :selected-addresses="selectedAddresses"
+    />
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import { SupportedDefiProtocols } from '@/services/defi/types';
-import { UniswapAssetDetails } from '@/services/defi/types/uniswap';
+import { UnknownToken } from '@/services/defi/types';
 import { SupportedAsset } from '@/services/types-model';
 import { Section } from '@/store/const';
 import { UniswapBalance } from '@/store/defi/types';
-import { DefiAccount, ETH, GeneralAccount } from '@/typing/types';
+import { assetName } from '@/store/defi/utils';
+import { ETH, GeneralAccount } from '@/typing/types';
+import { UniswapDetails } from '@/utils/premium';
 
 @Component({
-  components: { ProgressScreen, UniswapPoolAsset, BlockchainAccountSelector },
+  components: {
+    UniswapDetails,
+    ProgressScreen,
+    UniswapPoolAsset,
+    BlockchainAccountSelector
+  },
   computed: {
     ...mapGetters('balances', ['assetInfo']),
-    ...mapGetters('defi', ['defiAccounts', 'uniswapBalances'])
+    ...mapGetters('defi', ['uniswapBalances', 'uniswapAddresses'])
+  },
+  methods: {
+    ...mapActions('defi', ['fetchUniswapEvents', 'fetchUniswapBalances'])
   }
 })
 export default class Uniswap extends Mixins(StatusMixin) {
   readonly ETH = ETH;
+  readonly assetName = assetName;
   section = Section.DEFI_UNISWAP_BALANCES;
-  defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
+  secondSection = Section.DEFI_UNISWAP_EVENTS;
+
   assetInfo!: (asset: string) => SupportedAsset | undefined;
   uniswapBalances!: (addresses: string[]) => UniswapBalance[];
+  uniswapAddresses!: string[];
   selectedAccount: GeneralAccount | null = null;
+  fetchUniswapBalances!: (refresh: boolean) => Promise<void>;
+  fetchUniswapEvents!: (refresh: boolean) => Promise<void>;
+
+  get selectedAddresses(): string[] {
+    return this.selectedAccount ? [this.selectedAccount.address] : [];
+  }
 
   get balances(): UniswapBalance[] {
-    return this.uniswapBalances(
-      this.selectedAccount ? [this.selectedAccount.address] : []
-    );
+    return this.uniswapBalances(this.selectedAddresses);
   }
 
-  get addresses(): string[] {
-    return this.balances.map(value => value.account);
-  }
-
-  assetName(asset: UniswapAssetDetails | string) {
-    if (typeof asset === 'string') {
-      return asset;
-    }
-    return asset.symbol;
-  }
-
-  assetAddress(asset: UniswapAssetDetails | string) {
+  assetAddress(asset: UnknownToken | string) {
     if (typeof asset === 'string') {
       return this.assetInfo(asset)?.ethereumAddress ?? '';
     }
     return asset.ethereumAddress;
+  }
+
+  async refresh() {
+    await Promise.all([
+      this.fetchUniswapBalances(true),
+      this.fetchUniswapEvents(true)
+    ]);
   }
 }
 </script>

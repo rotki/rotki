@@ -162,6 +162,14 @@ export function getProtcolIcon(name: OverviewDefiProtocol): string {
   return ICON_LIST[name];
 }
 
+export const UNISWAP_EVENT_MINT = 'mint';
+export const UNISWAP_EVENT_BURN = 'burn';
+
+export const UNISWAP_EVENT_TYPE = [
+  UNISWAP_EVENT_MINT,
+  UNISWAP_EVENT_BURN
+] as const;
+
 export const uniswapNumericKeys = [
   ...balanceKeys,
   'usd_price',
@@ -177,4 +185,14 @@ export const uniswapTradeNumericKeys = [
   'amount0_out',
   'amount1_in',
   'amount1_out'
+];
+
+export const uniswapEventsNumericKeys = [
+  'amount0',
+  'amount1',
+  'lp_amount',
+  'usd_price',
+  'profit_loss0',
+  'profit_loss1',
+  'usd_profit_loss'
 ];

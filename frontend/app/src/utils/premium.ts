@@ -9,6 +9,7 @@ import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue'
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
+import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -46,6 +47,7 @@ export const setupPremium = () => {
   Vue.component('DateDisplay', DateDisplay);
   Vue.component('LocationDisplay', LocationDisplay);
   Vue.component('RefreshHeader', RefreshHeader);
+  Vue.component('UniswapPoolAsset', UniswapPoolAsset);
 };
 
 function findComponents(): string[] {
@@ -146,6 +148,10 @@ export const Eth2Staking = (): Promise<VueConstructor> => {
 
 export const DexTradesTable = (): Promise<VueConstructor> => {
   return load('DexTradesTable');
+};
+
+export const UniswapDetails = (): Promise<VueConstructor> => {
+  return load('UniswapDetails');
 };
 
 declare global {

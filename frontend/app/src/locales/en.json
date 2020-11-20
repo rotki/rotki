@@ -341,6 +341,15 @@
           "description": "Failed to retrieve Aave history: {error}"
         }
       },
+      "uniswap_events": {
+        "task": {
+          "title": "Querying Uniswap events"
+        },
+        "error": {
+          "title": "Querying Uniswap events",
+          "description": "Failed to retrieve Uniswap events: {error}"
+        }
+      },
       "uniswap_trades": {
         "task": {
           "title": "Querying Uniswap trades"
@@ -370,11 +379,11 @@
       },
       "uniswap": {
         "task": {
-          "title": "Querying uniswap balances"
+          "title": "Querying Uniswap balances"
         },
         "error": {
           "title": "Uniswap balances",
-          "description": "Failed to retrieve uniswap balances: {error}"
+          "description": "Failed to retrieve Uniswap balances: {error}"
         }
       }
     },
@@ -991,6 +1000,7 @@
     "liquidity": "Liquidity Pools"
   },
   "uniswap": {
+    "title": "Uniswap Pools",
     "loading":"Please wait while your liquidity pools are getting loaded...",
     "pool_header": "UNIv2 {asset1}/{asset2}",
     "liquidity": "Liquidity:",

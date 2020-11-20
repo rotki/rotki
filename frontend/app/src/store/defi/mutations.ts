@@ -17,6 +17,7 @@ import {
   DSRHistory,
   MakerDAOVault,
   MakerDAOVaultDetails,
+  UniswapEvents,
   UniswapTrades
 } from '@/store/defi/types';
 
@@ -62,6 +63,9 @@ export const mutations: MutationTree<DefiState> = {
   },
   uniswapTrades(state: DefiState, trades: UniswapTrades) {
     state.uniswapTrades = trades;
+  },
+  uniswapEvents(state: DefiState, events: UniswapEvents) {
+    state.uniswapEvents = events;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

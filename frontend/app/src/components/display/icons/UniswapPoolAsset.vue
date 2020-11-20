@@ -7,11 +7,12 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { TokenDetails } from '@/services/defi/types';
 
 @Component({})
 export default class UniswapPoolAsset extends Vue {
   @Prop({ required: true, type: Array, validator: value => value.length === 2 })
-  assets!: string[];
+  assets!: TokenDetails[];
 }
 </script>
 

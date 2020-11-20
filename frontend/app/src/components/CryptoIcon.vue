@@ -1,6 +1,6 @@
 <template>
   <genereted-icon
-    v-if="!!currency || error"
+    v-if="!!currency || error || isUnknown"
     :asset="displayAsset"
     :currency="!!currency"
     :size="size"
@@ -18,13 +18,15 @@
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import GeneretedIcon from '@/components/helper/GeneretedIcon.vue';
 import { currencies } from '@/data/currencies';
+import { TokenDetails } from '@/services/defi/types';
+import { assetName } from '@/store/defi/utils';
 
 @Component({
   components: { GeneretedIcon }
 })
 export default class CryptoIcon extends Vue {
   @Prop({ required: true })
-  symbol!: string;
+  symbol!: TokenDetails;
   @Prop({ required: true, type: String })
   size!: string;
   error: boolean = false;
@@ -34,20 +36,28 @@ export default class CryptoIcon extends Vue {
     this.error = false;
   }
 
+  get isUnknown(): boolean {
+    return typeof this.symbol !== 'string';
+  }
+
+  get asset(): string {
+    return assetName(this.symbol);
+  }
+
   get displayAsset(): string {
-    return this.currency || this.symbol;
+    return this.currency || this.asset;
   }
 
   get currency(): string | undefined {
-    return currencies.find(currency => currency.ticker_symbol === this.symbol)
+    return currencies.find(currency => currency.ticker_symbol === this.asset)
       ?.unicode_symbol;
   }
 
   get url(): string {
-    if (this.symbol === 'WETH') {
+    if (this.asset === 'WETH') {
       return require(`@/assets/images/defi/weth.svg`);
     }
-    return `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.symbol}/icon/small`;
+    return `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon/small`;
   }
 }
 </script>
