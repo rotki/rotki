@@ -1204,7 +1204,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   uniswapBalances: ({ uniswapBalances }) => (
     addresses: string[]
   ): UniswapBalance[] => {
-    const balances: UniswapBalance[] = [];
+    const balances: { [poolAddress: string]: Writeable<UniswapBalance> } = {};
     for (const account in uniswapBalances) {
       if (addresses.length > 0 && !addresses.includes(account)) {
         continue;
@@ -1218,16 +1218,30 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         totalSupply,
         assets,
         address
-      } of accountBalances)
-        balances.push({
-          account,
-          userBalance,
-          totalSupply,
-          assets,
-          poolAddress: address
-        });
+      } of accountBalances) {
+        const balance = balances[address];
+        if (balance) {
+          const oldBalance = balance.userBalance;
+          balance.userBalance = {
+            amount: oldBalance.amount.plus(userBalance.amount),
+            usdValue: oldBalance.usdValue.plus(userBalance.usdValue)
+          };
+
+          if (balance.totalSupply !== null && totalSupply !== null) {
+            balance.totalSupply = balance.totalSupply.plus(totalSupply);
+          }
+        } else {
+          balances[address] = {
+            account,
+            userBalance,
+            totalSupply,
+            assets,
+            poolAddress: address
+          };
+        }
+      }
     }
-    return balances;
+    return Object.values(balances);
   },
   uniswapTrades: ({ uniswapTrades }) => (addresses): Trade[] => {
     const trades: Trade[] = [];
