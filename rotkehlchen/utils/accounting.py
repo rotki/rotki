@@ -2,6 +2,7 @@ from typing import Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -12,7 +13,15 @@ from rotkehlchen.exchanges.data_structures import (
 )
 from rotkehlchen.typing import EthereumTransaction, Timestamp
 
-TaxableAction = Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Loan, DefiEvent]
+TaxableAction = Union[  # TODO: At this point we perhaps should create an interface/superclass
+    Trade,
+    AssetMovement,
+    EthereumTransaction,
+    MarginPosition,
+    Loan,
+    DefiEvent,
+    AMMTrade,
+]
 
 
 def action_get_timestamp(action: TaxableAction) -> Timestamp:
@@ -21,7 +30,7 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
 
     Can Raise assertion error if the action is not of any expected type
     """
-    if isinstance(action, (Trade, AssetMovement, EthereumTransaction, DefiEvent)):
+    if isinstance(action, (Trade, AssetMovement, EthereumTransaction, DefiEvent, AMMTrade)):
         return action.timestamp
     elif isinstance(action, (MarginPosition, Loan)):
         return action.close_time
@@ -30,7 +39,7 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
 
 
 def action_get_type(action: TaxableAction) -> str:
-    if isinstance(action, Trade):
+    if isinstance(action, (AMMTrade, Trade)):
         return 'trade'
     elif isinstance(action, AssetMovement):
         return 'asset_movement'
@@ -49,7 +58,7 @@ def action_get_type(action: TaxableAction) -> str:
 def action_get_assets(
         action: TaxableAction,
 ) -> Tuple[Asset, Optional[Asset]]:
-    if isinstance(action, Trade):
+    if isinstance(action, (Trade, AMMTrade)):
         return trade_get_assets(action)
     elif isinstance(action, (AssetMovement, DefiEvent)):
         return action.asset, None

@@ -2,6 +2,8 @@ from typing import Any, Dict, List, NamedTuple, Tuple, Union
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UNKNOWN_TOKEN_KEYS, UnknownEthereumToken
+from rotkehlchen.constants.assets import A_DAI
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_address,
@@ -13,9 +15,11 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     AssetAmount,
     ChecksumEthAddress,
+    Fee,
     Location,
     Price,
     Timestamp,
+    TradePair,
     TradeType,
 )
 
@@ -247,12 +251,22 @@ class AMMTrade(NamedTuple):
         return f'{self.tx_hash}-{self.trade_index}'
 
     @property
-    def pair(self) -> str:
-        return f'{self.base_asset.symbol}_{self.quote_asset.symbol}'
+    def pair(self) -> TradePair:
+        return TradePair(f'{self.base_asset.symbol}_{self.quote_asset.symbol}')
 
     @property
     def trade_id(self) -> str:
         return self.identifier
+
+    @property
+    def fee_currency(self) -> EthereumToken:
+        # always 0 DAI, super hacky -- just to satisfy the "Trade" interface for
+        # use in accounting module. We need to fix these stuff ...
+        return A_DAI
+
+    @property
+    def fee(self) -> Fee:
+        return Fee(ZERO)
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the trade into a dict matching Trade serialization from

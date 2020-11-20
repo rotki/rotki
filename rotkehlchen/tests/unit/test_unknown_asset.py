@@ -1,12 +1,10 @@
 from dataclasses import asdict
-import pytest
 
 from eth_utils.typing import HexAddress, HexStr
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.typing import ChecksumEthAddress
-
 
 SHUF_ETHEREUM_ADDRESS = ChecksumEthAddress(
     HexAddress(HexStr('0x3A9FfF453d50D4Ac52A6890647b823379ba36B9E')),
@@ -58,9 +56,7 @@ def test_eq_invalid_type():
         symbol=SHUF_SYMBOL,
     )
     token = EthereumToken('WETH')
-
-    with pytest.raises(TypeError):
-        assert ue_token == token
+    assert ue_token != token
 
 
 def test_hash():

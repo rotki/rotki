@@ -18,6 +18,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.api import (
+    ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
@@ -90,7 +91,11 @@ def test_get_balances(
     )
     if async_query:
         task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        outcome = wait_for_async_task(
+            server=rotkehlchen_api_server,
+            task_id=task_id,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
+        )
         assert outcome['message'] == ''
         result = outcome['result']
     else:
@@ -142,7 +147,7 @@ EXPECTED_TRADES = [AMMTrade(
     base_asset=EthereumToken('USDT'),
     quote_asset=EthereumToken('WETH'),
     amount=AssetAmount(FVal('20632.012923')),
-    rate=Price(FVal('375.1275076909090909090909091')),
+    rate=Price(FVal('0.002665760253508154513092246380')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0x13723c8b286ec56e95b00e091557e6a76f723d20a52503d2e08df5867d942b51',
@@ -164,7 +169,7 @@ EXPECTED_TRADES = [AMMTrade(
     base_asset=EthereumToken('DAI'),
     quote_asset=EthereumToken('WETH'),
     amount=AssetAmount(FVal('1411.453463704718081611')),
-    rate=Price(FVal('371.4351220275573898976315789')),
+    rate=Price(FVal('0.002692260210992670573731568435')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900',
@@ -190,7 +195,7 @@ EXPECTED_TRADES = [AMMTrade(
         name='aleph.im v2',
     ),
     amount=AssetAmount(FVal('904.171423330858608178')),
-    rate=Price(FVal('0.1604821621994156262081817395')),
+    rate=Price(FVal('6.231222126465350944166830285')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6',
@@ -230,7 +235,7 @@ EXPECTED_TRADES = [AMMTrade(
     base_asset=EthereumToken('DAI'),
     quote_asset=EthereumToken('WETH'),
     amount=AssetAmount(FVal('1211.13639188704153712')),
-    rate=Price(FVal('374.9648272096103830092879257')),
+    rate=Price(FVal('0.002666916807748974669759705026')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0x96531b9f02bbb9b3f97e0a761eb49c8fd0752d8cc934dda4c5296e1e35d2b91e',
@@ -252,7 +257,7 @@ EXPECTED_TRADES = [AMMTrade(
     base_asset=EthereumToken('DAI'),
     quote_asset=EthereumToken('USDC'),
     amount=AssetAmount(FVal('27.555943016050019506')),
-    rate=Price(FVal('0.9835081452620556913888108835')),
+    rate=Price(FVal('1.016768396700517467316300829')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0x0b9b335b5a805dc58e330413ef6de52fc13369247978d90bb0436a9aadf98c86',
@@ -274,7 +279,7 @@ EXPECTED_TRADES = [AMMTrade(
     base_asset=EthereumToken('yyDAI+yUSDC+yUSDT+yTUSD'),
     quote_asset=EthereumToken('yDAI+yUSDC+yUSDT+yTUSD'),
     amount=AssetAmount(FVal('49.398809059381378894')),
-    rate=Price(FVal('0.8986486458818072655160164770')),
+    rate=Price(FVal('1.112781958313352583115667770')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0xf3a3be42927fafb244e3968537491c8c5b1e789237e633ae972073726bf185f0',
@@ -296,7 +301,7 @@ EXPECTED_TRADES = [AMMTrade(
     base_asset=EthereumToken('yyDAI+yUSDC+yUSDT+yTUSD'),
     quote_asset=EthereumToken('YAM'),
     amount=AssetAmount(FVal('43.559866604727594889')),
-    rate=Price(FVal('0.7259977767454599148166666667')),
+    rate=Price(FVal('1.377414686423491971126255967')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0x99a50afa868558ed1a854a124cf3abb1cba3a0bb86a4e0ceef23246154387247',
@@ -322,7 +327,7 @@ EXPECTED_TRADES = [AMMTrade(
     ),
     quote_asset=EthereumToken('WETH'),
     amount=AssetAmount(FVal('208.229580065011456795')),
-    rate=Price(FVal('20.8229580065011456795')),
+    rate=Price(FVal('0.04802391666389518346374466944')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0x648ddb305ae1c5b4185bdff50fa81e2f4757d2957c2a369269712529881d41c9',
@@ -352,7 +357,7 @@ EXPECTED_TRADES = [AMMTrade(
         name='Metric.exchange',
     ),
     amount=AssetAmount(FVal('82.850917596149392912')),
-    rate=Price(FVal('24.53020699025697325558361475')),
+    rate=Price(FVal('0.04076606448519512519987536529')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0xa1cc9423122b91a688d030dbe640eadf778c3d35c65deb032abebcba853387f5',
@@ -450,7 +455,7 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
     base_asset=EthereumToken('WETH'),
     quote_asset=EthereumToken('WETH'),
     amount=AssetAmount(FVal('0.088104479651219417')),
-    rate=Price(FVal('1.043359110743797209725374332')),
+    rate=Price(FVal('0.9584427736363110293711465160')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
@@ -524,7 +529,7 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
         name='https://t.me/fomok',
     ),
     amount=AssetAmount(FVal('5.311132913120564692')),
-    rate=Price(FVal('4.028080078867186255105216731')),
+    rate=Price(FVal('0.2482572293550899816477686816')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
@@ -574,7 +579,7 @@ BOTH_IN_TRADES = [AMMTrade(
     base_asset=EthereumToken('WETH'),
     quote_asset=EthereumToken('WETH'),
     amount=AssetAmount(FVal('0.106591333983182783')),
-    rate=Price(FVal('0.5731680724164101146042500330')),
+    rate=Price(FVal('1.744688945746953393022811238')),
     trade_index=0,
     swaps=[AMMSwap(
         tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
@@ -632,7 +637,7 @@ BOTH_IN_TRADES = [AMMTrade(
     base_asset=EthereumToken('WETH'),
     quote_asset=EthereumToken('aDAI'),
     amount=AssetAmount(FVal('0.106591333983182783')),
-    rate=Price(FVal('0.7095950786343146869149332940')),
+    rate=Price(FVal('1.409254418625053124546000710')),
     trade_index=1,
     swaps=[AMMSwap(
         tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',

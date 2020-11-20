@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
@@ -254,8 +254,12 @@ def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
     return Asset(get_pair_position_str(pair, position))
 
 
-def trade_get_assets(trade: Trade) -> Tuple[Asset, Asset]:
-    return pair_get_assets(trade.pair)
+def trade_get_assets(trade: Union[Trade, AMMTrade]) -> Tuple[Asset, Asset]:
+    if isinstance(trade, Trade):
+        return pair_get_assets(trade.pair)
+    else:  # Should only be AMMTrade
+        # can also be unknown ethereum token
+        return trade.base_asset, trade.quote_asset  # type: ignore
 
 
 def deserialize_trade(data: Dict[str, Any]) -> Trade:
