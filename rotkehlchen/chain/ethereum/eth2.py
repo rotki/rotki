@@ -23,6 +23,7 @@ ETH2_DEPOSITS_PREFIX = 'eth2_deposits'
 
 EVENT_ABI = [x for x in ETH2_DEPOSIT.abi if x['type'] == 'event'][0]
 
+REQUEST_DELTA_TS = 60 * 60  # 1h
 
 Eth2DepositDBTuple = (
     Tuple[
@@ -163,11 +164,12 @@ def get_eth2_staked_amount(
 ) -> Eth2DepositResult:
     """Get the addresses' ETH2 staked amount
 
-    For any given new address an on-chain query from the ETH2 deposit contract
-    deployment timestamp until now will be run.
+    For any given new address query on-chain from the ETH2 deposit contract
+    deployment timestamp until now.
 
-    For any existing address an on-chain query from the minimum "to timestamp"
-    last used query range among all the existing addresses until now will be run.
+    For any existing address query on-chain from the minimum last used query
+    range "end_ts" (among all the existing addresses) until now, as long as the
+    difference between both is gte than REQUEST_DELTA_TS.
 
     Then write in DB all the new deposits and finally return them all.
     """
@@ -210,7 +212,7 @@ def get_eth2_staked_amount(
             )
 
     # Get new deposits for existing addresses
-    if existing_addresses and min_from_ts <= to_ts:
+    if existing_addresses and min_from_ts + REQUEST_DELTA_TS <= to_ts:
         deposits_ = _get_eth2_staked_amount_onchain(
             ethereum=ethereum,
             addresses=existing_addresses,

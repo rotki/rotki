@@ -5,6 +5,7 @@ import pytest
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2 import (
+    REQUEST_DELTA_TS,
     Eth2Deposit,
     Eth2DepositResult,
     _get_eth2_staked_amount_onchain,
@@ -270,7 +271,6 @@ def test_get_eth2_staked_amount_onchain(  # pylint: disable=unused-argument
     assert total_addr3 == FVal(480)
 
 
-@pytest.mark.freeze_time(datetime(2020, 11, 4, 16, 18, 5))
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 @pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
 def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argument
@@ -282,55 +282,31 @@ def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argumen
         freezer,
 ):
     """
-    Test new on-chain requests for existing addresses start from last used
-    query range `end_ts`, to "now".
-
-    For avoiding request since ETH2 deposit contract deployment timestamp
-    (1602667372) the following steps are done:
-
-      1. Freeze test time at 2020-11-04T16:18:05 (1604506685), from
-      EXPECTED_DEPOSITS[0].timestamp. "Now" is 1604506685.
-
-      2. Mock 1st `get_used_query_range()` call for returning:
-        - start_ts = 1604506683 (ts_now - 2)
-        - end_ts = 1604506684 (ts_now - 1)
-
-      3. Mock 2nd `get_used_query_range()` call for returning:
-        - start_ts = 1604506684 (ts_now - 1)
-        - end_ts = 1604506685 (ts_now)
-
-      4. Execute the 1st `get_eth2_staked_amount()` call. Expected timestamp
-      arguments for `_get_eth2_staked_amount_onchain()`:
-        - start_ts = 1604506684
-        - end_ts = 1604506685
-
-      5. Move forward time 1 second ("now" is 1604506686)
-
-      6. Execute the 2nd `get_eth2_staked_amount()` call. Expected timestamp
-      arguments for `_get_eth2_staked_amount_onchain()`:
-        - start_ts = 1604506685
-        - end_ts = 1604506686
+    Test new on-chain requests for existing addresses requires a difference of
+    REQUEST_DELTA_TS since last used query range `end_ts`.
     """
+    freezer.move_to(datetime.fromtimestamp(EXPECTED_DEPOSITS[0].timestamp))
     ts_now = int(datetime.now().timestamp())  # 1604506685
 
     database = MagicMock()
     database.get_used_query_range.side_effect = [
-        (Timestamp(ts_now - 2), Timestamp(ts_now - 1)),  # 1604506683 - 1604506684
-        (Timestamp(ts_now - 1), Timestamp(ts_now)),  # 1604506684 - 1604506685
+        (Timestamp(ts_now - (2 * REQUEST_DELTA_TS)), Timestamp(ts_now)),
+        (Timestamp(ts_now - (2 * REQUEST_DELTA_TS)), Timestamp(ts_now)),
+        (Timestamp(ts_now - (2 * REQUEST_DELTA_TS)), Timestamp(ts_now)),
     ]
     database.get_eth2_deposits.side_effect = [
-        [EXPECTED_DEPOSITS[0]],
-        [EXPECTED_DEPOSITS[0]],
+        [],  # no on-chain request, nothing in DB
+        [],  # no on-chain request, nothing in DB
+        [EXPECTED_DEPOSITS[0]],  # on-chain request, deposit in DB
     ]
     expected_balance = {ADDR1: Balance(amount=FVal(32), usd_value=FVal(48))}
 
     with patch(
         'rotkehlchen.chain.ethereum.eth2._get_eth2_staked_amount_onchain',
     ) as mock_get_eth2_staked_amount_onchain:
-        mock_get_eth2_staked_amount_onchain.side_effect = [
-            [EXPECTED_DEPOSITS[0]],
-            [],
-        ]
+        # 3rd call return
+        mock_get_eth2_staked_amount_onchain.return_value = [EXPECTED_DEPOSITS[0]]
+
         wait_until_all_nodes_connected(
             ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
             ethereum=ethereum_manager,
@@ -345,22 +321,12 @@ def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argumen
             msg_aggregator=message_aggregator,
             database=database,
         )
-        # Assert deposit results
-        assert deposit_results_onchain.deposits == [EXPECTED_DEPOSITS[0]]
-        assert deposit_results_onchain.totals == expected_balance
+        assert deposit_results_onchain.deposits == []
+        assert deposit_results_onchain.totals == {}
+        mock_get_eth2_staked_amount_onchain.assert_not_called()
 
-        # Assert `mock_get_eth2_staked_amount_onchain` timestamp arguments
-        mock_get_eth2_staked_amount_onchain.assert_called_with(
-            ethereum=ethereum_manager,
-            addresses=[ADDR1],
-            has_premium=True,
-            msg_aggregator=message_aggregator,
-            from_ts=Timestamp(ts_now - 1),  # 1604506684
-            to_ts=Timestamp(ts_now),  # 1604506685
-        )
-
-        # NB: Move time 1s forward
-        freezer.move_to(datetime(2020, 11, 4, 16, 18, 6))  # 1604506686
+        # NB: Move time to ts_now + REQUEST_DELTA_TS - 1s
+        freezer.move_to(datetime.fromtimestamp(ts_now + REQUEST_DELTA_TS - 1))
 
         # Second call
         deposit_results_onchain = get_eth2_staked_amount(
@@ -370,17 +336,30 @@ def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argumen
             msg_aggregator=message_aggregator,
             database=database,
         )
+        assert deposit_results_onchain.deposits == []
+        assert deposit_results_onchain.totals == {}
+        mock_get_eth2_staked_amount_onchain.assert_not_called()
+
+        # NB: Move time to ts_now + REQUEST_DELTA_TS (triggers request)
+        freezer.move_to(datetime.fromtimestamp(ts_now + REQUEST_DELTA_TS))
+
+        # Third call
+        deposit_results_onchain = get_eth2_staked_amount(
+            ethereum=ethereum_manager,
+            addresses=[ADDR1],
+            has_premium=True,
+            msg_aggregator=message_aggregator,
+            database=database,
+        )
         assert deposit_results_onchain.deposits == [EXPECTED_DEPOSITS[0]]
         assert deposit_results_onchain.totals == expected_balance
-
-        # Assert `mock_get_eth2_staked_amount_onchain` timestamp arguments
         mock_get_eth2_staked_amount_onchain.assert_called_with(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
             has_premium=True,
             msg_aggregator=message_aggregator,
-            from_ts=Timestamp(ts_now),  # 1604506685
-            to_ts=Timestamp(ts_now + 1),  # 1604506686
+            from_ts=Timestamp(ts_now),
+            to_ts=Timestamp(ts_now + REQUEST_DELTA_TS),
         )
 
 
