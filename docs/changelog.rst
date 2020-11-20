@@ -27,7 +27,22 @@ Changelog
   - `Synthetix iETH (iETH) <https://www.coingecko.com/en/coins/ieth>`__
   - `Aave Interest bearing Uniswap (aUNI) <https://etherscan.io/address/0xB124541127A0A657f056D9Dd06188c4F1b0e5aab>`__
   - `Blockstack (STX) <https://www.coingecko.com/en/coins/blockstack>`__
-
+  - `Axie Infinity Shard (AXS) <https://www.coingecko.com/en/coins/axie-infinity>`__
+  - `Bitcoin ABC (BCHA) <https://www.coingecko.com/en/coins/bitcoin-cash-abc>`__
+  - `Binance leveraged token BCHDOWN (BCHDOWN) <https://www.cryptocompare.com/coins/bchdown/overview>`__
+  - `Binance leveraged token BCHUP (BCHUP) <https://www.cryptocompare.com/coins/bchup/overview>`__
+  - `Frontier Token (FRONT) <https://www.coingecko.com/en/coins/frontier>`__
+  - `HARD Protocol (HARD) <https://www.coingecko.com/en/coins/hard-protocol>`__
+  - `Keep3rV1 (KP3R) <https://www.coingecko.com/en/coins/keep3rv1>`__
+  - `Oasis Network (ROSE) <https://www.coingecko.com/en/coins/oasis-network>`__
+  - `Small Love Potion (SLP) <https://www.coingecko.com/en/coins/small-love-potion>`__
+  - `Stratis (STRAX) <https://www.coingecko.com/en/coins/stratis>`__
+  - `Unifi Protocol DAO (UNFI) <https://www.coingecko.com/en/coins/unifi-protocol-dao>`__
+  - `Akoin (AKN) <https://www.coingecko.com/en/coins/akoin>`__
+  - `Camp (CAMP) <https://www.cryptocompare.com/coins/camp/overview>`__
+  - `Gleec Coin (GLEEC) <https://www.coingecko.com/en/coins/gleec-coin>`__
+  - `NerveNetwork (NVT) <https://www.coingecko.com/en/coins/nervenetwork>`__
+  - `ShareToken (SHR) <https://www.coingecko.com/en/coins/sharetoken>`__
 
 * :release:`1.8.3 <2020-10-30>`
 * :bug:`1636` Users running earlier OSX versions than Catalina can again start the application properly.

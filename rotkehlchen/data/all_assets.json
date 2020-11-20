@@ -13745,5 +13745,130 @@
         "started": 1598421792,
         "symbol": "ycrvRenWSBTC",
         "type": "ethereum token"
+    },
+    "AXS": {
+        "coingecko": "axie-infinity",
+        "ethereum_address": "0xF5D669627376EBd411E34b98F19C868c8ABA5ADA",
+        "ethereum_token_decimals": 18,
+        "name": "Axie Infinity Shard",
+        "started": 1603773926,
+        "symbol": "AXS",
+        "type": "ethereum token"
+    },
+    "BCHA": {
+        "coingecko": "bitcoin-cash-abc",
+        "forked": "BCH",
+        "name": "Bitcoin ABC",
+        "started": 1605474360,
+        "symbol": "BCHA",
+        "type": "own chain"
+    },
+    "BCHDOWN": {
+        "coingecko": "",
+        "name": "Binance leveraged token BCHDOWN",
+        "started": 1603843200,
+        "symbol": "BCHDOWN",
+        "type": "own chain"
+    },
+    "BCHUP": {
+        "coingecko": "",
+        "name": "Binance leveraged token BCHUP",
+        "started": 1603843200,
+        "symbol": "BCHUP",
+        "type": "own chain"
+    },
+    "FRONT": {
+        "coingecko": "frontier",
+        "ethereum_address": "0xf8C3527CC04340b208C854E985240c02F7B7793f",
+        "ethereum_token_decimals": 18,
+        "name": "Frontier Token",
+        "started": 1599843287,
+        "symbol": "FRONT",
+        "type": "ethereum token"
+    },
+    "HARD": {
+        "coingecko": "hard-protocol",
+        "name": "HARD Protocol",
+        "started": 1604620800,
+        "symbol": "HARD",
+        "type": "own chain"
+    },
+    "KP3R": {
+        "coingecko": "keep3rv1",
+        "ethereum_address": "0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44",
+        "ethereum_token_decimals": 18,
+        "name": "Keep3rV1",
+        "started": 1603871844,
+        "symbol": "KP3R",
+        "type": "ethereum token"
+    },
+    "ROSE": {
+        "coingecko": "oasis-network",
+        "name": "Oasis Network",
+        "started": 1605744000,
+        "symbol": "ROSE",
+        "type": "own chain"
+    },
+    "SLP": {
+        "coingecko": "small-love-potion",
+        "ethereum_address": "0x37236CD05b34Cc79d3715AF2383E96dd7443dCF1",
+        "ethereum_token_decimals": 0,
+        "name": "Small Love Potion",
+        "started": 1576751331,
+        "symbol": "SLP",
+        "type": "ethereum token"
+    },
+    "STRAX": {
+        "coingecko": "stratis",
+        "name": "Stratis",
+        "started": 1603278000,
+        "symbol": "STRAX",
+        "type": "own chain"
+    },
+    "UNFI": {
+        "coingecko": "unifi-protocol-dao",
+        "name": "Unifi Protocol DAO",
+        "started": 1605744000,
+        "symbol": "UNFI",
+        "type": "own chain"
+    },
+    "AKN": {
+        "coingecko": "akoin",
+        "name": "Akoin",
+        "started": 1605052800,
+        "symbol": "AKN",
+        "type": "own chain"
+    },
+    "CAMP": {
+        "coingecko": "",
+        "ethereum_address": "0xE9E73E1aE76D17A16cC53E3e87a9a7dA78834d37",
+        "ethereum_token_decimals": 18,
+        "name": "Camp",
+        "started": 1601535391,
+        "symbol": "CAMP",
+        "type": "ethereum token"
+    },
+    "GLEEC": {
+        "coingecko": "gleec-coin",
+        "name": "Gleec Coin",
+        "started": 1578614400,
+        "symbol": "GLEEC",
+        "type": "own chain"
+    },
+    "NVT": {
+        "coingecko": "nervenetwork",
+        "name": "NerveNetwork",
+        "started": 1595458800,
+        "symbol": "NVT",
+        "type": "own chain"
+    },
+    "SHR": {
+        "coingecko": "sharetoken",
+        "ethereum_address": "0xd98F75b1A3261dab9eEd4956c93F33749027a964",
+        "ethereum_token_decimals": 2,
+        "name": "ShareToken",
+        "started": 1604676299,
+        "symbol": "SHR",
+        "type": "ethereum token"
     }
 }
