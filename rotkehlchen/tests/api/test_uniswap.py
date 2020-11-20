@@ -57,10 +57,11 @@ def test_get_balances_module_not_activated(
 
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
-@pytest.mark.parametrize(  # Force infura and another web3 node for chain query
+@pytest.mark.parametrize(
     'start_with_valid_premium,ethrpc_endpoint,ethereum_manager_connect_at_start',
-    [
+    [  # Test with infura (as own node), many open nodes, and premium + graph
         (False, INFURA_TEST, (NodeName.OWN, NodeName.MYCRYPTO)),
+        (False, '', (NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.AVADO_POOL)),
         (True, '', ()),
     ],
 )
@@ -94,7 +95,7 @@ def test_get_balances(
         outcome = wait_for_async_task(
             server=rotkehlchen_api_server,
             task_id=task_id,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
         )
         assert outcome['message'] == ''
         result = outcome['result']
@@ -465,11 +466,7 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
         to_address=deserialize_ethereum_address('0x21aD02e972E968D9c76a7081a483d782001d6558'),
         timestamp=Timestamp(1605431265),
         location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x37236CD05b34Cc79d3715AF2383E96dd7443dCF1'),  # noqa: E501
-            symbol='SLP',
-            name='Small Love Potion',
-        ),
+        token0=EthereumToken('SLP'),
         token1=EthereumToken('WETH'),
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('0.084443101846698663')),
@@ -488,11 +485,7 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x37236CD05b34Cc79d3715AF2383E96dd7443dCF1'),  # noqa: E501
-            symbol='SLP',
-            name='Small Love Potion',
-        ),
+        token1=EthereumToken('SLP'),
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('876')),
         amount0_out=AssetAmount(FVal('20.085448793024895802')),
