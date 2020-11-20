@@ -21,6 +21,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
+from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSITS_PREFIX, Eth2Deposit
 from rotkehlchen.chain.ethereum.structures import (
     AaveEvent,
     YearnVault,
@@ -2044,6 +2045,9 @@ class DBHandler:
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name="{UNISWAP_TRADES_PREFIX}_{address}";',
         )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name="{ETH2_DEPOSITS_PREFIX}_{address}";',
+        )
         cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM uniswap_events WHERE address=?;', (address,))
@@ -2069,6 +2073,7 @@ class DBHandler:
             other_eth_accounts,
         )
         cursor.execute('DELETE FROM amm_swaps WHERE address=?;', (address,))
+        cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 
         self.conn.commit()
         self.update_last_write()
@@ -2327,6 +2332,82 @@ class DBHandler:
             return False, 'Tried to delete non-existing AMM swap'
         self.conn.commit()
         return True, ''
+
+    def add_eth2_deposits(self, deposits: Sequence[Eth2Deposit]) -> None:
+        """Inserts a list of Eth2Deposit
+        """
+        query = (
+            """
+            INSERT INTO eth2_deposits (
+                tx_hash,
+                log_index,
+                from_address,
+                timestamp,
+                pubkey,
+                withdrawal_credentials,
+                value,
+                validator_index
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """
+        )
+        cursor = self.conn.cursor()
+        for deposit in deposits:
+            deposit_tuple = deposit.to_db_tuple()
+            try:
+                cursor.execute(query, deposit_tuple)
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add an ETH2 deposit that already exists in the DB. '
+                    f'Deposit data: {deposit_tuple}. Skipping deposit.',
+                )
+                continue
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_eth2_deposits(self) -> None:
+        """Delete all historical ETH2 eth2_deposits data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM eth2_deposits;')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{ETH2_DEPOSITS_PREFIX}%";')
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_eth2_deposits(
+            self,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            address: Optional[ChecksumEthAddress] = None,
+    ) -> List[Eth2Deposit]:
+        """Returns a list of Eth2Deposit filtered by time and address
+        """
+        cursor = self.conn.cursor()
+        query = (
+            'SELECT '
+            'tx_hash, '
+            'log_index, '
+            'from_address, '
+            'timestamp, '
+            'pubkey, '
+            'withdrawal_credentials, '
+            'value, '
+            'validator_index '
+            'FROM eth2_deposits '
+        )
+        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
+        filters = []
+        if address is not None:
+            filters.append(f'from_address="{address}" ')
+
+        if filters:
+            query += 'WHERE '
+            query += 'AND '.join(filters)
+
+        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
+        results = cursor.execute(query, bindings)
+
+        return [Eth2Deposit.deserialize_from_db(deposit_tuple) for deposit_tuple in results]
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
