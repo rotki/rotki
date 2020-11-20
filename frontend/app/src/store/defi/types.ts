@@ -31,7 +31,7 @@ import {
 } from '@/services/defi/types/yearn';
 import { TradeType } from '@/services/history/types';
 import { Balance, HasBalance } from '@/services/types-api';
-import { OVERVIEW_PROTOCOLS } from '@/store/defi/const';
+import { OVERVIEW_PROTOCOLS, UNISWAP_EVENT_TYPE } from '@/store/defi/const';
 
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
@@ -49,6 +49,7 @@ export interface DefiState {
   yearnVaultsBalances: YearnVaultsBalances;
   uniswapBalances: UniswapBalances;
   uniswapTrades: UniswapTrades;
+  uniswapEvents: UniswapEvents;
 }
 
 export interface DSRBalances {
@@ -241,6 +242,9 @@ export interface UniswapBalance {
   readonly userBalance: Balance;
 }
 
+type UniswapToken = UniswapAssetDetails | string;
+type UniswapEventType = typeof UNISWAP_EVENT_TYPE[number];
+
 interface UniswapSwap {
   readonly amount0In: BigNumber;
   readonly amount0Out: BigNumber;
@@ -250,20 +254,20 @@ interface UniswapSwap {
   readonly location: 'uniswap';
   readonly logIndex: number;
   readonly toAddress: string;
-  readonly token0: UniswapAssetDetails | string;
-  readonly token1: UniswapAssetDetails | string;
+  readonly token0: UniswapToken;
+  readonly token1: UniswapToken;
   readonly txHash: string;
 }
 
 export interface UniswapTrade {
   readonly address: string;
   readonly amount: BigNumber;
-  readonly baseAsset: UniswapAssetDetails | string;
+  readonly baseAsset: UniswapToken;
   readonly fee: BigNumber;
   readonly feeCurrency: string;
   readonly location: 'uniswap';
   readonly pair: string;
-  readonly quoteAsset: UniswapAssetDetails | string;
+  readonly quoteAsset: UniswapToken;
   readonly rate: BigNumber;
   readonly swaps: UniswapSwap[];
   readonly timestamp: number;
@@ -274,4 +278,30 @@ export interface UniswapTrade {
 
 export interface UniswapTrades {
   readonly [address: string]: UniswapTrade[];
+}
+
+interface UniswapEvent {
+  readonly amount0: BigNumber;
+  readonly amount1: BigNumber;
+  readonly eventType: UniswapEventType;
+  readonly logIndex: number;
+  readonly lpAmount: BigNumber;
+  readonly timestamp: number;
+  readonly txHash: string;
+  readonly usdPrice: BigNumber;
+}
+
+interface UniswapPoolDetails {
+  readonly address: string;
+  readonly events: UniswapEvent[];
+  readonly poolAddress: string;
+  readonly profitLoss0: BigNumber;
+  readonly profitLoss1: BigNumber;
+  readonly token0: UniswapToken;
+  readonly token1: UniswapToken;
+  readonly usdProfitLoss: BigNumber;
+}
+
+export interface UniswapEvents {
+  readonly [address: string]: UniswapPoolDetails[];
 }

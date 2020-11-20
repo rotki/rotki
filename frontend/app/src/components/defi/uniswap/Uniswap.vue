@@ -168,6 +168,8 @@ import { DefiAccount, ETH, GeneralAccount } from '@/typing/types';
 export default class Uniswap extends Mixins(StatusMixin) {
   readonly ETH = ETH;
   section = Section.DEFI_UNISWAP_BALANCES;
+  secondSection = Section.DEFI_UNISWAP_EVENTS;
+
   defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
   assetInfo!: (asset: string) => SupportedAsset | undefined;
   uniswapBalances!: (addresses: string[]) => UniswapBalance[];

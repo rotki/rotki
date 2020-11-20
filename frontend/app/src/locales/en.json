@@ -341,6 +341,15 @@
           "description": "Failed to retrieve Aave history: {error}"
         }
       },
+      "uniswap_events": {
+        "task": {
+          "title": "Querying Uniswap events"
+        },
+        "error": {
+          "title": "Querying Uniswap events",
+          "description": "Failed to retrieve Uniswap events: {error}"
+        }
+      },
       "uniswap_trades": {
         "task": {
           "title": "Querying Uniswap trades"
