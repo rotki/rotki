@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.utils import decode_event_data
@@ -161,6 +161,7 @@ def get_eth2_staked_amount(
         has_premium: bool,
         msg_aggregator: MessagesAggregator,
         database: 'DBHandler',
+        force_token_detection: Optional[bool] = None,
 ) -> Eth2DepositResult:
     """Get the addresses' ETH2 staked amount
 
@@ -173,6 +174,7 @@ def get_eth2_staked_amount(
 
     Then write in DB all the new deposits and finally return them all.
     """
+    request_delta_ts = 0 if force_token_detection else REQUEST_DELTA_TS
     new_deposits: List[Eth2Deposit] = []
     totals: Dict[ChecksumEthAddress, Balance] = {}
     new_addresses: List[ChecksumEthAddress] = []
@@ -212,7 +214,7 @@ def get_eth2_staked_amount(
             )
 
     # Get new deposits for existing addresses
-    if existing_addresses and min_from_ts + REQUEST_DELTA_TS <= to_ts:
+    if existing_addresses and min_from_ts + request_delta_ts <= to_ts:
         deposits_ = _get_eth2_staked_amount_onchain(
             ethereum=ethereum,
             addresses=existing_addresses,

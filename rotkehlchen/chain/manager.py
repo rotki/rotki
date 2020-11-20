@@ -835,9 +835,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         self.query_defi_balances()
         self.query_ethereum_tokens(force_token_detection)
-        self._add_protocol_balances()
+        self._add_protocol_balances(force_token_detection)
 
-    def _add_protocol_balances(self) -> None:
+    def _add_protocol_balances(self, force_token_detection: bool) -> None:
         """Also count token balances that may come from various protocols"""
         # If we have anything in DSR also count it towards total blockchain balances
         eth_balances = self.balances.eth
@@ -871,7 +871,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     self.totals += entry
 
         # Count ETH staked in Eth2 beacon chain
-        self.get_staked_eth2_balances()
+        self.get_staked_eth2_balances(force_token_detection)
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_token_and_totals()
 
@@ -960,7 +960,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.balances.eth[address].assets[A_ETH2] = result.totals[address]
             self.totals.assets[A_ETH2] += result.totals[address]
 
-    def get_staked_eth2_balances(self) -> Eth2DepositResult:
+    def get_staked_eth2_balances(
+            self,
+            force_token_detection: Optional[bool] = None,
+    ) -> Eth2DepositResult:
         with self.eth2_lock:
             # Before querying the new balances, delete the ones in memory if any
             self.totals.assets.pop(A_ETH2, None)
@@ -974,6 +977,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 has_premium=self.premium is not None,
                 msg_aggregator=self.msg_aggregator,
                 database=self.database,
+                force_token_detection=force_token_detection,
             )
 
             # and now that we queried it update the chain manager's balances
