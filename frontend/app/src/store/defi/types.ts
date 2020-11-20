@@ -5,7 +5,8 @@ import {
   DSRMovementType,
   EventType,
   MakerDAOVaultEventType,
-  SupportedDefiProtocols
+  SupportedDefiProtocols,
+  TokenDetails
 } from '@/services/defi/types';
 import {
   AaveBalances,
@@ -19,11 +20,7 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import {
-  UniswapAsset,
-  UniswapAssetDetails,
-  UniswapBalances
-} from '@/services/defi/types/uniswap';
+import { UniswapAsset, UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnEventType,
   YearnVaultsBalances,
@@ -242,7 +239,6 @@ export interface UniswapBalance {
   readonly userBalance: Balance;
 }
 
-type UniswapToken = UniswapAssetDetails | string;
 type UniswapEventType = typeof UNISWAP_EVENT_TYPE[number];
 
 interface UniswapSwap {
@@ -254,20 +250,20 @@ interface UniswapSwap {
   readonly location: 'uniswap';
   readonly logIndex: number;
   readonly toAddress: string;
-  readonly token0: UniswapToken;
-  readonly token1: UniswapToken;
+  readonly token0: TokenDetails;
+  readonly token1: TokenDetails;
   readonly txHash: string;
 }
 
 export interface UniswapTrade {
   readonly address: string;
   readonly amount: BigNumber;
-  readonly baseAsset: UniswapToken;
+  readonly baseAsset: TokenDetails;
   readonly fee: BigNumber;
   readonly feeCurrency: string;
   readonly location: 'uniswap';
   readonly pair: string;
-  readonly quoteAsset: UniswapToken;
+  readonly quoteAsset: TokenDetails;
   readonly rate: BigNumber;
   readonly swaps: UniswapSwap[];
   readonly timestamp: number;
@@ -297,11 +293,18 @@ interface UniswapPoolDetails {
   readonly poolAddress: string;
   readonly profitLoss0: BigNumber;
   readonly profitLoss1: BigNumber;
-  readonly token0: UniswapToken;
-  readonly token1: UniswapToken;
+  readonly token0: TokenDetails;
+  readonly token1: TokenDetails;
   readonly usdProfitLoss: BigNumber;
 }
 
 export interface UniswapEvents {
   readonly [address: string]: UniswapPoolDetails[];
 }
+
+export interface UniswapPoolProfit
+  extends Omit<UniswapPoolDetails, 'events' | 'address'> {}
+
+export interface UniswapEventDetails
+  extends UniswapEvent,
+    Pick<UniswapPoolDetails, 'address' | 'poolAddress' | 'token0' | 'token1'> {}

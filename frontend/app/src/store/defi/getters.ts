@@ -49,6 +49,8 @@ import {
   OverviewDefiProtocol,
   ProfitLossModel,
   UniswapBalance,
+  UniswapEventDetails,
+  UniswapPoolProfit,
   UniswapTrade
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
@@ -113,6 +115,9 @@ interface DefiGetters {
   aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
   uniswapBalances: (addresses: string[]) => UniswapBalance[];
   uniswapTrades: (addresses: string[]) => Trade[];
+  uniswapPoolProfit: (addresses: string[]) => UniswapPoolProfit[];
+  uniswapEvents: (addresses: string[]) => UniswapEventDetails[];
+  uniswapAddresses: string[];
   dexTrades: (addresses: string[]) => UniswapTrade[];
 }
 
@@ -1248,6 +1253,62 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     }
 
     return sortBy(trades, 'timestamp').reverse();
+  },
+  uniswapPoolProfit: ({ uniswapEvents }) => (
+    addresses: string[]
+  ): UniswapPoolProfit[] => {
+    const perPoolProfit: {
+      [poolAddress: string]: Writeable<UniswapPoolProfit>;
+    } = {};
+    for (const address in uniswapEvents) {
+      if (addresses.length > 0 && !addresses.includes(address)) {
+        continue;
+      }
+
+      const details = uniswapEvents[address];
+      for (const detail of details) {
+        const { poolAddress } = detail;
+        const profit = perPoolProfit[poolAddress];
+        if (profit) {
+          perPoolProfit[poolAddress] = {
+            ...profit,
+            profitLoss0: profit.profitLoss0.plus(detail.profitLoss0),
+            profitLoss1: profit.profitLoss1.plus(detail.profitLoss1),
+            usdProfitLoss: profit.usdProfitLoss.plus(detail.usdProfitLoss)
+          };
+        } else {
+          const { events: _, address, ...poolProfit } = detail;
+          perPoolProfit[poolAddress] = poolProfit;
+        }
+      }
+    }
+    return Object.values(perPoolProfit);
+  },
+  uniswapEvents: ({ uniswapEvents }) => (addresses): UniswapEventDetails[] => {
+    const eventDetails: UniswapEventDetails[] = [];
+    for (const address in uniswapEvents) {
+      if (addresses.length > 0 && !addresses.includes(address)) {
+        continue;
+      }
+      const details = uniswapEvents[address];
+      for (const { events, poolAddress, token0, token1 } of details) {
+        for (const event of events) {
+          eventDetails.push({
+            ...event,
+            address,
+            poolAddress: poolAddress,
+            token0: token0,
+            token1: token1
+          });
+        }
+      }
+    }
+    return eventDetails;
+  },
+  uniswapAddresses: ({ uniswapEvents, uniswapBalances }) => {
+    return Object.keys(uniswapBalances)
+      .concat(Object.keys(uniswapEvents))
+      .filter(unique);
   },
   dexTrades: ({ uniswapTrades }) => (addresses): UniswapTrade[] => {
     const trades: UniswapTrade[] = [];
