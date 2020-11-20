@@ -11,7 +11,7 @@ from webargs.compat import MARSHMALLOW_VERSION_INFO
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.bitcoin.hdkey import HDKey
+from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, is_valid_derivation_path
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants.misc import ZERO
@@ -911,9 +911,36 @@ class BaseXpubSchema(Schema):
     async_query = fields.Boolean(missing=False)
 
 
-class XpubSchema(BaseXpubSchema):
+class XpubAddSchema(Schema):
+    xpub = fields.String(required=True)
+    derivation_path = DerivationPathField(missing=None)
+    async_query = fields.Boolean(missing=False)
     label = fields.String(missing=None)
+    xpub_type = fields.String(
+        required=False,
+        missing=None,
+        validate=webargs.validate.OneOf(choices=('p2pkh', 'p2sh_p2wpkh', 'wpkh')),
+    )
     tags = fields.List(fields.String(), missing=None)
+
+    @post_load  # type: ignore
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        xpub_type_str = data.pop('xpub_type', None)
+        try:
+            xpub_type = None if xpub_type_str is None else XpubType.deserialize(xpub_type_str)
+            xpub_hdkey = HDKey.from_xpub(data['xpub'], xpub_type=xpub_type, path='m')
+        except (DeserializationError, XPUBError) as e:
+            raise ValidationError(
+                f'Failed to initialize an xpub due to {str(e)}',
+                field_name='xpub',
+            )
+
+        data['xpub'] = xpub_hdkey
+        return data
 
 
 class XpubPatchSchema(Schema):

@@ -17,7 +17,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     pubkey_to_bech32_address,
     pubkey_to_p2sh_p2wpkh_address,
 )
-from rotkehlchen.errors import XPUBError
+from rotkehlchen.errors import DeserializationError, XPUBError
 from rotkehlchen.typing import BTCAddress
 
 COMPRESSED_PUBKEY = True
@@ -33,6 +33,46 @@ class BTCAddressType(Enum):
     BASE58 = 1
     BECH32 = 2
     P2SH_P2WPKH = 3
+
+
+class XpubType(Enum):
+    P2PKH = 1          # lecacy/xpub
+    P2SH_P2WPKH = 2    # segwit/ypyb
+    WPKH = 3           # native segwit/zpub
+
+    def matches_prefix(self, prefix: str) -> bool:
+        own_prefix = XPUB_TYPE_MAPPING[self]  # should not raise due to enum
+        return own_prefix == prefix
+
+    def prefix(self) -> str:
+        return XPUB_TYPE_MAPPING[self]  # should not raise due to enum
+
+    def prefix_bytes(self) -> bytes:
+        return XPUB_TYPE_MAPPING_BYTES[self]  # should not raise due to enum
+
+    @staticmethod
+    def deserialize(value: str) -> 'XpubType':
+        if value == 'p2pkh':
+            return XpubType.P2PKH
+        elif value == 'p2sh_p2wpkh':
+            return XpubType.P2SH_P2WPKH
+        elif value == 'wpkh':
+            return XpubType.WPKH
+
+        raise DeserializationError(f'Unknown xpub type {value} found at deserialization')
+
+
+XPUB_TYPE_MAPPING = {
+    XpubType.P2PKH: 'xpub',
+    XpubType.P2SH_P2WPKH: 'ypub',
+    XpubType.WPKH: 'zpub',
+}
+
+XPUB_TYPE_MAPPING_BYTES = {
+    XpubType.P2PKH: b'\x04\x88\xb2\x1e',
+    XpubType.P2SH_P2WPKH: b'\x04\x9d|\xb2',
+    XpubType.WPKH: b'\x04\xb2GF',
+}
 
 
 VERSION_BYTES = {
@@ -105,7 +145,11 @@ class HDKey():
     hint: str
 
     @staticmethod
-    def from_xpub(xpub: str, path: Optional[str] = None) -> 'HDKey':
+    def from_xpub(
+            xpub: str,
+            xpub_type: Optional[XpubType] = None,
+            path: Optional[str] = None,
+    ) -> 'HDKey':
         """
         Instantiate an HDKey from an xpub. Populates all possible fields
         Args:
@@ -133,6 +177,16 @@ class HDKey():
         if result.network != 'mainnet':
             raise XPUBError('Given xpub is not for the bitcoin mainnet')
 
+        hint = result.hint
+        if xpub_type is not None and xpub_type.matches_prefix(xpub[0:4]) is False:
+            # the given type does not match the prefix, re-encode with correct pref
+            new_xpub = bytearray()
+            new_xpub.extend(xpub_type.prefix_bytes())
+            new_xpub.extend(xpub_bytes[4:])
+            new_xpub_bytes = new_xpub
+            hint = xpub_type.prefix()
+            xpub = b58encode(bytes(new_xpub_bytes)).decode('ascii')
+
         return HDKey(
             path=path,
             network=result.network,
@@ -146,7 +200,7 @@ class HDKey():
             xpub=xpub,
             privkey=None,
             pubkey=pubkey,
-            hint=result.hint,
+            hint=hint,
         )
 
     @staticmethod

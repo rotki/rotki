@@ -58,6 +58,7 @@ export interface ExchangePayload {
 interface XpubPayload {
   readonly xpub: string;
   readonly derivationPath: string;
+  readonly xpubType: string;
 }
 
 export interface BlockchainAccountPayload extends AccountPayload {

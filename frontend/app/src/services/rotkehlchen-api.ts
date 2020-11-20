@@ -496,6 +496,7 @@ export class RotkehlchenApi {
       ? {
           xpub: xpub.xpub,
           derivationPath: xpub.derivationPath ? xpub.derivationPath : undefined,
+          xpubType: xpub.xpubType ? xpub.xpubType : undefined,
           ...basePayload
         }
       : {
