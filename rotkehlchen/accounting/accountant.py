@@ -7,6 +7,7 @@ import gevent
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
@@ -451,6 +452,16 @@ class Accountant():
             )
             return True, prev_time
 
+        if isinstance(asset1, UnknownEthereumToken) or isinstance(asset2, UnknownEthereumToken):  # type: ignore  # noqa: E501
+            # TODO: Typing needs fixing here  # type: ignore
+            log.debug(  # type: ignore
+                'Ignoring action with unknown token',
+                action_type=action_type,
+                asset1=asset1,
+                asset2=asset2,
+            )
+            return True, prev_time
+
         if asset1 in ignored_assets or asset2 in ignored_assets:
             log.debug(
                 'Ignoring action with ignored asset',
@@ -458,7 +469,6 @@ class Accountant():
                 asset1=asset1,
                 asset2=asset2,
             )
-
             return True, prev_time
 
         if action_type == 'loan':

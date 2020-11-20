@@ -76,7 +76,7 @@ def add_trades_from_swaps(
     for entry in quote_assets:
         quote_asset = entry[0]
         sold_amount = entry[1]
-        rate = bought_amount / sold_amount
+        rate = sold_amount / bought_amount
         trade = AMMTrade(
             trade_type=TradeType.BUY,
             base_asset=token,
