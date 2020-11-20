@@ -7,6 +7,7 @@ import gevent
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.db.dbhandler import DBHandler
@@ -254,7 +255,7 @@ class Accountant():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            trade_history: List[Union[Trade, MarginPosition]],
+            trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],

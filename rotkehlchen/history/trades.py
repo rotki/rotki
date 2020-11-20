@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_DAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
@@ -28,7 +29,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 HistoryResult = Tuple[
     str,
-    List[Union[Trade, MarginPosition]],
+    List[Union[Trade, MarginPosition, AMMTrade]],
     List[Loan],
     List[AssetMovement],
     List[EthereumTransaction],
@@ -89,7 +90,7 @@ class TradesHistorian():
         )
         now = ts_now()
         # start creating the all trades history list
-        history: List[Union[Trade, MarginPosition]] = []
+        history: List[Union[Trade, MarginPosition, AMMTrade]] = []
         asset_movements = []
         loans = []
         empty_or_error = ''
@@ -156,6 +157,15 @@ class TradesHistorian():
             location=Location.EXTERNAL,
         )
         history.extend(external_trades)
+
+        # include uniswap trades
+        if has_premium and self.chain_manager.uniswap:
+            uniswap_trades = self.chain_manager.uniswap.get_trades(
+                addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
+                from_timestamp=Timestamp(0),
+                to_timestamp=now,
+            )
+            history.extend(uniswap_trades)
 
         # Include makerdao DSR gains
         defi_events = []

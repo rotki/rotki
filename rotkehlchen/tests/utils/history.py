@@ -3,6 +3,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -135,7 +136,7 @@ prices = {
 def check_result_of_history_creation_for_remote_errors(
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
-        trade_history: List[Union[Trade, MarginPosition]],
+        trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
         loan_history: List[Loan],
         asset_movements: List[AssetMovement],
         eth_transactions: List[EthereumTransaction],
@@ -641,7 +642,7 @@ def mock_history_processing(
     def check_result_of_history_creation(
             start_ts: Timestamp,
             end_ts: Timestamp,
-            trade_history: List[Union[Trade, MarginPosition]],
+            trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
@@ -771,7 +772,7 @@ def mock_history_processing(
     def check_result_of_history_creation_and_process_it(
             start_ts: Timestamp,
             end_ts: Timestamp,
-            trade_history: List[Union[Trade, MarginPosition]],
+            trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],

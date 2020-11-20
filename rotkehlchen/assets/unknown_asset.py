@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.typing import ChecksumEthAddress
 
 # The most common keys for serializing an <UnknownEthereumToken> via
@@ -8,22 +9,6 @@ from rotkehlchen.typing import ChecksumEthAddress
 UNKNOWN_TOKEN_KEYS = ('ethereum_address', 'name', 'symbol')
 
 SerializeAsDictKeys = Union[List[str], Tuple[str, ...], Set[str]]
-
-
-class FakeAsset(NamedTuple):
-    """A class that fakes Asset properties when the class can't be
-    instantiated (i.e. the identifier belongs to an unknown ethereum token).
-
-    For instance this happens with DB trades entries whose `fee_currency` is an
-    unknown ethereum token and Trade can't be instantiated.
-    """
-    identifier: str
-
-    def __str__(self) -> str:
-        return self.identifier
-
-    def to_binance(self) -> str:
-        return self.identifier
 
 
 @dataclass(init=True, repr=True, eq=False, unsafe_hash=False, frozen=True)
@@ -38,14 +23,22 @@ class UnknownEthereumToken:
         return hash(self.ethereum_address)
 
     def __eq__(self, other: Any) -> bool:
-        if other is None:
-            return False
+        """Check if an unknown ethereum tokens is equal to something.
+
+        We only accept comparison to unknown ethereum token or a string which
+        is interpreted as an address.
+
+        TODO: Think how to handle comparison to Asset and to Ethereum token
+        in the case the UnknownEthereumToken is actually supported after some time.
+
+        """
         if isinstance(other, UnknownEthereumToken):
             return self.ethereum_address == other.ethereum_address
-        if isinstance(other, str):
+        elif isinstance(other, str):
             return self.ethereum_address == other
 
-        raise TypeError(f'Invalid type: {type(other)}')
+        # else for any other type comparison return false
+        return False
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
@@ -79,3 +72,29 @@ class UnknownEthereumToken:
             return asdict(self)
 
         return {key: getattr(self, key) for key in keys if hasattr(self, key)}
+
+    #  --- matching the asset interface since this class is treated like an Asset
+    #
+    # TODO: Perhaps find a better way to handle this. Have a common Asset interface
+    # that has to be followed by using a superclass?
+    @property
+    def identifier(self) -> str:
+        """
+        Creates a unique identifier for this token.
+
+        This should stay only as long as we use objects of this class as drop ins
+        for Asset/EthereumToken
+        """
+        return f'custom_token {self.symbol} - {self.ethereum_address}'
+
+    def is_fiat(self) -> bool:  # pylint: disable=no-self-use
+        return False
+
+    def to_cryptocompare(self) -> str:
+        raise UnsupportedAsset(f'{self.identifier} is not supported by cryptocompare')
+
+    def to_coingecko(self) -> str:
+        raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
+
+    def has_coingecko(self) -> bool:  # pylint: disable=no-self-use
+        return False

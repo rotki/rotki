@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`717` Uniswap v2 LP balances are now detected by Rotki. Faster balance queries, swaps history and LP events history is also supported for premium users.
+* :feature:`717` Uniswap v2 LP balances are now detected by Rotki. Faster balance queries, swaps history and LP events history is also supported for premium users. Finally uniswap trades are now taken into account in the profit/loss report for premium users.
 * :bug:`1740` SNX token and some other token balances should no longer be double counted.
 * :feature:`1724` YFI and BAL are now supported as collateral for makerdao vaults.
 * :feature:`1694` Users are now able to track their ETH deposited in Eth2 beacon chain. Premium users can see more details about the activity and their staking gains in the staking menu.
