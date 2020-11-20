@@ -13,7 +13,7 @@ from rotkehlchen.typing import BlockchainAccountData, BTCAddress, SupportedBlock
 if TYPE_CHECKING:
     from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 
-XPUB_ADDRESS_STEP = 10
+XPUB_ADDRESS_STEP = 20
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +81,7 @@ def _derive_addresses_loop(
             batch_addresses.append((idx, child.address()))
 
         have_tx_mapping = have_bitcoin_transactions([x[1] for x in batch_addresses])
+        should_continue = False
         for idx, address in batch_addresses:
             have_tx, balance = have_tx_mapping[address]
             if have_tx:
@@ -90,8 +91,7 @@ def _derive_addresses_loop(
                     address=address,
                     balance=balance,
                 ))
-            else:
-                should_continue = False
+                should_continue = True
 
         # do one more pass and add any addresses with no transactions before the max index
         # this is so we can start new address generation from the max index later

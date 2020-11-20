@@ -53,6 +53,7 @@ EXPECTED_XPUB_ADDESSES = [
     '1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ',
     '1Ps7bkbAfcEFKsUvFTNu61vNTGqTY25Lpz',
     '1Q61WZ6sixTvd8JaH2qimkXAWFBR2MdBwu',
+    '1DNg5csVnUkheYczaBECsfby8ZcmZkYnJK',
 ]
 
 
