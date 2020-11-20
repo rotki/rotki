@@ -26,7 +26,7 @@
     <v-row v-if="displayXpubInput" align="center" no-gutters class="mt-2">
       <v-col cols="auto">
         <v-select
-          v-model="xpubKeyType"
+          v-model="xpubKeyPrefix"
           class="account-form__xpub-key-type"
           item-value="value"
           item-text="label"
@@ -158,10 +158,26 @@ const YPUB_LABEL = 'P2SH-P2WPKH';
 const YPUB_VALUE = 'ypub';
 const ZPUB_LABEL = 'WPKH';
 const ZPUB_VALUE = 'zpub';
+const XPUB_TYPE = 'p2pkh';
+const YPUB_TYPE = 'p2sh_p2wpkh';
+const ZPUB_TYPE = 'wpkh';
 
-const XPUB_KEY_TYPE = [XPUB_VALUE, YPUB_VALUE, ZPUB_VALUE] as const;
+const XPUB_KEY_PREFIX = [XPUB_VALUE, YPUB_VALUE, ZPUB_VALUE] as const;
+const XPUB_KEY_TYPE = [XPUB_TYPE, YPUB_TYPE, ZPUB_TYPE] as const;
 
+type XpubPrefix = typeof XPUB_KEY_PREFIX[number];
 type XpubKeyType = typeof XPUB_KEY_TYPE[number];
+
+const getKeyType: (key: XpubPrefix) => XpubKeyType = key => {
+  if (key === XPUB_VALUE) {
+    return XPUB_TYPE;
+  } else if (key === YPUB_VALUE) {
+    return YPUB_TYPE;
+  } else if (key === ZPUB_VALUE) {
+    return ZPUB_TYPE;
+  }
+  throw new Error(`${key} is not acceptable`);
+};
 
 @Component({
   components: { InputModeSelect, TagInput },
@@ -184,7 +200,7 @@ export default class AccountForm extends Vue {
   label: string = '';
   tags: string[] = [];
   errorMessages: string[] = [];
-  xpubKeyType: XpubKeyType = XPUB_VALUE;
+  xpubKeyPrefix: XpubPrefix = XPUB_VALUE;
   account!: (address: string) => GeneralAccount | undefined;
   addAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   addAccounts!: (payload: AddAccountsPayload) => Promise<void>;
@@ -267,7 +283,7 @@ export default class AccountForm extends Vue {
       const match = this.edit.xpub.match(/([xzy]pub)(.*)/);
       if (match) {
         this.xpub = match[0];
-        this.xpubKeyType = match[1] as XpubKeyType;
+        this.xpubKeyPrefix = match[1] as XpubPrefix;
       } else {
         this.xpub = this.edit.xpub;
       }
@@ -314,7 +330,7 @@ export default class AccountForm extends Vue {
   private setXpubKeyType(value: string) {
     const match = AccountForm.isPrefixed(value);
     if (match && match.length === 3) {
-      this.xpubKeyType = match[1] as XpubKeyType;
+      this.xpubKeyPrefix = match[1] as XpubPrefix;
     }
   }
 
@@ -404,11 +420,10 @@ export default class AccountForm extends Vue {
     let xpubPayload: XpubPayload | undefined;
     if (this.isBtc && this.isXpub) {
       const trimmedKey = this.xpub.trim();
-      const key = AccountForm.isPrefixed(trimmedKey);
-      const xpubKey = key && key.length === 3 ? key[2] : trimmedKey;
       xpubPayload = {
-        xpub: `${this.xpubKeyType}${xpubKey}`,
-        derivationPath: this.derivationPath ?? undefined
+        xpub: trimmedKey,
+        derivationPath: this.derivationPath ?? undefined,
+        xpubType: getKeyType(this.xpubKeyPrefix)
       };
     } else {
       xpubPayload = undefined;
