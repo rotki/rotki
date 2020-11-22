@@ -369,7 +369,7 @@ class DBHandler:
         password_for_sqlcipher = _protect_password_sqlcipher(password)
         script = f'PRAGMA key="{password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
-            script += 'PRAGMA kdf_iter={KDF_ITER};'
+            script += f'PRAGMA kdf_iter={KDF_ITER};'
         self.conn.executescript(script)
         self.conn.execute('PRAGMA foreign_keys=ON')
 
@@ -380,7 +380,7 @@ class DBHandler:
         new_password_for_sqlcipher = _protect_password_sqlcipher(new_password)
         script = f'PRAGMA rekey="{new_password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
-            script += 'PRAGMA kdf_iter={KDF_ITER};'
+            script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
             self.conn.executescript(script)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
