@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.typing import AssetType, ChecksumEthAddress
 from rotkehlchen.utils.misc import get_chunks
 
 from .typing import LiquidityPool, LiquidityPoolAsset
@@ -64,7 +64,7 @@ def _decode_result(
             decimals=token.decimals,
         )
         # Classify the asset either as known or unknown
-        if isinstance(asset, EthereumToken):
+        if asset.asset_type == AssetType.ETH_TOKEN:
             known_assets.add(asset)
         elif isinstance(asset, UnknownEthereumToken):
             unknown_assets.add(asset)

@@ -26,7 +26,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.genesis import GENESIS_STUB
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
+from rotkehlchen.typing import AssetType, BTCAddress, ChecksumEthAddress
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 logger = logging.getLogger(__name__)
@@ -349,7 +349,7 @@ def _get_token(value: Any) -> Optional[EthereumToken]:
             # not a token
             return None
         return token
-    elif isinstance(value, EthereumToken):
+    elif value.asset_type == AssetType.ETH_TOKEN:
         return value
 
     return None

@@ -18,7 +18,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_unknown_ethereum_token_from_db,
 )
-from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.typing import AssetAmount, AssetType, ChecksumEthAddress, Price, Timestamp
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class LiquidityPoolAsset:
     def serialize(self) -> Dict[str, Any]:
         serialized_asset: Union[str, Dict[str, Any]]
 
-        if isinstance(self.asset, EthereumToken):
+        if self.asset.asset_type == AssetType.ETH_TOKEN:
             serialized_asset = self.asset.serialize()
         elif isinstance(self.asset, UnknownEthereumToken):
             serialized_asset = self.asset.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
@@ -288,12 +288,12 @@ class LiquidityPoolEventsBalance(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         serialized_token0 = (
             self.token0.serialize()
-            if isinstance(self.token0, EthereumToken)
+            if self.token0.asset_type == AssetType.ETH_TOKEN
             else self.token0.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
         )
         serialized_token1 = (
             self.token1.serialize()
-            if isinstance(self.token1, EthereumToken)
+            if self.token1.asset_type == AssetType.ETH_TOKEN
             else self.token1.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
         )
         return {
