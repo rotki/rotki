@@ -172,13 +172,30 @@ Adding an exchange
 
 You can integrate many different exchanges with Rotki. Currently supported exchanges are: Kraken, Poloniex, Bittrex, Bitmex, Binance, Coinbase, Coinbase Pro and Gemini.
 
-To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else since that is all the permissions needed by Rotki.
+To do so you have to go to your exchange and create an API key (see the section :ref:`api-key-permissions`).
 
 Click on the "API keys" on the left sidebar. This will take you to the place where you can add new exchange API keys. Select the exchanges panel and select your exchange from the dropdown menu. Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press submit.
 
 If all went well, then you will get a confirmation that the connection was successful. If not please doublecheck that the key and secret are correct.
 
-Note that some exchanges have additional options. For example kraken needs you to specify the type of account you have with them to determine the api query limits and coinbasepro needs an additional passphrase.
+.. _api-key-permissions:
+
+API key permissions
+--------------------
+
+Rotki only needs read-only permissions for your accounts. As a general rule, exchanges (e.g. Binance, Coinbase Pro) group all the read-only permissions as "read" or "view".
+
+.. image:: images/add_exchange_api_keys_binance.png
+   :alt: Simple API key permissions
+   :align: center
+
+In case of an exchange providing a more granular permissions scheme (e.g. Coinbase, Kraken) or having additional options (e.g query limits, passphrase), refer to the exchange documentation or get in touch via their customer support channel.
+
+.. image:: images/add_exchange_api_keys_coinbase.png
+   :alt: Granular API key permissions
+   :align: center
+
+You may as well try creating an API key with the minimum read-related permissions, then adding it in Rotki and finally checking that the connection was successful and data was loaded as expected. Otherwise, try again adding more read-related premissions.
 
 Adding an external service API Key
 =====================================
