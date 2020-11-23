@@ -349,7 +349,7 @@ def _get_token(value: Any) -> Optional[EthereumToken]:
             # not a token
             return None
         return token
-    elif isinstance(value, EthereumToken):
+    elif value.asset_type == AssetType.ETH_TOKEN:
         return value
 
     return None

@@ -258,7 +258,7 @@ class Uniswap(EthereumModule):
                     )
 
                     # Classify the asset either as known or unknown
-                    if isinstance(asset, EthereumToken):
+                    if asset.asset_type == AssetType.ETH_TOKEN:
                         known_assets.add(asset)
                     elif isinstance(asset, UnknownEthereumToken):
                         unknown_assets.add(asset)

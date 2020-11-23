@@ -57,7 +57,7 @@ def serialize_known_or_unknown_token(
 ) -> Union[str, Dict[str, Any]]:
     return (
         token.serialize()
-        if isinstance(token, EthereumToken)
+        if token.asset_type == AssetType.ETH_TOKEN
         else token.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
     )
 
@@ -274,7 +274,7 @@ class AMMTrade(NamedTuple):
         """
         fee_symbol = (
             self.quote_asset.identifier
-            if isinstance(self.quote_asset, EthereumToken)
+            if self.quote_asset.asset_type == AssetType.ETH_TOKEN
             else self.quote_asset.symbol
         )
         return {
