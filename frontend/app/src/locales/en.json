@@ -399,11 +399,11 @@
       "blockchain_account_removal": {
         "task": {
           "title": "Removing {blockchain} account",
-          "description": "{address} is being removed"
+          "description": "{count} accounts are being removed"
         },
         "error": {
           "description": "Failed to remove the account: {error}",
-          "title": "Removing {blockchain} account {address}"
+          "title": "Removing {count} {blockchain} account(s)"
         }
       },
       "blockchain_account_add": {
@@ -598,9 +598,10 @@
     "select_loan_hint": "Please select a loan to see information"
   },
   "account_balances": {
+    "delete_button": "Delete",
+    "delete_tooltip": "Delete selected account(s)",
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
     "edit_tooltip": "Edit account",
-    "delete_tooltip": "Delete account",
     "data_table": {
       "loading": "Please wait while rotki queries the blockchain..."
     },
@@ -614,7 +615,8 @@
     "total": "Total",
     "confirm_delete": {
       "title": "Account delete",
-      "description": "Are you sure you want to delete {address}"
+      "description_xpub": "Are you sure you want to delete {address}",
+      "description_address": "Are you sure you want to delete {count} address(es)"
     }
   },
   "lending": {

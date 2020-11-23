@@ -357,8 +357,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async removeAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
-    const { address, blockchain } = payload;
-    const { taskId } = await api.removeBlockchainAccount(blockchain, address);
+    const { accounts, blockchain } = payload;
+    assert(accounts, 'Accounts was empty');
+    const { taskId } = await api.removeBlockchainAccount(blockchain, accounts);
 
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
@@ -373,7 +374,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         description: i18n.tc(
           'actions.balances.blockchain_account_removal.task.description',
           0,
-          { address }
+          { count: accounts.length }
         ),
         blockchain,
         numericKeys: blockchainBalanceKeys
@@ -392,7 +393,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const title = i18n.tc(
         'actions.balances.blockchain_account_removal.error.title',
         0,
-        { address, blockchain }
+        { count: accounts.length, blockchain }
       );
       const description = i18n.tc(
         'actions.balances.blockchain_account_removal.error.description',

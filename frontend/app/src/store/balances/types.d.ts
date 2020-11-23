@@ -64,6 +64,7 @@ interface XpubPayload {
 export interface BlockchainAccountPayload extends AccountPayload {
   readonly blockchain: Blockchain;
   readonly xpub?: XpubPayload;
+  readonly accounts?: string[];
 }
 
 export interface AccountPayload {
