@@ -452,6 +452,8 @@ Finally you can see a piechart of the distribution of your netvalue across all o
    :alt: Distribution of networth by asset
    :align: center
 
+.. _set-the-backend-s-arguments:
+
 Set the backend's arguments
 *******************************
 
