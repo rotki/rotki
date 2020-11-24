@@ -6,11 +6,25 @@ Rotki is an opensource project so help is really appreciated.
 Bug Reporting
 *****************
 
-Use the `proper template <https://github.com/rotki/rotki/issues/new?template=bug_report.md>`_ to create bug report issues.
+Before reporting an issue, make sure to check the issue tracker for similar ones. If this is a new issue then use the `proper template <https://github.com/rotki/rotki/issues/new?template=bug_report.md>`_ providing a detailed description about:
 
-Make sure to check the issue tracker for similar issues before reporting. If this is a new issue then provide a detailed description of the problem, what happened and what you were expecting to happen instead.
+- **Problem**: what happened and what you were expecting to happen instead.
+- **Logs**: run Rotki in debug mode, replicate the issue and attach the logs (see the section `Run Rotki in debug mode <#run-rotki-in-debug-mode>`_).
+- **Environment**: the operating system and the Rotki version.
 
-Also provide a detailed description of your system and of the rotki version used as the issue template explains.
+Run Rotki in debug mode
+------------------------
+
+For running Rotki in debug mode, you can do it either via a config file or the app UI:
+
+- **Config file**: see the section :ref:`set-the-backend-s-arguments`.
+- **App UI**: before log in, click the cog wheel at the bottom right corner and select "Debug" (image below). Then log in as usual.
+
+.. image:: images/rotki_debug_mode_set.png
+   :alt: Run Rotki in debug mode via app UI
+   :align: center
+
+You can find the app logs location by going to "Help" menu at the top and then choosing "Logs Directory".
 
 Feature Requests
 ********************
