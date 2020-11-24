@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1416` Request Binance deposits & withdraws using a 90 days window.
 * :bug:`1787` After 24/11/2020 some Infura users started getting a "query returned more than 10000 results" error when querying their balances. This should no longer happen.
 * :feature:`1774` Users now will only see the dashboard liabilities if there are liabilities to show.
 

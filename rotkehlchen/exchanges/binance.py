@@ -43,6 +43,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+BINANCE_LAUNCH_TS = 1500001200  # 2017-07-14T04:00:00Z (12:00 GMT+8, Beijing Time)
+API_TIME_INTERVAL_CONSTRAIN_TS = 60 * 60 * 24 * 90  # 90 days
 V3_ENDPOINTS = (
     'account',
     'myTrades',
@@ -227,6 +229,8 @@ class Binance(ExchangeInterface):
     def api_query(self, method: str, options: Optional[Dict] = None) -> Union[List, Dict]:
         if not options:
             options = {}
+        elif 'signature' in options:  # Prevent to pollute next signature
+            del options['signature']
 
         backoff = self.initial_backoff
 
@@ -522,30 +526,108 @@ class Binance(ExchangeInterface):
 
         return None
 
+    def _query_api_query_dict_within_time_delta(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            time_delta_ts: Timestamp,
+            method: str,
+    ) -> List[Dict[str, Any]]:
+        """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
+        delta (offset) less than `time_delta_ts`.
+
+        Be aware of:
+          - If `start_ts` equals zero, the Binance launch timestamp is used
+          (from BINANCE_LAUNCH_TS). This value is not stored in the
+          `used_query_ranges` table, but 0.
+          - Timestamps are converted to milliseconds.
+          - This function does not currently support limits.
+        """
+        if method == 'depositHistory.html':
+            query_schema = 'depositList'
+        elif method == 'withdrawHistory.html':
+            query_schema = 'withdrawList'
+        else:
+            raise AssertionError(f'Unexpected binance method case: {method}.')
+
+        results: List[Dict[str, Any]] = []
+        # Create required time references in milliseconds
+        time_delta_ts_ms = time_delta_ts * 1000 - 1  # less than in ms
+        end_ts_ms = end_ts * 1000
+        if start_ts == Timestamp(0):
+            start_ts_ms = Timestamp(BINANCE_LAUNCH_TS) * 1000
+        else:
+            start_ts_ms = start_ts * 1000
+
+        from_ts_ms = start_ts_ms
+        to_ts_ms = (
+            start_ts_ms + time_delta_ts_ms  # Case request with time delta
+            if end_ts_ms - start_ts_ms > time_delta_ts_ms
+            else end_ts_ms  # Case request without time delta (1 request)
+        )
+        while True:
+            options = {
+                'timestamp': ts_now_in_ms(),
+                'startTime': from_ts_ms,
+                'endTime': to_ts_ms,
+            }
+            result = self.api_query_dict(method, options=options)
+            results.extend(result.get(query_schema, []))
+            # Case stop requesting
+            if to_ts_ms == end_ts_ms:
+                break
+            # Case 1 more request: update `to_ts_ms` to `end_ts_ms`
+            elif to_ts_ms + time_delta_ts_ms > end_ts_ms:
+                from_ts_ms = to_ts_ms + 1
+                to_ts_ms = end_ts_ms
+            # Case keep requesting: update `to_ts_ms` to `to_ts_ms` + time delta
+            else:
+                from_ts_ms = to_ts_ms + 1
+                to_ts_ms = to_ts_ms + time_delta_ts_ms
+
+        return results
+
     def query_online_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        # This does not check for any limits. Can there be any limits like with trades
-        # in the deposit/withdrawal binance api? Can't see anything in the docs:
-        # https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#deposit-history-user_data
-        #
-        # Note that all timestamps should be in milliseconds, so we multiply by 1k
-        options = {
-            'timestamp': ts_now_in_ms(),
-            'startTime': start_ts * 1000,
-            'endTime': end_ts * 1000,
-        }
-        result = self.api_query_dict('depositHistory.html', options=options)
-        raw_data = result.get('depositList', [])
-        options['timestamp'] = ts_now_in_ms()
-        result = self.api_query_dict('withdrawHistory.html', options=options)
-        raw_data.extend(result.get('withdrawList', []))
-        log.debug('binance deposit/withdrawal history result', results_num=len(raw_data))
+        """
+        Be aware of:
+          - Timestamps must be in milliseconds.
+          - There must be less than 90 days between start and end timestamps.
+          - Both deposit history and withdraw history do not check for any limits.
+
+        Function `query_api_query_dict_within_time_delta()` deals with converting
+        timestamps to milliseconds and requesting from `start_ts` to `end_ts`
+        using a time delta less than 90 days.
+
+        Deposit & Withdraw history documentation:
+        https://binance-docs.github.io/apidocs/spot/en/#deposit-history-user_data
+        https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-user_data
+
+        Deprecated Deposit & Withdraw history documentation:
+        https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#deposit-history-user_data
+        https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#withdraw-history-user_data
+        """
+        deposits = self._query_api_query_dict_within_time_delta(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            time_delta_ts=Timestamp(API_TIME_INTERVAL_CONSTRAIN_TS),
+            method='depositHistory.html',
+        )
+        log.debug('binance deposit history result', results_num=len(deposits))
+
+        withdraws = self._query_api_query_dict_within_time_delta(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            time_delta_ts=Timestamp(API_TIME_INTERVAL_CONSTRAIN_TS),
+            method='withdrawHistory.html',
+        )
+        log.debug('binance withdraw history result', results_num=len(withdraws))
 
         movements = []
-        for raw_movement in raw_data:
+        for raw_movement in deposits + withdraws:
             movement = self._deserialize_asset_movement(raw_movement)
             if movement:
                 movements.append(movement)
