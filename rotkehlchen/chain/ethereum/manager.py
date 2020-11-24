@@ -1,3 +1,4 @@
+import json
 import logging
 import random
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
@@ -17,6 +18,7 @@ from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
+from web3.types import FilterParams
 
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.ethereum import ETH_SCAN
@@ -63,6 +65,72 @@ def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
         return False, message
 
     return True, message
+
+
+WEB3_LOGQUERY_BLOCK_RANGE = 250000
+
+
+def _query_web3_get_logs(
+        web3: Web3,
+        filter_args: FilterParams,
+        from_block: int,
+        to_block: Union[int, Literal['latest']],
+        contract_address: ChecksumEthAddress,
+        event_name: str,
+        argument_filters: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    until_block = web3.eth.blockNumber if to_block == 'latest' else to_block
+    events: List[Dict[str, Any]] = []
+    start_block = from_block
+    block_range = WEB3_LOGQUERY_BLOCK_RANGE
+    while start_block <= until_block:
+        filter_args['fromBlock'] = start_block
+        end_block = min(start_block + block_range, until_block)
+        filter_args['toBlock'] = end_block
+        log.debug(
+            'Querying web3 node for contract event',
+            contract_address=contract_address,
+            event_name=event_name,
+            argument_filters=argument_filters,
+            from_block=filter_args['fromBlock'],
+            to_block=filter_args['toBlock'],
+        )
+        # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
+        # is infura can throw an error here which we can only parse by catching the  exception
+        try:
+            new_events_web3 = cast(List[Dict[str, Any]], web3.eth.getLogs(filter_args))
+        except ValueError as e:
+            try:
+                decoded_error = json.loads(str(e).replace("'", '"'))
+            except json.JSONDecodeError:
+                # reraise the value error if the error is not json
+                raise e from None
+
+            msg = decoded_error.get('message', '')
+            # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
+            if msg in ('query returned more than 10000 results', 'query timeout exceeded'):
+                # repeat the query with smaller block range
+                block_range = int(block_range / 2)
+                continue
+            else:
+                # well we tried .. reraise the Value error
+                raise e
+
+        # Turn all HexBytes into hex strings
+        for e_idx, event in enumerate(new_events_web3):
+            new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
+            new_topics = []
+            for topic in (event['topics']):
+                new_topics.append(topic.hex())
+            new_events_web3[e_idx]['topics'] = new_topics
+            new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
+
+        start_block = end_block + 1
+        events.extend(new_events_web3)
+        # end of the loop, end of 1 query. Reset the block range to max
+        block_range = WEB3_LOGQUERY_BLOCK_RANGE
+
+    return events
 
 
 OPEN_NODES = (
@@ -636,33 +704,15 @@ class EthereumManager():
         events: List[Dict[str, Any]] = []
         start_block = from_block
         if web3 is not None:
-            until_block = web3.eth.blockNumber if to_block == 'latest' else to_block
-            while start_block <= until_block:
-                filter_args['fromBlock'] = start_block
-                end_block = min(start_block + 250000, until_block)
-                filter_args['toBlock'] = end_block
-                log.debug(
-                    'Querying node for contract event',
-                    contract_address=contract_address,
-                    event_name=event_name,
-                    argument_filters=argument_filters,
-                    from_block=filter_args['fromBlock'],
-                    to_block=filter_args['toBlock'],
-                )
-                # WTF: for some reason the first time we get in here the loop resets
-                # to the start without querying eth_getLogs and ends up with double logging
-                new_events_web3 = cast(List[Dict[str, Any]], web3.eth.getLogs(filter_args))
-                # Turn all HexBytes into hex strings
-                for e_idx, event in enumerate(new_events_web3):
-                    new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
-                    new_topics = []
-                    for topic in (event['topics']):
-                        new_topics.append(topic.hex())
-                    new_events_web3[e_idx]['topics'] = new_topics
-                    new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
-
-                start_block = end_block + 1
-                events.extend(new_events_web3)
+            events = _query_web3_get_logs(
+                web3=web3,
+                filter_args=filter_args,
+                from_block=from_block,
+                to_block=to_block,
+                contract_address=contract_address,
+                event_name=event_name,
+                argument_filters=argument_filters,
+            )
         else:  # etherscan
             until_block = (
                 self.etherscan.get_latest_block_number() if to_block == 'latest' else to_block
