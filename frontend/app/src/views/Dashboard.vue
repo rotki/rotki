@@ -102,7 +102,7 @@
         />
       </v-col>
     </v-row>
-    <v-row>
+    <v-row v-if="liabilities.length > 0">
       <v-col>
         <dashboard-asset-table
           :title="$t('dashboard.liabilities.title')"
