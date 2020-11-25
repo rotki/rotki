@@ -450,9 +450,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }),
         dispatch('fetchYearnVaultBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section, status, commit);
-        }),
-        dispatch('fetchUniswapBalances', refresh).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
         })
       ]);
 
@@ -475,8 +472,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchDSRHistory', refresh),
       dispatch('fetchAaveHistory', { refresh }),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchYearnVaultsHistory', { refresh }),
-      dispatch('fetchUniswapEvents', refresh)
+      dispatch('fetchYearnVaultsHistory', { refresh })
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);

@@ -212,6 +212,13 @@ export default class Uniswap extends Mixins(StatusMixin) {
     return asset.ethereumAddress;
   }
 
+  async mounted() {
+    await Promise.all([
+      this.fetchUniswapBalances(false),
+      this.fetchUniswapEvents(false)
+    ]);
+  }
+
   async refresh() {
     await Promise.all([
       this.fetchUniswapBalances(true),
