@@ -52,6 +52,21 @@ class RemoteError(Exception):
     pass
 
 
+class UnsyncSystemClockError(RemoteError):
+    """Raised when the system clock is not synchronized via Internet and
+    remote APIs return an error code regarding the current timestamp sent.
+    """
+    def __init__(self, current_time: str, remote_server: Optional[str] = None) -> None:
+        self.current_time = current_time  # As str datetime
+        self.remote_server = remote_server  # Remote server name
+        msg_remote_server = f'{self.remote_server} server' if self.remote_server else 'server'
+        super().__init__(
+            f'Invalid provided current time: {self.current_time}. '
+            f'Local system clock is not sync with the {msg_remote_server}. '
+            f"Please, try syncing your system's clock.",
+        )
+
+
 class PriceQueryUnsupportedAsset(Exception):
     def __init__(self, asset_name: str) -> None:
         self.asset_name = asset_name

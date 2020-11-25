@@ -1,11 +1,14 @@
 import warnings as test_warnings
+from http import HTTPStatus
 from unittest.mock import patch
+
+import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from_bittrex
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import UnknownAsset, UnsupportedAsset, UnsyncSystemClockError
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
@@ -519,3 +522,24 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
         deposits=input_deposits,
         withdrawals=empty_response,
     )
+
+
+def test_bittrex_query_raises_unsync_system_clock_error(bittrex):
+    """Test that a request that returns an error code related with unsync
+    system clock raises UnsyncSystemClockError.
+
+    NB: only for non-public endpoints.
+    """
+    def mock_response(url, method, json):  # pylint: disable=unused-argument
+        response = MockResponse(HTTPStatus.UNAUTHORIZED, '{"code": "INVALID_TIMESTAMP"}')
+        return response
+
+    with patch.object(bittrex.session, 'request', side_effect=mock_response):
+        with pytest.raises(UnsyncSystemClockError) as e:
+            bittrex._single_api_query(
+                request_url=bittrex.uri,
+                options={},
+                method='put',
+                public_endpoint=False,
+            )
+        assert 'Invalid provided current time' in str(e.value)

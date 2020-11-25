@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import logging
+from datetime import datetime
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
@@ -20,6 +21,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnprocessableTradePair,
     UnsupportedAsset,
+    UnsyncSystemClockError,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, get_pair_position_asset
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -50,7 +52,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_list
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -273,6 +275,16 @@ class Bittrex(ExchangeInterface):
             )
         except requests.exceptions.ConnectionError as e:
             raise RemoteError(f'Bittrex API request failed due to {str(e)}')
+
+        # Error due to unsync system clock (only for non-public endpoints)
+        if not public_endpoint and response.status_code == HTTPStatus.UNAUTHORIZED:
+            json_ret = rlk_jsonloads_dict(response.text)
+            if json_ret.get('code') == 'INVALID_TIMESTAMP':
+                current_time = datetime.fromtimestamp(int(api_timestamp) / 1000)
+                raise UnsyncSystemClockError(
+                    current_time=str(current_time),
+                    remote_server='Bittrex',
+                )
 
         return response
 

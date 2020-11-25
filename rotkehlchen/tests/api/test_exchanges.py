@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import patch
 from urllib.parse import urlencode
@@ -8,6 +9,7 @@ import requests
 
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.errors import UnsyncSystemClockError
 from rotkehlchen.exchanges.data_structures import AssetMovement
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -60,6 +62,14 @@ API_KEYPAIR_COINBASEPRO_VALIDATION_PATCH = patch(
 API_KEYPAIR_COINBASE_VALIDATION_PATCH = patch(
     'rotkehlchen.exchanges.coinbase.Coinbase.validate_api_key',
     return_value=(True, ''),
+)
+
+UNSYNC_SYSTEM_CLOCK_RESPONSE_BITTREX = patch(
+    'rotkehlchen.exchanges.bittrex.Bittrex._single_api_query',
+    side_effect=UnsyncSystemClockError(
+        current_time=str(datetime.now()),
+        remote_server='Bittrex',
+    ),
 )
 
 
@@ -135,6 +145,37 @@ def test_setup_exchange(rotkehlchen_api_server):
     json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result'] == ['kraken', 'coinbasepro']
+
+
+@pytest.mark.parametrize('data, response_patch', [
+    # Bittrex
+    (
+        {'name': 'bittrex', 'api_key': 'ddddd', 'api_secret': 'fffff'},
+        UNSYNC_SYSTEM_CLOCK_RESPONSE_BITTREX,
+    ),
+])
+def test_setup_exchange_raises_unsync_system_clock_error(
+        rotkehlchen_api_server,
+        data,
+        response_patch,
+):
+    """Test that when setting up an exchange raises UnsyncSystemClockError the
+    response status code is 409 (from HTTPStatus.Conflict)
+
+    TODO update the `exchange` param items each time an existing exchange
+    integrates this exception.
+    """
+    # Mock the api response that raises UnsyncSystemClockError
+    with response_patch:
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+        )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='Invalid provided current time',
+        status_code=HTTPStatus.CONFLICT,
+    )
 
 
 @pytest.mark.parametrize('added_exchanges', [('kraken',)])

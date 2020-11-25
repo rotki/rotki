@@ -43,6 +43,7 @@ from rotkehlchen.errors import (
     RotkehlchenPermissionError,
     SystemPermissionError,
     TagConstraintError,
+    UnsyncSystemClockError,
 )
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -394,14 +395,18 @@ class RestAPI():
             api_secret: ApiSecret,
             passphrase: Optional[str],
     ) -> Response:
-        result: Optional[bool]
-        result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret, passphrase)
-
+        result = None
         status_code = HTTPStatus.OK
-        if not result:
-            result = None
+        msg = ''
+        try:
+            result, msg = self.rotkehlchen.setup_exchange(name, api_key, api_secret, passphrase)
+        except UnsyncSystemClockError as e:
+            msg = str(e)
             status_code = HTTPStatus.CONFLICT
-        return api_response(_wrap_in_result(result, message), status_code=status_code)
+        else:
+            if not result:
+                status_code = HTTPStatus.CONFLICT
+        return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     @require_loggedin_user()
     def remove_exchange(self, name: str) -> Response:
