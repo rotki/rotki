@@ -3,11 +3,15 @@ import { OverviewDefiProtocol } from '@/store/defi/types';
 
 const FINNEXUS = 'FinNexus';
 const PICKLE_FINANCE = 'Pickle Finance';
+const PICKLE_FINANCE_FARMS = 'Pickle Finance • Farms';
+const PICKLE_FINANCE_STAKING = 'Pickle Finance • Staking';
 const DODO = 'DODO';
 const BEREZKA = 'Berezka';
 const BZX = 'bZx';
 const CREAM = 'C.R.E.A.M.';
+const CREAM_STAKING = 'C.R.E.A.M. • Staking';
 const SWERVE = 'Swerve';
+const SWERVE_LIQUIDITY_GAUGES = 'Swerve • Liquidity Gauges';
 const SASHIMISWAP = 'SashimiSwap';
 const HARVEST = 'Harvest';
 const KIMCHI = 'KIMCHI';
@@ -17,15 +21,20 @@ const MOONISWAP = 'Mooniswap';
 const MATIC = 'Matic';
 const ARAGON = 'Aragon';
 export const AAVE = 'Aave';
-const BALANCER = 'balancer';
+const AAVE_STAKING = 'Aave • Staking';
+const AAVE_UNISWAPMARKET = 'Aave • Uniswap Market';
+const BALANCER = 'Balancer';
 export const COMPOUND = 'Compound';
-const COMPOUND_COMP = 'Compound Governance';
+const COMPOUND_GOVERNANCE = 'Compound Governance';
 const CURVE = 'Curve';
+const CURVE_VESTING = 'Curve • Vesting';
+const CURVE_LIQUIDITY_GAUGES = 'Curve • Liquidity Gauges';
 const DYDX = 'dYdX';
 const MELON = 'Melon';
 export const YEARN_FINANCE_VAULTS = 'yearn.finance • Vaults';
 const KEEPERDAO = 'KeeperDAO';
 const MSTABLE = 'mStable';
+const MSTABLE_STAKING = 'mStable • Staking';
 const KYBERDAO = 'KyberDAO';
 const DDEX_SPOT = 'DDEX • Spot';
 const DDEX_MARGIN = 'DDEX • Margin';
@@ -34,7 +43,7 @@ const AMPLEFORTH = 'Ampleforth';
 const MAKER_GOVERNANCE = 'Maker Governance';
 const GNOSIS_PROTOCOL = 'Gnosis Protocol';
 const UNISWAPV2 = 'Uniswap V2';
-const AAVE_UNISWAPMARKET = 'Aave • Uniswap Market';
+const IDLE = 'Idle';
 const IDLE_RISKADJUSTED = 'Idle • Risk-Adjusted';
 const PIEDAO = 'PieDAO';
 const MULTICOLLATERAL_DAI = 'Multi-Collateral Dai';
@@ -48,19 +57,28 @@ const DAI_SAVINGS_RATE = 'Dai Savings Rate';
 const CHAI = 'Chai';
 const IEARNFINANCEV3 = 'iearn.finance (v3)';
 const IEARNFINANCEV2 = 'iearn.finance (v2)';
-const IDLE_BESTYIELD = 'Idle • Best-Yield';
+const YGOVFINANCEV1 = 'ygov.finance (v1)';
+const YGOVFINANCEV2 = 'ygov.finance (v2)';
 const ZEROX_STAKING = '0x Staking';
 const CHIGASTOKEN = 'Chi Gastoken by 1inch';
+const ZLOTFINANCE = 'zlot.finance';
 export const MAKERDAO = 'MakerDAO';
 
 export const OVERVIEW_PROTOCOLS = [
+  YGOVFINANCEV1,
+  YGOVFINANCEV2,
+  ZLOTFINANCE,
   FINNEXUS,
   PICKLE_FINANCE,
+  PICKLE_FINANCE_FARMS,
+  PICKLE_FINANCE_STAKING,
   DODO,
   BEREZKA,
   BZX,
   CREAM,
+  CREAM_STAKING,
   SWERVE,
+  SWERVE_LIQUIDITY_GAUGES,
   SASHIMISWAP,
   HARVEST,
   KIMCHI,
@@ -73,6 +91,7 @@ export const OVERVIEW_PROTOCOLS = [
   YEARN_FINANCE_VAULTS,
   KEEPERDAO,
   MSTABLE,
+  MSTABLE_STAKING,
   KYBERDAO,
   DDEX_SPOT,
   DDEX_MARGIN,
@@ -81,8 +100,6 @@ export const OVERVIEW_PROTOCOLS = [
   MAKER_GOVERNANCE,
   GNOSIS_PROTOCOL,
   CHIGASTOKEN,
-  IDLE_RISKADJUSTED,
-  AAVE_UNISWAPMARKET,
   UNISWAPV2,
   PIEDAO,
   MULTICOLLATERAL_DAI,
@@ -97,19 +114,28 @@ export const OVERVIEW_PROTOCOLS = [
   CHAI,
   IEARNFINANCEV3,
   IEARNFINANCEV2,
-  IDLE_BESTYIELD,
+  IDLE,
+  IDLE_RISKADJUSTED,
   DYDX,
   CURVE,
+  CURVE_VESTING,
+  CURVE_LIQUIDITY_GAUGES,
   COMPOUND,
-  COMPOUND_COMP,
+  COMPOUND_GOVERNANCE,
   BALANCER,
   AAVE,
+  AAVE_STAKING,
+  AAVE_UNISWAPMARKET,
   MAKERDAO
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
+  [ZLOTFINANCE]: '',
+  [YGOVFINANCEV1]: '',
+  [YGOVFINANCEV2]: '',
   [ZEROX_STAKING]: '0x_staking.svg',
   [AAVE]: 'aave.svg',
+  [AAVE_STAKING]: 'aave.svg',
   [AAVE_UNISWAPMARKET]: 'aave.svg',
   [AMPLEFORTH]: 'ampl.svg',
   [ARAGON]: 'aragon.svg',
@@ -120,9 +146,12 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [CHAI]: 'chai.png',
   [CHIGASTOKEN]: 'chi.png',
   [COMPOUND]: 'compound.svg',
-  [COMPOUND_COMP]: 'compound.svg',
+  [COMPOUND_GOVERNANCE]: 'compound.svg',
   [CREAM]: 'cream.svg',
+  [CREAM_STAKING]: 'cream.svg',
   [CURVE]: 'curve.svg',
+  [CURVE_VESTING]: 'curve.svg',
+  [CURVE_LIQUIDITY_GAUGES]: 'curve.svg',
   [MULTICOLLATERAL_DAI]: 'dai.svg',
   [DDEX_LENDING]: 'ddex.svg',
   [DDEX_SPOT]: 'ddex.svg',
@@ -134,7 +163,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [FINNEXUS]: 'finnexus.svg',
   [GNOSIS_PROTOCOL]: 'gnosis_protocol.png',
   [HARVEST]: 'harvest.gif',
-  [IDLE_BESTYIELD]: 'idle.svg',
+  [IDLE]: 'idle.svg',
   [IDLE_RISKADJUSTED]: 'idle.svg',
   [IEARNFINANCEV2]: 'iearn.png',
   [IEARNFINANCEV3]: 'iearn.png',
@@ -146,14 +175,18 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [MELON]: 'melon.svg',
   [MOONISWAP]: 'mooniswap.svg',
   [MSTABLE]: 'mstable.png',
+  [MSTABLE_STAKING]: 'mstable.png',
   [NEXUS_MUTUAL]: 'nexusmutual.svg',
   [PICKLE_FINANCE]: 'pickle.png',
+  [PICKLE_FINANCE_FARMS]: 'pickle.png',
+  [PICKLE_FINANCE_STAKING]: 'pickle.png',
   [PIEDAO]: 'piedao.png',
   [POOLTOGETHER]: 'pooltogether.svg',
   [SASHIMISWAP]: 'sashimi.png',
   [TOKENSETS]: 'set.svg',
   [SUSHISWAP]: 'sushi.png',
   [SWERVE]: 'swerve.png',
+  [SWERVE_LIQUIDITY_GAUGES]: 'swerve.png',
   [SYNTHETIX]: 'synthetix.svg',
   [UNISWAPV1]: 'uniswap.svg',
   [UNISWAPV2]: 'uniswap.svg',
