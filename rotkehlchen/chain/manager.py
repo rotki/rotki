@@ -75,13 +75,13 @@ DEFI_BALANCES_REQUERY_SECONDS = 600
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     # aTokens are already detected at token balance queries
-    'Aave': True,  # None means all
+    'Aave': True,  # True means all
     # cTokens are already detected at token balance queries
-    'Compound': True,  # None means all
+    'Compound': True,  # True means all
     # Chitoken is in our all_assets.json
-    'Chi Gastoken by 1inch': True,  # None means all
+    'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens
-    'yearn.finance • Vaults': True,
+    'yearn.finance • Vaults': True,  # True means all
     # Synthetix SNX token is in all_assets.json
     'Synthetix': ['SNX'],
 }

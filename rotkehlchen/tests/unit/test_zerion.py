@@ -36,3 +36,96 @@ def test_query_all_protocol_balances_for_account(
     assert len(errors) == 0
     warnings = function_scope_messages_aggregator.consume_warnings()
     assert len(warnings) == 0
+
+
+KNOWN_ZERION_PROTOCOL_NAMES = (
+    'Curve • Vesting',
+    'Curve • Liquidity Gauges',
+    'ygov.finance (v1)',
+    'ygov.finance (v2)',
+    'mStable • Staking',
+    'Swerve • Liquidity Gauges',
+    'Pickle Finance • Farms',
+    'Pickle Finance • Staking',
+    'Aave • Staking',
+    'C.R.E.A.M. • Staking',
+    'Compound Governance',
+    'zlot.finance',
+    'FinNexus',
+    'Pickle Finance',
+    'DODO',
+    'Berezka',
+    'bZx',
+    'C.R.E.A.M.',
+    'Swerve',
+    'SashimiSwap',
+    'Harvest',
+    'KIMCHI',
+    'SushiSwap',
+    'Nexus Mutual',
+    'Mooniswap',
+    'Matic',
+    'Aragon',
+    'Melon',
+    'yearn.finance • Vaults',
+    'KeeperDAO',
+    'mStable',
+    'KyberDAO',
+    'DDEX • Spot',
+    'DDEX • Margin',
+    'DDEX • Lending',
+    'Ampleforth',
+    'Maker Governance',
+    'Gnosis Protocol',
+    'Chi Gastoken by 1inch',
+    'Idle • Risk-Adjusted',
+    'Aave • Uniswap Market',
+    'Uniswap V2',
+    'PieDAO',
+    'Multi-Collateral Dai',
+    'Bancor',
+    'DeFi Money Market',
+    'TokenSets',
+    '0x Staking',
+    'Uniswap V1',
+    'Synthetix',
+    'PoolTogether',
+    'Dai Savings Rate',
+    'Chai',
+    'iearn.finance (v3)',
+    'iearn.finance (v2)',
+    'Idle',
+    'dYdX',
+    'Curve',
+    'Compound',
+    'Balancer',
+    'Aave',
+)
+
+
+def test_protocol_names_are_known(
+        ethereum_manager,
+        function_scope_messages_aggregator,
+        inquirer,  # pylint: disable=unused-argument
+):
+    zerion = Zerion(ethereum_manager, function_scope_messages_aggregator)
+    protocol_names = zerion.contract.call(
+        ethereum=zerion.ethereum,
+        method_name='getProtocolNames',
+        arguments=[],
+    )
+
+    # Make sure that none of the already known names has changed. If it has changed.
+    # If it has that may cause trouble as we saw in: https://github.com/rotki/rotki/issues/1803
+    for expected_name in KNOWN_ZERION_PROTOCOL_NAMES:
+        msg = f'Could not find "{expected_name}" in the zerion protocol names'
+        assert expected_name in protocol_names, msg
+
+    # informative pass with some warnings if a protocol is added by zerion we don't know about
+    # We should check those warnings from time to time and add them to the known
+    # protocols and add an icon for them among other things
+    for name in protocol_names:
+        if name not in KNOWN_ZERION_PROTOCOL_NAMES:
+            test_warnings.warn(
+                UserWarning(f'Unknown protocol "{name}" seen in Zerion protocol names'),
+            )

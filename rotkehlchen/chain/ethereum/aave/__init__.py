@@ -110,6 +110,8 @@ class Aave(EthereumModule):
             lending_map = {}
             borrowing_map = {}
             for balance_entry in balance_entries:
+                # Aave also has "Aave • Staking" and "Aave • Uniswap Market" but
+                # here we are only querying the balances in the lending protocol
                 if balance_entry.protocol.name != 'Aave':
                     continue
 

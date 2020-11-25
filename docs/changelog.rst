@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1803` After 25/11/2020 Compound's claimable COMP stopped appearing in the app due to a change in a smart contract we depend on. This has now been fixed and they should be detected properly again.
 * :bug:`1416` Request Binance deposits & withdraws using a 90 days window.
 * :bug:`1787` After 24/11/2020 some Infura users started getting a "query returned more than 10000 results" error when querying their balances. This should no longer happen.
 * :feature:`1774` Users now will only see the dashboard liabilities if there are liabilities to show.
