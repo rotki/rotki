@@ -176,7 +176,7 @@ class Compound(EthereumModule):
             borrowing_map = {}
             rewards_map = {}
             for balance_entry in balance_entries:
-                if balance_entry.protocol.name != 'Compound':
+                if balance_entry.protocol.name not in ('Compound Governance', 'Compound'):
                     continue
 
                 entry = balance_entry.base_balance
@@ -188,7 +188,11 @@ class Compound(EthereumModule):
                     )
                     continue
 
-                if entry.token_address == A_COMP.ethereum_address:
+                unclaimed_comp_rewards = (
+                    entry.token_address == A_COMP.ethereum_address and
+                    balance_entry.protocol.name == 'Compound Governance'
+                )
+                if unclaimed_comp_rewards:
                     rewards_map[A_COMP] = CompoundBalance(
                         balance_type=BalanceType.ASSET,
                         balance=entry.balance,

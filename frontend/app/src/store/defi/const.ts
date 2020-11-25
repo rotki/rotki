@@ -19,6 +19,7 @@ const ARAGON = 'Aragon';
 export const AAVE = 'Aave';
 const BALANCER = 'balancer';
 export const COMPOUND = 'Compound';
+const COMPOUND_COMP = 'Compound Governance';
 const CURVE = 'Curve';
 const DYDX = 'dYdX';
 const MELON = 'Melon';
@@ -100,6 +101,7 @@ export const OVERVIEW_PROTOCOLS = [
   DYDX,
   CURVE,
   COMPOUND,
+  COMPOUND_COMP,
   BALANCER,
   AAVE,
   MAKERDAO
@@ -118,6 +120,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [CHAI]: 'chai.png',
   [CHIGASTOKEN]: 'chi.png',
   [COMPOUND]: 'compound.svg',
+  [COMPOUND_COMP]: 'compound.svg',
   [CREAM]: 'cream.svg',
   [CURVE]: 'curve.svg',
   [MULTICOLLATERAL_DAI]: 'dai.svg',
