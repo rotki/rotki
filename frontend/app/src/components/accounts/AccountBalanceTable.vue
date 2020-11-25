@@ -15,6 +15,23 @@
     sort-desc
     v-on="$listeners"
   >
+    <template #header.accountSelection>
+      <v-simple-checkbox
+        :disabled="nonExpandedBalances.length === 0"
+        :ripple="false"
+        :value="allSelected"
+        color="primary"
+        @input="setSelected($event)"
+      />
+    </template>
+    <template #item.accountSelection="{ item }">
+      <v-simple-checkbox
+        :ripple="false"
+        color="primary"
+        :value="selected.includes(item.address)"
+        @input="selectionChanged(item.address, $event)"
+      />
+    </template>
     <template v-if="blockchain === 'ETH'" #header.balance.usdValue>
       {{
         $t('account_balances.headers.usd-value-eth', {
@@ -58,15 +75,15 @@
     <template #item.actions="{ item }">
       <row-actions
         class="account-balance-table__actions"
+        :no-delete="true"
         :edit-tooltip="$t('account_balances.edit_tooltip')"
-        :delete-tooltip="$t('account_balances.delete_tooltip')"
         :disabled="accountOperation || refreshing"
-        @delete-click="deleteClick(item.address)"
         @edit-click="editClick(item)"
       />
     </template>
     <template v-if="balances.length > 0" #body.append>
       <tr class="account-balance-table__total">
+        <td />
         <td>{{ $t('account_balances.total') }}</td>
         <td class="text-end">
           <amount-display
@@ -121,6 +138,8 @@
 </template>
 
 <script lang="ts">
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
@@ -172,15 +191,17 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   blockchain!: Blockchain;
   @Prop({ required: true, type: Array })
   visibleTags!: string[];
-
-  @Emit()
-  deleteClick(_account: string) {}
+  @Prop({ required: true, type: Array })
+  selected!: string[];
 
   @Emit()
   editClick(_account: BlockchainAccountWithBalance) {}
 
   @Emit()
   deleteXpub(_payload: XpubPayload) {}
+
+  @Emit()
+  addressesSelected(_selected: string[]) {}
 
   section = chainSection[this.blockchain];
   currency!: Currency;
@@ -193,6 +214,45 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   expanded = [];
 
   collapsedXpubs: XpubPayload[] = [];
+
+  setSelected(selected: boolean) {
+    const selection = [...this.selected];
+    if (!selected) {
+      const total = selection.length;
+      for (let i = 0; i < total; i++) {
+        selection.pop();
+      }
+    } else {
+      for (const { address } of this.nonExpandedBalances) {
+        if (selection.includes(address)) {
+          continue;
+        }
+        selection.push(address);
+      }
+    }
+
+    this.addressesSelected(selection);
+  }
+
+  selectionChanged(address: string, selected: boolean) {
+    const selection = [...this.selected];
+    if (!selected) {
+      const index = selection.indexOf(address);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+    } else if (!selection.includes(address)) {
+      selection.push(address);
+    }
+    this.addressesSelected(selection);
+  }
+
+  get allSelected(): boolean {
+    const strings = this.nonExpandedBalances.map(value => value.address);
+    return (
+      strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
+    );
+  }
 
   get collapsedKeys(): string[] {
     return this.collapsedXpubs.map(
@@ -240,22 +300,28 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   }
 
   readonly footerProps = footerProps;
-  readonly headers: DataTableHeader[] = [
-    { text: this.$tc('account_balances.headers.account'), value: 'address' },
-    { text: this.blockchain, value: 'balance.amount', align: 'end' },
-    {
-      text: this.$tc('account_balances.headers.usd-value-default'),
-      value: 'balance.usdValue',
-      align: 'end'
-    },
-    {
-      text: this.$tc('account_balances.headers.actions'),
-      value: 'actions',
-      sortable: false,
-      width: '50'
-    },
-    { text: '', value: 'expand', align: 'end', sortable: false }
-  ];
+  get headers(): DataTableHeader[] {
+    return [
+      { text: '', value: 'accountSelection', width: '34px', sortable: false },
+      { text: this.$tc('account_balances.headers.account'), value: 'address' },
+      { text: this.blockchain, value: 'balance.amount', align: 'end' },
+      {
+        text: this.$tc('account_balances.headers.usd-value-default'),
+        value: 'balance.usdValue',
+        align: 'end'
+      },
+      {
+        text: this.$tc('account_balances.headers.actions'),
+        value: 'actions',
+        align: 'center',
+        sortable: false,
+        width: '28'
+      },
+      ...(this.blockchain === BTC
+        ? []
+        : [{ text: '', value: 'expand', align: 'end', sortable: false }])
+    ];
+  }
 
   getItems(xpub: string, derivationPath?: string) {
     return this.balances.filter(
@@ -344,11 +410,6 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   &__account {
     display: flex;
     flex-direction: column;
-  }
-
-  &__actions {
-    display: flex;
-    flex-direction: row;
   }
 
   &__total {

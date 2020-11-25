@@ -6,6 +6,7 @@ Changelog
 * :bug:`1416` Request Binance deposits & withdraws using a 90 days window.
 * :bug:`1787` After 24/11/2020 some Infura users started getting a "query returned more than 10000 results" error when querying their balances. This should no longer happen.
 * :feature:`1774` Users now will only see the dashboard liabilities if there are liabilities to show.
+* :feature:`1745` Users can now delete multiple blockchain accounts at once.
 
 * :release:`1.9.0 <2020-11-20>`
 * :feature:`717` Uniswap v2 LP balances are now detected by Rotki. Faster balance queries, swaps history and LP events history is also supported for premium users. Finally uniswap trades are now taken into account in the profit/loss report for premium users.

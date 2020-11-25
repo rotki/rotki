@@ -19,8 +19,33 @@
         />
       </v-col>
     </v-row>
-    <v-row>
-      <v-col cols="6" offset="6">
+    <v-row align="center">
+      <v-col cols="6">
+        <v-tooltip top>
+          <template #activator="{ on, attrs }">
+            <span v-bind="attrs" v-on="on">
+              <v-btn
+                color="primary"
+                text
+                outlined
+                :disabled="
+                  isLoading ||
+                  operationRunning ||
+                  selectedAddresses.length === 0
+                "
+                @click="confirmDelete = true"
+              >
+                <v-icon>
+                  mdi-delete-outline
+                </v-icon>
+                <span>{{ $t('account_balances.delete_button') }}</span>
+              </v-btn>
+            </span>
+          </template>
+          <span>{{ $t('account_balances.delete_tooltip') }}</span>
+        </v-tooltip>
+      </v-col>
+      <v-col cols="6">
         <tag-filter v-model="visibleTags" />
       </v-col>
     </v-row>
@@ -29,18 +54,15 @@
       :blockchain="blockchain"
       :balances="balances"
       :visible-tags="visibleTags"
-      @delete-click="toDeleteAccount = $event"
+      :selected="selectedAddresses"
       @edit-click="editAccount($event)"
       @delete-xpub="xpubToDelete = $event"
+      @addresses-selected="selectedAddresses = $event"
     />
     <confirm-dialog
       :display="confirm"
       :title="$t('account_balances.confirm_delete.title')"
-      :message="
-        $t('account_balances.confirm_delete.description', {
-          address: pendingAddress
-        })
-      "
+      :message="deleteDescription"
       @cancel="cancelDelete()"
       @confirm="deleteAccount()"
     />
@@ -82,9 +104,10 @@ export default class AccountBalances extends Vue {
   @Prop({ required: true })
   title!: string;
 
+  selectedAddresses: string[] = [];
   visibleTags: string[] = [];
   editedAccount = '';
-  toDeleteAccount: string = '';
+  confirmDelete: boolean = false;
   xpubToDelete: XpubPayload | null = null;
 
   isTaskRunning!: (type: TaskType) => boolean;
@@ -93,19 +116,26 @@ export default class AccountBalances extends Vue {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
   }
 
-  get confirm(): boolean {
-    return !!this.toDeleteAccount || !!this.xpubToDelete;
+  get operationRunning(): boolean {
+    return (
+      this.isTaskRunning(TaskType.ADD_ACCOUNT) ||
+      this.isTaskRunning(TaskType.REMOVE_ACCOUNT)
+    );
   }
 
-  get pendingAddress(): string {
-    if (this.xpubToDelete) {
-      return this.xpubToDelete.xpub;
-    }
-    if (this.toDeleteAccount) {
-      return this.toDeleteAccount;
-    }
+  get confirm(): boolean {
+    return this.confirmDelete || !!this.xpubToDelete;
+  }
 
-    return '';
+  get deleteDescription(): string {
+    if (this.xpubToDelete) {
+      return this.$tc('account_balances.confirm_delete.description_xpub', 0, {
+        address: this.xpubToDelete.xpub
+      });
+    }
+    return this.$tc('account_balances.confirm_delete.description_address', 0, {
+      count: this.selectedAddresses.length
+    });
   }
 
   @Emit()
@@ -115,15 +145,15 @@ export default class AccountBalances extends Vue {
   }
 
   async deleteAccount() {
-    if (this.toDeleteAccount) {
-      const address = this.toDeleteAccount;
+    if (this.selectedAddresses.length > 0) {
       const blockchain = this.blockchain;
-      this.toDeleteAccount = '';
+      this.confirmDelete = false;
 
       await this.$store.dispatch('balances/removeAccount', {
-        address,
+        accounts: this.selectedAddresses,
         blockchain
       });
+      this.selectedAddresses = [];
     } else if (this.xpubToDelete) {
       const payload = { ...this.xpubToDelete };
       this.xpubToDelete = null;
@@ -133,7 +163,7 @@ export default class AccountBalances extends Vue {
   }
 
   cancelDelete() {
-    this.toDeleteAccount = '';
+    this.confirmDelete = false;
     this.xpubToDelete = null;
   }
 

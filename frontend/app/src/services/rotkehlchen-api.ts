@@ -462,13 +462,13 @@ export class RotkehlchenApi {
 
   removeBlockchainAccount(
     blockchain: string,
-    account: string
+    accounts: string[]
   ): Promise<PendingTask> {
     return this.axios
       .delete<ActionResult<PendingTask>>(`/blockchains/${blockchain}`, {
         data: axiosSnakeCaseTransformer({
           asyncQuery: true,
-          accounts: [account]
+          accounts: accounts
         }),
         validateStatus: validWithParamsSessionAndExternalService,
         transformResponse: basicAxiosTransformer

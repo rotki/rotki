@@ -18,7 +18,7 @@
       </template>
       <span>{{ editTooltip }}</span>
     </v-tooltip>
-    <v-tooltip top>
+    <v-tooltip v-if="!noDelete" top>
       <template #activator="{ on, attrs }">
         <v-btn
           small
@@ -48,8 +48,10 @@ export default class RowActions extends Vue {
   disabled!: boolean;
   @Prop({ required: true, type: String })
   editTooltip!: string;
-  @Prop({ required: true, type: String })
+  @Prop({ required: false, type: String, default: '' })
   deleteTooltip!: string;
+  @Prop({ required: false, type: Boolean, default: false })
+  noDelete!: boolean;
 
   @Emit()
   editClick() {}
