@@ -3,7 +3,7 @@
     {{ $t('account_group_header.standalone') }}
   </td>
   <fragment v-else>
-    <td class="pa-2">
+    <td class="pa-2" colspan="2">
       <div class="ps-8">
         <span class="subtitle-2">{{ label }}</span>
       </div>
@@ -83,7 +83,6 @@
         <span> {{ $t('account_group_header.delete_tooltip') }} </span>
       </v-tooltip>
     </td>
-    <td />
   </fragment>
 </template>
 <script lang="ts">

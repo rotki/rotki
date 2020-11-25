@@ -300,23 +300,28 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   }
 
   readonly footerProps = footerProps;
-  readonly headers: DataTableHeader[] = [
-    { text: '', value: 'accountSelection', width: 34, sortable: false },
-    { text: this.$tc('account_balances.headers.account'), value: 'address' },
-    { text: this.blockchain, value: 'balance.amount', align: 'end' },
-    {
-      text: this.$tc('account_balances.headers.usd-value-default'),
-      value: 'balance.usdValue',
-      align: 'end'
-    },
-    {
-      text: this.$tc('account_balances.headers.actions'),
-      value: 'actions',
-      sortable: false,
-      width: '50'
-    },
-    { text: '', value: 'expand', align: 'end', sortable: false }
-  ];
+  get headers(): DataTableHeader[] {
+    return [
+      { text: '', value: 'accountSelection', width: '34px', sortable: false },
+      { text: this.$tc('account_balances.headers.account'), value: 'address' },
+      { text: this.blockchain, value: 'balance.amount', align: 'end' },
+      {
+        text: this.$tc('account_balances.headers.usd-value-default'),
+        value: 'balance.usdValue',
+        align: 'end'
+      },
+      {
+        text: this.$tc('account_balances.headers.actions'),
+        value: 'actions',
+        align: 'center',
+        sortable: false,
+        width: '28'
+      },
+      ...(this.blockchain === BTC
+        ? []
+        : [{ text: '', value: 'expand', align: 'end', sortable: false }])
+    ];
+  }
 
   getItems(xpub: string, derivationPath?: string) {
     return this.balances.filter(
@@ -405,11 +410,6 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   &__account {
     display: flex;
     flex-direction: column;
-  }
-
-  &__actions {
-    display: flex;
-    flex-direction: row;
   }
 
   &__total {
