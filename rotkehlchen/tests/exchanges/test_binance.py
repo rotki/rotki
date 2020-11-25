@@ -10,7 +10,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
-    API_TIME_INTERVAL_CONSTRAIN_TS,
+    API_TIME_INTERVAL_CONSTRAINT_TS,
     BINANCE_LAUNCH_TS,
     Binance,
     trade_from_binance,
@@ -657,12 +657,15 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
     """Test the not so happy case of binance deposit withdrawal query
 
     From `start_ts` to `end_ts` there is a difference gte 90 days, which forces
-    to request using a time delta (from API_TIME_INTERVAL_CONSTRAIN_TS).
+    to request using a time delta (from API_TIME_INTERVAL_CONSTRAINT_TS). As
+    the `mock_get_deposit_withdrawal()` results are the same than in
+    `test_binance_query_deposits_withdrawals`, we only assert the number of
+    movements.
 
-    This test implementation must mock 4 requests instead of 2.
+    NB: this test implementation must mock 4 requests instead of 2.
     """
     start_ts = 0  # Defaults to BINANCE_LAUNCH_TS
-    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAIN_TS  # eq 90 days after
+    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
     binance = function_scope_binance
 
     def get_time_delta_deposit_result():
@@ -712,11 +715,11 @@ def test_api_query_dict_calls_with_time_delta(function_scope_binance):
     requests involve a time delta.
 
     From `start_ts` to `end_ts` there is a difference gte 90 days, which forces
-    to request using a time delta (from API_TIME_INTERVAL_CONSTRAIN_TS).
+    to request using a time delta (from API_TIME_INTERVAL_CONSTRAINT_TS).
     """
     now_ts_ms = int(datetime.utcnow().timestamp()) * 1000
     start_ts = 0  # Defaults to BINANCE_LAUNCH_TS
-    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAIN_TS  # eq 90 days after
+    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
     expected_calls = [
         call(
             'depositHistory.html',

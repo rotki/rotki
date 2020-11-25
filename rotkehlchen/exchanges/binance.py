@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 import gevent
 import requests
 from gevent.lock import Semaphore
+from typing_extensions import Literal
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
@@ -43,8 +44,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-BINANCE_LAUNCH_TS = 1500001200  # 2017-07-14T04:00:00Z (12:00 GMT+8, Beijing Time)
-API_TIME_INTERVAL_CONSTRAIN_TS = 60 * 60 * 24 * 90  # 90 days
+# Binance launched at 2017-07-14T04:00:00Z (12:00 GMT+8, Beijing Time)
+# https://www.binance.com/en/support/articles/115000599831-Binance-Exchange-Launched-Date-Set
+BINANCE_LAUNCH_TS = Timestamp(1500001200)
+API_TIME_INTERVAL_CONSTRAINT_TS = Timestamp(7776000)  # 90 days
 V3_ENDPOINTS = (
     'account',
     'myTrades',
@@ -227,10 +230,10 @@ class Binance(ExchangeInterface):
         return True, ''
 
     def api_query(self, method: str, options: Optional[Dict] = None) -> Union[List, Dict]:
-        if not options:
-            options = {}
-        elif 'signature' in options:  # Prevent to pollute next signature
-            del options['signature']
+        call_options = options.copy() if options else {}
+        # Prevent to pollute next signature
+        if 'signature' in call_options:
+            del call_options['signature']
 
         backoff = self.initial_backoff
 
@@ -242,14 +245,14 @@ class Binance(ExchangeInterface):
                 if method in V3_ENDPOINTS or method in WAPI_ENDPOINTS:
                     api_version = 3
                     # Recommended recvWindows is 5000 but we get timeouts with it
-                    options['recvWindow'] = 10000
-                    options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
+                    call_options['recvWindow'] = 10000
+                    call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
                     signature = hmac.new(
                         self.secret,
-                        urlencode(options).encode('utf-8'),
+                        urlencode(call_options).encode('utf-8'),
                         hashlib.sha256,
                     ).hexdigest()
-                    options['signature'] = signature
+                    call_options['signature'] = signature
                 elif method in V1_ENDPOINTS:
                     api_version = 1
                 else:
@@ -257,7 +260,7 @@ class Binance(ExchangeInterface):
 
                 apistr = 'wapi/' if method in WAPI_ENDPOINTS else 'api/'
                 request_url = f'{self.uri}{apistr}v{str(api_version)}/{method}?'
-                request_url += urlencode(options)
+                request_url += urlencode(call_options)
 
                 log.debug('Binance API request', request_url=request_url)
                 try:
@@ -526,22 +529,21 @@ class Binance(ExchangeInterface):
 
         return None
 
-    def _query_api_query_dict_within_time_delta(
+    def _api_query_dict_within_time_delta(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            time_delta_ts: Timestamp,
-            method: str,
+            time_delta: Timestamp,
+            method: Literal["depositHistory.html", "withdrawHistory.html"],
     ) -> List[Dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
-        delta (offset) less than `time_delta_ts`.
+        delta (offset) less than `time_delta`.
 
         Be aware of:
           - If `start_ts` equals zero, the Binance launch timestamp is used
           (from BINANCE_LAUNCH_TS). This value is not stored in the
           `used_query_ranges` table, but 0.
           - Timestamps are converted to milliseconds.
-          - This function does not currently support limits.
         """
         if method == 'depositHistory.html':
             query_schema = 'depositList'
@@ -552,38 +554,31 @@ class Binance(ExchangeInterface):
 
         results: List[Dict[str, Any]] = []
         # Create required time references in milliseconds
-        time_delta_ts_ms = time_delta_ts * 1000 - 1  # less than in ms
-        end_ts_ms = end_ts * 1000
+        offset = time_delta * 1000 - 1  # less than time_delta
         if start_ts == Timestamp(0):
-            start_ts_ms = Timestamp(BINANCE_LAUNCH_TS) * 1000
+            from_ts = BINANCE_LAUNCH_TS * 1000
         else:
-            start_ts_ms = start_ts * 1000
+            from_ts = start_ts * 1000
 
-        from_ts_ms = start_ts_ms
-        to_ts_ms = (
-            start_ts_ms + time_delta_ts_ms  # Case request with time delta
-            if end_ts_ms - start_ts_ms > time_delta_ts_ms
-            else end_ts_ms  # Case request without time delta (1 request)
+        to_ts = (
+            from_ts + offset  # Case request with offset
+            if end_ts * 1000 - from_ts > offset
+            else end_ts * 1000  # Case request without offset (1 request)
         )
         while True:
             options = {
                 'timestamp': ts_now_in_ms(),
-                'startTime': from_ts_ms,
-                'endTime': to_ts_ms,
+                'startTime': from_ts,
+                'endTime': to_ts,
             }
             result = self.api_query_dict(method, options=options)
             results.extend(result.get(query_schema, []))
             # Case stop requesting
-            if to_ts_ms == end_ts_ms:
+            if to_ts == end_ts * 1000:
                 break
-            # Case 1 more request: update `to_ts_ms` to `end_ts_ms`
-            elif to_ts_ms + time_delta_ts_ms > end_ts_ms:
-                from_ts_ms = to_ts_ms + 1
-                to_ts_ms = end_ts_ms
-            # Case keep requesting: update `to_ts_ms` to `to_ts_ms` + time delta
-            else:
-                from_ts_ms = to_ts_ms + 1
-                to_ts_ms = to_ts_ms + time_delta_ts_ms
+
+            from_ts = to_ts + 1
+            to_ts = min(to_ts + offset, end_ts * 1000)
 
         return results
 
@@ -596,32 +591,23 @@ class Binance(ExchangeInterface):
         Be aware of:
           - Timestamps must be in milliseconds.
           - There must be less than 90 days between start and end timestamps.
-          - Both deposit history and withdraw history do not check for any limits.
-
-        Function `query_api_query_dict_within_time_delta()` deals with converting
-        timestamps to milliseconds and requesting from `start_ts` to `end_ts`
-        using a time delta less than 90 days.
 
         Deposit & Withdraw history documentation:
         https://binance-docs.github.io/apidocs/spot/en/#deposit-history-user_data
         https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-user_data
-
-        Deprecated Deposit & Withdraw history documentation:
-        https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#deposit-history-user_data
-        https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#withdraw-history-user_data
         """
-        deposits = self._query_api_query_dict_within_time_delta(
+        deposits = self._api_query_dict_within_time_delta(
             start_ts=start_ts,
             end_ts=end_ts,
-            time_delta_ts=Timestamp(API_TIME_INTERVAL_CONSTRAIN_TS),
+            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             method='depositHistory.html',
         )
         log.debug('binance deposit history result', results_num=len(deposits))
 
-        withdraws = self._query_api_query_dict_within_time_delta(
+        withdraws = self._api_query_dict_within_time_delta(
             start_ts=start_ts,
             end_ts=end_ts,
-            time_delta_ts=Timestamp(API_TIME_INTERVAL_CONSTRAIN_TS),
+            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             method='withdrawHistory.html',
         )
         log.debug('binance withdraw history result', results_num=len(withdraws))
