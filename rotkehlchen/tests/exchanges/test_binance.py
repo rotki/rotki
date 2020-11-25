@@ -1,5 +1,6 @@
 import warnings as test_warnings
-from unittest.mock import patch
+from datetime import datetime
+from unittest.mock import call, patch
 
 import pytest
 
@@ -8,15 +9,19 @@ from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.binance import Binance, trade_from_binance
+from rotkehlchen.exchanges.binance import (
+    API_TIME_INTERVAL_CONSTRAINT_TS,
+    BINANCE_LAUNCH_TS,
+    Binance,
+    trade_from_binance,
+)
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT, A_XMR
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE, BINANCE_MYTRADES_RESPONSE
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
-from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory
+from rotkehlchen.typing import AssetMovementCategory, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -398,7 +403,7 @@ BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
             "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
             "asset": "ETH",
             "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
-            "applyTime": 1518192542000,
+            "applyTime": 1508488245000,
             "status": 4
         },
         {
@@ -408,7 +413,7 @@ BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
             "addressTag": "342341222",
             "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
             "asset": "XMR",
-            "applyTime": 1529198732000,
+            "applyTime": 1508512521000,
             "status": 4
         }
     ],
@@ -417,7 +422,13 @@ BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
 
 
 def test_binance_query_deposits_withdrawals(function_scope_binance):
-    """Test the happy case of binance deposit withdrawal query"""
+    """Test the happy case of binance deposit withdrawal query
+
+    NB: set `start_ts` and `end_ts` with a difference less than 90 days to
+    prevent requesting with a time delta.
+    """
+    start_ts = 1508022000  # 2017-10-15
+    end_ts = 1508540400  # 2017-10-21 (less than 90 days since `start_ts`)
     binance = function_scope_binance
 
     def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
@@ -429,7 +440,10 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
         return MockResponse(200, response_str)
 
     with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
-        movements = binance.query_online_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
+        movements = binance.query_online_deposits_withdrawals(
+            start_ts=Timestamp(start_ts),
+            end_ts=Timestamp(end_ts),
+        )
 
     errors = binance.msg_aggregator.consume_errors()
     warnings = binance.msg_aggregator.consume_warnings()
@@ -456,7 +470,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
 
     assert movements[2].location == Location.BINANCE
     assert movements[2].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[2].timestamp == 1518192542
+    assert movements[2].timestamp == 1508488245
     assert isinstance(movements[2].asset, Asset)
     assert movements[2].asset == A_ETH
     assert movements[2].amount == FVal('1')
@@ -464,7 +478,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
 
     assert movements[3].location == Location.BINANCE
     assert movements[3].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[3].timestamp == 1529198732
+    assert movements[3].timestamp == 1508512521
     assert isinstance(movements[3].asset, Asset)
     assert movements[3].asset == A_XMR
     assert movements[3].amount == FVal('850.1')
@@ -472,7 +486,13 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
 
 
 def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binance):
-    """Test that we handle unexpected deposit withdrawal query data gracefully"""
+    """Test that we handle unexpected deposit withdrawal query data gracefully
+
+    NB: set `start_ts` and `end_ts` with a difference less than 90 days to
+    prevent requesting with a time delta.
+    """
+    start_ts = 1508022000  # 2017-10-15
+    end_ts = 1508540400  # 2017-10-21 (less than 90 days since `start_ts`)
     binance = function_scope_binance
 
     def mock_binance_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
@@ -486,7 +506,10 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
             return MockResponse(200, response_str)
 
         with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
-            movements = binance.query_online_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
+            movements = binance.query_online_deposits_withdrawals(
+                start_ts=Timestamp(start_ts),
+                end_ts=Timestamp(end_ts),
+            )
 
         if expected_errors_num == 0 and expected_warnings_num == 0:
             assert len(movements) == 1
@@ -628,3 +651,142 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
         deposits=input_deposits,
         withdrawals=empty_withdrawals,
     )
+
+
+def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
+    """Test the not so happy case of binance deposit withdrawal query
+
+    From `start_ts` to `end_ts` there is a difference gte 90 days, which forces
+    to request using a time delta (from API_TIME_INTERVAL_CONSTRAINT_TS). As
+    the `mock_get_deposit_withdrawal()` results are the same as in
+    `test_binance_query_deposits_withdrawals`, we only assert the number of
+    movements.
+
+    NB: this test implementation must mock 4 requests instead of 2.
+    """
+    start_ts = 0  # Defaults to BINANCE_LAUNCH_TS
+    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
+    binance = function_scope_binance
+
+    def get_time_delta_deposit_result():
+        results = [
+            BINANCE_DEPOSITS_HISTORY_RESPONSE,
+            '{}',
+        ]
+        for result in results:
+            yield result
+
+    def get_time_delta_withdraw_result():
+        results = [
+            '{}',
+            BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
+        ]
+        for result in results:
+            yield result
+
+    def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+        if 'deposit' in url:
+            response_str = next(get_deposit_result)
+        else:
+            response_str = next(get_withdraw_result)
+
+        return MockResponse(200, response_str)
+
+    get_deposit_result = get_time_delta_deposit_result()
+    get_withdraw_result = get_time_delta_withdraw_result()
+
+    with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
+        movements = binance.query_online_deposits_withdrawals(
+            start_ts=Timestamp(start_ts),
+            end_ts=Timestamp(end_ts),
+        )
+
+    errors = binance.msg_aggregator.consume_errors()
+    warnings = binance.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    assert len(movements) == 4
+
+
+@pytest.mark.freeze_time(datetime(2020, 11, 24, 3, 14, 15))
+def test_api_query_dict_calls_with_time_delta(function_scope_binance):
+    """Test the `api_query_dict()` arguments when deposit/withdraw history
+    requests involve a time delta.
+
+    From `start_ts` to `end_ts` there is a difference gte 90 days, which forces
+    to request using a time delta (from API_TIME_INTERVAL_CONSTRAINT_TS).
+    """
+    now_ts_ms = int(datetime.utcnow().timestamp()) * 1000
+    start_ts = 0  # Defaults to BINANCE_LAUNCH_TS
+    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
+    expected_calls = [
+        call(
+            'depositHistory.html',
+            options={
+                'timestamp': now_ts_ms,
+                'startTime': 1500001200000,
+                'endTime': 1507777199999,
+            },
+        ),
+        call(
+            'depositHistory.html',
+            options={
+                'timestamp': now_ts_ms,
+                'startTime': 1507777200000,
+                'endTime': 1507777200000,
+            },
+        ),
+        call(
+            'withdrawHistory.html',
+            options={
+                'timestamp': now_ts_ms,
+                'startTime': 1500001200000,
+                'endTime': 1507777199999,
+            },
+        ),
+        call(
+            'withdrawHistory.html',
+            options={
+                'timestamp': now_ts_ms,
+                'startTime': 1507777200000,
+                'endTime': 1507777200000,
+            },
+        ),
+    ]
+    binance = function_scope_binance
+
+    def get_time_delta_deposit_result():
+        results = [
+            BINANCE_DEPOSITS_HISTORY_RESPONSE,
+            '{}',
+        ]
+        for result in results:
+            yield result
+
+    def get_time_delta_withdraw_result():
+        results = [
+            '{}',
+            BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
+        ]
+        for result in results:
+            yield result
+
+    def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+        if 'deposit' in url:
+            response_str = next(get_deposit_result)
+        else:
+            response_str = next(get_withdraw_result)
+
+        return MockResponse(200, response_str)
+
+    get_deposit_result = get_time_delta_deposit_result()
+    get_withdraw_result = get_time_delta_withdraw_result()
+
+    with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
+        with patch.object(binance, 'api_query_dict') as mock_api_query_dict:
+            binance.query_online_deposits_withdrawals(
+                start_ts=Timestamp(start_ts),
+                end_ts=Timestamp(end_ts),
+            )
+            assert mock_api_query_dict.call_args_list == expected_calls
