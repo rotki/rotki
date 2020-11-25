@@ -231,10 +231,6 @@ class Binance(ExchangeInterface):
 
     def api_query(self, method: str, options: Optional[Dict] = None) -> Union[List, Dict]:
         call_options = options.copy() if options else {}
-        # Prevent to pollute next signature
-        if 'signature' in call_options:
-            del call_options['signature']
-
         backoff = self.initial_backoff
 
         while True:
@@ -534,7 +530,7 @@ class Binance(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             time_delta: Timestamp,
-            method: Literal["depositHistory.html", "withdrawHistory.html"],
+            method: Literal['depositHistory.html', 'withdrawHistory.html'],
     ) -> List[Dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
         delta (offset) less than `time_delta`.
@@ -553,17 +549,20 @@ class Binance(ExchangeInterface):
             raise AssertionError(f'Unexpected binance method case: {method}.')
 
         results: List[Dict[str, Any]] = []
+
         # Create required time references in milliseconds
+        start_ts = Timestamp(start_ts * 1000)
+        end_ts = Timestamp(end_ts * 1000)
         offset = time_delta * 1000 - 1  # less than time_delta
         if start_ts == Timestamp(0):
             from_ts = BINANCE_LAUNCH_TS * 1000
         else:
-            from_ts = start_ts * 1000
+            from_ts = start_ts
 
         to_ts = (
             from_ts + offset  # Case request with offset
-            if end_ts * 1000 - from_ts > offset
-            else end_ts * 1000  # Case request without offset (1 request)
+            if end_ts - from_ts > offset
+            else end_ts  # Case request without offset (1 request)
         )
         while True:
             options = {
@@ -574,11 +573,11 @@ class Binance(ExchangeInterface):
             result = self.api_query_dict(method, options=options)
             results.extend(result.get(query_schema, []))
             # Case stop requesting
-            if to_ts == end_ts * 1000:
+            if to_ts >= end_ts:
                 break
 
             from_ts = to_ts + 1
-            to_ts = min(to_ts + offset, end_ts * 1000)
+            to_ts = min(to_ts + offset, end_ts)
 
         return results
 

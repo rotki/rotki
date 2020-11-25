@@ -658,7 +658,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
 
     From `start_ts` to `end_ts` there is a difference gte 90 days, which forces
     to request using a time delta (from API_TIME_INTERVAL_CONSTRAINT_TS). As
-    the `mock_get_deposit_withdrawal()` results are the same than in
+    the `mock_get_deposit_withdrawal()` results are the same as in
     `test_binance_query_deposits_withdrawals`, we only assert the number of
     movements.
 
