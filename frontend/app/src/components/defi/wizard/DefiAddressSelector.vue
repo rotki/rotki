@@ -27,7 +27,21 @@
 
     <v-stepper-items>
       <v-stepper-content v-for="n in steps" :key="`${n}-content`" :step="n">
-        <v-card class="mb-12" flat height="110px">
+        <v-row align="center" class="hidden-lg-and-up">
+          <v-col cols="auto">
+            <v-img
+              width="30px"
+              contain
+              max-height="24px"
+              :src="modules[n - 1].icon"
+            />
+          </v-col>
+          <v-col>
+            <div class="title">{{ modules[n - 1].name }}</div>
+          </v-col>
+        </v-row>
+
+        <v-card class="mb-12 mt-4" flat height="110px">
           <defi-queriable-address
             :module="modules[n - 1].identifier"
             :selected-addresses="
@@ -38,13 +52,15 @@
           />
         </v-card>
 
-        <v-btn v-if="step > 1" text @click="previousStep(n)">Back</v-btn>
+        <v-btn v-if="step > 1" text @click="previousStep(n)">
+          {{ $t('defi_address_selector.back') }}
+        </v-btn>
         <v-btn
           v-if="step < modules.length"
           color="primary"
           @click="nextStep(n)"
         >
-          Next
+          {{ $t('defi_address_selector.next') }}
         </v-btn>
       </v-stepper-content>
     </v-stepper-items>
