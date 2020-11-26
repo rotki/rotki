@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`1801` Users that have the uniswap module deactivated will now see a proper message about the module status instead of a loading.
+* :bug:`1801` Users that have the uniswap module deactivated will now see a proper message about the module status instead of a loading page.
 * :bug:`1798` Log level settings now are properly saved and the users are not required to set them on every run.
 * :bug:`1761` Retry GraphQL requests when the API server fails.
 * :bug:`1809` Token balances should now always be saved in the balances snapshot. Also an edge case that rarely caused the ethereum balances to be queried twice should be now fixed.
