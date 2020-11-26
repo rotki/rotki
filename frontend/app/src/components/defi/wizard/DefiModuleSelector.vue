@@ -79,6 +79,7 @@ export default class DefiModuleSelector extends Vue {
       return;
     }
     this.selectedModules.splice(selectionIndex, 1);
+    this.update(this.selectedModules);
   }
 
   async update(activeModules: SupportedModules[]) {

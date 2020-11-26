@@ -25,6 +25,18 @@
       "button_create": "Create"
     }
   },
+  "defi_address_selector": {
+    "back": "Back",
+    "next": "Next"
+  },
+  "defi_settings": {
+    "active_modules": "Active Defi modules",
+    "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
+    "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
+    "select_accounts": "Selected accounts",
+    "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
+    "title": "Defi Settings"
+  },
   "dex_trade": {
     "title": "DEX Trades"
   },
@@ -57,6 +69,10 @@
       "valid_username": "A username must contain only alphanumeric characters and have no spaces",
       "non_empty_password": "Please provide a password"
     }
+  },
+  "module_not_active": {
+    "not_active": "The {module} module is not activated. Please visit the {link} to activated it",
+    "settings_link": "Defi settings"
   },
   "premium_credentials": {
     "label_enable": "Enable Premium",

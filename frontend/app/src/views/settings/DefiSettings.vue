@@ -1,19 +1,20 @@
 <template>
   <v-card>
-    <v-card-title>Defi Settings</v-card-title>
+    <v-card-title v-text="$t('defi_settings.title')" />
     <v-card-text>
-      <div class="title">Active Defi modules</div>
-      <p class="text--secondary">
-        Only data for the selected modules will be queried. If no modules are
-        selected, querying for all the supported modules will be disabled.
-      </p>
+      <div class="title" v-text="$t('defi_settings.active_modules')" />
+      <p
+        class="text--secondary"
+        v-text="$t('defi_settings.active_modules_description')"
+      />
       <defi-module-selector />
-      <div class="mt-6 title">Selected accounts</div>
-      <p class="text--secondary">
-        If no accounts are selected for a protocol, data for all accounts will
-        be queried for that protocol.
-      </p>
+      <div class="mt-6 title" v-text="$t('defi_settings.select_accounts')" />
+      <p
+        class="text--secondary"
+        v-text="$t('defi_settings.select_accounts_description')"
+      />
       <defi-address-selector />
+      <span class="caption" v-text="$t('defi_settings.hint')" />
     </v-card-text>
   </v-card>
 </template>

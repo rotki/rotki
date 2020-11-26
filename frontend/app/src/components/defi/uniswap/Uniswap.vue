@@ -1,5 +1,6 @@
 <template>
-  <progress-screen v-if="loading">
+  <module-not-active v-if="!isUniswapEnabled" :module="MODULE_UNISWAP" />
+  <progress-screen v-else-if="loading">
     <template #message>
       {{ $t('uniswap.loading') }}
     </template>
@@ -157,9 +158,11 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import DefiModuleMixin from '@/mixins/defi-module-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UnknownToken } from '@/services/defi/types';
 import { SupportedAsset } from '@/services/types-model';
@@ -171,6 +174,7 @@ import { UniswapDetails } from '@/utils/premium';
 
 @Component({
   components: {
+    ModuleNotActive,
     UniswapDetails,
     ProgressScreen,
     UniswapPoolAsset,
@@ -184,7 +188,7 @@ import { UniswapDetails } from '@/utils/premium';
     ...mapActions('defi', ['fetchUniswapEvents', 'fetchUniswapBalances'])
   }
 })
-export default class Uniswap extends Mixins(StatusMixin) {
+export default class Uniswap extends Mixins(StatusMixin, DefiModuleMixin) {
   readonly ETH = ETH;
   readonly assetName = assetName;
   section = Section.DEFI_UNISWAP_BALANCES;
