@@ -17,7 +17,6 @@ import { startHttp, stopHttp } from '@/electron-main/http';
 import { IPC_RESTART_BACKEND } from '@/electron-main/ipc';
 import { selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
-import { CRITICAL, DEBUG, Level } from '@/utils/log-level';
 import PyHandler from './py-handler';
 import Timeout = NodeJS.Timeout;
 
@@ -195,7 +194,7 @@ const defaultMenuTemplate: any[] = [
     : [])
 ];
 
-function createWindow() {
+async function createWindow() {
   // set default window Width and Height in case not specific
   const mainWindowState = windowStateKeeper({
     defaultWidth: 1200,
@@ -205,7 +204,7 @@ function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
     x: mainWindowState.x, // defaults to middle of the screen if not specified
-    y: mainWindowState.y, // defaults to middle of the screen if not specified
+    y: mainWindowState.y, // defaults to middle of the screen if not specifiede
     width: mainWindowState.width,
     height: mainWindowState.height,
     webPreferences: {
@@ -220,13 +219,13 @@ function createWindow() {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     pyHandler.setCorsURL(process.env.WEBPACK_DEV_SERVER_URL);
     // Load the url of the dev server if in development mode
-    win.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
+    await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
     if (!process.env.IS_TEST) win.webContents.openDevTools();
   } else {
     createProtocol('app');
     // Load the index.html when not in development
     pyHandler.setCorsURL('app://*');
-    win.loadURL('app://./index.html');
+    await win.loadURL('app://./index.html');
   }
 
   const menuTemplate: MenuItemConstructorOptions[] = defaultMenuTemplate as MenuItemConstructorOptions[];
@@ -236,15 +235,6 @@ function createWindow() {
 
   win.on('closed', async () => {
     win = null;
-  });
-
-  let logLevel: Level = DEBUG;
-  if (!isDevelopment) {
-    logLevel = CRITICAL;
-  }
-
-  pyHandler.createPyProc(win, logLevel).then(() => {
-    pyHandler.listenForMessages();
   });
 }
 // Quit when all windows are closed.
