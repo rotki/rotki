@@ -563,6 +563,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # chain to populate the self.balances mapping.
         if not self.balances.is_queried(blockchain):
             self.query_balances(blockchain, ignore_cache=True)
+            self.flush_cache('query_balances', arguments_matter=True, blockchain=blockchain, ignore_cache=True)  # noqa: E501
 
         result = self.modify_blockchain_accounts(
             blockchain=blockchain,
@@ -644,6 +645,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
           as etherscan or blockchain.info
         """
         if blockchain == SupportedBlockchain.BITCOIN:
+            # we are adding/removing accounts, make sure query cache is flushed
+            self.flush_cache('query_btc_balances', arguments_matter=True)
+            self.flush_cache('query_balances', arguments_matter=True)
+            self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.BITCOIN)  # noqa: E501
             for idx, account in enumerate(accounts):
                 a_balance = already_queried_balances[idx] if already_queried_balances else None
                 self.modify_btc_account(
@@ -654,6 +659,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
+            # we are adding/removing accounts, make sure query cache is flushed
+            self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=False)  # noqa: E501
+            self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=True)  # noqa: E501
+            self.flush_cache('query_balances', arguments_matter=True)
+            self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
             for account in accounts:
                 address = deserialize_ethereum_address(account)
                 try:

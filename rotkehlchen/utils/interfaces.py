@@ -35,6 +35,10 @@ class CacheableObject():
         # Can also be 0 which means cache is disabled.
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
 
+    def flush_cache(self, name: str, arguments_matter: bool, *args: Any, **kwargs: Any) -> None:
+        cache_key = _function_sig_key(name, arguments_matter, *args, **kwargs)
+        self.results_cache.pop(cache_key, None)
+
 
 def cache_response_timewise(arguments_matter: bool = True) -> Callable:
     """ This is a decorator for caching results of functions of objects.
