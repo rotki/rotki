@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors import UnsyncSystemClockError
+from rotkehlchen.errors import SystemClockNotSyncedError
 from rotkehlchen.exchanges.data_structures import AssetMovement
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -64,9 +64,9 @@ API_KEYPAIR_COINBASE_VALIDATION_PATCH = patch(
     return_value=(True, ''),
 )
 
-UNSYNC_SYSTEM_CLOCK_RESPONSE_BITTREX = patch(
-    'rotkehlchen.exchanges.bittrex.Bittrex._single_api_query',
-    side_effect=UnsyncSystemClockError(
+SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITTREX = patch(
+    'rotkehlchen.exchanges.bittrex.Bittrex._check_for_system_clock_not_synced_error',
+    side_effect=SystemClockNotSyncedError(
         current_time=str(datetime.now()),
         remote_server='Bittrex',
     ),
@@ -148,24 +148,23 @@ def test_setup_exchange(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('data, response_patch', [
-    # Bittrex
     (
         {'name': 'bittrex', 'api_key': 'ddddd', 'api_secret': 'fffff'},
-        UNSYNC_SYSTEM_CLOCK_RESPONSE_BITTREX,
+        SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITTREX,
     ),
 ])
-def test_setup_exchange_raises_unsync_system_clock_error(
+def test_setup_exchange_raises_system_clock_not_synced_error(
         rotkehlchen_api_server,
         data,
         response_patch,
 ):
-    """Test that when setting up an exchange raises UnsyncSystemClockError the
-    response status code is 409 (from HTTPStatus.Conflict)
+    """Test that when setting up an exchange raises SystemClockNotSyncedError
+    the response status code is HTTPStatus.Conflict.
 
     TODO update the `exchange` param items each time an existing exchange
     integrates this exception.
     """
-    # Mock the api response that raises UnsyncSystemClockError
+    # Mock the api response that raises SystemClockNotSyncedError
     with response_patch:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
@@ -173,7 +172,7 @@ def test_setup_exchange_raises_unsync_system_clock_error(
 
     assert_error_response(
         response=response,
-        contained_in_msg='Invalid provided current time',
+        contained_in_msg='Local system clock',
         status_code=HTTPStatus.CONFLICT,
     )
 

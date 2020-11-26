@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
+from requests.adapters import Response
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -18,10 +19,10 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
+    SystemClockNotSyncedError,
     UnknownAsset,
     UnprocessableTradePair,
     UnsupportedAsset,
-    UnsyncSystemClockError,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, get_pair_position_asset
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -183,6 +184,21 @@ class Bittrex(ExchangeInterface):
                 raise
         return True, ''
 
+    @staticmethod
+    def _check_for_system_clock_not_synced_error(response: Response) -> None:
+        if response.status_code == HTTPStatus.UNAUTHORIZED:
+            try:
+                result = rlk_jsonloads_dict(response.text)
+            except JSONDecodeError:
+                raise RemoteError(f'Bittrex returned invalid JSON response: {response.text}')
+
+            if result.get('code', None) == 'INVALID_TIMESTAMP':
+                raise SystemClockNotSyncedError(
+                    current_time=str(datetime.now()),
+                    remote_server='Bittrex',
+                )
+        return None
+
     def api_query(  # noqa: F811
             self,
             endpoint: str,
@@ -228,6 +244,7 @@ class Bittrex(ExchangeInterface):
             break
 
         if response.status_code != HTTPStatus.OK:
+            self._check_for_system_clock_not_synced_error(response)
             raise RemoteError(
                 f'Bittrex query responded with error status code: {response.status_code}'
                 f' and text: {response.text}',
@@ -275,16 +292,6 @@ class Bittrex(ExchangeInterface):
             )
         except requests.exceptions.ConnectionError as e:
             raise RemoteError(f'Bittrex API request failed due to {str(e)}')
-
-        # Error due to unsync system clock (only for non-public endpoints)
-        if not public_endpoint and response.status_code == HTTPStatus.UNAUTHORIZED:
-            json_ret = rlk_jsonloads_dict(response.text)
-            if json_ret.get('code') == 'INVALID_TIMESTAMP':
-                current_time = datetime.fromtimestamp(int(api_timestamp) / 1000)
-                raise UnsyncSystemClockError(
-                    current_time=str(current_time),
-                    remote_server='Bittrex',
-                )
 
         return response
 

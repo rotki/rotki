@@ -41,9 +41,9 @@ from rotkehlchen.errors import (
     PremiumAuthenticationError,
     RemoteError,
     RotkehlchenPermissionError,
+    SystemClockNotSyncedError,
     SystemPermissionError,
     TagConstraintError,
-    UnsyncSystemClockError,
 )
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -400,11 +400,12 @@ class RestAPI():
         msg = ''
         try:
             result, msg = self.rotkehlchen.setup_exchange(name, api_key, api_secret, passphrase)
-        except UnsyncSystemClockError as e:
+        except SystemClockNotSyncedError as e:
             msg = str(e)
             status_code = HTTPStatus.CONFLICT
         else:
             if not result:
+                result = None
                 status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 

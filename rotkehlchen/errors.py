@@ -52,7 +52,7 @@ class RemoteError(Exception):
     pass
 
 
-class UnsyncSystemClockError(RemoteError):
+class SystemClockNotSyncedError(RemoteError):
     """Raised when the system clock is not synchronized via Internet and
     remote APIs return an error code regarding the current timestamp sent.
     """
@@ -61,8 +61,7 @@ class UnsyncSystemClockError(RemoteError):
         self.remote_server = remote_server  # Remote server name
         msg_remote_server = f'{self.remote_server} server' if self.remote_server else 'server'
         super().__init__(
-            f'Invalid provided current time: {self.current_time}. '
-            f'Local system clock is not sync with the {msg_remote_server}. '
+            f'Local system clock {self.current_time} is not sync with the {msg_remote_server}. '
             f"Please, try syncing your system's clock.",
         )
 
