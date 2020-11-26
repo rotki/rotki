@@ -13,6 +13,11 @@ Changelog
 * :feature:`1745` Users can now delete multiple blockchain accounts at once.
 * :bug:`1778` Uniswap pool balances will now only be loaded when the user navigates to the Liquidity pools screen.
 
+* :feature:`-` Added support for the following tokens:
+
+  - `renBCH (renBCH) <https://www.coingecko.com/en/coins/renbch>`__
+  - `renZEC (renZEC) <https://www.coingecko.com/en/coins/renzec>`__
+
 * :release:`1.9.0 <2020-11-20>`
 * :feature:`717` Uniswap v2 LP balances are now detected by Rotki. Faster balance queries, swaps history and LP events history is also supported for premium users. Finally uniswap trades are now taken into account in the profit/loss report for premium users.
 * :bug:`1664` Properly convert the given xpub to ypub if P2SH_P2WPKH and zpub if WPKH. This should address the problem of importing some types of xpubs for some users.
