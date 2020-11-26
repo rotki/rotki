@@ -14,6 +14,7 @@ from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 log = logging.getLogger(__name__)
 
 
+MAX_RETRIES = 3
 GRAPH_QUERY_LIMIT = 1000
 RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
 
@@ -51,7 +52,7 @@ class Graph():
     def __init__(self, url: str) -> None:
         """
         - May raise requests.RequestException if there is a problem connecting to the subgraph"""
-        transport = RequestsHTTPTransport(url=url)
+        transport = RequestsHTTPTransport(url=url, retries=MAX_RETRIES)
         try:
             self.client = Client(transport=transport, fetch_schema_from_transport=True)
         except (requests.exceptions.RequestException) as e:
