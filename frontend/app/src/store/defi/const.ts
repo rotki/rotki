@@ -130,9 +130,9 @@ export const OVERVIEW_PROTOCOLS = [
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
-  [ZLOTFINANCE]: '',
-  [YGOVFINANCEV1]: '',
-  [YGOVFINANCEV2]: '',
+  [ZLOTFINANCE]: 'zlotfinance.png',
+  [YGOVFINANCEV1]: 'iearn.png',
+  [YGOVFINANCEV2]: 'iearn.png',
   [ZEROX_STAKING]: '0x_staking.svg',
   [AAVE]: 'aave.svg',
   [AAVE_STAKING]: 'aave.svg',
@@ -141,7 +141,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [ARAGON]: 'aragon.svg',
   [BALANCER]: 'balancer.svg',
   [BANCOR]: 'bancor.svg',
-  [BEREZKA]: '',
+  [BEREZKA]: 'berezka.png',
   [BZX]: 'bzx.svg',
   [CHAI]: 'chai.png',
   [CHIGASTOKEN]: 'chi.png',
