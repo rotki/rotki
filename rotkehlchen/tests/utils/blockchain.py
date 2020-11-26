@@ -16,6 +16,7 @@ from web3.middleware import geth_poa_middleware
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.ethereum import ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
@@ -319,6 +320,8 @@ def assert_eth_balances_result(
 
     # Check our owned eth tokens here since the test may have changed their number
     owned_assets = set(rotki.chain_manager.totals.assets.keys())
+    if not also_btc:
+        owned_assets.discard(A_BTC)
     assert len(totals) == len(owned_assets)
 
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
