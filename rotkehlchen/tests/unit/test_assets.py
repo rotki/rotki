@@ -60,7 +60,7 @@ def test_ethereum_tokens():
     rdn_asset = EthereumToken('RDN')
     assert rdn_asset.ethereum_address == '0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'
     assert rdn_asset.decimals == 18
-    assert rdn_asset.asset_type == AssetType.ETH_TOKEN
+    assert rdn_asset.is_eth_token()
 
     with pytest.raises(DeserializationError):
         EthereumToken('BTC')

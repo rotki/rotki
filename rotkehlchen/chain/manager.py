@@ -46,7 +46,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
-    AssetType,
     BTCAddress,
     ChecksumEthAddress,
     ListOfBlockchainAddresses,
@@ -779,9 +778,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
         client and the chain is not synced
         """
         # Clear out all previous token balances
-        for token in [x for x, _ in self.totals.assets.items() if x.asset_type == AssetType.ETH_TOKEN]:  # noqa: E501
+        for token in [x for x, _ in self.totals.assets.items() if x.is_eth_token()]:
             del self.totals.assets[token]
-        for token in [x for x, _ in self.totals.liabilities.items() if x.asset_type == AssetType.ETH_TOKEN]:  # noqa: E501
+        for token in [x for x, _ in self.totals.liabilities.items() if x.is_eth_token()]:
             del self.totals.liabilities[token]
 
         self._query_ethereum_tokens(action=AccountAction.QUERY, force_detection=force_detection)

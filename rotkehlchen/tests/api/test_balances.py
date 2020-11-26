@@ -449,7 +449,7 @@ def test_multiple_balance_queries_not_concurrent(
         wraps=rotki.chain_manager.ethereum.get_multieth_balance,
     )
     btc_balances_patch = patch(
-        'rotkehlchen.chain.bitcoin.get_bitcoin_addresses_balances',
+        'rotkehlchen.chain.manager.get_bitcoin_addresses_balances',
         wraps=get_bitcoin_addresses_balances,
     )
     binance = rotki.exchange_manager.connected_exchanges['binance']
@@ -515,7 +515,7 @@ def test_multiple_balance_queries_not_concurrent(
                 task_id_blockchain,
             )
         assert eth.call_count == 1, 'eth balance query should only fire once'
-        assert eth.call_count == 1, 'btc balance query should only happen once'
+        assert btc.call_count == 1, 'btc balance query should only happen once'
         assert bn.call_count == 1, 'binance balance query should only happen once'
 
     assert_all_balances(
