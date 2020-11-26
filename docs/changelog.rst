@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1798` Log level settings now are properly saved and the users are not required to set them on every run.
 * :bug:`1761` Retry GraphQL requests when the API server fails.
 * :bug:`1803` After 25/11/2020 Compound's claimable COMP stopped appearing in the app due to a change in a smart contract we depend on. This has now been fixed and they should be detected properly again.
 * :bug:`1416` Request Binance deposits & withdraws using a 90 days window.

@@ -32,7 +32,10 @@
       </v-card>
       <privacy-notice />
       <div v-if="$interop.isPackaged" class="account-management__log-level">
-        <log-level :value="loglevel" @input="changeLogLevel($event)" />
+        <log-level
+          :value="loglevel"
+          @input="startBackendWithLogLevel($event)"
+        />
       </div>
     </div>
 
@@ -56,7 +59,9 @@ import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { SyncConflict } from '@/store/session/types';
 import { Message } from '@/store/types';
 import { Credentials, UnlockPayload } from '@/typing/types';
-import { CRITICAL, DEBUG, Level } from '@/utils/log-level';
+import { CRITICAL, DEBUG, Level, levels } from '@/utils/log-level';
+
+const LOG_LEVEL = 'log_level';
 
 @Component({
   components: {
@@ -92,12 +97,29 @@ export default class AccountManagement extends Vue {
     return !this.premium && !this.message.title && this.premiumVisible;
   }
 
+  async created() {
+    this.loadLogLevel();
+    if (this.connected) {
+      return;
+    }
+
+    await this.startBackendWithLogLevel(this.loglevel);
+  }
+
+  private loadLogLevel() {
+    const item = localStorage.getItem(LOG_LEVEL) as any;
+    if (item && levels.includes(item)) {
+      this.loglevel = item as Level;
+    }
+  }
+
   @Emit()
   loginComplete() {
     this.dismiss();
   }
 
-  async changeLogLevel(level: Level) {
+  async startBackendWithLogLevel(level: Level) {
+    localStorage.setItem(LOG_LEVEL, level);
     await this.$store.commit('setConnected', false);
     await this.$interop.restartBackend(level);
     await this.$store.dispatch('connect');
