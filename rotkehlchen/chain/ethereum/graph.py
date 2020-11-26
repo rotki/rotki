@@ -8,13 +8,13 @@ from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 from typing_extensions import Literal
 
+from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 log = logging.getLogger(__name__)
 
 
-MAX_RETRIES = 3
 GRAPH_QUERY_LIMIT = 1000
 RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
 
@@ -52,7 +52,7 @@ class Graph():
     def __init__(self, url: str) -> None:
         """
         - May raise requests.RequestException if there is a problem connecting to the subgraph"""
-        transport = RequestsHTTPTransport(url=url, retries=MAX_RETRIES)
+        transport = RequestsHTTPTransport(url=url, retries=QUERY_RETRY_TIMES)
         try:
             self.client = Client(transport=transport, fetch_schema_from_transport=True)
         except (requests.exceptions.RequestException) as e:

@@ -8,6 +8,7 @@ import pytest
 import requests
 
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -21,7 +22,10 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
-from rotkehlchen.tests.utils.blockchain import assert_eth_balances_result
+from rotkehlchen.tests.utils.blockchain import (
+    assert_btc_balances_result,
+    assert_eth_balances_result,
+)
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.exchanges import assert_binance_balances_result
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
@@ -421,16 +425,20 @@ def test_query_all_balances_errors(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('separate_blockchain_calls', [True, False])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_multiple_balance_queries_not_concurrent(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
+        separate_blockchain_calls,
 ):
     """Test multiple different balance query requests happening concurrently
 
     This tests that if multiple balance query requests happen concurrently we
     do not end up doing them multiple times, but reuse the results thanks to cache.
+
+    Try running both all blockchain balances in one call and each blockchain call separately.
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
@@ -440,6 +448,10 @@ def test_multiple_balance_queries_not_concurrent(
         'get_multieth_balance',
         wraps=rotki.chain_manager.ethereum.get_multieth_balance,
     )
+    btc_balances_patch = patch(
+        'rotkehlchen.chain.manager.get_bitcoin_addresses_balances',
+        wraps=get_bitcoin_addresses_balances,
+    )
     binance = rotki.exchange_manager.connected_exchanges['binance']
     binance_querydict_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
 
@@ -447,6 +459,7 @@ def test_multiple_balance_queries_not_concurrent(
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
         eth = stack.enter_context(multieth_balance_patch)
+        btc = stack.enter_context(btc_balances_patch)
         bn = stack.enter_context(binance_querydict_patch)
         response = requests.get(
             api_url_for(
@@ -461,11 +474,24 @@ def test_multiple_balance_queries_not_concurrent(
             name='binance',
         ), json={'async_query': True})
         task_id_one_exchange = assert_ok_async_response(response)
-        response = requests.get(api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            "blockchainbalancesresource",
-        ), json={'async_query': True})
-        task_id_blockchain = assert_ok_async_response(response)
+        if separate_blockchain_calls:
+            response = requests.get(api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "blockchainbalancesresource",
+            ), json={'async_query': True, 'blockchain': 'ETH'})
+            task_id_blockchain_eth = assert_ok_async_response(response)
+            response = requests.get(api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "blockchainbalancesresource",
+            ), json={'async_query': True, 'blockchain': 'BTC'})
+            task_id_blockchain_btc = assert_ok_async_response(response)
+        else:
+            response = requests.get(api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "blockchainbalancesresource",
+            ), json={'async_query': True})
+            task_id_blockchain = assert_ok_async_response(response)
+
         outcome_all = wait_for_async_task_with_result(
             rotkehlchen_api_server_with_exchanges,
             task_id_all,
@@ -474,12 +500,23 @@ def test_multiple_balance_queries_not_concurrent(
             rotkehlchen_api_server_with_exchanges,
             task_id_one_exchange,
         )
-        outcome_blockchain = wait_for_async_task_with_result(
-            rotkehlchen_api_server_with_exchanges,
-            task_id_blockchain,
-        )
-        assert eth.call_count == 1, 'blockchain balance call should not happen concurrently'
-        assert bn.call_count == 1, 'binance balance call should not happen concurrently'
+        if separate_blockchain_calls:
+            outcome_eth = wait_for_async_task_with_result(
+                rotkehlchen_api_server_with_exchanges,
+                task_id_blockchain_eth,
+            )
+            outcome_btc = wait_for_async_task_with_result(
+                rotkehlchen_api_server_with_exchanges,
+                task_id_blockchain_btc,
+            )
+        else:
+            outcome_blockchain = wait_for_async_task_with_result(
+                rotkehlchen_api_server_with_exchanges,
+                task_id_blockchain,
+            )
+        assert eth.call_count == 1, 'eth balance query should only fire once'
+        assert btc.call_count == 1, 'btc balance query should only happen once'
+        assert bn.call_count == 1, 'binance balance query should only happen once'
 
     assert_all_balances(
         result=outcome_all,
@@ -488,13 +525,23 @@ def test_multiple_balance_queries_not_concurrent(
         setup=setup,
     )
     assert_binance_balances_result(outcome_one_exchange['result'])
+    if not separate_blockchain_calls:
+        outcome_eth = outcome_blockchain
+        outcome_btc = outcome_blockchain
+
     assert_eth_balances_result(
         rotki=rotki,
-        result=outcome_blockchain,
+        result=outcome_eth,
         eth_accounts=ethereum_accounts,
         eth_balances=setup.eth_balances,
         token_balances=setup.token_balances,
-        also_btc=True,
+        also_btc=not separate_blockchain_calls,
+    )
+    assert_btc_balances_result(
+        result=outcome_btc,
+        btc_accounts=btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=not separate_blockchain_calls,
     )
 
 

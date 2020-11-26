@@ -2,15 +2,21 @@
 Changelog
 =========
 
-* :bug:`1801` Users that have the uniswap module deactivated will now see a proper message about the module status instead of a loading.
+* :bug:`1801` Users that have the uniswap module deactivated will now see a proper message about the module status instead of a loading page.
 * :bug:`1798` Log level settings now are properly saved and the users are not required to set them on every run.
 * :bug:`1761` Retry GraphQL requests when the API server fails.
+* :bug:`1809` Token balances should now always be saved in the balances snapshot. Also an edge case that rarely caused the ethereum balances to be queried twice should be now fixed.
 * :bug:`1803` After 25/11/2020 Compound's claimable COMP stopped appearing in the app due to a change in a smart contract we depend on. This has now been fixed and they should be detected properly again.
 * :bug:`1416` Request Binance deposits & withdraws using a 90 days window.
 * :bug:`1787` After 24/11/2020 some Infura users started getting a "query returned more than 10000 results" error when querying their balances. This should no longer happen.
 * :feature:`1774` Users now will only see the dashboard liabilities if there are liabilities to show.
 * :feature:`1745` Users can now delete multiple blockchain accounts at once.
 * :bug:`1778` Uniswap pool balances will now only be loaded when the user navigates to the Liquidity pools screen.
+
+* :feature:`-` Added support for the following tokens:
+
+  - `renBCH (renBCH) <https://www.coingecko.com/en/coins/renbch>`__
+  - `renZEC (renZEC) <https://www.coingecko.com/en/coins/renzec>`__
 
 * :release:`1.9.0 <2020-11-20>`
 * :feature:`717` Uniswap v2 LP balances are now detected by Rotki. Faster balance queries, swaps history and LP events history is also supported for premium users. Finally uniswap trades are now taken into account in the profit/loss report for premium users.

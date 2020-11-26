@@ -60,7 +60,7 @@ def test_ethereum_tokens():
     rdn_asset = EthereumToken('RDN')
     assert rdn_asset.ethereum_address == '0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'
     assert rdn_asset.decimals == 18
-    assert rdn_asset.asset_type == AssetType.ETH_TOKEN
+    assert rdn_asset.is_eth_token()
 
     with pytest.raises(DeserializationError):
         EthereumToken('BTC')
@@ -182,7 +182,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '21b8c3a8fe0cd22029aeb550ba1aad24', 'version': 24}
+    last_meta = {'md5': 'e7f7220c07bd60426e79b4510753b18e', 'version': 26}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

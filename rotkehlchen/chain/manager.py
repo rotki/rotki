@@ -46,7 +46,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
-    AssetType,
     BTCAddress,
     ChecksumEthAddress,
     ListOfBlockchainAddresses,
@@ -384,6 +383,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         return self.get_balances_update()
 
     @protect_with_lock()
+    @cache_response_timewise()
     def query_btc_balances(self) -> None:
         """Queries blockchain.info/blockstream for the balance of all BTC accounts
 
@@ -563,6 +563,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # chain to populate the self.balances mapping.
         if not self.balances.is_queried(blockchain):
             self.query_balances(blockchain, ignore_cache=True)
+            self.flush_cache('query_balances', arguments_matter=True, blockchain=blockchain, ignore_cache=True)  # noqa: E501
 
         result = self.modify_blockchain_accounts(
             blockchain=blockchain,
@@ -644,6 +645,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
           as etherscan or blockchain.info
         """
         if blockchain == SupportedBlockchain.BITCOIN:
+            # we are adding/removing accounts, make sure query cache is flushed
+            self.flush_cache('query_btc_balances', arguments_matter=True)
+            self.flush_cache('query_balances', arguments_matter=True)
+            self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.BITCOIN)  # noqa: E501
             for idx, account in enumerate(accounts):
                 a_balance = already_queried_balances[idx] if already_queried_balances else None
                 self.modify_btc_account(
@@ -654,6 +659,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
+            # we are adding/removing accounts, make sure query cache is flushed
+            self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=False)  # noqa: E501
+            self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=True)  # noqa: E501
+            self.flush_cache('query_balances', arguments_matter=True)
+            self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
             for account in accounts:
                 address = deserialize_ethereum_address(account)
                 try:
@@ -778,9 +788,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
         client and the chain is not synced
         """
         # Clear out all previous token balances
-        for token in [x for x, _ in self.totals.assets.items() if x.asset_type == AssetType.ETH_TOKEN]:  # noqa: E501
+        for token in [x for x, _ in self.totals.assets.items() if x.is_eth_token()]:
             del self.totals.assets[token]
-        for token in [x for x, _ in self.totals.liabilities.items() if x.asset_type == AssetType.ETH_TOKEN]:  # noqa: E501
+        for token in [x for x, _ in self.totals.liabilities.items() if x.is_eth_token()]:
             del self.totals.liabilities[token]
 
         self._query_ethereum_tokens(action=AccountAction.QUERY, force_detection=force_detection)
@@ -808,6 +818,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             return self.defi_balances
 
     @protect_with_lock()
+    @cache_response_timewise()
     def query_ethereum_balances(self, force_token_detection: bool) -> None:
         """Queries all the ethereum balances and populates the state
 

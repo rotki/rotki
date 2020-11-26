@@ -2,7 +2,6 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup
-from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 
@@ -14,7 +13,7 @@ def get_asset_balance_total(asset_symbol: str, setup: BalancesTestSetup) -> FVal
     if asset_symbol in ('ETH', 'BTC'):
         asset_balances = getattr(setup, f'{asset_symbol.lower()}_balances')
         total += sum(conversion_function(FVal(b)) for b in asset_balances)
-    elif asset.asset_type == AssetType.ETH_TOKEN:
+    elif asset.is_eth_token():
         asset_balances = setup.token_balances[EthereumToken(asset_symbol)]
         total += sum(conversion_function(FVal(b)) for b in asset_balances)
 
