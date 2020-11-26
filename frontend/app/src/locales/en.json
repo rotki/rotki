@@ -1018,6 +1018,8 @@
     "liquidity": "Liquidity Pools"
   },
   "uniswap": {
+    "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
+    "premium": "premium",
     "title": "Uniswap Pools",
     "loading":"Please wait while your liquidity pools are getting loaded...",
     "pool_header": "UNIv2 {asset1}/{asset2}",

@@ -4,6 +4,14 @@
     <template #message>
       {{ $t('uniswap.loading') }}
     </template>
+    <template v-if="!premium" #default>
+      <i18n tag="div" path="uniswap.loading_non_premium">
+        <base-external-link
+          :text="$t('uniswap.premium')"
+          :href="$interop.premiumURL"
+        />
+      </i18n>
+    </template>
   </progress-screen>
   <v-container v-else class="uniswap">
     <refresh-header
@@ -158,11 +166,13 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import DefiModuleMixin from '@/mixins/defi-module-mixin';
+import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UnknownToken } from '@/services/defi/types';
 import { SupportedAsset } from '@/services/types-model';
@@ -174,6 +184,7 @@ import { UniswapDetails } from '@/utils/premium';
 
 @Component({
   components: {
+    BaseExternalLink,
     ModuleNotActive,
     UniswapDetails,
     ProgressScreen,
@@ -188,7 +199,11 @@ import { UniswapDetails } from '@/utils/premium';
     ...mapActions('defi', ['fetchUniswapEvents', 'fetchUniswapBalances'])
   }
 })
-export default class Uniswap extends Mixins(StatusMixin, DefiModuleMixin) {
+export default class Uniswap extends Mixins(
+  StatusMixin,
+  DefiModuleMixin,
+  PremiumMixin
+) {
   readonly ETH = ETH;
   readonly assetName = assetName;
   section = Section.DEFI_UNISWAP_BALANCES;
