@@ -145,6 +145,21 @@ class PriceHistoryData(NamedTuple):
     end_time: Timestamp
 
 
+class HistoHourAssetData(NamedTuple):
+    timestamp: Timestamp
+    usd_price: Price
+
+
+# Safest starting timestamp for requesting an asset price via histohour avoiding
+# 0 price. Be aware `usd_price` is from the 'close' price in USD.
+CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES: Dict[Asset, HistoHourAssetData] = {
+    A_COMP: HistoHourAssetData(
+        timestamp=Timestamp(1592632800),
+        usd_price=Price(FVal('202.93')),
+    ),
+}
+
+
 def _dict_history_to_entries(data: List[Dict[str, Any]]) -> List[PriceHistoryEntry]:
     """Turns a list of dict of history entries to a list of proper objects"""
     return [
@@ -633,6 +648,42 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         return self.price_history[cache_key].data
 
+    @staticmethod
+    def _check_and_get_special_histohour_price(
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
+        """For the given timestamp, check whether the from..to asset price
+        (or viceversa) is a special histohour API case. If so, return the price
+        based on the assets pair, otherwise return zero.
+
+        NB: special histohour API cases are the one where this Cryptocompare
+        API returns zero prices per hour.
+        """
+        price = Price(ZERO)
+        if (
+            from_asset in CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES and to_asset == A_USD or
+            from_asset == A_USD and to_asset in CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES
+        ):
+            asset_data = (
+                CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES[from_asset]
+                if to_asset == A_USD
+                else CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES[to_asset]
+            )
+            if timestamp <= asset_data.timestamp:
+                price = (
+                    asset_data.usd_price
+                    if to_asset == A_USD
+                    else Price(FVal('1') / asset_data.usd_price)
+                )
+                log.warning(
+                    f'Query price of: {from_asset.identifier} in {to_asset.identifier} '
+                    f'at timestamp {timestamp} may return zero price. '
+                    f'Setting price to {price}, from timestamp {asset_data.timestamp}.',
+                )
+        return price
+
     def query_historical_price(
             self,
             from_asset: Asset,
@@ -651,6 +702,15 @@ class Cryptocompare(ExternalServiceWithApiKey):
         - RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
+        # NB: check if the from..to asset price (or viceversa) is a special
+        # histohour API case.
+        price = self._check_and_get_special_histohour_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+        if price != Price(ZERO):
+            return price
 
         try:
             data = self.get_historical_data(

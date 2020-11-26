@@ -35,7 +35,6 @@ A_COMP = EthereumToken('COMP')
 COMPTROLLER_PROXY = EthereumConstants().contract('COMPTROLLER_PROXY')
 COMP_DEPLOYED_BLOCK = 9601359
 
-
 LEND_EVENTS_QUERY_PREFIX = """{graph_event_name}
 (where: {{blockTime_lte: $end_ts, blockTime_gte: $start_ts, {addr_position}: $address}}) {{
     id

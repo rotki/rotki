@@ -4,11 +4,13 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDT
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import NoPriceForGivenTimestamp
-from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.cryptocompare import A_COMP, Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_SNGLS
+from rotkehlchen.typing import Price, Timestamp
 
 
 def test_cryptocompare_query_pricehistorical(cryptocompare):
@@ -177,3 +179,33 @@ def test_cryptocompare_query_compound_tokens(
         to_asset=A_USD,
     )
     assert price is not None
+
+
+@pytest.mark.parametrize('from_asset, to_asset, timestamp, expected_price', [
+    (A_ETH, A_USD, Timestamp(1592632800), Price(ZERO)),
+    (A_COMP, A_COMP, Timestamp(1592632800), Price(ZERO)),  # both assets COMP
+    (A_USD, A_USD, Timestamp(1592632800), Price(ZERO)),  # both assets USD
+    (A_COMP, A_USDT, Timestamp(1592632800), Price(ZERO)),  # to_asset USDT
+    (A_USDT, A_COMP, Timestamp(1592632800), Price(ZERO)),  # from_asset USDT
+    (A_COMP, A_USD, Timestamp(1592632800), Price(FVal('202.93'))),
+    (A_USD, A_COMP, Timestamp(1592632800), Price(FVal('0.004927807618390578031833637215'))),
+    (A_COMP, A_USD, Timestamp(1592632801), Price(ZERO)),  # timestamp gt
+    (A_USD, A_COMP, Timestamp(1592632801), Price(ZERO)),  # timestamp gt
+])
+def test_check_and_get_special_histohour_price(
+        cryptocompare,
+        from_asset,
+        to_asset,
+        timestamp,
+        expected_price,
+):
+    """
+    Test expected prices are returned for different combinations of
+    `from_asset`, `to_asset` and `timestamp`.
+    """
+    price = cryptocompare._check_and_get_special_histohour_price(
+        from_asset=from_asset,
+        to_asset=to_asset,
+        timestamp=timestamp,
+    )
+    assert price == expected_price

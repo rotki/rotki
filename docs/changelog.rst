@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1726` Fixed COMP zero price warnings on Compound history events for COMP claimed.
 * :bug:`1801` Users that have the uniswap module deactivated will now see a proper message about the module status instead of a loading page.
 * :bug:`1798` Log level settings now are properly saved and the users are not required to set them on every run.
 * :bug:`1785` Inform the user when they try to setup Bittrex with their system clock not in sync.
