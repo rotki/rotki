@@ -301,7 +301,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
 
   readonly footerProps = footerProps;
   get headers(): DataTableHeader[] {
-    return [
+    const headers: DataTableHeader[] = [
       { text: '', value: 'accountSelection', width: '34px', sortable: false },
       { text: this.$tc('account_balances.headers.account'), value: 'address' },
       { text: this.blockchain, value: 'balance.amount', align: 'end' },
@@ -316,11 +316,18 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
         align: 'center',
         sortable: false,
         width: '28'
-      },
-      ...(this.blockchain === BTC
-        ? []
-        : [{ text: '', value: 'expand', align: 'end', sortable: false }])
+      }
     ];
+
+    if (this.blockchain !== BTC) {
+      headers.push({
+        text: '',
+        value: 'expand',
+        align: 'end',
+        sortable: false
+      } as DataTableHeader);
+    }
+    return headers;
   }
 
   getItems(xpub: string, derivationPath?: string) {
