@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import logging
+from datetime import datetime
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
@@ -9,6 +10,7 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
+from requests.adapters import Response
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -17,6 +19,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
+    SystemClockNotSyncedError,
     UnknownAsset,
     UnprocessableTradePair,
     UnsupportedAsset,
@@ -50,7 +53,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_list
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -181,6 +184,21 @@ class Bittrex(ExchangeInterface):
                 raise
         return True, ''
 
+    @staticmethod
+    def _check_for_system_clock_not_synced_error(response: Response) -> None:
+        if response.status_code == HTTPStatus.UNAUTHORIZED:
+            try:
+                result = rlk_jsonloads_dict(response.text)
+            except JSONDecodeError:
+                raise RemoteError(f'Bittrex returned invalid JSON response: {response.text}')
+
+            if result.get('code', None) == 'INVALID_TIMESTAMP':
+                raise SystemClockNotSyncedError(
+                    current_time=str(datetime.now()),
+                    remote_server='Bittrex',
+                )
+        return None
+
     def api_query(  # noqa: F811
             self,
             endpoint: str,
@@ -226,6 +244,7 @@ class Bittrex(ExchangeInterface):
             break
 
         if response.status_code != HTTPStatus.OK:
+            self._check_for_system_clock_not_synced_error(response)
             raise RemoteError(
                 f'Bittrex query responded with error status code: {response.status_code}'
                 f' and text: {response.text}',
