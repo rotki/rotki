@@ -71,14 +71,18 @@
         />
       </v-col>
     </v-row>
-    <v-row no-gutters class="mt-2">
-      <v-col cols="12">
+    <v-row
+      v-if="
+        (!isBtc || (isBtc && !isXpub) || !!edit) &&
+        !isMetaMask &&
+        !(isXpub && !!edit)
+      "
+      no-gutters
+      class="mt-2"
+    >
+      <v-col>
         <v-text-field
-          v-if="
-            (!isBtc || (isBtc && !isXpub) || !!edit) &&
-            !isMetaMask &&
-            !(isXpub && !!edit)
-          "
+          v-if="!multiple"
           v-model="address"
           class="account-form__address"
           :label="$t('account_form.labels.account')"
@@ -88,6 +92,35 @@
           :disabled="accountOperation || loading || !!edit"
           @paste="onPasteAddress"
         />
+        <v-textarea
+          v-else
+          v-model="addresses"
+          :disabled="accountOperation || loading || !!edit"
+          :hint="$t('account_form.labels.addresses_hint')"
+          :label="$t('account_form.labels.addresses')"
+          @paste="onPasteMulti"
+        />
+        <v-row v-if="multiple" no-gutters>
+          <v-col>
+            <div
+              class="caption"
+              v-text="
+                $t('account_form.labels.addresses_entries', {
+                  count: entries.length
+                })
+              "
+            />
+          </v-col>
+        </v-row>
+        <v-row v-if="!edit && !isXpub" no-gutters align="center">
+          <v-col cols="auto">
+            <v-checkbox
+              v-model="multiple"
+              :disabled="accountOperation || loading || !!edit"
+              :label="$t('account_form.labels.multiple')"
+            />
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
     <v-row no-gutters>
@@ -197,8 +230,10 @@ export default class AccountForm extends Vue {
   xpub: string = '';
   derivationPath: string = '';
   address: string = '';
+  addresses: string = '';
   label: string = '';
   tags: string[] = [];
+  multiple: boolean = false;
   errorMessages: string[] = [];
   xpubKeyPrefix: XpubPrefix = XPUB_VALUE;
   account!: (address: string) => GeneralAccount | undefined;
@@ -207,6 +242,13 @@ export default class AccountForm extends Vue {
   editAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   advanced: boolean = false;
   inputMode: AccountInput = MANUAL_ADD;
+
+  get entries(): string[] {
+    return this.addresses
+      .split(',')
+      .map(value => value.trim())
+      .filter(entry => entry.length > 0);
+  }
 
   get isBtc(): boolean {
     return this.blockchain === BTC;
@@ -305,6 +347,12 @@ export default class AccountForm extends Vue {
     this.clearErrors();
   }
 
+  @Watch('multiple')
+  onMultiple() {
+    this.addresses = '';
+    this.address = '';
+  }
+
   @Watch('edit')
   onEdit() {
     this.setEditMode();
@@ -338,6 +386,13 @@ export default class AccountForm extends Vue {
     return value.match(/([xzy]pub)(.*)/);
   }
 
+  onPasteMulti(event: ClipboardEvent) {
+    const paste = trimOnPaste(event);
+    if (paste) {
+      this.addresses = paste.replace(/,(0x)/g, ',\n0x');
+    }
+  }
+
   onPasteAddress(event: ClipboardEvent) {
     const paste = trimOnPaste(event);
     if (paste) {
@@ -355,6 +410,7 @@ export default class AccountForm extends Vue {
 
   reset() {
     this.address = '';
+    this.addresses = '';
     this.label = '';
     this.tags = [];
     this.xpub = '';
@@ -362,6 +418,7 @@ export default class AccountForm extends Vue {
     (this.$refs.form as any).resetValidation();
     this.blockchain = ETH;
     this.inputMode = MANUAL_ADD;
+    this.multiple = false;
   }
 
   @Emit()
@@ -439,12 +496,22 @@ export default class AccountForm extends Vue {
   }
 
   async manualAdd() {
-    const payload = this.payload();
     try {
       if (this.edit) {
-        await this.editAccount(payload);
+        await this.editAccount(this.payload());
       } else {
-        await this.addAccount(payload);
+        if (this.entries.length > 0) {
+          await this.addAccounts({
+            blockchain: this.blockchain,
+            payload: this.entries.map(address => ({
+              address: address,
+              label: this.label,
+              tags: this.tags
+            }))
+          } as AddAccountsPayload);
+        } else {
+          await this.addAccount(this.payload());
+        }
       }
 
       this.reset();
