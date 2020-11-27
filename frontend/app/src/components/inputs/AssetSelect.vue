@@ -13,6 +13,7 @@
     item-value="key"
     :item-text="assetText"
     :menu-props="{ closeOnContentClick: true }"
+    :outlined="outlined"
     @input="input"
   >
     <template #selection="{ item }">
@@ -71,6 +72,9 @@ export default class AssetSelect extends Vue {
 
   @Prop({ default: false, required: false })
   disabled!: boolean;
+
+  @Prop({ default: false, required: false, type: Boolean })
+  outlined!: boolean;
 
   @Emit()
   input(_value: string) {}
