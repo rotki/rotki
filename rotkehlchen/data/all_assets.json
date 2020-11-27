@@ -10865,6 +10865,15 @@
         "symbol": "SWM",
         "type": "ethereum token"
     },
+    "swUSD": {
+        "coingecko": "swusd",
+        "ethereum_address": "0x77C6E4a580c0dCE4E5c7a17d0bc077188a83A059",
+        "ethereum_token_decimals": 18,
+        "name": "Swerve.fi DAI/USDC/USDT/TUSD",
+        "started": 1599201427,
+        "symbol": "swUSD",
+        "type": "ethereum token"
+    },
     "SWRV": {
         "coingecko": "swerve-dao",
         "ethereum_address": "0xB8BAa0e4287890a5F79863aB62b7F175ceCbD433",

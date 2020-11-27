@@ -7,7 +7,7 @@ from rotkehlchen.utils.hashing import file_md5
 def test_uniswapv2_lp_tokens_json_meta():
     """Test that uniswapv2_lp_tokens.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '5520c3b05773f6aba3d9495ea2a90706', 'version': 1}
+    last_meta = {'md5': 'c9a123a4bdf20c1effeb2ff23a5314fe', 'version': 2}
     data_dir = Path(__file__).resolve().parent.parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'uniswapv2_lp_tokens.json')
 
