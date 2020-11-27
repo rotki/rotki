@@ -2,10 +2,12 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 
 from eth_utils.address import to_checksum_address
 
+from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.manager import (
@@ -13,8 +15,8 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
+from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.utils import multicall_specific
-from rotkehlchen.chain.ethereum.zerion import uniswap_lp_token_balances
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
@@ -169,6 +171,11 @@ if __name__ == "__main__":
         help='Even if the results have been saved in a file requery',
         action='store_true',
     )
+    parser.add_argument(
+        '--no-query-balances',
+        help='Do not query balances, just create the lp tokens file',
+        action='store_true',
+    )
     args = parser.parse_args()
 
     results = {}
@@ -194,15 +201,20 @@ if __name__ == "__main__":
             results['ethereum'] = result
             write_result_to_file(result, 'uniswap_lp_tokens_ethereum.json')
 
-        start = ts_now()
-        balances = uniswap_lp_token_balances(
-            address='0x1554d34D46842778999cB4eb1381b19f651e4a9d',  # test address
-            ethereum=ethereum,
-            lp_addresses=results['ethereum'],
-        )
-        end = ts_now()
-        print(f'Querying balances took {end-start} seconds')
-        print(balances)
+        if args.no_query_balances is False:
+            start = ts_now()
+            known_assets: Set[EthereumToken] = set()
+            unknown_assets: Set[UnknownEthereumToken] = set()
+            balances = uniswap_lp_token_balances(
+                address='0x1554d34D46842778999cB4eb1381b19f651e4a9d',  # test address
+                ethereum=ethereum,
+                lp_addresses=results['ethereum'],
+                known_assets=known_assets,
+                unknown_assets=unknown_assets,
+            )
+            end = ts_now()
+            print(f'Querying balances took {end-start} seconds')
+            print(balances)
 
     if args.source == 'both':
         for entry in results['graph']:
