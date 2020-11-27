@@ -25,7 +25,7 @@ setup(
     url='https://github.com/rotki/rotki',
     packages=find_packages('.'),
     package_data={
-        "rotkehlchen": ["data/*.json"],
+        "rotkehlchen": ["data/*.json", "data/*.meta"],
     },
     python_requires='>=3.6',
     install_requires=requirements,
