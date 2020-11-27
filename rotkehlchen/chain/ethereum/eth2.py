@@ -98,7 +98,7 @@ class Eth2DepositResult(NamedTuple):
     totals: Dict[ChecksumEthAddress, Balance]
 
 
-def _get_eth2_staked_amount_onchain(
+def _get_eth2_staking_deposits_onchain(
         ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
         has_premium: bool,
@@ -155,7 +155,7 @@ def _get_eth2_staked_amount_onchain(
     return deposits
 
 
-def get_eth2_staked_amount(
+def get_eth2_staking_deposits(
         ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
         has_premium: bool,
@@ -193,7 +193,7 @@ def get_eth2_staked_amount(
 
     # Get deposits for new addresses
     if new_addresses:
-        deposits_ = _get_eth2_staked_amount_onchain(
+        deposits_ = _get_eth2_staking_deposits_onchain(
             ethereum=ethereum,
             addresses=new_addresses,
             has_premium=has_premium,
@@ -213,7 +213,7 @@ def get_eth2_staked_amount(
 
     # Get new deposits for existing addresses
     if existing_addresses and min_from_ts + REQUEST_DELTA_TS <= to_ts:
-        deposits_ = _get_eth2_staked_amount_onchain(
+        deposits_ = _get_eth2_staking_deposits_onchain(
             ethereum=ethereum,
             addresses=existing_addresses,
             has_premium=has_premium,

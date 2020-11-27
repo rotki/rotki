@@ -1493,7 +1493,7 @@ class RestAPI():
 
     def _get_eth2_stake(self) -> Dict[str, Any]:
         try:
-            result = self.rotkehlchen.chain_manager.get_staked_eth2_balances()
+            result = self.rotkehlchen.chain_manager.get_eth2_staking_deposits()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 

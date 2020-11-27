@@ -8,8 +8,8 @@ from rotkehlchen.chain.ethereum.eth2 import (
     REQUEST_DELTA_TS,
     Eth2Deposit,
     Eth2DepositResult,
-    _get_eth2_staked_amount_onchain,
-    get_eth2_staked_amount,
+    _get_eth2_staking_deposits_onchain,
+    get_eth2_staking_deposits,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -215,7 +215,7 @@ EXPECTED_DEPOSITS = [
 @pytest.mark.freeze_time(datetime(2020, 11, 10, 21, 42, 57))
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 @pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
-def test_get_eth2_staked_amount_onchain(  # pylint: disable=unused-argument
+def test_get_eth2_staking_deposits_onchain(  # pylint: disable=unused-argument
         ethereum_manager,
         call_order,
         ethereum_manager_connect_at_start,
@@ -238,7 +238,7 @@ def test_get_eth2_staked_amount_onchain(  # pylint: disable=unused-argument
         ethereum=ethereum_manager,
     )
     # Main call
-    deposits = _get_eth2_staked_amount_onchain(
+    deposits = _get_eth2_staking_deposits_onchain(
         ethereum=ethereum_manager,
         addresses=[ADDR1, ADDR2, ADDR3],
         has_premium=True,
@@ -248,7 +248,7 @@ def test_get_eth2_staked_amount_onchain(  # pylint: disable=unused-argument
     )
     # Querying filtering by a timestamp range and specific addresses, and
     # having replicated the deposits in EXPECTED_DEPOSITS allows to assert the
-    # length. Due to `_get_eth2_staked_amount_onchain()` does not implement
+    # length. Due to `_get_eth2_staking_deposits_onchain()` does not implement
     # sorting deposits by (timestamp, log_index), asserting both lists against
     # each other is discarded
     assert len(deposits) == len(EXPECTED_DEPOSITS)
@@ -273,7 +273,7 @@ def test_get_eth2_staked_amount_onchain(  # pylint: disable=unused-argument
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 @pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
-def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argument
+def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argument
         ethereum_manager,
         call_order,
         ethereum_manager_connect_at_start,
@@ -302,10 +302,10 @@ def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argumen
     expected_balance = {ADDR1: Balance(amount=FVal(32), usd_value=FVal(48))}
 
     with patch(
-        'rotkehlchen.chain.ethereum.eth2._get_eth2_staked_amount_onchain',
-    ) as mock_get_eth2_staked_amount_onchain:
+        'rotkehlchen.chain.ethereum.eth2._get_eth2_staking_deposits_onchain',
+    ) as mock_get_eth2_staking_deposits_onchain:
         # 3rd call return
-        mock_get_eth2_staked_amount_onchain.return_value = [EXPECTED_DEPOSITS[0]]
+        mock_get_eth2_staking_deposits_onchain.return_value = [EXPECTED_DEPOSITS[0]]
 
         wait_until_all_nodes_connected(
             ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
@@ -314,7 +314,7 @@ def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argumen
         message_aggregator = MessagesAggregator()
 
         # First call
-        deposit_results_onchain = get_eth2_staked_amount(
+        deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
             has_premium=True,
@@ -323,13 +323,13 @@ def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argumen
         )
         assert deposit_results_onchain.deposits == []
         assert deposit_results_onchain.totals == {}
-        mock_get_eth2_staked_amount_onchain.assert_not_called()
+        mock_get_eth2_staking_deposits_onchain.assert_not_called()
 
         # NB: Move time to ts_now + REQUEST_DELTA_TS - 1s
         freezer.move_to(datetime.fromtimestamp(ts_now + REQUEST_DELTA_TS - 1))
 
         # Second call
-        deposit_results_onchain = get_eth2_staked_amount(
+        deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
             has_premium=True,
@@ -338,13 +338,13 @@ def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argumen
         )
         assert deposit_results_onchain.deposits == []
         assert deposit_results_onchain.totals == {}
-        mock_get_eth2_staked_amount_onchain.assert_not_called()
+        mock_get_eth2_staking_deposits_onchain.assert_not_called()
 
         # NB: Move time to ts_now + REQUEST_DELTA_TS (triggers request)
         freezer.move_to(datetime.fromtimestamp(ts_now + REQUEST_DELTA_TS))
 
         # Third call
-        deposit_results_onchain = get_eth2_staked_amount(
+        deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
             has_premium=True,
@@ -353,7 +353,7 @@ def test_get_eth2_staked_amount_fetch_from_db(  # pylint: disable=unused-argumen
         )
         assert deposit_results_onchain.deposits == [EXPECTED_DEPOSITS[0]]
         assert deposit_results_onchain.totals == expected_balance
-        mock_get_eth2_staked_amount_onchain.assert_called_with(
+        mock_get_eth2_staking_deposits_onchain.assert_called_with(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
             has_premium=True,

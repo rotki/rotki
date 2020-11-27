@@ -27,7 +27,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
-from rotkehlchen.chain.ethereum.eth2 import Eth2DepositResult, get_eth2_staked_amount
+from rotkehlchen.chain.ethereum.eth2 import Eth2DepositResult, get_eth2_staking_deposits
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
@@ -882,7 +882,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     self.totals += entry
 
         # Count ETH staked in Eth2 beacon chain
-        self.get_staked_eth2_balances()
+        self.get_eth2_staking_deposits()
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_token_and_totals()
 
@@ -957,7 +957,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     def account_for_staked_eth2_balance(self, address: ChecksumEthAddress) -> None:
         with self.eth2_lock:
-            result = get_eth2_staked_amount(
+            result = get_eth2_staking_deposits(
                 ethereum=self.ethereum,
                 addresses=list(self.balances.eth.keys()),
                 has_premium=self.premium is not None,
@@ -971,7 +971,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.balances.eth[address].assets[A_ETH2] = result.totals[address]
             self.totals.assets[A_ETH2] += result.totals[address]
 
-    def get_staked_eth2_balances(self) -> Eth2DepositResult:
+    def get_eth2_staking_deposits(self) -> Eth2DepositResult:
         with self.eth2_lock:
             # Before querying the new balances, delete the ones in memory if any
             self.totals.assets.pop(A_ETH2, None)
@@ -979,7 +979,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 if A_ETH2 in entry.assets:
                     del entry.assets[A_ETH2]
 
-            result = get_eth2_staked_amount(
+            result = get_eth2_staking_deposits(
                 ethereum=self.ethereum,
                 addresses=list(self.balances.eth.keys()),
                 has_premium=self.premium is not None,
