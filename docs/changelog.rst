@@ -22,6 +22,12 @@ Changelog
   - `renBCH (renBCH) <https://www.coingecko.com/en/coins/renbch>`__
   - `renZEC (renZEC) <https://www.coingecko.com/en/coins/renzec>`__
   - `Swerve.fi DAI/USDC/USDT/TUSD (swUSD) <https://www.coingecko.com/en/coins/swusd>`__
+  - `Golem (GLM) <https://www.coingecko.com/en/coins/golem>`__
+  - `Hegic (HEGIC) <https://www.coingecko.com/en/coins/hegic>`__
+  - `Prometeus (PROM) <https://www.coingecko.com/en/coins/prometeus>`__
+  - `88mph (MPH) <https://www.coingecko.com/en/coins/88mph>`__
+  - `zLOT (ZLOT) <https://www.coingecko.com/en/coins/zlot>`__
+  - `tBTC (TBTC) <https://www.coingecko.com/en/coins/tbtc>`__
 
 * :release:`1.9.0 <2020-11-20>`
 * :feature:`717` Uniswap v2 LP balances are now detected by Rotki. Faster balance queries, swaps history and LP events history is also supported for premium users. Finally uniswap trades are now taken into account in the profit/loss report for premium users.
