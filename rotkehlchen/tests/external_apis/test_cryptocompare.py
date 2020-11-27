@@ -217,9 +217,13 @@ def test_check_and_get_special_histohour_price(
 
 
 def test_keep_special_histohour_cases_up_to_date(cryptocompare):
-    """Test CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES assets timestamps and prices
-    are still valid.
+    """Test CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES assets timestamps are still
+    valid by checking that for a smaller timestamp the response contains
+    entries with all price attributes at zero.
     """
+    def is_price_not_valid(hour_price_data):
+        return all(hour_price_data[attr] == 0 for attr in ('low', 'high', 'open', 'close'))
+
     limit = 10
     for asset, asset_data in CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES.items():
         # Call `query_endpoint_histohour()` for handling special assets
@@ -231,26 +235,13 @@ def test_keep_special_histohour_cases_up_to_date(cryptocompare):
             limit=limit,
             to_timestamp=to_timestamp,
         )
-        if response['Data']:
-            for hour_price_data in response['Data']:
-                if (
-                    hour_price_data['high'] == 0 and
-                    hour_price_data['low'] == 0 and
-                    hour_price_data['open'] == 0 and
-                    hour_price_data['close'] == 0
-                ):
-                    break
-            else:
-                warning_msg = (
-                    f'Cryptocompare histohour API has non-zero prices for asset '
-                    f'{asset.identifier} from {from_timestamp} to {to_timestamp}. '
-                    f' Please, update CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES dict.',
-                )
-                test_warnings.warn(UserWarning(warning_msg))
-        else:
+        try:
+            assert any(is_price_not_valid(price_data) for price_data in response['Data'])
+        except AssertionError:
             warning_msg = (
-                f'Cryptocompare histohour API should return prices for asset '
+                f'Cryptocompare histohour API has non-zero prices for asset '
                 f'{asset.identifier} from {from_timestamp} to {to_timestamp}. '
-                'Unexpected response.',
+                f' Please, update CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES dict '
+                f'with a smaller timestamp.'
             )
             test_warnings.warn(UserWarning(warning_msg))
