@@ -268,7 +268,13 @@ class EthereumManager():
             log.warning(message)
             return False, message
 
-        if web3.isConnected():
+        try:
+            is_connected = web3.isConnected()
+        except AssertionError:
+            # Terrible, terrible hack but needed due to https://github.com/rotki/rotki/issues/1817
+            is_connected = False
+
+        if is_connected:
             # Also make sure we are actually connected to the Ethereum mainnet
             synchronized = True
             msg = ''
