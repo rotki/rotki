@@ -172,7 +172,7 @@ def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEthAddress]:
             return json.loads(remote_data)
 
         # else, same as all error cases use the current one
-    except (requests.exceptions.ConnectionError, KeyError, json.decoder.JSONDecodeError):
+    except (requests.exceptions.RequestException, KeyError, json.decoder.JSONDecodeError):
         pass
 
     if our_downloaded_meta.is_file():

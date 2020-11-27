@@ -266,7 +266,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         while tries >= 0:
             try:
                 response = self.session.get(querystr)
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Cryptocompare API request failed due to {str(e)}')
 
             try:

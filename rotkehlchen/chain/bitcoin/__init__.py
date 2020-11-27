@@ -43,7 +43,7 @@ def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddres
             for idx, entry in enumerate(btc_resp['addresses']):
                 balances[accounts[idx]] = satoshis_to_btc(FVal(entry['final_balance']))
     except (
-            requests.exceptions.ConnectionError,
+            requests.exceptions.RequestException,
             UnableToDecryptRemoteData,
             requests.exceptions.Timeout,
     ) as e:
@@ -109,7 +109,7 @@ def have_bitcoin_transactions(accounts: List[BTCAddress]) -> Dict[BTCAddress, Tu
             source = 'blockchain.info'
             have_transactions = _check_blockchaininfo_for_transactions(accounts)
     except (
-            requests.exceptions.ConnectionError,
+            requests.exceptions.RequestException,
             UnableToDecryptRemoteData,
             requests.exceptions.Timeout,
     ) as e:

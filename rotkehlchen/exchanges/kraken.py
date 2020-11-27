@@ -395,7 +395,7 @@ class Kraken(ExchangeInterface):
         urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
         try:
             response = self.session.post(urlpath, data=req)
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.RequestException as e:
             raise RemoteError(f'Kraken API request failed due to {str(e)}')
 
         self._manage_call_counter(method)
@@ -483,7 +483,7 @@ class Kraken(ExchangeInterface):
                     KRAKEN_BASE_URL + urlpath,
                     data=post_data.encode(),
                 )
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Kraken API request failed due to {str(e)}')
             self._manage_call_counter(method)
 

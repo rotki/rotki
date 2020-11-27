@@ -275,7 +275,7 @@ class Coinbase(ExchangeInterface):
         full_url = self.base_uri + request_url
         try:
             response = self.session.get(full_url)
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.RequestException as e:
             raise RemoteError(f'Coinbase API request failed due to {str(e)}')
 
         if response.status_code == 403:

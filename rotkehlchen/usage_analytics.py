@@ -150,7 +150,7 @@ def maybe_submit_usage_analytics(should_submit: bool) -> None:
     analytics = create_usage_analytics()
     try:
         response = requests.put('https://rotki.com/api/1/usage_analytics', json=analytics)
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         return None
 
     if response.status_code == HTTPStatus.NO_CONTENT:

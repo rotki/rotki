@@ -171,7 +171,7 @@ class Etherscan(ExternalServiceWithApiKey):
         while backoff < backoff_limit:
             try:
                 response = self.session.get(query_str)
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.RequestException as e:
                 if 'Max retries exceeded with url' in str(e):
                     log.debug(
                         f'Got max retries exceeded from etherscan. Will '

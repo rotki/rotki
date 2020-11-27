@@ -261,7 +261,7 @@ class Binance(ExchangeInterface):
                 log.debug('Binance API request', request_url=request_url)
                 try:
                     response = self.session.get(request_url)
-                except requests.exceptions.ConnectionError as e:
+                except requests.exceptions.RequestException as e:
                     raise RemoteError(f'Binance API request failed due to {str(e)}')
 
             limit_ban = response.status_code == 429 and backoff > self.backoff_limit

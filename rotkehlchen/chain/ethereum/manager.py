@@ -263,7 +263,7 @@ class EthereumManager():
             ens = ENS(provider)
             web3 = Web3(provider, ens=ens)
             web3.middleware_onion.inject(http_retry_request_middleware, layer=0)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.RequestException:
             message = f'Failed to connect to ethereum node {name} at endpoint {ethrpc_endpoint}'
             log.warning(message)
             return False, message

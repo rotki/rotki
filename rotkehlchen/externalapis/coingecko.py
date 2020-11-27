@@ -136,7 +136,7 @@ class Coingecko():
             url += subpath
         try:
             response = self.session.get(f'{url}?{urlencode(options)}')
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.RequestException as e:
             raise RemoteError(f'Coingecko API request failed due to {str(e)}')
 
         if response.status_code != 200:

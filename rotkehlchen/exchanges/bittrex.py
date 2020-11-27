@@ -290,7 +290,7 @@ class Bittrex(ExchangeInterface):
                 url=request_url,
                 json=options if method != 'get' else None,
             )
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.RequestException as e:
             raise RemoteError(f'Bittrex API request failed due to {str(e)}')
 
         return response
