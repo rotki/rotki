@@ -154,8 +154,8 @@ class HistoHourAssetData(NamedTuple):
 # 0 price. Be aware `usd_price` is from the 'close' price in USD.
 CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES: Dict[Asset, HistoHourAssetData] = {
     A_COMP: HistoHourAssetData(
-        timestamp=Timestamp(1592632800),
-        usd_price=Price(FVal('202.93')),
+        timestamp=Timestamp(1592629200),
+        usd_price=Price(FVal('239.13')),
     ),
 }
 
@@ -658,7 +658,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         (or viceversa) is a special histohour API case. If so, return the price
         based on the assets pair, otherwise return zero.
 
-        NB: special histohour API cases are the one where this Cryptocompare
+        NB: special histohour API cases are the ones where this Cryptocompare
         API returns zero prices per hour.
         """
         price = Price(ZERO)

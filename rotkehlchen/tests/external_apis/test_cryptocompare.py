@@ -1,4 +1,5 @@
 import os
+import warnings as test_warnings
 from unittest.mock import patch
 
 import pytest
@@ -7,7 +8,11 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import NoPriceForGivenTimestamp
-from rotkehlchen.externalapis.cryptocompare import A_COMP, Cryptocompare
+from rotkehlchen.externalapis.cryptocompare import (
+    A_COMP,
+    CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES,
+    Cryptocompare,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_SNGLS
 from rotkehlchen.typing import Price, Timestamp
@@ -182,15 +187,15 @@ def test_cryptocompare_query_compound_tokens(
 
 
 @pytest.mark.parametrize('from_asset, to_asset, timestamp, expected_price', [
-    (A_ETH, A_USD, Timestamp(1592632800), Price(ZERO)),
-    (A_COMP, A_COMP, Timestamp(1592632800), Price(ZERO)),  # both assets COMP
-    (A_USD, A_USD, Timestamp(1592632800), Price(ZERO)),  # both assets USD
-    (A_COMP, A_USDT, Timestamp(1592632800), Price(ZERO)),  # to_asset USDT
-    (A_USDT, A_COMP, Timestamp(1592632800), Price(ZERO)),  # from_asset USDT
-    (A_COMP, A_USD, Timestamp(1592632800), Price(FVal('202.93'))),
-    (A_USD, A_COMP, Timestamp(1592632800), Price(FVal('0.004927807618390578031833637215'))),
-    (A_COMP, A_USD, Timestamp(1592632801), Price(ZERO)),  # timestamp gt
-    (A_USD, A_COMP, Timestamp(1592632801), Price(ZERO)),  # timestamp gt
+    (A_ETH, A_USD, Timestamp(1592629200), Price(ZERO)),
+    (A_COMP, A_COMP, Timestamp(1592629200), Price(ZERO)),  # both assets COMP
+    (A_USD, A_USD, Timestamp(1592629200), Price(ZERO)),  # both assets USD
+    (A_COMP, A_USDT, Timestamp(1592629200), Price(ZERO)),  # to_asset USDT
+    (A_USDT, A_COMP, Timestamp(1592629200), Price(ZERO)),  # from_asset USDT
+    (A_COMP, A_USD, Timestamp(1592629200), Price(FVal('239.13'))),
+    (A_USD, A_COMP, Timestamp(1592629200), Price(FVal('0.004181825785137791159620290219'))),
+    (A_COMP, A_USD, Timestamp(1592629201), Price(ZERO)),  # timestamp gt
+    (A_USD, A_COMP, Timestamp(1592629201), Price(ZERO)),  # timestamp gt
 ])
 def test_check_and_get_special_histohour_price(
         cryptocompare,
@@ -209,3 +214,43 @@ def test_check_and_get_special_histohour_price(
         timestamp=timestamp,
     )
     assert price == expected_price
+
+
+def test_keep_special_histohour_cases_up_to_date(cryptocompare):
+    """Test CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES assets timestamps and prices
+    are still valid.
+    """
+    limit = 10
+    for asset, asset_data in CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES.items():
+        # Call `query_endpoint_histohour()` for handling special assets
+        to_timestamp = Timestamp(asset_data.timestamp - 3600)
+        from_timestamp = Timestamp(to_timestamp - limit * 3600)
+        response = cryptocompare.query_endpoint_histohour(
+            from_asset=asset,
+            to_asset=A_USD,
+            limit=limit,
+            to_timestamp=to_timestamp,
+        )
+        if response['Data']:
+            for hour_price_data in response['Data']:
+                if (
+                    hour_price_data['high'] == 0 and
+                    hour_price_data['low'] == 0 and
+                    hour_price_data['open'] == 0 and
+                    hour_price_data['close'] == 0
+                ):
+                    break
+            else:
+                warning_msg = (
+                    f'Cryptocompare histohour API has non-zero prices for asset '
+                    f'{asset.identifier} from {from_timestamp} to {to_timestamp}. '
+                    f' Please, update CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES dict.',
+                )
+                test_warnings.warn(UserWarning(warning_msg))
+        else:
+            warning_msg = (
+                f'Cryptocompare histohour API should return prices for asset '
+                f'{asset.identifier} from {from_timestamp} to {to_timestamp}. '
+                'Unexpected response.',
+            )
+            test_warnings.warn(UserWarning(warning_msg))
