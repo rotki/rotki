@@ -14,6 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.api import (
+    ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
@@ -528,8 +529,12 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
-            # Timeout of 120 since this test can take a long time
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+            # Big timeout since this test can take a long time
+            outcome = wait_for_async_task(
+                rotkehlchen_api_server,
+                task_id,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 10,
+            )
             assert outcome['message'] == ''
             result = outcome['result']
         else:
