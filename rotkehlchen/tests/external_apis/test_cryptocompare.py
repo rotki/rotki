@@ -1,14 +1,21 @@
 import os
+import warnings as test_warnings
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDT
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import NoPriceForGivenTimestamp
-from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.cryptocompare import (
+    A_COMP,
+    CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES,
+    Cryptocompare,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_SNGLS
+from rotkehlchen.typing import Price, Timestamp
 
 
 def test_cryptocompare_query_pricehistorical(cryptocompare):
@@ -177,3 +184,64 @@ def test_cryptocompare_query_compound_tokens(
         to_asset=A_USD,
     )
     assert price is not None
+
+
+@pytest.mark.parametrize('from_asset, to_asset, timestamp, expected_price', [
+    (A_ETH, A_USD, Timestamp(1592629200), Price(ZERO)),
+    (A_COMP, A_COMP, Timestamp(1592629200), Price(ZERO)),  # both assets COMP
+    (A_USD, A_USD, Timestamp(1592629200), Price(ZERO)),  # both assets USD
+    (A_COMP, A_USDT, Timestamp(1592629200), Price(ZERO)),  # to_asset USDT
+    (A_USDT, A_COMP, Timestamp(1592629200), Price(ZERO)),  # from_asset USDT
+    (A_COMP, A_USD, Timestamp(1592629200), Price(FVal('239.13'))),
+    (A_USD, A_COMP, Timestamp(1592629200), Price(FVal('0.004181825785137791159620290219'))),
+    (A_COMP, A_USD, Timestamp(1592629201), Price(ZERO)),  # timestamp gt
+    (A_USD, A_COMP, Timestamp(1592629201), Price(ZERO)),  # timestamp gt
+])
+def test_check_and_get_special_histohour_price(
+        cryptocompare,
+        from_asset,
+        to_asset,
+        timestamp,
+        expected_price,
+):
+    """
+    Test expected prices are returned for different combinations of
+    `from_asset`, `to_asset` and `timestamp`.
+    """
+    price = cryptocompare._check_and_get_special_histohour_price(
+        from_asset=from_asset,
+        to_asset=to_asset,
+        timestamp=timestamp,
+    )
+    assert price == expected_price
+
+
+def test_keep_special_histohour_cases_up_to_date(cryptocompare):
+    """Test CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES assets timestamps are still
+    valid by checking that for a smaller timestamp the response contains
+    entries with all price attributes at zero.
+    """
+    def is_price_not_valid(hour_price_data):
+        return all(hour_price_data[attr] == 0 for attr in ('low', 'high', 'open', 'close'))
+
+    limit = 10
+    for asset, asset_data in CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES.items():
+        # Call `query_endpoint_histohour()` for handling special assets
+        to_timestamp = Timestamp(asset_data.timestamp - 3600)
+        from_timestamp = Timestamp(to_timestamp - limit * 3600)
+        response = cryptocompare.query_endpoint_histohour(
+            from_asset=asset,
+            to_asset=A_USD,
+            limit=limit,
+            to_timestamp=to_timestamp,
+        )
+        try:
+            assert any(is_price_not_valid(price_data) for price_data in response['Data'])
+        except AssertionError:
+            warning_msg = (
+                f'Cryptocompare histohour API has non-zero prices for asset '
+                f'{asset.identifier} from {from_timestamp} to {to_timestamp}. '
+                f' Please, update CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES dict '
+                f'with a smaller timestamp.'
+            )
+            test_warnings.warn(UserWarning(warning_msg))
