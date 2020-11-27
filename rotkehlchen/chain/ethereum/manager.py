@@ -278,26 +278,34 @@ class EthereumManager():
             # Also make sure we are actually connected to the Ethereum mainnet
             synchronized = True
             msg = ''
-            if mainnet_check:
-                network_id = int(web3.net.version)
-                if network_id != 1:
-                    message = (
-                        f'Connected to ethereum node {name} at endpoint {ethrpc_endpoint} but '
-                        f'it is not on the ethereum mainnet. The chain id '
-                        f'the node is in is {network_id}.'
-                    )
-                    log.warning(message)
-                    return False, message
+            try:
+                if mainnet_check:
+                    network_id = int(web3.net.version)
 
-                current_block = web3.eth.blockNumber  # pylint: disable=no-member
-                try:
-                    latest_block = self.query_eth_highest_block()
-                except RemoteError:
-                    msg = 'Could not query latest block'
-                    log.warning(msg)
-                    synchronized = False
-                else:
-                    synchronized, msg = _is_synchronized(current_block, latest_block)
+                    if network_id != 1:
+                        message = (
+                            f'Connected to ethereum node {name} at endpoint {ethrpc_endpoint} but '
+                            f'it is not on the ethereum mainnet. The chain id '
+                            f'the node is in is {network_id}.'
+                        )
+                        log.warning(message)
+                        return False, message
+
+                    current_block = web3.eth.blockNumber  # pylint: disable=no-member
+                    try:
+                        latest_block = self.query_eth_highest_block()
+                    except RemoteError:
+                        msg = 'Could not query latest block'
+                        log.warning(msg)
+                        synchronized = False
+                    else:
+                        synchronized, msg = _is_synchronized(current_block, latest_block)
+            except ValueError as e:
+                message = (
+                    f'Failed to connect to ethereum node {name} at endpoint '
+                    f'{ethrpc_endpoint} due to {str(e)}'
+                )
+                return False, message
 
             if not synchronized:
                 self.msg_aggregator.add_warning(
