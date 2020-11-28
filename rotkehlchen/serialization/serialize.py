@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.compound import CompoundBalance, CompoundEvent
-from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit, Eth2DepositResult
+from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit
 from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
     MakerDAOVault,
@@ -91,7 +91,11 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, (DefiProtocol, MakerDAOVault, XpubData)):
+    elif isinstance(entry, (
+            DefiProtocol,
+            MakerDAOVault,
+            XpubData,
+    )):
         return entry.serialize()
     elif isinstance(entry, (
             Trade,
@@ -128,7 +132,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             DefiProtocolBalances,
             YearnVaultHistory,
             BlockchainAccountData,
-            Eth2DepositResult,
             Eth2Deposit,
     )):
         return process_result(entry._asdict())

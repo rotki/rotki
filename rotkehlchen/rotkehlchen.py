@@ -38,6 +38,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -222,6 +223,7 @@ class Rotkehlchen():
             should_submit=settings.submit_usage_analytics,
         )
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
+        self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         # Initialize the price historian singleton
@@ -264,6 +266,7 @@ class Rotkehlchen():
             premium=self.premium,
             eth_modules=settings.active_modules,
             data_directory=self.data_dir,
+            beaconchain=self.beaconchain,
         )
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,

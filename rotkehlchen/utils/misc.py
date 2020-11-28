@@ -102,6 +102,10 @@ def from_wei(wei_value: FVal) -> FVal:
     return wei_value / FVal(10 ** 18)
 
 
+def from_gwei(gwei_value: Union[FVal, int]) -> FVal:
+    return gwei_value / FVal(10 ** 9)
+
+
 K = TypeVar('K')
 V = TypeVar('V')
 

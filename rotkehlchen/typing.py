@@ -75,6 +75,7 @@ class ApiCredentials(NamedTuple):
 class ExternalService(Enum):
     ETHERSCAN = 0
     CRYPTOCOMPARE = 1
+    BEACONCHAIN = 2
 
     @staticmethod
     def serialize(name: str) -> Optional['ExternalService']:
@@ -82,6 +83,8 @@ class ExternalService(Enum):
             return ExternalService.ETHERSCAN
         elif name == 'cryptocompare':
             return ExternalService.CRYPTOCOMPARE
+        elif name == 'beaconchain':
+            return ExternalService.BEACONCHAIN
 
         return None
 

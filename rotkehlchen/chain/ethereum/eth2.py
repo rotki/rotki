@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Tuple
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.utils import decode_event_data
@@ -11,11 +12,12 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import from_gwei, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.beaconchain import BeaconChain, ValidatorPerformance
 
 ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
 ETH2_DEPLOYED_TS = Timestamp(1602667372)
@@ -37,6 +39,19 @@ Eth2DepositDBTuple = (
         int,  # validator_index
     ]
 )
+
+
+class ValidatorDetails(NamedTuple):
+    validator_index: int
+    eth1_depositor: ChecksumEthAddress
+    performance: 'ValidatorPerformance'
+
+    def serialize(self, eth_usd_price: FVal) -> Dict[str, Any]:
+        return {
+            'index': self.validator_index,
+            'eth1_depositor': self.eth1_depositor,
+            **self.performance.serialize(eth_usd_price),
+        }
 
 
 class Eth2Deposit(NamedTuple):
@@ -93,12 +108,7 @@ class Eth2Deposit(NamedTuple):
         )
 
 
-class Eth2DepositResult(NamedTuple):
-    deposits: List[Eth2Deposit]
-    totals: Dict[ChecksumEthAddress, Balance]
-
-
-def _get_eth2_staked_amount_onchain(
+def _get_eth2_staking_deposits_onchain(
         ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
         has_premium: bool,
@@ -140,7 +150,7 @@ def _get_eth2_staked_amount_onchain(
                         location='Eth2 staking query',
                         msg_aggregator=msg_aggregator,
                     )
-                normalized_amount = FVal(amount) / 10 ** 9
+                normalized_amount = from_gwei(FVal(amount))
                 deposits.append(Eth2Deposit(
                     from_address=transaction.from_address,
                     pubkey='0x' + decoded_data[0].hex(),
@@ -152,17 +162,18 @@ def _get_eth2_staked_amount_onchain(
                     timestamp=Timestamp(transaction.timestamp),
                 ))
                 break
+
     return deposits
 
 
-def get_eth2_staked_amount(
+def get_eth2_staking_deposits(
         ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
         has_premium: bool,
         msg_aggregator: MessagesAggregator,
         database: 'DBHandler',
-) -> Eth2DepositResult:
-    """Get the addresses' ETH2 staked amount
+) -> List[Eth2Deposit]:
+    """Get the addresses' ETH2 staking deposits
 
     For any given new address query on-chain from the ETH2 deposit contract
     deployment timestamp until now.
@@ -174,7 +185,6 @@ def get_eth2_staked_amount(
     Then write in DB all the new deposits and finally return them all.
     """
     new_deposits: List[Eth2Deposit] = []
-    totals: Dict[ChecksumEthAddress, Balance] = {}
     new_addresses: List[ChecksumEthAddress] = []
     existing_addresses: List[ChecksumEthAddress] = []
     to_ts = ts_now()
@@ -193,7 +203,7 @@ def get_eth2_staked_amount(
 
     # Get deposits for new addresses
     if new_addresses:
-        deposits_ = _get_eth2_staked_amount_onchain(
+        deposits_ = _get_eth2_staking_deposits_onchain(
             ethereum=ethereum,
             addresses=new_addresses,
             has_premium=has_premium,
@@ -213,7 +223,7 @@ def get_eth2_staked_amount(
 
     # Get new deposits for existing addresses
     if existing_addresses and min_from_ts + REQUEST_DELTA_TS <= to_ts:
-        deposits_ = _get_eth2_staked_amount_onchain(
+        deposits_ = _get_eth2_staking_deposits_onchain(
             ethereum=ethereum,
             addresses=existing_addresses,
             has_premium=has_premium,
@@ -235,23 +245,73 @@ def get_eth2_staked_amount(
     if new_deposits:
         database.add_eth2_deposits(new_deposits)
 
-    current_usd_price = Inquirer().find_usd_price(A_ETH)
-
     # Fetch all DB deposits for the given addresses
     deposits: List[Eth2Deposit] = []
     for address in addresses:
         db_deposits = database.get_eth2_deposits(address=address)
-        if db_deposits:
-            # Calculate total ETH2 balance per address
-            total_amount = FVal(sum(db_deposit.value.amount for db_deposit in db_deposits))
-            totals[address] = Balance(
-                amount=total_amount,
-                usd_value=total_amount * current_usd_price,
-            )
-            deposits.extend(db_deposits)
+        deposits.extend(db_deposits)
 
     deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.log_index))
-    return Eth2DepositResult(
-        deposits=deposits,
-        totals=totals,
-    )
+    return deposits
+
+
+def get_eth2_balances(
+        beaconchain: 'BeaconChain',
+        addresses: List[ChecksumEthAddress],
+) -> Dict[ChecksumEthAddress, Balance]:
+    """May Raise RemoteError from beaconcha.in api"""
+    address_to_validators = {}
+    index_to_address = {}
+    validator_indices = []
+    usd_price = Inquirer().find_usd_price(A_ETH)
+    balance_mapping: Dict[ChecksumEthAddress, Balance] = defaultdict(Balance)
+    # Map eth1 addresses to validators
+    for address in addresses:
+        validators = beaconchain.get_eth1_address_validators(address)
+        if len(validators) == 0:
+            continue
+
+        address_to_validators[address] = validators
+        for validator in validators:
+            validator_indices.append(validator.validator_index)
+            index_to_address[validator.validator_index] = address
+
+    # Get current balance of all validator indices
+    performance = beaconchain.get_performance(validator_indices)
+    for validator_index, entry in performance.items():
+        amount = from_gwei(entry.balance)
+        balance_mapping[index_to_address[validator_index]] += Balance(amount, amount * usd_price)
+
+    return balance_mapping
+
+
+def get_eth2_balances_via_deposits(
+        beaconchain: 'BeaconChain',
+        deposits: List[Eth2Deposit],
+) -> List[ValidatorDetails]:
+    """Goes through the list of all of our deposits and gets all validator indices,
+    calculates balances and returns performance and balance per address and per validator.
+
+    Then with that info queries the beaconchai.in API. Saves some calls to the API
+    if we already have the list of deposits.
+
+    May raise RemoteError due to beaconcha.in API"""
+    indices = set()
+    address_to_indices = defaultdict(list)
+    index_to_address = {}
+    for deposit in deposits:
+        indices.add(deposit.validator_index)
+        address_to_indices[deposit.from_address].append(deposit.validator_index)
+        index_to_address[deposit.validator_index] = deposit.from_address
+
+    # Get current balance of all validator indices
+    result = []
+    performance_result = beaconchain.get_performance(list(indices))
+    for validator_index, entry in performance_result.items():
+        result.append(ValidatorDetails(
+            validator_index=validator_index,
+            eth1_depositor=index_to_address[validator_index],
+            performance=entry,
+        ))
+
+    return result

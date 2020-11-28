@@ -4311,15 +4311,16 @@ Getting Eth2 Staking details
 	      "validator_index": 1650,
 	      "tx_hash": "0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7",
 	      "log_index": 221
-	  }],
-	  "totals": {
-	      "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397": {
-	          "amount": "32", "usd_value": "11360"
-	      },
-	      "0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19": {
-	          "amount": "128", "usd_value": "58240"
-	      }
-	  }
+e	  }],
+	  "details": [{
+	      "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
+	      "index": 9,
+	      "balance": {"amount": "32.101", "usd_value": "11399"},
+	      "performance_1d": {"amount": "0.1", "usd_value": "100"},
+	      "performance_1w": {"amount": "0.7", "usd_value": "700"},
+	      "performance_1m": {"amount": "3", "usd_value": "3000"},
+	      "performance_1y": {"amount": "36.5", "usd_value": "36500"}
+	  }]
 	},
         "message": "",
       }
@@ -4332,9 +4333,9 @@ Getting Eth2 Staking details
    :resjson validator_index int: The validator index slot for which the deposit was made
    :resjson tx_hash str: The Eth1 transaction hash in which the deposit was made.
    :resjson log_index int: The log index of the deposit
-   :resjson object totals: The total balances staked in Eth2 across all Eth1 accounts
+   :resjson object details: A list of details per validator index. The performance in the last day, week, month, year, the validator index, the eth1 address that deposited and the current balance.
 
-   :statuscode 200: Staked balances succesfully queried
+   :statuscode 200: Eth2 staking details succesfully queried
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
