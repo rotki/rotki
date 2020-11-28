@@ -319,7 +319,7 @@ class Poloniex(ExchangeInterface):
         while tries >= 0:
             try:
                 response = self._single_query(command, req)
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Poloniex API request failed due to {str(e)}')
 
             if response is None:

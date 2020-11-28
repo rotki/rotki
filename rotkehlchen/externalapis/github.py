@@ -19,7 +19,7 @@ class Github():
         """
         try:
             response = requests.get(f'{self.prefix}{path}')
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to query Github: {str(e)}')
 
         if response.status_code != 200:

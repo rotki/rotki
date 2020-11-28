@@ -118,11 +118,11 @@ def test_cryptocompare_dao_query(cryptocompare):
     [{
         'asset': Asset('cDAI'),
         'expected_price1': FVal('0.02012010'),
-        'expected_price2': FVal('0'),  # Needs to be fixed -- mistake in cryptocompare data
+        'expected_price2': FVal('0.02033108'),
     }, {
         'asset': Asset('cBAT'),
         'expected_price1': FVal('0.003522603'),
-        'expected_price2': FVal('0.002723634'),
+        'expected_price2': FVal('0.002713524'),
     }, {
         'asset': Asset('cETH'),
         'expected_price1': FVal('2.903'),
@@ -130,15 +130,15 @@ def test_cryptocompare_dao_query(cryptocompare):
     }, {
         'asset': Asset('cREP'),
         'expected_price1': FVal('0.20105130'),
-        'expected_price2': FVal('0.16356648'),
+        'expected_price2': FVal('0.16380696'),
     }, {
         'asset': Asset('cUSDC'),
         'expected_price1': FVal('0.02085273'),
-        'expected_price2': FVal('0.02103101'),
+        'expected_price2': FVal('0.020944869'),
     }, {
         'asset': Asset('cWBTC'),
         'expected_price1': FVal('136.971575'),
-        'expected_price2': FVal('138.8820732'),
+        'expected_price2': FVal('99.411774'),
     }, {
         'asset': Asset('cZRX'),
         'expected_price1': FVal('0.004324785'),
@@ -235,9 +235,7 @@ def test_keep_special_histohour_cases_up_to_date(cryptocompare):
             limit=limit,
             to_timestamp=to_timestamp,
         )
-        try:
-            assert any(is_price_not_valid(price_data) for price_data in response['Data'])
-        except AssertionError:
+        if not any(is_price_not_valid(price_data) for price_data in response['Data']):
             warning_msg = (
                 f'Cryptocompare histohour API has non-zero prices for asset '
                 f'{asset.identifier} from {from_timestamp} to {to_timestamp}. '

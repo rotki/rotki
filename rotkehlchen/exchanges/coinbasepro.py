@@ -205,7 +205,7 @@ class Coinbasepro(ExchangeInterface):
                     full_url,
                     data=stringified_options,
                 )
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Coinbase Pro {request_method} query at '
                     f'{full_url} connection error: {str(e)}',

@@ -80,7 +80,7 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
             return json.loads(remote_asset_data)
 
         # else, same as all error cases use the current one
-    except (requests.exceptions.ConnectionError, KeyError, json.decoder.JSONDecodeError):
+    except (requests.exceptions.RequestException, KeyError, json.decoder.JSONDecodeError):
         pass
 
     if our_downloaded_meta.is_file():

@@ -172,7 +172,7 @@ class Bitmex(ExchangeInterface):
         log.debug('Bitmex API Query', verb=verb, request_url=request_url)
         try:
             response = getattr(self.session, verb)(request_url, data=data)
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.RequestException as e:
             raise RemoteError(f'Bitmex API request failed due to {str(e)}')
 
         if response.status_code not in (200, 401):

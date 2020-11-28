@@ -220,8 +220,8 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotki server')
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
 
         return _process_dict_response(response)
 
@@ -244,8 +244,8 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotki server')
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
 
         return _process_dict_response(response)
 
@@ -267,8 +267,8 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotki server')
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
 
         result = _process_dict_response(response)
         metadata = RemoteMetadata(
@@ -296,8 +296,8 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotki server')
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
 
         result = _process_dict_response(response)
         return result['data']
@@ -322,8 +322,8 @@ class Premium():
                 json=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.exceptions.ConnectionError:
-            raise RemoteError('Could not connect to rotki server')
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
 
         return _decode_premium_json(response)
 

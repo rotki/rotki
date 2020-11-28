@@ -209,7 +209,7 @@ def retry_calls(
 
             return result
 
-        except (requests.exceptions.ConnectionError) as e:
+        except requests.exceptions.RequestException as e:
             tries -= 1
             log.debug(
                 f'In retry_call for {location}-{method_name}. Got error {str(e)} '

@@ -172,7 +172,7 @@ class Gemini(ExchangeInterface):
 
             try:
                 response = self.session.request(method=method, url=url)
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Gemini {method} query at {url} connection error: {str(e)}')
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
