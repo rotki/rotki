@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    DefaultDict,
     Dict,
     Iterator,
     List,
@@ -99,8 +100,12 @@ class AccountAction(Enum):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BlockchainBalances:
     db: DBHandler  # Need this to serialize BTC accounts with xpub mappings
-    eth: Dict[ChecksumEthAddress, BalanceSheet] = field(default_factory=dict)
-    btc: Dict[BTCAddress, Balance] = field(default_factory=dict)
+    eth: DefaultDict[ChecksumEthAddress, BalanceSheet] = field(init=False)
+    btc: Dict[BTCAddress, Balance] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.eth = defaultdict(BalanceSheet)
+        self.btc = defaultdict(Balance)
 
     def serialize(self) -> Dict[str, Dict]:
         eth_balances = {k: v.serialize() for k, v in self.eth.items()}
@@ -981,12 +986,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
             result = get_eth2_staking_deposits(
                 ethereum=self.ethereum,
-                addresses=list(self.balances.eth.keys()),
+                addresses=self.accounts.eth,
                 has_premium=self.premium is not None,
                 msg_aggregator=self.msg_aggregator,
                 database=self.database,
             )
-
             # and now that we queried it update the chain manager's balances
             total = Balance()
             for address, balance in result.totals.items():

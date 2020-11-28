@@ -10,7 +10,7 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, get_chunks
+from rotkehlchen.utils.misc import from_gwei, get_chunks
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
@@ -19,29 +19,30 @@ if TYPE_CHECKING:
 
 class ValidatorBalance(NamedTuple):
     epoch: int
-    balance: int  # in wei
+    balance: int  # in gwei
     effective_balance: int  # in wei
 
 
 class ValidatorPerformance(NamedTuple):
-    balance: int  # in wei
-    performance_1d: int  # in wei
-    performance_1w: int  # in wei
-    performance_1m: int  # in wei
-    performance_1y: int  # in wei
+    balance: int  # in gwei
+    performance_1d: int  # in gwei
+    performance_1w: int  # in gwei
+    performance_1m: int  # in gwei
+    performance_1y: int  # in gwei
 
-    def serialize(self):
+    def serialize(self) -> Dict[str, str]:
         return {
-            'balance': from_wei(self.balance),
-            'performance_1d': from_wei(self.performance_1d),
-            'performance_1w': from_wei(self.performance_1w),
-            'performance_1m': from_wei(self.performance_1m),
-            'performance_1y': from_wei(self.performance_1y),
+            'balance': str(from_gwei(self.balance)),
+            'performance_1d': str(from_gwei(self.performance_1d)),
+            'performance_1w': str(from_gwei(self.performance_1w)),
+            'performance_1m': str(from_gwei(self.performance_1m)),
+            'performance_1y': str(from_gwei(self.performance_1y)),
         }
 
 
 class ValidatorID(NamedTuple):
-    index: int
+    # not using index due to : https://github.com/python/mypy/issues/9043
+    validator_index: int
     public_key: str
 
 
@@ -64,7 +65,7 @@ class BeaconChain(ExternalServiceWithApiKey):
     def _query(
             self,
             module: Literal['validator'],
-            endpoint: Literal['balanceHistory', 'performance', 'eth1'],
+            endpoint: Literal['balancehistory', 'performance', 'eth1'],
             encoded_args: str,
     ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """
@@ -217,7 +218,10 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         try:
             validators = [
-                ValidatorID(index=x['validatorindex'], public_key=x['publickey']) for x in data
+                ValidatorID(
+                    validator_index=x['validatorindex'],
+                    public_key=x['publickey'],
+                ) for x in data
             ]
         except KeyError as e:
             raise RemoteError(

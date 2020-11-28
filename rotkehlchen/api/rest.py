@@ -26,6 +26,7 @@ from rotkehlchen.balances.manual import (
     remove_manually_tracked_balances,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.ethereum.eth2 import get_eth2_current_info
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -1493,7 +1494,15 @@ class RestAPI():
 
     def _get_eth2_stake(self) -> Dict[str, Any]:
         try:
-            result = self.rotkehlchen.chain_manager.get_eth2_staking_deposits()
+            deposit_result = self.rotkehlchen.chain_manager.get_eth2_staking_deposits()
+            performance = get_eth2_current_info(
+                deposits=deposit_result.deposits,
+                beaconchain=self.rotkehlchen.beaconchain,
+            )
+            result = {
+                'deposits': deposit_result.deposits,
+                'balances': performance,
+            }
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 

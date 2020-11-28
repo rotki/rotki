@@ -11,11 +11,12 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import from_gwei, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.beaconchain import BeaconChain, ValidatorPerformance
 
 ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
 ETH2_DEPLOYED_TS = Timestamp(1602667372)
@@ -140,7 +141,7 @@ def _get_eth2_staking_deposits_onchain(
                         location='Eth2 staking query',
                         msg_aggregator=msg_aggregator,
                     )
-                normalized_amount = FVal(amount) / 10 ** 9
+                normalized_amount = from_gwei(FVal(amount))
                 deposits.append(Eth2Deposit(
                     from_address=transaction.from_address,
                     pubkey='0x' + decoded_data[0].hex(),
@@ -152,6 +153,7 @@ def _get_eth2_staking_deposits_onchain(
                     timestamp=Timestamp(transaction.timestamp),
                 ))
                 break
+
     return deposits
 
 
@@ -162,7 +164,7 @@ def get_eth2_staking_deposits(
         msg_aggregator: MessagesAggregator,
         database: 'DBHandler',
 ) -> Eth2DepositResult:
-    """Get the addresses' ETH2 staked amount
+    """Get the addresses' ETH2 staking deposits
 
     For any given new address query on-chain from the ETH2 deposit contract
     deployment timestamp until now.
@@ -255,3 +257,22 @@ def get_eth2_staking_deposits(
         deposits=deposits,
         totals=totals,
     )
+
+
+def get_all_eth2_validator_indices(deposits: List[Eth2Deposit]) -> List[int]:
+    """Goes through the list of all of our deposits and gets all validator indices"""
+    indices = set()
+    for deposit in deposits:
+        indices.add(deposit.validator_index)
+    return list(indices)
+
+
+def get_eth2_current_info(
+        deposits: List[Eth2Deposit],
+        beaconchain: 'BeaconChain',
+) -> Dict[int, 'ValidatorPerformance']:
+    """Gets the eth2 balances and APR performance"""
+    validator_indices = get_all_eth2_validator_indices(deposits)
+    # balances = beaconchain.get_balance(validator_indices)
+    performance = beaconchain.get_performance(validator_indices)
+    return performance

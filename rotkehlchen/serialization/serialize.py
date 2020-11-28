@@ -40,6 +40,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.externalapis.beaconchain import ValidatorPerformance
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db
 from rotkehlchen.typing import (
@@ -91,7 +92,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, (DefiProtocol, MakerDAOVault, XpubData)):
+    elif isinstance(entry, (DefiProtocol, MakerDAOVault, XpubData, ValidatorPerformance)):
         return entry.serialize()
     elif isinstance(entry, (
             Trade,

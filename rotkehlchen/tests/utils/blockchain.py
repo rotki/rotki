@@ -401,9 +401,13 @@ def mock_etherscan_query(
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
         elif 'api.etherscan.io/api?module=account&action=txlistinternal&' in url:
+            if 'transactions' in original_queries:
+                return original_requests_get(url, *args, **kwargs)
             # By default when mocking, don't query for transactions
             response = '{"status":"1","message":"OK","result":[]}'
         elif 'api.etherscan.io/api?module=account&action=txlist&' in url:
+            if 'transactions' in original_queries:
+                return original_requests_get(url, *args, **kwargs)
             # By default when mocking, don't query for transactions
             response = '{"status":"1","message":"OK","result":[]}'
         elif 'api.etherscan.io/api?module=logs&action=getLogs&' in url:
