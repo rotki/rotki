@@ -8,6 +8,7 @@ from typing_extensions import Literal
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_gwei, get_chunks
@@ -23,6 +24,14 @@ class ValidatorBalance(NamedTuple):
     effective_balance: int  # in wei
 
 
+def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> Dict[str, str]:
+    normalized_value = from_gwei(value)
+    return {
+        'amount': str(normalized_value),
+        'usd_value': str(normalized_value * eth_usd_price),
+    }
+
+
 class ValidatorPerformance(NamedTuple):
     balance: int  # in gwei
     performance_1d: int  # in gwei
@@ -30,13 +39,13 @@ class ValidatorPerformance(NamedTuple):
     performance_1m: int  # in gwei
     performance_1y: int  # in gwei
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self, eth_usd_price: FVal) -> Dict[str, Dict[str, str]]:
         return {
-            'balance': str(from_gwei(self.balance)),
-            'performance_1d': str(from_gwei(self.performance_1d)),
-            'performance_1w': str(from_gwei(self.performance_1w)),
-            'performance_1m': str(from_gwei(self.performance_1m)),
-            'performance_1y': str(from_gwei(self.performance_1y)),
+            'balance': _serialize_gwei_with_price(self.balance, eth_usd_price),
+            'performance_1d': _serialize_gwei_with_price(self.performance_1d, eth_usd_price),
+            'performance_1w': _serialize_gwei_with_price(self.performance_1w, eth_usd_price),
+            'performance_1m': _serialize_gwei_with_price(self.performance_1m, eth_usd_price),
+            'performance_1y': _serialize_gwei_with_price(self.performance_1y, eth_usd_price),
         }
 
 

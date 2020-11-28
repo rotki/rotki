@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Tuple
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.utils import decode_event_data
@@ -38,6 +39,19 @@ Eth2DepositDBTuple = (
         int,  # validator_index
     ]
 )
+
+
+class ValidatorDetails(NamedTuple):
+    validator_index: int
+    eth1_depositor: ChecksumEthAddress
+    performance: 'ValidatorPerformance'
+
+    def serialize(self, eth_usd_price: FVal) -> Dict[str, Any]:
+        return {
+            'index': self.validator_index,
+            'eth1_depositor': self.eth1_depositor,
+            **self.performance.serialize(eth_usd_price),
+        }
 
 
 class Eth2Deposit(NamedTuple):
@@ -92,11 +106,6 @@ class Eth2Deposit(NamedTuple):
             str(self.value.amount),
             self.validator_index,
         )
-
-
-class Eth2DepositResult(NamedTuple):
-    deposits: List[Eth2Deposit]
-    totals: Dict[ChecksumEthAddress, Balance]
 
 
 def _get_eth2_staking_deposits_onchain(
@@ -163,7 +172,7 @@ def get_eth2_staking_deposits(
         has_premium: bool,
         msg_aggregator: MessagesAggregator,
         database: 'DBHandler',
-) -> Eth2DepositResult:
+) -> List[Eth2Deposit]:
     """Get the addresses' ETH2 staking deposits
 
     For any given new address query on-chain from the ETH2 deposit contract
@@ -176,7 +185,6 @@ def get_eth2_staking_deposits(
     Then write in DB all the new deposits and finally return them all.
     """
     new_deposits: List[Eth2Deposit] = []
-    totals: Dict[ChecksumEthAddress, Balance] = {}
     new_addresses: List[ChecksumEthAddress] = []
     existing_addresses: List[ChecksumEthAddress] = []
     to_ts = ts_now()
@@ -237,42 +245,73 @@ def get_eth2_staking_deposits(
     if new_deposits:
         database.add_eth2_deposits(new_deposits)
 
-    current_usd_price = Inquirer().find_usd_price(A_ETH)
-
     # Fetch all DB deposits for the given addresses
     deposits: List[Eth2Deposit] = []
     for address in addresses:
         db_deposits = database.get_eth2_deposits(address=address)
-        if db_deposits:
-            # Calculate total ETH2 balance per address
-            total_amount = FVal(sum(db_deposit.value.amount for db_deposit in db_deposits))
-            totals[address] = Balance(
-                amount=total_amount,
-                usd_value=total_amount * current_usd_price,
-            )
-            deposits.extend(db_deposits)
+        deposits.extend(db_deposits)
 
     deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.log_index))
-    return Eth2DepositResult(
-        deposits=deposits,
-        totals=totals,
-    )
+    return deposits
 
 
-def get_all_eth2_validator_indices(deposits: List[Eth2Deposit]) -> List[int]:
-    """Goes through the list of all of our deposits and gets all validator indices"""
+def get_eth2_balances(
+        beaconchain: 'BeaconChain',
+        addresses: List[ChecksumEthAddress],
+) -> Dict[ChecksumEthAddress, Balance]:
+    """May Raise RemoteError from beaconcha.in api"""
+    address_to_validators = {}
+    index_to_address = {}
+    validator_indices = []
+    usd_price = Inquirer().find_usd_price(A_ETH)
+    balance_mapping: Dict[ChecksumEthAddress, Balance] = defaultdict(Balance)
+    # Map eth1 addresses to validators
+    for address in addresses:
+        validators = beaconchain.get_eth1_address_validators(address)
+        if len(validators) == 0:
+            continue
+
+        address_to_validators[address] = validators
+        for validator in validators:
+            validator_indices.append(validator.validator_index)
+            index_to_address[validator.validator_index] = address
+
+    # Get current balance of all validator indices
+    performance = beaconchain.get_performance(validator_indices)
+    for validator_index, entry in performance.items():
+        amount = from_gwei(entry.balance)
+        balance_mapping[index_to_address[validator_index]] += Balance(amount, amount * usd_price)
+
+    return balance_mapping
+
+
+def get_eth2_balances_via_deposits(
+        beaconchain: 'BeaconChain',
+        deposits: List[Eth2Deposit],
+) -> List[ValidatorDetails]:
+    """Goes through the list of all of our deposits and gets all validator indices,
+    calculates balances and returns performance and balance per address and per validator.
+
+    Then with that info queries the beaconchai.in API. Saves some calls to the API
+    if we already have the list of deposits.
+
+    May raise RemoteError due to beaconcha.in API"""
     indices = set()
+    address_to_indices = defaultdict(list)
+    index_to_address = {}
     for deposit in deposits:
         indices.add(deposit.validator_index)
-    return list(indices)
+        address_to_indices[deposit.from_address].append(deposit.validator_index)
+        index_to_address[deposit.validator_index] = deposit.from_address
 
+    # Get current balance of all validator indices
+    result = []
+    performance_result = beaconchain.get_performance(list(indices))
+    for validator_index, entry in performance_result.items():
+        result.append(ValidatorDetails(
+            validator_index=validator_index,
+            eth1_depositor=index_to_address[validator_index],
+            performance=entry,
+        ))
 
-def get_eth2_current_info(
-        deposits: List[Eth2Deposit],
-        beaconchain: 'BeaconChain',
-) -> Dict[int, 'ValidatorPerformance']:
-    """Gets the eth2 balances and APR performance"""
-    validator_indices = get_all_eth2_validator_indices(deposits)
-    # balances = beaconchain.get_balance(validator_indices)
-    performance = beaconchain.get_performance(validator_indices)
-    return performance
+    return result

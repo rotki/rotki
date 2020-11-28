@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
+from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
@@ -216,6 +217,11 @@ def ethereum_modules() -> List[str]:
 
 
 @pytest.fixture
+def beaconchain(database, messages_aggregator):
+    return BeaconChain(database=database, msg_aggregator=messages_aggregator)
+
+
+@pytest.fixture
 def blockchain(
         blockchain_backend,  # pylint: disable=unused-argument
         ethereum_manager,
@@ -228,6 +234,7 @@ def blockchain(
         rotki_premium_credentials,
         database,
         data_dir,
+        beaconchain,
 ):
     premium = None
     if start_with_valid_premium:
@@ -242,6 +249,7 @@ def blockchain(
         premium=premium,
         eth_modules=ethereum_modules,
         data_directory=data_dir,
+        beaconchain=beaconchain,
     )
 
     return chain_manager

@@ -266,6 +266,7 @@ class Rotkehlchen():
             premium=self.premium,
             eth_modules=settings.active_modules,
             data_directory=self.data_dir,
+            beaconchain=self.beaconchain,
         )
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
