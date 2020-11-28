@@ -62,7 +62,7 @@ def test_get_eth1_validator_indices_single(session_beaconchain):
         )
         test_warnings.warn(UserWarning(msg))
 
-    assert validators[0].index == 9
+    assert validators[0].validator_index == 9
     assert validators[0].public_key == '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'  # noqa: E501
 
 
@@ -88,5 +88,5 @@ def test_get_eth1_validator_indices_multiple(session_beaconchain):
         (1046, '0xb44383a9ce75b90cc8248bdd46d02a2a309117bbfdbe9fd05743def6d483549072c3285ae4953f48b1d17c9787697764'),  # noqa: E501
     ]
     for idx, validator in enumerate(validators):
-        assert validator.index == expected_results[idx][0]
+        assert validator.validator_index == expected_results[idx][0]
         assert validator.public_key == expected_results[idx][1]
