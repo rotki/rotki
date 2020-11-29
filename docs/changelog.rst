@@ -2,6 +2,11 @@
 Changelog
 =========
 
+* :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
+  - 1inch
+  - my ether walet
+  - cloudflare-eth
+  - linkpool
 * :bug:`1777` Free users will now be able to load uniswap LP balances properly again.
 * :bug:`1726` When querying Compound history for COMP claimed around the start of COMP issuance, zero price warnings should no longer be emitted.
 * :feature:`1804` Premium users: Eth2 staking balances (along with what is gained via staking) will now be shown along with an APR estimation of the gains by staking. 
