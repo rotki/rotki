@@ -31,6 +31,7 @@ export interface DBSettings {
   readonly kraken_account_type: string;
   readonly active_modules: SupportedModules[];
   readonly frontend_settings: string;
+  readonly account_for_assets_movements: boolean;
 }
 
 interface ApiKey {

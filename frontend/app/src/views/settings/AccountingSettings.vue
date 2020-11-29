@@ -43,6 +43,21 @@
               type="number"
               @change="onTaxFreePeriodChange($event)"
             />
+            <v-switch
+              v-model="accountForAssetsMovements"
+              class="accounting-settings__account-for-assets-movements"
+              :success-messages="
+                settingsMessages['accountForAssetsMovements'].success
+              "
+              :error-messages="
+                settingsMessages['accountForAssetsMovements'].error
+              "
+              :label="
+                $t('accounting_settings.labels.account_for_assets_movements')
+              "
+              color="primary"
+              @change="onAccountForAssetsMovements($event)"
+            />
           </v-card-text>
         </v-card>
       </v-col>
@@ -149,6 +164,7 @@ export default class Accounting extends Settings {
   gasCosts: boolean = false;
   taxFreeAfterPeriod: number | null = null;
   taxFreePeriod: boolean = false;
+  accountForAssetsMovements: boolean = false;
 
   assetToIgnore: string = '';
   assetToRemove: string = '';
@@ -161,7 +177,8 @@ export default class Accounting extends Settings {
     taxFreePeriod: { success: '', error: '' },
     taxFreePeriodAfter: { success: '', error: '' },
     addIgnoreAsset: { success: '', error: '' },
-    remIgnoreAsset: { success: '', error: '' }
+    remIgnoreAsset: { success: '', error: '' },
+    accountForAssetsMovements: { success: '', error: '' }
   };
 
   taxFreeRules = [
@@ -182,6 +199,7 @@ export default class Accounting extends Settings {
       this.taxFreePeriod = false;
       this.taxFreeAfterPeriod = null;
     }
+    this.accountForAssetsMovements = this.accountingSettings.accountForAssetsMovements;
   }
 
   onTaxFreeChange(enabled: boolean) {
@@ -308,6 +326,33 @@ export default class Accounting extends Settings {
           this.$tc('account_settings.messages.gas_costs', 0, {
             message: reason.message
           })
+        );
+      });
+  }
+
+  onAccountForAssetsMovements(enabled: boolean) {
+    const { commit } = this.$store;
+
+    this.$api
+      .setSettings({ account_for_assets_movements: enabled })
+      .then(settings => {
+        commit('session/accountingSettings', {
+          ...this.accountingSettings,
+          accountForAssetsMovements: settings.account_for_assets_movements
+        });
+        this.validateSettingChange('accountForAssetsMovements', 'success');
+      })
+      .catch(reason => {
+        this.validateSettingChange(
+          'accountForAssetsMovements',
+          'error',
+          this.$tc(
+            'account_settings.messages.account_for_assets_movements',
+            0,
+            {
+              message: reason.message
+            }
+          )
         );
       });
   }

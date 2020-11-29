@@ -97,6 +97,9 @@ class Accountant():
         self.events.profit_currency = settings.main_currency
         self.csvexporter.profit_currency = settings.main_currency
 
+        if settings.account_for_assets_movements is not None:
+            self.events.account_for_assets_movements = settings.account_for_assets_movements
+
     def get_fee_in_profit_currency(self, trade: Trade) -> Fee:
         """Get the profit_currency rate of the fee of the given trade
 
@@ -129,7 +132,7 @@ class Accountant():
         if timestamp < self.start_ts:
             return
 
-        if movement.asset.identifier == 'KFEE':
+        if movement.asset.identifier == 'KFEE' or not self.events.account_for_assets_movements:
             # There is no reason to process deposits of KFEE for kraken as it has only value
             # internal to kraken and KFEE has no value and will error at cryptocompare price query
             return

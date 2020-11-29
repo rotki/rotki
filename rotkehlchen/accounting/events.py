@@ -32,6 +32,7 @@ class TaxableEvents():
 
         self._taxfree_after_period: Optional[int] = None
         self._include_crypto2crypto: Optional[bool] = None
+        self._account_for_assets_movements: Optional[bool] = None
 
     def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
         self.events = {}
@@ -62,6 +63,14 @@ class TaxableEvents():
         is_valid = isinstance(value, int) or value is None
         assert is_valid, 'set taxfree_after_period should only get int or None'
         self._taxfree_after_period = value
+
+    @property
+    def account_for_assets_movements(self) -> Optional[bool]:
+        return self._account_for_assets_movements
+
+    @account_for_assets_movements.setter
+    def account_for_assets_movements(self, value: Optional[bool]) -> None:
+        self._account_for_assets_movements = value
 
     def calculate_asset_details(self) -> Dict[Asset, Tuple[FVal, FVal]]:
         """ Calculates what amount of all assets has been untouched for a year and
