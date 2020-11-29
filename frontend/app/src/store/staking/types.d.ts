@@ -14,11 +14,17 @@ export interface Eth2Deposit {
   readonly logIndex: number;
 }
 
-interface Eth2Total {
-  readonly [address: string]: Balance;
+interface Eth2Detail {
+  readonly eth1Depositor: string;
+  readonly index: number;
+  readonly balance: Balance;
+  readonly performance1d: Balance;
+  readonly performance1w: Balance;
+  readonly performance1m: Balance;
+  readonly performance1y: Balance;
 }
 
 export interface Eth2Staking {
   readonly deposits: Eth2Deposit[];
-  readonly totals: Eth2Total;
+  readonly details: Eth2Detail[];
 }

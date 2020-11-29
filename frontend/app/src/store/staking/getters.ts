@@ -1,10 +1,10 @@
-import { Eth2Deposit, Eth2Total, StakingState } from '@/store/staking/types';
+import { Eth2Deposit, Eth2Detail, StakingState } from '@/store/staking/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 
 interface StakingGetters {
   deposits: Eth2Deposit[];
-  total: Eth2Total;
+  details: Eth2Detail[];
 }
 
 export const getters: Getters<
@@ -14,5 +14,5 @@ export const getters: Getters<
   any
 > = {
   deposits: state => state.eth2.deposits,
-  total: state => state.eth2.totals
+  details: state => state.eth2.details
 };
