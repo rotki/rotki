@@ -5429,7 +5429,6 @@
         "type": "ethereum token"
     },
     "GNT": {
-        "active": false,
         "coingecko": "golem",
         "ethereum_address": "0xa74476443119A942dE498590Fe1f2454d7D4aC0d",
         "ethereum_token_decimals": 18,

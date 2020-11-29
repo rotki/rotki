@@ -1,12 +1,19 @@
 import pytest
 
-from rotkehlchen.chain.ethereum.manager import NodeName
+from rotkehlchen.chain.ethereum.manager import (
+    ETHEREUM_NODES_TO_CONNECT_AT_START,
+    OPEN_NODES,
+    OPEN_NODES_WEIGHT_MAP,
+    NodeName,
+)
 from rotkehlchen.constants.ethereum import (
     ATOKEN_ABI,
     ERC20TOKEN_ABI,
     YEARN_YCRV_VAULT,
     ZERO_ADDRESS,
 )
+from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
@@ -192,3 +199,21 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
         call_order=call_order,
     )
     assert all(x['transactionIndex'] == 0 for x in result['logs'])
+
+
+def test_nodes_weight_map():
+    """Test the weight map has no duplicates and adds to 100%"""
+    nodes_set = set()
+    total = ZERO
+    for node, value in OPEN_NODES_WEIGHT_MAP.items():
+        assert node not in nodes_set, f'node {str(node)} appears more than once'
+        nodes_set.add(node)
+        total += FVal(value)
+
+    assert total == ONE
+
+
+def test_nodes_sets():
+    """Test that all nodes sets contain the nodes they should"""
+    assert set(OPEN_NODES) - set({NodeName.ETHERSCAN}) == set(ETHEREUM_NODES_TO_CONNECT_AT_START) - set({NodeName.OWN})  # noqa: E501
+    assert set(OPEN_NODES_WEIGHT_MAP.keys()) - set({NodeName.ETHERSCAN}) == set(ETHEREUM_NODES_TO_CONNECT_AT_START) - set({NodeName.OWN})  # noqa: E501
