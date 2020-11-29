@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from rotkehlchen.chain.ethereum.manager import (
@@ -62,8 +64,8 @@ def test_get_transaction_receipt(ethereum_manager, call_order, ethereum_manager_
 @pytest.mark.parametrize('ethrpc_endpoint,ethereum_manager_connect_at_start,call_order', [
     (
         '',
-        (NodeName.MYCRYPTO, NodeName.AVADO_POOL, NodeName.BLOCKSCOUT),
-        (NodeName.MYCRYPTO, NodeName.AVADO_POOL, NodeName.BLOCKSCOUT),
+        [x for x in OPEN_NODES if x != NodeName.ETHERSCAN],
+        [x for x in OPEN_NODES if x != NodeName.ETHERSCAN],
     ),
 ])
 def test_use_open_nodes(ethereum_manager, call_order, ethereum_manager_connect_at_start):
@@ -217,3 +219,12 @@ def test_nodes_sets():
     """Test that all nodes sets contain the nodes they should"""
     assert set(OPEN_NODES) - set({NodeName.ETHERSCAN}) == set(ETHEREUM_NODES_TO_CONNECT_AT_START) - set({NodeName.OWN})  # noqa: E501
     assert set(OPEN_NODES_WEIGHT_MAP.keys()) - set({NodeName.ETHERSCAN}) == set(ETHEREUM_NODES_TO_CONNECT_AT_START) - set({NodeName.OWN})  # noqa: E501
+
+
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='This test is only for us to figure out the speed of the open nodes',
+)
+def test_nodes_speed():
+    """TODO"""
+    pass
