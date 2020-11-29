@@ -389,7 +389,7 @@ export default class AccountForm extends Vue {
   onPasteMulti(event: ClipboardEvent) {
     const paste = trimOnPaste(event);
     if (paste) {
-      this.addresses = paste.replace(/,(0x)/g, ',\n0x');
+      this.addresses += paste.replace(/,(0x)/g, ',\n0x');
     }
   }
 
