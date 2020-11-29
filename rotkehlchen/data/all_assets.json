@@ -13793,7 +13793,7 @@
         "type": "ethereum token"
     },
     "BCHA": {
-        "coingecko": "bitcoin-cash-abc",
+        "coingecko": "bitcoin-cash-abc-2",
         "forked": "BCH",
         "name": "Bitcoin ABC",
         "started": 1605474360,
@@ -13815,7 +13815,7 @@
         "type": "own chain"
     },
     "FRONT": {
-        "coingecko": "frontier",
+        "coingecko": "frontier-token",
         "ethereum_address": "0xf8C3527CC04340b208C854E985240c02F7B7793f",
         "ethereum_token_decimals": 18,
         "name": "Frontier Token",
@@ -13900,7 +13900,7 @@
         "type": "own chain"
     },
     "SHR": {
-        "coingecko": "sharetoken",
+        "coingecko": "sharering",
         "ethereum_address": "0xd98F75b1A3261dab9eEd4956c93F33749027a964",
         "ethereum_token_decimals": 2,
         "name": "ShareToken",

@@ -134,6 +134,26 @@ def test_coingecko_identifiers_are_reachable():
         'SGN',
         'SOAR',
         'YUP',
+        'AC',
+        'APIS',
+        'BITPARK',
+        'CO2',
+        'DAN',
+        'DEC',
+        'DLT',
+        'DROP',
+        'ERD',
+        'ETBS',
+        'GEN',
+        'STP',
+        'SYNC',
+        'TBT',
+        'TNT',
+        'WIC',
+        'XCN',
+        'XTP',
+        'FREC',
+        'PTC',
     ]
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
@@ -182,7 +202,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': 'e327a3f7ffa1435ffb0fc481ab6dc63d', 'version': 26}
+    last_meta = {'md5': 'c9b48b7fac39090dbb3fe6c51abbaae7', 'version': 27}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
