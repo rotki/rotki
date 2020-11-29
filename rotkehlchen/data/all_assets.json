@@ -2726,6 +2726,16 @@
         "symbol": "CORN",
         "type": "tron token"
     },
+    "CORN-2": {
+        "coingecko": "cornichon",
+        "cryptocompare": "",
+        "ethereum_address": "0xa456b515303B2Ce344E9d2601f91270f8c2Fea5E",
+        "ethereum_token_decimals": 18,
+        "name": "Cornichon",
+        "started": 1606603741,
+        "symbol": "CORN",
+        "type": "ethereum token"
+    },
     "COS": {
         "active": true,
         "coingecko": "contentos",

@@ -104,9 +104,9 @@ Handling user creation, sign-in, log-out and querying
             "password": "supersecurepassword",
             "premium_api_key": "dasdsda",
             "premium_api_secret": "adsadasd",
-	    "initial_settings": {
-	        "submit_usage_analytics": false
-	    }
+            "initial_settings": {
+                "submit_usage_analytics": false
+            }
       }
 
    :reqjson string name: The name to give to the new user
@@ -1437,8 +1437,8 @@ Querying onchain balances
                       }},
                       "xpubs": [{
                               "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-			      "derivation_path": "m/0/0",
-			      "addresses": {
+                              "derivation_path": "m/0/0",
+                              "addresses": {
                                   "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
                                       "amount": "0.5", "usd_value": "3770.075"
                                   },
@@ -1447,14 +1447,14 @@ Querying onchain balances
                                   }
                           }}, {
                               "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-			      "derivation_path": "m",
-			      "addresses": {
-				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  },
-				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  }
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
                           }}]
                    },
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
@@ -1462,20 +1462,20 @@ Querying onchain balances
                            "ETH": {"amount": "10", "usd_value": "1650.53"},
                            "DAI": {"amount": "15", "usd_value": "15.21"}
                        },
-		       "liabilities": {
-		           "DAI": {"amount": "20", "usd_value": "20.35"}
-		       }
+                       "liabilities": {
+                           "DAI": {"amount": "20", "usd_value": "20.35"}
+                       }
                   }}
               },
               "totals": {
-	          "assets": {
-		      "BTC": {"amount": "1", "usd_value": "7540.15"},
-		      "ETH": {"amount": "10", "usd_value": "1650.53"},
-		      "DAI": {"amount": "15", "usd_value": "15.21"}
-		  },
-		  "liabilities": {
-		      "DAI": {"amount": "20", "usd_value": "20.35"}
-		  }
+                  "assets": {
+                      "BTC": {"amount": "1", "usd_value": "7540.15"},
+                      "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "DAI": {"amount": "15", "usd_value": "15.21"}
+                  },
+                  "liabilities": {
+                      "DAI": {"amount": "20", "usd_value": "20.35"}
+                  }
               }
           },
           "message": ""
@@ -1533,30 +1533,30 @@ Querying all balances
 
       {
           "result": {
-	      "assets": {
-		  "ETH": {
-		      "amount": "1",
-		      "percentage_of_net_value": "9.5%",
-		      "usd_value": "180"
-		   },
-		   "BTC": {
-		      "amount": "0.5",
-		      "percentage_of_net_value": "90%",
-		      "usd_value": "4000"
-		   },
-		   "EUR": {
-		      "amount": "2",
-		      "percentage_of_net_value": "0.5%",
-		      "usd_value": "2.8"
-		   }
-	       },
-	       "liabilities": {
-	           "DAI": {
-		       "amount": "100",
-		       "usd_value": "102.5",
-		       "percentage_of_net_value": "1%"
-		   }
-	       },
+              "assets": {
+                  "ETH": {
+                      "amount": "1",
+                      "percentage_of_net_value": "9.5%",
+                      "usd_value": "180"
+                   },
+                   "BTC": {
+                      "amount": "0.5",
+                      "percentage_of_net_value": "90%",
+                      "usd_value": "4000"
+                   },
+                   "EUR": {
+                      "amount": "2",
+                      "percentage_of_net_value": "0.5%",
+                      "usd_value": "2.8"
+                   }
+               },
+               "liabilities": {
+                   "DAI": {
+                       "amount": "100",
+                       "usd_value": "102.5",
+                       "percentage_of_net_value": "1%"
+                   }
+               },
                "location": {
                    "banks": {
                        "percentage_of_net_value": "0.5%",
@@ -2592,37 +2592,37 @@ Getting blockchain account data
 
       {
           "result" : {
-	      "standalone": [{
+              "standalone": [{
                   "address": "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5",
                   "label": null,
                   "tags": ["private"],
-		  }, {
+                  }, {
                   "address": "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra",
                   "label": "some label",
                   "tags": null,
-	      }],
-	      "xpubs": [{
-	          "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-		  "derivation_path": "m/0/0",
-		  "label": "ledger xpub",
-		  "tags": ["super secret", "awesome"],
-		  "addresses": [{
-		      "address": "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r",
-		      "label": "derived address",
-		      "tags": ["super secret", "awesome", "derived"]
-		      }, {
-		      "address": "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT",
-		      "label": null,
-		      "tags": null
-		      }]
-		  }, {
+              }],
+              "xpubs": [{
+                  "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+                  "derivation_path": "m/0/0",
+                  "label": "ledger xpub",
+                  "tags": ["super secret", "awesome"],
+                  "addresses": [{
+                      "address": "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r",
+                      "label": "derived address",
+                      "tags": ["super secret", "awesome", "derived"]
+                      }, {
+                      "address": "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT",
+                      "label": null,
+                      "tags": null
+                      }]
+                  }, {
                   "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-		  "derivation_path": null,
-	          "label": "some label",
-		  "tags": null,
-		  "addresses": null,
-	      }]
-	  },
+                  "derivation_path": null,
+                  "label": "some label",
+                  "tags": null,
+                  "addresses": null,
+              }]
+          },
            "message": "",
       }
 
@@ -2877,60 +2877,60 @@ Getting ethereum MakerDAO DSR historical report
                   "movements": [{
                       "movement_type": "deposit",
                       "gain_so_far": {
-		          "amount": "0",
-		          "usd_value": "0"
-		      },
+                          "amount": "0",
+                          "usd_value": "0"
+                      },
                       "value": {
                           "amount": "350",
                           "usd_value": "351.21"
-		      },
+                      },
                       "block_number": 9128160,
                       "timestamp": 1582706553,
                       "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289"
                   }, {
                       "movement_type": "deposit",
                       "gain_so_far": {
-		          "amount": "0.875232",
+                          "amount": "0.875232",
                           "usd_value": "0.885292"
-		      },
+                      },
                       "value": {
                           "amount": "50",
                           "usd_value": "50.87"
-		      },
+                      },
                       "block_number": 9129165,
                       "timestamp": 1582806553,
                       "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
                   }, {
                       "movement_type": "withdrawal",
                       "gain_so_far": {
-		          "amount": "1.12875932",
+                          "amount": "1.12875932",
                           "usd_value": "1.34813"
-		      },
+                      },
                       "value": {
                           "amount": "350",
                           "usd_value": "353.12"
-		      },
+                      },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
                       "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756"
                   }, {
                   }],
                   "gain_so_far": {
-		      "amount": "1.14875932",
-		      "usd_value": "1.2323"
-		  }
+                      "amount": "1.14875932",
+                      "usd_value": "1.2323"
+                  }
               },
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "movements": [{
                       "movement_type": "deposit",
                       "gain_so_far": {
-		          "amount": "0",
+                          "amount": "0",
                           "usd_value": "0"
-		      },
+                      },
                       "value": {
                           "amount": "550",
                           "usd_value": "553.43"
-		      },
+                      },
                       "block_number": 9128174,
                       "timestamp": 1583706553,
                       "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443"
@@ -2938,7 +2938,7 @@ Getting ethereum MakerDAO DSR historical report
                   "gain_so_far": {
                       "amount": "0.953423",
                       "usd_value": "0.998421"
-		  }
+                  }
               }
           },
           "message": ""
@@ -2996,11 +2996,11 @@ Getting MakerDAO vaults basic data
               "collateral": {
                   "amount": "5.232",
                   "usd_value": "950.13"
-	      },
+              },
               "debt": {
                   "amount": "650",
                   "usd_value": "653.42"
-	      },
+              },
               "collateralization_ratio": "234.21%",
               "liquidation_ratio": "150%",
               "liquidation_price": "125.1",
@@ -3013,11 +3013,11 @@ Getting MakerDAO vaults basic data
               "collateral": {
                   "amount": "150",
                   "usd_value": "150"
-	      },
+              },
               "debt": {
                   "amount": "50",
                   "usd_value": "53.2"
-	      },
+              },
               "collateralization_ratio": "250.551%",
               "liquidation_ratio": "150%",
               "liquidation_price": "0.45",
@@ -3084,13 +3084,13 @@ Getting MakerDAO vault details
               "total_liquidated": {
                   "amount": "0",
                   "usd_value": "0"
-	      },
+              },
               "events": [{
                   "event_type": "deposit",
                   "value": {
                       "amount": "5.551",
                       "usd_value": "120.32"
-		  },
+                  },
                   "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
@@ -3098,7 +3098,7 @@ Getting MakerDAO vault details
                   "value": {
                       "amount": "325",
                       "usd_value": "12003.32"
-		  },
+                  },
                   "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }]
@@ -3109,13 +3109,13 @@ Getting MakerDAO vault details
               "total_liquidated": {
                   "amount": "1050.21",
                   "usd_value": "2501.234"
-	      },
+              },
               "events": [{
                   "event_type": "deposit",
                   "value": {
                       "amount": "1050.21",
                       "usd_value": "10500.21"
-		  },
+                  },
                   "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
@@ -3123,7 +3123,7 @@ Getting MakerDAO vault details
                   "value": {
                       "amount": "721.32",
                       "usd_value": "7213.2"
-		  },
+                  },
                   "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
@@ -3131,7 +3131,7 @@ Getting MakerDAO vault details
                   "value": {
                       "amount": "500",
                       "usd_value": "5000"
-		  },
+                  },
                   "timestamp": 1589068000,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }, {
@@ -3139,7 +3139,7 @@ Getting MakerDAO vault details
                   "value": {
                       "amount": "550.21",
                       "usd_value": "5502.1"
-		  },
+                  },
                   "timestamp": 1589068001,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
               }]
@@ -3284,87 +3284,87 @@ Getting Aave historical data
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                   "events": [{
                       "event_type": "deposit",
-		      "asset": "DAI",
+                      "asset": "DAI",
                       "value": {
-		          "amount": "350.0",
-			  "usd_value": "351.21"
-		      },
+                          "amount": "350.0",
+                          "usd_value": "351.21"
+                      },
                       "block_number": 9128160,
                       "timestamp": 1582706553,
                       "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-		      "log_index": 1
+                      "log_index": 1
                   }, {
                       "event_type": "interest",
-		      "asset": "DAI",
-		      "value": {
-		          "amount": "0.5323",
-			  "usd_value": "0.5482"
-		      },
+                      "asset": "DAI",
+                      "value": {
+                          "amount": "0.5323",
+                          "usd_value": "0.5482"
+                      },
                       "block_number": 9129165,
                       "timestamp": 1582806553,
                       "tx_hash": "0x2a1bee69b9bafe031026dbcc8f199881b568fd767482b5436dd1cd94f2642443",
-		      "log_index": 1
+                      "log_index": 1
                   }, {
                       "event_type": "withdrawal",
-		      "asset": "DAI",
+                      "asset": "DAI",
                       "value": {
-		          "amount": "150",
-			  "usd_value": "150.87"
-		      },
+                          "amount": "150",
+                          "usd_value": "150.87"
+                      },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
                       "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756",
-		      "log_index": 1
+                      "log_index": 1
                   }, {
                       "event_type": "deposit",
-		      "asset": "ZRX",
+                      "asset": "ZRX",
                       "value": {
-		          "amount": "150",
-			  "usd_value": "60.995"
-		      },
+                          "amount": "150",
+                          "usd_value": "60.995"
+                      },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
                       "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a755",
-		      "log_index": 1
+                      "log_index": 1
                   }],
                   "total_earned": {
-		      "DAI": {
-		          "amount": "0.9482",
-			  "usd_value": "1.001"
-		      },
-		      "ZRX": {
-		          "amount": "0.523",
-			  "usd_value": "0.0253"
-		      }
-		  },
-		  "total_lost": {
-		      "WBTC": {
-		          "amount": "0.3212",
-			  "usd_value": "3560.32"
-		      }
-		  }
+                      "DAI": {
+                          "amount": "0.9482",
+                          "usd_value": "1.001"
+                      },
+                      "ZRX": {
+                          "amount": "0.523",
+                          "usd_value": "0.0253"
+                      }
+                  },
+                  "total_lost": {
+                      "WBTC": {
+                          "amount": "0.3212",
+                          "usd_value": "3560.32"
+                      }
+                  }
               },
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "events": [{
                       "event_type": "deposit",
-		      "asset": "BAT",
+                      "asset": "BAT",
                       "value": {
-		          "amount": "500",
-			  "usd_value": "124.1"
-		      },
+                          "amount": "500",
+                          "usd_value": "124.1"
+                      },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
                       "tx_hash": "0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a755",
-		      "log_index": 1
+                      "log_index": 1
                   }],
                   "total_earned_interest": {
-		      "BAT": {
-		          "amount": "0.9482",
-			  "usd_value": "0.2312"
-		      }
-		  },
-		  "total_lost": {},
-		  "total_earned_liquidations": {},
+                      "BAT": {
+                          "amount": "0.9482",
+                          "usd_value": "0.2312"
+                      }
+                  },
+                  "total_lost": {},
+                  "total_earned_liquidations": {},
               }
           },
           "message": ""
@@ -3428,14 +3428,14 @@ Getting Compound balances
       {
           "result": {
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-	          "rewards": {
-		      "COMP": {
-		          "balance" :{
-			      "amount": "3.5",
-			      "usd_value": "892.5",
-			  }
-		      }
-		  },
+                  "rewards": {
+                      "COMP": {
+                          "balance" :{
+                              "amount": "3.5",
+                              "usd_value": "892.5",
+                          }
+                      }
+                  },
                   "lending": {
                       "DAI": {
                           "balance": {
@@ -3523,149 +3523,149 @@ Getting compound historical data
 
       {
           "result": {
-	      "events": [{
-	          "event_type": "mint",
-		  "address": "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056",
-		  "block_number": 1,
-		  "timestamp": 2,
-		  "asset": "DAI",
-		  "value": {
-		      "amount": "10.5",
-		      "usd_value": "10.86"
-		  },
-		  "to_asset": "cDAI",
-		  "to_value": {
-		      "amount": "165.21",
-		      "usd_value": "10.86"
-		  },
-		  "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-		  "log_index": 1
-	      }, {
-	          "event_type": "redeem",
-		  "address": "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056",
-		  "block_number": 1,
-		  "timestamp": 2,
-		  "asset": "cDAI",
-		  "value": {
-		      "amount": "165.21",
-		      "usd_value": "12.25"
-		  },
-		  "to_asset": "DAI",
-		  "to_value": {
-		      "amount": "12.01",
-		      "usd_value": "12.25"
-		  },
-		  "realized_pnl": {
-		      "amount": "1",
-		      "usd_value": "1.15"
-		  },
-		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-		  "log_index": 1
-	      }, {
-	          "event_type": "borrow",
-		  "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
-		  "block_number": 1,
-		  "timestamp": 2,
-		  "asset": "ZRX",
-		  "value": {
-		      "amount": "10",
-		      "usd_value": "4.5"
-		  },
-		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-		  "log_index": 1
-	      }, {
-	          "event_type": "repay",
-		  "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
-		  "block_number": 1,
-		  "timestamp": 2,
-		  "asset": "ZRX",
-		  "value": {
-		      "amount": "10.5",
-		      "usd_value": "4.8"
-		  },
-		  "realized_pnl": {
-		      "amount": "0.5",
-		      "usd_value": "0.8"
-		  },
-		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-		  "log_index": 1
-	      }, {
-	          "event_type": "liquidation",
-		  "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
-		  "block_number": 1,
-		  "timestamp": 2,
-		  "asset": "ETH",
-		  "value": {
-		      "amount": "0.00005",
-		      "usd_value": "0.09"
-		  },
-		  "to_asset": "ZRX",
-		  "to_value": {
-		      "amount": "10",
-		      "usd_value": "4.5"
-		  }
-		  "realized_pnl": null,
-		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-		  "log_index": 1
-	      }, {
-	          "event_type": "comp",
-		  "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
-		  "block_number": 1,
-		  "timestamp": 2,
-		  "asset": "COMP",
-		  "value": {
-		      "amount": "1.01",
-		      "usd_value": "195"
-		  },
-		  "realized_pnl": {
-		      "amount": "1.01",
-		      "usd_value": "195"
-		  },
-		  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-		  "log_index": 1
-	      }],
-	      "interest_profit": {
+              "events": [{
+                  "event_type": "mint",
+                  "address": "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056",
+                  "block_number": 1,
+                  "timestamp": 2,
+                  "asset": "DAI",
+                  "value": {
+                      "amount": "10.5",
+                      "usd_value": "10.86"
+                  },
+                  "to_asset": "cDAI",
+                  "to_value": {
+                      "amount": "165.21",
+                      "usd_value": "10.86"
+                  },
+                  "tx_hash": "0x988aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                  "log_index": 1
+              }, {
+                  "event_type": "redeem",
+                  "address": "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056",
+                  "block_number": 1,
+                  "timestamp": 2,
+                  "asset": "cDAI",
+                  "value": {
+                      "amount": "165.21",
+                      "usd_value": "12.25"
+                  },
+                  "to_asset": "DAI",
+                  "to_value": {
+                      "amount": "12.01",
+                      "usd_value": "12.25"
+                  },
+                  "realized_pnl": {
+                      "amount": "1",
+                      "usd_value": "1.15"
+                  },
+                  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                  "log_index": 1
+              }, {
+                  "event_type": "borrow",
+                  "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
+                  "block_number": 1,
+                  "timestamp": 2,
+                  "asset": "ZRX",
+                  "value": {
+                      "amount": "10",
+                      "usd_value": "4.5"
+                  },
+                  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                  "log_index": 1
+              }, {
+                  "event_type": "repay",
+                  "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
+                  "block_number": 1,
+                  "timestamp": 2,
+                  "asset": "ZRX",
+                  "value": {
+                      "amount": "10.5",
+                      "usd_value": "4.8"
+                  },
+                  "realized_pnl": {
+                      "amount": "0.5",
+                      "usd_value": "0.8"
+                  },
+                  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                  "log_index": 1
+              }, {
+                  "event_type": "liquidation",
+                  "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
+                  "block_number": 1,
+                  "timestamp": 2,
+                  "asset": "ETH",
+                  "value": {
+                      "amount": "0.00005",
+                      "usd_value": "0.09"
+                  },
+                  "to_asset": "ZRX",
+                  "to_value": {
+                      "amount": "10",
+                      "usd_value": "4.5"
+                  }
+                  "realized_pnl": null,
+                  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                  "log_index": 1
+              }, {
+                  "event_type": "comp",
+                  "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
+                  "block_number": 1,
+                  "timestamp": 2,
+                  "asset": "COMP",
+                  "value": {
+                      "amount": "1.01",
+                      "usd_value": "195"
+                  },
+                  "realized_pnl": {
+                      "amount": "1.01",
+                      "usd_value": "195"
+                  },
+                  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                  "log_index": 1
+              }],
+              "interest_profit": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-		      "COMP": {
-			      "amount": "3.5",
-			      "usd_value": "892.5",
-			  },
-		       "DAI": {
-			      "amount": "250",
-			      "usd_value": "261.1",
-		      }
-		  },
+                      "COMP": {
+                              "amount": "3.5",
+                              "usd_value": "892.5",
+                          },
+                       "DAI": {
+                              "amount": "250",
+                              "usd_value": "261.1",
+                      }
+                  },
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-		      "ZRX": {
-		          "amount": "0.55",
-			  "usd_value": "86.1"
-		      }
-		  }
-	       },
-	       "debt_loss": {
+                      "ZRX": {
+                          "amount": "0.55",
+                          "usd_value": "86.1"
+                      }
+                  }
+               },
+               "debt_loss": {
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-		       "ETH": {
-			      "amount": "0.1",
-			      "usd_value": "30.5",
-		      }
-		  }
-	       },
-	       "liquidation_profit": {
+                       "ETH": {
+                              "amount": "0.1",
+                              "usd_value": "30.5",
+                      }
+                  }
+               },
+               "liquidation_profit": {
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-		       "ETH": {
-			      "amount": "0.00005",
-			      "usd_value": "0.023",
-		      }
-		  }
-	       },
-	       "rewards": {
+                       "ETH": {
+                              "amount": "0.00005",
+                              "usd_value": "0.023",
+                      }
+                  }
+               },
+               "rewards": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-		      "COMP": {
-			      "amount": "3.5",
-			      "usd_value": "892.5",
-			  },
-	          }
-	       }
+                      "COMP": {
+                              "amount": "3.5",
+                              "usd_value": "892.5",
+                          },
+                  }
+               }
           },
           "message": ""
       }
@@ -3918,17 +3918,17 @@ Getting Uniswap trades
       {
         "result": {
           "0x21d05071cA08593e13cd3aFD0b4869537e015C92": [{
-	      "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
-	      "amount": "1411.453463704718081611",
-	      "base_asset": "DAI",
-	      "fee": "0",
-	      "fee_currency": "WETH",
-	      "location": "uniswap",
-	      "pair": "DAI_WETH",
-	      "quote_asset": "WETH",
-	      "rate": "371.4351220275573898976315789",
+              "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
+              "amount": "1411.453463704718081611",
+              "base_asset": "DAI",
+              "fee": "0",
+              "fee_currency": "WETH",
+              "location": "uniswap",
+              "pair": "DAI_WETH",
+              "quote_asset": "WETH",
+              "rate": "371.4351220275573898976315789",
               "swaps": [{
-	          "amount0_in": "0",
+                  "amount0_in": "0",
                   "amount0_out": "1411.453463704718081611",
                   "amount1_in": "3.8",
                   "amount1_out": "0",
@@ -3939,25 +3939,25 @@ Getting Uniswap trades
                   "token0": "DAI",
                   "token1": "WETH",
                   "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}],
-	      "timestamp": 1603056982,
-	      "trade_id": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900-0",
-	      "trade_type": "buy",
-	      "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}, {
-	      "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
-	      "amount": "904.171423330858608178",
-	      "base_asset": "DAI",
-	      "fee": "0",
-	      "fee_currency": "ALEPH",
-	      "location": "uniswap",
-	      "pair": "DAI_ALEPH",
-	      "quote_asset": {
-	          "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
-		  "name": "aleph.im v2",
-		  "symbol": "ALEPH"
-	      },
-	      "rate": "0.1604821621994156262081817395",
-	      "swaps": [{
-	          "amount0_in": "5634.092979176915803392",
+              "timestamp": 1603056982,
+              "trade_id": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900-0",
+              "trade_type": "buy",
+              "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}, {
+              "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
+              "amount": "904.171423330858608178",
+              "base_asset": "DAI",
+              "fee": "0",
+              "fee_currency": "ALEPH",
+              "location": "uniswap",
+              "pair": "DAI_ALEPH",
+              "quote_asset": {
+                  "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
+                  "name": "aleph.im v2",
+                  "symbol": "ALEPH"
+              },
+              "rate": "0.1604821621994156262081817395",
+              "swaps": [{
+                  "amount0_in": "5634.092979176915803392",
                   "amount0_out": "0",
                   "amount1_in": "0",
                   "amount1_out": "2.411679959413889526",
@@ -3968,7 +3968,7 @@ Getting Uniswap trades
                   "token0": {"ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628", "name": "aleph.im v2", "symbol": "ALEPH"},
                   "token1": "WETH",
                   "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}, {
-		  "amount0_in": "0",
+                  "amount0_in": "0",
                   "amount0_out": "904.171423330858608178",
                   "amount1_in": "2.411679959413889526",
                   "amount1_out": "0",
@@ -3979,10 +3979,10 @@ Getting Uniswap trades
                   "token0": "DAI",
                   "token1": "WETH",
                   "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}],
-	      "timestamp": 1602796833,
-	      "trade_id": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6-0",
-	      "trade_type": "buy",
-	      "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}
+              "timestamp": 1602796833,
+              "trade_id": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6-0",
+              "trade_type": "buy",
+              "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}
           ],
         },
         "message": "",
@@ -4056,42 +4056,42 @@ Getting yearn finance vaults balances
       {
           "result": {
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-	          "YCRV Vault": {
-		      "underlying_token": "yDAI+yUSDC+yUSDT+yTUSD",
-		      "vault_token": "yyDAI+yUSDC+yUSDT+yTUSD",
-		      "underlying_value": {
-		          "amount": "25", "usd_value": "150"
-		      },
-		      "vault_value": {
-		          "amount": "19", "usd_value": "150"
-		      },
-		      "roi": "25.55%",
-		  },
-		  "YYFI Vault": {
-		      "underlying_token": "YFI",
-		      "vault_token": "yYFI",
-		      "underlying_value": {
-		          "amount": "25", "usd_value": "150"
-		      },
-		      "vault_value": {
-		          "amount": "19", "usd_value": "150"
-		      },
-		      "roi": "5.35%",
-		  }
-	      },
+                  "YCRV Vault": {
+                      "underlying_token": "yDAI+yUSDC+yUSDT+yTUSD",
+                      "vault_token": "yyDAI+yUSDC+yUSDT+yTUSD",
+                      "underlying_value": {
+                          "amount": "25", "usd_value": "150"
+                      },
+                      "vault_value": {
+                          "amount": "19", "usd_value": "150"
+                      },
+                      "roi": "25.55%",
+                  },
+                  "YYFI Vault": {
+                      "underlying_token": "YFI",
+                      "vault_token": "yYFI",
+                      "underlying_value": {
+                          "amount": "25", "usd_value": "150"
+                      },
+                      "vault_value": {
+                          "amount": "19", "usd_value": "150"
+                      },
+                      "roi": "5.35%",
+                  }
+              },
           "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-	      "YALINK Vault": {
-		      "underlying_token": "aLINK",
-		      "vault_token": "yaLINK",
-		      "underlying_value": {
-		          "amount": "25", "usd_value": "150"
-		      },
-		      "vault_value": {
-		          "amount": "19", "usd_value": "150"
-		      },
-		      "roi": "35.15%",
-	      }
-	  }
+              "YALINK Vault": {
+                      "underlying_token": "aLINK",
+                      "vault_token": "yaLINK",
+                      "underlying_value": {
+                          "amount": "25", "usd_value": "150"
+                      },
+                      "vault_value": {
+                          "amount": "19", "usd_value": "150"
+                      },
+                      "roi": "35.15%",
+              }
+          }
           },
           "message": ""
       }
@@ -4149,88 +4149,88 @@ Getting yearn finance vaults historical data
       {
           "result": {
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-	          "YCRV Vault": {
-		      "events": [{
-		          "event_type": "deposit",
-			  "block_number": 1,
-			  "timestamp": 1,
-			  "from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
-			  "from_value": {
-			      "amount": "115000", "usd_value": "119523.23"
-			  },
-			  "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  "to_value": {
-			      "amount": "108230.234", "usd_value": "119523.23"
-			  },
-			  "realized_pnl": null,
-			  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-			  "log_index": 1
-		      }, {
-		          "event_type": "withdraw",
-			  "block_number": 1,
-			  "timestamp": 1,
-			  "from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  "from_value": {
-			      "amount": "108230.234", "usd_value": "125321.24"
-			  },
-			  "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-			  "to_value": {
-			      "amount": "117500.23", "usd_value": "123500.32"
-			  },
-			  "realized_pnl": {
-			      "amount": "2500.23", "usd_value": "2750.452"
-			  },
-			  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-			  "log_index": 1
-		      }],
-		      "profit_loss": {
-			      "amount": "2500.23", "usd_value": "2750.452"
-		      }
-		  },
-		  "YYFI Vault": {
-		      "events": [{
-		          "event_type": "deposit",
-			  "block_number": 1,
-			  "timestamp": 1,
-			  "from_asset": "YFI",
-			  "from_value": {
-			      "amount": "5", "usd_value": "155300.23"
-			  },
-			  "to_asset": "yYFI",
-			  "to_value": {
-			      "amount": "4.97423", "usd_value": "154300.44"
-			  },
-			  "realized_pnl": null,
-			  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-			  "log_index": 1
-		      }],
-		      "profit_loss": {
-			      "amount": "0.05", "usd_value": "1500"
-		      }
-	      }
-	  },
+                  "YCRV Vault": {
+                      "events": [{
+                          "event_type": "deposit",
+                          "block_number": 1,
+                          "timestamp": 1,
+                          "from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
+                          "from_value": {
+                              "amount": "115000", "usd_value": "119523.23"
+                          },
+                          "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "to_value": {
+                              "amount": "108230.234", "usd_value": "119523.23"
+                          },
+                          "realized_pnl": null,
+                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                          "log_index": 1
+                      }, {
+                          "event_type": "withdraw",
+                          "block_number": 1,
+                          "timestamp": 1,
+                          "from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "from_value": {
+                              "amount": "108230.234", "usd_value": "125321.24"
+                          },
+                          "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "to_value": {
+                              "amount": "117500.23", "usd_value": "123500.32"
+                          },
+                          "realized_pnl": {
+                              "amount": "2500.23", "usd_value": "2750.452"
+                          },
+                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                          "log_index": 1
+                      }],
+                      "profit_loss": {
+                              "amount": "2500.23", "usd_value": "2750.452"
+                      }
+                  },
+                  "YYFI Vault": {
+                      "events": [{
+                          "event_type": "deposit",
+                          "block_number": 1,
+                          "timestamp": 1,
+                          "from_asset": "YFI",
+                          "from_value": {
+                              "amount": "5", "usd_value": "155300.23"
+                          },
+                          "to_asset": "yYFI",
+                          "to_value": {
+                              "amount": "4.97423", "usd_value": "154300.44"
+                          },
+                          "realized_pnl": null,
+                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                          "log_index": 1
+                      }],
+                      "profit_loss": {
+                              "amount": "0.05", "usd_value": "1500"
+                      }
+              }
+          },
           "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-	      "YSRENCURVE Vault": {
-		      "events": [{
-		          "event_type": "deposit",
-			  "block_number": 1,
-			  "timestamp": 1,
-			  "from_asset": "crvRenWSBTC",
-			  "from_value": {
-			      "amount": "20", "usd_value": "205213.12"
-			  },
-			  "to_asset": "ycrvRenWSBTC",
-			  "to_value": {
-			      "amount": "19.8523", "usd_value": "2049874.23"
-			  },
-			  "realized_pnl": null,
-			  "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-			  "log_index": 1
-		      }],
-		      "profit_loss": {
-			      "amount": "0.1", "usd_value": "1984.23"
-		      }
-	      }
+              "YSRENCURVE Vault": {
+                      "events": [{
+                          "event_type": "deposit",
+                          "block_number": 1,
+                          "timestamp": 1,
+                          "from_asset": "crvRenWSBTC",
+                          "from_value": {
+                              "amount": "20", "usd_value": "205213.12"
+                          },
+                          "to_asset": "ycrvRenWSBTC",
+                          "to_value": {
+                              "amount": "19.8523", "usd_value": "2049874.23"
+                          },
+                          "realized_pnl": null,
+                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                          "log_index": 1
+                      }],
+                      "profit_loss": {
+                              "amount": "0.1", "usd_value": "1984.23"
+                      }
+              }
           }},
           "message": ""
       }
@@ -4292,36 +4292,36 @@ Getting Eth2 Staking details
       {
         "result": {
           "deposits": [{
-	      "from_address": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
-	      "pubkey": "0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b",
-	      "withdrawal_credentials": "0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499",
-	      "value": {
-	          "amount": "32", "usd_value": "11360"
-	      },
-	      "validator_index": 9,
-	      "tx_hash": "0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1",
-	      "log_index": 22
-	      }, {
-	      "from_address": "0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19",
-	      "pubkey": "0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3",
-	      "withdrawal_credentials": "0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817",
-	      "value": {
-	          "amount": "32", "usd_value": "11860"
-	      },
-	      "validator_index": 1650,
-	      "tx_hash": "0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7",
-	      "log_index": 221
-e	  }],
-	  "details": [{
-	      "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
-	      "index": 9,
-	      "balance": {"amount": "32.101", "usd_value": "11399"},
-	      "performance_1d": {"amount": "0.1", "usd_value": "100"},
-	      "performance_1w": {"amount": "0.7", "usd_value": "700"},
-	      "performance_1m": {"amount": "3", "usd_value": "3000"},
-	      "performance_1y": {"amount": "36.5", "usd_value": "36500"}
-	  }]
-	},
+              "from_address": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
+              "pubkey": "0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b",
+              "withdrawal_credentials": "0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499",
+              "value": {
+                  "amount": "32", "usd_value": "11360"
+              },
+              "validator_index": 9,
+              "tx_hash": "0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1",
+              "log_index": 22
+              }, {
+              "from_address": "0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19",
+              "pubkey": "0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3",
+              "withdrawal_credentials": "0x00cfe1c10347d642a8b8daf86d23bcb368076972691445de2cf517ff43765817",
+              "value": {
+                  "amount": "32", "usd_value": "11860"
+              },
+              "validator_index": 1650,
+              "tx_hash": "0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7",
+              "log_index": 221
+          }],
+          "details": [{
+              "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
+              "index": 9,
+              "balance": {"amount": "32.101", "usd_value": "11399"},
+              "performance_1d": {"amount": "0.1", "usd_value": "100"},
+              "performance_1w": {"amount": "0.7", "usd_value": "700"},
+              "performance_1m": {"amount": "3", "usd_value": "3000"},
+              "performance_1y": {"amount": "36.5", "usd_value": "36500"}
+          }]
+        },
         "message": "",
       }
 
@@ -4364,9 +4364,9 @@ Get addresses to query per protocol
 
       {
           "result": {
-	      "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B", "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
-	      "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
-	  },
+              "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B", "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+              "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+          },
           "message": ""
       }
 
@@ -4405,9 +4405,9 @@ Add address to query per protocol
 
       {
           "result": {
-	      "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B", "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
-	      "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
-	  },
+              "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B", "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+              "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+          },
           "message": ""
       }
 
@@ -4446,9 +4446,9 @@ Remove an address to query per protocol
 
       {
           "result": {
-	      "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"],
-	      "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
-	  },
+              "aave": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"],
+              "makerdao_dsr": ["0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"],
+          },
           "message": ""
       }
 
@@ -4512,8 +4512,8 @@ Adding blockchain accounts
                       }},
                       "xpubs": [{
                               "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-			      "derivation_path": "m/0/0",
-			      "addresses": {
+                              "derivation_path": "m/0/0",
+                              "addresses": {
                                   "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
                                       "amount": "0.5", "usd_value": "3770.075"
                                   },
@@ -4522,14 +4522,14 @@ Adding blockchain accounts
                                   }
                           }}, {
                               "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-			      "derivation_path": "m",
-			      "addresses": {
-				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  },
-				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  }
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
                           }}]
                    },
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
@@ -4538,17 +4538,17 @@ Adding blockchain accounts
                            "GNO": {"amount": "1", "usd_value": "50"},
                            "RDN": {"amount": "1", "usd_value": "1.5"}
                        },
-		  "liabilities": {}
+                  "liabilities": {}
                   }}
               },
               "totals": {
-	          "assets": {
-		      "BTC": {"amount": "1", "usd_value": "7540.15"},
-		      "ETH": {"amount": "10", "usd_value": "1650.53"},
-		      "RDN": {"amount": "1", "usd_value": "1.5"},
-		      "GNO": {"amount": "1", "usd_value": "50"}
-		  },
-		  "liabilities": {}
+                  "assets": {
+                      "BTC": {"amount": "1", "usd_value": "7540.15"},
+                      "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "RDN": {"amount": "1", "usd_value": "1.5"},
+                      "GNO": {"amount": "1", "usd_value": "50"}
+                  },
+                  "liabilities": {}
           },
           "message": ""
       }
@@ -4581,7 +4581,7 @@ Adding BTC xpubs
 
       {
           "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-	  "xpub_type": "p2sh_p2wpkh",
+          "xpub_type": "p2sh_p2wpkh",
           "derivation_path": "m/0/0",
           "label": "my electrum xpub",
           "tags": ["public", "old"]
@@ -4613,8 +4613,8 @@ Adding BTC xpubs
                       }},
                       "xpubs": [{
                               "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-			      "derivation_path": "m/0/0",
-			      "addresses": {
+                              "derivation_path": "m/0/0",
+                              "addresses": {
                                   "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
                                       "amount": "0.5", "usd_value": "3770.075"
                                   },
@@ -4623,14 +4623,14 @@ Adding BTC xpubs
                                   }
                           }}, {
                               "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-			      "derivation_path": "m",
-			      "addresses": {
-				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  },
-				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  }
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
                           }}]
                    },
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
@@ -4639,19 +4639,19 @@ Adding BTC xpubs
                            "GNO": {"amount": "1", "usd_value": "50"},
                            "RDN": {"amount": "1", "usd_value": "1.5"}
                        },
-          	      "liabilities": {}
+                      "liabilities": {}
                   }}
               },
               "totals": {
-	          "assets": {
-		      "BTC": {"amount": "1", "usd_value": "7540.15"},
-		      "ETH": {"amount": "10", "usd_value": "1650.53"},
-		      "RDN": {"amount": "1", "usd_value": "1.5"},
-		      "GNO": {"amount": "1", "usd_value": "50"}
-		  },
-		  "liabilities": {
-		      "DAI": {"amount": "10", "usd_value": "10.2"}
-		  }
+                  "assets": {
+                      "BTC": {"amount": "1", "usd_value": "7540.15"},
+                      "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "RDN": {"amount": "1", "usd_value": "1.5"},
+                      "GNO": {"amount": "1", "usd_value": "50"}
+                  },
+                  "liabilities": {
+                      "DAI": {"amount": "10", "usd_value": "10.2"}
+                  }
           },
           "message": ""
       }
@@ -4709,8 +4709,8 @@ Editing BTC xpubs
                       }},
                       "xpubs": [{
                               "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-			      "derivation_path": "m/0/0",
-			      "addresses": {
+                              "derivation_path": "m/0/0",
+                              "addresses": {
                                   "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
                                       "amount": "0.5", "usd_value": "3770.075"
                                   },
@@ -4719,14 +4719,14 @@ Editing BTC xpubs
                                   }
                           }}, {
                               "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-			      "derivation_path": "m",
-			      "addresses": {
-				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  },
-				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  }
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
                           }}]
                    },
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
@@ -4799,14 +4799,14 @@ Deleting BTC xpubs
                       }},
                       "xpubs": [{
                               "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-			      "derivation_path": "m",
-			      "addresses": {
-				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  },
-				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  }
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
                           }}]
                    },
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
@@ -4815,17 +4815,17 @@ Deleting BTC xpubs
                            "GNO": {"amount": "1", "usd_value": "50"},
                            "RDN": {"amount": "1", "usd_value": "1.5"}
                        },
-          	       "liabilities": {}
+                       "liabilities": {}
                   }}
               },
               "totals": {
-	          "assets": {
-		      "BTC": {"amount": "1", "usd_value": "7540.15"},
-		      "ETH": {"amount": "10", "usd_value": "1650.53"},
-		      "RDN": {"amount": "1", "usd_value": "1.5"},
-		      "GNO": {"amount": "1", "usd_value": "50"}
-		  },
-		  "liabilities": {}
+                  "assets": {
+                      "BTC": {"amount": "1", "usd_value": "7540.15"},
+                      "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "RDN": {"amount": "1", "usd_value": "1.5"},
+                      "GNO": {"amount": "1", "usd_value": "50"}
+                  },
+                  "liabilities": {}
           },
           "message": ""
       }
@@ -4939,8 +4939,8 @@ Removing blockchain accounts
                       }},
                       "xpubs": [{
                               "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-			      "derivation_path": "m/0/0",
-			      "addresses": {
+                              "derivation_path": "m/0/0",
+                              "addresses": {
                                   "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
                                       "amount": "0.5", "usd_value": "3770.075"
                                   },
@@ -4949,19 +4949,19 @@ Removing blockchain accounts
                                   }
                           }}, {
                               "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-			      "derivation_path": "m",
-			      "addresses": {
-				  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  },
-				  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-				      "amount": "0.5", "usd_value": "3770.075"
-				  }
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
                           }}]
               }},
               "totals": {
                   "assets": {"BTC": {"amount": "1", "usd_value": "7540.15"}},
-		  "liabilities": {}
+                  "liabilities": {}
               }
           },
           "message": ""

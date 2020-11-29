@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.9.1 <2020-11-29>`
 * :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
   - 1inch
   - my ether walet
@@ -35,6 +36,7 @@ Changelog
   - `88mph (MPH) <https://www.coingecko.com/en/coins/88mph>`__
   - `zLOT (ZLOT) <https://www.coingecko.com/en/coins/zlot>`__
   - `tBTC (TBTC) <https://www.coingecko.com/en/coins/tbtc>`__
+  - `Cornichon (CORN) <https://www.coingecko.com/en/coins/cornichon>`__
 
 * :release:`1.9.0 <2020-11-20>`
 * :feature:`717` Uniswap v2 LP balances are now detected by Rotki. Faster balance queries, swaps history and LP events history is also supported for premium users. Finally uniswap trades are now taken into account in the profit/loss report for premium users.
