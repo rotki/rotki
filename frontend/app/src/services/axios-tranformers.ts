@@ -6,7 +6,7 @@ const isNumber = /^-?\d+(\.\d+)?(E-\d{0,2})?$/;
 const createReviver = (
   numericKeys: string[]
 ): ((key: string, value: any) => any) => (key: string, value: any) => {
-  const checkForBN = numericKeys.includes(key) || numericKeys.length === 0;
+  const checkForBN = numericKeys.includes(key);
   if (
     checkForBN &&
     value &&

@@ -17,6 +17,7 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import HashLink from '@/components/helper/HashLink.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { DebugSettings } from '@/electron-main/ipc';
 import { api } from '@/services/rotkehlchen-api';
 
@@ -27,7 +28,7 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 4
+    version: 5
   };
   // Globally registered components are also provided to the premium components.
   Vue.component('AmountDisplay', AmountDisplay);
@@ -48,6 +49,8 @@ export const setupPremium = () => {
   Vue.component('LocationDisplay', LocationDisplay);
   Vue.component('RefreshHeader', RefreshHeader);
   Vue.component('UniswapPoolAsset', UniswapPoolAsset);
+  // version 5
+  Vue.component('AssetSelect', AssetSelect);
 };
 
 function findComponents(): string[] {
