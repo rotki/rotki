@@ -5392,6 +5392,15 @@
         "symbol": "GLC",
         "type": "own chain"
     },
+    "GLM": {
+        "coingecko": "golem",
+        "ethereum_address": "0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429",
+        "ethereum_token_decimals": 18,
+        "name": "Golem",
+        "started": 1605690833,
+        "symbol": "GLM",
+        "type": "ethereum token"
+    },
     "GML": {
         "active": false,
         "coingecko": "",
@@ -5425,6 +5434,7 @@
         "ethereum_token_decimals": 18,
         "name": "Golem",
         "started": 1478810650,
+        "swapped_for": "GLM",
         "symbol": "GNT",
         "type": "ethereum token"
     },
@@ -13783,7 +13793,7 @@
         "type": "ethereum token"
     },
     "BCHA": {
-        "coingecko": "bitcoin-cash-abc",
+        "coingecko": "bitcoin-cash-abc-2",
         "forked": "BCH",
         "name": "Bitcoin ABC",
         "started": 1605474360,
@@ -13805,7 +13815,7 @@
         "type": "own chain"
     },
     "FRONT": {
-        "coingecko": "frontier",
+        "coingecko": "frontier-token",
         "ethereum_address": "0xf8C3527CC04340b208C854E985240c02F7B7793f",
         "ethereum_token_decimals": 18,
         "name": "Frontier Token",
@@ -13890,12 +13900,59 @@
         "type": "own chain"
     },
     "SHR": {
-        "coingecko": "sharetoken",
+        "coingecko": "sharering",
         "ethereum_address": "0xd98F75b1A3261dab9eEd4956c93F33749027a964",
         "ethereum_token_decimals": 2,
         "name": "ShareToken",
         "started": 1604676299,
         "symbol": "SHR",
+        "type": "ethereum token"
+    },
+    "HEGIC": {
+        "coingecko": "hegic",
+        "ethereum_address": "0x584bC13c7D411c00c01A62e8019472dE68768430",
+        "ethereum_token_decimals": 18,
+        "name": "Hegic",
+        "started": 1596888964,
+        "symbol": "HEGIC",
+        "type": "ethereum token"
+    },
+    "PROM": {
+        "coingecko": "prometeus",
+        "ethereum_address": "0xfc82bb4ba86045Af6F327323a46E80412b91b27d",
+        "ethereum_token_decimals": 18,
+        "name": "Prometeus",
+        "started": 1558252145,
+        "symbol": "PROM",
+        "type": "ethereum token"
+    },
+    "MPH": {
+        "coingecko": "88mph",
+        "cryptocompare": "88MPH",
+        "ethereum_address": "0x8888801aF4d980682e47f1A9036e589479e835C5",
+        "ethereum_token_decimals": 18,
+        "name": "88mph",
+        "started": 1605809018,
+        "symbol": "MPH",
+        "type": "ethereum token"
+    },
+    "ZLOT": {
+        "coingecko": "zlot",
+        "cryptocompare": "",
+        "ethereum_address": "0xA8e7AD77C60eE6f30BaC54E2E7c0617Bd7B5A03E",
+        "ethereum_token_decimals": 18,
+        "name": "zLOT",
+        "started": 1603240380,
+        "symbol": "ZLOT",
+        "type": "ethereum token"
+    },
+    "TBTC": {
+        "coingecko": "tbtc",
+        "ethereum_address": "0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa",
+        "ethereum_token_decimals": 18,
+        "name": "tBTC",
+        "started": 1600188723,
+        "symbol": "TBTC",
         "type": "ethereum token"
     }
 }

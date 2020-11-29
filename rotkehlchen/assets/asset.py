@@ -124,6 +124,9 @@ WORLD_TO_KRAKEN = {
     'FIL': 'FIL',
     'UNI': 'UNI',
     'YFI': 'YFI',
+    'ANT': 'ANT',
+    'KEEP': 'KEEP',
+    'TBTC': 'TBTC',
 }
 
 WORLD_TO_BINANCE = {

@@ -133,23 +133,40 @@ def _query_web3_get_logs(
     return events
 
 
+# TODO: Ideally all these should become configurable
+# Taking LINKPOOL out since it's just really too slow and seems to not
+# respond to the batched calls almost at all. Combined with web3.py retries
+# this makes the tokens balance queries super slow.
 OPEN_NODES = (
     NodeName.MYCRYPTO,
     NodeName.BLOCKSCOUT,
     NodeName.AVADO_POOL,
+    NodeName.ONEINCH,
+    NodeName.MYETHERWALLET,
+    # NodeName.LINKPOOL,
+    NodeName.CLOUDFLARE_ETH,
     NodeName.ETHERSCAN,
 )
 ETHEREUM_NODES_TO_CONNECT_AT_START = (
     NodeName.OWN,
     NodeName.MYCRYPTO,
     NodeName.BLOCKSCOUT,
+    NodeName.ONEINCH,
     NodeName.AVADO_POOL,
+    NodeName.ONEINCH,
+    NodeName.MYETHERWALLET,
+    # NodeName.LINKPOOL,
+    NodeName.CLOUDFLARE_ETH,
 )
 OPEN_NODES_WEIGHT_MAP = {  # Probability with which to select each node
-    NodeName.ETHERSCAN: 0.5,
-    NodeName.MYCRYPTO: 0.25,
-    NodeName.BLOCKSCOUT: 0.2,
+    NodeName.ETHERSCAN: 0.3,
+    NodeName.MYCRYPTO: 0.15,
+    NodeName.BLOCKSCOUT: 0.1,
     NodeName.AVADO_POOL: 0.05,
+    NodeName.ONEINCH: 0.15,
+    NodeName.MYETHERWALLET: 0.15,
+    # NodeName.LINKPOOL: 0.05,
+    NodeName.CLOUDFLARE_ETH: 0.1,
 }
 
 
@@ -355,7 +372,7 @@ class EthereumManager():
 
             try:
                 result = method(web3, **kwargs)
-            except (RemoteError, BlockchainQueryError, requests.exceptions.HTTPError) as e:
+            except (RemoteError, BlockchainQueryError, requests.exceptions.RequestException) as e:
                 log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
                 # Catch all possible errors here and just try next node call
                 continue
@@ -394,7 +411,7 @@ class EthereumManager():
         eth_resp: Optional[Dict[str, str]]
         try:
             eth_resp = request_get_dict(url)
-        except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.ReadTimeout):
+        except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.RequestException):
             eth_resp = None
 
         block_number: Optional[int]
