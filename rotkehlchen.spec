@@ -1,6 +1,5 @@
 # -*- mode: python -*-
-from __future__ import print_function
-
+from __future__ import print_function  # isort:skip
 import platform
 import sys
 from distutils.spawn import find_executable
@@ -89,6 +88,8 @@ a = Entrypoint(
         ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.meta', 'rotkehlchen/data'),
+        ('rotkehlchen/data/uniswapv2_lp_tokens.json', 'rotkehlchen/data'),
+        ('rotkehlchen/data/uniswapv2_lp_tokens.meta', 'rotkehlchen/data'),
     ],
     excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'packaging'],
 )
