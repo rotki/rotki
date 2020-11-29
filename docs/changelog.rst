@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.9.1 <2020-11-29>`
 * :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
   - 1inch
   - my ether walet
