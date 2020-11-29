@@ -223,7 +223,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
         selection.pop();
       }
     } else {
-      for (const { address } of this.nonExpandedBalances) {
+      for (const { address } of this.visibleBalances) {
         if (selection.includes(address)) {
           continue;
         }
@@ -248,7 +248,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   }
 
   get allSelected(): boolean {
-    const strings = this.nonExpandedBalances.map(value => value.address);
+    const strings = this.visibleBalances.map(value => value.address);
     return (
       strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
     );

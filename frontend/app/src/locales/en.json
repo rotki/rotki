@@ -692,6 +692,9 @@
   },
   "account_form": {
     "labels": {
+      "addresses": "Addresses",
+      "addresses_entries": "{count} total entries",
+      "addresses_hint": "Insert multiple comma separated addresses",
       "blockchain": "Choose blockchain",
       "account": "Account",
       "label": "Label",
@@ -699,7 +702,8 @@
         "xpub": "XPUB",
         "derivation_path": "Derivation Path",
         "derivation_path_hint": "Optional"
-      }
+      },
+      "multiple": "Add multiple addresses"
     },
     "validation": {
       "address_non_empty": "The address cannot be empty",

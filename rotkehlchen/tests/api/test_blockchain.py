@@ -1428,7 +1428,11 @@ def test_remove_blockchain_accounts(
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+            outcome = wait_for_async_task_with_result(
+                server=rotkehlchen_api_server,
+                task_id=task_id,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
+            )
         else:
             outcome = assert_proper_response_with_result(response)
 
