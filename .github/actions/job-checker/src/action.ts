@@ -1,12 +1,12 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
-export async function getPullRequestFiles(): Promise<string[]> {
+export async function getPullRequestFiles(): Promise<string[] | null> {
   const token = core.getInput('token', {required: true})
   const client = github.getOctokit(token)
   const {context} = github
   if (!context.payload.pull_request) {
-    throw new Error('not a pr')
+    return null
   }
   const {number} = context.payload.pull_request
 

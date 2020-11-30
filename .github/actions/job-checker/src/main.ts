@@ -10,6 +10,13 @@ async function run(): Promise<void> {
 
     const changes = await getPullRequestFiles()
 
+    if (changes === null) {
+      core.setOutput('frontend_tasks', true)
+      core.setOutput('backend_tasks', true)
+      core.setOutput('documentation_tasks', true)
+      return
+    }
+
     if (changeDetected(frontendPaths, changes)) {
       core.setOutput('frontend_tasks', true)
     }
