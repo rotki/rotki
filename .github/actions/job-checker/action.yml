@@ -1,0 +1,28 @@
+name: 'Job Checker'
+description: 'Checks changes to decided which jobs are required to run'
+author: 'Rotki Solutions GmbH'
+inputs:
+  token:
+    description: 'Github token'
+    required: true
+  backend_paths:
+    description: 'Paths of files or directories that will trigger the backend tasks'
+    required: true
+  frontend_paths:
+    description: 'Paths of files or directories that will trigger the frontend tasks'
+    required: true
+  documentation_paths:
+    description: 'Paths of files or directories that will trigger the documentation build'
+    required: true
+
+outputs:
+  backend_tasks:
+    description: 'Backend tasks should be executed'
+  frontend_tasks:
+    description: 'Frontend tasks should be executed'
+  documentation_tasks:
+    description: 'Documentation tasks should be executed'
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
