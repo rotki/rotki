@@ -200,6 +200,8 @@ jobs:
         run: bash <(curl -s https://codecov.io/bash) -F backend
 
   test-e2e:
+    needs: [ 'check-changes' ]
+    if: ${{ needs.check-changes.outputs.frontend_tasks }} || ${{ needs.check-changes.outputs.backend_tasks }}
     strategy:
       matrix:
         os: [ubuntu-latest]
