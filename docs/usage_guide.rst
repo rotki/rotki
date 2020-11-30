@@ -507,3 +507,13 @@ Rotki saves user data by default in a different directory per OS. For each OS da
 Before v1.6.0 Rotki was saving data in ``$USER/.rotkehlchen``. From v1.6.0 that directory got migrated to the OS equivalent standard directory and it should be safe for the users to delete the old directory as long as the new directory contains the migrated DB.
 
 A very good idea about the rotki data directory would be to be making frequent backups of it as it contains all of the data of all of your rotki accounts and cache data for historical price queries.
+
+Troubleshooting
+*****************
+
+Local system clock is not synchronized
+========================================
+
+Some remote servers (e.g. exchanges) require your local system clock synchronized with theirs. In case of not having it synchronized the request will fail and Rotki will either display a specific error message (i.e. 409 status code and a *local system clock is not sync* message) or the generic 500 error one (please, :ref:`report it to us <bug_reporting>`).
+
+Follow your OS official guidelines about how to synchronize the clock with an Internet Time Server and try again.
