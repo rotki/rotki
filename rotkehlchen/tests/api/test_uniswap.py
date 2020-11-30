@@ -75,6 +75,8 @@ def test_get_balances(
 
     Checks the functionality both for the graph queries (when premium) and simple
     onchain queries (without premium)
+
+    THIS IS SUPER FREAKING SLOW. BE WARNED.
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -95,7 +97,7 @@ def test_get_balances(
         outcome = wait_for_async_task(
             server=rotkehlchen_api_server,
             task_id=task_id,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 10,
         )
         assert outcome['message'] == ''
         result = outcome['result']
