@@ -3,6 +3,8 @@ Rotki Contribution Guide
 
 Rotki is an opensource project so help is really appreciated.
 
+.. _bug_reporting:
+
 Bug Reporting
 *****************
 
@@ -13,7 +15,7 @@ Before reporting an issue, make sure to check the issue tracker for similar ones
 - **Environment**: the operating system and the Rotki version.
 
 Run Rotki in debug mode
-------------------------
+=========================
 
 For running Rotki in debug mode, you can do it either via a config file or the app UI:
 
@@ -27,7 +29,7 @@ For running Rotki in debug mode, you can do it either via a config file or the a
 You can find the app logs location by going to "Help" menu at the top and then choosing "Logs Directory".
 
 Feature Requests
-********************
+******************
 
 Use the `feature request <https://github.com/rotki/rotki/issues/new?template=feature_request.md>`_ template.
 
@@ -36,14 +38,14 @@ Describe exactly what it is that you would like to see added to rotki and why th
 Please note that feature requests are just that. Requests. There is no guarantee that they will be worked on in the near future.
 
 Contributing as a Developer
-********************************
+*****************************
 
 Being an opensource project, we welcome contributions in the form of source code. To do that you will have to work on an issue and open a Pull Request for it.
 
 In order for your Pull Request to be considered it will need to pass the automated CI tests and you will also need to sign the CLA (Contributor's license agreement).
 
 Committing Rules
-=====================
+==================
 
 For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/>`_ guide. It's all really good advice. Some rules that you should always follow though are:
 
@@ -54,7 +56,7 @@ For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/>`_ g
 5. **Never** merge master on the branch, always rebase on master. To delete/amend/edit/combine commits follow `this tutorial <https://robots.thoughtbot.com/git-interactive-rebase-squash-amend-rewriting-history>`_.
 
 Adding new assets to Rotki
-================================
+============================
 
 To add new assets to rotki you need to edit `all assets file <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/data/all_assets.json>`__.
 
@@ -73,31 +75,53 @@ To add new assets to rotki you need to edit `all assets file <https://github.com
 
 As an example look above. The key should be unique as it's the unique identifier for each asset. Then the possible keys are:
 
-- ``coingecko``: The coingecko identifier for the asset. It's used to pull coingecko logo and prices. If not supported by coingecko it should be an empty string.
-- ``cryptocompare``: This is an optional entry. If it's missing the cryptocompare identifier is considered the same as as the asset key. If not supported by cryptocompare the empty string should be given.
-- ``ethereum_address``: If this is an ethereum token give the checksummed ethereum address here
-- ``ethereum_token_decimal``: If this is an ethereum token give the ERC20 decimals here
-- ``name``: Give the name of the asset here
-- ``started``: The timestamp where data for the assets should first be available. The launch of a chain, deploment of a token etc.
-- ``symbol``: The token symbol. Does not need to be unique (identifier should be)
+- ``coingecko``: The CoinGecko identifier for the asset. It's used to pull CoinGecko logo and prices. If not supported by CoinGecko it should be an empty string. To see how to get the CoinGecko identifier go to :ref:`get CoinGecko asset identifier <get_cryptocompare_asset_identifier>`.
+- ``cryptocompare``: The CryptoCompare identifier for the asset. It's used to pull historical prices. This is an optional entry. If missing, the identifier is considered the same as as the asset key. If not supported by CryptoCompare it should be an empty string. To see how to get the CryptoCompare identifier go to :ref:`get CryptoCompare asset identifier <get_cryptocompare_asset_identifier>`.
+- ``ethereum_address``: If this is an ethereum token give the checksummed ethereum address here.
+- ``ethereum_token_decimal``: If this is an ethereum token give the ERC20 decimals here.
+- ``name``: Give the name of the asset here.
+- ``started``: The UNIX timestamp (in seconds) where data for the assets should first be available. Use the appropriate blockchain explorer for getting the date of the token deployment or the launch of the chain. In case of a leveraged token (e.g. "BCHDOWN") either use the date when CryptoCompare/CoinGecko started to track it or when the exchange opened its trade. Please, in case of `converting a date to a UNIX timestamp <https://www.epochconverter.com/>`__ make sure the date is in UTC/GMT.
+- ``symbol``: The token symbol. Does not need to be unique (identifier should be).
 - ``type``: The type of the asset. Standalone chain, ethereum token etc. For possible values for this field check `here <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/assets/resolver.py#L12>`__.
 - ``forked``: This is an optional field. Given to specify if an asset is a fork of another asset. For example ``ETC`` should have ``ETH`` here.
 - ``swapped_for``: This is an optional field. Given to specify if an asset is swapped for another asset. For example ``LEND`` should have ``AAVE`` here.
 
-Once an asset is added here the md5sum of the file should be regenerated and added to the `meta file <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/data/all_assets.meta>`__. And the version in the meta file should also be bumped. The same changes should be done in the unit test that checks exactly for the md5 sum of the assets file.
+Once an asset is added and both CoinGecko and CryptoCompare identifiers have been validated (if existing), the md5sum of the file should be regenerated and added to the `meta file <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/data/all_assets.meta>`__. And the version in the meta file should also be bumped. The same changes should be done in the unit test that checks exactly for the md5 sum of the assets file.
 
-One important gotcha is to check for cryptocompare asset prices. Unfortunately you need to to check the page of each asset in cryptocompare. For example for `$BASED <https://www.cryptocompare.com/coins/based/overview>`__ you would need to check the page and then try to see the api call for USD price to see `if it exists <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=USD&ts=1611915600>`__. If this returns something like:
+.. _get_coingecko_asset_identifier:
+
+Get CoinGecko asset identifier
+--------------------------------
+
+In most cases the CoinGecko asset identifier matches the URL one, for example "weth" for `WETH <https://www.coingecko.com/en/coins/weth>`__. However, sometimes it doesn't, for example "sharering" for `SHR <https://www.coingecko.com/en/coins/sharetoken>`__ ("sharetoken" in the URL).
+
+This identifiers mismatch can be detected by running the `this test <https://github.com/rotki/rotki/blob/develop/rotkehlchen/tests/unit/test_assets.py#L91>`__:
+
+::
+
+    python pytestgeventwrapper.py -xs rotkehlchen/tests/unit/test_assets.py::test_coingecko_identifiers_are_reachable
+
+The test warns each mismatch suggesting the potential identifier (e.g. *Suggestion: id:sharering name:ShareToken symbol:shr*). This identifier can be checked via the **GET coins by id endpoint** on the `CryptoCompare API explorer <https://www.coingecko.com/en/api#explore-api>`__.
+
+The test also warns about any asset delisted from CoinGecko. In that case, add the delisted asset identifier in the `coins_delisted_from_coingecko list <https://github.com/rotki/rotki/blob/develop/rotkehlchen/tests/unit/test_assets.py#L95>`__.
+
+.. _get_cryptocompare_asset_identifier:
+
+Get CryptoCompare asset identifier
+------------------------------------
+
+One important gotcha is to check for CryptoCompare asset prices. Unfortunately you need to to check the page of each asset in CryptoCompare. For example for `$BASED <https://www.cryptocompare.com/coins/based/overview>`__ you would need to check the page and then try to see the api call for USD price to see `if it exists <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=USD&ts=1611915600>`__. If this returns something like:
 
 ::
 
    {"Response":"Error","Message":"There is no data for any of the toSymbols USD .","HasWarning":true,"Type":2,"RateLimit":{},"Data":{},"Warning":"There is no data for the toSymbol/s USD ","ParamWithError":"tsyms"}
 
-Then that means you have to check the cryptocompare page and compare directly with the asset they have listed there. Like `so <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=WETH&ts=1611915600>`__ and see that it works. Then you need to edit the cryptocompare mappings in the code to add that special mapping `here <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/externalapis/cryptocompare.py#L45>`__.
+Then that means you have to check the CryptoCompare page and compare directly with the asset they have listed there. Like `so <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=WETH&ts=1611915600>`__ and see that it works. Then you need to edit the CryptoCompare mappings in the code to add that special mapping `here <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/externalapis/cryptocompare.py#L45>`__.
 
-Hopefully this situation with cryptocompare is temporary and they will remove the need for these special mappings soon.
+Hopefully this situation with CryptoCompare is temporary and they will remove the need for these special mappings soon.
 
 Code Testing
-***********************
+**************
 
 Python
 ========
