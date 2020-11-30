@@ -45,7 +45,7 @@ function getPullRequestFiles() {
         const client = github.getOctokit(token);
         const { context } = github;
         if (!context.payload.pull_request) {
-            throw new Error('not a pr');
+            return null;
         }
         const { number } = context.payload.pull_request;
         const { data } = yield client.pulls.listFiles(Object.assign(Object.assign({}, context.repo), { pull_number: number }));
@@ -120,6 +120,12 @@ function run() {
             const frontendPaths = action_1.getInputAsArray('frontend_paths', options);
             const documentationPaths = action_1.getInputAsArray('documentation_paths', options);
             const changes = yield action_1.getPullRequestFiles();
+            if (changes === null) {
+                core.setOutput('frontend_tasks', true);
+                core.setOutput('backend_tasks', true);
+                core.setOutput('documentation_tasks', true);
+                return;
+            }
             if (action_1.changeDetected(frontendPaths, changes)) {
                 core.setOutput('frontend_tasks', true);
             }

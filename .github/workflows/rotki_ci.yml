@@ -201,7 +201,9 @@ jobs:
 
   test-e2e:
     needs: [ 'check-changes' ]
-    if: ${{ needs.check-changes.outputs.frontend_tasks }} || ${{ needs.check-changes.outputs.backend_tasks }}
+    if: |
+      contains(needs.check-changes.outputs.frontend_tasks, true) ||
+      contains(needs.check-changes.outputs.backend_tasks, true)
     strategy:
       matrix:
         os: [ubuntu-latest]
