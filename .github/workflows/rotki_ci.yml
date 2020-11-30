@@ -11,9 +11,36 @@ on:
       - develop
 
 jobs:
+  check-changes:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        node-version: [ 12.x ]
+    runs-on: ${{ matrix.os }}
+    outputs:
+      backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
+      frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
+      documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/actions/job-checker
+        id: checker
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          documentation_paths: |
+            docs
+          backend_paths: |
+            rotkehlchen
+            requirements.txt
+            requirements_dev.txt
+            requirements_lint.txt
+          frontend_paths: |
+            frontend/app
+
+
   check-frontend:
-    env:
-      CI: true
+    needs: ['check-changes']
+    if: ${{ needs.check-changes.outputs.frontend_tasks }}
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -51,7 +78,10 @@ jobs:
       - name: Upload coverage
         working-directory: ./frontend/app
         run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_unit
+
   docs:
+    needs: [ 'check-changes' ]
+    if: ${{ needs.check-changes.outputs.documentation_tasks }}
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -70,7 +100,10 @@ jobs:
           git rev-parse HEAD
       - name: Build html docs
         run: cd docs && make html
+
   lint-backend:
+    needs: ['check-changes']
+    if: ${{ needs.check-changes.outputs.backend_tasks }}
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -91,7 +124,8 @@ jobs:
         run: make lint
 
   test-backend:
-    needs: lint-backend
+    if: ${{ needs.check-changes.outputs.backend_tasks }}
+    needs: ['lint-backend', 'check-changes']
     timeout-minutes: 40
     env:
       CI: true
@@ -164,11 +198,8 @@ jobs:
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash) -F backend
+
   test-e2e:
-    needs: [check-frontend]
-    env:
-      CI: true
-      FILTER: '[ui tests]'
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -177,104 +208,55 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - name: check if ui tests should run
-        id: check
-        run: |
-          readonly local last_log=$(git log -1 --pretty=format:"%s")
-          readonly local count=$(echo "${last_log}" | grep -c "${FILTER}" )
-          if [[ "${count}" -eq 0 ]]; then
-              echo "skipping job, ${FILTER} not found"
-          else
-              echo "::set-output name=ui-tests::true"
-          fi
       - name: Set up python
-        if: contains(steps.check.outputs.ui-tests, true)
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
       - uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux') && contains(steps.check.outputs.ui-tests, true)
         with:
-          path: ~/.cache/pip
+          path: |
+            ~/.cache/pip
+            ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-pip-e2e-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-e2e-
       - uses: actions/cache@v2
-        if: startsWith(runner.os, 'macOS') && contains(steps.check.outputs.ui-tests, true)
         with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-e2e-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-e2e-
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux') && contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'macOS') && contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: ~/Library/Caches/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
-      - uses: actions/cache@v2
-        if: contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            ~/.cache/Cypress
           key: ${{ runner.os }}-node--e2e-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node--e2e-
-      - uses: actions/cache@v2
-        if: contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: ~/.cache/.rotkehlchen-test-dir
-          key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-testdir-
       - name: Setup SQLCipher
-        if: contains(steps.check.outputs.ui-tests, true)
         run: |
-          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
-          then
-            sudo apt-get update
-            sudo apt-get install libxml2-utils
-            ./install_deps.sh
-            sudo ldconfig
-          fi
-          if [ ${{ matrix.os }} == 'macos-latest' ];
-          then
-            brew install sqlcipher
-          fi
+          sudo apt-get update
+          sudo apt-get install libxml2-utils
+          ./install_deps.sh
+          sudo ldconfig
       - name: Setup backend
-        if: contains(steps.check.outputs.ui-tests, true)
         run: |
           pip install -r requirements.txt
           pip install -e .
       - name: Restore dependencies
-        if: contains(steps.check.outputs.ui-tests, true)
         working-directory: ./frontend/app
         run: |
           if ! npm ci --exit-code; then
             npm ci
           fi
       - name: Run integration tests
-        if: contains(steps.check.outputs.ui-tests, true)
         working-directory: ./frontend/app
         run: npm run test:integration-ci
       - name: Upload coverage
-        if: contains(steps.check.outputs.ui-tests, true)
         working-directory: ./frontend/app
         run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_integration
       - uses: actions/upload-artifact@v1
-        if: failure() && contains(steps.check.outputs.ui-tests, true)
+        if: failure()
         with:
           name: screenshots-${{ runner.os }}
           path: ./frontend/app/tests/e2e/screenshots
       - uses: actions/upload-artifact@v1
-        if: always() && contains(steps.check.outputs.ui-tests, true)
+        if: always()
         with:
           name: videos-${{ runner.os }}
           path: ./frontend/app/tests/e2e/videos
