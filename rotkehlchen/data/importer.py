@@ -296,12 +296,18 @@ class DataImporter():
             'lockup_swap_debited',
             'lockup_swap_credited',
             'lockup_swap_rebate',
-            'dynamic_coin_swap_debited',
-            'dynamic_coin_swap_credited',
             'dynamic_coin_swap_bonus_exchange_deposit',
             # we don't handle cryto.com exchange yet
             'crypto_to_exchange_transfer',
             'exchange_to_crypto_transfer',
+            # supercharger actions
+            'supercharger_deposit',
+            'supercharger_withdrawal',
+            # already handled using _import_cryptocom_double_entries
+            'dynamic_coin_swap_debited',
+            'dynamic_coin_swap_credited',
+            'dust_conversion_debited',
+            'dust_conversion_credited',
         ):
             # those types are ignored because it doesn't affect the wallet balance
             # or are not handled here
@@ -312,43 +318,44 @@ class DataImporter():
                 f'cryptocom data import. Ignoring entry',
             )
 
-    def _import_cryptocom_swap(self, data: Any) -> None:
-        """Look for swapping events and handle them as trades.
+    def _import_cryptocom_double_entries(self, data: Any, double_type: str) -> None:
+        """Look for events that have double entries and handle them as trades.
 
-        Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
-        `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
-        This method looks for `dynamic_coin_swap_debited` and `dynamic_coin_swap_credited`
-        entries using the same timestamp to handle them as one trade.
+        This method looks for `*_debited` and `*_credited` entries using the
+        same timestamp to handle them as one trade.
+
+        Known double_type: 'dynamic_coin_swap' or 'dust_conversion'
         """
-        swapping_rows: Dict[Any, Dict[str, Any]] = {}
+        double_rows: Dict[Any, Dict[str, Any]] = {}
         debited_row = None
         credited_row = None
         for row in data:
-            if row['Transaction Kind'] == 'dynamic_coin_swap_debited':
+            if row['Transaction Kind'] == f'{double_type}_debited':
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
                     formatstr='%Y-%m-%d %H:%M:%S',
                     location='crypto.com',
                 )
-                if timestamp not in swapping_rows:
-                    swapping_rows[timestamp] = {}
-                swapping_rows[timestamp]['debited'] = row
-            elif row['Transaction Kind'] == 'dynamic_coin_swap_credited':
+                if timestamp not in double_rows:
+                    double_rows[timestamp] = {}
+                double_rows[timestamp]['debited'] = row
+            elif row['Transaction Kind'] == f'{double_type}_credited':
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
                     formatstr='%Y-%m-%d %H:%M:%S',
                     location='crypto.com',
                 )
-                if timestamp not in swapping_rows:
-                    swapping_rows[timestamp] = {}
-                swapping_rows[timestamp]['credited'] = row
+                if timestamp not in double_rows:
+                    double_rows[timestamp] = {}
+                double_rows[timestamp]['credited'] = row
 
-        for timestamp in swapping_rows:
-            credited_row = swapping_rows[timestamp]['credited']
-            debited_row = swapping_rows[timestamp]['debited']
+        for timestamp in double_rows:
+            credited_row = double_rows[timestamp]['credited']
+            debited_row = double_rows[timestamp]['debited']
             if credited_row is not None and debited_row is not None:
-                notes = 'Coin Swap\nSource: crypto.com (CSV import)'
-                # No fees here since it's coin swapping
+                description = credited_row['Transaction Description']
+                notes = f'{description}\nSource: crypto.com (CSV import)'
+                # No fees here
                 fee = Fee(ZERO)
                 fee_currency = A_USD
 
@@ -376,11 +383,19 @@ class DataImporter():
     def import_cryptocom_csv(self, filepath: Path) -> None:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
-            self._import_cryptocom_swap(data)
+
+            #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
+            # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
+            self._import_cryptocom_double_entries(data, 'dynamic_coin_swap')
             # reset the iterator
             csvfile.seek(0)
             # pass the header since seek(0) make the first row to be the header
             next(data)
+
+            self._import_cryptocom_double_entries(data, 'dust_conversion')
+            csvfile.seek(0)
+            next(data)
+
             for row in data:
                 try:
                     self._consume_cryptocom_entry(row)
