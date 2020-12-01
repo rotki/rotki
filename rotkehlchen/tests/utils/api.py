@@ -14,7 +14,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 if platform.system() == 'Darwin':
     ASYNC_TASK_WAIT_TIMEOUT = 60
 else:
-    ASYNC_TASK_WAIT_TIMEOUT = 30
+    ASYNC_TASK_WAIT_TIMEOUT = 50
 
 
 def _wait_for_listening_port(
