@@ -37,6 +37,7 @@ from rotkehlchen.api.v1.resources import (
     ExchangesResource,
     ExternalServicesResource,
     FiatExchangeRatesResource,
+    HistoryDownloadingResource,
     HistoryExportingResource,
     HistoryProcessingResource,
     IgnoredAssetsResource,
@@ -127,6 +128,7 @@ URLS_V1: URLS = [
     ('/periodic/', PeriodicDataResource),
     ('/history/', HistoryProcessingResource),
     ('/history/export/', HistoryExportingResource),
+    ('/history/download/', HistoryDownloadingResource),
     ('/queried_addresses', QueriedAddressesResource),
     ('/blockchains/ETH/transactions', EthereumTransactionsResource),
     (

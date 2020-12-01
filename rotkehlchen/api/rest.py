@@ -5,14 +5,17 @@ import logging
 import traceback
 from functools import wraps
 from http import HTTPStatus
+from os import rmdir, remove
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, overload
 
 import gevent
-from flask import Response, make_response
+from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
 from typing_extensions import Literal
+from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
@@ -1117,6 +1120,22 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
+    def download_processed_history_csv(self) -> Response:
+        if len(self.rotkehlchen.accountant.csvexporter.all_events_csv) == 0:
+            result_dict = wrap_in_fail_result('No history processed in order to perform an export')
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+        try:
+            return send_file(
+                self.rotkehlchen.accountant.csvexporter.create_zip(),
+                mimetype='application/zip',
+                as_attachment=True,
+                attachment_filename="report.zip",
+            )
+        except FileNotFoundError:
+            return api_response({}, status_code=HTTPStatus.NOT_FOUND)
+
+    @require_loggedin_user()
     def query_periodic_data(self) -> Response:
         data = self.rotkehlchen.query_periodic_data()
         result = process_result(data)
@@ -1984,3 +2003,23 @@ class RestAPI():
             status_code = HTTPStatus.OK
 
         return api_response(result_dict, status_code=status_code)
+
+    @require_loggedin_user()
+    def import_data_from_file(
+            self,
+            source: Literal['cointracking.info', 'crypto.com'],
+            file: FileStorage,
+    ) -> Response:
+        if file.filename is None or not file.filename.endswith('.csv'):
+            result = wrap_in_fail_result(f'{file.filename} is not a csv')
+            return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+
+        temp_directory = Path(mkdtemp())
+        filepath = temp_directory / f'{source}.csv'
+
+        file.save(str(filepath))
+
+        response = self.import_data(source, filepath)
+        remove(filepath)
+        rmdir(temp_directory)
+        return response
