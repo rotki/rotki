@@ -99,7 +99,6 @@ def beaconchain(database, messages_aggregator):
 
 @pytest.fixture
 def blockchain(
-        blockchain_backend,  # pylint: disable=unused-argument
         ethereum_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
