@@ -1,5 +1,4 @@
 import operator
-import os
 from unittest.mock import patch
 
 import gevent
@@ -7,31 +6,11 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.zerion import DefiBalance, DefiProtocol, DefiProtocolBalances
 from rotkehlchen.constants.assets import A_BTC, A_DAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
 from rotkehlchen.typing import SupportedBlockchain
-
-
-@pytest.mark.skipif(
-    os.name == 'nt',
-    reason='Not testing running with geth in windows at the moment',
-)
-@pytest.mark.parametrize('have_blockchain_backend', [True])
-def test_eth_connection_initial_balances(
-        blockchain,
-        inquirer,  # pylint: disable=unused-argument
-):
-    """TODO for this test. Either:
-    1. Not use own chain but use a normal open node for this test.
-    2. If we use own chain, deploy the eth-scan contract there.
-
-    But probably (1) makes more sense
-    """
-    msg = 'Should be connected to ethereum node'
-    assert blockchain.ethereum.web3_mapping.get(NodeName.OWN) is not None, msg
 
 
 def test_query_btc_balances(blockchain):
