@@ -245,7 +245,10 @@ class Binance(ExchangeInterface):
                 # non-increasing nonces. So if two greenlets come in here at
                 # the same time one of them will fail
                 if method in V3_ENDPOINTS or method in WAPI_ENDPOINTS or method in SAPI_ENDPOINTS:
-                    api_version = 3
+                    if method in SAPI_ENDPOINTS:
+                        api_version = 1
+                    else:
+                        api_version = 3
                     # Recommended recvWindows is 5000 but we get timeouts with it
                     call_options['recvWindow'] = 10000
                     call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
@@ -268,7 +271,6 @@ class Binance(ExchangeInterface):
                     apistr = 'api/'
                 request_url = f'{self.uri}{apistr}v{str(api_version)}/{method}?'
                 request_url += urlencode(call_options)
-
                 log.debug('Binance API request', request_url=request_url)
                 try:
                     response = self.session.get(request_url)
@@ -380,7 +382,7 @@ class Binance(ExchangeInterface):
             cross_collaterals = futures_response['crossCollaterals']
             for entry in cross_collaterals:
                 try:
-                    asset = asset_from_binance(entry['asset'])
+                    asset = asset_from_binance(entry['collateralCoin'])
                 except UnsupportedAsset as e:
                     self.msg_aggregator.add_warning(
                         f'Found unsupported binance asset {e.asset_name}. '
@@ -411,7 +413,7 @@ class Binance(ExchangeInterface):
 
                 balance = Balance(amount=amount, usd_value=amount * usd_price)
                 if asset not in balances:
-                    balances[asset] = balance
+                    balances[asset] = balance.to_dict()
                 else:
                     balances[asset]['amount'] += balance.amount
                     balances[asset]['usd_value'] += balance.usd_value

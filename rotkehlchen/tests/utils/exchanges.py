@@ -144,6 +144,31 @@ BINANCE_BALANCES_RESPONSE = """
       "locked": "0.0"
 }]}"""
 
+
+BINANCE_FUTURES_WALLET_RESPONSE = """{
+    "totalCrossCollateral":"5.8238577133",
+    "totalBorrowed":"5.07000000",
+    "totalInterest":"0.0",
+    "asset": "USDT",
+    "crossCollaterals":[
+        {
+            "collateralCoin":"BUSD",
+            "locked":"5.82211108",
+            "loanAmount": "5.07",
+            "currentCollateralRate": "0.87168984",
+            "principalForInterest": "0.0",
+            "interest": "0.0"
+        }, {
+            "collateralCoin":"BTC",
+            "locked":"0",
+            "loanAmount": "0",
+            "currentCollateralRate": "0",
+            "principalForInterest": "0.0",
+            "interest": "0.0"
+        }
+    ]
+}"""
+
 BINANCE_MYTRADES_RESPONSE = """
 [
     {

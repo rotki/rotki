@@ -17,8 +17,12 @@ from rotkehlchen.exchanges.binance import (
 )
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT, A_XMR
-from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE, BINANCE_MYTRADES_RESPONSE
+from rotkehlchen.tests.utils.constants import A_BNB, A_BUSD, A_RDN, A_USDT, A_XMR
+from rotkehlchen.tests.utils.exchanges import (
+    BINANCE_BALANCES_RESPONSE,
+    BINANCE_FUTURES_WALLET_RESPONSE,
+    BINANCE_MYTRADES_RESPONSE,
+)
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Timestamp
@@ -227,6 +231,31 @@ def test_binance_query_balances_unknown_asset(function_scope_binance):
     assert len(balances) == 2
     assert balances[A_BTC]['amount'] == FVal('4723846.89208129')
     assert balances[A_ETH]['amount'] == FVal('4763368.68006011')
+
+    warnings = binance.msg_aggregator.consume_warnings()
+    assert len(warnings) == 2
+    assert 'unknown binance asset IDONTEXIST' in warnings[0]
+    assert 'unsupported binance asset ETF' in warnings[1]
+
+
+def test_binance_query_balances_include_features(function_scope_binance):
+    """Test that querying binance balances includes the futures wallet"""
+    binance = function_scope_binance
+
+    def mock_binance_response(url):  # pylint: disable=unused-argument
+        if 'futures' in url:
+            return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
+        else:
+            return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+
+    with patch.object(binance.session, 'get', side_effect=mock_binance_response):
+        balances, msg = binance.query_balances()
+
+    assert msg == ''
+    assert len(balances) == 3
+    assert balances[A_BTC]['amount'] == FVal('4723846.89208129')
+    assert balances[A_ETH]['amount'] == FVal('4763368.68006011')
+    assert balances[A_BUSD]['amount'] == FVal('5.82211108')
 
     warnings = binance.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
