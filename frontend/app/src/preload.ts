@@ -26,7 +26,6 @@ if (isDevelopment) {
 contextBridge.exposeInMainWorld('interop', {
   openUrl: (url: string) => ipcRenderer.send('OPEN_URL', url),
   closeApp: () => ipcRenderer.send('CLOSE_APP'),
-  openFile: (title: string) => ipcAction('OPEN_FILE', title),
   openDirectory: (title: string) => ipcAction('OPEN_DIRECTORY', title),
   premiumUserLoggedIn: (premiumUser: boolean) =>
     ipcRenderer.send('PREMIUM_USER_LOGGED_IN', premiumUser),

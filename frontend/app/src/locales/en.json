@@ -43,6 +43,13 @@
   "dex_trades": {
     "loading": "@:common.loading.please_wait DEX Trades are @:common.loading.getting_loaded"
   },
+  "file_upload": {
+    "drop_area": "Drop the csv file or {0}",
+    "import_complete": "Import was completed successfully.",
+    "select_file": "Select file",
+    "many_files_selected": "One one csv file must be selected",
+    "only_csv": "Only csv files are allowed"
+  },
   "helpers": {
     "refresh_header": {
       "tooltip": "Refresh {title} data"
@@ -894,7 +901,31 @@
     "csv_export_error": "There was an error with Export"
   },
   "import_data": {
-    "title": "Import Data"
+    "cointracking": {
+      "line_one": "Trades/deposits/withdrawals from Cointracking do not include fees.",
+      "line_two": "All trades imported from Cointracking will always be considered as buys due to the way the data are represented.",
+      "line_three": "ETH/BTC Transactions are treated as deposits/withdrawals so they are not imported in rotki. To import ETH transactions simply input your accounts in {0} and they will be imported automatically for you.",
+      "link": "Blockchain Accounts/Balances",
+      "name": "cointracking",
+      "note": " Important notes for importing data from {0}'s CSV exports.",
+      "preferred": "For the above reasons it's preferred to directly connect your exchanges in order to import data from there. If you do not do that a lot of accuracy is lost."
+    },
+    "cryptocom": {
+      "line_one": "[Early stage] This import script may miss some transactions types, like withdrawals. Since we can't have an exhaustive list of every type, we develop it using what we know at the time. If you think that import script can be improved and you can help providing more data types, {0}.",
+      "line_one_link": "please let us know",
+      "line_two": "{0} If you want to connect your Crypto.com Exchange account, please wait until we support it and then connect to it as an exchange.",
+      "line_two_warning": "It only concerns the Crypto.com mobile application.",
+      "line_three": "Trades/deposits/withdrawals from crypto.com do not include fees details. They are waived at the moment (August 2020) or they are handled in the traded amount.",
+      "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your Rotki balances, you have to add them manually as manual balances: {0}",
+      "line_four_link": "Manual Accounts/Balances",
+      "name": "crypto.com mobile app",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
+    "description": "You can manually import data from the services below by clicking on the respective logo",
+    "title": "Import Data",
+    "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
+    "notice_warning": "⚠️Important notice ⚠️:",
+    "notice_link": "open an issue with rotki"
   },
   "dashboard": {
     "title": "Dashboard",

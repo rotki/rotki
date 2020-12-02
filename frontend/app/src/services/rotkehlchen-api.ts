@@ -831,6 +831,17 @@ export class RotkehlchenApi {
       })
       .then(handleResponse);
   }
+
+  importFile(data: FormData) {
+    return this.axios
+      .post<ActionResult<boolean>>('/import', data, {
+        validateStatus: validStatus,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      .then(handleResponse);
+  }
 }
 
 export const api = new RotkehlchenApi();
