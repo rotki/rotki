@@ -5,9 +5,8 @@ import logging
 import traceback
 from functools import wraps
 from http import HTTPStatus
-from os import rmdir, remove
 from pathlib import Path
-from tempfile import mkdtemp
+from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, overload
 
 import gevent
@@ -1133,7 +1132,10 @@ class RestAPI():
                 attachment_filename="report.zip",
             )
         except FileNotFoundError:
-            return api_response({}, status_code=HTTPStatus.NOT_FOUND)
+            return api_response(
+                wrap_in_fail_result('No file was found'),
+                status_code=HTTPStatus.NOT_FOUND,
+            )
 
     @require_loggedin_user()
     def query_periodic_data(self) -> Response:
@@ -2014,12 +2016,9 @@ class RestAPI():
             result = wrap_in_fail_result(f'{file.filename} is not a csv')
             return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
 
-        temp_directory = Path(mkdtemp())
-        filepath = temp_directory / f'{source}.csv'
-
-        file.save(str(filepath))
-
-        response = self.import_data(source, filepath)
-        remove(filepath)
-        rmdir(temp_directory)
+        with TemporaryDirectory() as temp_directory:
+            filepath = Path(temp_directory) / f'{source}.csv'
+            file.save(str(filepath))
+            response = self.import_data(source, filepath)
+            filepath.unlink()
         return response

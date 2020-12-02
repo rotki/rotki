@@ -1,5 +1,4 @@
 import csv
-from os import remove
 from tempfile import mkdtemp
 from zipfile import ZipFile
 
@@ -516,6 +515,8 @@ class CSVExporter():
     def create_zip(self) -> Optional[str]:
         if not self.create_csv:
             return None
+
+        # TODO: Find a way to properly delete the directory after send is complete
         dirpath = Path(mkdtemp())
         success, _ = self.create_files(dirpath)
         if not success:
@@ -538,6 +539,6 @@ class CSVExporter():
                     continue
 
                 csv_zip.write(path, filename)
-                remove(path)
+                path.unlink()
 
         return csv_zip.filename
