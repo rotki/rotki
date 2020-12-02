@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1611` Rotki can now import data and download the tax report csv when running in the browser.
 * :feature:`176` Add an accounting setting to make asset movements fees (deposits/withdrawals to/from exchanges) inclusion in the profit loss report configurable.
 * :feature:`1840` Better handling double crypto.com entries (dust_conversion, swap, ...) from csv export.
 * :feature:`1605` User funds in Binance's futures wallet should now also be included in Rotki
