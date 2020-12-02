@@ -164,7 +164,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Coin Swap'),
+        notes=get_trade_note('MCO/CRO Overall Swap'),
     ), Trade(
         timestamp=Timestamp(1596730165),
         location=Location.CRYPTOCOM,
@@ -175,7 +175,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Coin Swap'),
+        notes=get_trade_note('MCO/CRO Overall Swap'),
     ), Trade(
         timestamp=Timestamp(1599934176),
         location=Location.CRYPTOCOM,
@@ -209,6 +209,17 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee_currency=A_USD,
         link='',
         notes=get_trade_note('Referral Bonus Reward'),
+    ), Trade(
+        timestamp=Timestamp(1606833565),
+        location=Location.CRYPTOCOM,
+        pair=TradePair('CRO_DAI'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('0.007231228760408149')),
+        rate=Price(FVal('14.26830000900286970270179629')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes=get_trade_note('Convert Dust'),
     )]
     assert expected_trades == trades
 
