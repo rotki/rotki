@@ -253,3 +253,69 @@ jobs:
           path: |
             ${{ steps.packaging.outputs.binary }}
             ${{ steps.packaging.outputs.binary_checksum }}
+
+  build-windows:
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SQLCIPHER_VERSION: 'v4.4.0'
+      PYSQLCIPHER3_VERSION: 'fd1b547407bcb7198107fe3c458105286a060b0d'
+      BUILD_DEPENDENCIES: "build-dependencies"
+    strategy:
+      matrix:
+        os: [ windows-latest ]
+        python-version: [ 3.7 ]
+        node-version: [ 12.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: pip cache persistence
+        uses: actions/cache@v2
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-packaging-
+      - name: Get npm cache directory
+        id: npm-cache
+        run: |
+          echo "::set-output name=dir::$(npm config get cache)"
+      - name: npm cache persistence
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.npm-cache.outputs.dir }}
+            ~\AppData\Local\Cypress
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node--packaging-
+      - name: Persist Build Dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~\${{ env.BUILD_DEPENDENCIES }}\
+            ~\AppData\Local\Temp\chocolatey\
+          key: ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-build-dependencies
+      - name: Build rotki
+        id: packaging
+        run: .\package.ps1
+        shell: powershell
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: nightly-windows
+          path: |
+            ${{ steps.packaging.outputs.binary }}
+            ${{ steps.packaging.outputs.binary_checksum }}
