@@ -128,10 +128,18 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return json_ret['data']
 
-    def get_balance(self, validator_indices: List[int]) -> Dict[int, ValidatorBalance]:
-        """Get the balance of all the validators given from the indices list
+    def get_balance_history(self, validator_indices: List[int]) -> Dict[int, ValidatorBalance]:
+        """Get the balance history of all the validators given from the indices list
 
-        Queries in chunks of 100 due to api limitations
+        https://beaconcha.in/api/v1/docs/index.html#/Validator/get_api_v1_validator__indexOrPubkey__balancehistory
+
+        Queries in chunks of 100 due to api limitations.
+
+        NOTICE: Do not use yet. The results seem incosistent. The list can accept
+        up to 100 validators, but the balance history is for the last 100 epochs
+        of each validator, limited to 100 results. So it's not really useful.
+
+        Their devs said they will have a look as this may not be desired behaviour.
 
         May raise:
         - RemoteError due to problems querying beaconcha.in API

@@ -89,6 +89,8 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'yearn.finance • Vaults': True,  # True means all
     # Synthetix SNX token is in all_assets.json
     'Synthetix': ['SNX'],
+    # Ampleforth's AMPL token is in all_assets.json
+    'Ampleforth': ['AMPL'],
 }
 
 
