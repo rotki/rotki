@@ -1,3 +1,4 @@
+import { api } from '@/services/rotkehlchen-api';
 import { assert } from '@/utils/assertions';
 import { Level } from '@/utils/log-level';
 
@@ -10,6 +11,14 @@ export class ElectronInterop {
 
   get isPackaged(): boolean {
     return this.packagedApp;
+  }
+
+  get downloadCSV(): string | null {
+    if (this.isPackaged) {
+      return null;
+    }
+
+    return api.csvDownloadUrl;
   }
 
   navigateToPremium() {

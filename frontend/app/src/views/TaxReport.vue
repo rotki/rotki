@@ -7,9 +7,15 @@
         class="tax-report__export-csv"
         depressed
         color="primary"
+        :target="$interop.isPackaged ? null : '_blank'"
+        :href="$interop.downloadCSV"
         @click="exportCSV()"
       >
-        {{ $t('tax_report.export_csv') }}
+        {{
+          $interop.isPackaged
+            ? $t('tax_report.export_csv')
+            : $t('tax_report.download_csv')
+        }}
       </v-btn>
       <tax-report-overview class="tax-report__section" />
       <tax-report-events class="tax-report__section" />

@@ -96,6 +96,10 @@ export class RotkehlchenApi {
     return this._history;
   }
 
+  get csvDownloadUrl(): string {
+    return `${this.axios.defaults.baseURL}/history/download`;
+  }
+
   setup(serverUrl: string) {
     this.axios = axios.create({
       baseURL: `${serverUrl}/api/1/`,
