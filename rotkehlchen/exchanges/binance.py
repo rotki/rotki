@@ -10,6 +10,7 @@ import requests
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
 from rotkehlchen.constants.misc import ZERO
@@ -57,11 +58,16 @@ V3_ENDPOINTS = (
 V1_ENDPOINTS = (
     'exchangeInfo',
     'time',
+    'futures/loan/wallet',
 )
 
 WAPI_ENDPOINTS = (
     'depositHistory.html',
     'withdrawHistory.html',
+)
+
+SAPI_ENDPOINTS = (
+    'futures/loan/wallet',
 )
 
 
@@ -238,7 +244,7 @@ class Binance(ExchangeInterface):
                 # Protect this region with a lock since binance will reject
                 # non-increasing nonces. So if two greenlets come in here at
                 # the same time one of them will fail
-                if method in V3_ENDPOINTS or method in WAPI_ENDPOINTS:
+                if method in V3_ENDPOINTS or method in WAPI_ENDPOINTS or method in SAPI_ENDPOINTS:
                     api_version = 3
                     # Recommended recvWindows is 5000 but we get timeouts with it
                     call_options['recvWindow'] = 10000
@@ -254,7 +260,12 @@ class Binance(ExchangeInterface):
                 else:
                     raise ValueError('Unexpected binance api method {}'.format(method))
 
-                apistr = 'wapi/' if method in WAPI_ENDPOINTS else 'api/'
+                if method in WAPI_ENDPOINTS:
+                    apistr = 'wapi/'
+                elif method in SAPI_ENDPOINTS:
+                    apistr = 'sapi/'
+                else:
+                    apistr = 'api/'
                 request_url = f'{self.uri}{apistr}v{str(api_version)}/{method}?'
                 request_url += urlencode(call_options)
 
@@ -314,23 +325,8 @@ class Binance(ExchangeInterface):
         assert isinstance(result, List)
         return result
 
-    @protect_with_lock()
-    @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[dict], str]:
-        self.first_connection()
-
-        try:
-            # account data returns a dict as per binance docs
-            account_data = self.api_query_dict('account')
-        except RemoteError as e:
-            msg = (
-                'Binance API request failed. Could not reach binance due '
-                'to {}'.format(e)
-            )
-            log.error(msg)
-            return None, msg
-
-        returned_balances = {}
+    def _query_spot_balances(self, balances: Dict) -> Dict:
+        account_data = self.api_query_dict('account')
         for entry in account_data['balances']:
             amount = entry['free'] + entry['locked']
             if amount == FVal(0):
@@ -369,21 +365,86 @@ class Binance(ExchangeInterface):
             balance['amount'] = amount
             balance['usd_value'] = FVal(amount * usd_price)
 
-            if asset not in returned_balances:
-                returned_balances[asset] = balance
+            if asset not in balances:
+                balances[asset] = balance
             else:  # Some assets may appear twice in binance balance query for different locations
                 # Lending/staking for example
-                returned_balances[asset]['amount'] += balance['amount']
-                returned_balances[asset]['usd_value'] += balance['usd_value']
+                balances[asset]['amount'] += balance['amount']
+                balances[asset]['usd_value'] += balance['usd_value']
 
-            log.debug(
-                'binance balance query result',
-                sensitive_log=True,
-                asset=asset,
-                amount=amount,
-                usd_value=balance['usd_value'],
+        return balances
+
+    def _query_futures_balances(self, balances: Dict) -> Dict:
+        futures_response = self.api_query_dict('futures/loan/wallet')
+        try:
+            cross_collaterals = futures_response['crossCollaterals']
+            for entry in cross_collaterals:
+                try:
+                    asset = asset_from_binance(entry['asset'])
+                except UnsupportedAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unsupported binance asset {e.asset_name}. '
+                        f' Ignoring its futures balance query.',
+                    )
+                    continue
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unknown binance asset {e.asset_name}. '
+                        f' Ignoring its futures balance query.',
+                    )
+                    continue
+                except DeserializationError:
+                    self.msg_aggregator.add_error(
+                        f'Found binance asset with non-string type {type(entry["asset"])}. '
+                        f' Ignoring its futures balance query.',
+                    )
+                    continue
+                amount = FVal(entry['locked'])
+                try:
+                    usd_price = Inquirer().find_usd_price(asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing binance balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+
+                balance = Balance(amount=amount, usd_value=amount * usd_price)
+                if asset not in balances:
+                    balances[asset] = balance
+                else:
+                    balances[asset]['amount'] += balance.amount
+                    balances[asset]['usd_value'] += balance.usd_value
+
+        except KeyError as e:
+            self.msg_aggregator.add_error(
+                f'At binance futures balance query did not find expected key '
+                f' {str(e)}. Skipping futures query ...',
             )
 
+        return balances
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_balances(self) -> Tuple[Optional[Dict], str]:
+        self.first_connection()
+        returned_balances: Dict = {}
+        try:
+            returned_balances = self._query_spot_balances(returned_balances)
+            returned_balances = self._query_futures_balances(returned_balances)
+        except RemoteError as e:
+            msg = (
+                'Binance account API request failed. Could not reach binance due '
+                'to {}'.format(e)
+            )
+            log.error(msg)
+            return None, msg
+
+        log.debug(
+            'binance balance query result',
+            sensitive_log=True,
+            balances=returned_balances,
+        )
         return returned_balances, ''
 
     def query_online_trade_history(
