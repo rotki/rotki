@@ -922,7 +922,7 @@
       "name": "crypto.com mobile app",
       "note": "Important notes for importing data from {0}'s CSV exports."
     },
-    "description": "You can manually import data from the services below by clicking on the respective logo",
+    "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
     "title": "Import Data",
     "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
     "notice_warning": "⚠️Important notice ⚠️:",
