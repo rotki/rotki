@@ -1047,7 +1047,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       summary[DEFI_MAKERDAO] = {
         protocol: {
           name: MAKERDAO,
-          icon: getProtcolIcon(name)
+          icon: getProtcolIcon(MAKERDAO)
         },
         assets: [],
         liabilitiesUrl: '/defi/liabilities?protocol=makerdao',

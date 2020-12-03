@@ -8,11 +8,10 @@ import store from '@/store/store';
 Vue.use(Vuetify);
 
 describe('RevealableInput.vue', () => {
-  let vuetify: typeof Vuetify;
   let wrapper: Wrapper<RevealableInput>;
 
   beforeEach(() => {
-    vuetify = new Vuetify();
+    const vuetify = new Vuetify();
     wrapper = mount(RevealableInput, {
       store,
       vuetify,
