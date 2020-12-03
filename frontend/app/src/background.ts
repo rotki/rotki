@@ -131,7 +131,7 @@ const defaultMenuTemplate: any[] = [
         }
       },
       {
-        label: 'Frequenty Asked Questions',
+        label: 'Frequently Asked Questions',
         click: async () => {
           await shell.openExternal(
             'https://rotki.readthedocs.io/en/latest/faq.html'
