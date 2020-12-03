@@ -1,7 +1,7 @@
 import csv
 from itertools import count
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
@@ -160,7 +160,7 @@ class DataImporter():
                 f'data import. Ignoring entry',
             )
 
-    def import_cointracking_csv(self, filepath: Path) -> None:
+    def import_cointracking_csv(self, filepath: Path) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.reader(csvfile, delimiter=',', quotechar='"')
             header = remap_header(next(data))
@@ -188,8 +188,10 @@ class DataImporter():
                 except UnsupportedCointrackingEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
                     continue
+                except KeyError as e:
+                    return False, str(e)
 
-        return None
+        return True, ''
 
     def _consume_cryptocom_entry(self, csv_row: Dict[str, Any]) -> None:
         """Consumes a cryptocom entry row from the CSV and adds it into the database
@@ -380,21 +382,23 @@ class DataImporter():
                 )
                 self.db.add_trades([trade])
 
-    def import_cryptocom_csv(self, filepath: Path) -> None:
+    def import_cryptocom_csv(self, filepath: Path) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
+            try:
+                #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
+                # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
+                self._import_cryptocom_double_entries(data, 'dynamic_coin_swap')
+                # reset the iterator
+                csvfile.seek(0)
+                # pass the header since seek(0) make the first row to be the header
+                next(data)
 
-            #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
-            # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
-            self._import_cryptocom_double_entries(data, 'dynamic_coin_swap')
-            # reset the iterator
-            csvfile.seek(0)
-            # pass the header since seek(0) make the first row to be the header
-            next(data)
-
-            self._import_cryptocom_double_entries(data, 'dust_conversion')
-            csvfile.seek(0)
-            next(data)
+                self._import_cryptocom_double_entries(data, 'dust_conversion')
+                csvfile.seek(0)
+                next(data)
+            except KeyError as e:
+                return False, str(e)
 
             for row in data:
                 try:
@@ -414,4 +418,6 @@ class DataImporter():
                 except UnsupportedCryptocomEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
                     continue
-        return None
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
