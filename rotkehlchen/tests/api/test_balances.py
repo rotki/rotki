@@ -244,6 +244,7 @@ def test_query_all_balances_ignore_cache(
         'query_ethereum_tokens',
         wraps=rotki.chain_manager.query_ethereum_tokens,
     )
+    original_binance_query_dict = binance.api_query_dict
     binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
     poloniex_query_patch = patch.object(poloniex, 'api_query_dict', wraps=poloniex.api_query_dict)
 
@@ -273,7 +274,11 @@ def test_query_all_balances_ignore_cache(
             expected_data_in_db=True,
             setup=setup,
         )
-        assert all(fn.call_count == 1 for fn in function_call_counters)
+        for fn in function_call_counters:
+            if fn._mock_wraps == original_binance_query_dict:
+                assert fn.call_count == 2
+            else:
+                assert fn.call_count == 1
         full_query_etherscan_count = etherscan_mock.call_count
 
         # Query all balances second time and assert cache was used
@@ -291,7 +296,11 @@ def test_query_all_balances_ignore_cache(
             setup=setup,
         )
         msg = 'call count should stay the same since cache should have been used'
-        assert all(fn.call_count == 1 for fn in function_call_counters), msg
+        for fn in function_call_counters:
+            if fn._mock_wraps == original_binance_query_dict:
+                assert fn.call_count == 2, msg
+            else:
+                assert fn.call_count == 1, msg
         msg = 'etherscan call_count should have remained the same due to no token detection '
         assert etherscan_mock.call_count == full_query_etherscan_count, msg
 
@@ -310,7 +319,11 @@ def test_query_all_balances_ignore_cache(
             setup=setup,
         )
         msg = 'call count should increase since cache should have been ignored'
-        assert all(fn.call_count == 2 for fn in function_call_counters), msg
+        for fn in function_call_counters:
+            if fn._mock_wraps == original_binance_query_dict:
+                assert fn.call_count == 4, msg
+            else:
+                assert fn.call_count == 2, msg
         msg = 'etherscan call count should have doubled after forced token detection'
         expected_count = full_query_etherscan_count * 2 - len(ethereum_accounts)
         assert etherscan_mock.call_count == expected_count, msg
@@ -512,7 +525,7 @@ def test_multiple_balance_queries_not_concurrent(
             )
         assert eth.call_count == 1, 'eth balance query should only fire once'
         assert btc.call_count == 1, 'btc balance query should only happen once'
-        assert bn.call_count == 1, 'binance balance query should only happen once'
+        assert bn.call_count == 2, 'binance balance query should do 2 calls'
 
     assert_all_balances(
         result=outcome_all,
