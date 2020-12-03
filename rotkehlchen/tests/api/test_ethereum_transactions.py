@@ -129,8 +129,7 @@ EXPECTED_4193_TXS = [{
 def test_query_transactions(rotkehlchen_api_server):
     """Test that querying the ethereum transactions endpoint works as expected
 
-    This test uses real data. Found an ethereum address that has very few transactions
-    and hopefully won't have more. If it does we can adjust the test.
+    This test uses real data.
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -151,8 +150,19 @@ def test_query_transactions(rotkehlchen_api_server):
     expected_result = EXPECTED_AFB7_TXS + EXPECTED_4193_TXS
     expected_result.sort(key=lambda x: x['timestamp'])
     expected_result.reverse()
-    assert result['entries'] == expected_result
-    assert result['entries_found'] == len(expected_result)
+
+    # Make sure that all of the transactions we expect are there and in order
+    # There can be more transactions (since the address can make more)
+    # but this check ignores them
+    previous_index = 0
+    for entry in expected_result:
+        assert entry in result['entries']
+        entry_idx = result['entries'].index(entry)
+        if previous_index != 0:
+            assert entry_idx == previous_index + 1
+        previous_index = entry_idx
+
+    assert result['entries_found'] >= len(expected_result)
     assert result['entries_limit'] == FREE_ETH_TX_LIMIT
 
     # Check that transactions per address and in a specific time range can be

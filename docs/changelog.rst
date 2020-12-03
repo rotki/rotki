@@ -2,7 +2,9 @@
 Changelog
 =========
 
+* :feature:`176` Add an accounting setting to make asset movements fees (deposits/withdrawals to/from exchanges) inclusion in the profit loss report configurable.
 * :feature:`1840` Better handling double crypto.com entries (dust_conversion, swap, ...) from csv export.
+* :feature:`1605` User funds in Binance's futures wallet should now also be included in Rotki
 
 * :release:`1.9.1 <2020-11-29>`
 * :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
