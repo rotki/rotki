@@ -31,6 +31,7 @@ from rotkehlchen.db.settings import (
     ROTKEHLCHEN_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
+    DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
 )
 from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
 from rotkehlchen.errors import AuthenticationError, InputError
@@ -280,6 +281,7 @@ def test_writing_fetching_data(data_dir, username):
         'kraken_account_type': DEFAULT_KRAKEN_ACCOUNT_TYPE,
         'active_modules': DEFAULT_ACTIVE_MODULES,
         'frontend_settings': '',
+        'account_for_assets_movements': DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

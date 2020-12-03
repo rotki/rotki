@@ -24,6 +24,7 @@ export interface AccountingSettings {
   readonly includeCrypto2Crypto: boolean;
   readonly includeGasCosts: boolean;
   readonly taxFreeAfterPeriod: number | null;
+  readonly accountForAssetsMovements: boolean;
 }
 
 export type AccountingSettingsUpdate = {
@@ -117,6 +118,7 @@ interface SettingsPayload {
   premium_should_sync: boolean;
   active_modules: SupportedModules[];
   frontend_settings: string;
+  account_for_assets_movements: boolean;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';

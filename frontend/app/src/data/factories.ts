@@ -21,5 +21,6 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
 export const defaultAccountingSettings = (): AccountingSettings => ({
   includeCrypto2Crypto: true,
   includeGasCosts: true,
-  taxFreeAfterPeriod: null
+  taxFreeAfterPeriod: null,
+  accountForAssetsMovements: true
 });

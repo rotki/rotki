@@ -27,6 +27,7 @@ DEFAULT_CURRENCY_LOCATION = 'after'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 DEFAULT_ACTIVE_MODULES = AVAILABLE_MODULES
+DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 
 
 class DBSettings(NamedTuple):
@@ -53,6 +54,7 @@ class DBSettings(NamedTuple):
     kraken_account_type: KrakenAccountType = DEFAULT_KRAKEN_ACCOUNT_TYPE
     active_modules: List[str] = DEFAULT_ACTIVE_MODULES
     frontend_settings: str = ''
+    account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -74,6 +76,7 @@ class ModifiableDBSettings(NamedTuple):
     kraken_account_type: Optional[KrakenAccountType] = None
     active_modules: Optional[List[str]] = None
     frontend_settings: Optional[str] = None
+    account_for_assets_movements: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -178,6 +181,8 @@ def db_settings_from_dict(
             specified_args[key] = json.loads(value)
         elif key == 'frontend_settings':
             specified_args[key] = str(value)
+        elif key == 'account_for_assets_movements':
+            specified_args[key] = read_boolean(value)
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

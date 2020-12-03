@@ -719,6 +719,7 @@ class ModifiableSettingsSchema(Schema):
     kraken_account_type = KrakenAccountTypeField(missing=None)
     active_modules = fields.List(fields.String(), missing=None)
     frontend_settings = fields.String(missing=None)
+    account_for_assets_movements = fields.Bool(missing=None)
 
     @validates_schema  # type: ignore
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -759,6 +760,7 @@ class ModifiableSettingsSchema(Schema):
             kraken_account_type=data['kraken_account_type'],
             active_modules=data['active_modules'],
             frontend_settings=data['frontend_settings'],
+            account_for_assets_movements=data['account_for_assets_movements'],
         )
 
 
