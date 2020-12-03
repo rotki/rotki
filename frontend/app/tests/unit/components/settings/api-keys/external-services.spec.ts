@@ -9,7 +9,6 @@ import store from '@/store/store';
 Vue.use(Vuetify);
 
 describe('ExternalServices.vue', () => {
-  let vuetify: typeof Vuetify;
   let wrapper: Wrapper<ExternalServices>;
   let queryExternalServices: jest.Mock;
   let setExternalServices: jest.Mock;
@@ -25,7 +24,7 @@ describe('ExternalServices.vue', () => {
   };
 
   function createWrapper(): Wrapper<ExternalServices> {
-    vuetify = new Vuetify();
+    const vuetify = new Vuetify();
     return mount(ExternalServices, {
       store,
       vuetify,
@@ -47,7 +46,6 @@ describe('ExternalServices.vue', () => {
     queryExternalServices = jest.fn();
     setExternalServices = jest.fn();
     deleteExternalServices = jest.fn();
-    vuetify = new Vuetify();
   });
 
   afterEach(() => {

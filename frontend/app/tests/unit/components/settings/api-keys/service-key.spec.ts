@@ -7,11 +7,10 @@ import store from '@/store/store';
 Vue.use(Vuetify);
 
 describe('ServiceKey.vue', () => {
-  let vuetify: typeof Vuetify;
   let wrapper: Wrapper<ServiceKey>;
 
   function createWrapper(): Wrapper<ServiceKey> {
-    vuetify = new Vuetify();
+    const vuetify = new Vuetify();
     return mount(ServiceKey, {
       store,
       vuetify,
@@ -24,7 +23,6 @@ describe('ServiceKey.vue', () => {
 
   beforeEach(() => {
     wrapper = createWrapper();
-    vuetify = new Vuetify();
   });
 
   test('component leaves edit mode when updated with non-empty value', async () => {

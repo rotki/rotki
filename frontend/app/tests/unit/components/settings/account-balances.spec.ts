@@ -11,11 +11,10 @@ import '../../i18n';
 Vue.use(Vuetify);
 
 describe('AccountBalances.vue', () => {
-  let vuetify: typeof Vuetify;
   let wrapper: Wrapper<AccountBalances>;
 
   beforeEach(() => {
-    vuetify = new Vuetify();
+    const vuetify = new Vuetify();
     wrapper = mount(AccountBalances, {
       store,
       vuetify,

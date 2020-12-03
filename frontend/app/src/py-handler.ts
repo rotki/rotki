@@ -193,7 +193,7 @@ export default class PyHandler {
   }
 
   private terminateBackend = (client: ChildProcess) =>
-    new Promise((resolve, reject) => {
+    new Promise<void>((resolve, reject) => {
       client.on('exit', () => {
         this.logToFile(
           `The Python sub-process was terminated successfully (${client.killed})`
@@ -349,7 +349,7 @@ export default class PyHandler {
 
     const taskKill = spawn('taskkill', args);
 
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       taskKill.on('exit', () => {
         this.logToFile('Call to taskkill exited');
         if (!restart) {

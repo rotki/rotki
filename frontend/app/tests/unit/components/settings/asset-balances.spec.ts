@@ -9,11 +9,10 @@ import store from '@/store/store';
 Vue.use(Vuetify);
 
 describe('AssetBalances.vue', () => {
-  let vuetify: typeof Vuetify;
   let wrapper: Wrapper<AssetBalances>;
 
   beforeEach(() => {
-    vuetify = new Vuetify();
+    const vuetify = new Vuetify();
     wrapper = mount(AssetBalances, {
       store,
       vuetify,

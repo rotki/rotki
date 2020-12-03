@@ -10,11 +10,10 @@ import '../../i18n';
 Vue.use(Vuetify);
 
 describe('ManualBalanceList.vue', () => {
-  let vuetify: typeof Vuetify;
   let wrapper: Wrapper<ManualBalancesList>;
 
   beforeEach(() => {
-    vuetify = new Vuetify();
+    const vuetify = new Vuetify();
     wrapper = mount(ManualBalancesList, {
       stubs: ['v-dialog'],
       store,
