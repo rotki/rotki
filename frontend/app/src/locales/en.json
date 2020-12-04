@@ -894,6 +894,7 @@
   },
   "tax_report": {
     "download_csv": "Download CSV",
+    "download_failed": "Download of report is not possible",
     "title": "Tax Report",
     "export_csv": "Export CSV",
     "loading_message": "Please wait while your report is generated...",

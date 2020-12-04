@@ -81,7 +81,7 @@ export default class TaxReport extends Vue {
       } else {
         const { success, message } = await this.$api.downloadCSV();
         if (!success) {
-          this.showMessage(message);
+          this.showMessage(message ?? this.$tc('tax_report.download_failed'));
         }
       }
     } catch (e) {
@@ -90,7 +90,7 @@ export default class TaxReport extends Vue {
     }
   }
 
-  private showMessage(description) {
+  private showMessage(description: string) {
     this.$store.commit('setMessage', {
       title: this.$tc('tax_report.csv_export_error'),
       description: description
