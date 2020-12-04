@@ -6,7 +6,7 @@
   >
     <v-row no-gutters class="pa-3 secondary--text summary-card__header">
       <v-toolbar-title class="font-weight-medium text-capitalize">
-        {{ name }} balances
+        {{ $t('summary_card.title', { name }) }}
         <v-tooltip v-if="this.$slots.tooltip" bottom max-width="300px">
           <template #activator="{ on }">
             <v-icon
@@ -29,17 +29,16 @@
             <v-btn
               icon
               x-small
+              :disabled="isLoading"
               color="primary"
               class="summary-card__refresh-icon"
               @click="refresh(name)"
               v-on="on"
             >
-              <v-icon color="primary">
-                fa-refresh
-              </v-icon>
+              <v-icon color="primary">fa-refresh</v-icon>
             </v-btn>
           </template>
-          Refresh {{ name }} balances
+          <span>{{ $t('summary_card.refresh_tooltip', { name }) }}</span>
         </v-tooltip>
       </span>
     </v-row>
