@@ -28,10 +28,6 @@ export class ElectronInterop {
     return (await window.interop?.openDirectory(title)) ?? undefined;
   }
 
-  async openFile(title: string): Promise<string | undefined> {
-    return (await window.interop?.openFile(title)) ?? undefined;
-  }
-
   openUrl(url: string) {
     window.interop?.openUrl(url);
   }

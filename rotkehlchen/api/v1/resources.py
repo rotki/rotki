@@ -3,11 +3,13 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from flask import Blueprint, Request, Response, request as flask_request
 from flask_restful import Resource
+from flask_restful.reqparse import RequestParser
 from marshmallow import Schema
 from marshmallow.utils import missing
 from typing_extensions import Literal
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
+from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
@@ -649,6 +651,12 @@ class HistoryExportingResource(BaseResource):
         return self.rest_api.export_processed_history_csv(directory_path=directory_path)
 
 
+class HistoryDownloadingResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.download_processed_history_csv()
+
+
 class PeriodicDataResource(BaseResource):
 
     def get(self) -> Response:
@@ -839,8 +847,28 @@ class DataImportResource(BaseResource):
     put_schema = DataImportSchema()
 
     @use_kwargs(put_schema, location='json')  # type: ignore
-    def put(self, source: Literal['cointracking.info'], filepath: Path) -> None:
+    def put(self, source: Literal['cointracking.info', 'crypto.com'], filepath: Path) -> Response:
         return self.rest_api.import_data(source=source, filepath=filepath)
+
+    def post(self) -> Response:
+        req_parser = RequestParser()
+        req_parser.add_argument(
+            'source',
+            location='form',
+            required=True,
+            help="Source is required",
+            choices=('cointracking.info', 'crypto.com'),
+        )
+        req_parser.add_argument(
+            'file',
+            type=FileStorage,
+            location='files',
+            required=True,
+            help="A file is required",
+        )
+
+        args = req_parser.parse_args()
+        return self.rest_api.import_data_from_file(source=(args['source']), file=(args['file']))
 
 
 class Eth2StakeResource(BaseResource):

@@ -12,13 +12,27 @@ export class Defaults {
   static KRAKEN_DEFAULT_ACCOUNT_TYPE = 'starter';
 }
 
+export const EXCHANGE_POLONIEX = 'poloniex';
+export const EXCHANGE_KRAKEN = 'kraken';
+export const EXCHANGE_BITTREX = 'bittrex';
+export const EXCHANGE_BITMEX = 'bitmex';
+export const EXCHANGE_BINANCE = 'binance';
+export const EXCHANGE_COINBASE = 'coinbase';
+export const EXCHANGE_COINBASEPRO = 'coinbasepro';
+export const EXCHANGE_GEMINI = 'gemini';
+export const EXCHANGE_CRYPTOCOM = 'crypto.com';
+
+export const EXCHANGE_UNISWAP = 'uniswap';
+export const TRADE_LOCATION_EXTERNAL = 'external';
+
 export const exchanges = [
-  'poloniex',
-  'kraken',
-  'bittrex',
-  'bitmex',
-  'binance',
-  'coinbase',
-  'coinbasepro',
-  'gemini'
+  EXCHANGE_POLONIEX,
+  EXCHANGE_KRAKEN,
+  EXCHANGE_BITTREX,
+  EXCHANGE_BITMEX,
+  EXCHANGE_BINANCE,
+  EXCHANGE_COINBASE,
+  EXCHANGE_COINBASEPRO,
+  EXCHANGE_GEMINI,
+  EXCHANGE_CRYPTOCOM
 ] as const;

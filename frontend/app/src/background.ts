@@ -323,10 +323,6 @@ app.on('ready', async () => {
     }
     shell.openExternal(args);
   });
-  ipcMain.on('OPEN_FILE', async (event, args) => {
-    const file = await select(args, 'openFile');
-    event.sender.send('OPEN_FILE', file);
-  });
   ipcMain.on('OPEN_DIRECTORY', async (event, args) => {
     const directory = await select(args, 'openDirectory');
     event.sender.send('OPEN_DIRECTORY', directory);

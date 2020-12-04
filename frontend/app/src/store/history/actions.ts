@@ -1,6 +1,7 @@
 import { Transaction } from 'electron';
 import { ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
+import { EXCHANGE_CRYPTOCOM, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
@@ -67,7 +68,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
     const { connectedExchanges } = balances!;
-    const locations: TradeLocation[] = [...connectedExchanges, 'external'];
+    const locations: TradeLocation[] = [
+      ...connectedExchanges,
+      TRADE_LOCATION_EXTERNAL,
+      EXCHANGE_CRYPTOCOM
+    ];
 
     const fetchLocation: (
       location: TradeLocation
@@ -253,7 +258,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     await Promise.all(
-      locations.map(location =>
+      ([...locations, EXCHANGE_CRYPTOCOM] as TradeLocation[]).map(location =>
         fetchLocation(location).catch(e => onError(location, e.message))
       )
     );

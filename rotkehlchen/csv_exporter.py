@@ -1,4 +1,7 @@
 import csv
+from tempfile import mkdtemp
+from zipfile import ZipFile
+
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -508,3 +511,34 @@ class CSVExporter():
             return False, str(e)
 
         return True, ''
+
+    def create_zip(self) -> Optional[str]:
+        if not self.create_csv:
+            return None
+
+        # TODO: Find a way to properly delete the directory after send is complete
+        dirpath = Path(mkdtemp())
+        success, _ = self.create_files(dirpath)
+        if not success:
+            return None
+
+        files: List[Tuple[Path, str]] = [
+            (dirpath / FILENAME_TRADES_CSV, FILENAME_TRADES_CSV),
+            (dirpath / FILENAME_LOAN_PROFITS_CSV, FILENAME_LOAN_PROFITS_CSV),
+            (dirpath / FILENAME_ASSET_MOVEMENTS_CSV, FILENAME_ASSET_MOVEMENTS_CSV),
+            (dirpath / FILENAME_GAS_CSV, FILENAME_GAS_CSV),
+            (dirpath / FILENAME_MARGIN_CSV, FILENAME_MARGIN_CSV),
+            (dirpath / FILENAME_LOAN_SETTLEMENTS_CSV, FILENAME_LOAN_SETTLEMENTS_CSV),
+            (dirpath / FILENAME_DEFI_EVENTS_CSV, FILENAME_DEFI_EVENTS_CSV),
+            (dirpath / FILENAME_ALL_CSV, FILENAME_ALL_CSV),
+        ]
+
+        with ZipFile(dirpath / 'csv.zip', 'w') as csv_zip:
+            for path, filename in files:
+                if not path.exists():
+                    continue
+
+                csv_zip.write(path, filename)
+                path.unlink()
+
+        return csv_zip.filename

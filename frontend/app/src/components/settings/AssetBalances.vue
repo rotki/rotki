@@ -23,9 +23,10 @@
       </template>
       <template #item.usdValue="{ item }">
         <amount-display
-          fiat-currency="USD"
-          :value="item.usdValue"
           show-currency="symbol"
+          :fiat-currency="item.asset"
+          :amount="item.amount"
+          :value="item.usdValue"
         />
       </template>
       <template v-if="balances.length > 0" #body.append>
