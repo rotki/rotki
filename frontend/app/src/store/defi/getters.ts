@@ -1181,12 +1181,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
       const totalEarned = aaveHistory[address].totalEarnedInterest;
       for (const asset in totalEarned) {
-        const predicate = (e: ProfitLossModel) =>
-          e.address === address && e.asset === asset;
-        const index = earned.findIndex(predicate);
+        const index = earned.findIndex(e => e.asset === asset);
         if (index < 0) {
           earned.push({
-            address,
+            address: '',
             asset,
             value: totalEarned[asset]
           });
