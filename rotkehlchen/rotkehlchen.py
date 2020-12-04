@@ -808,12 +808,13 @@ class Rotkehlchen():
         else:
             assert isinstance(exchange, Location), 'only a location should make it here'
             assert exchange == Location.CRYPTOCOM, 'only cryptocom should make it here'
+            location = exchange
             # cryptocom has no exchange integration but we may have DB entries
-            self.actions_per_location['asset_movement'][exchange] = 0
+            self.actions_per_location['asset_movement'][location] = 0
             location_movements = self.data.db.get_asset_movements(
                 from_ts=from_ts,
                 to_ts=to_ts,
-                location=str(exchange),
+                location=str(location),
             )
 
         movements: List[AssetMovement] = []
@@ -825,7 +826,8 @@ class Rotkehlchen():
                 all_actions=all_movements,
             )
         else:
-            movements = location_movements
+            all_movements.extend(location_movements)
+            movements = all_movements
 
         return movements
 
@@ -874,12 +876,12 @@ class Rotkehlchen():
                 exchange=Location.CRYPTOCOM,
             )
             for _, exchange in self.exchange_manager.connected_exchanges.items():
-                movements.extend(self._query_exchange_asset_movements(
+                self._query_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
                     all_movements=movements,
                     exchange=exchange,
-                ))
+                )
 
         # return movements with most recent first
         movements.sort(key=lambda x: x.timestamp, reverse=True)
