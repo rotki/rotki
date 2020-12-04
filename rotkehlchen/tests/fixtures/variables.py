@@ -60,4 +60,5 @@ def added_exchanges():
         'coinbase',
         'coinbasepro',
         'gemini',
+        'bitstamp',
     )

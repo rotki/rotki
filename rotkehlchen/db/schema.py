@@ -54,6 +54,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('O', 15);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('P', 16);
 /* Uniswap */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('Q', 17);
+/* Bitstamp */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('R', 18);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

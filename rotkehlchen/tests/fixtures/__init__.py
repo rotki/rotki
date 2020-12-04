@@ -8,6 +8,7 @@ from rotkehlchen.tests.fixtures.blockchain import *
 from rotkehlchen.tests.fixtures.db import *
 from rotkehlchen.tests.fixtures.exchanges.binance import *
 from rotkehlchen.tests.fixtures.exchanges.bitmex import *
+from rotkehlchen.tests.fixtures.exchanges.bitstamp import *
 from rotkehlchen.tests.fixtures.exchanges.bittrex import *
 from rotkehlchen.tests.fixtures.exchanges.coinbase import *
 from rotkehlchen.tests.fixtures.exchanges.coinbasepro import *
