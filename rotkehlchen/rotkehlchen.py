@@ -597,6 +597,8 @@ class Rotkehlchen():
             trades = self.query_location_trades(from_ts, to_ts, location)
         else:
             trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL)
+            # crypto.com is not an API key supported exchange but user can import from CSV
+            trades.extend(self.query_location_trades(from_ts, to_ts, Location.CRYPTOCOM))
             for name, exchange in self.exchange_manager.connected_exchanges.items():
                 exchange_trades = exchange.query_trade_history(start_ts=from_ts, end_ts=to_ts)
                 if self.premium is None:
@@ -635,7 +637,7 @@ class Rotkehlchen():
         self.actions_per_location['trade'][location] = 0
 
         location_trades: TRADES_LIST
-        if location == Location.EXTERNAL:
+        if location in (Location.EXTERNAL, Location.CRYPTOCOM):
             location_trades = self.data.db.get_trades(  # type: ignore  # list invariance
                 from_ts=from_ts,
                 to_ts=to_ts,
@@ -793,12 +795,26 @@ class Rotkehlchen():
             from_ts: Timestamp,
             to_ts: Timestamp,
             all_movements: List[AssetMovement],
-            exchange: ExchangeInterface,
+            exchange: Union[ExchangeInterface, Location],
     ) -> List[AssetMovement]:
-        location = deserialize_location(exchange.name)
-        # clear the asset movements queried for this exchange
-        self.actions_per_location['asset_movement'][location] = 0
-        location_movements = exchange.query_deposits_withdrawals(start_ts=from_ts, end_ts=to_ts)
+        if isinstance(exchange, ExchangeInterface):
+            location = deserialize_location(exchange.name)
+            # clear the asset movements queried for this exchange
+            self.actions_per_location['asset_movement'][location] = 0
+            location_movements = exchange.query_deposits_withdrawals(
+                start_ts=from_ts,
+                end_ts=to_ts,
+            )
+        else:
+            assert isinstance(exchange, Location), 'only a location should make it here'
+            assert exchange == Location.CRYPTOCOM, 'only cryptocom should make it here'
+            # cryptocom has no exchange integration but we may have DB entries
+            self.actions_per_location['asset_movement'][exchange] = 0
+            location_movements = self.data.db.get_asset_movements(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                location=str(exchange),
+            )
 
         movements: List[AssetMovement] = []
         if self.premium is None:
@@ -828,27 +844,42 @@ class Rotkehlchen():
         """
         movements: List[AssetMovement] = []
         if location is not None:
-            exchange = self.exchange_manager.get(str(location))
-            if not exchange:
-                logger.warn(
-                    f'Tried to query deposits/withdrawals from {location} which is either not an '
-                    f'exchange or not an exchange the user has connected to',
+            if location == Location.CRYPTOCOM:
+                movements = self._query_exchange_asset_movements(
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    all_movements=movements,
+                    exchange=Location.CRYPTOCOM,
                 )
-                return []
-            movements = self._query_exchange_asset_movements(
-                from_ts=from_ts,
-                to_ts=to_ts,
-                all_movements=movements,
-                exchange=exchange,
-            )
-        else:
-            for _, exchange in self.exchange_manager.connected_exchanges.items():
+            else:
+                exchange = self.exchange_manager.get(str(location))
+                if not exchange:
+                    logger.warn(
+                        f'Tried to query deposits/withdrawals from {location} which is either '
+                        f'not at exchange or not an exchange the user has connected to',
+                    )
+                    return []
                 movements = self._query_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
                     all_movements=movements,
                     exchange=exchange,
                 )
+        else:
+            # cryptocom has no exchange integration but we may have DB entries due to csv import
+            movements = self._query_exchange_asset_movements(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                all_movements=movements,
+                exchange=Location.CRYPTOCOM,
+            )
+            for _, exchange in self.exchange_manager.connected_exchanges.items():
+                movements.extend(self._query_exchange_asset_movements(
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    all_movements=movements,
+                    exchange=exchange,
+                ))
 
         # return movements with most recent first
         movements.sort(key=lambda x: x.timestamp, reverse=True)
