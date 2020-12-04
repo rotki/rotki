@@ -47,6 +47,7 @@ import {
   BlockchainAccountPayload,
   XpubPayload
 } from '@/store/balances/types';
+import { ActionStatus } from '@/store/types';
 import {
   AccountSession,
   Blockchain,
@@ -94,10 +95,6 @@ export class RotkehlchenApi {
 
   get history(): HistoryApi {
     return this._history;
-  }
-
-  get csvDownloadUrl(): string {
-    return `${this.axios.defaults.baseURL}/history/download`;
   }
 
   setup(serverUrl: string) {
@@ -845,6 +842,35 @@ export class RotkehlchenApi {
         }
       })
       .then(handleResponse);
+  }
+
+  downloadCSV(): Promise<ActionStatus> {
+    return this.axios
+      .get('/history/download', {
+        responseType: 'blob',
+        validateStatus: validTaskStatus
+      })
+      .then(async response => {
+        if (response.status === 200) {
+          const url = window.URL.createObjectURL(response.data);
+          const link = document.createElement('a');
+          link.id = 'history-download-link';
+          link.href = url;
+          link.setAttribute('download', 'reports.zip');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          return { success: true };
+        }
+
+        const body = await (response.data as Blob).text();
+        const result: ActionResult<null> = JSON.parse(body);
+
+        return { success: false, message: result.message };
+      })
+      .catch(reason => {
+        return { success: false, message: reason.message };
+      });
   }
 }
 

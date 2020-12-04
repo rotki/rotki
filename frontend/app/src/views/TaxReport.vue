@@ -7,8 +7,6 @@
         class="tax-report__export-csv"
         depressed
         color="primary"
-        :target="$interop.isPackaged ? null : '_blank'"
-        :href="$interop.downloadCSV"
         @click="exportCSV()"
       >
         {{
@@ -72,19 +70,31 @@ export default class TaxReport extends Vue {
 
   async exportCSV() {
     try {
-      const directory = await this.$interop.openDirectory(
-        this.$tc('tax_report.select_directory')
-      );
-      if (!directory) {
-        return;
+      if (this.$interop.isPackaged) {
+        const directory = await this.$interop.openDirectory(
+          this.$tc('tax_report.select_directory')
+        );
+        if (!directory) {
+          return;
+        }
+        await this.$store.dispatch('reports/createCSV', directory);
+      } else {
+        const { success, message } = await this.$api.downloadCSV();
+        if (!success) {
+          this.showMessage(message);
+        }
       }
-      await this.$store.dispatch('reports/createCSV', directory);
     } catch (e) {
-      this.$store.commit('setMessage', {
-        title: this.$tc('tax_report.csv_export_error'),
-        description: e.message
-      } as Message);
+      const description = e.message;
+      this.showMessage(description);
     }
+  }
+
+  private showMessage(description) {
+    this.$store.commit('setMessage', {
+      title: this.$tc('tax_report.csv_export_error'),
+      description: description
+    } as Message);
   }
 }
 </script>
