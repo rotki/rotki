@@ -120,6 +120,9 @@ class Bitstamp(ExchangeInterface):
             'X-Auth-Version': 'v2',
         })
 
+    def first_connection(self) -> None:
+        self.first_connection_made = True
+
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Balance]], str]:
