@@ -1,8 +1,9 @@
 import hashlib
 import hmac
 import warnings as test_warnings
+from contextlib import ExitStack
 from datetime import datetime
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import call, patch
 from urllib.parse import urlencode
 
 import pytest
@@ -816,21 +817,23 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
 
     get_response = get_mocked_response()
 
-    # NB: force to break the loop after 2 requests by lowering the `self.backoff_limit`
-    backoff_limit_ = MagicMock(return_value=7)
-    offset_ms_ = MagicMock(return_value=1000)
-    session_get = MagicMock(side_effect=mock_response)
-    with patch.object(binance, 'backoff_limit', new_callable=backoff_limit_):
-        with patch.object(binance, 'offset_ms', new_callable=offset_ms_):
-            with patch.object(binance.session, 'get', side_effect=session_get) as mock_session_get:
-                with pytest.raises(RemoteError) as e:
-                    binance.api_query(
-                        method='myTrades',
-                        options={
-                            'fromId': 0,
-                            'limit': 1000,
-                            'symbol': 'BUSDUSDT',
-                        },
-                    )
+    # force to break the loop after 2 requests by lowering the `self.backoff_limit`
+    backoff_patch = patch.object(binance, 'backoff_limit', new=7)
+    offset_ms_patch = patch.object(binance, 'offset_ms', new=1000)
+    binance_patch = patch.object(binance.session, 'get', side_effect=mock_response)
+
+    with ExitStack() as stack:
+        stack.enter_context(backoff_patch)
+        stack.enter_context(offset_ms_patch)
+        binance_mock_get = stack.enter_context(binance_patch)
+        with pytest.raises(RemoteError) as e:
+            binance.api_query(
+                method='myTrades',
+                options={
+                    'fromId': 0,
+                    'limit': 1000,
+                    'symbol': 'BUSDUSDT',
+                },
+            )
     assert 'myTrades failed with HTTP status code: 418' in str(e.value)
-    assert mock_session_get.call_args_list == expected_calls
+    assert binance_mock_get.call_args_list == expected_calls
