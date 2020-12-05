@@ -55,6 +55,8 @@ def exchange_row_to_location(entry: str) -> Location:
     # TODO: Check if this is the correct string for Gemini from cointracking
     elif entry == 'Gemini':
         return Location.GEMINI
+    elif entry == 'Bitstamp':
+        return Location.BITSTAMP
     elif entry == 'ETH Transaction':
         raise UnsupportedCointrackingEntry(
             'Not importing ETH Transactions from Cointracking. Cointracking does not '

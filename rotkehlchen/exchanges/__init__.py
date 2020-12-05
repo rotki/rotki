@@ -1,5 +1,6 @@
 from rotkehlchen.exchanges.binance import Binance  # noqa: F401
 from rotkehlchen.exchanges.bitmex import Bitmex  # noqa: F401
+from rotkehlchen.exchanges.bitstamp import Bitstamp  # noqa: F401
 from rotkehlchen.exchanges.bittrex import Bittrex  # noqa: F401
 from rotkehlchen.exchanges.coinbase import Coinbase  # noqa: F401
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro  # noqa: F401
