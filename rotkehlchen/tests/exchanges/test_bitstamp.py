@@ -25,7 +25,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Fee, Location, Timestamp, TradePair
 
 
-def test_validate_api_key__invalid_json(mock_bitstamp):
+def test_validate_api_key_invalid_json(mock_bitstamp):
     """Test when status code is not 200, an invalid JSON response raises
     RemoteError.
     """
@@ -37,7 +37,7 @@ def test_validate_api_key__invalid_json(mock_bitstamp):
             mock_bitstamp.validate_api_key()
 
 
-def test_validate_api_key__system_clock_not_synced_error_code(mock_bitstamp):
+def test_validate_api_key_system_clock_not_synced_error_code(mock_bitstamp):
     """Test the error code related with the local system clock not being synced
     raises SystemClockNotSyncedError.
     """
@@ -53,7 +53,7 @@ def test_validate_api_key__system_clock_not_synced_error_code(mock_bitstamp):
 
 
 @pytest.mark.parametrize('code', API_KEY_ERROR_CODE_ACTION.keys())
-def test_validate_api_key__api_key_error_code(
+def test_validate_api_key_api_key_error_code(
         mock_bitstamp,
         code,
 ):
@@ -78,7 +78,7 @@ def test_validate_api_key__api_key_error_code(
     ('{"code": "APIXXX", "reason": "has reason"}', True),
     ('{"code": "APIXXX", "text": "has text"}', False),
 ))
-def test_validate_api_key__non_related_error_code(
+def test_validate_api_key_non_related_error_code(
         mock_bitstamp,
         response,
         has_reason,
@@ -100,7 +100,7 @@ def test_validate_api_key__non_related_error_code(
         assert exp_reason in str(e.value)
 
 
-def test_validate_api_key__success(mock_bitstamp):
+def test_validate_api_key_success(mock_bitstamp):
     """Test when status code is 200 the response is a tuple with True (result)
     and an empty message.
     """
@@ -114,7 +114,7 @@ def test_validate_api_key__success(mock_bitstamp):
     assert msg == ''
 
 
-def test_query_balances__invalid_json(mock_bitstamp):
+def test_query_balances_invalid_json(mock_bitstamp):
     """Test an invalid JSON response raises RemoteError.
     """
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
@@ -125,7 +125,7 @@ def test_query_balances__invalid_json(mock_bitstamp):
             mock_bitstamp.query_balances()
 
 
-def test_query_balances__system_clock_not_synced_error_code(mock_bitstamp):
+def test_query_balances_system_clock_not_synced_error_code(mock_bitstamp):
     """Test the error code related with the local system clock not being synced
     raises SystemClockNotSyncedError.
     """
@@ -144,7 +144,7 @@ def test_query_balances__system_clock_not_synced_error_code(mock_bitstamp):
     ('{"code": "APIXXX", "reason": "has reason"}', True),
     ('{"code": "APIXXX", "text": "has text"}', False),
 ))
-def test_query_balances__non_related_error_code(
+def test_query_balances_non_related_error_code(
         mock_bitstamp,
         response,
         has_reason,
@@ -164,7 +164,7 @@ def test_query_balances__non_related_error_code(
     assert exp_reason in msg
 
 
-def test_query_balances__skips_not_balance_entry(mock_bitstamp):
+def test_query_balances_skips_not_balance_entry(mock_bitstamp):
     """Test an entry that doesn't end with `_balance` is skipped
     """
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
@@ -174,7 +174,7 @@ def test_query_balances__skips_not_balance_entry(mock_bitstamp):
         assert mock_bitstamp.query_balances() == ({}, '')
 
 
-def test_query_balances__skipped_not_asset_entry(mock_bitstamp):
+def test_query_balances_skipped_not_asset_entry(mock_bitstamp):
     """Test an entry that can't instantiate Asset is skipped
     """
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
@@ -184,7 +184,7 @@ def test_query_balances__skipped_not_asset_entry(mock_bitstamp):
         assert mock_bitstamp.query_balances() == ({}, '')
 
 
-def test_query_balances__skips_inquirer_error(mock_bitstamp):
+def test_query_balances_skips_inquirer_error(mock_bitstamp):
     """Test an entry that can't get its USD price because of a remote error is
     skipped
     """
@@ -200,7 +200,7 @@ def test_query_balances__skips_inquirer_error(mock_bitstamp):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_balances__asset_balance(mock_bitstamp, inquirer):  # pylint: disable=unused-argument
+def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disable=unused-argument
     """Test an entry that can't get its USD price is skipped
     """
     balances_data = (
@@ -295,7 +295,7 @@ def test_deserialize_trade_sell(mock_bitstamp):
 
 
 @pytest.mark.parametrize('option', ['limit', 'since_id', 'sort', 'offset'])
-def test_api_query_paginated__user_transactions_required_options(mock_bitstamp, option):
+def test_api_query_paginated_user_transactions_required_options(mock_bitstamp, option):
     """Test calling the 'user_transactions' endpoint requires a set of specific
     options.
     """
@@ -316,7 +316,7 @@ def test_api_query_paginated__user_transactions_required_options(mock_bitstamp, 
 
 
 @pytest.mark.parametrize('option', ['limit', 'since_id', 'sort', 'offset'])
-def test_api_query_paginated__user_transactions_required_options_values(mock_bitstamp, option):
+def test_api_query_paginated_user_transactions_required_options_values(mock_bitstamp, option):
     """Test calling the 'user_transactions' endpoint requires a set of specific
     options.
     """
@@ -336,7 +336,7 @@ def test_api_query_paginated__user_transactions_required_options_values(mock_bit
         )
 
 
-def test_api_query_paginated__system_clock_not_synced_error_code(mock_bitstamp):
+def test_api_query_paginated_system_clock_not_synced_error_code(mock_bitstamp):
     """Test the error code related with the local system clock not being synced
     raises SystemClockNotSyncedError.
     """
@@ -363,7 +363,7 @@ def test_api_query_paginated__system_clock_not_synced_error_code(mock_bitstamp):
             )
 
 
-def test_api_query_paginated__invalid_json(mock_bitstamp):
+def test_api_query_paginated_invalid_json(mock_bitstamp):
     """Test an invalid JSON response returns empty list.
     """
     options = {
@@ -390,7 +390,7 @@ def test_api_query_paginated__invalid_json(mock_bitstamp):
     '{"code": "APIXXX", "reason": "has reason"}',
     '{"code": "APIXXX", "text": "has text"}',
 ))
-def test_api_query_paginated__non_related_error_code(mock_bitstamp, response):
+def test_api_query_paginated_non_related_error_code(mock_bitstamp, response):
     """Test an error code unrelated with the system clock not synced one
     returns a an empty list.
     """
@@ -415,7 +415,7 @@ def test_api_query_paginated__non_related_error_code(mock_bitstamp, response):
     assert result == []
 
 
-def test_api_query_paginated__skips_different_type_result(mock_bitstamp):
+def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
     """Test results whose type is not in `raw_result_type_filter` are skipped
     """
     options = {
@@ -442,7 +442,7 @@ def test_api_query_paginated__skips_different_type_result(mock_bitstamp):
     assert result == []
 
 
-def test_api_query_paginated__stops_timestamp_gt_end_ts(mock_bitstamp):
+def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
     """Test the method stops processing results when a result timestamp is gt
     `end_ts`.
     """
@@ -496,7 +496,7 @@ def test_api_query_paginated__stops_timestamp_gt_end_ts(mock_bitstamp):
 
 
 @pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
-def test_api_query_paginated__trades_pagination(mock_bitstamp):
+def test_api_query_paginated_trades_pagination(mock_bitstamp):
     """Test pagination logic for trades works as expected.
 
     First request: 2 results, 1 valid trade (id 2)
