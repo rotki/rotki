@@ -47,11 +47,12 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_price,
+    deserialize_timestamp_from_bitstamp_date,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_now_in_ms
+from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 if TYPE_CHECKING:
@@ -424,7 +425,7 @@ class Bitstamp(ExchangeInterface):
                 if raw_result['type'] not in raw_result_type_filter:
                     continue
                 try:
-                    result_timestamp = iso8601ts_to_timestamp(raw_result['datetime'])
+                    result_timestamp = deserialize_timestamp_from_bitstamp_date(raw_result['datetime'])
 
                     if result_timestamp > end_ts:
                         is_result_timesamp_gt_end_ts = True  # prevent extra request
@@ -510,7 +511,7 @@ class Bitstamp(ExchangeInterface):
         else:
             raise AssertionError(f'Unexpected Bitstamp asset movement case: {type_}.')
 
-        timestamp = iso8601ts_to_timestamp(raw_movement['datetime'])
+        timestamp = deserialize_timestamp_from_bitstamp_date(raw_movement['datetime'])
         trade_pair_data = self._get_trade_pair_data_from_transaction(raw_movement)
         base_asset_amount = deserialize_asset_amount(
             raw_movement[trade_pair_data.base_asset_symbol],
@@ -554,7 +555,7 @@ class Bitstamp(ExchangeInterface):
 
         Can raise DeserializationError.
         """
-        timestamp = iso8601ts_to_timestamp(raw_trade['datetime'])
+        timestamp = deserialize_timestamp_from_bitstamp_date(raw_trade['datetime'])
         trade_pair_data = self._get_trade_pair_data_from_transaction(raw_trade)
         base_asset_amount = deserialize_asset_amount(
             raw_trade[trade_pair_data.base_asset_symbol],
