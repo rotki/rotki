@@ -64,6 +64,8 @@ WAPI_ENDPOINTS = (
     'withdrawHistory.html',
 )
 
+RETRY_AFTER_LIMIT = 60
+
 
 class BinancePair(NamedTuple):
     """A binance pair. Contains the symbol in the Binance mode e.g. "ETHBTC" and
@@ -265,7 +267,7 @@ class Binance(ExchangeInterface):
                 except requests.exceptions.RequestException as e:
                     raise RemoteError(f'Binance API request failed due to {str(e)}')
 
-            if response.status_code not in (200, 429):
+            if response.status_code not in (200, 418, 429):
                 code = 'no code found'
                 msg = 'no message found'
                 try:
@@ -285,7 +287,7 @@ class Binance(ExchangeInterface):
                         code,
                         msg,
                     ))
-            elif response.status_code == 429:
+            elif response.status_code in (418, 429):
                 # Binance has limits and if we hit them we should backoff.
                 # A Retry-After header is sent with a 418 or 429 responses and
                 # will give the number of seconds required to wait, in the case
@@ -293,7 +295,20 @@ class Binance(ExchangeInterface):
                 # the ban is over.
                 # https://binance-docs.github.io/apidocs/spot/en/#limits
                 retry_after = int(response.headers.get('retry-after', '0'))
-                log.debug('Got 429 from Binance. Backing off', seconds=retry_after)
+                log.debug(
+                    f'Got status code {response.status_code} from Binance. Backing off',
+                    seconds=retry_after,
+                )
+                if retry_after > RETRY_AFTER_LIMIT:
+                    raise RemoteError(
+                        'Binance API request {} for {} failed with HTTP status '
+                        'code: {} due to a too long retry after value (> {})'.format(
+                            response.url,
+                            method,
+                            response.status_code,
+                            RETRY_AFTER_LIMIT,
+                        ))
+
                 gevent.sleep(retry_after)
                 continue
             else:

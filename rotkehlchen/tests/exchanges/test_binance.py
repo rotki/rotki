@@ -15,6 +15,7 @@ from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
     BINANCE_LAUNCH_TS,
+    RETRY_AFTER_LIMIT,
     Binance,
     trade_from_binance,
 )
@@ -798,13 +799,14 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
     base_url = 'https://api.binance.com/api/v3/myTrades?'
     exp_request_url = base_url + urlencode(call_options)
 
-    # NB: both calls must have the same signature (time frozen)
-    expected_calls = [call(exp_request_url), call(exp_request_url)]
+    # NB: all calls must have the same signature (time frozen)
+    expected_calls = [call(exp_request_url), call(exp_request_url), call(exp_request_url)]
 
     def get_mocked_response():
         responses = [
             MockResponse(429, '[]', headers={'retry-after': '1'}),
-            MockResponse(418, '{"code": "XXX", "msg": "msg"}'),
+            MockResponse(418, '[]', headers={'retry-after': '5'}),
+            MockResponse(418, '[]', headers={'retry-after': str(RETRY_AFTER_LIMIT + 1)}),
         ]
         for response in responses:
             yield response
