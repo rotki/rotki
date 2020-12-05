@@ -1,12 +1,12 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.exchanges.data_structures import MarginPosition
+from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import EthereumTransaction, Location
+from rotkehlchen.typing import EthereumTransaction, Location, AssetMovementCategory, Timestamp, Fee
 
 DUMMY_ADDRESS = '0x0'
 DUMMY_HASH = b''
@@ -502,3 +502,49 @@ def test_accounting_works_for_empty_history(accountant):
     )
     assert FVal(result['overview']['general_trade_profit_loss']).is_close('0')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('0')
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings, expected', [
+    ({'account_for_assets_movements': False}, 0),
+    ({'account_for_assets_movements': True}, 0.57867315),
+])
+def test_assets_movements_not_accounted_for(accountant, expected):
+    # asset_movements_list partially copied from
+    # rotkehlchen/tests/integration/test_end_to_end_tax_report.py
+    asset_movements_list = [AssetMovement(
+        # before query period -- 8.915 * 0.001 = 8.915e-3
+        location=Location.KRAKEN,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1479510304),  # 18/11/2016,
+        asset=A_ETH,  # cryptocompare hourly ETH/EUR: 8.915
+        amount=FVal('95'),
+        fee_asset=A_ETH,
+        fee=Fee(FVal('0.001')),
+        link='krakenid1',
+    ), AssetMovement(  # 0.00029*1964.685 = 0.56975865
+        location=Location.POLONIEX,
+        address='foo',
+        transaction_id='0xfoo',
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=Timestamp(1495969504),  # 28/05/2017,
+        asset=A_BTC,  # cryptocompare hourly BTC/EUR: 1964.685
+        amount=FVal('8.5'),
+        fee_asset=A_BTC,
+        fee=Fee(FVal('0.00029')),
+        link='poloniexid1',
+    )]
+    history = []
+
+    result = accounting_history_process(
+        accountant,
+        1436979735,
+        1519693374,
+        history,
+        asset_movements_list=asset_movements_list,
+    )
+    assert FVal(result['overview']['asset_movement_fees']).is_close(expected)
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close(-expected)
+    assert FVal(result['overview']['total_profit_loss']).is_close(-expected)
