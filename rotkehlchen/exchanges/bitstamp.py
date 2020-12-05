@@ -112,7 +112,7 @@ class Bitstamp(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super(Bitstamp, self).__init__('bitstamp', api_key, secret, database)
+        super().__init__('bitstamp', api_key, secret, database)
         self.base_uri = 'https://www.bitstamp.net/api'
         self.msg_aggregator = msg_aggregator
         # NB: X-Auth-Signature, X-Auth-Nonce, X-Auth-Timestamp and Content-Type per request
@@ -144,10 +144,10 @@ class Bitstamp(ExchangeInterface):
             return result, msg
         try:
             response_dict = rlk_jsonloads_dict(response.text)
-        except JSONDecodeError:
+        except JSONDecodeError as e:
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)
-            raise RemoteError(msg)
+            raise RemoteError(msg) from e
 
         asset_balance: Dict[Asset, Balance] = {}
         for entry, amount in response_dict.items():
@@ -324,7 +324,7 @@ class Bitstamp(ExchangeInterface):
         except requests.exceptions.RequestException as e:
             raise RemoteError(
                 f'Bitstamp {method} request at {request_url} connection error: {str(e)}.',
-            )
+            ) from e
 
         return response
 
@@ -425,7 +425,9 @@ class Bitstamp(ExchangeInterface):
                 if raw_result['type'] not in raw_result_type_filter:
                     continue
                 try:
-                    result_timestamp = deserialize_timestamp_from_bitstamp_date(raw_result['datetime'])
+                    result_timestamp = deserialize_timestamp_from_bitstamp_date(
+                        raw_result['datetime'],
+                    )
 
                     if result_timestamp > end_ts:
                         is_result_timesamp_gt_end_ts = True  # prevent extra request
@@ -473,8 +475,6 @@ class Bitstamp(ExchangeInterface):
                 current_time=str(datetime.now()),
                 remote_server='Bitstamp',
             )
-
-        return None
 
     def _deserialize_asset_movement(
             self,
@@ -600,11 +600,11 @@ class Bitstamp(ExchangeInterface):
         """
         try:
             pair = [key for key in raw_result.keys() if '_' in key and key != 'order_id'][0]
-        except IndexError:
+        except IndexError as e:
             raise DeserializationError(
                 'Could not deserialize Bitstamp trade pair from user transaction. '
                 f'Trade pair not found in: {raw_result}.',
-            )
+            ) from e
 
         # NB: `pair_get_assets()` is not used for simplifying the calls and
         # storing the raw pair strings.
@@ -617,7 +617,7 @@ class Bitstamp(ExchangeInterface):
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
             raise DeserializationError(
                 f'{asset_tag} {e.asset_name} found while processing trade pair.',
-            )
+            ) from e
 
         return TradePairData(
             pair=pair,
@@ -675,19 +675,19 @@ class Bitstamp(ExchangeInterface):
         case_pretty = case.replace('_', ' ')  # human readable case
         try:
             response_dict = rlk_jsonloads_dict(response.text)
-        except JSONDecodeError:
+        except JSONDecodeError as e:
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)
 
             if case in {'validate_api_key', 'balances'}:
-                raise RemoteError(msg)
-            elif case in {'trades', 'asset_movements'}:
+                raise RemoteError(msg) from e
+            if case in {'trades', 'asset_movements'}:
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Bistamp {case_pretty}: {msg}',
                 )
                 return []
-            else:
-                raise AssertionError(f'Unexpected Bitstamp response_case: {case}.')
+
+            raise AssertionError(f'Unexpected Bitstamp response_case: {case}.') from e
 
         error_code = response_dict.get('code', None)
         self._check_for_system_clock_not_synced_error(error_code)
@@ -710,10 +710,10 @@ class Bitstamp(ExchangeInterface):
             raise RemoteError(msg)
         if case == 'balances':
             return None, msg
-        elif case in {'trades', 'asset_movements'}:
+        if case in {'trades', 'asset_movements'}:
             self.msg_aggregator.add_error(
                 f'Got remote error while querying Bistamp {case_pretty}: {msg}',
             )
             return []
-        else:
-            raise AssertionError(f'Unexpected Bitstamp response_case: {case}.')
+
+        raise AssertionError(f'Unexpected Bitstamp response_case: {case}.')
