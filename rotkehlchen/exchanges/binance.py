@@ -298,7 +298,8 @@ class Binance(ExchangeInterface):
                         code,
                         msg,
                     ))
-            elif response.status_code == 429:
+
+            if response.status_code == 429:
                 if backoff > self.backoff_limit:
                     break
                 # Binance has limits and if we hit them we should backoff

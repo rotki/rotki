@@ -1017,9 +1017,9 @@ def _transform_eth_address(
                 f'Given ENS address {given_address} could not be resolved',
                 field_name='address',
             )
-        else:
-            address = to_checksum_address(resolved_address)
-            log.info(f'Resolved ENS {given_address} to {address}')
+
+        address = to_checksum_address(resolved_address)
+        log.info(f'Resolved ENS {given_address} to {address}')
 
     return address
 

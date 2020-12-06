@@ -75,8 +75,8 @@ class DataHandler():
                     raise AuthenticationError(
                         f'User {username} already exists. User data dir: {user_data_dir}',
                     )
-                else:
-                    user_data_dir.mkdir(exist_ok=True)
+
+                user_data_dir.mkdir(exist_ok=True)
             except PermissionError as e:
                 raise SystemPermissionError(f'Failed to create directory for user: {str(e)}')
 

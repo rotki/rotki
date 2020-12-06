@@ -357,9 +357,8 @@ class HDKey():
         # error if we can't derive a child
         if not self.chain_code:
             raise XPUBError('Cannot derive XPUB child without chain_code')
-        else:
-            own_chain_code = self.chain_code
 
+        own_chain_code = self.chain_code
         # start key derivation process
         data = bytearray()
         index_as_bytes = index.to_bytes(4, byteorder='big')
@@ -388,9 +387,9 @@ class HDKey():
                 # if we have a private key, give the child a private key
                 # child_privkey = self.privkey.add(tweak)
                 # child_pubkey = PublicKey.from_secret(child_privkey.secret)
-            else:
-                # otherwise, just derive a pubkey
-                child_pubkey = self.pubkey.add(tweak)
+
+            # otherwise, just derive a pubkey
+            child_pubkey = self.pubkey.add(tweak)
         except ValueError:
             # NB: it is possible to derive an "impossible" key.
             #     e.g. the privkey is too high, or is 0

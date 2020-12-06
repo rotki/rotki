@@ -604,10 +604,10 @@ class Cryptocompare(ExternalServiceWithApiKey):
                         'Unexpected fata format in cryptocompare query_endpoint_histohour. '
                         'End dates do not match.',
                     )
-                else:
-                    # but if it's just a drift within an hour just update the end_date so that
-                    # it can be picked up by the next iterations in the loop
-                    end_date = resp['TimeTo']
+
+                # else if it's just a drift within an hour just update the end_date so that
+                # it can be picked up by the next iterations in the loop
+                end_date = resp['TimeTo']
 
             # If last time slot and first new are the same, skip the first new slot
             last_entry_equal_to_first = (

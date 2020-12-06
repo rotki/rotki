@@ -278,7 +278,8 @@ class PremiumSyncManager():
             if sync_approval == 'unknown':
                 log.info('Remote DB is possibly newer. Ask user.')
                 raise RotkehlchenPermissionError(result.message, result.payload)
-            elif sync_approval == 'yes':
+
+            if sync_approval == 'yes':
                 log.info('User approved data sync from server')
                 if self._sync_data_from_server_and_replace_local()[0]:
                     if create_new:
