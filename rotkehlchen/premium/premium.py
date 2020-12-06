@@ -76,8 +76,10 @@ class PremiumCredentials():
         self.api_key = given_api_key
         try:
             self.api_secret = b64decode(given_api_secret)
-        except BinasciiError:
-            raise IncorrectApiKeyFormat('Rotkehlchen api secret is not in the correct format')
+        except BinasciiError as e:
+            raise IncorrectApiKeyFormat(
+                'Rotkehlchen api secret is not in the correct format',
+            ) from e
 
     def serialize_key(self) -> str:
         """Turn the API key into the format to send outside Rotki (network, DB e.t.c.)"""
@@ -101,11 +103,11 @@ def _decode_response_json(response: requests.Response) -> Any:
     """
     try:
         json_response = response.json()
-    except ValueError:
+    except ValueError as e:
         raise RemoteError(
             f'Could not decode json from {response.text} to {response.request.method} '
             f'query {response.url}',
-        )
+        ) from e
 
     return json_response
 
@@ -152,7 +154,7 @@ class Premium():
         try:
             self.reset_credentials(credentials)
         except BinasciiError as e:
-            raise IncorrectApiKeyFormat(f'Secret Key formatting error: {str(e)}')
+            raise IncorrectApiKeyFormat(f'Secret Key formatting error: {str(e)}') from e
 
         active = self.is_active()
         if not active:
@@ -221,7 +223,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
 
         return _process_dict_response(response)
 
@@ -245,7 +247,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
 
         return _process_dict_response(response)
 
@@ -268,7 +270,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
 
         result = _process_dict_response(response)
         metadata = RemoteMetadata(
@@ -297,7 +299,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
 
         result = _process_dict_response(response)
         return result['data']
@@ -323,7 +325,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}')
+            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
 
         return _decode_premium_json(response)
 

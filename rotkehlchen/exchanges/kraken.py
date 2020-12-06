@@ -236,7 +236,7 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
     try:
         decoded_json = rlk_jsonloads_dict(response.text)
     except json.decoder.JSONDecodeError as e:
-        raise RemoteError(f'Invalid JSON in Kraken response. {e}')
+        raise RemoteError(f'Invalid JSON in Kraken response. {e}') from e
 
     try:
         if decoded_json['error']:
@@ -254,7 +254,7 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
 
         result = decoded_json['result']
     except KeyError as e:
-        raise RemoteError(f'Unexpected format of Kraken response. Missing key: {e}')
+        raise RemoteError(f'Unexpected format of Kraken response. Missing key: {e}') from e
 
     return result
 
@@ -398,7 +398,7 @@ class Kraken(ExchangeInterface):
         try:
             response = self.session.post(urlpath, data=req)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Kraken API request failed due to {str(e)}')
+            raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
 
         self._manage_call_counter(method)
         return _check_and_get_response(response, method)
@@ -486,7 +486,7 @@ class Kraken(ExchangeInterface):
                     data=post_data.encode(),
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Kraken API request failed due to {str(e)}')
+                raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
             self._manage_call_counter(method)
 
         return _check_and_get_response(response, method)

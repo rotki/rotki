@@ -137,7 +137,7 @@ class Coingecko():
         try:
             response = self.session.get(f'{url}?{urlencode(options)}')
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Coingecko API request failed due to {str(e)}')
+            raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
 
         if response.status_code != 200:
             raise RemoteError(
@@ -148,7 +148,7 @@ class Coingecko():
         try:
             decoded_json = rlk_jsonloads(response.text)
         except json.decoder.JSONDecodeError as e:
-            raise RemoteError(f'Invalid JSON in Kraken response. {e}')
+            raise RemoteError(f'Invalid JSON in Kraken response. {e}') from e
 
         return decoded_json
 
@@ -193,7 +193,9 @@ class Coingecko():
                 ),
             )
         except KeyError as e:
-            raise RemoteError(f'Missing expected key entry {e} in coingecko coin data response')
+            raise RemoteError(
+                f'Missing expected key entry {e} in coingecko coin data response',
+            ) from e
 
         return parsed_data
 

@@ -119,7 +119,7 @@ class ExchangeManager():
                     # This should never happen
                     raise AssertionError(
                         f'Tried to initialize unknown exchange {name}. Should never happen.',
-                    )
+                    ) from None
 
                 exchange_ctor = getattr(module, name.capitalize())
                 extra_args: Dict[str, Any] = {}

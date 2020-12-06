@@ -276,7 +276,7 @@ class Binance(ExchangeInterface):
                 try:
                     response = self.session.get(request_url)
                 except requests.exceptions.RequestException as e:
-                    raise RemoteError(f'Binance API request failed due to {str(e)}')
+                    raise RemoteError(f'Binance API request failed due to {str(e)}') from e
 
             limit_ban = response.status_code == 429 and backoff > self.backoff_limit
             if limit_ban or response.status_code not in (200, 429):
@@ -315,8 +315,8 @@ class Binance(ExchangeInterface):
 
         try:
             json_ret = rlk_jsonloads(response.text)
-        except JSONDecodeError:
-            raise RemoteError(f'Binance returned invalid JSON response: {response.text}')
+        except JSONDecodeError as e:
+            raise RemoteError(f'Binance returned invalid JSON response: {response.text}') from e
         return json_ret
 
     def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:

@@ -678,7 +678,7 @@ class EthereumManager():
         except ValueError as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {str(e)}',
-            )
+            ) from e
         return result
 
     def get_logs(

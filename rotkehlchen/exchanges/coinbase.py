@@ -143,7 +143,7 @@ class Coinbase(ExchangeInterface):
             else:
                 raise AssertionError(
                     f'Unexpected coinbase method {method_str} at API key validation',
-                )
+                ) from e
             msg = (
                 f'Provided Coinbase API key needs to have {permission} permission activated. '
                 f'Please log into your coinbase account and set all required permissions: '
@@ -275,7 +275,7 @@ class Coinbase(ExchangeInterface):
         try:
             response = self.session.get(full_url)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Coinbase API request failed due to {str(e)}')
+            raise RemoteError(f'Coinbase API request failed due to {str(e)}') from e
 
         if response.status_code == 403:
             raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')
@@ -288,8 +288,8 @@ class Coinbase(ExchangeInterface):
 
         try:
             json_ret = rlk_jsonloads_dict(response.text)
-        except JSONDecodeError:
-            raise RemoteError(f'Coinbase returned invalid JSON response: {response.text}')
+        except JSONDecodeError as e:
+            raise RemoteError(f'Coinbase returned invalid JSON response: {response.text}') from e
 
         if 'data' not in json_ret:
             raise RemoteError(f'Coinbase json response does not contain data: {response.text}')

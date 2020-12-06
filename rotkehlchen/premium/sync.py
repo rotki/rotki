@@ -136,11 +136,11 @@ class PremiumSyncManager():
 
         try:
             self.data.decompress_and_decrypt_db(self.password, result['data'])
-        except UnableToDecryptRemoteData:
+        except UnableToDecryptRemoteData as e:
             raise PremiumAuthenticationError(
                 'The given password can not unlock the database that was retrieved  from '
                 'the server. Make sure to use the same password as when the account was created.',
-            )
+            ) from e
 
         return True, ''
 
@@ -254,7 +254,7 @@ class PremiumSyncManager():
                 raise PremiumAuthenticationError(
                     'Could not verify keys for the new account. '
                     '{}'.format(str(e)),
-                )
+                ) from e
 
         # else, if we got premium data in the DB initialize it and try to sync with the server
         db_credentials = self.data.db.get_rotkehlchen_premium()
@@ -268,7 +268,7 @@ class PremiumSyncManager():
                     f'the API keys found in the Database. Error: {str(e)}'
                 )
                 log.error(message)
-                raise PremiumAuthenticationError(message)
+                raise PremiumAuthenticationError(message) from e
 
         if self.premium is None:
             return None

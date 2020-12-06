@@ -37,7 +37,7 @@ def _migrate_fiat_balances(db: 'DBHandler') -> None:
                 raise DBUpgradeError(
                     f'Failed to migrate {asset} fiat balance to '
                     f'manually tracked balances. Error: {str(e)}',
-                )
+                ) from e
 
         db.conn.commit()
 

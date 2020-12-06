@@ -88,7 +88,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     except KeyError as e:
         raise DeserializationError(
             f'Poloniex trade deserialization error. Missing key entry for {str(e)} in trade dict',
-        )
+        ) from e
 
     cost = rate * amount
     if trade_type == TradeType.BUY:
@@ -320,7 +320,7 @@ class Poloniex(ExchangeInterface):
             try:
                 response = self._single_query(command, req)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Poloniex API request failed due to {str(e)}')
+                raise RemoteError(f'Poloniex API request failed due to {str(e)}') from e
 
             if response is None:
                 if tries >= 1:
@@ -353,8 +353,8 @@ class Poloniex(ExchangeInterface):
                 else:
                     result = rlk_jsonloads_dict(response.text)
                     result = _post_process(result)
-        except JSONDecodeError:
-            raise RemoteError(f'Poloniex returned invalid JSON response: {response.text}')
+        except JSONDecodeError as e:
+            raise RemoteError(f'Poloniex returned invalid JSON response: {response.text}') from e
 
         if isinstance(result, dict) and 'error' in result:
             raise RemoteError(

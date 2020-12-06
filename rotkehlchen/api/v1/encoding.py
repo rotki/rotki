@@ -90,11 +90,11 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
                 if marshmallow.utils.is_iterable_but_not_string(value)
                 else value.split(self.delimiter)  # type: ignore
             )
-        except AttributeError:
+        except AttributeError as e:
             if MARSHMALLOW_VERSION_INFO[0] < 3:
                 self.fail("invalid")
             else:
-                raise self.make_error("invalid")
+                raise self.make_error("invalid") from e
         return super(webargs.fields.DelimitedList, self)._deserialize(ret, attr, data, **kwargs)
 
 
@@ -110,7 +110,7 @@ class TimestampField(fields.Field):
         try:
             timestamp = deserialize_timestamp(value)
         except DeserializationError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return timestamp
 
@@ -127,7 +127,7 @@ class ColorField(fields.Field):
         try:
             color_code = deserialize_hex_color_code(value)
         except DeserializationError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return color_code
 
@@ -144,7 +144,7 @@ class TaxFreeAfterPeriodField(fields.Field):
         try:
             value = int(value)
         except ValueError:
-            raise ValidationError(f'{value} is not a valid integer')
+            raise ValidationError(f'{value} is not a valid integer') from None
 
         if value < -1:
             raise ValidationError(
@@ -168,8 +168,8 @@ class KrakenAccountTypeField(fields.Field):
     ) -> KrakenAccountType:
         try:
             acc_type = KrakenAccountType.deserialize(value)
-        except DeserializationError:
-            raise ValidationError(f'{value} is not a valid kraken account type')
+        except DeserializationError as e:
+            raise ValidationError(f'{value} is not a valid kraken account type') from e
 
         return acc_type
 
@@ -195,7 +195,7 @@ class AmountField(fields.Field):
         try:
             amount = deserialize_asset_amount(value)
         except DeserializationError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return amount
 
@@ -237,7 +237,7 @@ class PriceField(fields.Field):
         try:
             price = deserialize_price(value)
         except DeserializationError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return price
 
@@ -263,7 +263,7 @@ class FeeField(fields.Field):
         try:
             fee = deserialize_fee(value)
         except DeserializationError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return fee
 
@@ -308,7 +308,7 @@ class AssetField(fields.Field):
         try:
             asset = Asset(value)
         except (DeserializationError, UnknownAsset) as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return asset
 
@@ -350,11 +350,11 @@ class EthereumAddressField(fields.Field):
         # Make sure that given value is an ethereum address
         try:
             address = to_checksum_address(value)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
             raise ValidationError(
                 f'Given value {value} is not an ethereum address',
                 field_name='address',
-            )
+            ) from e
 
         return address
 
@@ -380,7 +380,7 @@ class TradeTypeField(fields.Field):
         try:
             trade_type = deserialize_trade_type(value)
         except DeserializationError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return trade_type
 
@@ -399,7 +399,7 @@ class TradePairField(fields.Field):
         try:
             trade_pair = deserialize_trade_pair(value)
         except DeserializationError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return trade_pair
 
@@ -425,7 +425,7 @@ class LocationField(fields.Field):
         try:
             location = deserialize_location(value)
         except DeserializationError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return location
 
@@ -558,7 +558,7 @@ class XpubField(fields.Field):
         try:
             hdkey = HDKey.from_xpub(value, path='m')
         except XPUBError as e:
-            raise ValidationError(str(e))
+            raise ValidationError(str(e)) from e
 
         return hdkey
 
@@ -939,7 +939,7 @@ class XpubAddSchema(Schema):
             raise ValidationError(
                 f'Failed to initialize an xpub due to {str(e)}',
                 field_name='xpub',
-            )
+            ) from e
 
         data['xpub'] = xpub_hdkey
         return data
@@ -971,11 +971,11 @@ def _validate_blockchain_account_schemas(
                 # Make sure that given value is an ethereum address
                 try:
                     address = to_checksum_address(address_string)
-                except (ValueError, TypeError):
+                except (ValueError, TypeError) as e:
                     raise ValidationError(
                         f'Given value {address_string} is not an ethereum address',
                         field_name='address',
-                    )
+                    ) from e
             else:
                 # else it's ENS name and will be checked in the transformation step and not here
                 address = address_string
@@ -1016,7 +1016,7 @@ def _transform_eth_address(
             raise ValidationError(
                 f'Given ENS address {given_address} could not be resolved',
                 field_name='address',
-            )
+            ) from None
 
         address = to_checksum_address(resolved_address)
         log.info(f'Resolved ENS {given_address} to {address}')

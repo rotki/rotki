@@ -136,10 +136,10 @@ def _evaluate_balance_input(other: Any, operation: str) -> Balance:
             try:
                 amount = FVal(other['amount'])
                 usd_value = FVal(other['usd_value'])
-            except ValueError:
+            except (ValueError, KeyError) as e:
                 raise InputError(
                     f'Found valid dict object but with invalid values during Balance {operation}',
-                )
+                ) from e
             transformed_input = Balance(amount=amount, usd_value=usd_value)
         else:
             raise InputError(f'Found invalid dict object during Balance {operation}')

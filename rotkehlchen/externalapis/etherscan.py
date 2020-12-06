@@ -26,20 +26,20 @@ log = RotkehlchenLogsAdapter(logger)
 def read_hash(data: Dict[str, Any], key: str) -> bytes:
     try:
         result = hexstring_to_bytes(data[key])
-    except ValueError:
+    except ValueError as e:
         raise DeserializationError(
             f'Failed to read {key} as a hash during etherscan transaction query',
-        )
+        ) from e
     return result
 
 
 def read_integer(data: Dict[str, Any], key: str) -> int:
     try:
         result = convert_to_int(data[key])
-    except ConversionError:
+    except ConversionError as e:
         raise DeserializationError(
             f'Failed to read {key} as an integer during etherscan transaction query',
-        )
+        ) from e
     return result
 
 
@@ -75,7 +75,9 @@ def deserialize_transaction_from_etherscan(
             nonce=nonce,
         )
     except KeyError as e:
-        raise DeserializationError(f'Etherscan ethereum transaction missing expected key {str(e)}')
+        raise DeserializationError(
+            f'Etherscan ethereum transaction missing expected key {str(e)}',
+        ) from e
 
 
 class Etherscan(ExternalServiceWithApiKey):
@@ -183,10 +185,10 @@ class Etherscan(ExternalServiceWithApiKey):
                         raise RemoteError(
                             'Getting Etherscan max connections error even '
                             'after we incrementally backed off',
-                        )
+                        ) from e
                     continue
 
-                raise RemoteError(f'Etherscan API request failed due to {str(e)}')
+                raise RemoteError(f'Etherscan API request failed due to {str(e)}') from e
 
             if response.status_code != 200:
                 raise RemoteError(
@@ -197,8 +199,10 @@ class Etherscan(ExternalServiceWithApiKey):
 
             try:
                 json_ret = rlk_jsonloads_dict(response.text)
-            except JSONDecodeError:
-                raise RemoteError(f'Etherscan returned invalid JSON response: {response.text}')
+            except JSONDecodeError as e:
+                raise RemoteError(
+                    f'Etherscan returned invalid JSON response: {response.text}',
+                ) from e
 
             try:
                 result = json_ret.get('result', None)
@@ -245,7 +249,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 raise RemoteError(
                     f'Unexpected format of Etherscan response for request {response.url}. '
                     f'Missing key entry for {str(e)}. Response was: {response.text}',
-                )
+                ) from e
 
             # success, break out of the loop and return result
             return result

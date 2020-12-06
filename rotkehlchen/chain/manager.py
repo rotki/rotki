@@ -691,7 +691,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     raise EthSyncError(
                         'Tried to use the ethereum chain of a local client to edit '
                         'an eth account but the chain is not synced.',
-                    )
+                    ) from e
 
                 # Also modify and take into account defi balances
                 if append_or_remove == 'append':
@@ -759,7 +759,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             raise EthSyncError(
                 'Tried to use the ethereum chain of the provided client to query '
                 'token balances but the chain is not synced.',
-            )
+            ) from e
 
         # Update the per account token balance and usd value
         token_totals: Dict[EthereumToken, FVal] = defaultdict(FVal)

@@ -92,7 +92,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             try:
                 response = self.session.get(query_str)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Querying {query_str} failed due to {str(e)}')
+                raise RemoteError(f'Querying {query_str} failed due to {str(e)}') from e
 
             if response.status_code == 429:
                 if times == 0:
@@ -117,8 +117,10 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         try:
             json_ret = rlk_jsonloads_dict(response.text)
-        except JSONDecodeError:
-            raise RemoteError(f'Beaconchain API returned invalid JSON response: {response.text}')
+        except JSONDecodeError as e:
+            raise RemoteError(
+                f'Beaconchain API returned invalid JSON response: {response.text}',
+            ) from e
 
         if json_ret.get('status') != 'OK':
             raise RemoteError(f'Beaconchain API returned non-OK status. Response: {json_ret}')
@@ -174,7 +176,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         except KeyError as e:
             raise RemoteError(
                 f'Beaconchai.in balance response processing error. Missing key entry {str(e)}',
-            )
+            ) from e
 
         return balances
 
@@ -213,7 +215,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         except KeyError as e:
             raise RemoteError(
                 f'Beaconchai.in performance response processing error. Missing key entry {str(e)}',
-            )
+            ) from e
 
         return performance
 
@@ -243,5 +245,5 @@ class BeaconChain(ExternalServiceWithApiKey):
         except KeyError as e:
             raise RemoteError(
                 f'Beaconchai.in eth1 response processing error. Missing key entry {str(e)}',
-            )
+            ) from e
         return validators

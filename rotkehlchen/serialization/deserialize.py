@@ -40,7 +40,7 @@ def deserialize_fee(fee: Optional[str]) -> Fee:
     try:
         result = Fee(FVal(fee))
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize a fee entry due to: {str(e)}')
+        raise DeserializationError(f'Failed to deserialize a fee entry due to: {str(e)}') from e
 
     return result
 
@@ -59,19 +59,19 @@ def deserialize_timestamp(timestamp: Union[int, str, FVal]) -> Timestamp:
     elif isinstance(timestamp, FVal):
         try:
             processed_timestamp = Timestamp(timestamp.to_int(exact=True))
-        except ConversionError:
+        except ConversionError as e:
             # An fval was not representing an exact int
             raise DeserializationError(
                 'Tried to deserialize a timestamp fron a non-exact int FVal entry',
-            )
+            ) from e
     elif isinstance(timestamp, str):
         try:
             processed_timestamp = Timestamp(int(timestamp))
-        except ValueError:
+        except ValueError as e:
             # String could not be turned to an int
             raise DeserializationError(
                 f'Failed to deserialize a timestamp entry from string {timestamp}',
-            )
+            ) from e
     else:
         raise DeserializationError(
             f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
@@ -122,8 +122,10 @@ def deserialize_timestamp_from_date(
 
     try:
         return Timestamp(create_timestamp(datestr=date, formatstr=formatstr))
-    except ValueError:
-        raise DeserializationError(f'Failed to deserialize {date} {location} timestamp entry')
+    except ValueError as e:
+        raise DeserializationError(
+            f'Failed to deserialize {date} {location} timestamp entry',
+        ) from e
 
 
 def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
@@ -178,15 +180,17 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal, int]) -> Timestamp:
     if isinstance(time, str):
         try:
             return Timestamp(convert_to_int(time, accept_only_exact=False))
-        except ConversionError:
-            raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
+        except ConversionError as e:
+            raise DeserializationError(
+                f'Failed to deserialize {time} kraken timestamp entry',
+            ) from e
     if isinstance(time, FVal):
         try:
             return Timestamp(time.to_int(exact=False))
-        except ConversionError:
+        except ConversionError as e:
             raise DeserializationError(
                 f'Failed to deserialize {time} kraken timestamp entry from an FVal',
-            )
+            ) from e
 
     # else
     raise DeserializationError(
@@ -225,7 +229,7 @@ def deserialize_optional_fval(
     try:
         result = FVal(value)
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {str(e)}')
+        raise DeserializationError(f'Failed to deserialize value entry: {str(e)}') from e
 
     return result
 
@@ -234,7 +238,7 @@ def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
     try:
         result = AssetAmount(FVal(amount))
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize an amount entry: {str(e)}')
+        raise DeserializationError(f'Failed to deserialize an amount entry: {str(e)}') from e
 
     return result
 
@@ -254,7 +258,7 @@ def deserialize_price(amount: AcceptableFValInitInput) -> Price:
     try:
         result = Price(FVal(amount))
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize a price/rate entry: {str(e)}')
+        raise DeserializationError(f'Failed to deserialize a price/rate entry: {str(e)}') from e
 
     return result
 
@@ -395,11 +399,11 @@ def deserialize_trade_pair(pair: str) -> TradePair:
     try:
         pair_get_assets(TradePair(pair))
     except UnprocessableTradePair as e:
-        raise DeserializationError(str(e))
+        raise DeserializationError(str(e)) from e
     except UnknownAsset as e:
         raise DeserializationError(
             f'Unknown asset {e.asset_name} found while processing trade pair',
-        )
+        ) from e
 
     return TradePair(pair)
 
@@ -514,10 +518,10 @@ def deserialize_hex_color_code(symbol: str) -> HexColorCode:
 
     try:
         color_value = int(symbol, 16)
-    except ValueError:
+    except ValueError as e:
         raise DeserializationError(
             f'The given color code value "{symbol}" could not be processed as a hex color value',
-        )
+        ) from e
 
     if color_value < 0 or color_value > 16777215:
         raise DeserializationError(
@@ -551,10 +555,10 @@ def deserialize_int_from_hex(symbol: str, location: str) -> int:
 
     try:
         result = int(symbol, 16)
-    except ValueError:
+    except ValueError as e:
         raise DeserializationError(
             f'Could not turn string "{symbol}" into an integer at {location}',
-        )
+        ) from e
 
     return result
 
@@ -574,10 +578,10 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
 
         try:
             result = int(symbol, 16)
-        except ValueError:
+        except ValueError as e:
             raise DeserializationError(
                 f'Could not turn string "{symbol}" into an integer {location}',
-            )
+            ) from e
     else:
         raise DeserializationError(
             f'Unexpected type {type(symbol)} given to '
@@ -594,7 +598,7 @@ def deserialize_ethereum_token_from_db(identifier: str) -> EthereumToken:
     except UnknownAsset as e:
         raise DeserializationError(
             f'Unknown ethereum token {e.asset_name} found',
-        )
+        ) from e
 
     return ethereum_token
 
@@ -615,11 +619,11 @@ def deserialize_unknown_ethereum_token_from_db(
             name=name,
             decimals=decimals,
         )
-    except Exception:
+    except Exception as e:
         raise DeserializationError(
             f'Failed deserializing an unknown ethereum token with '
             f'address {ethereum_address}, symbol {symbol}, name {name}, '
             f'decimals {decimals}.',
-        )
+        ) from e
 
     return unknown_ethereum_token

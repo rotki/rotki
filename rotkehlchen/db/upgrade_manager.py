@@ -232,7 +232,7 @@ class DBUpgradeManager():
                     tmp_db_filename,
                     os.path.join(self.db.user_data_dir, 'rotkehlchen.db'),
                 )
-                raise DBUpgradeError(error_message)
+                raise DBUpgradeError(error_message) from e
 
         # Upgrade success all is good
         self.db.set_version(to_version)

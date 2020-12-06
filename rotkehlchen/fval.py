@@ -39,11 +39,11 @@ class FVal():
             else:
                 raise ValueError(f'Invalid type {type(data)} of data given to FVal constructor')
 
-        except InvalidOperation:
+        except InvalidOperation as e:
             raise ValueError(
                 'Expected string, int, float, or Decimal to initialize an FVal.'
                 'Found {}.'.format(type(data)),
-            )
+            ) from e
 
     def __str__(self) -> str:
         return str(self.num)
