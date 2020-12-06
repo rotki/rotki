@@ -1,6 +1,10 @@
+import hashlib
+import hmac
 import warnings as test_warnings
+from contextlib import ExitStack
 from datetime import datetime
 from unittest.mock import call, patch
+from urllib.parse import urlencode
 
 import pytest
 
@@ -12,6 +16,7 @@ from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
     BINANCE_LAUNCH_TS,
+    RETRY_AFTER_LIMIT,
     Binance,
     trade_from_binance,
 )
@@ -23,6 +28,7 @@ from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_now_in_ms
 
 
 def test_name():
@@ -149,32 +155,6 @@ exchange_info_mock_text = '''{
     "icebergAllowed": false
     }]
 }'''
-
-
-def test_binance_backoff_after_429(function_scope_binance):
-    count = 0
-    binance = function_scope_binance
-
-    def mock_429(url):  # pylint: disable=unused-argument
-        nonlocal count
-        if count < 2:
-            response = MockResponse(429, '{"code": -1103, "msg": "Too many requests"}')
-        else:
-            response = MockResponse(200, exchange_info_mock_text)
-        count += 1
-        return response
-
-    binance.initial_backoff = 0.5
-    binance.backoff_limit = 2
-    with patch.object(binance.session, 'get', side_effect=mock_429):
-        # test that after 2 429 cals we finally succeed in the API call
-        result = binance.api_query('exchangeInfo')
-        assert 'timezone' in result
-
-        # Test the backoff_limit properly returns an error when hit
-        count = -9999999
-        with pytest.raises(RemoteError):
-            binance.api_query('exchangeInfo')
 
 
 def test_binance_assets_are_known(
@@ -790,3 +770,70 @@ def test_api_query_dict_calls_with_time_delta(function_scope_binance):
                 end_ts=Timestamp(end_ts),
             )
             assert mock_api_query_dict.call_args_list == expected_calls
+
+
+@pytest.mark.freeze_time(datetime(2020, 11, 24, 3, 14, 15))
+def test_api_query_retry_on_status_code_429(function_scope_binance):
+    """Test when Binance API returns 429 and the request is retried, the
+    signature is not polluted by any attribute from the previous call.
+
+    It also tests getting the `retry-after` seconds to backoff from the
+    response header.
+
+    NB: basically remove `call_options['signature']`.
+    """
+    binance = function_scope_binance
+    offset_ms = 1000
+    call_options = {
+        'fromId': 0,
+        'limit': 1000,
+        'symbol': 'BUSDUSDT',
+        'recvWindow': 10000,
+        'timestamp': str(ts_now_in_ms() + offset_ms),
+    }
+    signature = hmac.new(
+        binance.secret,
+        urlencode(call_options).encode('utf-8'),
+        hashlib.sha256,
+    ).hexdigest()
+    call_options['signature'] = signature
+    base_url = 'https://api.binance.com/api/v3/myTrades?'
+    exp_request_url = base_url + urlencode(call_options)
+
+    # NB: all calls must have the same signature (time frozen)
+    expected_calls = [call(exp_request_url), call(exp_request_url), call(exp_request_url)]
+
+    def get_mocked_response():
+        responses = [
+            MockResponse(429, '[]', headers={'retry-after': '1'}),
+            MockResponse(418, '[]', headers={'retry-after': '5'}),
+            MockResponse(418, '[]', headers={'retry-after': str(RETRY_AFTER_LIMIT + 1)}),
+        ]
+        for response in responses:
+            yield response
+
+    def mock_response(url):  # pylint: disable=unused-argument
+        return next(get_response)
+
+    get_response = get_mocked_response()
+
+    # force to break the loop after 2 requests by lowering the `self.backoff_limit`
+    backoff_patch = patch.object(binance, 'backoff_limit', new=7)
+    offset_ms_patch = patch.object(binance, 'offset_ms', new=1000)
+    binance_patch = patch.object(binance.session, 'get', side_effect=mock_response)
+
+    with ExitStack() as stack:
+        stack.enter_context(backoff_patch)
+        stack.enter_context(offset_ms_patch)
+        binance_mock_get = stack.enter_context(binance_patch)
+        with pytest.raises(RemoteError) as e:
+            binance.api_query(
+                method='myTrades',
+                options={
+                    'fromId': 0,
+                    'limit': 1000,
+                    'symbol': 'BUSDUSDT',
+                },
+            )
+    assert 'myTrades failed with HTTP status code: 418' in str(e.value)
+    assert binance_mock_get.call_args_list == expected_calls

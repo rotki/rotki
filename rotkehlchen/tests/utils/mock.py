@@ -6,11 +6,17 @@ from hexbytes import HexBytes
 
 
 class MockResponse():
-    def __init__(self, status_code: int, text: str) -> None:
+    def __init__(
+            self,
+            status_code: int,
+            text: str,
+            headers: Dict['str', Any] = None,
+    ) -> None:
         self.status_code = status_code
         self.text = text
         self.content = text.encode()
         self.url = 'http://someurl.com'
+        self.headers = headers or {}
 
     def json(self) -> Dict[str, Any]:
         return json.loads(self.text)

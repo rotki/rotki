@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :bug:`1846` AMPL token balance should no longer be double counted
+* :bug:`1849` Binance queries should no longer randomly fail with invalid signature.
+* :bug:`1846` AMPL token balance should no longer be double counted.
 
 * :release:`1.9.1 <2020-11-29>`
 * :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
