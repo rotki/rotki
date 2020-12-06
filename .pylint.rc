@@ -46,6 +46,9 @@ enable=
     inconsistent-return-statements,
     reimported,
     too-many-function-args,
+    no-else-raise,
+    no-else-return,
+    raise-missing-from,
     rotki-lognokwargs,
     rotki-nonbooleannot
 

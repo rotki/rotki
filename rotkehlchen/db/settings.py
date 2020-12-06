@@ -105,9 +105,9 @@ class ModifiableDBSettings(NamedTuple):
 def read_boolean(value: Union[str, bool]) -> bool:
     if isinstance(value, bool):
         return value
-    elif isinstance(value, str):
+    if isinstance(value, str):
         return str_to_bool(value)
-
+    # else
     raise DeserializationError(
         f'Failed to read a boolean from {value} which is of type {type(value)}',
     )

@@ -110,10 +110,10 @@ class Bitmex(ExchangeInterface):
             error = str(e)
             if 'Invalid API Key' in error:
                 return False, 'Provided API Key is invalid'
-            elif 'Signature not valid' in error:
+            if 'Signature not valid' in error:
                 return False, 'Provided API Secret is invalid'
-            else:
-                raise
+            # else reraise
+            raise
         return True, ''
 
     def _generate_signature(self, verb: str, path: str, expires: int, data: str = '') -> str:
@@ -173,7 +173,7 @@ class Bitmex(ExchangeInterface):
         try:
             response = getattr(self.session, verb)(request_url, data=data)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Bitmex API request failed due to {str(e)}')
+            raise RemoteError(f'Bitmex API request failed due to {str(e)}') from e
 
         if response.status_code not in (200, 401):
             raise RemoteError(
@@ -185,8 +185,8 @@ class Bitmex(ExchangeInterface):
 
         try:
             json_ret = rlk_jsonloads(response.text)
-        except JSONDecodeError:
-            raise RemoteError('Bitmex returned invalid JSON response')
+        except JSONDecodeError as e:
+            raise RemoteError('Bitmex returned invalid JSON response') from e
 
         if isinstance(json_ret, dict) and 'error' in json_ret:
             raise RemoteError(json_ret['error']['message'])

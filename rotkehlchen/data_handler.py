@@ -75,10 +75,12 @@ class DataHandler():
                     raise AuthenticationError(
                         f'User {username} already exists. User data dir: {user_data_dir}',
                     )
-                else:
-                    user_data_dir.mkdir(exist_ok=True)
+
+                user_data_dir.mkdir(exist_ok=True)
             except PermissionError as e:
-                raise SystemPermissionError(f'Failed to create directory for user: {str(e)}')
+                raise SystemPermissionError(
+                    f'Failed to create directory for user: {str(e)}',
+                ) from e
 
         else:
             try:
@@ -88,7 +90,7 @@ class DataHandler():
                 if not (user_data_dir / 'rotkehlchen.db').exists():
                     raise PermissionError
 
-            except PermissionError:
+            except PermissionError as e:
                 # This is bad. User directory exists but database is missing.
                 # Or either DB or user directory can't be accessed due to permissions
                 # Make a backup of the directory that user should probably remove
@@ -103,7 +105,8 @@ class DataHandler():
                     'User {} exists but DB is missing. Somehow must have been manually '
                     'deleted or is corrupt or access permissions do not allow reading. '
                     'Please recreate the user account. '
-                    'A backup of the user directory was created.'.format(username))
+                    'A backup of the user directory was created.'.format(username),
+                ) from e
 
         self.db: DBHandler = DBHandler(
             user_data_dir=user_data_dir,

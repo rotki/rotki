@@ -134,9 +134,9 @@ def wait_for_async_task(
             status = json_data['result']['status']
             if status == 'completed':
                 return json_data['result']['outcome']
-            elif status == 'not-found':
+            if status == 'not-found':
                 raise AssertionError(f'Tried to wait for task id {task_id} but it is not found')
-            elif status == 'pending':
+            if status == 'pending':
                 gevent.sleep(1)
             else:
                 raise AssertionError(

@@ -528,15 +528,15 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
     # https://support.coinbase.com/customer/portal/articles/2982947
     if cb_name == 'MCDAI':
         return A_DAI
-    elif cb_name == 'DAI':
+    if cb_name == 'DAI':
         # If it's dai and it's queried from the exchange before the end of the upgrade
         if not time:
             time = ts_now()
         if time < COINBASE_DAI_UPGRADE_END_TS:
             # Then it should be the single collateral version
             return A_SAI
-        else:
-            return A_DAI
+        # else
+        return A_DAI
 
     # else
     return Asset(cb_name)

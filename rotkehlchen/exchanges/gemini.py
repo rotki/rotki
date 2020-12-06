@@ -173,7 +173,9 @@ class Gemini(ExchangeInterface):
             try:
                 response = self.session.request(method=method, url=url)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Gemini {method} query at {url} connection error: {str(e)}')
+                raise RemoteError(
+                    f'Gemini {method} query at {url} connection error: {str(e)}',
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
@@ -204,11 +206,11 @@ class Gemini(ExchangeInterface):
 
         try:
             json_ret = rlk_jsonloads_list(response.text)
-        except JSONDecodeError:
+        except JSONDecodeError as e:
             raise RemoteError(
                 f'Gemini  query at {response.url} '
                 f'returned invalid JSON response: {response.text}',
-            )
+            ) from e
 
         return json_ret
 
@@ -247,7 +249,7 @@ class Gemini(ExchangeInterface):
             raise GeminiPermissionError(
                 f'API key does not have permission for {endpoint}',
             )
-        elif response.status_code == HTTPStatus.BAD_REQUEST:
+        if response.status_code == HTTPStatus.BAD_REQUEST:
             if 'InvalidSignature' in response.text:
                 raise GeminiPermissionError('Invalid API Key or API secret')
             # else let it be handled by the generic non-200 code error below
@@ -263,11 +265,11 @@ class Gemini(ExchangeInterface):
 
         try:
             json_ret = deserialization_fn(response.text)
-        except JSONDecodeError:
+        except JSONDecodeError as e:
             raise RemoteError(
                 f'Gemini query at {response.url} '
                 f'returned invalid JSON response: {response.text}',
-            )
+            ) from e
 
         return json_ret
 

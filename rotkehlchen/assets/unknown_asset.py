@@ -34,7 +34,7 @@ class UnknownEthereumToken:
         """
         if isinstance(other, UnknownEthereumToken):
             return self.ethereum_address == other.ethereum_address
-        elif isinstance(other, str):
+        if isinstance(other, str):
             return self.ethereum_address == other
 
         # else for any other type comparison return false

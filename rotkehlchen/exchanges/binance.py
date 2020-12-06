@@ -222,17 +222,18 @@ class Binance(ExchangeInterface):
             error = str(e)
             if 'API-key format invalid' in error:
                 return False, 'Provided API Key is in invalid Format'
-            elif 'Signature for this request is not valid' in error:
+            if 'Signature for this request is not valid' in error:
                 return False, 'Provided API Secret is malformed'
-            elif 'Invalid API-key, IP, or permissions for action' in error:
+            if 'Invalid API-key, IP, or permissions for action' in error:
                 return False, 'API Key does not match the given secret'
-            elif 'Timestamp for this request was' in error:
+            if 'Timestamp for this request was' in error:
                 return False, (
                     "Local system clock is not in sync with binance server. "
                     "Try syncing your system's clock"
                 )
-            else:
-                raise
+            # else reraise
+            raise
+
         return True, ''
 
     def api_query(self, method: str, options: Optional[Dict] = None) -> Union[List, Dict]:
@@ -275,7 +276,7 @@ class Binance(ExchangeInterface):
                 try:
                     response = self.session.get(request_url)
                 except requests.exceptions.RequestException as e:
-                    raise RemoteError(f'Binance API request failed due to {str(e)}')
+                    raise RemoteError(f'Binance API request failed due to {str(e)}') from e
 
             limit_ban = response.status_code == 429 and backoff > self.backoff_limit
             if limit_ban or response.status_code not in (200, 429):
@@ -298,7 +299,8 @@ class Binance(ExchangeInterface):
                         code,
                         msg,
                     ))
-            elif response.status_code == 429:
+
+            if response.status_code == 429:
                 if backoff > self.backoff_limit:
                     break
                 # Binance has limits and if we hit them we should backoff
@@ -313,8 +315,8 @@ class Binance(ExchangeInterface):
 
         try:
             json_ret = rlk_jsonloads(response.text)
-        except JSONDecodeError:
-            raise RemoteError(f'Binance returned invalid JSON response: {response.text}')
+        except JSONDecodeError as e:
+            raise RemoteError(f'Binance returned invalid JSON response: {response.text}') from e
         return json_ret
 
     def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:

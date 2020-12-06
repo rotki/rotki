@@ -306,13 +306,12 @@ class RestAPI():
                         # Also remove the greenlet from the killable_greenlets
                         self.killable_greenlets.pop(idx)
                         return api_response(result=result_dict, status_code=HTTPStatus.OK)
-                    else:
-                        # Task is still pending and the greenlet is running
-                        result_dict = {
-                            'result': {'status': 'pending', 'outcome': None},
-                            'message': f'The task with id {task_id} is still pending',
-                        }
-                        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+                    # else task is still pending and the greenlet is running
+                    result_dict = {
+                        'result': {'status': 'pending', 'outcome': None},
+                        'message': f'The task with id {task_id} is still pending',
+                    }
+                    return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
         # The task has not been found
         result_dict = {
@@ -971,8 +970,8 @@ class RestAPI():
             msg = 'The database rejected the password change for unknown reasons'
             result_dict['message'] = msg
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-        else:
-            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        # else
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=False)
     def user_premium_key_remove(self) -> Response:
@@ -985,8 +984,8 @@ class RestAPI():
         if success is False:
             result_dict['message'] = msg
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-        else:
-            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        # else
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
     def query_all_assets() -> Response:

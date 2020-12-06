@@ -129,16 +129,16 @@ def create_web3_mock(web3: Web3, test_data: VaultTestData):
         )
         if address == MAKERDAO_GET_CDPS.address and 'GetCDPS' in test_data.mock_contracts:
             return MockContract(test_data, getCdpsAsc=mock_get_cdps_asc)
-        elif mock_proxy_registry:
+        if mock_proxy_registry:
             return MockContract(test_data, proxies=mock_registry_proxies)
-        elif address == MAKERDAO_VAT.address and 'VAT' in test_data.mock_contracts:
+        if address == MAKERDAO_VAT.address and 'VAT' in test_data.mock_contracts:
             return MockContract(test_data, urns=mock_vat_urns, ilks=mock_vat_ilks)
-        elif address == MAKERDAO_SPOT.address and 'SPOT' in test_data.mock_contracts:
+        if address == MAKERDAO_SPOT.address and 'SPOT' in test_data.mock_contracts:
             return MockContract(test_data, ilks=mock_spot_ilks)
-        elif address == MAKERDAO_JUG.address and 'JUG' in test_data.mock_contracts:
+        if address == MAKERDAO_JUG.address and 'JUG' in test_data.mock_contracts:
             return MockContract(test_data, ilks=mock_jug_ilks)
-        else:
-            raise AssertionError('Got unexpected address for contract during tests')
+        # else
+        raise AssertionError('Got unexpected address for contract during tests')
 
     return patch.object(
         web3.eth,

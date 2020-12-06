@@ -20,7 +20,7 @@ class Github():
         try:
             response = requests.get(f'{self.prefix}{path}')
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query Github: {str(e)}')
+            raise RemoteError(f'Failed to query Github: {str(e)}') from e
 
         if response.status_code != 200:
             raise RemoteError(
@@ -31,8 +31,8 @@ class Github():
 
         try:
             json_ret = rlk_jsonloads_dict(response.text)
-        except JSONDecodeError:
-            raise RemoteError(f'Github returned invalid JSON response: {response.text}')
+        except JSONDecodeError as e:
+            raise RemoteError(f'Github returned invalid JSON response: {response.text}') from e
         return json_ret
 
     def get_latest_release(self) -> Tuple[str, str]:

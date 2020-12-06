@@ -178,10 +178,10 @@ class Bittrex(ExchangeInterface):
             error = str(e)
             if 'APIKEY_INVALID' in error:
                 return False, 'Provided API Key is invalid'
-            elif 'INVALID_SIGNATURE' in error:
+            if 'INVALID_SIGNATURE' in error:
                 return False, 'Provided API Secret is invalid'
-            else:
-                raise
+            # else reraise
+            raise
         return True, ''
 
     @staticmethod
@@ -189,8 +189,10 @@ class Bittrex(ExchangeInterface):
         if response.status_code == HTTPStatus.UNAUTHORIZED:
             try:
                 result = rlk_jsonloads_dict(response.text)
-            except JSONDecodeError:
-                raise RemoteError(f'Bittrex returned invalid JSON response: {response.text}')
+            except JSONDecodeError as e:
+                raise RemoteError(
+                    f'Bittrex returned invalid JSON response: {response.text}',
+                ) from e
 
             if result.get('code', None) == 'INVALID_TIMESTAMP':
                 raise SystemClockNotSyncedError(
@@ -252,8 +254,8 @@ class Bittrex(ExchangeInterface):
 
         try:
             result = rlk_jsonloads_list(response.text)
-        except JSONDecodeError:
-            raise RemoteError(f'Bittrex returned invalid JSON response: {response.text}')
+        except JSONDecodeError as e:
+            raise RemoteError(f'Bittrex returned invalid JSON response: {response.text}') from e
 
         return result
 
@@ -291,7 +293,7 @@ class Bittrex(ExchangeInterface):
                 json=options if method != 'get' else None,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Bittrex API request failed due to {str(e)}')
+            raise RemoteError(f'Bittrex API request failed due to {str(e)}') from e
 
         return response
 

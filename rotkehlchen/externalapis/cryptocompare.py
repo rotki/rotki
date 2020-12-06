@@ -267,12 +267,14 @@ class Cryptocompare(ExternalServiceWithApiKey):
             try:
                 response = self.session.get(querystr)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Cryptocompare API request failed due to {str(e)}')
+                raise RemoteError(f'Cryptocompare API request failed due to {str(e)}') from e
 
             try:
                 json_ret = rlk_jsonloads_dict(response.text)
-            except JSONDecodeError:
-                raise RemoteError(f'Cryptocompare returned invalid JSON response: {response.text}')
+            except JSONDecodeError as e:
+                raise RemoteError(
+                    f'Cryptocompare returned invalid JSON response: {response.text}',
+                ) from e
 
             try:
                 if json_ret.get('Message', None) == RATE_LIMIT_MSG:
@@ -309,7 +311,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 raise RemoteError(
                     f'Unexpected format of Cryptocompare json_response. '
                     f'Missing key entry for {str(e)}',
-                )
+                ) from e
 
         raise AssertionError('We should never get here')
 
@@ -414,7 +416,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             cc_from_asset_symbol = from_asset.to_cryptocompare()
             cc_to_asset_symbol = to_asset.to_cryptocompare()
         except UnsupportedAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name)
+            raise PriceQueryUnsupportedAsset(e.asset_name) from e
 
         query_path = (
             f'v2/histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
@@ -448,7 +450,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             cc_from_asset_symbol = from_asset.to_cryptocompare()
             cc_to_asset_symbol = to_asset.to_cryptocompare()
         except UnsupportedAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name)
+            raise PriceQueryUnsupportedAsset(e.asset_name) from e
 
         query_path = f'price?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
         result = self._api_query(path=query_path)
@@ -488,7 +490,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             cc_from_asset_symbol = from_asset.to_cryptocompare()
             cc_to_asset_symbol = to_asset.to_cryptocompare()
         except UnsupportedAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name)
+            raise PriceQueryUnsupportedAsset(e.asset_name) from e
 
         query_path = (
             f'pricehistorical?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
@@ -604,10 +606,10 @@ class Cryptocompare(ExternalServiceWithApiKey):
                         'Unexpected fata format in cryptocompare query_endpoint_histohour. '
                         'End dates do not match.',
                     )
-                else:
-                    # but if it's just a drift within an hour just update the end_date so that
-                    # it can be picked up by the next iterations in the loop
-                    end_date = resp['TimeTo']
+
+                # else if it's just a drift within an hour just update the end_date so that
+                # it can be picked up by the next iterations in the loop
+                end_date = resp['TimeTo']
 
             # If last time slot and first new are the same, skip the first new slot
             last_entry_equal_to_first = (
@@ -720,7 +722,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 historical_data_start=historical_data_start,
             )
         except UnsupportedAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name)
+            raise PriceQueryUnsupportedAsset(e.asset_name) from e
 
         price = Price(ZERO)
         # all data are sorted and timestamps are always increasing by 1 hour

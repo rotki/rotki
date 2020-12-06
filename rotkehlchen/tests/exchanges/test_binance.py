@@ -245,8 +245,8 @@ def test_binance_query_balances_include_features(function_scope_binance):
     def mock_binance_response(url):  # pylint: disable=unused-argument
         if 'futures' in url:
             return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
-        else:
-            return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+        # else
+        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
     with patch.object(binance.session, 'get', side_effect=mock_binance_response):
         balances, msg = binance.query_balances()

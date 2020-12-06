@@ -75,8 +75,8 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
             add_a_second = True
     try:
         ts = Timestamp(int(datetime.datetime.fromisoformat(datestr).timestamp()))
-    except ValueError:
-        raise DeserializationError(f'Couldnt read {datestr} as iso8601ts timestamp')
+    except ValueError as e:
+        raise DeserializationError(f'Couldnt read {datestr} as iso8601ts timestamp') from e
 
     return Timestamp(ts + 1) if add_a_second else ts
 
@@ -226,7 +226,7 @@ def retry_calls(
                         method_name,
                         times,
                         e,
-                    ))
+                    )) from e
 
 
 def request_get(
@@ -293,7 +293,7 @@ def convert_to_int(
     """
     if isinstance(val, FVal):
         return val.to_int(accept_only_exact)
-    elif isinstance(val, (bytes, str)):
+    if isinstance(val, (bytes, str)):
         # Since float string are not converted to int we have to first convert
         # to float and try to convert to int afterwards
         try:
@@ -302,14 +302,14 @@ def convert_to_int(
             # else also try to turn it into a float
             try:
                 return FVal(val).to_int(exact=accept_only_exact)
-            except ValueError:
-                raise ConversionError(f'Could not convert {val!r} to an int')
-    elif isinstance(val, int):
+            except ValueError as e:
+                raise ConversionError(f'Could not convert {val!r} to an int') from e
+    if isinstance(val, int):
         return val
-    elif isinstance(val, float):
+    if isinstance(val, float):
         if val.is_integer() or accept_only_exact is False:
             return int(val)
-
+    # else
     raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
 
 
@@ -392,8 +392,8 @@ def hexstr_to_int(value: str) -> int:
     """
     try:
         int_value = int(value, 16)
-    except ValueError:
-        raise ConversionError(f'Could not convert string "{value}" to an int')
+    except ValueError as e:
+        raise ConversionError(f'Could not convert string "{value}" to an int') from e
 
     return int_value
 

@@ -88,7 +88,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     except KeyError as e:
         raise DeserializationError(
             f'Poloniex trade deserialization error. Missing key entry for {str(e)} in trade dict',
-        )
+        ) from e
 
     cost = rate * amount
     if trade_type == TradeType.BUY:
@@ -249,8 +249,8 @@ class Poloniex(ExchangeInterface):
             error = str(e)
             if 'Invalid API key' in error:
                 return False, 'Provided API Key or secret is invalid'
-            else:
-                raise
+            # else reraise
+            raise
         return True, ''
 
     def api_query_dict(self, command: str, req: Optional[Dict] = None) -> Dict:
@@ -292,7 +292,7 @@ class Poloniex(ExchangeInterface):
         if response.status_code == 504:
             # backoff and repeat
             return None
-        elif response.status_code != 200:
+        if response.status_code != 200:
             raise RemoteError(
                 f'Poloniex query responded with error status code: {response.status_code}'
                 f' and text: {response.text}',
@@ -320,7 +320,7 @@ class Poloniex(ExchangeInterface):
             try:
                 response = self._single_query(command, req)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Poloniex API request failed due to {str(e)}')
+                raise RemoteError(f'Poloniex API request failed due to {str(e)}') from e
 
             if response is None:
                 if tries >= 1:
@@ -353,8 +353,8 @@ class Poloniex(ExchangeInterface):
                 else:
                     result = rlk_jsonloads_dict(response.text)
                     result = _post_process(result)
-        except JSONDecodeError:
-            raise RemoteError(f'Poloniex returned invalid JSON response: {response.text}')
+        except JSONDecodeError as e:
+            raise RemoteError(f'Poloniex returned invalid JSON response: {response.text}') from e
 
         if isinstance(result, dict) and 'error' in result:
             raise RemoteError(

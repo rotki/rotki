@@ -188,8 +188,8 @@ class Coinbasepro(ExchangeInterface):
                     message.encode(),
                     hashlib.sha256,
                 ).digest()
-            except binascii.Error:
-                raise RemoteError('Provided API Secret is invalid')
+            except binascii.Error as e:
+                raise RemoteError('Provided API Secret is invalid') from e
 
             self.session.headers.update({
                 'CB-ACCESS-SIGN': b64encode(signature).decode('utf-8'),
@@ -209,7 +209,7 @@ class Coinbasepro(ExchangeInterface):
                 raise RemoteError(
                     f'Coinbase Pro {request_method} query at '
                     f'{full_url} connection error: {str(e)}',
-                )
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
@@ -248,11 +248,11 @@ class Coinbasepro(ExchangeInterface):
 
         try:
             json_ret = loading_function(response.text)
-        except JSONDecodeError:
+        except JSONDecodeError as e:
             raise RemoteError(
                 f'Coinbase Pro {request_method} query at {full_url} '
                 f'returned invalid JSON response: {response.text}',
-            )
+            ) from e
 
         return json_ret
 

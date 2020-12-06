@@ -1059,7 +1059,7 @@ def maybe_mock_historical_price_queries(
                 raise AssertionError(
                     f'No mocked price found from {from_asset.identifier} to '
                     f'{to_asset.identifier} at {timestamp}',
-                )
+                ) from None
             # else just use the default
             return default_mock_value
 

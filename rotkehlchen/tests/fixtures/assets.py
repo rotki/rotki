@@ -54,9 +54,9 @@ def asset_resolver(
     def mock_get_request(url: str) -> MockResponse:
         if url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.meta':  # noqa: E501
             return MockResponse(200, mock_asset_meta_github_response)
-        elif url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.json':  # noqa: E501
+        if url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.json':  # noqa: E501
             return MockResponse(200, mock_asset_github_response)
-
+        # else
         raise AssertionError('This mock should receive no other urls')
 
     get_patch = patch('requests.get', side_effect=mock_get_request)

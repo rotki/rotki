@@ -20,43 +20,43 @@ class NodeName(Enum):
     def __str__(self) -> str:
         if self == NodeName.OWN:
             return 'own node'
-        elif self == NodeName.ETHERSCAN:
+        if self == NodeName.ETHERSCAN:
             return 'etherscan'
-        elif self == NodeName.MYCRYPTO:
+        if self == NodeName.MYCRYPTO:
             return 'mycrypto'
-        elif self == NodeName.BLOCKSCOUT:
+        if self == NodeName.BLOCKSCOUT:
             return 'blockscout'
-        elif self == NodeName.AVADO_POOL:
+        if self == NodeName.AVADO_POOL:
             return 'avado pool'
-        elif self == NodeName.ONEINCH:
+        if self == NodeName.ONEINCH:
             return '1inch'
-        elif self == NodeName.MYETHERWALLET:
+        if self == NodeName.MYETHERWALLET:
             return 'myetherwallet'
-        elif self == NodeName.LINKPOOL:
+        if self == NodeName.LINKPOOL:
             return 'linkpool'
-        elif self == NodeName.CLOUDFLARE_ETH:
+        if self == NodeName.CLOUDFLARE_ETH:
             return 'cloudflare-eth'
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
 
     def endpoint(self, own_rpc_endpoint: str) -> str:
         if self == NodeName.OWN:
             return own_rpc_endpoint
-        elif self == NodeName.ETHERSCAN:
+        if self == NodeName.ETHERSCAN:
             raise TypeError('Called endpoint for etherscan')
-        elif self == NodeName.MYCRYPTO:
+        if self == NodeName.MYCRYPTO:
             return 'https://api.mycryptoapi.com/eth'
-        elif self == NodeName.BLOCKSCOUT:
+        if self == NodeName.BLOCKSCOUT:
             return 'https://mainnet-nethermind.blockscout.com/'
-        elif self == NodeName.AVADO_POOL:
+        if self == NodeName.AVADO_POOL:
             return 'https://mainnet.eth.cloud.ava.do/'
-        elif self == NodeName.ONEINCH:
+        if self == NodeName.ONEINCH:
             return 'https://web3.1inch.exchange'
-        elif self == NodeName.MYETHERWALLET:
+        if self == NodeName.MYETHERWALLET:
             return 'https://nodes.mewapi.io/rpc/eth'
-        elif self == NodeName.LINKPOOL:
+        if self == NodeName.LINKPOOL:
             return 'https://main-rpc.linkpool.io/'
-        elif self == NodeName.CLOUDFLARE_ETH:
+        if self == NodeName.CLOUDFLARE_ETH:
             return 'https://cloudflare-eth.com/'
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')

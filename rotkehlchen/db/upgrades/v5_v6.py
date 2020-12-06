@@ -128,25 +128,25 @@ def _location_to_enum_location(location: str) -> str:
     """
     if location == 'external':
         return 'A'
-    elif location == 'kraken':
+    if location == 'kraken':
         return 'B'
-    elif location == 'poloniex':
+    if location == 'poloniex':
         return 'C'
-    elif location == 'bittrex':
+    if location == 'bittrex':
         return 'D'
-    elif location == 'binance':
+    if location == 'binance':
         return 'E'
-    elif location == 'bitmex':
+    if location == 'bitmex':
         return 'F'
-    elif location == 'coinbase':
+    if location == 'coinbase':
         return 'G'
-    elif location == 'total':
+    if location == 'total':
         return 'H'
-    elif location == 'banks':
+    if location == 'banks':
         return 'I'
-    elif location == 'blockchain':
+    if location == 'blockchain':
         return 'J'
-
+    # else
     raise DBUpgradeError(f'Invalid location {location} encountered during DB v5->v6 upgrade')
 
 

@@ -542,8 +542,9 @@ class UsersByNameResource(BaseResource):
                 password=password,
                 sync_approval=sync_approval,
             )
-        else:  # Can only be logout -- checked by marshmallow
-            return self.rest_api.user_logout(name=name)
+
+        # else can only be logout -- checked by marshmallow
+        return self.rest_api.user_logout(name=name)
 
 
 class UserPasswordChangeResource(BaseResource):

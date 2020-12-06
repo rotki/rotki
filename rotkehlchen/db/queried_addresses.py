@@ -23,8 +23,10 @@ class QueriedAddresses():
                 'INSERT INTO multisettings(name, value) VALUES(?, ?)',
                 (f'queried_address_{module}', address),
             )
-        except sqlcipher.DatabaseError:  # pylint: disable=no-member
-            raise InputError(f'Address {address} is already in the queried addresses for {module}')
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            raise InputError(
+                f'Address {address} is already in the queried addresses for {module}',
+            ) from e
         self.db.conn.commit()
         self.db.update_last_write()
 

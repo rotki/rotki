@@ -39,11 +39,11 @@ class FVal():
             else:
                 raise ValueError(f'Invalid type {type(data)} of data given to FVal constructor')
 
-        except InvalidOperation:
+        except InvalidOperation as e:
             raise ValueError(
                 'Expected string, int, float, or Decimal to initialize an FVal.'
                 'Found {}.'.format(type(data)),
-            )
+            ) from e
 
     def __str__(self) -> str:
         return str(self.num)
@@ -174,7 +174,7 @@ def evaluate_input(other: Any) -> Union[Decimal, int]:
     """Evaluate 'other' and return its Decimal representation"""
     if isinstance(other, FVal):
         return other.num
-    elif not isinstance(other, int):
+    if not isinstance(other, int):
         raise NotImplementedError("Expected either FVal or int.")
-
+    # else
     return other

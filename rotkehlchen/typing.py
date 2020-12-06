@@ -81,11 +81,11 @@ class ExternalService(Enum):
     def serialize(name: str) -> Optional['ExternalService']:
         if name == 'etherscan':
             return ExternalService.ETHERSCAN
-        elif name == 'cryptocompare':
+        if name == 'cryptocompare':
             return ExternalService.CRYPTOCOMPARE
-        elif name == 'beaconchain':
+        if name == 'beaconchain':
             return ExternalService.BEACONCHAIN
-
+        # else
         return None
 
 
@@ -200,9 +200,9 @@ class SupportedBlockchain(Enum):
     def get_address_type(self) -> Callable:
         if self == SupportedBlockchain.ETHEREUM:
             return ChecksumEthAddress
-        elif self == SupportedBlockchain.BITCOIN:
+        if self == SupportedBlockchain.BITCOIN:
             return BTCAddress
-
+        # else
         raise AssertionError('Invalid SupportedBlockchain value')
 
 
@@ -261,25 +261,25 @@ class TradeType(Enum):
     def __str__(self) -> str:
         if self == TradeType.BUY:
             return 'buy'
-        elif self == TradeType.SELL:
+        if self == TradeType.SELL:
             return 'sell'
-        elif self == TradeType.SETTLEMENT_BUY:
+        if self == TradeType.SETTLEMENT_BUY:
             return 'settlement_buy'
-        elif self == TradeType.SETTLEMENT_SELL:
+        if self == TradeType.SETTLEMENT_SELL:
             return 'settlement_sell'
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
 
     def serialize_for_db(self) -> str:
         if self == TradeType.BUY:
             return 'A'
-        elif self == TradeType.SELL:
+        if self == TradeType.SELL:
             return 'B'
-        elif self == TradeType.SETTLEMENT_BUY:
+        if self == TradeType.SETTLEMENT_BUY:
             return 'C'
-        elif self == TradeType.SETTLEMENT_SELL:
+        if self == TradeType.SETTLEMENT_SELL:
             return 'D'
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
 
 
@@ -307,81 +307,81 @@ class Location(Enum):
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
             return 'external'
-        elif self == Location.KRAKEN:
+        if self == Location.KRAKEN:
             return 'kraken'
-        elif self == Location.POLONIEX:
+        if self == Location.POLONIEX:
             return 'poloniex'
-        elif self == Location.BITTREX:
+        if self == Location.BITTREX:
             return 'bittrex'
-        elif self == Location.BINANCE:
+        if self == Location.BINANCE:
             return 'binance'
-        elif self == Location.BITMEX:
+        if self == Location.BITMEX:
             return 'bitmex'
-        elif self == Location.COINBASE:
+        if self == Location.COINBASE:
             return 'coinbase'
-        elif self == Location.TOTAL:
+        if self == Location.TOTAL:
             return 'total'
-        elif self == Location.BANKS:
+        if self == Location.BANKS:
             return 'banks'
-        elif self == Location.BLOCKCHAIN:
+        if self == Location.BLOCKCHAIN:
             return 'blockchain'
-        elif self == Location.COINBASEPRO:
+        if self == Location.COINBASEPRO:
             return 'coinbasepro'
-        elif self == Location.GEMINI:
+        if self == Location.GEMINI:
             return 'gemini'
-        elif self == Location.EQUITIES:
+        if self == Location.EQUITIES:
             return 'equities'
-        elif self == Location.REALESTATE:
+        if self == Location.REALESTATE:
             return 'real estate'
-        elif self == Location.COMMODITIES:
+        if self == Location.COMMODITIES:
             return 'commodities'
-        elif self == Location.CRYPTOCOM:
+        if self == Location.CRYPTOCOM:
             return 'crypto.com'
-        elif self == Location.UNISWAP:
+        if self == Location.UNISWAP:
             return 'uniswap'
-        elif self == Location.BITSTAMP:
+        if self == Location.BITSTAMP:
             return 'bitstamp'
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
     def serialize_for_db(self) -> str:
         if self == Location.EXTERNAL:
             return 'A'
-        elif self == Location.KRAKEN:
+        if self == Location.KRAKEN:
             return 'B'
-        elif self == Location.POLONIEX:
+        if self == Location.POLONIEX:
             return 'C'
-        elif self == Location.BITTREX:
+        if self == Location.BITTREX:
             return 'D'
-        elif self == Location.BINANCE:
+        if self == Location.BINANCE:
             return 'E'
-        elif self == Location.BITMEX:
+        if self == Location.BITMEX:
             return 'F'
-        elif self == Location.COINBASE:
+        if self == Location.COINBASE:
             return 'G'
-        elif self == Location.TOTAL:
+        if self == Location.TOTAL:
             return 'H'
-        elif self == Location.BANKS:
+        if self == Location.BANKS:
             return 'I'
-        elif self == Location.BLOCKCHAIN:
+        if self == Location.BLOCKCHAIN:
             return 'J'
-        elif self == Location.COINBASEPRO:
+        if self == Location.COINBASEPRO:
             return 'K'
-        elif self == Location.GEMINI:
+        if self == Location.GEMINI:
             return 'L'
-        elif self == Location.EQUITIES:
+        if self == Location.EQUITIES:
             return 'M'
-        elif self == Location.REALESTATE:
+        if self == Location.REALESTATE:
             return 'N'
-        elif self == Location.COMMODITIES:
+        if self == Location.COMMODITIES:
             return 'O'
-        elif self == Location.CRYPTOCOM:
+        if self == Location.CRYPTOCOM:
             return 'P'
-        elif self == Location.UNISWAP:
+        if self == Location.UNISWAP:
             return 'Q'
-        elif self == Location.BITSTAMP:
+        if self == Location.BITSTAMP:
             return 'R'
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
 
@@ -393,9 +393,9 @@ class AssetMovementCategory(Enum):
     def __str__(self) -> str:
         if self == AssetMovementCategory.DEPOSIT:
             return 'deposit'
-        elif self == AssetMovementCategory.WITHDRAWAL:
+        if self == AssetMovementCategory.WITHDRAWAL:
             return 'withdrawal'
-
+        # else
         raise RuntimeError(
             f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
         )
@@ -403,9 +403,9 @@ class AssetMovementCategory(Enum):
     def serialize_for_db(self) -> str:
         if self == AssetMovementCategory.DEPOSIT:
             return 'A'
-        elif self == AssetMovementCategory.WITHDRAWAL:
+        if self == AssetMovementCategory.WITHDRAWAL:
             return 'B'
-
+        # else
         raise RuntimeError(
             f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
         )

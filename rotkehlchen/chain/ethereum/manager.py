@@ -334,11 +334,10 @@ class EthereumManager():
             log.info(f'Connected ethereum node {name} at {ethrpc_endpoint}')
             self.web3_mapping[name] = web3
             return True, ''
-        else:
-            message = f'Failed to connect to ethereum node {name} at endpoint {ethrpc_endpoint}'
-            log.warning(message)
 
-        # If we get here we did not connnect
+        # else
+        message = f'Failed to connect to ethereum node {name} at endpoint {ethrpc_endpoint}'
+        log.warning(message)
         return False, message
 
     def set_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
@@ -352,12 +351,13 @@ class EthereumManager():
             self.web3_mapping.pop(NodeName.OWN, None)
             self.own_rpc_endpoint = ''
             return True, ''
-        else:
-            result, message = self.attempt_connect(name=NodeName.OWN, ethrpc_endpoint=endpoint)
-            if result:
-                log.info('Setting own node ETH RPC endpoint', endpoint=endpoint)
-                self.own_rpc_endpoint = endpoint
-            return result, message
+
+        # else
+        result, message = self.attempt_connect(name=NodeName.OWN, ethrpc_endpoint=endpoint)
+        if result:
+            log.info('Setting own node ETH RPC endpoint', endpoint=endpoint)
+            self.own_rpc_endpoint = endpoint
+        return result, message
 
     def query(self, method: Callable, call_order: Sequence[NodeName], **kwargs: Any) -> Any:
         """Queries ethereum related data by performing the provided method to all given nodes
@@ -678,7 +678,7 @@ class EthereumManager():
         except ValueError as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {str(e)}',
-            )
+            ) from e
         return result
 
     def get_logs(

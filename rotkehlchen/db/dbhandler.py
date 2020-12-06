@@ -158,21 +158,20 @@ def db_tuple_to_str(
             f'in {deserialize_location_from_db(data[2])} and pair {data[3]} '
             f'at timestamp {data[1]}'
         )
-    elif tuple_type == 'asset_movement':
+    if tuple_type == 'asset_movement':
         return (
             f'{deserialize_asset_movement_category_from_db(data[2])} of '
             f' {data[4]} with id {data[0]} '
             f'in {deserialize_location_from_db(data[1])} at timestamp {data[3]}'
         )
-    elif tuple_type == 'margin_position':
+    if tuple_type == 'margin_position':
         return (
             f'Margin position with id {data[0]} in  {deserialize_location_from_db(data[1])} '
             f'for {data[5]} closed at timestamp {data[3]}'
         )
-    elif tuple_type == 'ethereum_transaction':
+    if tuple_type == 'ethereum_transaction':
         return f'Ethereum transaction with hash "{data[0].hex()}"'
-
-    elif tuple_type == 'amm_swap':
+    if tuple_type == 'amm_swap':
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
             f'in {deserialize_location_from_db(data[6])} '
@@ -267,7 +266,9 @@ class DBHandler:
                     f'SQLCipher version: {self.sqlcipher_version} - Error: {errstr}. '
                     f'Wrong password while decrypting the database or not a database.',
                 )
-                raise AuthenticationError('Wrong password or invalid/corrupt database for user')
+                raise AuthenticationError(
+                    'Wrong password or invalid/corrupt database for user',
+                ) from e
 
         # Run upgrades if needed
         DBUpgradeManager(self).run_upgrades()
@@ -360,10 +361,10 @@ class DBHandler:
         fullpath = self.user_data_dir / 'rotkehlchen.db'
         try:
             self.conn = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member
-        except sqlcipher.OperationalError:  # pylint: disable=no-member
+        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
-            )
+            ) from e
 
         self.conn.text_factory = str
         password_for_sqlcipher = _protect_password_sqlcipher(password)
@@ -457,7 +458,7 @@ class DBHandler:
         except SystemPermissionError as e:
             raise AssertionError(
                 f'Permission error when reopening the DB. {str(e)}. Should never happen here',
-            )
+            ) from e
         self._run_actions_after_first_connection(password)
         # all went okay, remove the original temp backup
         (self.user_data_dir / 'rotkehlchen_temp_backup.db').unlink()
@@ -1105,10 +1106,10 @@ class DBHandler:
                 'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES (?, ?, ?)',
                 tuples,
             )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'Blockchain account/s {[x.address for x in account_data]} already exist',
-            )
+            ) from e
 
         insert_tag_mappings(cursor=cursor, data=account_data, object_reference_keys=['address'])
 
@@ -1460,7 +1461,7 @@ class DBHandler:
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'One of the manually tracked balance entries already exists in the DB. {str(e)}',
-            )
+            ) from e
         insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['label'])
 
         self.conn.commit()
@@ -2456,8 +2457,8 @@ class DBHandler:
                 return None
 
             return credentials
-        else:
-            return None
+        # else
+        return None
 
     def get_netvalue_data(self, from_ts: Timestamp) -> Tuple[List[str], List[str]]:
         """Get all entries of net value data from the DB"""
@@ -2660,7 +2661,7 @@ class DBHandler:
             if 'UNIQUE constraint failed: tags.name' in msg:
                 raise TagConstraintError(
                     f'Tag with name {name} already exists. Tag name matching is case insensitive.',
-                )
+                ) from e
 
             # else something really bad happened
             log.error('Unexpected DB error: {msg} while adding a tag')
@@ -2779,11 +2780,11 @@ class DBHandler:
                     xpub_data.label,
                 ),
             )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'Xpub {xpub_data.xpub.xpub} with derivation path '
                 f'{xpub_data.derivation_path} is already tracked',
-            )
+            ) from e
         self.conn.commit()
         self.update_last_write()
 
@@ -2865,11 +2866,11 @@ class DBHandler:
                     xpub_data.serialize_derivation_path_for_db(),
                 ),
             )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'There was an error when updating Xpub {xpub_data.xpub.xpub} with '
                 f'derivation path {xpub_data.derivation_path}',
-            )
+            ) from e
         self.conn.commit()
         self.update_last_write()
 

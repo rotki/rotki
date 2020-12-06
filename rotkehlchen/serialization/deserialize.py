@@ -40,7 +40,7 @@ def deserialize_fee(fee: Optional[str]) -> Fee:
     try:
         result = Fee(FVal(fee))
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize a fee entry due to: {str(e)}')
+        raise DeserializationError(f'Failed to deserialize a fee entry due to: {str(e)}') from e
 
     return result
 
@@ -59,19 +59,19 @@ def deserialize_timestamp(timestamp: Union[int, str, FVal]) -> Timestamp:
     elif isinstance(timestamp, FVal):
         try:
             processed_timestamp = Timestamp(timestamp.to_int(exact=True))
-        except ConversionError:
+        except ConversionError as e:
             # An fval was not representing an exact int
             raise DeserializationError(
                 'Tried to deserialize a timestamp fron a non-exact int FVal entry',
-            )
+            ) from e
     elif isinstance(timestamp, str):
         try:
             processed_timestamp = Timestamp(int(timestamp))
-        except ValueError:
+        except ValueError as e:
             # String could not be turned to an int
             raise DeserializationError(
                 f'Failed to deserialize a timestamp entry from string {timestamp}',
-            )
+            ) from e
     else:
         raise DeserializationError(
             f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
@@ -122,8 +122,10 @@ def deserialize_timestamp_from_date(
 
     try:
         return Timestamp(create_timestamp(datestr=date, formatstr=formatstr))
-    except ValueError:
-        raise DeserializationError(f'Failed to deserialize {date} {location} timestamp entry')
+    except ValueError as e:
+        raise DeserializationError(
+            f'Failed to deserialize {date} {location} timestamp entry',
+        ) from e
 
 
 def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
@@ -175,23 +177,25 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal, int]) -> Timestamp:
 
     if isinstance(time, int):
         return Timestamp(time)
-    elif isinstance(time, str):
+    if isinstance(time, str):
         try:
             return Timestamp(convert_to_int(time, accept_only_exact=False))
-        except ConversionError:
-            raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
-    elif isinstance(time, FVal):
+        except ConversionError as e:
+            raise DeserializationError(
+                f'Failed to deserialize {time} kraken timestamp entry',
+            ) from e
+    if isinstance(time, FVal):
         try:
             return Timestamp(time.to_int(exact=False))
-        except ConversionError:
+        except ConversionError as e:
             raise DeserializationError(
                 f'Failed to deserialize {time} kraken timestamp entry from an FVal',
-            )
+            ) from e
 
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize a timestamp entry from a {type(time)} entry in kraken',
-        )
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize a timestamp entry from a {type(time)} entry in kraken',
+    )
 
 
 def deserialize_timestamp_from_binance(time: int) -> Timestamp:
@@ -225,7 +229,7 @@ def deserialize_optional_fval(
     try:
         result = FVal(value)
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {str(e)}')
+        raise DeserializationError(f'Failed to deserialize value entry: {str(e)}') from e
 
     return result
 
@@ -234,7 +238,7 @@ def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
     try:
         result = AssetAmount(FVal(amount))
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize an amount entry: {str(e)}')
+        raise DeserializationError(f'Failed to deserialize an amount entry: {str(e)}') from e
 
     return result
 
@@ -254,7 +258,7 @@ def deserialize_price(amount: AcceptableFValInitInput) -> Price:
     try:
         result = Price(FVal(amount))
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize a price/rate entry: {str(e)}')
+        raise DeserializationError(f'Failed to deserialize a price/rate entry: {str(e)}') from e
 
     return result
 
@@ -271,16 +275,17 @@ def deserialize_trade_type(symbol: str) -> TradeType:
 
     if symbol in ('buy', 'LIMIT_BUY', 'BUY', 'Buy'):
         return TradeType.BUY
-    elif symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
+    if symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
         return TradeType.SELL
-    elif symbol == 'settlement_buy':
+    if symbol == 'settlement_buy':
         return TradeType.SETTLEMENT_BUY
-    elif symbol == 'settlement_sell':
+    if symbol == 'settlement_sell':
         return TradeType.SETTLEMENT_SELL
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
-        )
+
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
+    )
 
 
 def deserialize_trade_type_from_db(symbol: str) -> TradeType:
@@ -295,16 +300,16 @@ def deserialize_trade_type_from_db(symbol: str) -> TradeType:
 
     if symbol == 'A':
         return TradeType.BUY
-    elif symbol == 'B':
+    if symbol == 'B':
         return TradeType.SELL
-    elif symbol == 'C':
+    if symbol == 'C':
         return TradeType.SETTLEMENT_BUY
-    elif symbol == 'D':
+    if symbol == 'D':
         return TradeType.SETTLEMENT_SELL
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize trade type symbol. Unknown DB symbol {symbol} for trade type',
-        )
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize trade type symbol. Unknown DB symbol {symbol} for trade type',
+    )
 
 
 def deserialize_location(symbol: str) -> Location:
@@ -320,44 +325,44 @@ def deserialize_location(symbol: str) -> Location:
 
     if symbol == 'external':
         return Location.EXTERNAL
-    elif symbol == 'kraken':
+    if symbol == 'kraken':
         return Location.KRAKEN
-    elif symbol == 'poloniex':
+    if symbol == 'poloniex':
         return Location.POLONIEX
-    elif symbol == 'bittrex':
+    if symbol == 'bittrex':
         return Location.BITTREX
-    elif symbol == 'binance':
+    if symbol == 'binance':
         return Location.BINANCE
-    elif symbol == 'bitmex':
+    if symbol == 'bitmex':
         return Location.BITMEX
-    elif symbol == 'coinbase':
+    if symbol == 'coinbase':
         return Location.COINBASE
-    elif symbol == 'total':
+    if symbol == 'total':
         return Location.TOTAL
-    elif symbol == 'banks':
+    if symbol == 'banks':
         return Location.BANKS
-    elif symbol == 'blockchain':
+    if symbol == 'blockchain':
         return Location.BLOCKCHAIN
-    elif symbol == 'coinbasepro':
+    if symbol == 'coinbasepro':
         return Location.COINBASEPRO
-    elif symbol == 'gemini':
+    if symbol == 'gemini':
         return Location.GEMINI
-    elif symbol == 'equities':
+    if symbol == 'equities':
         return Location.EQUITIES
-    elif symbol == 'real estate':
+    if symbol == 'real estate':
         return Location.REALESTATE
-    elif symbol == 'commodities':
+    if symbol == 'commodities':
         return Location.COMMODITIES
-    elif symbol == 'crypto.com':
+    if symbol == 'crypto.com':
         return Location.CRYPTOCOM
-    elif symbol == 'uniswap':
+    if symbol == 'uniswap':
         return Location.UNISWAP
-    elif symbol == 'bitstamp':
+    if symbol == 'bitstamp':
         return Location.BITSTAMP
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
-        )
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
+    )
 
 
 def _split_pair(pair: TradePair) -> Tuple[str, str]:
@@ -394,11 +399,11 @@ def deserialize_trade_pair(pair: str) -> TradePair:
     try:
         pair_get_assets(TradePair(pair))
     except UnprocessableTradePair as e:
-        raise DeserializationError(str(e))
+        raise DeserializationError(str(e)) from e
     except UnknownAsset as e:
         raise DeserializationError(
             f'Unknown asset {e.asset_name} found while processing trade pair',
-        )
+        ) from e
 
     return TradePair(pair)
 
@@ -416,44 +421,44 @@ def deserialize_location_from_db(symbol: str) -> Location:
 
     if symbol == 'A':
         return Location.EXTERNAL
-    elif symbol == 'B':
+    if symbol == 'B':
         return Location.KRAKEN
-    elif symbol == 'C':
+    if symbol == 'C':
         return Location.POLONIEX
-    elif symbol == 'D':
+    if symbol == 'D':
         return Location.BITTREX
-    elif symbol == 'E':
+    if symbol == 'E':
         return Location.BINANCE
-    elif symbol == 'F':
+    if symbol == 'F':
         return Location.BITMEX
-    elif symbol == 'G':
+    if symbol == 'G':
         return Location.COINBASE
-    elif symbol == 'H':
+    if symbol == 'H':
         return Location.TOTAL
-    elif symbol == 'I':
+    if symbol == 'I':
         return Location.BANKS
-    elif symbol == 'J':
+    if symbol == 'J':
         return Location.BLOCKCHAIN
-    elif symbol == 'K':
+    if symbol == 'K':
         return Location.COINBASEPRO
-    elif symbol == 'L':
+    if symbol == 'L':
         return Location.GEMINI
-    elif symbol == 'M':
+    if symbol == 'M':
         return Location.EQUITIES
-    elif symbol == 'N':
+    if symbol == 'N':
         return Location.REALESTATE
-    elif symbol == 'O':
+    if symbol == 'O':
         return Location.COMMODITIES
-    elif symbol == 'P':
+    if symbol == 'P':
         return Location.CRYPTOCOM
-    elif symbol == 'Q':
+    if symbol == 'Q':
         return Location.UNISWAP
-    elif symbol == 'R':
+    if symbol == 'R':
         return Location.BITSTAMP
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
-        )
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
+    )
 
 
 def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
@@ -468,7 +473,7 @@ def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
 
     if symbol.lower() == 'deposit':
         return AssetMovementCategory.DEPOSIT
-    elif symbol.lower() == 'withdrawal':
+    if symbol.lower() == 'withdrawal':
         return AssetMovementCategory.WITHDRAWAL
 
     # else
@@ -490,7 +495,7 @@ def deserialize_asset_movement_category_from_db(symbol: str) -> AssetMovementCat
 
     if symbol == 'A':
         return AssetMovementCategory.DEPOSIT
-    elif symbol == 'B':
+    if symbol == 'B':
         return AssetMovementCategory.WITHDRAWAL
 
     # else
@@ -513,10 +518,10 @@ def deserialize_hex_color_code(symbol: str) -> HexColorCode:
 
     try:
         color_value = int(symbol, 16)
-    except ValueError:
+    except ValueError as e:
         raise DeserializationError(
             f'The given color code value "{symbol}" could not be processed as a hex color value',
-        )
+        ) from e
 
     if color_value < 0 or color_value > 16777215:
         raise DeserializationError(
@@ -550,10 +555,10 @@ def deserialize_int_from_hex(symbol: str, location: str) -> int:
 
     try:
         result = int(symbol, 16)
-    except ValueError:
+    except ValueError as e:
         raise DeserializationError(
             f'Could not turn string "{symbol}" into an integer at {location}',
-        )
+        ) from e
 
     return result
 
@@ -573,10 +578,10 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
 
         try:
             result = int(symbol, 16)
-        except ValueError:
+        except ValueError as e:
             raise DeserializationError(
                 f'Could not turn string "{symbol}" into an integer {location}',
-            )
+            ) from e
     else:
         raise DeserializationError(
             f'Unexpected type {type(symbol)} given to '
@@ -593,7 +598,7 @@ def deserialize_ethereum_token_from_db(identifier: str) -> EthereumToken:
     except UnknownAsset as e:
         raise DeserializationError(
             f'Unknown ethereum token {e.asset_name} found',
-        )
+        ) from e
 
     return ethereum_token
 
@@ -614,11 +619,11 @@ def deserialize_unknown_ethereum_token_from_db(
             name=name,
             decimals=decimals,
         )
-    except Exception:
+    except Exception as e:
         raise DeserializationError(
             f'Failed deserializing an unknown ethereum token with '
             f'address {ethereum_address}, symbol {symbol}, name {name}, '
             f'decimals {decimals}.',
-        )
+        ) from e
 
     return unknown_ethereum_token

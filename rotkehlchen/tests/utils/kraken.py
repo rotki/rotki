@@ -346,7 +346,7 @@ class MockKraken(Kraken):
                 return generate_random_kraken_balance_response()
             # else
             return self.balance_data_return
-        elif method == 'TradesHistory':
+        if method == 'TradesHistory':
             assert req, 'Should have given arguments for kraken TradesHistory endpoint call'
             if self.random_trade_data:
                 return generate_random_kraken_trades_data(
@@ -356,7 +356,7 @@ class MockKraken(Kraken):
                 )
             # else
             return rlk_jsonloads_dict(KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE)
-        elif method == 'Ledgers':
+        if method == 'Ledgers':
             assert req, 'Should have given arguments for kraken Ledgers endpoint call'
             ledger_type = req['type']
             if self.random_ledgers_data:
@@ -388,5 +388,5 @@ class MockKraken(Kraken):
                 raise AssertionError('Unknown ledger type at kraken ledgers mock query')
 
             return rlk_jsonloads_dict(response)
-
+        # else
         return super().api_query(method, req)
