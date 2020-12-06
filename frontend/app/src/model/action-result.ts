@@ -32,6 +32,7 @@ export interface DBSettings {
   readonly active_modules: SupportedModules[];
   readonly frontend_settings: string;
   readonly account_for_assets_movements: boolean;
+  readonly periodic_client_query_period: number;
 }
 
 interface ApiKey {

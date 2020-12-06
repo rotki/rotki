@@ -24,6 +24,7 @@ export interface GeneralSettings {
   readonly selectedCurrency: Currency;
   readonly krakenAccountType: string;
   readonly activeModules: SupportedModules[];
+  readonly periodicClientQueryPeriod: number;
 }
 
 export interface AccountingSettings {
@@ -125,6 +126,7 @@ interface SettingsPayload {
   active_modules: SupportedModules[];
   frontend_settings: string;
   account_for_assets_movements: boolean;
+  periodic_client_query_period: number;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';

@@ -73,10 +73,12 @@
     },
     "frontend": {
       "label": {
+        "query_period": "Periodic client query period in seconds",
         "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
       },
       "title": "Frontend-only Settings"
     },
+    "historic_start_hint": "DD/MM/YYYY format",
     "labels": {
       "anonymized_logs": "Should logs be anonymized?",
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
@@ -132,6 +134,10 @@
       "decimal_separator": {
         "error": "Error setting decimal separator",
         "success": "Decimal separator set to {decimalSeparator}"
+      },
+      "periodic_query": {
+        "error": "Error setting periodic query client period",
+        "success": "Periodic query client period set to {period}"
       },
       "timeframe": {
         "error": "Failed to set the default timeframe for the user: {message}",

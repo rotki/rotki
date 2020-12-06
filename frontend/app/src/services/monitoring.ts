@@ -19,10 +19,13 @@ class Monitoring {
    * This function is called periodically, queries some data from the
    * client and updates the UI with the response.
    */
-  start() {
+  start(periodicClientQueryPeriod: number) {
     if (!this.monitoring) {
       this.fetch();
-      this.monitoring = setInterval(this.fetch, 5000);
+      this.monitoring = setInterval(
+        this.fetch,
+        periodicClientQueryPeriod * 1000
+      );
     }
 
     if (!this.taskMonitoring) {

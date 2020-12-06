@@ -42,7 +42,7 @@
                   v-model="historicDataStart"
                   class="general-settings__fields__historic-data-start"
                   :label="$t('general_settings.labels.historical_data_start')"
-                  hint="DD/MM/YYYY format"
+                  :hint="$t('general_settings.historic_start_hint')"
                   prepend-icon="fa-calendar"
                   :success-messages="
                     settingsMessages['historicDataStart'].success
@@ -213,6 +213,19 @@
               :value="defaultGraphTimeframe"
               @timeframe-change="onTimeframeChange"
             />
+            <v-text-field
+              v-model="periodicClientQueryPeriod"
+              class="general-settings__fields__periodic-client-query-period"
+              :label="$t('general_settings.frontend.label.query_period')"
+              type="text"
+              :success-messages="
+                settingsMessages['periodicClientQueryPeriod'].success
+              "
+              :error-messages="
+                settingsMessages['periodicClientQueryPeriod'].error
+              "
+              @change="onPeriodicClientQueryPeriodChange($event)"
+            />
           </v-card-text>
         </v-card>
       </v-col>
@@ -227,6 +240,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
+import { monitor } from '@/services/monitoring';
 import { TIMEFRAME_SETTING, TIMEFRAME_ALL } from '@/store/settings/consts';
 import {
   FrontendSettingsPayload,
@@ -277,6 +291,7 @@ export default class General extends Settings {
   defaultGraphTimeframe: TimeFrameSetting = TIMEFRAME_ALL;
   settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
+  periodicClientQueryPeriod: string = '5';
 
   settingsMessages: SettingsMessages = {
     floatingPrecision: { success: '', error: '' },
@@ -291,7 +306,8 @@ export default class General extends Settings {
     currencyLocation: { success: '', error: '' },
     selectedCurrency: { success: '', error: '' },
     scrambleData: { success: '', error: '' },
-    timeframe: { success: '', error: '' }
+    timeframe: { success: '', error: '' },
+    periodicClientQueryPeriod: { success: '', error: '' }
   };
 
   historicDateMenu: boolean = false;
@@ -367,6 +383,30 @@ export default class General extends Settings {
             message
           })}`
     );
+  }
+
+  async onPeriodicClientQueryPeriodChange(periodicClientQueryPeriod: string) {
+    const message: BaseMessage = {
+      success: `${this.$t(
+        'general_settings.validation.periodic_query.success',
+        {
+          period: periodicClientQueryPeriod
+        }
+      )}`,
+      error: `${this.$t('general_settings.validation.periodic_query.error')}`
+    };
+    const success = await this.update(
+      {
+        periodic_client_query_period: parseInt(periodicClientQueryPeriod)
+      },
+      'periodicClientQueryPeriod',
+      message
+    );
+
+    if (success) {
+      monitor.stop();
+      monitor.start(parseInt(this.periodicClientQueryPeriod));
+    }
   }
 
   async onSelectedCurrencyChange(currency: Currency) {
@@ -640,6 +680,7 @@ export default class General extends Settings {
     const state = this.$store.state;
     this.scrambleData = state.session.scrambleData;
     this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
+    this.periodicClientQueryPeriod = settings.periodicClientQueryPeriod.toString();
   }
 
   notTheSame<T>(value: T, oldValue: T): T | undefined {
