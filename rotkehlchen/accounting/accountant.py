@@ -486,24 +486,24 @@ class Accountant():
                 close_time=timestamp,
             )
             return True, prev_time
-        elif action_type == 'asset_movement':
+        if action_type == 'asset_movement':
             action = cast(AssetMovement, action)
             self.add_asset_movement_to_events(action)
             return True, prev_time
-        elif action_type == 'margin_position':
+        if action_type == 'margin_position':
             action = cast(MarginPosition, action)
             self.events.add_margin_position(margin=action)
             return True, prev_time
-        elif action_type == 'ethereum_transaction':
+        if action_type == 'ethereum_transaction':
             action = cast(EthereumTransaction, action)
             self.account_for_gas_costs(action, db_settings.include_gas_costs)
             return True, prev_time
-        elif action_type == 'defi_event':
+        if action_type == 'defi_event':
             action = cast(DefiEvent, action)
             self.events.add_defi_event(action)
             return True, prev_time
 
-        # if we get here it's a trade
+        # else if we get here it's a trade
         trade = cast(Trade, action)
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive

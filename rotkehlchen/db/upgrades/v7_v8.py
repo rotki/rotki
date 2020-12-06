@@ -38,7 +38,7 @@ def v7_deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory
 
     if symbol == 'A':
         return AssetMovementCategory.DEPOSIT
-    elif symbol == 'B':
+    if symbol == 'B':
         return AssetMovementCategory.WITHDRAWAL
 
     # else

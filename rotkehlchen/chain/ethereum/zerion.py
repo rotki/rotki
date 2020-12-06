@@ -87,7 +87,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
                 usd_value=normalized_balance * dai_price,
             ),
         )
-    elif 'USDC' in token_name:
+    if 'USDC' in token_name:
         usdc_price = Inquirer.find_usd_price(A_USDC)
         return DefiBalance(
             token_address=to_checksum_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
@@ -98,7 +98,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
                 usd_value=normalized_balance * usdc_price,
             ),
         )
-
+    # else
     return None
 
 

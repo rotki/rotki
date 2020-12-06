@@ -158,9 +158,9 @@ class BlockchainBalances:
     def is_queried(self, blockchain: SupportedBlockchain) -> bool:
         if blockchain == SupportedBlockchain.ETHEREUM:
             return self.eth != {}
-        elif blockchain == SupportedBlockchain.BITCOIN:
+        if blockchain == SupportedBlockchain.BITCOIN:
             return self.btc != {}
-
+        # else
         raise AssertionError('Invalid blockchain value')
 
 

@@ -224,7 +224,7 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
     if response.status_code in (520, 525, 504):
         log.debug(f'Kraken returned status code {response.status_code}')
         return 'Usual kraken 5xx shenanigans'
-    elif response.status_code != 200:
+    if response.status_code != 200:
         raise RemoteError(
             'Kraken API request {} for {} failed with HTTP status '
             'code: {}'.format(
@@ -248,8 +248,9 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
             if 'Rate limit exceeded' in error:
                 log.debug(f'Kraken: Got rate limit exceeded error: {error}')
                 return 'Rate limited exceeded'
-            else:
-                raise RemoteError(error)
+
+            # else
+            raise RemoteError(error)
 
         result = decoded_json['result']
     except KeyError as e:
@@ -266,9 +267,9 @@ class KrakenAccountType(Enum):
     def __str__(self) -> str:
         if self == KrakenAccountType.STARTER:
             return 'starter'
-        elif self == KrakenAccountType.INTERMEDIATE:
+        if self == KrakenAccountType.INTERMEDIATE:
             return 'intermediate'
-        elif self == KrakenAccountType.PRO:
+        if self == KrakenAccountType.PRO:
             return 'pro'
 
         raise RuntimeError(f'Corrupt value {self} for KrakenAcountType -- Should never happen')
@@ -280,11 +281,11 @@ class KrakenAccountType(Enum):
     def deserialize(symbol: str) -> 'KrakenAccountType':
         if symbol == 'starter':
             return KrakenAccountType.STARTER
-        elif symbol == 'intermediate':
+        if symbol == 'intermediate':
             return KrakenAccountType.INTERMEDIATE
-        elif symbol == 'pro':
+        if symbol == 'pro':
             return KrakenAccountType.PRO
-
+        # else
         raise DeserializationError(f'Tried to deserialized invalid kraken account type: {symbol}')
 
 
@@ -355,22 +356,23 @@ class Kraken(ExchangeInterface):
             error = str(e)
             if 'Incorrect padding' in error:
                 return False, 'Provided API Key or secret is invalid'
-            elif 'EAPI:Invalid key' in error:
+            if 'EAPI:Invalid key' in error:
                 return False, 'Provided API Key is invalid'
-            elif 'EGeneral:Permission denied' in error:
+            if 'EGeneral:Permission denied' in error:
                 msg = (
                     'Provided API Key does not have appropriate permissions. Make '
                     'sure that the "Query Funds", "Query Open/Closed Order and Trades"'
                     'and "Query Ledger Entries" actions are allowed for your Kraken API Key.'
                 )
                 return False, msg
-            else:
-                log.error(f'Kraken API key validation error: {str(e)}')
-                msg = (
-                    'Unknown error at Kraken API key validation. Perhaps API '
-                    'Key/Secret combination invalid?'
-                )
-                return False, msg
+
+            # else
+            log.error(f'Kraken API key validation error: {str(e)}')
+            msg = (
+                'Unknown error at Kraken API key validation. Perhaps API '
+                'Key/Secret combination invalid?'
+            )
+            return False, msg
         return True, ''
 
     def first_connection(self) -> None:

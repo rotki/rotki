@@ -47,6 +47,7 @@ enable=
     reimported,
     too-many-function-args,
     no-else-raise,
+    no-else-return,
     rotki-lognokwargs,
     rotki-nonbooleannot
 

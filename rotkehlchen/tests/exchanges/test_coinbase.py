@@ -414,19 +414,19 @@ TRANSACTIONS_RESPONSE = """{
 def mock_normal_coinbase_query(url):  # pylint: disable=unused-argument
     if 'buys' in url:
         return MockResponse(200, BUYS_RESPONSE)
-    elif 'sells' in url:
+    if 'sells' in url:
         return MockResponse(200, SELLS_RESPONSE)
-    elif 'deposits' in url:
+    if 'deposits' in url:
         return MockResponse(200, DEPOSITS_RESPONSE)
-    elif 'withdrawals' in url:
+    if 'withdrawals' in url:
         return MockResponse(200, WITHDRAWALS_RESPONSE)
-    elif 'transactions' in url:
+    if 'transactions' in url:
         return MockResponse(200, TRANSACTIONS_RESPONSE)
-    elif 'accounts' in url:
+    if 'accounts' in url:
         # keep it simple just return a single ID and ignore the rest of the fields
         return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
-    else:
-        raise AssertionError(f'Unexpected url {url} for test')
+    # else
+    raise AssertionError(f'Unexpected url {url} for test')
 
 
 def test_coinbase_query_trade_history(function_scope_coinbase):
@@ -501,22 +501,22 @@ def query_coinbase_and_test(
         if 'buys' in url:
             if 'next-page' in url:
                 return MockResponse(200, buys_paginated_end)
-            else:
-                return MockResponse(200, buys_response)
-        elif 'sells' in url:
+            # else
+            return MockResponse(200, buys_response)
+        if 'sells' in url:
             if 'next-page' in url:
                 return MockResponse(200, sells_paginated_end)
-            else:
-                return MockResponse(200, sells_response)
-        elif 'deposits' in url:
+            # else
+            return MockResponse(200, sells_response)
+        if 'deposits' in url:
             return MockResponse(200, deposits_response)
-        elif 'withdrawals' in url:
+        if 'withdrawals' in url:
             return MockResponse(200, withdrawals_response)
-        elif 'accounts' in url:
+        if 'accounts' in url:
             # keep it simple just return a single ID and ignore the rest of the fields
             return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
-        else:
-            raise AssertionError(f'Unexpected url {url} for test')
+        # else
+        raise AssertionError(f'Unexpected url {url} for test')
 
     query_fn = getattr(coinbase, query_fn_name)
     with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):

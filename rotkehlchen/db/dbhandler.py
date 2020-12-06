@@ -158,21 +158,20 @@ def db_tuple_to_str(
             f'in {deserialize_location_from_db(data[2])} and pair {data[3]} '
             f'at timestamp {data[1]}'
         )
-    elif tuple_type == 'asset_movement':
+    if tuple_type == 'asset_movement':
         return (
             f'{deserialize_asset_movement_category_from_db(data[2])} of '
             f' {data[4]} with id {data[0]} '
             f'in {deserialize_location_from_db(data[1])} at timestamp {data[3]}'
         )
-    elif tuple_type == 'margin_position':
+    if tuple_type == 'margin_position':
         return (
             f'Margin position with id {data[0]} in  {deserialize_location_from_db(data[1])} '
             f'for {data[5]} closed at timestamp {data[3]}'
         )
-    elif tuple_type == 'ethereum_transaction':
+    if tuple_type == 'ethereum_transaction':
         return f'Ethereum transaction with hash "{data[0].hex()}"'
-
-    elif tuple_type == 'amm_swap':
+    if tuple_type == 'amm_swap':
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
             f'in {deserialize_location_from_db(data[6])} '
@@ -2456,8 +2455,8 @@ class DBHandler:
                 return None
 
             return credentials
-        else:
-            return None
+        # else
+        return None
 
     def get_netvalue_data(self, from_ts: Timestamp) -> Tuple[List[str], List[str]]:
         """Get all entries of net value data from the DB"""

@@ -32,26 +32,26 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
     """
     if isinstance(action, (Trade, AssetMovement, EthereumTransaction, DefiEvent, AMMTrade)):
         return action.timestamp
-    elif isinstance(action, (MarginPosition, Loan)):
+    if isinstance(action, (MarginPosition, Loan)):
         return action.close_time
-
+    # else
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
 def action_get_type(action: TaxableAction) -> str:
     if isinstance(action, (AMMTrade, Trade)):
         return 'trade'
-    elif isinstance(action, AssetMovement):
+    if isinstance(action, AssetMovement):
         return 'asset_movement'
-    elif isinstance(action, EthereumTransaction):
+    if isinstance(action, EthereumTransaction):
         return 'ethereum_transaction'
-    elif isinstance(action, MarginPosition):
+    if isinstance(action, MarginPosition):
         return 'margin_position'
-    elif isinstance(action, Loan):
+    if isinstance(action, Loan):
         return 'loan'
-    elif isinstance(action, DefiEvent):
+    if isinstance(action, DefiEvent):
         return 'defi_event'
-
+    # else
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
@@ -60,13 +60,13 @@ def action_get_assets(
 ) -> Tuple[Asset, Optional[Asset]]:
     if isinstance(action, (Trade, AMMTrade)):
         return trade_get_assets(action)
-    elif isinstance(action, (AssetMovement, DefiEvent)):
+    if isinstance(action, (AssetMovement, DefiEvent)):
         return action.asset, None
-    elif isinstance(action, EthereumTransaction):
+    if isinstance(action, EthereumTransaction):
         return A_ETH, None
-    elif isinstance(action, MarginPosition):
+    if isinstance(action, MarginPosition):
         return action.pl_currency, None
-    elif isinstance(action, Loan):
+    if isinstance(action, Loan):
         return action.currency, None
-
+    # else
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')

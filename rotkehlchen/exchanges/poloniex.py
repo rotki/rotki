@@ -249,8 +249,8 @@ class Poloniex(ExchangeInterface):
             error = str(e)
             if 'Invalid API key' in error:
                 return False, 'Provided API Key or secret is invalid'
-            else:
-                raise
+            # else reraise
+            raise
         return True, ''
 
     def api_query_dict(self, command: str, req: Optional[Dict] = None) -> Dict:
@@ -292,7 +292,7 @@ class Poloniex(ExchangeInterface):
         if response.status_code == 504:
             # backoff and repeat
             return None
-        elif response.status_code != 200:
+        if response.status_code != 200:
             raise RemoteError(
                 f'Poloniex query responded with error status code: {response.status_code}'
                 f' and text: {response.text}',

@@ -19,26 +19,26 @@ class BalanceType(Enum):
     def __str__(self) -> str:
         if self == BalanceType.ASSET:
             return 'asset'
-        elif self == BalanceType.LIABILITY:
+        if self == BalanceType.LIABILITY:
             return 'liability'
-
+        # else
         raise AssertionError(f'Invalid value {self} for BalanceType')
 
     @staticmethod
     def deserialize_from_db(value: str) -> 'BalanceType':
         if value == 'A':
             return BalanceType.ASSET
-        elif value == 'B':
+        if value == 'B':
             return BalanceType.LIABILITY
-
+        # else
         raise DeserializationError(f'Encountered unknown BalanceType value {value} in the DB')
 
     def serialize_for_db(self) -> str:
         if self == BalanceType.ASSET:
             return 'A'
-        elif self == BalanceType.LIABILITY:
+        if self == BalanceType.LIABILITY:
             return 'B'
-
+        # else
         raise AssertionError(f'Invalid value {self} for BalanceType')
 
 
@@ -57,25 +57,25 @@ class DefiEventType(Enum):
     def __str__(self) -> str:
         if self == DefiEventType.DSR_LOAN_GAIN:
             return "DSR loan gain"
-        elif self == DefiEventType.MAKERDAO_VAULT_LOSS:
+        if self == DefiEventType.MAKERDAO_VAULT_LOSS:
             return "Makerdao vault loss"
-        elif self == DefiEventType.AAVE_LOAN_INTEREST:
+        if self == DefiEventType.AAVE_LOAN_INTEREST:
             return "Aave loan interest"
-        elif self == DefiEventType.AAVE_LOSS:
+        if self == DefiEventType.AAVE_LOSS:
             return "Aave loss"
-        elif self == DefiEventType.COMPOUND_LOAN_INTEREST:
+        if self == DefiEventType.COMPOUND_LOAN_INTEREST:
             return "Compound loan interest"
-        elif self == DefiEventType.COMPOUND_DEBT_REPAY:
+        if self == DefiEventType.COMPOUND_DEBT_REPAY:
             return "Compound debt repayment"
-        elif self == DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID:
+        if self == DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID:
             return "Compound liquidation debt repayment"
-        elif self == DefiEventType.COMPOUND_LIQUIDATION_COLLATERAL_LOST:
+        if self == DefiEventType.COMPOUND_LIQUIDATION_COLLATERAL_LOST:
             return "Compound liquidation collateral lost"
-        elif self == DefiEventType.COMPOUND_REWARDS:
+        if self == DefiEventType.COMPOUND_REWARDS:
             return "Compound rewards"
-        elif self == DefiEventType.YEARN_VAULTS_PNL:
+        if self == DefiEventType.YEARN_VAULTS_PNL:
             return "Yearn vaults profit/loss"
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
 
     def is_profitable(self) -> bool:

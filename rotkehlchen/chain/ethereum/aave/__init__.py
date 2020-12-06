@@ -181,14 +181,14 @@ class Aave(EthereumModule):
                     to_timestamp=to_timestamp,
                     aave_balances=aave_balances,
                 )
-            else:
-                return self.blockchain_inquirer.get_history_for_addresses(
-                    addresses=addresses,
-                    to_block=latest_block,
-                    from_timestamp=from_timestamp,
-                    to_timestamp=to_timestamp,
-                    aave_balances=None,  # type: ignore
-                )
+            # else
+            return self.blockchain_inquirer.get_history_for_addresses(
+                addresses=addresses,
+                to_block=latest_block,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                aave_balances=None,  # type: ignore
+            )
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

@@ -256,10 +256,10 @@ class Asset():
 
         if isinstance(other, Asset):
             return self.identifier == other.identifier
-        elif isinstance(other, str):
+        if isinstance(other, str):
             return self.identifier == other
-        else:
-            raise ValueError(f'Invalid comparison of asset with {type(other)}')
+        # else
+        raise ValueError(f'Invalid comparison of asset with {type(other)}')
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
@@ -267,10 +267,10 @@ class Asset():
     def __lt__(self, other: Any) -> bool:
         if isinstance(other, Asset):
             return self.identifier < other.identifier
-        elif isinstance(other, str):
+        if isinstance(other, str):
             return self.identifier < other
-        else:
-            raise ValueError(f'Invalid comparison of asset with {type(other)}')
+        # else
+        raise ValueError(f'Invalid comparison of asset with {type(other)}')
 
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)

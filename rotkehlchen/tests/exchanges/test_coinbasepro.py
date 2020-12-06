@@ -172,9 +172,10 @@ def create_coinbasepro_query_mock(
                 raise AssertionError('Tried to download invalid coinbasepro report during tests')
 
             return MockResponse(200, text)
-        else:
-            assert original_get, 'for mocked gets we need also the original function'
-            return original_get(url)
+
+        # else
+        assert original_get, 'for mocked gets we need also the original function'
+        return original_get(url)
 
     def mock_coinbasepro_request(
             request_method: Literal['get', 'post'],

@@ -174,7 +174,7 @@ def evaluate_input(other: Any) -> Union[Decimal, int]:
     """Evaluate 'other' and return its Decimal representation"""
     if isinstance(other, FVal):
         return other.num
-    elif not isinstance(other, int):
+    if not isinstance(other, int):
         raise NotImplementedError("Expected either FVal or int.")
-
+    # else
     return other

@@ -293,7 +293,7 @@ def convert_to_int(
     """
     if isinstance(val, FVal):
         return val.to_int(accept_only_exact)
-    elif isinstance(val, (bytes, str)):
+    if isinstance(val, (bytes, str)):
         # Since float string are not converted to int we have to first convert
         # to float and try to convert to int afterwards
         try:
@@ -304,12 +304,12 @@ def convert_to_int(
                 return FVal(val).to_int(exact=accept_only_exact)
             except ValueError:
                 raise ConversionError(f'Could not convert {val!r} to an int')
-    elif isinstance(val, int):
+    if isinstance(val, int):
         return val
-    elif isinstance(val, float):
+    if isinstance(val, float):
         if val.is_integer() or accept_only_exact is False:
             return int(val)
-
+    # else
     raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
 
 

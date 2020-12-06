@@ -16,28 +16,28 @@ def v6_deserialize_location_from_db(symbol: str) -> Location:
     """
     if symbol == 'A':
         return Location.EXTERNAL
-    elif symbol == 'B':
+    if symbol == 'B':
         return Location.KRAKEN
-    elif symbol == 'C':
+    if symbol == 'C':
         return Location.POLONIEX
-    elif symbol == 'D':
+    if symbol == 'D':
         return Location.BITTREX
-    elif symbol == 'E':
+    if symbol == 'E':
         return Location.BINANCE
-    elif symbol == 'F':
+    if symbol == 'F':
         return Location.BITMEX
-    elif symbol == 'G':
+    if symbol == 'G':
         return Location.COINBASE
-    elif symbol == 'H':
+    if symbol == 'H':
         return Location.TOTAL
-    elif symbol == 'I':
+    if symbol == 'I':
         return Location.BANKS
-    elif symbol == 'J':
+    if symbol == 'J':
         return Location.BLOCKCHAIN
-    else:
-        raise DBUpgradeError(
-            f'Failed to deserialize location. Unknown symbol {symbol} for location found in DB',
-        )
+    # else
+    raise DBUpgradeError(
+        f'Failed to deserialize location. Unknown symbol {symbol} for location found in DB',
+    )
 
 
 def v6_deserialize_trade_type_from_db(symbol: str) -> TradeType:
@@ -48,16 +48,16 @@ def v6_deserialize_trade_type_from_db(symbol: str) -> TradeType:
     """
     if symbol == 'A':
         return TradeType.BUY
-    elif symbol == 'B':
+    if symbol == 'B':
         return TradeType.SELL
-    elif symbol == 'C':
+    if symbol == 'C':
         return TradeType.SETTLEMENT_BUY
-    elif symbol == 'D':
+    if symbol == 'D':
         return TradeType.SETTLEMENT_SELL
-    else:
-        raise DBUpgradeError(
-            f'Failed to deserialize trade type. Unknown DB symbol {symbol} for trade type in DB',
-        )
+    # else
+    raise DBUpgradeError(
+        f'Failed to deserialize trade type. Unknown DB symbol {symbol} for trade type in DB',
+    )
 
 
 def v6_generate_trade_id(

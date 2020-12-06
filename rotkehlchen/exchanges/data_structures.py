@@ -257,9 +257,9 @@ def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
 def trade_get_assets(trade: Union[Trade, AMMTrade]) -> Tuple[Asset, Asset]:
     if isinstance(trade, Trade):
         return pair_get_assets(trade.pair)
-    else:  # Should only be AMMTrade
-        # can also be unknown ethereum token
-        return trade.base_asset, trade.quote_asset  # type: ignore
+
+    # else should only be AMMTrade
+    return trade.base_asset, trade.quote_asset  # type: ignore
 
 
 def deserialize_trade(data: Dict[str, Any]) -> Trade:

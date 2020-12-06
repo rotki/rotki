@@ -175,12 +175,12 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal, int]) -> Timestamp:
 
     if isinstance(time, int):
         return Timestamp(time)
-    elif isinstance(time, str):
+    if isinstance(time, str):
         try:
             return Timestamp(convert_to_int(time, accept_only_exact=False))
         except ConversionError:
             raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
-    elif isinstance(time, FVal):
+    if isinstance(time, FVal):
         try:
             return Timestamp(time.to_int(exact=False))
         except ConversionError:
@@ -188,10 +188,10 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal, int]) -> Timestamp:
                 f'Failed to deserialize {time} kraken timestamp entry from an FVal',
             )
 
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize a timestamp entry from a {type(time)} entry in kraken',
-        )
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize a timestamp entry from a {type(time)} entry in kraken',
+    )
 
 
 def deserialize_timestamp_from_binance(time: int) -> Timestamp:
@@ -271,16 +271,17 @@ def deserialize_trade_type(symbol: str) -> TradeType:
 
     if symbol in ('buy', 'LIMIT_BUY', 'BUY', 'Buy'):
         return TradeType.BUY
-    elif symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
+    if symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
         return TradeType.SELL
-    elif symbol == 'settlement_buy':
+    if symbol == 'settlement_buy':
         return TradeType.SETTLEMENT_BUY
-    elif symbol == 'settlement_sell':
+    if symbol == 'settlement_sell':
         return TradeType.SETTLEMENT_SELL
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
-        )
+
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
+    )
 
 
 def deserialize_trade_type_from_db(symbol: str) -> TradeType:
@@ -295,16 +296,16 @@ def deserialize_trade_type_from_db(symbol: str) -> TradeType:
 
     if symbol == 'A':
         return TradeType.BUY
-    elif symbol == 'B':
+    if symbol == 'B':
         return TradeType.SELL
-    elif symbol == 'C':
+    if symbol == 'C':
         return TradeType.SETTLEMENT_BUY
-    elif symbol == 'D':
+    if symbol == 'D':
         return TradeType.SETTLEMENT_SELL
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize trade type symbol. Unknown DB symbol {symbol} for trade type',
-        )
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize trade type symbol. Unknown DB symbol {symbol} for trade type',
+    )
 
 
 def deserialize_location(symbol: str) -> Location:
@@ -320,44 +321,44 @@ def deserialize_location(symbol: str) -> Location:
 
     if symbol == 'external':
         return Location.EXTERNAL
-    elif symbol == 'kraken':
+    if symbol == 'kraken':
         return Location.KRAKEN
-    elif symbol == 'poloniex':
+    if symbol == 'poloniex':
         return Location.POLONIEX
-    elif symbol == 'bittrex':
+    if symbol == 'bittrex':
         return Location.BITTREX
-    elif symbol == 'binance':
+    if symbol == 'binance':
         return Location.BINANCE
-    elif symbol == 'bitmex':
+    if symbol == 'bitmex':
         return Location.BITMEX
-    elif symbol == 'coinbase':
+    if symbol == 'coinbase':
         return Location.COINBASE
-    elif symbol == 'total':
+    if symbol == 'total':
         return Location.TOTAL
-    elif symbol == 'banks':
+    if symbol == 'banks':
         return Location.BANKS
-    elif symbol == 'blockchain':
+    if symbol == 'blockchain':
         return Location.BLOCKCHAIN
-    elif symbol == 'coinbasepro':
+    if symbol == 'coinbasepro':
         return Location.COINBASEPRO
-    elif symbol == 'gemini':
+    if symbol == 'gemini':
         return Location.GEMINI
-    elif symbol == 'equities':
+    if symbol == 'equities':
         return Location.EQUITIES
-    elif symbol == 'real estate':
+    if symbol == 'real estate':
         return Location.REALESTATE
-    elif symbol == 'commodities':
+    if symbol == 'commodities':
         return Location.COMMODITIES
-    elif symbol == 'crypto.com':
+    if symbol == 'crypto.com':
         return Location.CRYPTOCOM
-    elif symbol == 'uniswap':
+    if symbol == 'uniswap':
         return Location.UNISWAP
-    elif symbol == 'bitstamp':
+    if symbol == 'bitstamp':
         return Location.BITSTAMP
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
-        )
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
+    )
 
 
 def _split_pair(pair: TradePair) -> Tuple[str, str]:
@@ -416,44 +417,44 @@ def deserialize_location_from_db(symbol: str) -> Location:
 
     if symbol == 'A':
         return Location.EXTERNAL
-    elif symbol == 'B':
+    if symbol == 'B':
         return Location.KRAKEN
-    elif symbol == 'C':
+    if symbol == 'C':
         return Location.POLONIEX
-    elif symbol == 'D':
+    if symbol == 'D':
         return Location.BITTREX
-    elif symbol == 'E':
+    if symbol == 'E':
         return Location.BINANCE
-    elif symbol == 'F':
+    if symbol == 'F':
         return Location.BITMEX
-    elif symbol == 'G':
+    if symbol == 'G':
         return Location.COINBASE
-    elif symbol == 'H':
+    if symbol == 'H':
         return Location.TOTAL
-    elif symbol == 'I':
+    if symbol == 'I':
         return Location.BANKS
-    elif symbol == 'J':
+    if symbol == 'J':
         return Location.BLOCKCHAIN
-    elif symbol == 'K':
+    if symbol == 'K':
         return Location.COINBASEPRO
-    elif symbol == 'L':
+    if symbol == 'L':
         return Location.GEMINI
-    elif symbol == 'M':
+    if symbol == 'M':
         return Location.EQUITIES
-    elif symbol == 'N':
+    if symbol == 'N':
         return Location.REALESTATE
-    elif symbol == 'O':
+    if symbol == 'O':
         return Location.COMMODITIES
-    elif symbol == 'P':
+    if symbol == 'P':
         return Location.CRYPTOCOM
-    elif symbol == 'Q':
+    if symbol == 'Q':
         return Location.UNISWAP
-    elif symbol == 'R':
+    if symbol == 'R':
         return Location.BITSTAMP
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
-        )
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
+    )
 
 
 def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
@@ -468,7 +469,7 @@ def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
 
     if symbol.lower() == 'deposit':
         return AssetMovementCategory.DEPOSIT
-    elif symbol.lower() == 'withdrawal':
+    if symbol.lower() == 'withdrawal':
         return AssetMovementCategory.WITHDRAWAL
 
     # else
@@ -490,7 +491,7 @@ def deserialize_asset_movement_category_from_db(symbol: str) -> AssetMovementCat
 
     if symbol == 'A':
         return AssetMovementCategory.DEPOSIT
-    elif symbol == 'B':
+    if symbol == 'B':
         return AssetMovementCategory.WITHDRAWAL
 
     # else

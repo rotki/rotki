@@ -37,33 +37,33 @@ def exchange_row_to_location(entry: str) -> Location:
     """Takes the exchange row entry of Cointracking exported trades list and returns a location"""
     if entry == 'no exchange':
         return Location.EXTERNAL
-    elif entry == 'Kraken':
+    if entry == 'Kraken':
         return Location.KRAKEN
-    elif entry == 'Poloniex':
+    if entry == 'Poloniex':
         return Location.POLONIEX
-    elif entry == 'Bittrex':
+    if entry == 'Bittrex':
         return Location.BITTREX
-    elif entry == 'Binance':
+    if entry == 'Binance':
         return Location.BINANCE
-    elif entry == 'Bitmex':
+    if entry == 'Bitmex':
         return Location.BITMEX
-    elif entry == 'Coinbase':
+    if entry == 'Coinbase':
         return Location.COINBASE
     # TODO: Check if this is the correct string for CoinbasePro from cointracking
-    elif entry == 'CoinbasePro':
+    if entry == 'CoinbasePro':
         return Location.COINBASEPRO
     # TODO: Check if this is the correct string for Gemini from cointracking
-    elif entry == 'Gemini':
+    if entry == 'Gemini':
         return Location.GEMINI
-    elif entry == 'Bitstamp':
+    if entry == 'Bitstamp':
         return Location.BITSTAMP
-    elif entry == 'ETH Transaction':
+    if entry == 'ETH Transaction':
         raise UnsupportedCointrackingEntry(
             'Not importing ETH Transactions from Cointracking. Cointracking does not '
             'export enough data for them. Simply enter your ethereum accounts and all '
             'your transactions will be auto imported directly from the chain',
         )
-    elif entry == 'BTC Transaction':
+    if entry == 'BTC Transaction':
         raise UnsupportedCointrackingEntry(
             'Not importing BTC Transactions from Cointracking. Cointracking does not '
             'export enough data for them. Simply enter your BTC accounts and all '

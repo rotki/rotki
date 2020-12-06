@@ -178,10 +178,10 @@ class Bittrex(ExchangeInterface):
             error = str(e)
             if 'APIKEY_INVALID' in error:
                 return False, 'Provided API Key is invalid'
-            elif 'INVALID_SIGNATURE' in error:
+            if 'INVALID_SIGNATURE' in error:
                 return False, 'Provided API Secret is invalid'
-            else:
-                raise
+            # else reraise
+            raise
         return True, ''
 
     @staticmethod

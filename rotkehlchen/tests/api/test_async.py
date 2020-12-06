@@ -36,8 +36,8 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     def mock_binance_asset_return(url):  # pylint: disable=unused-argument
         if 'futures' in url:
             return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
-        else:
-            return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+        # else
+        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
     binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
 

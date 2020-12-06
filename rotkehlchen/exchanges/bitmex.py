@@ -110,10 +110,10 @@ class Bitmex(ExchangeInterface):
             error = str(e)
             if 'Invalid API Key' in error:
                 return False, 'Provided API Key is invalid'
-            elif 'Signature not valid' in error:
+            if 'Signature not valid' in error:
                 return False, 'Provided API Secret is invalid'
-            else:
-                raise
+            # else reraise
+            raise
         return True, ''
 
     def _generate_signature(self, verb: str, path: str, expires: int, data: str = '') -> str:

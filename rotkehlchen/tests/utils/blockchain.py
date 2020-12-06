@@ -150,9 +150,9 @@ def _get_token(value: Any) -> Optional[EthereumToken]:
             # not a token
             return None
         return token
-    elif isinstance(value, EthereumToken):
+    if isinstance(value, EthereumToken):
         return value
-
+    # else
     return None
 
 

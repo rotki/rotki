@@ -222,17 +222,18 @@ class Binance(ExchangeInterface):
             error = str(e)
             if 'API-key format invalid' in error:
                 return False, 'Provided API Key is in invalid Format'
-            elif 'Signature for this request is not valid' in error:
+            if 'Signature for this request is not valid' in error:
                 return False, 'Provided API Secret is malformed'
-            elif 'Invalid API-key, IP, or permissions for action' in error:
+            if 'Invalid API-key, IP, or permissions for action' in error:
                 return False, 'API Key does not match the given secret'
-            elif 'Timestamp for this request was' in error:
+            if 'Timestamp for this request was' in error:
                 return False, (
                     "Local system clock is not in sync with binance server. "
                     "Try syncing your system's clock"
                 )
-            else:
-                raise
+            # else reraise
+            raise
+
         return True, ''
 
     def api_query(self, method: str, options: Optional[Dict] = None) -> Union[List, Dict]:

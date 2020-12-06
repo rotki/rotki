@@ -56,34 +56,34 @@ from rotkehlchen.utils.version_check import VersionCheckResult
 def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     if isinstance(entry, FVal):
         return str(entry)
-    elif isinstance(entry, list):
+    if isinstance(entry, list):
         new_list = []
         for new_entry in entry:
             new_list.append(_process_entry(new_entry))
         return new_list
-    elif isinstance(entry, (dict, AttributeDict)):
+    if isinstance(entry, (dict, AttributeDict)):
         new_dict = {}
         for k, v in entry.items():
             if isinstance(k, Asset):
                 k = k.identifier
             new_dict[k] = _process_entry(v)
         return new_dict
-    elif isinstance(entry, HexBytes):
+    if isinstance(entry, HexBytes):
         return entry.hex()
-    elif isinstance(entry, LocationData):
+    if isinstance(entry, LocationData):
         return {
             'time': entry.time,
             'location': str(deserialize_location_from_db(entry.location)),
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, SingleAssetBalance):
+    if isinstance(entry, SingleAssetBalance):
         return {
             'time': entry.time,
             'category': str(entry.category),
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, AssetBalance):
+    if isinstance(entry, AssetBalance):
         return {
             'time': entry.time,
             'category': str(entry.category),
@@ -91,13 +91,13 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
-    elif isinstance(entry, (
+    if isinstance(entry, (
             DefiProtocol,
             MakerDAOVault,
             XpubData,
     )):
         return entry.serialize()
-    elif isinstance(entry, (
+    if isinstance(entry, (
             Trade,
             EthereumTransaction,
             MakerDAOVault,
@@ -116,7 +116,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             UniswapPoolEventsBalance,
     )):
         return process_result(entry.serialize())
-    elif isinstance(entry, (
+    if isinstance(entry, (
             DBSettings,
             EthTokenInfo,
             CompoundEvent,
@@ -135,11 +135,11 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             Eth2Deposit,
     )):
         return process_result(entry._asdict())
-    elif isinstance(entry, tuple):
+    if isinstance(entry, tuple):
         raise ValueError('Query results should not contain plain tuples')
-    elif isinstance(entry, Asset):
+    if isinstance(entry, Asset):
         return entry.identifier
-    elif isinstance(entry, (
+    if isinstance(entry, (
             TradeType,
             Location,
             KrakenAccountType,
@@ -148,8 +148,9 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AssetMovementCategory,
     )):
         return str(entry)
-    else:
-        return entry
+
+    # else
+    return entry
 
 
 def process_result(result: Any) -> Dict[Any, Any]:

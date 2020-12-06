@@ -193,7 +193,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             asset=asset1,
             value=Balance(amount=asset1_amount, usd_value=asset1_usd_value),
         )
-    elif event_type == 'borrow':
+    if event_type == 'borrow':
         if event_tuple[12] not in ('stable', 'variable'):
             raise DeserializationError(
                 f'Invalid borrow rate mode encountered in the DB: {event_tuple[12]}',
@@ -221,7 +221,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             borrow_rate=borrow_rate,
             accrued_borrow_interest=accrued_borrow_interest,
         )
-    elif event_type == 'repay':
+    if event_type == 'repay':
         fee_amount = deserialize_optional_fval(
             value=event_tuple[10],
             name='fee_amount',
@@ -242,7 +242,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             value=Balance(amount=asset1_amount, usd_value=asset1_usd_value),
             fee=Balance(amount=fee_amount, usd_value=fee_usd_value),
         )
-    elif event_type == 'liquidation':
+    if event_type == 'liquidation':
         try:
             # If event_tuple[9] is None DeserializationError is raised from Asset ctor->type ignore
             principal_asset = Asset(event_tuple[9])  # type: ignore
@@ -275,7 +275,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
                 usd_value=principal_usd_value,
             ),
         )
-
+    # else
     raise DeserializationError(
         f'Unknown event type {event_type} encountered during '
         f'deserialization of Aave event from DB',

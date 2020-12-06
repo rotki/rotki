@@ -36,8 +36,8 @@ class RKLEncoder(json.JSONEncoder):
             def transform_asset(o: Any) -> Any:
                 return self._encode(o.identifier if isinstance(o, Asset) else o)
             return {transform_asset(k): transform_asset(v) for k, v in obj.items()}
-        else:
-            return obj
+        # else
+        return obj
 
     def encode(self, obj: Any) -> Any:
         return super().encode(self._encode(obj))
@@ -93,11 +93,11 @@ def rkl_decode_value(
                 value = str(v)
             new_val[k] = value
         return new_val
-    elif isinstance(val, list):
+    if isinstance(val, list):
         return [rkl_decode_value(x) for x in val]
-    elif isinstance(val, float):
+    if isinstance(val, float):
         return FVal(val)
-    elif isinstance(val, (bytes, str)):
+    if isinstance(val, (bytes, str)):
         try:  # try to interpet it as an integer
             val = int(val)
             return val

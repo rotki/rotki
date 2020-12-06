@@ -101,9 +101,9 @@ class EventType(Enum):
     def __str__(self) -> str:
         if self == EventType.MINT:
             return 'mint'
-        elif self == EventType.BURN:
+        if self == EventType.BURN:
             return 'burn'
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for EventType -- Should never happen')
 
 

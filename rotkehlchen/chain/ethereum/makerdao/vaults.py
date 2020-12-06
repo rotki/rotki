@@ -138,15 +138,15 @@ class VaultEventType(Enum):
     def __str__(self) -> str:
         if self == VaultEventType.DEPOSIT_COLLATERAL:
             return 'deposit'
-        elif self == VaultEventType.WITHDRAW_COLLATERAL:
+        if self == VaultEventType.WITHDRAW_COLLATERAL:
             return 'withdraw'
-        elif self == VaultEventType.GENERATE_DEBT:
+        if self == VaultEventType.GENERATE_DEBT:
             return 'generate'
-        elif self == VaultEventType.PAYBACK_DEBT:
+        if self == VaultEventType.PAYBACK_DEBT:
             return 'payback'
-        elif self == VaultEventType.LIQUIDATION:
+        if self == VaultEventType.LIQUIDATION:
             return 'liquidation'
-
+        # else
         raise RuntimeError(f'Corrupt value {self} for VaultEventType -- Should never happen')
 
 
@@ -334,7 +334,7 @@ class MakerDAOVaults(MakerDAOCommon):
                 'happen. Please open a bug report: https://github.com/rotki/rotki/issues',
             )
             return None
-        elif len(events) != 1:
+        if len(events) != 1:
             log.error(
                 f'Multiple events found for a Vault creation: {events}. Taking '
                 f'only the first. This should not happen. Something is wrong',

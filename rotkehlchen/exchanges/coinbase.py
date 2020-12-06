@@ -157,11 +157,10 @@ class Coinbase(ExchangeInterface):
             error = str(e)
             if 'invalid signature' in error:
                 return None, 'Failed to authenticate with the Provided API key/secret'
-            elif 'invalid api key' in error:
+            if 'invalid api key' in error:
                 return None, 'Provided API Key is invalid'
-            else:
-                # any other remote error
-                return None, error
+            # else any other remote error
+            return None, error
 
         return result, ''
 
