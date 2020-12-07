@@ -401,7 +401,7 @@ export default class General extends Settings {
     );
   }
 
-  onSelectedCurrencyChange(currency: Currency) {
+  async onSelectedCurrencyChange(currency: Currency) {
     const symbol = currency.ticker_symbol;
     const message: BaseMessage = {
       success: `${this.$t('general_settings.validation.currency.success', {
@@ -409,10 +409,10 @@ export default class General extends Settings {
       })}`,
       error: `${this.$t('general_settings.validation.currency.error')}`
     };
-    this.update({ main_currency: symbol }, 'selectedCurrency', message);
+    await this.update({ main_currency: symbol }, 'selectedCurrency', message);
   }
 
-  onThousandSeparatorChange(thousandSeparator: string) {
+  async onThousandSeparatorChange(thousandSeparator: string) {
     const message: BaseMessage = {
       success: `${this.$t(
         'general_settings.validation.thousand_separator.success',
@@ -423,14 +423,14 @@ export default class General extends Settings {
       )}`
     };
 
-    this.update(
+    await this.update(
       { thousand_separator: thousandSeparator },
       'thousandSeparator',
       message
     );
   }
 
-  onDecimalSeparatorChange(decimalSeparator: string) {
+  async onDecimalSeparatorChange(decimalSeparator: string) {
     const message: BaseMessage = {
       success: `${this.$t(
         'general_settings.validation.decimal_separator.success',
@@ -441,14 +441,14 @@ export default class General extends Settings {
       error: `${this.$t('general_settings.validation.decimal_separator.error')}`
     };
 
-    this.update(
+    await this.update(
       { decimal_separator: decimalSeparator },
       'decimalSeparator',
       message
     );
   }
 
-  onCurrencyLocationChange(currencyLocation: CurrencyLocation) {
+  async onCurrencyLocationChange(currencyLocation: CurrencyLocation) {
     const message: BaseMessage = {
       success: `${this.$t(
         'general_settings.validation.currency_location.success',
@@ -459,14 +459,14 @@ export default class General extends Settings {
       error: `${this.$t('general_settings.validation.currency_location.error')}`
     };
 
-    this.update(
+    await this.update(
       { currency_location: currencyLocation },
       'currencyLocation',
       message
     );
   }
 
-  onFloatingPrecisionChange(precision: string) {
+  async onFloatingPrecisionChange(precision: string) {
     const previousValue = this.generalSettings.floatingPrecision.toString();
 
     if (!this.notTheSame(precision, previousValue)) {
@@ -487,7 +487,7 @@ export default class General extends Settings {
       )}`
     };
 
-    const success = this.update(
+    const success = await this.update(
       { ui_floating_precision: parseInt(precision) },
       'floatingPrecision',
       message
@@ -498,29 +498,29 @@ export default class General extends Settings {
     }
   }
 
-  onAnonymizedLogsChange(enabled: boolean) {
+  async onAnonymizedLogsChange(enabled: boolean) {
     const message: BaseMessage = {
       success: '',
       error: `${this.$t('general_settings.validation.anonymized_logs.error')}`
     };
 
-    this.update({ anonymized_logs: enabled }, 'anonymizedLogs', message);
+    await this.update({ anonymized_logs: enabled }, 'anonymizedLogs', message);
   }
 
-  onAnonymousUsageAnalyticsChange(enabled: boolean) {
+  async onAnonymousUsageAnalyticsChange(enabled: boolean) {
     const message: BaseMessage = {
       success: '',
       error: `${this.$t('general_settings.validation.analytics.error')}`
     };
 
-    this.update(
+    await this.update(
       { submit_usage_analytics: enabled },
       'anonymousUsageAnalytics',
       message
     );
   }
 
-  onHistoricDataStartChange(date: string) {
+  async onHistoricDataStartChange(date: string) {
     const previousValue = this.parseDate(
       this.generalSettings.historicDataStart
     );
@@ -543,7 +543,7 @@ export default class General extends Settings {
       )}`
     };
 
-    const success = this.update(
+    const success = await this.update(
       { historical_data_start: date },
       'historicDataStart',
       message
@@ -554,7 +554,7 @@ export default class General extends Settings {
     }
   }
 
-  onBalanceSaveFrequencyChange(frequency: string) {
+  async onBalanceSaveFrequencyChange(frequency: string) {
     const previousValue = this.generalSettings.balanceSaveFrequency;
 
     if (!this.notTheSame(frequency, previousValue.toString())) {
@@ -575,7 +575,7 @@ export default class General extends Settings {
       )}`
     };
 
-    const success = this.update(
+    const success = await this.update(
       { balance_save_frequency: parseInt(frequency) },
       'balanceSaveFrequency',
       message
@@ -586,7 +586,7 @@ export default class General extends Settings {
     }
   }
 
-  onDateDisplayFormatChange(dateFormat: string) {
+  async onDateDisplayFormatChange(dateFormat: string) {
     const message: BaseMessage = {
       success: `${this.$t('general_settings.validation.date_format.success', {
         dateFormat
@@ -594,14 +594,14 @@ export default class General extends Settings {
       error: `${this.$t('general_settings.validation.date_format.error')}`
     };
 
-    this.update(
+    await this.update(
       { date_display_format: dateFormat },
       'dateDisplayFormat',
       message
     );
   }
 
-  onRpcEndpointChange(endpoint: string) {
+  async onRpcEndpointChange(endpoint: string) {
     const previousValue = this.generalSettings.ethRpcEndpoint;
 
     if (!this.notTheSame(endpoint, previousValue) && endpoint !== '') {
@@ -617,7 +617,7 @@ export default class General extends Settings {
       error: `${this.$t('general_settings.validation.rpc.error')}`
     };
 
-    const success = this.update(
+    const success = await this.update(
       { eth_rpc_endpoint: endpoint },
       'rpcEndpoint',
       message
