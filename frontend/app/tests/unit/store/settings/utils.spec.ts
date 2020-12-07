@@ -1,4 +1,5 @@
-import { DEFI_SETUP_DONE } from '@/store/settings/consts';
+import { TIMEFRAME_ALL } from '@/components/dashboard/const';
+import { DASHBOARD_TIMEFRAME, DEFI_SETUP_DONE } from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
 
 describe('settings:utils', () => {
@@ -33,7 +34,7 @@ describe('settings:utils', () => {
     loadFrontendSettings(commit, JSON.stringify({ [DEFI_SETUP_DONE]: true }));
     expect(commit).toHaveBeenCalledWith(
       'settings/restore',
-      { [DEFI_SETUP_DONE]: true },
+      { [DASHBOARD_TIMEFRAME]: TIMEFRAME_ALL, [DEFI_SETUP_DONE]: true },
       { root: true }
     );
   });

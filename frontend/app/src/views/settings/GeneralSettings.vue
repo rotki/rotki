@@ -3,12 +3,12 @@
     <v-row no-gutters>
       <v-col>
         <v-card>
-          <v-card-title>General Settings</v-card-title>
+          <v-card-title>{{ $t('general_settings.title') }}</v-card-title>
           <v-card-text>
             <v-switch
               v-model="anonymizedLogs"
               class="general-settings__fields__anonymized-logs"
-              label="Should logs be anonymized?"
+              :label="$t('general_settings.labels.anonymized_logs')"
               color="primary"
               :success-messages="settingsMessages['anonymizedLogs'].success"
               :error-messages="settingsMessages['anonymizedLogs'].error"
@@ -18,7 +18,7 @@
               v-model="anonymousUsageAnalytics"
               class="general-settings__fields__anonymous-usage-statistics"
               color="primary"
-              label="Should anonymous usage analytics be submitted?"
+              :label="$t('general_settings.labels.anonymous_analytics')"
               :success-messages="
                 settingsMessages['anonymousUsageAnalytics'].success
               "
@@ -41,7 +41,7 @@
                 <v-text-field
                   v-model="historicDataStart"
                   class="general-settings__fields__historic-data-start"
-                  label="Date from when to count historical data"
+                  :label="$t('general_settings.labels.historical_data_start')"
                   hint="DD/MM/YYYY format"
                   prepend-icon="fa-calendar"
                   :success-messages="
@@ -63,7 +63,7 @@
             <v-text-field
               v-model="rpcEndpoint"
               class="general-settings__fields__rpc-endpoint"
-              label="Eth RPC Endpoint"
+              :label="$t('general_settings.labels.rpc_endpoint')"
               type="text"
               data-vv-name="eth_rpc_endpoint"
               :success-messages="settingsMessages['rpcEndpoint'].success"
@@ -77,7 +77,7 @@
             <v-text-field
               v-model="balanceSaveFrequency"
               class="general-settings__fields__balance-save-frequency"
-              label="Balance data saving frequency in hours"
+              :label="$t('general_settings.labels.balance_saving_frequency')"
               type="number"
               :success-messages="
                 settingsMessages['balanceSaveFrequency'].success
@@ -89,7 +89,7 @@
             <v-text-field
               v-model="dateDisplayFormat"
               class="general-settings__fields__date-display-format"
-              label="Date display format"
+              :label="$t('general_settings.labels.date_display_format')"
               type="text"
               :success-messages="settingsMessages['dateDisplayFormat'].success"
               :error-messages="settingsMessages['dateDisplayFormat'].error"
@@ -98,12 +98,14 @@
           </v-card-text>
         </v-card>
         <v-card class="mt-5">
-          <v-card-title>Amounts Settings</v-card-title>
+          <v-card-title>
+            {{ $t('general_settings.amount.title') }}
+          </v-card-title>
           <v-card-text>
             <v-text-field
               v-model="floatingPrecision"
               class="general-settings__fields__floating-precision"
-              label="Floating Precision"
+              :label="$t('general_settings.amount.labels.floating_precision')"
               type="number"
               :success-messages="settingsMessages['floatingPrecision'].success"
               :error-messages="settingsMessages['floatingPrecision'].error"
@@ -113,7 +115,7 @@
             <v-select
               v-model="selectedCurrency"
               class="general-settings__fields__currency-selector"
-              label="Select Main Currency"
+              :label="$t('general_settings.amount.labels.main_currency')"
               item-text="ticker_symbol"
               return-object
               :items="currencies"
@@ -137,7 +139,11 @@
                       {{ item.name }}
                     </v-list-item-title>
                     <v-list-item-subtitle>
-                      Select as the main currency
+                      {{
+                        $t(
+                          'general_settings.amount.labels.main_currency_subtitle'
+                        )
+                      }}
                     </v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
@@ -147,7 +153,7 @@
             <v-text-field
               v-model="thousandSeparator"
               class="general-settings__fields__thousand-separator"
-              label="Thousands separator"
+              :label="$t('general_settings.amount.label.thousand_separator')"
               type="text"
               :success-messages="settingsMessages['thousandSeparator'].success"
               :error-messages="settingsMessages['thousandSeparator'].error"
@@ -157,7 +163,7 @@
             <v-text-field
               v-model="decimalSeparator"
               class="general-settings__fields__decimal-separator"
-              label="Decimal separator"
+              :label="$t('general_settings.amount.label.decimal_separator')"
               type="text"
               :success-messages="settingsMessages['decimalSeparator'].success"
               :error-messages="settingsMessages['decimalSeparator'].error"
@@ -167,31 +173,83 @@
             <v-radio-group
               v-model="currencyLocation"
               class="general-settings__fields__currency-location"
-              label="Currency location"
+              :label="$t('general_settings.amount.label.currency_location')"
               row
               :success-messages="settingsMessages['currencyLocation'].success"
               :error-messages="settingsMessages['currencyLocation'].error"
               @change="onCurrencyLocationChange($event)"
             >
-              <v-radio label="Before" value="before" />
-              <v-radio label="After" value="after" />
+              <v-radio
+                :label="$t('general_settings.amount.label.location_before')"
+                value="before"
+              />
+              <v-radio
+                :label="$t('general_settings.amount.label.location_after')"
+                value="after"
+              />
             </v-radio-group>
 
-            <strong>Resulting format: </strong>
+            <strong>
+              {{ $t('general_settings.amount.label.resulting_format') }}
+            </strong>
             <amount-display :value="amountExample" show-currency="symbol" />
           </v-card-text>
         </v-card>
         <v-card class="mt-5">
-          <v-card-title>Frontend-only Settings</v-card-title>
+          <v-card-title>
+            {{ $t('general_settings.frontend.title') }}
+          </v-card-title>
           <v-card-text>
             <v-switch
               v-model="scrambleData"
               class="general-settings__fields__scramble-data"
-              :label="`Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.`"
+              :label="$t('general_settings.frontend.label.scramble')"
               :success-messages="settingsMessages['scrambleData'].success"
               :error-messages="settingsMessages['scrambleData'].error"
               @change="onScrambleDataChange($event)"
             />
+            <v-row>
+              <v-col>
+                <div
+                  class="title"
+                  v-text="
+                    $t('general_settings.frontend.label.default_timeframe')
+                  "
+                />
+                <div
+                  class="subtitle-1"
+                  v-text="
+                    $t(
+                      'general_settings.frontend.label.default_timeframe_description'
+                    )
+                  "
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <timeframe-selector
+                  v-model="defaultGraphTimeframe"
+                  @changed="onTimeframeChange"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col
+                :class="{
+                  'success--text': !!settingsMessages['timeframe'].success,
+                  'error--text': !!settingsMessages['timeframe'].error
+                }"
+                class="subtitle-2 general-settings__timeframe"
+              >
+                <div v-if="settingsMessages['timeframe'].success">
+                  {{ settingsMessages['timeframe'].success }}
+                </div>
+                <div v-if="settingsMessages['timeframe'].error">
+                  {{ settingsMessages['timeframe'].error }}
+                </div>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
       </v-col>
@@ -201,25 +259,39 @@
 
 <script lang="ts">
 import { Component, Watch } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
+import { TIMEFRAME_ALL } from '@/components/dashboard/const';
+import { TimeFramePeriod } from '@/components/dashboard/types';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { convertToGeneralSettings, findCurrency } from '@/data/converters';
+import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
-import { Message } from '@/store/types';
-import { GeneralSettings, SettingsUpdate } from '@/typing/types';
+import { DASHBOARD_TIMEFRAME } from '@/store/settings/consts';
+import { FrontendSettingsPayload } from '@/store/settings/types';
+import { ActionStatus } from '@/store/types';
+import {
+  CURRENCY_AFTER,
+  CurrencyLocation,
+  GeneralSettings,
+  SettingsUpdate
+} from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 
-const { mapState, mapGetters } = createNamespacedHelpers('session');
+type BaseMessage = { success: string; error: string };
 
 @Component({
   components: {
+    TimeframeSelector,
     AmountDisplay
   },
   computed: {
-    ...mapState(['generalSettings']),
-    ...mapGetters(['currency'])
+    ...mapState('session', ['generalSettings']),
+    ...mapGetters('session', ['currency'])
+  },
+  methods: {
+    ...mapActions('session', ['settingsUpdate']),
+    ...mapActions('settings', ['updateSetting'])
   }
 })
 export default class General extends Settings {
@@ -235,9 +307,12 @@ export default class General extends Settings {
   dateDisplayFormat: string = '';
   thousandSeparator: string = '';
   decimalSeparator: string = '';
-  currencyLocation: GeneralSettings['currencyLocation'] = 'after';
+  currencyLocation: CurrencyLocation = CURRENCY_AFTER;
   selectedCurrency: Currency = currencies[0];
   scrambleData: boolean = false;
+  defaultGraphTimeframe: TimeFramePeriod = TIMEFRAME_ALL;
+  settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
+  updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
 
   settingsMessages: SettingsMessages = {
     floatingPrecision: { success: '', error: '' },
@@ -251,7 +326,8 @@ export default class General extends Settings {
     decimalSeparator: { success: '', error: '' },
     currencyLocation: { success: '', error: '' },
     selectedCurrency: { success: '', error: '' },
-    scrambleData: { success: '', error: '' }
+    scrambleData: { success: '', error: '' },
+    timeframe: { success: '', error: '' }
   };
 
   historicDateMenu: boolean = false;
@@ -267,304 +343,288 @@ export default class General extends Settings {
     }
   }
 
+  async onTimeframeChange(timeframe: TimeFramePeriod) {
+    const { success, message } = await this.updateSetting({
+      [DASHBOARD_TIMEFRAME]: timeframe
+    });
+    this.validateSettingChange(
+      'timeframe',
+      success ? 'success' : 'error',
+      success
+        ? `${this.$t('general_settings.validation.timeframe.success', {
+            timeframe: timeframe
+          })}`
+        : `${this.$t('general_settings.validation.timeframe.error', {
+            message
+          })}`
+    );
+  }
+
+  async update(
+    update: SettingsUpdate,
+    setting: string,
+    baseMessage: BaseMessage
+  ): Promise<boolean> {
+    const { message, success } = await this.settingsUpdate(update);
+
+    this.validateSettingChange(
+      setting,
+      success ? 'success' : 'error',
+      success ? baseMessage.success : `${baseMessage.error}: ${message}`
+    );
+    return success;
+  }
+
   onScrambleDataChange(enabled: boolean) {
     const { commit } = this.$store;
     const previousValue = this.$store.state.session.scrambleData;
 
+    let success: boolean = false;
+    let message: string | undefined;
+
     try {
       commit('session/scrambleData', enabled);
-      this.validateSettingChange('scrambleData', 'success');
+      success = true;
     } catch (error) {
-      this.validateSettingChange(
-        'anonymizedLogs',
-        'error',
-        `Error setting anonymized logs ${error}`
-      );
       this.scrambleData = previousValue;
+      message = error.message;
     }
+
+    this.validateSettingChange(
+      'scrambleData',
+      success ? 'success' : 'error',
+      success
+        ? ''
+        : `${this.$t('general_settings.validation.scramble.error', {
+            message
+          })}`
+    );
   }
 
   onSelectedCurrencyChange(currency: Currency) {
-    const { commit } = this.$store;
-
-    this.$api
-      .setSettings({ main_currency: currency.ticker_symbol })
-      .then(settings => {
-        commit('session/generalSettings', {
-          ...this.generalSettings,
-          selectedCurrency: findCurrency(settings.main_currency)
-        });
-        this.validateSettingChange(
-          'selectedCurrency',
-          'success',
-          `Main currency set to ${currency.ticker_symbol}`
-        );
-      })
-      .catch(reason => {
-        this.validateSettingChange(
-          'selectedCurrency',
-          'error',
-          `Error setting main currency ${reason.message}`
-        );
-      });
+    const symbol = currency.ticker_symbol;
+    const message: BaseMessage = {
+      success: `${this.$t('general_settings.validation.currency.success', {
+        symbol
+      })}`,
+      error: `${this.$t('general_settings.validation.currency.error')}`
+    };
+    this.update({ main_currency: symbol }, 'selectedCurrency', message);
   }
 
   onThousandSeparatorChange(thousandSeparator: string) {
-    const { commit } = this.$store;
-    this.$api
-      .setSettings({ thousand_separator: thousandSeparator })
-      .then(settings => {
-        commit('session/generalSettings', {
-          ...this.generalSettings,
-          thousandSeparator: settings.thousand_separator
-        });
-        this.validateSettingChange(
-          'thousandSeparator',
-          'success',
-          `thousand separator set to ${thousandSeparator}`
-        );
-      })
-      .catch(reason => {
-        this.validateSettingChange(
-          'thousandSeparator',
-          'error',
-          `Error setting thousand separator ${reason.message}`
-        );
-      });
+    const message: BaseMessage = {
+      success: `${this.$t(
+        'general_settings.validation.thousand_separator.success',
+        { thousandSeparator }
+      )}`,
+      error: `${this.$t(
+        'general_settings.validation.thousand_separator.error'
+      )}`
+    };
+
+    this.update(
+      { thousand_separator: thousandSeparator },
+      'thousandSeparator',
+      message
+    );
   }
+
   onDecimalSeparatorChange(decimalSeparator: string) {
-    const { commit } = this.$store;
-    this.$api
-      .setSettings({ decimal_separator: decimalSeparator })
-      .then(settings => {
-        commit('session/generalSettings', {
-          ...this.generalSettings,
-          decimalSeparator: settings.decimal_separator
-        });
-        this.validateSettingChange(
-          'decimalSeparator',
-          'success',
-          `decimal separator set to ${decimalSeparator}`
-        );
-      })
-      .catch(reason => {
-        this.validateSettingChange(
-          'decimalSeparator',
-          'error',
-          `Error setting decimal separator ${reason.message}`
-        );
-      });
+    const message: BaseMessage = {
+      success: `${this.$t(
+        'general_settings.validation.decimal_separator.success',
+        {
+          decimalSeparator
+        }
+      )}`,
+      error: `${this.$t('general_settings.validation.decimal_separator.error')}`
+    };
+
+    this.update(
+      { decimal_separator: decimalSeparator },
+      'decimalSeparator',
+      message
+    );
   }
-  onCurrencyLocationChange(
-    currencyLocation: GeneralSettings['currencyLocation']
-  ) {
-    const { commit } = this.$store;
-    this.$api
-      .setSettings({ currency_location: currencyLocation })
-      .then(settings => {
-        commit('session/generalSettings', {
-          ...this.generalSettings,
-          currencyLocation: settings.currency_location
-        });
-        this.validateSettingChange(
-          'currencyLocation',
-          'success',
-          `currency location set to ${currencyLocation}`
-        );
-      })
-      .catch(reason => {
-        this.validateSettingChange(
-          'currencyLocation',
-          'error',
-          `Error setting currency location ${reason.message}`
-        );
-      });
+
+  onCurrencyLocationChange(currencyLocation: CurrencyLocation) {
+    const message: BaseMessage = {
+      success: `${this.$t(
+        'general_settings.validation.currency_location.success',
+        {
+          currencyLocation
+        }
+      )}`,
+      error: `${this.$t('general_settings.validation.currency_location.error')}`
+    };
+
+    this.update(
+      { currency_location: currencyLocation },
+      'currencyLocation',
+      message
+    );
   }
 
   onFloatingPrecisionChange(precision: string) {
-    const { commit } = this.$store;
     const previousValue = this.generalSettings.floatingPrecision.toString();
 
-    if (this.execOnlyIfDifferent(precision, previousValue)) {
-      this.$api
-        .setSettings({ ui_floating_precision: parseInt(precision) })
-        .then(settings => {
-          commit('session/generalSettings', {
-            ...this.generalSettings,
-            floatingPrecision: settings.ui_floating_precision
-          });
-          this.validateSettingChange(
-            'floatingPrecision',
-            'success',
-            `Floating precision set to ${precision}`
-          );
-        })
-        .catch(reason => {
-          this.validateSettingChange(
-            'floatingPrecision',
-            'error',
-            `Error setting floating precision to ${precision}. ${reason.message}`
-          );
-          this.floatingPrecision = previousValue;
-        });
+    if (!this.notTheSame(precision, previousValue)) {
+      return;
+    }
+
+    const params = {
+      precision
+    };
+    const message: BaseMessage = {
+      success: `${this.$t(
+        'general_settings.validation.floating_precision.success',
+        params
+      )}`,
+      error: `${this.$t(
+        'general_settings.validation.floating_precision.error',
+        params
+      )}`
+    };
+
+    const success = this.update(
+      { ui_floating_precision: parseInt(precision) },
+      'floatingPrecision',
+      message
+    );
+
+    if (!success) {
+      this.floatingPrecision = previousValue;
     }
   }
 
   onAnonymizedLogsChange(enabled: boolean) {
-    const { commit } = this.$store;
+    const message: BaseMessage = {
+      success: '',
+      error: `${this.$t('general_settings.validation.anonymized_logs.error')}`
+    };
 
-    this.$api
-      .setSettings({ anonymized_logs: enabled })
-      .then(settings => {
-        commit('session/generalSettings', {
-          ...this.generalSettings,
-          anonymizedLogs: settings.anonymized_logs
-        });
-        this.validateSettingChange('anonymizedLogs', 'success');
-      })
-      .catch(reason => {
-        this.validateSettingChange(
-          'anonymizedLogs',
-          'error',
-          `Error setting anonymized logs ${reason.message}`
-        );
-      });
+    this.update({ anonymized_logs: enabled }, 'anonymizedLogs', message);
   }
 
   onAnonymousUsageAnalyticsChange(enabled: boolean) {
-    const { commit } = this.$store;
+    const message: BaseMessage = {
+      success: '',
+      error: `${this.$t('general_settings.validation.analytics.error')}`
+    };
 
-    this.$api
-      .setSettings({ submit_usage_analytics: enabled })
-      .then(settings => {
-        commit('session/generalSettings', {
-          ...this.generalSettings,
-          anonymousUsageAnalytics: settings.submit_usage_analytics
-        });
-        this.validateSettingChange('anonymousUsageAnalytics', 'success');
-      })
-      .catch(reason => {
-        this.validateSettingChange(
-          'anonymousUsageAnalytics',
-          'error',
-          `Error setting anonymous usage analytics ${reason.message}`
-        );
-      });
+    this.update(
+      { submit_usage_analytics: enabled },
+      'anonymousUsageAnalytics',
+      message
+    );
   }
 
   onHistoricDataStartChange(date: string) {
-    const { commit } = this.$store;
     const previousValue = this.parseDate(
       this.generalSettings.historicDataStart
     );
 
-    if (this.execOnlyIfDifferent(date, previousValue)) {
-      this.$api
-        .setSettings({ historical_data_start: date })
-        .then(settings => {
-          commit('session/generalSettings', {
-            ...this.generalSettings,
-            historicDataStart: settings.historical_data_start
-          });
-          this.validateSettingChange(
-            'historicDataStart',
-            'success',
-            `Historical data start set to ${date}`
-          );
-        })
-        .catch(reason => {
-          this.validateSettingChange(
-            'historicDataStart',
-            'error',
-            `Error setting historical data start to ${date}. ${reason.message}`
-          );
-          this.historicDataStart = previousValue || '';
-        });
+    if (!this.notTheSame(date, previousValue)) {
+      return;
+    }
+
+    const params = {
+      date
+    };
+    const message: BaseMessage = {
+      success: `${this.$t(
+        'general_settings.validation.historic_data.success',
+        params
+      )}`,
+      error: `${this.$t(
+        'general_settings.validation.historic_data.error',
+        params
+      )}`
+    };
+
+    const success = this.update(
+      { historical_data_start: date },
+      'historicDataStart',
+      message
+    );
+
+    if (!success) {
+      this.historicDataStart = previousValue || '';
     }
   }
 
   onBalanceSaveFrequencyChange(frequency: string) {
-    const { commit } = this.$store;
     const previousValue = this.generalSettings.balanceSaveFrequency;
 
-    if (this.execOnlyIfDifferent(frequency, String(previousValue))) {
-      this.$api
-        .setSettings({ balance_save_frequency: parseInt(frequency) })
-        .then(settings => {
-          commit('session/generalSettings', {
-            ...this.generalSettings,
-            balanceSaveFrequency: settings.balance_save_frequency
-          });
-          this.validateSettingChange(
-            'balanceSaveFrequency',
-            'success',
-            `data save frequency set to ${frequency} hours`
-          );
-        })
-        .catch(reason => {
-          this.validateSettingChange(
-            'balanceSaveFrequency',
-            'error',
-            `Error setting balance save frequency to ${frequency}. ${reason.message}`
-          );
-          this.balanceSaveFrequency = String(previousValue);
-        });
+    if (!this.notTheSame(frequency, previousValue.toString())) {
+      return;
+    }
+
+    const params = {
+      frequency
+    };
+    const message: BaseMessage = {
+      success: `${this.$t(
+        'general_settings.validation.balance_frequency.success',
+        params
+      )}`,
+      error: `${this.$t(
+        'general_settings.validation.balance_frequency.error',
+        params
+      )}`
+    };
+
+    const success = this.update(
+      { balance_save_frequency: parseInt(frequency) },
+      'balanceSaveFrequency',
+      message
+    );
+
+    if (!success) {
+      this.balanceSaveFrequency = previousValue.toString();
     }
   }
 
   onDateDisplayFormatChange(dateFormat: string) {
-    const { commit } = this.$store;
+    const message: BaseMessage = {
+      success: `${this.$t('general_settings.validation.date_format.success', {
+        dateFormat
+      })}`,
+      error: `${this.$t('general_settings.validation.date_format.error')}`
+    };
 
-    this.$api
-      .setSettings({ date_display_format: dateFormat })
-      .then(settings => {
-        commit('session/generalSettings', {
-          ...this.generalSettings,
-          dateDisplayFormat: settings.date_display_format
-        });
-        this.validateSettingChange(
-          'dateDisplayFormat',
-          'success',
-          `date display set to ${dateFormat}`
-        );
-      })
-      .catch(reason => {
-        this.validateSettingChange(
-          'dateDisplayFormat',
-          'error',
-          `Error setting date display format ${reason.message}`
-        );
-      });
+    this.update(
+      { date_display_format: dateFormat },
+      'dateDisplayFormat',
+      message
+    );
   }
 
   onRpcEndpointChange(endpoint: string) {
-    const { commit } = this.$store;
     const previousValue = this.generalSettings.ethRpcEndpoint;
 
-    if (this.execOnlyIfDifferent(endpoint, previousValue) || endpoint === '') {
-      this.$api
-        .setSettings({ eth_rpc_endpoint: endpoint })
-        .then(settings => {
-          commit('session/generalSettings', {
-            ...this.generalSettings,
-            ethRpcEndpoint: settings.eth_rpc_endpoint
-          });
-          this.validateSettingChange(
-            'rpcEndpoint',
-            'success',
+    if (!this.notTheSame(endpoint, previousValue) && endpoint !== '') {
+      return;
+    }
+
+    const message: BaseMessage = {
+      success: endpoint
+        ? `${this.$t('general_settings.validation.rpc.success_set', {
             endpoint
-              ? `RPC endpoint set to ${endpoint}`
-              : 'RPC endpoint was successfully unset'
-          );
-        })
-        .catch(reason => {
-          this.validateSettingChange(
-            'rpcEndpoint',
-            'error',
-            `Error setting rpc endpoint ${reason.message}`
-          );
-          this.rpcEndpoint = previousValue || '';
-        });
+          })}`
+        : `${this.$t('general_settings.validation.rpc.success_unset')}`,
+      error: `${this.$t('general_settings.validation.rpc.error')}`
+    };
+
+    const success = this.update(
+      { eth_rpc_endpoint: endpoint },
+      'rpcEndpoint',
+      message
+    );
+
+    if (!success) {
+      this.rpcEndpoint = previousValue || '';
     }
   }
 
@@ -574,6 +634,7 @@ export default class General extends Settings {
     const [year, month, day] = date.split('-');
     return `${day}/${month}/${year}`;
   }
+
   parseDate(date: string) {
     if (
       !/^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}$/.test(
@@ -609,86 +670,11 @@ export default class General extends Settings {
     this.currencyLocation = settings.currencyLocation;
     this.date = this.parseDate(settings.historicDataStart) || '';
     this.scrambleData = this.$store.state.session.scrambleData;
+    this.defaultGraphTimeframe = this.$store.state.session.dashboardTimeframe;
   }
 
-  execOnlyIfDifferent<T>(value: T, oldValue: T): T | undefined {
+  notTheSame<T>(value: T, oldValue: T): T | undefined {
     return value !== oldValue ? value : undefined;
-  }
-
-  save() {
-    function setOnlyIfDifferent<T>(value: T, oldValue: T): T | undefined {
-      return value !== oldValue ? value : undefined;
-    }
-
-    const { commit } = this.$store;
-
-    const floatingPrecision = parseInt(this.floatingPrecision);
-    const balanceSaveFrequency = parseInt(this.balanceSaveFrequency);
-
-    const update: SettingsUpdate = {
-      ui_floating_precision: setOnlyIfDifferent(
-        floatingPrecision,
-        this.generalSettings.floatingPrecision
-      ),
-      historical_data_start: setOnlyIfDifferent(
-        this.historicDataStart,
-        this.generalSettings.historicDataStart
-      ),
-      main_currency: setOnlyIfDifferent(
-        this.selectedCurrency.ticker_symbol,
-        this.currency.ticker_symbol
-      ),
-      eth_rpc_endpoint: setOnlyIfDifferent(
-        this.rpcEndpoint,
-        this.generalSettings.ethRpcEndpoint
-      ),
-      balance_save_frequency: setOnlyIfDifferent(
-        balanceSaveFrequency,
-        this.generalSettings.balanceSaveFrequency
-      ),
-      anonymized_logs: setOnlyIfDifferent(
-        this.anonymizedLogs,
-        this.generalSettings.anonymizedLogs
-      ),
-      submit_usage_analytics: setOnlyIfDifferent(
-        this.anonymousUsageAnalytics,
-        this.generalSettings.anonymousUsageAnalytics
-      ),
-      date_display_format: setOnlyIfDifferent(
-        this.dateDisplayFormat,
-        this.generalSettings.dateDisplayFormat
-      ),
-      thousand_separator: setOnlyIfDifferent(
-        this.thousandSeparator,
-        this.generalSettings.thousandSeparator
-      ),
-      decimal_separator: setOnlyIfDifferent(
-        this.decimalSeparator,
-        this.generalSettings.decimalSeparator
-      ),
-      currency_location: setOnlyIfDifferent(
-        this.currencyLocation,
-        this.generalSettings.currencyLocation
-      )
-    };
-    this.$api
-      .setSettings(update)
-      .then(settings => {
-        commit('setMessage', {
-          title: 'Success',
-          description: 'Successfully changed settings.',
-          success: true
-        } as Message);
-        commit('session/generalSettings', convertToGeneralSettings(settings));
-        this.loadFromState();
-      })
-      .catch((error: Error) => {
-        this.loadFromState();
-        commit('setMessage', {
-          title: 'Settings Error',
-          description: `Error at changing settings: ${error.message}`
-        } as Message);
-      });
   }
 }
 </script>
@@ -697,6 +683,10 @@ export default class General extends Settings {
   &__currency-list {
     font-size: 2em;
     font-weight: bold;
+  }
+
+  &__timeframe {
+    min-height: 55px;
   }
 }
 </style>

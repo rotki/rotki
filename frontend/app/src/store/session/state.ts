@@ -1,3 +1,4 @@
+import { TIMEFRAME_ALL } from '@/components/dashboard/const';
 import {
   defaultAccountingSettings,
   defaultGeneralSettings
@@ -25,7 +26,8 @@ export const defaultState: () => SessionState = () => ({
   queriedAddresses: {},
   ignoredAssets: [],
   lastBalanceSave: 0,
-  lastDataUpload: 0
+  lastDataUpload: 0,
+  dashboardTimeframe: TIMEFRAME_ALL
 });
 
 export const state: SessionState = defaultState();

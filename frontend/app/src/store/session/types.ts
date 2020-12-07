@@ -1,3 +1,4 @@
+import { TimeFramePeriod } from '@/components/dashboard/types';
 import {
   QueriedAddresses,
   Watcher,
@@ -24,6 +25,7 @@ export interface SessionState {
   ignoredAssets: string[];
   lastBalanceSave: number;
   lastDataUpload: number;
+  dashboardTimeframe: TimeFramePeriod;
 }
 
 export interface SyncConflictPayload {

@@ -1,21 +1,25 @@
 import { ActionContext, ActionTree } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
 import { FrontendSettingsPayload, SettingsState } from '@/store/settings/types';
-import { RotkehlchenState } from '@/store/types';
+import { ActionStatus, RotkehlchenState } from '@/store/types';
+import { assert } from '@/utils/assertions';
 
 interface Actions {
   updateSetting(
     context: ActionContext<SettingsState, RotkehlchenState>,
     payload: FrontendSettingsPayload
-  ): Promise<void>;
+  ): Promise<ActionStatus>;
 }
 
 export const actions: ActionTree<SettingsState, RotkehlchenState> & Actions = {
-  async updateSetting({ commit, state }, payload: FrontendSettingsPayload) {
+  async updateSetting(
+    { commit, state },
+    payload: FrontendSettingsPayload
+  ): Promise<ActionStatus> {
     const props = Object.entries(payload);
-    if (props.length === 0) {
-      return;
-    }
+    assert(props.length > 0, 'Payload must be not-empty');
+    let success = false;
+    let message: string | undefined;
 
     for (const [prop, value] of props) {
       commit(prop, value);
@@ -25,7 +29,13 @@ export const actions: ActionTree<SettingsState, RotkehlchenState> & Actions = {
       await api.setSettings({
         frontend_settings: JSON.stringify(state)
       });
-      // eslint-disable-next-line no-empty
-    } catch (e) {}
+      success = true;
+    } catch (e) {
+      message = e.message;
+    }
+    return {
+      success,
+      message
+    };
   }
 };

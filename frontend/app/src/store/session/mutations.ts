@@ -1,4 +1,5 @@
 import { MutationTree } from 'vuex';
+import { TimeFramePeriod } from '@/components/dashboard/types';
 import {
   QueriedAddresses,
   Watcher,
@@ -79,5 +80,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   updateLastDataUpload(state: SessionState, lastDataUpload: number) {
     state.lastDataUpload = lastDataUpload;
+  },
+  setDashboardTimeframe(state: SessionState, timeframe: TimeFramePeriod) {
+    state.dashboardTimeframe = timeframe;
   }
 };

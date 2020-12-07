@@ -39,33 +39,7 @@
             />
           </span>
         </div>
-
-        <div class="overall-balances__timeframe-chips text-center">
-          <v-tooltip v-if="!premium" top>
-            <template #activator="{ on, attrs }">
-              <v-icon
-                class="overall-balances__premium"
-                small
-                v-bind="attrs"
-                v-on="on"
-              >
-                mdi-lock
-              </v-icon>
-            </template>
-            <span v-text="$t('overall_balances.premium_hint')" />
-          </v-tooltip>
-          <v-chip
-            v-for="(timeframe, i) in timeframes"
-            :key="i"
-            :class="activeClass(timeframe.text)"
-            class="ma-2"
-            :disabled="!premium && !worksWithoutPremium(timeframe.text)"
-            small
-            @click="activeTimeframe = timeframe.text"
-          >
-            {{ timeframe.text }}
-          </v-chip>
-        </div>
+        <timeframe-selector v-model="activeTimeframe" />
       </v-col>
       <v-col cols="12" md="8" lg="8" class="d-flex">
         <div
@@ -92,19 +66,15 @@
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
 
-import {
-  TIMEFRAME_ALL,
-  TIMEFRAME_TWO_WEEKS,
-  TIMEFRAME_WEEK,
-  timeframes
-} from '@/components/dashboard/const';
+import { TIMEFRAME_TWO_WEEKS, timeframes } from '@/components/dashboard/const';
 import NetWorthChart from '@/components/dashboard/NetworthChart.vue';
 import { TimeFramePeriod, Timeframes } from '@/components/dashboard/types';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 
 import Loading from '@/components/helper/Loading.vue';
+import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { NetValue } from '@/services/types-api';
@@ -112,13 +82,15 @@ import { Section } from '@/store/const';
 import { bigNumberify } from '@/utils/bignumbers';
 
 @Component({
-  components: { Loading, AmountDisplay, NetWorthChart },
+  components: { TimeframeSelector, Loading, AmountDisplay, NetWorthChart },
   computed: {
     ...mapGetters('session', ['currencySymbol']),
-    ...mapGetters('statistics', ['netValue', 'totalNetWorth'])
+    ...mapGetters('statistics', ['netValue', 'totalNetWorth']),
+    ...mapState('session', ['dashboardTimeframe'])
   },
   methods: {
-    ...mapActions('statistics', ['fetchNetValue'])
+    ...mapActions('statistics', ['fetchNetValue']),
+    ...mapMutations('session', ['setDashboardTimeframe'])
   }
 })
 export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
@@ -126,8 +98,16 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   netValue!: (startingDate: number) => NetValue;
   totalNetWorth!: BigNumber;
   fetchNetValue!: () => Promise<void>;
+  dashboardTimeframe!: TimeFramePeriod;
+  setDashboardTimeframe!: (timeframe: TimeFramePeriod) => void;
 
-  activeTimeframe: TimeFramePeriod = TIMEFRAME_ALL;
+  get activeTimeframe(): TimeFramePeriod {
+    return this.dashboardTimeframe;
+  }
+
+  set activeTimeframe(value: TimeFramePeriod) {
+    this.setDashboardTimeframe(value);
+  }
 
   section = Section.BLOCKCHAIN_ETH;
   secondSection = Section.BLOCKCHAIN_BTC;
@@ -150,16 +130,6 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
     return this.balanceDelta.isNegative()
       ? 'rotki-red lighten-1'
       : 'rotki-green';
-  }
-
-  activeClass(timeframePeriod: TimeFramePeriod): string {
-    return timeframePeriod === this.selection
-      ? 'overall-balances__timeframe-chips--active'
-      : '';
-  }
-
-  worksWithoutPremium(period: TimeFramePeriod): boolean {
-    return [TIMEFRAME_WEEK, TIMEFRAME_TWO_WEEKS].includes(period);
   }
 
   get timeframes(): Timeframes {
@@ -255,17 +225,6 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
     }
   }
 
-  &__timeframe-chips {
-    .v-chip {
-      cursor: pointer;
-    }
-
-    &--active {
-      color: white !important;
-      background-color: var(--v-primary-base) !important;
-    }
-  }
-
   &__net-worth-chart {
     width: 100%;
 
@@ -277,10 +236,6 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
       justify-content: center;
       text-align: center;
     }
-  }
-
-  &__premium {
-    margin-left: -16px;
   }
 }
 </style>
