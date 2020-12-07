@@ -70,6 +70,8 @@ SAPI_ENDPOINTS = (
     'futures/loan/wallet',
 )
 
+RETRY_AFTER_LIMIT = 60
+
 
 class BinancePair(NamedTuple):
     """A binance pair. Contains the symbol in the Binance mode e.g. "ETHBTC" and
@@ -238,18 +240,21 @@ class Binance(ExchangeInterface):
 
     def api_query(self, method: str, options: Optional[Dict] = None) -> Union[List, Dict]:
         call_options = options.copy() if options else {}
-        backoff = self.initial_backoff
 
         while True:
             with self.nonce_lock:
                 # Protect this region with a lock since binance will reject
                 # non-increasing nonces. So if two greenlets come in here at
                 # the same time one of them will fail
+                if 'signature' in call_options:
+                    del call_options['signature']
+
                 if method in V3_ENDPOINTS or method in WAPI_ENDPOINTS or method in SAPI_ENDPOINTS:
                     if method in SAPI_ENDPOINTS:
                         api_version = 1
                     else:
                         api_version = 3
+
                     # Recommended recvWindows is 5000 but we get timeouts with it
                     call_options['recvWindow'] = 10000
                     call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
@@ -278,8 +283,7 @@ class Binance(ExchangeInterface):
                 except requests.exceptions.RequestException as e:
                     raise RemoteError(f'Binance API request failed due to {str(e)}') from e
 
-            limit_ban = response.status_code == 429 and backoff > self.backoff_limit
-            if limit_ban or response.status_code not in (200, 429):
+            if response.status_code not in (200, 418, 429):
                 code = 'no code found'
                 msg = 'no message found'
                 try:
@@ -300,14 +304,29 @@ class Binance(ExchangeInterface):
                         msg,
                     ))
 
-            if response.status_code == 429:
-                if backoff > self.backoff_limit:
-                    break
-                # Binance has limits and if we hit them we should backoff
-                # https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#limits
-                log.debug('Got 429 from Binance. Backing off', seconds=backoff)
-                gevent.sleep(backoff)
-                backoff = backoff * 2
+            if response.status_code in (418, 429):
+                # Binance has limits and if we hit them we should backoff.
+                # A Retry-After header is sent with a 418 or 429 responses and
+                # will give the number of seconds required to wait, in the case
+                # of a 429, to prevent a ban, or, in the case of a 418, until
+                # the ban is over.
+                # https://binance-docs.github.io/apidocs/spot/en/#limits
+                retry_after = int(response.headers.get('retry-after', '0'))
+                log.debug(
+                    f'Got status code {response.status_code} from Binance. Backing off',
+                    seconds=retry_after,
+                )
+                if retry_after > RETRY_AFTER_LIMIT:
+                    raise RemoteError(
+                        'Binance API request {} for {} failed with HTTP status '
+                        'code: {} due to a too long retry after value (> {})'.format(
+                            response.url,
+                            method,
+                            response.status_code,
+                            RETRY_AFTER_LIMIT,
+                        ))
+
+                gevent.sleep(retry_after)
                 continue
             else:
                 # success
