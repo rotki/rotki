@@ -21,6 +21,7 @@ interface SessionGetters {
   decimalSeparator: string;
   currencyLocation: 'before' | 'after';
   currencySymbol: string;
+  periodicClientQueryPeriod: number;
 }
 
 export const getters: Getters<
@@ -75,5 +76,9 @@ export const getters: Getters<
 
   activeModules: ({ generalSettings }) => {
     return generalSettings.activeModules;
+  },
+
+  periodicClientQueryPeriod: (state: SessionState) => {
+    return state.generalSettings.periodicClientQueryPeriod;
   }
 };

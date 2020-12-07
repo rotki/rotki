@@ -405,7 +405,7 @@ export default class General extends Settings {
 
     if (success) {
       monitor.stop();
-      monitor.start(parseInt(this.periodicClientQueryPeriod));
+      monitor.start();
     }
   }
 

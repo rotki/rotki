@@ -127,7 +127,6 @@ export default class App extends Vue {
 
   loginComplete!: boolean;
   completeLogin!: (complete: boolean) => void;
-  periodicClientQueryPeriod!: number;
 
   notifications: boolean = false;
 
@@ -178,7 +177,7 @@ export default class App extends Vue {
     });
 
     if (process.env.NODE_ENV === 'development' && this.logged) {
-      monitor.start(this.periodicClientQueryPeriod);
+      monitor.start();
     }
   }
 

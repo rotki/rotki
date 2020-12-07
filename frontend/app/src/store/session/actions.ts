@@ -80,7 +80,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         settings
       });
 
-      monitor.start(settings.periodic_client_query_period);
+      monitor.start();
       commit('tags', await api.getTags());
       commit('login', { username, newAccount: create });
 
