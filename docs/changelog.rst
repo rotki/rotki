@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1671` Users will now see the amounts earned on aave lending aggregated per asset.
 * :bug:`1868` Binance SOL token is now properly mapped to Solana.
 * :bug:`1849` Binance queries should no longer randomly fail with invalid signature.
 * :bug:`1846` AMPL token balance should no longer be double counted.
