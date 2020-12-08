@@ -67,6 +67,9 @@
         <summary-card
           :name="$t('dashboard.manual_balances.title')"
           :tooltip="$t('dashboard.manual_balances.card_tooltip')"
+          :is-loading="manualBalancesLoading"
+          can-refresh
+          @refresh="fetchManualBalances"
         >
           <div slot="tooltip">
             {{ $t('dashboard.manual_balances.tooltip') }}
@@ -158,7 +161,8 @@ import { Blockchain, BTC, ETH, ExchangeInfo } from '@/typing/types';
   methods: {
     ...mapActions('balances', [
       'fetchExchangeBalances',
-      'fetchBlockchainBalances'
+      'fetchBlockchainBalances',
+      'fetchManualBalances'
     ])
   }
 })
@@ -173,6 +177,7 @@ export default class Dashboard extends Vue {
     payload: BlockchainBalancePayload
   ) => Promise<void>;
   fetchExchangeBalances!: (payload: ExchangeBalancePayload) => Promise<void>;
+  fetchManualBalances!: () => Promise<void>;
 
   name(chain: Blockchain): string {
     if (chain === ETH) {
@@ -193,6 +198,10 @@ export default class Dashboard extends Vue {
 
   get allBalancesIsLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BALANCES);
+  }
+
+  get manualBalancesLoading(): boolean {
+    return this.isTaskRunning(TaskType.MANUAL_BALANCES);
   }
 
   get anyIsLoading(): boolean {

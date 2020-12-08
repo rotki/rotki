@@ -138,6 +138,10 @@
     "label": "trades",
     "refresh_tooltip": "Refresh trades"
   },
+  "summary_card": {
+    "refresh_tooltip": "Refresh {name} balances",
+    "title": "{name} balances"
+  },
   "trade_location_selector": {
     "selection-none": "Showing results across all locations",
     "selection-single": "Showing results for {location}",
