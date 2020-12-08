@@ -517,16 +517,18 @@ export default class AccountForm extends Vue {
       this.reset();
     } catch (e) {
       const apiErrorMessage = deserializeApiErrorMessage(e.message);
-      if (apiErrorMessage) {
+      if (apiErrorMessage && Object.keys(apiErrorMessage).length > 0) {
         const fields = ['address', 'xpub'];
         let errors: string[] = [];
         this.clearErrors();
-        for (const field in fields) {
+        for (const field of fields) {
           if (!(field in apiErrorMessage)) {
             continue;
           }
+
           errors = errors.concat(apiErrorMessage[field]);
         }
+
         this.setErrors(errors);
         this.pending = false;
         return false;

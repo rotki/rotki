@@ -470,78 +470,77 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await dispatch('updateBalances', { chain: blockchain, balances: result });
     };
 
-    try {
-      const additions = accounts.map(value =>
-        addAccount(blockchain, value).catch(() => {})
-      );
-      await Promise.all(additions);
-      commit('defi/reset', undefined, { root: true });
-      await dispatch('resetDefiStatus', {}, { root: true });
-    } catch (e) {
-      const title = i18n.tc(
-        'actions.balances.blockchain_accounts_add.error.title',
-        0,
-        { blockchain }
-      );
-      const description = i18n.tc(
-        'actions.balances.blockchain_accounts_add.error.description',
-        0,
-        {
-          error: e.message,
-          address: accounts.length,
-          blockchain
-        }
-      );
-      notify(description, title, Severity.ERROR, true);
-    }
+    const additions = accounts.map(value =>
+      addAccount(blockchain, value).catch(() => {})
+    );
+    Promise.all(additions)
+      .then(async () => {
+        commit('defi/reset', undefined, { root: true });
+        await dispatch('resetDefiStatus', {}, { root: true });
+      })
+      .catch(e => {
+        const title = i18n.tc(
+          'actions.balances.blockchain_accounts_add.error.title',
+          0,
+          { blockchain }
+        );
+        const description = i18n.tc(
+          'actions.balances.blockchain_accounts_add.error.description',
+          0,
+          {
+            error: e.message,
+            address: accounts.length,
+            blockchain
+          }
+        );
+        notify(description, title, Severity.ERROR, true);
+      });
   },
 
   async addAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
     const { address, blockchain } = payload;
-    try {
-      const taskType = TaskType.ADD_ACCOUNT;
-      const { taskId } = await api.addBlockchainAccount(payload);
+    const taskType = TaskType.ADD_ACCOUNT;
+    const { taskId } = await api.addBlockchainAccount(payload);
 
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc(
-          'actions.balances.blockchain_account_add.task.title',
-          0,
-          { blockchain }
-        ),
-        description: i18n.tc(
-          'actions.balances.blockchain_account_add.task.description',
-          0,
-          { address }
-        ),
-        blockchain,
-        numericKeys: blockchainBalanceKeys
-      } as BlockchainMetadata);
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<
-        BlockchainBalances,
-        BlockchainMetadata
-      >(taskType);
-
-      await dispatch('updateBalances', { chain: blockchain, balances: result });
-      commit('defi/reset', undefined, { root: true });
-      await dispatch('resetDefiStatus', {}, { root: true });
-    } catch (e) {
-      const title = i18n.tc(
-        'actions.balances.blockchain_account_add.error.title',
+    const task = createTask(taskId, taskType, {
+      title: i18n.tc('actions.balances.blockchain_account_add.task.title', 0, {
+        blockchain
+      }),
+      description: i18n.tc(
+        'actions.balances.blockchain_account_add.task.description',
         0,
-        { address, blockchain }
-      );
-      const description = i18n.tc(
-        'actions.balances.blockchain_account_add.error.description',
-        0,
-        {
-          error: e.message
-        }
-      );
-      notify(description, title, Severity.ERROR, true);
-    }
+        { address }
+      ),
+      blockchain,
+      numericKeys: blockchainBalanceKeys
+    } as BlockchainMetadata);
+
+    commit('tasks/add', task, { root: true });
+
+    taskCompletion<BlockchainBalances, BlockchainMetadata>(taskType)
+      .then(async ({ result }) => {
+        await dispatch('updateBalances', {
+          chain: blockchain,
+          balances: result
+        });
+        commit('defi/reset', undefined, { root: true });
+        await dispatch('resetDefiStatus', {}, { root: true });
+      })
+      .catch(e => {
+        const title = i18n.tc(
+          'actions.balances.blockchain_account_add.error.title',
+          0,
+          { address, blockchain }
+        );
+        const description = i18n.tc(
+          'actions.balances.blockchain_account_add.error.description',
+          0,
+          {
+            error: e.message
+          }
+        );
+        notify(description, title, Severity.ERROR, true);
+      });
   },
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
