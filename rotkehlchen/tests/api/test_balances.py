@@ -596,7 +596,7 @@ def test_balances_caching_mixup(
         result_eth = wait_for_async_task_with_result(
             server=rotkehlchen_api_server,
             task_id=task_id_eth,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
         )
         assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['ETH']['amount'] == '1'  # noqa: E501
         assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['RDN']['amount'] == '2'  # noqa: E501

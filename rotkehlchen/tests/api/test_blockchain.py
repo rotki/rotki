@@ -354,7 +354,7 @@ def _add_blockchain_accounts_test_start(
             result = wait_for_async_task_with_result(
                 api_server,
                 task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 4,
             )
         else:
             result = assert_proper_response_with_result(response)

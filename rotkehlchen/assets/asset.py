@@ -141,6 +141,8 @@ WORLD_TO_BINANCE = {
     'LUNA-2': 'LUNA',
     # YOYOW is known as YOYO in Binance
     'YOYOW': 'YOYO',
+    # Solana is SOL-2 in rotki
+    'SOL-2': 'SOL',
 }
 
 

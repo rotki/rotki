@@ -206,7 +206,7 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
     total_lost = result[AAVE_TEST_ACC_3]['total_lost']
     total_earned_liquidations = result[AAVE_TEST_ACC_3]['total_earned_liquidations']
 
-    assert len(total_earned_interest) == 1
+    assert len(total_earned_interest) >= 1
     assert len(total_earned_interest['aWBTC']) == 2
     assert FVal(total_earned_interest['aWBTC']['amount']) >= FVal('0.00000833')
     assert FVal(total_earned_interest['aWBTC']['usd_value']) >= ZERO
