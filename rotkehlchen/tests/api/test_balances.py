@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
+    ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
@@ -580,8 +581,9 @@ def test_balances_caching_mixup(
             task_id_btc,
         )
         result_eth = wait_for_async_task_with_result(
-            rotkehlchen_api_server,
-            task_id_eth,
+            server=rotkehlchen_api_server,
+            task_id=task_id_eth,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
         )
         assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['ETH']['amount'] == '1'  # noqa: E501
         assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['RDN']['amount'] == '2'  # noqa: E501
