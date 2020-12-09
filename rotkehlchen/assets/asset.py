@@ -127,6 +127,7 @@ WORLD_TO_KRAKEN = {
     'ANT': 'ANT',
     'KEEP': 'KEEP',
     'TBTC': 'TBTC',
+    'ETH2': 'ETH2',
 }
 
 WORLD_TO_BINANCE = {
