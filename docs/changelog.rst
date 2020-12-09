@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`1858` Rotki detects staked ETH2 balances in Kraken
 * :feature:`436` Rotki now supports Bitstamp. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`1611` Rotki can now import data and download the tax report csv when running in the browser.
 * :feature:`1413` Users can now refresh their manual balances from the dashboard.

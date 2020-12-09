@@ -463,7 +463,7 @@ def asset_from_kraken(kraken_name: str) -> Asset:
     if kraken_name.endswith('.S') or kraken_name.endswith('.M'):
         # this is a staked coin. For now since we don't show staked coins
         # consider it as the normal version. In the future we may perhaps
-        # differentiate between them in the balances
+        # differentiate between them in the balances https://github.com/rotki/rotki/issues/569
         kraken_name = kraken_name[:-2]
 
     # Some names are not in the map since kraken can have multiple representations

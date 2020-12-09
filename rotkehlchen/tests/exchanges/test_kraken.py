@@ -31,6 +31,7 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets.remove('USD.M')
     got_assets.remove('XBT.M')
     got_assets.remove('KSM.S')
+    got_assets.remove('ETH2.S')
     got_assets.remove('EUR.HOLD')
     got_assets.remove('FLOW.S')
     got_assets.remove('FLOWH.S')
