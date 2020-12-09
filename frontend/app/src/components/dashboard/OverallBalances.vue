@@ -68,9 +68,9 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
 
-import { TIMEFRAME_TWO_WEEKS, timeframes } from '@/components/dashboard/const';
+import { timeframes } from '@/components/dashboard/const';
 import NetWorthChart from '@/components/dashboard/NetworthChart.vue';
-import { TimeFramePeriod, Timeframes } from '@/components/dashboard/types';
+import { Timeframes } from '@/components/dashboard/types';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 
 import Loading from '@/components/helper/Loading.vue';
@@ -79,6 +79,16 @@ import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { NetValue } from '@/services/types-api';
 import { Section } from '@/store/const';
+import {
+  LAST_KNOWN_TIMEFRAME,
+  TIMEFRAME_TWO_WEEKS
+} from '@/store/settings/consts';
+import {
+  FrontendSettingsPayload,
+  TimeFramePeriod
+} from '@/store/settings/types';
+import { isPeriodAllowed } from '@/store/settings/utils';
+import { ActionStatus } from '@/store/types';
 import { bigNumberify } from '@/utils/bignumbers';
 
 @Component({
@@ -86,11 +96,12 @@ import { bigNumberify } from '@/utils/bignumbers';
   computed: {
     ...mapGetters('session', ['currencySymbol']),
     ...mapGetters('statistics', ['netValue', 'totalNetWorth']),
-    ...mapState('session', ['dashboardTimeframe'])
+    ...mapState('session', ['timeframe'])
   },
   methods: {
     ...mapActions('statistics', ['fetchNetValue']),
-    ...mapMutations('session', ['setDashboardTimeframe'])
+    ...mapMutations('session', ['setTimeframe']),
+    ...mapActions('settings', ['updateSetting'])
   }
 })
 export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
@@ -98,15 +109,17 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   netValue!: (startingDate: number) => NetValue;
   totalNetWorth!: BigNumber;
   fetchNetValue!: () => Promise<void>;
-  dashboardTimeframe!: TimeFramePeriod;
-  setDashboardTimeframe!: (timeframe: TimeFramePeriod) => void;
+  timeframe!: TimeFramePeriod;
+  setTimeframe!: (timeframe: TimeFramePeriod) => void;
+  updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
 
   get activeTimeframe(): TimeFramePeriod {
-    return this.dashboardTimeframe;
+    return this.timeframe;
   }
 
   set activeTimeframe(value: TimeFramePeriod) {
-    this.setDashboardTimeframe(value);
+    this.setTimeframe(value);
+    this.updateSetting({ [LAST_KNOWN_TIMEFRAME]: value });
   }
 
   section = Section.BLOCKCHAIN_ETH;
@@ -173,7 +186,7 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   }
 
   created() {
-    if (!this.premium) {
+    if (!this.premium && !isPeriodAllowed(this.activeTimeframe)) {
       this.activeTimeframe = TIMEFRAME_TWO_WEEKS;
     }
   }

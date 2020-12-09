@@ -1,5 +1,10 @@
-import { TIMEFRAME_YEAR } from '@/components/dashboard/const';
-import { DASHBOARD_TIMEFRAME, DEFI_SETUP_DONE } from '@/store/settings/consts';
+import {
+  TIMEFRAME_SETTING,
+  DEFI_SETUP_DONE,
+  TIMEFRAME_YEAR,
+  LAST_KNOWN_TIMEFRAME,
+  TIMEFRAME_TWO_WEEKS
+} from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 import store from '@/store/store';
 
@@ -7,10 +12,13 @@ describe('settings:mutations', () => {
   test('restore', async () => {
     const state: SettingsState = {
       [DEFI_SETUP_DONE]: true,
-      [DASHBOARD_TIMEFRAME]: TIMEFRAME_YEAR
+      [TIMEFRAME_SETTING]: TIMEFRAME_YEAR,
+      [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_TWO_WEEKS
     };
     store.commit('settings/restore', state);
-    expect(store.state.settings!.defiSetupDone).toBe(true);
-    expect(store.state.settings!.dashboardTimeframe).toBe(TIMEFRAME_YEAR);
+    const settings = store.state.settings!;
+    expect(settings[DEFI_SETUP_DONE]).toBe(true);
+    expect(settings[TIMEFRAME_SETTING]).toBe(TIMEFRAME_YEAR);
+    expect(settings[LAST_KNOWN_TIMEFRAME]).toBe(TIMEFRAME_TWO_WEEKS);
   });
 });

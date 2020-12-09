@@ -208,48 +208,11 @@
               :error-messages="settingsMessages['scrambleData'].error"
               @change="onScrambleDataChange($event)"
             />
-            <v-row>
-              <v-col>
-                <div
-                  class="title"
-                  v-text="
-                    $t('general_settings.frontend.label.default_timeframe')
-                  "
-                />
-                <div
-                  class="subtitle-1"
-                  v-text="
-                    $t(
-                      'general_settings.frontend.label.default_timeframe_description'
-                    )
-                  "
-                />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col>
-                <timeframe-selector
-                  v-model="defaultGraphTimeframe"
-                  @changed="onTimeframeChange"
-                />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col
-                :class="{
-                  'success--text': !!settingsMessages['timeframe'].success,
-                  'error--text': !!settingsMessages['timeframe'].error
-                }"
-                class="subtitle-2 general-settings__timeframe"
-              >
-                <div v-if="settingsMessages['timeframe'].success">
-                  {{ settingsMessages['timeframe'].success }}
-                </div>
-                <div v-if="settingsMessages['timeframe'].error">
-                  {{ settingsMessages['timeframe'].error }}
-                </div>
-              </v-col>
-            </v-row>
+            <time-frame-settings
+              :message="settingsMessages['timeframe']"
+              :value="defaultGraphTimeframe"
+              @timeframe-change="onTimeframeChange"
+            />
           </v-card-text>
         </v-card>
       </v-col>
@@ -260,14 +223,15 @@
 <script lang="ts">
 import { Component, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
-import { TIMEFRAME_ALL } from '@/components/dashboard/const';
-import { TimeFramePeriod } from '@/components/dashboard/types';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
+import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
-import { DASHBOARD_TIMEFRAME } from '@/store/settings/consts';
-import { FrontendSettingsPayload } from '@/store/settings/types';
+import { TIMEFRAME_SETTING, TIMEFRAME_ALL } from '@/store/settings/consts';
+import {
+  FrontendSettingsPayload,
+  TimeFrameSetting
+} from '@/store/settings/types';
 import { ActionStatus } from '@/store/types';
 import {
   CURRENCY_AFTER,
@@ -282,7 +246,7 @@ type BaseMessage = { success: string; error: string };
 
 @Component({
   components: {
-    TimeframeSelector,
+    TimeFrameSettings,
     AmountDisplay
   },
   computed: {
@@ -310,7 +274,7 @@ export default class General extends Settings {
   currencyLocation: CurrencyLocation = CURRENCY_AFTER;
   selectedCurrency: Currency = currencies[0];
   scrambleData: boolean = false;
-  defaultGraphTimeframe: TimeFramePeriod = TIMEFRAME_ALL;
+  defaultGraphTimeframe: TimeFrameSetting = TIMEFRAME_ALL;
   settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
 
@@ -343,9 +307,9 @@ export default class General extends Settings {
     }
   }
 
-  async onTimeframeChange(timeframe: TimeFramePeriod) {
+  async onTimeframeChange(timeframe: TimeFrameSetting) {
     const { success, message } = await this.updateSetting({
-      [DASHBOARD_TIMEFRAME]: timeframe
+      [TIMEFRAME_SETTING]: timeframe
     });
     this.validateSettingChange(
       'timeframe',
@@ -358,6 +322,10 @@ export default class General extends Settings {
             message
           })}`
     );
+
+    if (success) {
+      this.defaultGraphTimeframe = timeframe;
+    }
   }
 
   async update(
@@ -669,8 +637,9 @@ export default class General extends Settings {
     this.decimalSeparator = settings.decimalSeparator;
     this.currencyLocation = settings.currencyLocation;
     this.date = this.parseDate(settings.historicDataStart) || '';
-    this.scrambleData = this.$store.state.session.scrambleData;
-    this.defaultGraphTimeframe = this.$store.state.session.dashboardTimeframe;
+    const state = this.$store.state;
+    this.scrambleData = state.session.scrambleData;
+    this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
   }
 
   notTheSame<T>(value: T, oldValue: T): T | undefined {

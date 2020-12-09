@@ -16,53 +16,49 @@
     <v-chip
       v-for="(timeframe, i) in timeframes"
       :key="i"
-      :class="activeClass(timeframe.text)"
+      :class="activeClass(timeframe)"
       class="ma-2"
-      :disabled="!premium && !worksWithoutPremium(timeframe.text)"
+      :disabled="(!premium && !worksWithoutPremium(timeframe)) || disabled"
       small
-      @click="clicked(timeframe.text)"
+      @click="input(timeframe)"
     >
-      {{ timeframe.text }}
+      {{ timeframe }}
     </v-chip>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
-import {
-  TIMEFRAME_TWO_WEEKS,
-  TIMEFRAME_WEEK,
-  timeframes
-} from '@/components/dashboard/const';
-import { TimeFramePeriod, Timeframes } from '@/components/dashboard/types';
 import PremiumMixin from '@/mixins/premium-mixin';
+import { TIMEFRAME_PERIOD, TIMEFRAME_REMEMBER } from '@/store/settings/consts';
+import { TimeFrameSetting } from '@/store/settings/types';
+import { isPeriodAllowed } from '@/store/settings/utils';
 
 @Component({})
 export default class TimeframeSelector extends Mixins(PremiumMixin) {
   @Prop({ required: true, type: String })
-  value!: TimeFramePeriod;
+  value!: TimeFrameSetting;
+  @Prop({ required: false, type: Boolean, default: false })
+  disabled!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  setting!: boolean;
 
   @Emit()
-  input(_value: TimeFramePeriod) {}
+  input(_value: TimeFrameSetting) {}
 
-  @Emit()
-  changed(_value: TimeFramePeriod) {}
-
-  clicked(value: TimeFramePeriod) {
-    this.input(value);
-    this.changed(value);
+  worksWithoutPremium(period: TimeFrameSetting): boolean {
+    return isPeriodAllowed(period) || period === TIMEFRAME_REMEMBER;
   }
 
-  worksWithoutPremium(period: TimeFramePeriod): boolean {
-    return [TIMEFRAME_WEEK, TIMEFRAME_TWO_WEEKS].includes(period);
-  }
-
-  activeClass(timeframePeriod: TimeFramePeriod): string {
+  activeClass(timeframePeriod: TimeFrameSetting): string {
     return timeframePeriod === this.value ? 'timeframe-selector--active' : '';
   }
 
-  get timeframes(): Timeframes {
-    return timeframes;
+  get timeframes() {
+    if (this.setting) {
+      return [TIMEFRAME_REMEMBER, ...TIMEFRAME_PERIOD] as const;
+    }
+    return TIMEFRAME_PERIOD;
   }
 }
 </script>

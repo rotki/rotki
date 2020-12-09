@@ -1,6 +1,7 @@
 import { Commit } from 'vuex';
+import { TIMEFRAME_TWO_WEEKS, TIMEFRAME_WEEK } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
-import { SettingsState } from '@/store/settings/types';
+import { SettingsState, TimeFrameSetting } from '@/store/settings/types';
 import { Writeable } from '@/types';
 
 export function loadFrontendSettings(commit: Commit, value: string) {
@@ -23,4 +24,8 @@ export function loadFrontendSettings(commit: Commit, value: string) {
 
     // eslint-disable-next-line no-empty
   } catch (e) {}
+}
+
+export function isPeriodAllowed(period: TimeFrameSetting): boolean {
+  return [TIMEFRAME_WEEK, TIMEFRAME_TWO_WEEKS].includes(period);
 }

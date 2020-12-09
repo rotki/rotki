@@ -23,6 +23,11 @@ import {
   PremiumCredentialsPayload,
   SessionState
 } from '@/store/session/types';
+import {
+  LAST_KNOWN_TIMEFRAME,
+  TIMEFRAME_REMEMBER,
+  TIMEFRAME_SETTING
+} from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
@@ -63,8 +68,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
       if (settings.frontend_settings) {
         loadFrontendSettings(commit, settings.frontend_settings);
-        const dashboardTimeframe = rootState.settings!.dashboardTimeframe;
-        commit('setDashboardTimeframe', dashboardTimeframe);
+        const timeframeSetting = rootState.settings![TIMEFRAME_SETTING];
+        if (timeframeSetting !== TIMEFRAME_REMEMBER) {
+          commit('setTimeframe', timeframeSetting);
+        } else {
+          commit('setTimeframe', rootState.settings![LAST_KNOWN_TIMEFRAME]);
+        }
       }
 
       await dispatch('start', {
