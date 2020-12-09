@@ -446,6 +446,7 @@ class Bitstamp(ExchangeInterface):
                         f'Failed to deserialize a Bitstamp {case_pretty}. '
                         f'Check logs for details. Ignoring it.',
                     )
+                    continue
 
                 results.append(result)  # type: ignore
                 has_results = True  # NB: endpoint agnostic
