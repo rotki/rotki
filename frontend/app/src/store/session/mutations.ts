@@ -6,6 +6,7 @@ import {
 } from '@/services/session/types';
 import { defaultState } from '@/store/session/state';
 import { SessionState, SyncConflict } from '@/store/session/types';
+import { TimeFramePeriod } from '@/store/settings/types';
 import {
   AccountingSettings,
   AccountingSettingsUpdate,
@@ -79,5 +80,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   updateLastDataUpload(state: SessionState, lastDataUpload: number) {
     state.lastDataUpload = lastDataUpload;
+  },
+  setTimeframe(state: SessionState, timeframe: TimeFramePeriod) {
+    state.timeframe = timeframe;
   }
 };

@@ -1,26 +1,14 @@
 import moment from 'moment';
+import { Timeframe, Timeframes, TimeUnit } from '@/components/dashboard/types';
 import {
-  Timeframe,
-  TimeFramePeriod,
-  Timeframes,
-  TimeUnit
-} from '@/components/dashboard/types';
-
-export const TIMEFRAME_ALL = 'All';
-export const TIMEFRAME_YEAR = '1Y';
-export const TIMEFRAME_THREE_MONTHS = '3M';
-export const TIMEFRAME_MONTH = '1M';
-export const TIMEFRAME_TWO_WEEKS = '2W';
-export const TIMEFRAME_WEEK = '1W';
-
-export const TIMEFRAME_PERIOD = [
   TIMEFRAME_ALL,
-  TIMEFRAME_YEAR,
-  TIMEFRAME_THREE_MONTHS,
   TIMEFRAME_MONTH,
+  TIMEFRAME_THREE_MONTHS,
   TIMEFRAME_TWO_WEEKS,
-  TIMEFRAME_WEEK
-] as const;
+  TIMEFRAME_WEEK,
+  TIMEFRAME_YEAR
+} from '@/store/settings/consts';
+import { TimeFramePeriod } from '@/store/settings/types';
 
 const TIME_UNIT_YEAR = 'year';
 const TIME_UNIT_MONTH = 'month';

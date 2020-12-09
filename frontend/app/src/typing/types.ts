@@ -4,6 +4,12 @@ import { SupportedModules } from '@/services/session/types';
 import { AssetBalances } from '@/store/balances/types';
 import { SyncConflictPayload } from '@/store/session/types';
 
+export const CURRENCY_BEFORE = 'before';
+export const CURRENCY_AFTER = 'after';
+
+export const CURRENCY_LOCATION = [CURRENCY_AFTER, CURRENCY_BEFORE] as const;
+export type CurrencyLocation = typeof CURRENCY_LOCATION[number];
+
 export interface GeneralSettings {
   readonly floatingPrecision: number;
   readonly anonymizedLogs: boolean;
@@ -14,7 +20,7 @@ export interface GeneralSettings {
   readonly dateDisplayFormat: string;
   readonly thousandSeparator: string;
   readonly decimalSeparator: string;
-  readonly currencyLocation: 'after' | 'before';
+  readonly currencyLocation: CurrencyLocation;
   readonly selectedCurrency: Currency;
   readonly krakenAccountType: string;
   readonly activeModules: SupportedModules[];

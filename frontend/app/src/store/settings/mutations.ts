@@ -1,7 +1,15 @@
 import { MutationTree } from 'vuex';
-import { DEFI_SETUP_DONE } from '@/store/settings/consts';
+import {
+  TIMEFRAME_SETTING,
+  DEFI_SETUP_DONE,
+  LAST_KNOWN_TIMEFRAME
+} from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
-import { SettingsState } from '@/store/settings/types';
+import {
+  SettingsState,
+  TimeFramePeriod,
+  TimeFrameSetting
+} from '@/store/settings/types';
 import { Writeable } from '@/types';
 
 type Mutations<S = SettingsState> = {
@@ -13,6 +21,18 @@ type Mutations<S = SettingsState> = {
 export const mutations: MutationTree<SettingsState> & Mutations = {
   [DEFI_SETUP_DONE](state: Writeable<SettingsState>, done: boolean) {
     state.defiSetupDone = done;
+  },
+  [TIMEFRAME_SETTING](
+    state: Writeable<SettingsState>,
+    timeframe: TimeFrameSetting
+  ) {
+    state.timeframeSetting = timeframe;
+  },
+  [LAST_KNOWN_TIMEFRAME](
+    state: Writeable<SettingsState>,
+    timeframe: TimeFramePeriod
+  ) {
+    state.lastKnownTimeframe = timeframe;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);

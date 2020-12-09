@@ -23,6 +23,11 @@ import {
   PremiumCredentialsPayload,
   SessionState
 } from '@/store/session/types';
+import {
+  LAST_KNOWN_TIMEFRAME,
+  TIMEFRAME_REMEMBER,
+  TIMEFRAME_SETTING
+} from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
@@ -44,7 +49,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('generalSettings', convertToGeneralSettings(settings));
     commit('accountingSettings', convertToAccountingSettings(settings));
   },
-  async unlock({ commit, dispatch, state }, payload: UnlockPayload) {
+  async unlock({ commit, dispatch, state, rootState }, payload: UnlockPayload) {
     let settings: DBSettings;
     let exchanges: string[];
 
@@ -63,6 +68,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
       if (settings.frontend_settings) {
         loadFrontendSettings(commit, settings.frontend_settings);
+        const timeframeSetting = rootState.settings![TIMEFRAME_SETTING];
+        if (timeframeSetting !== TIMEFRAME_REMEMBER) {
+          commit('setTimeframe', timeframeSetting);
+        } else {
+          commit('setTimeframe', rootState.settings![LAST_KNOWN_TIMEFRAME]);
+        }
       }
 
       await dispatch('start', {
@@ -227,10 +238,20 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
 
-  async updateSettings(
+  //TODO: migrate to settingsUpdate in the future
+  async updateSettings({ dispatch }, update: SettingsUpdate): Promise<void> {
+    const { success, message } = await dispatch('settingsUpdate', update);
+    if (!success) {
+      showError(`Updating settings was not successful: ${message}`);
+    }
+  },
+
+  async settingsUpdate(
     { commit, state },
     update: SettingsUpdate
-  ): Promise<void> {
+  ): Promise<ActionStatus> {
+    let success = false;
+    let message = '';
     try {
       const settings = await api.setSettings(update);
       if (state.premium !== settings.have_premium) {
@@ -243,9 +264,14 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
       commit('generalSettings', convertToGeneralSettings(settings));
       commit('accountingSettings', convertToAccountingSettings(settings));
+      success = true;
     } catch (e) {
-      showError(`Updating settings was not successful: ${e.message}`);
+      message = e.message;
     }
+    return {
+      success,
+      message
+    };
   },
 
   async fetchWatchers({ commit, rootState: { session } }) {

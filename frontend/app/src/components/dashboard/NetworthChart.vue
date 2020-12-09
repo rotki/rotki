@@ -33,19 +33,16 @@ import {
 import moment from 'moment';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
+import { Timeframe, Timeframes } from '@/components/dashboard/types';
+import { Currency } from '@/model/currency';
+import { NetValue } from '@/services/types-api';
 import {
   TIMEFRAME_ALL,
   TIMEFRAME_MONTH,
   TIMEFRAME_PERIOD,
   TIMEFRAME_WEEK
-} from '@/components/dashboard/const';
-import {
-  Timeframe,
-  TimeFramePeriod,
-  Timeframes
-} from '@/components/dashboard/types';
-import { Currency } from '@/model/currency';
-import { NetValue } from '@/services/types-api';
+} from '@/store/settings/consts';
+import { TimeFramePeriod } from '@/store/settings/types';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 

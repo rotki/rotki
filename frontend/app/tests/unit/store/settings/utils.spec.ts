@@ -1,4 +1,10 @@
-import { DEFI_SETUP_DONE } from '@/store/settings/consts';
+import {
+  TIMEFRAME_SETTING,
+  DEFI_SETUP_DONE,
+  TIMEFRAME_ALL,
+  TIMEFRAME_REMEMBER,
+  LAST_KNOWN_TIMEFRAME
+} from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
 
 describe('settings:utils', () => {
@@ -33,7 +39,11 @@ describe('settings:utils', () => {
     loadFrontendSettings(commit, JSON.stringify({ [DEFI_SETUP_DONE]: true }));
     expect(commit).toHaveBeenCalledWith(
       'settings/restore',
-      { [DEFI_SETUP_DONE]: true },
+      {
+        [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
+        [DEFI_SETUP_DONE]: true,
+        [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL
+      },
       { root: true }
     );
   });

@@ -1,5 +1,11 @@
 import { api } from '@/services/rotkehlchen-api';
-import { DEFI_SETUP_DONE } from '@/store/settings/consts';
+import {
+  TIMEFRAME_SETTING,
+  DEFI_SETUP_DONE,
+  TIMEFRAME_ALL,
+  TIMEFRAME_REMEMBER,
+  LAST_KNOWN_TIMEFRAME
+} from '@/store/settings/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
 import store from '@/store/store';
 
@@ -17,18 +23,19 @@ describe('settings:actions', () => {
 
     expect(api.setSettings).toHaveBeenCalledWith(
       expect.objectContaining({
-        frontend_settings: JSON.stringify({ [DEFI_SETUP_DONE]: true })
+        frontend_settings: JSON.stringify({
+          [DEFI_SETUP_DONE]: true,
+          [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
+          [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL
+        })
       })
     );
   });
 
   test('does not update settings on missing payload', async () => {
     expect.assertions(1);
-    await store.dispatch(
-      'settings/updateSetting',
-      {} as FrontendSettingsPayload
-    );
-
-    expect(api.setSettings).toHaveBeenCalledTimes(0);
+    await expect(
+      store.dispatch('settings/updateSetting', {} as FrontendSettingsPayload)
+    ).rejects.toBeInstanceOf(Error);
   });
 });

@@ -50,6 +50,95 @@
     "many_files_selected": "One one csv file must be selected",
     "only_csv": "Only csv files are allowed"
   },
+ "timeframe_settings": {
+   "default_timeframe": "Dashboard graph default timeframe",
+   "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection."
+ },
+  "general_settings": {
+    "amount": {
+      "label": {
+        "currency_location": "Currency location",
+        "decimal_separator": "Decimal separator",
+        "location_after": "After",
+        "location_before": "Before",
+        "resulting_format": "Resulting format:",
+        "thousand_separator": "Thousands separator"
+      },
+      "title": "Amounts Settings",
+      "labels": {
+        "floating_precision":  "Floating Precision",
+        "main_currency": "Select Main Currency",
+        "main_currency_subtitle": "Select as the main currency"
+      }
+    },
+    "frontend": {
+      "label": {
+        "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
+      },
+      "title": "Frontend-only Settings"
+    },
+    "labels": {
+      "anonymized_logs": "Should logs be anonymized?",
+      "anonymous_analytics": "Should anonymous usage analytics be submitted?",
+      "balance_saving_frequency": "Balance data saving frequency in hours",
+      "date_display_format": "Date display format",
+      "historical_data_start": "Date from when to count historical data",
+      "rpc_endpoint": "Eth RPC Endpoint"
+    },
+    "title": "General Settings",
+    "validation": {
+      "analytics": {
+        "error": "Error setting anonymous usage analytics"
+      },
+      "anonymized_logs": {
+        "error": "Error setting anonymized logs"
+      },
+      "balance_frequency": {
+        "error": "Error setting balance save frequency to {frequency}",
+        "success": "Data save frequency set to {frequency} hours"
+      },
+      "currency": {
+        "error": "Error setting the main currency",
+        "success": "Main currency set to {symbol}"
+      },
+      "currency_location":  {
+        "success": "Currency location set to {currencyLocation}",
+        "error": "Error setting currency location"
+      },
+      "date_format": {
+        "error": "Error setting date display format",
+        "success": "Date display set to {dateFormat}"
+      },
+      "floating_precision": {
+        "error": "Floating precision set to {precision}",
+        "success":"Error setting floating precision to {precision}"
+      },
+      "historic_data": {
+        "error": "Error setting historical data start to {date}",
+        "success": "Historical data start set to {date}"
+      },
+      "rpc": {
+        "success_set": "RPC endpoint set to {endpoint}",
+        "success_unset": "RPC endpoint was successfully unset",
+        "error": "Error setting rpc endpoint"
+      },
+      "scramble": {
+        "error": "Error setting scramble mode: {message}"
+      },
+      "thousand_separator": {
+        "error": "Error setting thousand separator",
+        "success": "Thousand separator set to {thousandSeparator}"
+      },
+      "decimal_separator": {
+        "error": "Error setting decimal separator",
+        "success": "Decimal separator set to {decimalSeparator}"
+      },
+      "timeframe": {
+        "error": "Failed to set the default timeframe for the user: {message}",
+        "success": "Default timeframe set to {timeframe}"
+      }
+    }
+  },
   "helpers": {
     "refresh_header": {
       "tooltip": "Refresh {title} data"
