@@ -7,7 +7,12 @@ import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { Eth2Deposit, Eth2Detail, StakingState } from '@/store/staking/types';
+import {
+  AdexBalances,
+  Eth2Deposit,
+  Eth2Detail,
+  StakingState
+} from '@/store/staking/types';
 import { RotkehlchenState } from '@/store/types';
 import { isLoading, setStatus } from '@/store/utils';
 
@@ -98,5 +103,53 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     }
 
     await Promise.all([fetchDetails(), fetchDeposits()]);
+  },
+
+  async fetchAdex(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean
+  ) {
+    if (!session?.premium) {
+      return;
+    }
+
+    const section = Section.STAKING_ADEX;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.STAKING_ETH2;
+      const { taskId } = await api.adexBalances();
+      const task = createTask(taskId, taskType, {
+        title: `${i18n.t('actions.staking.adex_balances.task.title')}`,
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<AdexBalances, TaskMeta>(taskType);
+
+      commit('adexBalances', result);
+    } catch (e) {
+      notify(
+        `${i18n.t('actions.staking.adex_balances.error.description', {
+          error: e.message
+        })}`,
+        `${i18n.t('actions.staking.adex_balances.error.title')}`,
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
   }
 };
