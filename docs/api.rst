@@ -3396,6 +3396,60 @@ Getting Aave historical data
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+Getting AdEx balances
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/adex/balances
+
+   Doing a GET on the adex balances resource will return the ADX staked in the pools of the platform.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/adex/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "0xcf2B8EeC2A9cE682822b252a1e9B78EedebEFB02": [
+            {
+                "address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
+                "balance": {
+                    "amount": "105056.894263641728544592",
+                    "usd_value": "28564.9695502841859912745648"
+                },
+                "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                "pool_name": "Tom"
+            }
+          ],
+        },
+        "message": "",
+      }
+
+   :resjson object result: A mapping between accounts and their balances in AdEx pools (represented by a list where each item is a pool).
+   :resjson string address: The staking contract address.
+   :resjson string pool_id: The identifier of the pool.
+   :resjson string pool_id: The name of the pool.
+   :resjson object balance: The staked ADX amount and its USD value.
+
+   :statuscode 200: AdEx balances succesfully queried.
+   :statuscode 409: User is not logged in. Or AdEx module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+
 Getting Compound balances
 ==============================
 

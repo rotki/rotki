@@ -14,6 +14,7 @@ ModuleName = Literal[
     'compound',
     'yearn_vaults',
     'uniswap',
+    'adex',
 ]
 AVAILABLE_MODULES = [
     'makerdao_dsr',
@@ -22,6 +23,7 @@ AVAILABLE_MODULES = [
     'compound',
     'yearn_vaults',
     'uniswap',
+    'adex',
 ]
 
 T_BinaryEthAddress = bytes
@@ -303,6 +305,7 @@ class Location(Enum):
     CRYPTOCOM = 16
     UNISWAP = 17
     BITSTAMP = 18
+    ADEX = 19
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -341,6 +344,8 @@ class Location(Enum):
             return 'uniswap'
         if self == Location.BITSTAMP:
             return 'bitstamp'
+        if self == Location.ADEX:
+            return 'adex'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -381,6 +386,8 @@ class Location(Enum):
             return 'Q'
         if self == Location.BITSTAMP:
             return 'R'
+        if self == Location.ADEX:
+            return 'S'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

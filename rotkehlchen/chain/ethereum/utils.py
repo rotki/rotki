@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from eth_utils import to_bytes
+from eth_utils import to_bytes, to_checksum_address
+from eth_utils.typing import HexAddress, HexStr
 from web3 import Web3
 from web3._utils.abi import exclude_indexed_event_inputs, normalize_event_input_types
 from web3._utils.encoding import hexstr_if_str
@@ -12,6 +13,7 @@ from rotkehlchen.constants.ethereum import ETH_MULTICALL
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo
+from rotkehlchen.utils.misc import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
@@ -81,3 +83,28 @@ def decode_event_data(data: str, event_abi: Dict[str, Any]) -> Tuple:
     log_data_types = get_event_abi_types_for_decoding(log_data_normalized_inputs)
     decoded_log_data = ABI_CODEC.decode_abi(log_data_types, log_data)
     return decoded_log_data
+
+
+def generate_address_via_create2(
+        address: HexAddress,
+        salt: HexStr,
+        init_code: HexStr,
+) -> ChecksumEthAddress:
+    """Python implementation of CREATE2 opcode.
+
+    Given an address (deployer), a salt and an init code (contract creation
+    bytecode), returns the expected contract address once it is deployed.
+
+    Pseudocode:
+        keccak256( 0xff ++ address ++ salt ++ keccak256(init_code))[12:]
+
+    EIP-1014:
+    https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1014.md
+    """
+    contract_address = Web3.keccak(
+        hexstring_to_bytes('0xff') +
+        hexstring_to_bytes(address) +
+        hexstring_to_bytes(salt) +
+        Web3.keccak(hexstring_to_bytes(init_code)),
+    )[12:].hex()
+    return to_checksum_address(contract_address)

@@ -27,6 +27,7 @@ from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
+from rotkehlchen.chain.ethereum.adex import Adex
 from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
@@ -41,7 +42,7 @@ from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
 from rotkehlchen.chain.ethereum.yearn import YearnVaults
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2
+from rotkehlchen.constants.assets import A_ADX, A_BTC, A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -267,6 +268,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
+                elif given_module == 'adex':
+                    self.eth_modules['adex'] = Adex(
+                        ethereum_manager=ethereum_manager,
+                        database=self.database,
+                        premium=premium,
+                        msg_aggregator=msg_aggregator,
+                    )
                 else:
                     log.error(f'Unrecognized module value {given_module} given. Skipping...')
 
@@ -332,6 +340,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
     @property
     def aave(self) -> Optional[Aave]:
         module = self.eth_modules.get('aave', None)
+        if not module:
+            return None
+
+        return module  # type: ignore
+
+    @property
+    def adex(self) -> Optional[Adex]:
+        module = self.eth_modules.get('adex', None)
         if not module:
             return None
 
@@ -901,6 +917,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 else:
                     eth_balances[address] += entry
                     self.totals += entry
+
+        adex_module = self.adex
+        if adex_module is not None:
+            adex_balances = adex_module.get_balances(addresses=self.accounts.eth)
+            for address, pool_balances in adex_balances.items():
+                for pool_balance in pool_balances:
+                    eth_balances[address].assets[A_ADX] += pool_balance.balance
 
         # Count ETH staked in Eth2 beacon chain
         self.account_for_staked_eth2_balances(addresses=self.accounts.eth, at_addition=False)

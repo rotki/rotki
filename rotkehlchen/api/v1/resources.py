@@ -964,6 +964,15 @@ class AaveHistoryResource(BaseResource):
         )
 
 
+class AdexBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_adex_balances(async_query=async_query)
+
+
 class CompoundBalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
