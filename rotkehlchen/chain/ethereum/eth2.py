@@ -2,6 +2,10 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Tuple
 
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.chain.ethereum.eth2_utils import (
+    DEPOSITING_VALIDATOR_PERFORMANCE,
+    ValidatorPerformance,
+)
 from rotkehlchen.chain.ethereum.utils import decode_event_data
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
@@ -17,7 +21,7 @@ from rotkehlchen.utils.misc import from_gwei, ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.externalapis.beaconchain import BeaconChain, ValidatorPerformance
+    from rotkehlchen.externalapis.beaconchain import BeaconChain
 
 ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
 ETH2_DEPLOYED_TS = Timestamp(1602667372)
@@ -44,7 +48,7 @@ Eth2DepositDBTuple = (
 class ValidatorDetails(NamedTuple):
     validator_index: int
     eth1_depositor: ChecksumEthAddress
-    performance: 'ValidatorPerformance'
+    performance: ValidatorPerformance
 
     def serialize(self, eth_usd_price: FVal) -> Dict[str, Any]:
         return {
@@ -282,6 +286,13 @@ def get_eth2_balances(
         amount = from_gwei(entry.balance)
         balance_mapping[index_to_address[validator_index]] += Balance(amount, amount * usd_price)
 
+    # The performance call does not return validators that are not active and are still depositing
+    depositing_indices = set(index_to_address.keys()) - set(performance.keys())
+    for index in depositing_indices:
+        balance_mapping[index_to_address[index]] += Balance(
+            amount=FVal('32'), usd_value=FVal('32') * usd_price,
+        )
+
     return balance_mapping
 
 
@@ -325,6 +336,15 @@ def get_eth2_details(
             validator_index=validator_index,
             eth1_depositor=index_to_address[validator_index],
             performance=entry,
+        ))
+
+    # The performance call does not return validators that are not active and are still depositing
+    depositing_indices = set(index_to_address.keys()) - set(performance_result.keys())
+    for index in depositing_indices:
+        result.append(ValidatorDetails(
+            validator_index=index,
+            eth1_depositor=index_to_address[index],
+            performance=DEPOSITING_VALIDATOR_PERFORMANCE,
         ))
 
     return result

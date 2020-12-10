@@ -7,8 +7,15 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2 import (
     REQUEST_DELTA_TS,
     Eth2Deposit,
+    ValidatorDetails,
     _get_eth2_staking_deposits_onchain,
+    get_eth2_balances,
+    get_eth2_details,
     get_eth2_staking_deposits,
+)
+from rotkehlchen.chain.ethereum.eth2_utils import (
+    DEPOSITING_VALIDATOR_PERFORMANCE,
+    ValidatorPerformance,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -18,6 +25,7 @@ from rotkehlchen.tests.utils.ethereum import (
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -405,3 +413,76 @@ def test_eth2_deposits_serialization():
             'timestamp': 1605043544,
         },
     ]
+
+
+def _create_beacon_mock(beaconchain):
+    def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
+        if 'eth1' in url:
+            response = '{"status":"OK","data":[{"publickey":"0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b","valid_signature":true,"validatorindex":9},{"publickey":"0xa016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b","valid_signature":true,"validatorindex":1507}]}'  # noqa: E501
+        elif 'performance' in url:
+            response = '{"status":"OK","data":{"balance":32143716247,"performance1d":14437802,"performance31d":143716247,"performance365d":143716247,"performance7d":105960750,"validatorindex":9}}'  # noqa: E501
+        else:
+            raise AssertionError(f'Unexpected url: {url} in mock of beaconchain in tests')
+        return MockResponse(200, response)
+
+    return patch.object(beaconchain.session, 'get', wraps=mock_requests_get)
+
+
+def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer):  # pylint: disable=unused-argument  # noqa: E501
+    """Test that if a validator is detected but is not yet active the balance is shown properly
+
+    Test for: https://github.com/rotki/rotki/issues/1888
+    """
+    with _create_beacon_mock(beaconchain):
+        mapping = get_eth2_balances(beaconchain, [ADDR1])
+
+    assert len(mapping) == 1
+    amount = FVal('64.143716247')
+    assert mapping[ADDR1] == Balance(amount=amount, usd_value=amount * FVal('1.5'))
+
+
+def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # pylint: disable=unused-argument  # noqa: E501
+    """Test that if a validator is detected but is not yet active the balance is shown properly
+
+    Test for: https://github.com/rotki/rotki/issues/1888
+    """
+    deposits = [Eth2Deposit(
+        from_address=ADDR1,
+        pubkey='0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
+        withdrawal_credentials='foo',
+        value=Balance(FVal('32'), FVal('32')),
+        deposit_index=1,
+        tx_hash='0xf00',
+        log_index=1,
+        timestamp=1,
+    ), Eth2Deposit(
+        from_address=ADDR1,
+        pubkey='0xa016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
+        withdrawal_credentials='foo',
+        value=Balance(FVal('32'), FVal('32')),
+        deposit_index=1,
+        tx_hash='0xf00',
+        log_index=2,
+        timestamp=2,
+    )]
+    with _create_beacon_mock(beaconchain):
+        details = get_eth2_details(beaconchain, deposits)
+
+    expected_details = [
+        ValidatorDetails(
+            validator_index=9,
+            eth1_depositor=ADDR1,
+            performance=ValidatorPerformance(
+                balance=32143716247,
+                performance_1d=14437802,
+                performance_1w=105960750,
+                performance_1m=143716247,
+                performance_1y=143716247,
+            ),
+        ), ValidatorDetails(
+            validator_index=1507,
+            eth1_depositor=ADDR1,
+            performance=DEPOSITING_VALIDATOR_PERFORMANCE,
+        ),
+    ]
+    assert details == expected_details
