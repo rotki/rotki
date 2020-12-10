@@ -10,7 +10,7 @@ export class Defaults {
   static HISTORICAL_DATA_START = '01/08/2015';
   static ANONYMOUS_USAGE_ANALYTICS = true;
   static KRAKEN_DEFAULT_ACCOUNT_TYPE = 'starter';
-  static DEFAULT_PERIODIC_CLIENT_QUERY_PERIOD = 5;
+  static DEFAULT_QUERY_PERIOD = 5;
 }
 
 export const EXCHANGE_POLONIEX = 'poloniex';

@@ -1,6 +1,7 @@
 export const DEFI_SETUP_DONE = 'defiSetupDone' as 'defiSetupDone';
 export const TIMEFRAME_SETTING = 'timeframeSetting' as 'timeframeSetting';
 export const LAST_KNOWN_TIMEFRAME = 'lastKnownTimeframe' as 'lastKnownTimeframe';
+export const QUERY_PERIOD = 'queryPeriod' as 'queryPeriod';
 
 export const TIMEFRAME_ALL = 'All';
 export const TIMEFRAME_YEAR = '1Y';

@@ -73,7 +73,8 @@
     },
     "frontend": {
       "label": {
-        "query_period": "Periodic client query period in seconds",
+        "query_period": "Query period in seconds",
+        "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
         "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
       },
       "title": "Frontend-only Settings"
@@ -136,8 +137,9 @@
         "success": "Decimal separator set to {decimalSeparator}"
       },
       "periodic_query": {
-        "error": "Error setting periodic query client period",
-        "success": "Periodic query client period set to {period}"
+        "error": "Error setting query period: {message}",
+        "success": "Query period set to {period} seconds",
+        "invalid_period": "Period must be between {start} and {end}"
       },
       "timeframe": {
         "error": "Failed to set the default timeframe for the user: {message}",

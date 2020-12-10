@@ -1,4 +1,5 @@
 import { taskManager } from '@/services/task-manager';
+import { QUERY_PERIOD } from '@/store/settings/consts';
 import store from '@/store/store';
 
 class Monitoring {
@@ -24,7 +25,7 @@ class Monitoring {
       this.fetch();
       this.monitoring = setInterval(
         this.fetch,
-        store.getters['session/periodicClientQueryPeriod'] * 1000
+        store.state.settings![QUERY_PERIOD] * 1000
       );
     }
 

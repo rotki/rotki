@@ -214,17 +214,16 @@
               @timeframe-change="onTimeframeChange"
             />
             <v-text-field
-              v-model="periodicClientQueryPeriod"
+              v-model="queryPeriod"
               class="general-settings__fields__periodic-client-query-period"
               :label="$t('general_settings.frontend.label.query_period')"
-              type="text"
-              :success-messages="
-                settingsMessages['periodicClientQueryPeriod'].success
-              "
-              :error-messages="
-                settingsMessages['periodicClientQueryPeriod'].error
-              "
-              @change="onPeriodicClientQueryPeriodChange($event)"
+              :hint="$t('general_settings.frontend.label.query_period_hint')"
+              type="number"
+              min="5"
+              max="3600"
+              :success-messages="settingsMessages['queryPeriod'].success"
+              :error-messages="settingsMessages['queryPeriod'].error"
+              @change="onQueryPeriodChange($event)"
             />
           </v-card-text>
         </v-card>
@@ -241,7 +240,11 @@ import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.v
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { monitor } from '@/services/monitoring';
-import { TIMEFRAME_SETTING, TIMEFRAME_ALL } from '@/store/settings/consts';
+import {
+  TIMEFRAME_SETTING,
+  TIMEFRAME_ALL,
+  QUERY_PERIOD
+} from '@/store/settings/consts';
 import {
   FrontendSettingsPayload,
   TimeFrameSetting
@@ -291,7 +294,7 @@ export default class General extends Settings {
   defaultGraphTimeframe: TimeFrameSetting = TIMEFRAME_ALL;
   settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
-  periodicClientQueryPeriod: string = '5';
+  queryPeriod: string = '5';
 
   settingsMessages: SettingsMessages = {
     floatingPrecision: { success: '', error: '' },
@@ -307,7 +310,7 @@ export default class General extends Settings {
     selectedCurrency: { success: '', error: '' },
     scrambleData: { success: '', error: '' },
     timeframe: { success: '', error: '' },
-    periodicClientQueryPeriod: { success: '', error: '' }
+    queryPeriod: { success: '', error: '' }
   };
 
   historicDateMenu: boolean = false;
@@ -385,22 +388,39 @@ export default class General extends Settings {
     );
   }
 
-  async onPeriodicClientQueryPeriodChange(periodicClientQueryPeriod: string) {
-    const message: BaseMessage = {
-      success: `${this.$t(
-        'general_settings.validation.periodic_query.success',
+  async onQueryPeriodChange(queryPeriod: string) {
+    const period = parseInt(queryPeriod);
+    if (period < 5 || period > 3600) {
+      const message = `${this.$t(
+        'general_settings.validation.periodic_query.invalid_period',
         {
-          period: periodicClientQueryPeriod
+          start: 5,
+          end: 3600
         }
-      )}`,
-      error: `${this.$t('general_settings.validation.periodic_query.error')}`
-    };
-    const success = await this.update(
-      {
-        periodic_client_query_period: parseInt(periodicClientQueryPeriod)
-      },
-      'periodicClientQueryPeriod',
-      message
+      )}`;
+      this.validateSettingChange(
+        'queryPeriod',
+        'error',
+        `${this.$t('general_settings.validation.periodic_query.error', {
+          message
+        })}`
+      );
+      this.queryPeriod = this.$store.state.settings![QUERY_PERIOD].toString();
+      return;
+    }
+    const { success, message } = await this.updateSetting({
+      [QUERY_PERIOD]: period
+    });
+    this.validateSettingChange(
+      'queryPeriod',
+      success ? 'success' : 'error',
+      success
+        ? `${this.$t('general_settings.validation.periodic_query.success', {
+            period
+          })}`
+        : `${this.$t('general_settings.validation.periodic_query.error', {
+            message
+          })}`
     );
 
     if (success) {
@@ -680,7 +700,7 @@ export default class General extends Settings {
     const state = this.$store.state;
     this.scrambleData = state.session.scrambleData;
     this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
-    this.periodicClientQueryPeriod = settings.periodicClientQueryPeriod.toString();
+    this.queryPeriod = state.settings![QUERY_PERIOD].toString();
   }
 
   notTheSame<T>(value: T, oldValue: T): T | undefined {

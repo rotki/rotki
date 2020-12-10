@@ -15,8 +15,7 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   anonymousUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
   selectedCurrency: currencies[0],
   krakenAccountType: Defaults.KRAKEN_DEFAULT_ACCOUNT_TYPE,
-  activeModules: [],
-  periodicClientQueryPeriod: Defaults.DEFAULT_PERIODIC_CLIENT_QUERY_PERIOD
+  activeModules: []
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({

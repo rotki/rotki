@@ -3,7 +3,8 @@ import {
   DEFI_SETUP_DONE,
   TIMEFRAME_ALL,
   TIMEFRAME_REMEMBER,
-  LAST_KNOWN_TIMEFRAME
+  LAST_KNOWN_TIMEFRAME,
+  QUERY_PERIOD
 } from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
 
@@ -42,7 +43,8 @@ describe('settings:utils', () => {
       {
         [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
         [DEFI_SETUP_DONE]: true,
-        [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL
+        [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL,
+        [QUERY_PERIOD]: 5
       },
       { root: true }
     );
