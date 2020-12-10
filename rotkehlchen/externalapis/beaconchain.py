@@ -1,5 +1,5 @@
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Union, overload
 
 import gevent
 import requests
@@ -180,15 +180,32 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return balances
 
-    def get_performance(self, validator_indices: List[int]) -> Dict[int, ValidatorPerformance]:
-        """Get the performance of all the validators given from the indices list
+    @overload  # noqa: F811
+    def get_performance(
+            self,
+            indices_or_pubkeys: List[int],
+    ) -> Dict[int, ValidatorPerformance]:
+        ...
+
+    @overload  # noqa: F811
+    def get_performance(
+            self,
+            indices_or_pubkeys: List[str],
+    ) -> Dict[str, ValidatorPerformance]:
+        ...
+
+    def get_performance(
+            self,
+            indices_or_pubkeys: Union[List[int], List[str]],
+    ) -> Union[Dict[int, ValidatorPerformance], Dict[str, ValidatorPerformance]]:
+        """Get the performance of all the validators given from the list of indices or pubkeys
 
         Queries in chunks of 100 due to api limitations
 
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        chunks = list(get_chunks(validator_indices, n=100))
+        chunks = list(get_chunks(indices_or_pubkeys, n=100))  # type: ignore
         data = []
         for chunk in chunks:
             result = self._query(

@@ -30,7 +30,7 @@ from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.eth2 import (
     get_eth2_balances,
-    get_eth2_balances_via_deposits,
+    get_eth2_details,
     get_eth2_staking_deposits,
 )
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
@@ -997,7 +997,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             )
 
         current_usd_price = Inquirer().find_usd_price(A_ETH)
-        details = get_eth2_balances_via_deposits(beaconchain=self.beaconchain, deposits=deposits)
+        details = get_eth2_details(beaconchain=self.beaconchain, deposits=deposits)
         return {
             'deposits': [x._asdict() for x in deposits],
             'details': [x.serialize(current_usd_price) for x in details],

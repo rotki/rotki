@@ -59,7 +59,7 @@ class Eth2Deposit(NamedTuple):
     pubkey: str  # hexstring
     withdrawal_credentials: str  # hexstring
     value: Balance
-    validator_index: int  # the validator index
+    deposit_index: int  # the deposit index -- not the same as the validator index
     tx_hash: str  # the transaction hash
     log_index: int
     timestamp: Timestamp
@@ -80,7 +80,7 @@ class Eth2Deposit(NamedTuple):
         4 - pubkey
         5 - withdrawal_credentials
         6 - value
-        7 - validator_index
+        7 - deposit_index
         """
         return cls(
             tx_hash=deposit_tuple[0],
@@ -90,7 +90,7 @@ class Eth2Deposit(NamedTuple):
             pubkey=deposit_tuple[4],
             withdrawal_credentials=deposit_tuple[5],
             value=Balance(amount=FVal(deposit_tuple[6])),
-            validator_index=int(deposit_tuple[7]),
+            deposit_index=int(deposit_tuple[7]),
         )
 
     def to_db_tuple(self) -> Eth2DepositDBTuple:
@@ -104,7 +104,7 @@ class Eth2Deposit(NamedTuple):
             self.pubkey,
             self.withdrawal_credentials,
             str(self.value.amount),
-            self.validator_index,
+            self.deposit_index,
         )
 
 
@@ -156,7 +156,7 @@ def _get_eth2_staking_deposits_onchain(
                     pubkey='0x' + decoded_data[0].hex(),
                     withdrawal_credentials='0x' + decoded_data[1].hex(),
                     value=Balance(normalized_amount, usd_price * normalized_amount),
-                    validator_index=int.from_bytes(decoded_data[4], byteorder='little'),
+                    deposit_index=int.from_bytes(decoded_data[4], byteorder='little'),
                     tx_hash=tx_hash,
                     log_index=event['logIndex'],
                     timestamp=Timestamp(transaction.timestamp),
@@ -285,7 +285,7 @@ def get_eth2_balances(
     return balance_mapping
 
 
-def get_eth2_balances_via_deposits(
+def get_eth2_details(
         beaconchain: 'BeaconChain',
         deposits: List[Eth2Deposit],
 ) -> List[ValidatorDetails]:
@@ -296,13 +296,26 @@ def get_eth2_balances_via_deposits(
     if we already have the list of deposits.
 
     May raise RemoteError due to beaconcha.in API"""
-    indices = set()
-    address_to_indices = defaultdict(list)
+    addresses = set()
+    indices = []
     index_to_address = {}
+    # TODO: From the deposits we only get the pubkey, not the validator index. We
+    # can query performance by pubkey but beaconcha.in does not return validators
+    # that are not active yet and only returns index and not pubkey in the response.
+    # So there is no way to match the pubkeys given as arguments
+    # to the returned validator performance entries
+    # --> Make an issue at beaconcha.in for this
+    #
+    # Until then just get all addresses of the user that deposited
     for deposit in deposits:
-        indices.add(deposit.validator_index)
-        address_to_indices[deposit.from_address].append(deposit.validator_index)
-        index_to_address[deposit.validator_index] = deposit.from_address
+        addresses.add(deposit.from_address)
+
+    # and for each address get the validator info (to get the index) -- this could be avoided
+    for address in addresses:
+        validators = beaconchain.get_eth1_address_validators(address)
+        for validator in validators:
+            index_to_address[validator.validator_index] = address
+            indices.append(validator.validator_index)
 
     # Get current balance of all validator indices
     result = []
