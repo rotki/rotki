@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1753` Users can now filter the DEX trades by address and date range.
 * :feature:`1858` Rotki detects staked ETH2 balances in Kraken
 * :feature:`1810` Users can now set the default timeframe for the net worth graph. The selected timeframe now persist when navigating from and to the dashboard.
 * :feature:`436` Rotki now supports Bitstamp. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
