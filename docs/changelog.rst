@@ -14,6 +14,8 @@ Changelog
 * :bug:`1868` Binance SOL token is now properly mapped to Solana.
 * :bug:`1849` Binance queries should no longer randomly fail with invalid signature.
 * :bug:`1846` AMPL token balance should no longer be double counted.
+* :bug:`1888` Detect balances of Eth2 deposits that are pending and the validator is not yet active in the beacon chain
+* :bug:`1887` The Eth2 validator index should not be incorrectly shown for some users.
 
 * :release:`1.9.1 <2020-11-29>`
 * :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
