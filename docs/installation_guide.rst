@@ -154,7 +154,7 @@ The tl;dr version is:
 - install sqlcipher
 - use a virtual env with python 3.7.x
 - make sure pip installed everything it says it installed
-- get your node under control with nvm. It has been tested with 8.9
+- get your node under control with nvm. It has been tested with v12.18.0
 
 The following recipe has been tested using `Anaconda <https://conda.io>`_. `VirtualEnv <https://virtualenv.pypa.io>`_ works as well, refer to the documentations of those projects to install and use them.
 
@@ -211,7 +211,7 @@ Rotki uses electron, we need to install it. To do so you need ``node.js`` and ``
 
     $ brew install node
 
-Almost there, we can now install all the NodeJS dependencies of the frontend app. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm::
+Almost there, we can now install all the NodeJS dependencies of the frontend app. Using a recent NodeJS version such as 12.18.0, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm::
 
     $ cd frontend/app
     $ npm ci
