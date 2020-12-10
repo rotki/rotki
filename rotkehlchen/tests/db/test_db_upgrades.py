@@ -1125,6 +1125,59 @@ def test_upgrade_db_20_to_21(user_data_dir):
     assert db.get_version() == 21
 
 
+def test_upgrade_db_21_to_22(user_data_dir):
+    """Test upgrading the DB from version 21 to version 22.
+
+    Upgrade the eth2 deposits table to rename validator_index to deposit_index
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v21_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=22,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    # if nothing is raised here we are good
+    query = cursor.execute('SELECT * FROM balance_category;')
+    query = cursor.execute(
+        'SELECT tx_hash, '
+        'log_index, '
+        'from_address, '
+        'timestamp, '
+        'pubkey, '
+        'withdrawal_credentials, '
+        'value, '
+        'deposit_index from eth2_deposits;',
+    )
+    expected_entries = [(
+        '0x0',
+        1,
+        '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
+        15,
+        '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
+        '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
+        '32',
+        42,
+    ), (
+        '0x0',
+        5,
+        '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
+        15,
+        '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
+        '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
+        '32',
+        1337,
+    )]
+    length = 0
+    for idx, entry in enumerate(query):
+        assert entry == expected_entries[idx]
+        length += 1
+    assert length == 2
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 22
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
