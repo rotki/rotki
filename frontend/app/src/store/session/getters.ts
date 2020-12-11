@@ -7,7 +7,7 @@ import {
 import { SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
-import { Tag } from '@/typing/types';
+import { CurrencyLocation, Tag } from '@/typing/types';
 
 interface SessionGetters {
   floatingPrecision: number;
@@ -19,7 +19,7 @@ interface SessionGetters {
   activeModules: SupportedModules[];
   thousandSeparator: string;
   decimalSeparator: string;
-  currencyLocation: 'before' | 'after';
+  currencyLocation: CurrencyLocation;
   currencySymbol: string;
 }
 

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`114` Added a frontend-only setting to make the periodic query of the client customizable. The allowed range of values is from 5 seconds to 3600 seconds.
 * :feature:`1753` Users can now filter the DEX trades by address and date range.
 * :feature:`1858` Rotki detects staked ETH2 balances in Kraken
 * :feature:`1810` Users can now set the default timeframe for the net worth graph. The selected timeframe now persist when navigating from and to the dashboard.
@@ -23,7 +24,7 @@ Changelog
   - linkpool
 * :bug:`1777` Free users will now be able to load uniswap LP balances properly again.
 * :bug:`1726` When querying Compound history for COMP claimed around the start of COMP issuance, zero price warnings should no longer be emitted.
-* :feature:`1804` Premium users: Eth2 staking balances (along with what is gained via staking) will now be shown along with an APR estimation of the gains by staking. 
+* :feature:`1804` Premium users: Eth2 staking balances (along with what is gained via staking) will now be shown along with an APR estimation of the gains by staking.
 * :feature:`369` Users can now import multiple addresses at once.
 * :feature:`-` Users can now select predefined display date ranges for the premium statistics.
 * :bug:`1801` Users that have the uniswap module deactivated will now see a proper message about the module status instead of a loading page.

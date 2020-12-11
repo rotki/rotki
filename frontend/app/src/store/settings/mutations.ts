@@ -1,8 +1,8 @@
-import { MutationTree } from 'vuex';
 import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
-  LAST_KNOWN_TIMEFRAME
+  LAST_KNOWN_TIMEFRAME,
+  QUERY_PERIOD
 } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
 import {
@@ -14,25 +14,31 @@ import { Writeable } from '@/types';
 
 type Mutations<S = SettingsState> = {
   [DEFI_SETUP_DONE](state: S, done: boolean): void;
+  [TIMEFRAME_SETTING](state: S, timeframe: TimeFrameSetting): void;
+  [LAST_KNOWN_TIMEFRAME](state: S, timeframe: TimeFramePeriod): void;
+  [QUERY_PERIOD](state: S, period: number): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
 
-export const mutations: MutationTree<SettingsState> & Mutations = {
+export const mutations: Mutations = {
   [DEFI_SETUP_DONE](state: Writeable<SettingsState>, done: boolean) {
-    state.defiSetupDone = done;
+    state[DEFI_SETUP_DONE] = done;
   },
   [TIMEFRAME_SETTING](
     state: Writeable<SettingsState>,
     timeframe: TimeFrameSetting
   ) {
-    state.timeframeSetting = timeframe;
+    state[TIMEFRAME_SETTING] = timeframe;
   },
   [LAST_KNOWN_TIMEFRAME](
     state: Writeable<SettingsState>,
     timeframe: TimeFramePeriod
   ) {
-    state.lastKnownTimeframe = timeframe;
+    state[LAST_KNOWN_TIMEFRAME] = timeframe;
+  },
+  [QUERY_PERIOD](state: Writeable<SettingsState>, period: number) {
+    state[QUERY_PERIOD] = period;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);

@@ -4,7 +4,8 @@ import {
   DEFI_SETUP_DONE,
   TIMEFRAME_ALL,
   TIMEFRAME_REMEMBER,
-  LAST_KNOWN_TIMEFRAME
+  LAST_KNOWN_TIMEFRAME,
+  QUERY_PERIOD
 } from '@/store/settings/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
 import store from '@/store/store';
@@ -26,7 +27,8 @@ describe('settings:actions', () => {
         frontend_settings: JSON.stringify({
           [DEFI_SETUP_DONE]: true,
           [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
-          [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL
+          [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL,
+          [QUERY_PERIOD]: 5
         })
       })
     );
