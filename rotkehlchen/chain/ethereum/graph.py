@@ -54,7 +54,7 @@ class Graph():
         - May raise requests.RequestException if there is a problem connecting to the subgraph"""
         transport = RequestsHTTPTransport(url=url, retries=QUERY_RETRY_TIMES)
         try:
-            self.client = Client(transport=transport, fetch_schema_from_transport=True)
+            self.client = Client(transport=transport, fetch_schema_from_transport=False)
         except (requests.exceptions.RequestException) as e:
             raise RemoteError(f'Failed to connect to the graph at {url} due to {str(e)}') from e
 
