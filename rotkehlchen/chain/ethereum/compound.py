@@ -7,9 +7,9 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler

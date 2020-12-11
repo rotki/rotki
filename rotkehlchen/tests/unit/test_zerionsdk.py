@@ -2,7 +2,7 @@ import warnings as test_warnings
 
 import pytest
 
-from rotkehlchen.chain.ethereum.zerion import Zerion
+from rotkehlchen.chain.ethereum.defi.zerionsdk import ZerionSDK
 from rotkehlchen.fval import FVal
 
 
@@ -25,7 +25,7 @@ def test_query_all_protocol_balances_for_account(
     certain balance in a few DeFi protocols and does not change them. This way
     we can have something stable to check again.
     """
-    zerion = Zerion(ethereum_manager, function_scope_messages_aggregator)
+    zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator)
     balances = zerion.all_balances_for_account('0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662')
     if len(balances) == 0:
         test_warnings.warn(UserWarning('Test account for DeFi balances has no balances'))
@@ -108,7 +108,7 @@ def test_protocol_names_are_known(
         function_scope_messages_aggregator,
         inquirer,  # pylint: disable=unused-argument
 ):
-    zerion = Zerion(ethereum_manager, function_scope_messages_aggregator)
+    zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator)
     protocol_names = zerion.contract.call(
         ethereum=zerion.ethereum,
         method_name='getProtocolNames',

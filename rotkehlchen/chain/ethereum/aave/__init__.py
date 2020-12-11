@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from gevent.lock import Semaphore
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.makerdao.common import RAY
-from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES
 from rotkehlchen.constants.ethereum import AAVE_LENDING_POOL
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError

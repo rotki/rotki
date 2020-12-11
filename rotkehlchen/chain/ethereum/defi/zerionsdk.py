@@ -1,13 +1,17 @@
 import logging
-from typing import TYPE_CHECKING, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from eth_utils.address import to_checksum_address
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
+from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
+from rotkehlchen.chain.ethereum.defi.structures import (
+    DefiBalance,
+    DefiProtocol,
+    DefiProtocolBalances,
+)
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
@@ -38,37 +42,6 @@ def _is_token_non_standard(symbol: str, address: ChecksumEthAddress) -> bool:
         return True
 
     return False
-
-
-class DefiProtocol(NamedTuple):
-    name: str
-    description: str
-    url: str
-    version: int
-
-    def serialize(self) -> Dict[str, str]:
-        return {'name': self.name}
-
-
-class DefiBalance(NamedTuple):
-    token_address: ChecksumEthAddress
-    token_name: str
-    token_symbol: str
-    balance: Balance
-
-
-class DefiProtocolBalances(NamedTuple):
-    protocol: DefiProtocol
-    balance_type: Literal['Asset', 'Debt']
-    base_balance: DefiBalance
-    underlying_balances: List[DefiBalance]
-
-
-# Type of the argument given to functions that need the defi balances
-GIVEN_DEFI_BALANCES = Union[
-    Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
-    Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
-]
 
 
 def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[DefiBalance]:
@@ -106,7 +79,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
 ZERION_ADAPTER_ADDRESS = deserialize_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
 
 
-class Zerion():
+class ZerionSDK():
     """Adapter for the Zerion DeFi SDK https://github.com/zeriontech/defi-sdk"""
 
     def __init__(

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Optional
 import requests
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.defi import handle_defi_price_query
+from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK,
