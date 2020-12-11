@@ -12,18 +12,30 @@ def upgrade_v21_to_v22(db: 'DBHandler') -> None:
     """
     cursor = db.conn.cursor()
     query = cursor.execute(
-        'SELECT tx_hash, '
-        'log_index, '
-        'from_address, '
-        'timestamp, '
-        'pubkey, '
-        'withdrawal_credentials, '
-        'value, '
-        'validator_index from eth2_deposits;',
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='eth2_deposits';",
     )
+    results = query.fetchall()
+
+    # Check if table exists. IF not we are coming from an older DB
     entries = []
-    for q in query:
-        entries.append(q)
+    if len(results) != 0:
+        count = cursor.execute('SELECT COUNT(*) FROM eth2_deposits;').fetchone()[0]
+        if count != 0:
+            # Also query only if we have something. If we don't the table may have
+            # just been created and is already with the new schema
+            query = cursor.execute(
+                'SELECT tx_hash, '
+                'log_index, '
+                'from_address, '
+                'timestamp, '
+                'pubkey, '
+                'withdrawal_credentials, '
+                'value, '
+                'validator_index from eth2_deposits;',
+            )
+            for q in query:
+                entries.append(q)
+
     # delete old table and create new one
     cursor.execute('DROP TABLE IF EXISTS eth2_deposits;')
     cursor.execute("""

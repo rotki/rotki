@@ -56,7 +56,7 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
         'pubkey': '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
         'timestamp': 1604506685,
         'tx_hash': '0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
-        'validator_index': 9,
+        'deposit_index': 9,
         'value': {'amount': '32', 'usd_value': '0'},
         'withdrawal_credentials': '0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499',  # noqa: E501
     }
