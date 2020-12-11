@@ -497,11 +497,13 @@
         "type": "ethereum token"
     },
     "AMP": {
-        "coingecko": "",
-        "name": "HyperSpace",
-        "started": 1426723200,
+        "coingecko": "amp",
+        "ethereum_address": "0xfF20817765cB7f73d4bde2e66e067E58D11095C2",
+        "ethereum_token_decimals": 18,
+        "name": "Amp",
+        "started": 1597148839,
         "symbol": "AMP",
-        "type": "omni token"
+        "type": "ethereum token"
     },
     "AMPL": {
         "coingecko": "ampleforth",
@@ -5174,6 +5176,7 @@
         "name": "Flexacoin",
         "started": 1553299450,
         "symbol": "FXC",
+        "swapped_for": "AMP",
         "type": "ethereum token"
     },
     "FXT": {

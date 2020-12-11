@@ -35,6 +35,7 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Index cooperative (INDEX) <https://www.coingecko.com/en/coins/index-cooperative>`__
+  - `Amp (AMP) <https://www.coingecko.com/en/coins/amp>`__
 
 * :release:`1.9.1 <2020-11-29>`
 * :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
