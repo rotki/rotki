@@ -9,7 +9,7 @@ export interface Eth2Deposit {
   readonly pubkey: string;
   readonly withdrawalCredentials: string;
   readonly value: Balance;
-  readonly validatorIndex: number;
+  readonly depositIndex: number;
   readonly txHash: string;
   readonly logIndex: number;
 }
