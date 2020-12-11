@@ -6,6 +6,8 @@ BONDS_QUERY = (
         skip: $offset,
         where: {{
             owner_in: $user_identities,
+            timestamp_gte: $start_ts,
+            timestamp_lte: $end_ts,
         }}
     ) {{
         id
@@ -14,6 +16,7 @@ BONDS_QUERY = (
         timestamp
         amount
         nonce
+        slashedAtStart
     }}}}
     """
 )
@@ -25,6 +28,8 @@ UNBONDS_QUERY = (
         skip: $offset,
         where: {{
             owner_in: $user_identities,
+            timestamp_gte: $start_ts,
+            timestamp_lte: $end_ts,
         }}
     ) {{
         id
@@ -42,12 +47,15 @@ UNBOND_REQUESTS_QUERY = (
         skip: $offset,
         where: {{
             owner_in: $user_identities,
+            timestamp_gte: $start_ts,
+            timestamp_lte: $end_ts,
         }}
     ) {{
         id
         bondId
         owner
         timestamp
+        willUnlock
     }}}}
     """
 )

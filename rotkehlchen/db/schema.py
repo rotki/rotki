@@ -381,10 +381,27 @@ CREATE TABLE IF NOT EXISTS eth2_deposits (
 );
 """
 
+DB_CREATE_ADEX_EVENTS = """
+CREATE TABLE IF NOT EXISTS adex_events (
+    tx_hash VARCHAR[42] NOT NULL,
+    address VARCHAR[42] NOT NULL,
+    identity_address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    bond_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    pool_id TEXT,
+    amount TEXT,
+    nonce INT,
+    slashed_at INTEGER,
+    unlock_at INTEGER,
+    PRIMARY KEY (tx_hash, address, type)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -415,4 +432,5 @@ PRAGMA foreign_keys=on;
     DB_CREATE_AMM_SWAPS,
     DB_CREATE_UNISWAP_EVENTS,
     DB_CREATE_ETH2_DEPOSITS,
+    DB_CREATE_ADEX_EVENTS,
 )

@@ -1,7 +1,22 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Union, overload
+from datetime import datetime
+from http import HTTPStatus
+from json.decoder import JSONDecodeError
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Union,
+    cast,
+    overload,
+)
 
+import requests
 from eth_typing.evm import ChecksumAddress
 from eth_utils import to_checksum_address
 from eth_utils.typing import HexAddress, HexStr
@@ -13,6 +28,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
+from rotkehlchen.constants.assets import A_ADX
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -21,23 +37,34 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.serialization import rlk_jsonloads_list
 
 from .graph import BONDS_QUERY, UNBOND_REQUESTS_QUERY, UNBONDS_QUERY
 from .typing import (
     ADXStakingBalance,
+    ADXStakingEvents,
+    ADXStakingHistory,
+    ADXStakingStat,
     Bond,
     DeserializationMethod,
     EventCoreData,
+    EventType,
+    TomPoolIncentive,
     Unbond,
     UnbondRequest,
 )
 from .utils import (
+    ADEX_EVENTS_PREFIX,
     ADX_AMOUNT_MANTISSA,
     CREATE2_SALT,
     IDENTITY_FACTORY_ADDR,
     IDENTITY_PROXY_INIT_CODE,
+    PERIOD_END_AT_FORMAT,
     POOL_ID_POOL_NAME,
+    SECONDS_PER_YEAR,
     STAKING_ADDR,
+    TOM_POOL_FEE_REWARDS_API_URL,
+    TOM_POOL_ID,
 )
 
 if TYPE_CHECKING:
@@ -66,6 +93,8 @@ class Adex(EthereumModule):
         self.premium = premium
         self.msg_aggregator = msg_aggregator
         self.trades_lock = Semaphore()
+        self.session = requests.session()
+        self.session.headers.update({'User-Agent': 'rotkehlchen'})
         try:
             self.graph: Optional[Graph] = Graph(
                 'https://api.thegraph.com/subgraphs/name/adexnetwork/adex-protocol',
@@ -79,7 +108,7 @@ class Adex(EthereumModule):
             )
 
     @staticmethod
-    def _calculate_adex_balances(
+    def _calculate_staking_balances(
             bonds: List[Bond],
             unbonds: List[Unbond],
             unbond_requests: List[UnbondRequest],
@@ -130,6 +159,59 @@ class Adex(EthereumModule):
 
         return dict(adex_balances)
 
+    @staticmethod
+    def _get_staking_history(
+        staking_balances: Dict[ChecksumAddress, List[ADXStakingBalance]],
+        staking_events: ADXStakingEvents,
+        tom_pool_incentive: Optional[TomPoolIncentive] = None,
+    ) -> Dict[ChecksumAddress, ADXStakingHistory]:
+        """Given the following params:
+          - staking_balances: the balances of the addresses per pool.
+          - staking_events: all the events of the addresses mixed but grouped by
+          type.
+          - tom_pool_incentive (optional): Tom pool incentive data.
+
+        Return a map between an address and its <ADXStakingStat>, which contains
+        all the events that belong to the address, and the performance stats
+        per staking pool.
+        """
+        staking_history = {}
+        address_staking_events = defaultdict(list)
+        all_events: List[Union[Bond, Unbond, UnbondRequest]] = (
+            staking_events.bonds +
+            staking_events.unbonds +  # type: ignore # mypy bug concatenating lists
+            staking_events.unbond_requests  # type: ignore # mypy bug concatenating lists
+        )
+        # Map addresses with their events
+        for event in all_events:
+            address_staking_events[event.address].append(event)
+        # Sort staking events per address by timestamp (older first)
+        for address in address_staking_events.keys():
+            address_staking_events[address].sort(key=lambda event: event.timestamp)
+
+        for address, adx_staking_balances in staking_balances.items():
+            adx_staking_stats = []
+            for adx_staking_balance in adx_staking_balances:
+                # NB: currently it only returns stats for Tom pool
+                if adx_staking_balance.pool_id == TOM_POOL_ID and tom_pool_incentive is not None:
+                    pool_staking_stat = ADXStakingStat(
+                        address=adx_staking_balance.address,
+                        pool_id=adx_staking_balance.pool_id,
+                        pool_name=adx_staking_balance.pool_name,
+                        total_staked_amount=(
+                            tom_pool_incentive.total_staked_amount / ADX_AMOUNT_MANTISSA
+                        ),
+                        apr=tom_pool_incentive.apr,
+                        balance=adx_staking_balance.balance,
+                    )
+                    adx_staking_stats.append(pool_staking_stat)
+
+            staking_history[address] = ADXStakingHistory(
+                events=address_staking_events[address],
+                staking_stats=adx_staking_stats,
+            )
+        return staking_history
+
     def _deserialize_bond(
             self,
             raw_event: Dict[str, Any],
@@ -162,6 +244,7 @@ class Adex(EthereumModule):
             amount=amount,
             pool_id=pool_id,
             nonce=nonce,
+            slashed_at=Timestamp(int(raw_event['slashedAtStart'])),
         )
 
     @staticmethod
@@ -172,10 +255,11 @@ class Adex(EthereumModule):
         """Deserialize the common event attributes.
 
         It may raise KeyError.
+        Id for unbond and unbond request events is 'tx_hash:address'.
         """
         identity_address = to_checksum_address(raw_event['owner'])
         return EventCoreData(
-            tx_hash=HexStr(raw_event['id']),
+            tx_hash=HexStr(raw_event['id'].split(':')[0]),
             address=identity_address_map[identity_address],
             identity_address=identity_address,
             timestamp=Timestamp(raw_event['timestamp']),
@@ -221,36 +305,148 @@ class Adex(EthereumModule):
             identity_address=event_core_data.identity_address,
             timestamp=event_core_data.timestamp,
             bond_id=HexStr(raw_event['bondId']),
+            unlock_at=Timestamp(int(raw_event['willUnlock'])),
         )
 
-    @overload  # noqa: F811
-    def _get_balances_graph(  # pylint: disable=no-self-use
+    def _get_tom_pool_fee_rewards_from_api(self) -> List[Dict[str, Any]]:
+        """Do a GET request to the Tom pool fee rewards API.
+        """
+        fee_rewards: List[Dict[str, Any]] = []
+        try:
+            response = self.session.get(TOM_POOL_FEE_REWARDS_API_URL)
+        except requests.exceptions.RequestException as e:
+            msg = (
+                f'AdEx get request at {TOM_POOL_FEE_REWARDS_API_URL} connection error: {str(e)}.'
+            )
+            log.error(msg)
+            self.msg_aggregator.add_error(
+                f'Got remote error while querying AdEx fee rewards API: {msg}',
+            )
+            return fee_rewards
+
+        if response.status_code != HTTPStatus.OK:
+            msg = (
+                'AdEx fee rewards API query responded with error status code: '
+                f'{response.status_code} and text: {response.text}.'
+            )
+            log.error(msg)
+            self.msg_aggregator.add_error(
+                f'Got remote error while querying AdEx fee rewards API: {msg}',
+            )
+            return fee_rewards
+
+        try:
+            fee_rewards = rlk_jsonloads_list(response.text)
+        except JSONDecodeError:
+            msg = f'AdEx fee rewards API returned invalid JSON response: {response.text}.'
+            log.error(msg)
+            self.msg_aggregator.add_error(
+                f'Got remote error while querying AdEx fee rewards API: {msg}',
+            )
+            return fee_rewards
+
+        return fee_rewards
+
+    def _get_staking_events(
             self,
             addresses: List[ChecksumEthAddress],
-            case: Literal['bonds'],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> ADXStakingEvents:
+        """Given a list of addresses returns all their staking events within
+        the given time range. The returned events are grouped by type in
+        <ADXStakingEvents>.
+
+        For new addresses it requests all the events via subgraph.
+        For existing addresses it requests all the events since the latest
+        request timestamp (the minimum timestamp among all the existing
+        addresses).
+        """
+        new_addresses: List[ChecksumEthAddress] = []
+        existing_addresses: List[ChecksumEthAddress] = []
+        min_from_timestamp: Timestamp = to_timestamp
+
+        # Get addresses' last used query range for AdEx events
+        for address in addresses:
+            entry_name = f'{ADEX_EVENTS_PREFIX}_{address}'
+            events_range = self.database.get_used_query_range(name=entry_name)
+
+            if not events_range:
+                new_addresses.append(address)
+            else:
+                existing_addresses.append(address)
+                min_from_timestamp = min(min_from_timestamp, events_range[1])
+
+        # Request new addresses' events
+        all_new_events: List[Union[Bond, Unbond, UnbondRequest]] = []
+        if new_addresses:
+            new_events = self._get_new_staking_events_graph(
+                addresses=addresses,
+                from_timestamp=Timestamp(0),
+                to_timestamp=to_timestamp,
+            )
+            all_new_events.extend(new_events)
+
+        # Request existing DB addresses' events
+        if existing_addresses and min_from_timestamp <= to_timestamp:
+            new_events = self._get_new_staking_events_graph(
+                addresses=addresses,
+                from_timestamp=min_from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+            all_new_events.extend(new_events)
+
+        # Add new events in DB
+        if all_new_events:
+            self.database.add_adex_events(all_new_events)
+
+        # Fetch all DB events within the time range
+        db_events = self.database.get_adex_events(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+        staking_events = self._get_addresses_staking_events_grouped_by_type(
+            events=db_events,
+            addresses=set(addresses),
+        )
+        return staking_events
+
+    @overload  # noqa: F811
+    def _get_staking_events_graph(  # pylint: disable=no-self-use
+            self,
+            addresses: List[ChecksumEthAddress],
+            event_type: Literal[EventType.BOND],
+            from_timestamp: Optional[Timestamp] = None,
+            to_timestamp: Optional[Timestamp] = None,
     ) -> List[Bond]:
         ...
 
     @overload  # noqa: F811
-    def _get_balances_graph(  # pylint: disable=no-self-use
+    def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
-            case: Literal['unbonds'],
+            event_type: Literal[EventType.UNBOND],
+            from_timestamp: Optional[Timestamp] = None,
+            to_timestamp: Optional[Timestamp] = None,
     ) -> List[Unbond]:
         ...
 
     @overload  # noqa: F811
-    def _get_balances_graph(  # pylint: disable=no-self-use
+    def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
-            case: Literal['unbond_requests'],
+            event_type: Literal[EventType.UNBOND_REQUEST],
+            from_timestamp: Optional[Timestamp] = None,
+            to_timestamp: Optional[Timestamp] = None,
     ) -> List[UnbondRequest]:
         ...
 
-    def _get_balances_graph(
+    def _get_staking_events_graph(
             self,
             addresses: List[ChecksumEthAddress],
-            case: Literal['bonds', 'unbonds', 'unbond_requests'],
+            event_type: Literal[EventType.BOND, EventType.UNBOND, EventType.UNBOND_REQUEST],
+            from_timestamp: Optional[Timestamp] = None,
+            to_timestamp: Optional[Timestamp] = None,
     ) -> Union[List[Bond], List[Unbond], List[UnbondRequest]]:
         """Get the addresses' events data querying the AdEx subgraph.
         """
@@ -260,36 +456,42 @@ class Adex(EthereumModule):
         deserialization_method: DeserializationMethod
         querystr: str
         schema: Literal['bonds', 'unbonds', 'unbondRequests']
-        if case == 'bonds':
+        if event_type == EventType.BOND:
             deserialization_method = self._deserialize_bond
             querystr = format_query_indentation(BONDS_QUERY.format())
             schema = 'bonds'
-            case_pretty = 'bond'
-        elif case == 'unbonds':
+            event_type_pretty = 'bond'
+        elif event_type == EventType.UNBOND:
             deserialization_method = self._deserialize_unbond
             querystr = format_query_indentation(UNBONDS_QUERY.format())
             schema = 'unbonds'
-            case_pretty = 'unbond'
-        elif case == 'unbond_requests':
+            event_type_pretty = 'unbond'
+        elif event_type == EventType.UNBOND_REQUEST:
             deserialization_method = self._deserialize_unbond_request
             querystr = format_query_indentation(UNBOND_REQUESTS_QUERY.format())
             schema = 'unbondRequests'
-            case_pretty = 'unbond request'
+            event_type_pretty = 'unbond request'
         else:
-            raise AssertionError(f'Unexpected AdEx case: {case}.')
+            raise AssertionError(f'Unexpected AdEx event type: {event_type}.')
 
         user_identities = [str(identity).lower() for identity in identity_address_map.keys()]
+        start_ts = from_timestamp or 0
+        end_ts = to_timestamp or int(datetime.utcnow().timestamp())
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
             '$user_identities': '[Bytes!]',
+            '$start_ts': 'Int!',
+            '$end_ts': 'Int!',
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
             'offset': 0,
             'user_identities': user_identities,
+            'start_ts': start_ts,
+            'end_ts': end_ts,
         }
-        events: Union[List[Bond], List[Unbond], List[UnbondRequest]] = []  # type: ignore
+        events = []
         while True:
             try:
                 result = self.graph.query(  # type: ignore # caller already checks
@@ -303,7 +505,7 @@ class Adex(EthereumModule):
                 self.msg_aggregator.add_error(
                     f'{msg}. All AdEx balances queries are not functioning until this is fixed.',
                 )
-                return []  # type: ignore
+                raise
 
             result_data = result[schema]
             for raw_event in result_data:
@@ -315,27 +517,56 @@ class Adex(EthereumModule):
                 except KeyError as e:
                     msg = str(e)
                     log.error(
-                        f'Error processing an AdEx {case_pretty}.',
+                        f'Error processing an AdEx {event_type_pretty}.',
                         raw_event=raw_event,
                         error=msg,
                     )
                     self.msg_aggregator.add_error(
-                        f'Failed to deserialize an AdEx {case_pretty}. '
+                        f'Failed to deserialize an AdEx {event_type_pretty}. '
                         f'Check logs for details. Ignoring it.',
                     )
                     continue
 
-                events.append(event)  # type: ignore
+                events.append(event)
 
             if len(result_data) < GRAPH_QUERY_LIMIT:
                 break
 
+            offset = cast(int, param_values['offset'])
             param_values = {
                 **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore # is int
+                'offset': offset + GRAPH_QUERY_LIMIT,
             }
 
-        return events
+        return events  # type: ignore # type is not List[Union[Bond, Unbond, UnbondRequest]]
+
+    @staticmethod
+    def _get_addresses_staking_events_grouped_by_type(
+            events: List[Union[Bond, Unbond, UnbondRequest]],
+            addresses: Set[ChecksumAddress],
+    ) -> ADXStakingEvents:
+        """Filter out events that don't belong to any of the addresses and
+        return the valid ones grouped by event type in <ADXStakingEvents>.
+        """
+        bonds = []
+        unbonds = []
+        unbond_requests = []
+        for event in events:
+            if event.address in addresses:
+                if isinstance(event, Bond):
+                    bonds.append(event)
+                elif isinstance(event, Unbond):
+                    unbonds.append(event)
+                elif isinstance(event, UnbondRequest):
+                    unbond_requests.append(event)
+                else:
+                    raise AssertionError(f'Unexpected AdEx event type: {type(event)}.')
+
+        return ADXStakingEvents(
+            bonds=bonds,
+            unbonds=unbonds,
+            unbond_requests=unbond_requests,
+        )
 
     @staticmethod
     def _get_bond_id(
@@ -359,6 +590,98 @@ class Adex(EthereumModule):
         """
         return {self._get_user_identity(address): address for address in addresses}
 
+    def _get_tom_pool_incentive(self) -> Optional[TomPoolIncentive]:
+        """Get Tom pool incentive data (staking rewards).
+
+        NB: the APR is the AdEx codebase and website stats APY.
+        https://github.com/AdExNetwork/adex-staking/blob/master/src/actions/actions.js#L86
+
+        TODO: once AdEx rolls out issue #94, check how they handle incentives
+        with multiple channels, for instance how they process `periodEnd`.
+        https://github.com/AdExNetwork/adex-staking/issues/94
+        """
+        fee_rewards = self._get_tom_pool_fee_rewards_from_api()
+        total_staked_amount = FVal('0')
+        total_reward_per_second = FVal('0')
+        period_ends_at = Timestamp(0)
+        apr = FVal('0')
+        for entry in fee_rewards:
+            try:
+                if entry['channelArgs']['tokenAddr'] == A_ADX.ethereum_address:
+                    total_staked_amount += entry['stats']['currentTotalActiveStake']
+                    total_reward_per_second += entry['stats']['currentRewardPerSecond']
+                    # NB: `period_ends_at` is always overwritten
+                    period_ends_at = Timestamp(int(
+                        datetime.strptime(entry['periodEnd'], PERIOD_END_AT_FORMAT).timestamp(),
+                    ))
+            except (KeyError, ValueError) as e:
+                msg = str(e)
+                log.error(
+                    'Error processing AdEx Tom pool incentives.',
+                    entry=entry,
+                    error=msg,
+                )
+                self.msg_aggregator.add_error(
+                    'Failed to deserialize the AdEx Tom pool incentives. '
+                    'Check logs for details. Ignoring it.',
+                )
+                return None
+
+        now = Timestamp(int(datetime.utcnow().timestamp()))
+        # Calculate Tom pool APR (APY)
+        if now < period_ends_at:  # else apr is zero
+            seconds_left = FVal(period_ends_at - now)
+            to_distribute = total_reward_per_second * seconds_left
+            apr = to_distribute * SECONDS_PER_YEAR / seconds_left / total_staked_amount
+
+        return TomPoolIncentive(
+            total_staked_amount=total_staked_amount,
+            total_reward_per_second=total_reward_per_second,
+            period_ends_at=period_ends_at,
+            apr=apr,
+        )
+
+    def _get_new_staking_events_graph(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> List[Union[Bond, Unbond, UnbondRequest]]:
+        """Returns events of the addresses within the time range and inserts/updates
+        the used query range of the addresses as well.
+        """
+        all_events: List[Union[Bond, Unbond, UnbondRequest]] = []
+        for event_type_ in EventType:
+            event_type: Literal[EventType.BOND, EventType.UNBOND, EventType.UNBOND_REQUEST]
+            if event_type_ == EventType.BOND:
+                event_type = EventType.BOND
+            elif event_type_ == EventType.UNBOND:
+                event_type = EventType.UNBOND
+            elif event_type_ == EventType.UNBOND_REQUEST:
+                event_type = EventType.UNBOND_REQUEST
+            else:
+                raise AssertionError(f'Unexpected AdEx event type: {event_type_}.')
+
+            try:
+                events = self._get_staking_events_graph(
+                    addresses=addresses,
+                    event_type=event_type,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                )
+            except RemoteError:
+                return []
+
+            all_events.extend(events)
+
+        for address in addresses:
+            self.database.update_used_query_range(
+                name=f'{ADEX_EVENTS_PREFIX}_{address}',
+                start_ts=from_timestamp,
+                end_ts=to_timestamp,
+            )
+        return all_events
+
     @staticmethod
     def _get_user_identity(address: ChecksumAddress) -> ChecksumEthAddress:
         """Given an address (signer) returns its protocol user identity.
@@ -378,31 +701,73 @@ class Adex(EthereumModule):
 
         TODO: route non-premium users through on-chain query.
         """
+        staking_balances: Dict[ChecksumAddress, List[ADXStakingBalance]] = {}
         is_graph_mode = self.graph and self.premium
-
-        adex_balances: Dict[ChecksumAddress, List[ADXStakingBalance]] = {}
         if is_graph_mode:
-            bonds = self._get_balances_graph(addresses=addresses, case='bonds')
-
-            # NB: there shouldn't be unbonds and unbond_requests without bonds
-            if bonds:
-                unbonds = self._get_balances_graph(addresses=addresses, case='unbonds')
-                unbond_requests = self._get_balances_graph(
+            try:
+                bonds = self._get_staking_events_graph(
                     addresses=addresses,
-                    case='unbond_requests',
+                    event_type=EventType.BOND,
                 )
-                adx_usd_price = Inquirer().find_usd_price(EthereumToken('ADX'))
-                adex_balances = self._calculate_adex_balances(
-                    bonds=bonds,
-                    unbonds=unbonds,
-                    unbond_requests=unbond_requests,
-                    adx_usd_price=adx_usd_price,
+                unbonds = self._get_staking_events_graph(
+                    addresses=addresses,
+                    event_type=EventType.UNBOND,
                 )
+                unbond_requests = self._get_staking_events_graph(
+                    addresses=addresses,
+                    event_type=EventType.UNBOND_REQUEST,
+                )
+            except RemoteError:
+                return staking_balances
+
+            adx_usd_price = Inquirer().find_usd_price(EthereumToken('ADX'))
+            staking_balances = self._calculate_staking_balances(
+                bonds=bonds,
+                unbonds=unbonds,
+                unbond_requests=unbond_requests,
+                adx_usd_price=adx_usd_price,
+            )
         else:
             raise NotImplementedError(
                 "Get AdEx balances for non premium user is not implemented.",
             )
-        return adex_balances
+        return staking_balances
+
+    def get_events_history(
+            self,
+            addresses: List[ChecksumEthAddress],
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Dict[ChecksumAddress, ADXStakingHistory]:
+        """Get the staking history events of the addresses in the AdEx protocol.
+        """
+        if self.graph is None:  # could not initialize graph
+            return {}
+
+        with self.trades_lock:
+            if reset_db_data is True:
+                self.database.delete_adex_events_data()
+
+        staking_events = self._get_staking_events(
+            addresses=addresses,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+        adx_usd_price = Inquirer().find_usd_price(EthereumToken('ADX'))
+        staking_balances = self._calculate_staking_balances(
+            bonds=staking_events.bonds,
+            unbonds=staking_events.unbonds,
+            unbond_requests=staking_events.unbond_requests,
+            adx_usd_price=adx_usd_price,
+        )
+        tom_pool_incentive = self._get_tom_pool_incentive()
+        staking_history = self._get_staking_history(
+            staking_balances=staking_balances,
+            staking_events=staking_events,
+            tom_pool_incentive=tom_pool_incentive,
+        )
+        return staking_history
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
