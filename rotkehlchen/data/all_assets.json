@@ -5513,6 +5513,16 @@
         "symbol": "GPUC",
         "type": "own chain"
     },
+    "GRAIN": {
+        "coingecko": "grain-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x6589fe1271A0F29346796C6bAf0cdF619e25e58e",
+        "ethereum_token_decimals": 12,
+        "name": "GRAIN Token",
+        "started": 1606500872,
+        "symbol": "GRAIN",
+        "type": "ethereum token"
+    },
     "GRC": {
         "coingecko": "gridcoin-research",
         "name": "GridCoin",
