@@ -2347,7 +2347,7 @@ class DBHandler:
                 pubkey,
                 withdrawal_credentials,
                 value,
-                validator_index
+                deposit_index
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
@@ -2393,7 +2393,7 @@ class DBHandler:
             'pubkey, '
             'withdrawal_credentials, '
             'value, '
-            'validator_index '
+            'deposit_index '
             'FROM eth2_deposits '
         )
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`

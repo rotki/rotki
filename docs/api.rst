@@ -4298,7 +4298,7 @@ Getting Eth2 Staking details
               "value": {
                   "amount": "32", "usd_value": "11360"
               },
-              "validator_index": 9,
+              "deposit_index": 9,
               "tx_hash": "0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1",
               "log_index": 22
               }, {
@@ -4308,7 +4308,7 @@ Getting Eth2 Staking details
               "value": {
                   "amount": "32", "usd_value": "11860"
               },
-              "validator_index": 1650,
+              "deposit_index": 1650,
               "tx_hash": "0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7",
               "log_index": 221
           }],
@@ -4330,7 +4330,7 @@ Getting Eth2 Staking details
    :resjson from_address: The Eth1 address that made the Eth2 deposit.
    :resjson pubkey string: The Eth2 public key for which the deposit was made
    :resjson withdrawal_credentials string: The Eth2 withdrawal credentials with which the deposit was made
-   :resjson validator_index int: The validator index slot for which the deposit was made
+   :resjson deposit_index int: The index slot for which the deposit was made. NOT the same as the validator index.
    :resjson tx_hash str: The Eth1 transaction hash in which the deposit was made.
    :resjson log_index int: The log index of the deposit
    :resjson object details: A list of details per validator index. The performance in the last day, week, month, year, the validator index, the eth1 address that deposited and the current balance.

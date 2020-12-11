@@ -1,58 +1,25 @@
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union, overload
 
 import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.chain.ethereum.eth2_utils import (
+    ValidatorBalance,
+    ValidatorID,
+    ValidatorPerformance,
+)
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
-from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_gwei, get_chunks
+from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-
-
-class ValidatorBalance(NamedTuple):
-    epoch: int
-    balance: int  # in gwei
-    effective_balance: int  # in wei
-
-
-def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> Dict[str, str]:
-    normalized_value = from_gwei(value)
-    return {
-        'amount': str(normalized_value),
-        'usd_value': str(normalized_value * eth_usd_price),
-    }
-
-
-class ValidatorPerformance(NamedTuple):
-    balance: int  # in gwei
-    performance_1d: int  # in gwei
-    performance_1w: int  # in gwei
-    performance_1m: int  # in gwei
-    performance_1y: int  # in gwei
-
-    def serialize(self, eth_usd_price: FVal) -> Dict[str, Dict[str, str]]:
-        return {
-            'balance': _serialize_gwei_with_price(self.balance, eth_usd_price),
-            'performance_1d': _serialize_gwei_with_price(self.performance_1d, eth_usd_price),
-            'performance_1w': _serialize_gwei_with_price(self.performance_1w, eth_usd_price),
-            'performance_1m': _serialize_gwei_with_price(self.performance_1m, eth_usd_price),
-            'performance_1y': _serialize_gwei_with_price(self.performance_1y, eth_usd_price),
-        }
-
-
-class ValidatorID(NamedTuple):
-    # not using index due to : https://github.com/python/mypy/issues/9043
-    validator_index: int
-    public_key: str
 
 
 class BeaconChain(ExternalServiceWithApiKey):
@@ -180,15 +147,32 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return balances
 
-    def get_performance(self, validator_indices: List[int]) -> Dict[int, ValidatorPerformance]:
-        """Get the performance of all the validators given from the indices list
+    @overload  # noqa: F811
+    def get_performance(
+            self,
+            indices_or_pubkeys: List[int],
+    ) -> Dict[int, ValidatorPerformance]:
+        ...
+
+    @overload  # noqa: F811
+    def get_performance(
+            self,
+            indices_or_pubkeys: List[str],
+    ) -> Dict[str, ValidatorPerformance]:
+        ...
+
+    def get_performance(
+            self,
+            indices_or_pubkeys: Union[List[int], List[str]],
+    ) -> Union[Dict[int, ValidatorPerformance], Dict[str, ValidatorPerformance]]:
+        """Get the performance of all the validators given from the list of indices or pubkeys
 
         Queries in chunks of 100 due to api limitations
 
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        chunks = list(get_chunks(validator_indices, n=100))
+        chunks = list(get_chunks(indices_or_pubkeys, n=100))  # type: ignore
         data = []
         for chunk in chunks:
             result = self._query(
