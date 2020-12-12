@@ -13,6 +13,8 @@ Changelog
 * :feature:`176` Add an accounting setting to make asset movements fees (deposits/withdrawals to/from exchanges) inclusion in the profit loss report configurable.
 * :feature:`1840` Better handling double crypto.com entries (dust_conversion, swap, ...) from csv export. Also crypto.com imported trades and asset movements now appear in the history UI component
 * :feature:`1605` User funds in Binance's futures wallet should now also be included in Rotki
+* :bug:`1834` Users will not have to close the add account dialog manually while the newly added account balances are queried.
+* :bug:`1671` Users will now see the amounts earned on aave lending aggregated per asset.
 * :bug:`1868` Binance SOL token is now properly mapped to Solana.
 * :bug:`1849` Binance queries should no longer randomly fail with invalid signature.
 * :bug:`1846` AMPL token balance should no longer be double counted.
