@@ -31,6 +31,7 @@ class IconManager():
         self.icons_dir = data_dir / 'icons'
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
+        self.failed_assets = set()
 
     def iconfile_path(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Path:
         return self.icons_dir / f'{asset.identifier}_{size}.png'
@@ -57,7 +58,8 @@ class IconManager():
             log.warning(
                 f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
             )
-
+            # If a query fails (99$ of fails will be 404s) don't repeat them
+            self.failed_assets.add(asset)
             return False
 
         for size in ('thumb', 'small', 'large'):
@@ -118,8 +120,9 @@ class IconManager():
         cached_assets = [
             str(x.name)[:-10] for x in self.icons_dir.glob('*_thumb.png') if x.is_file()
         ]
-
-        uncached_assets = set(coingecko_integrated_assets) - set(cached_assets)
+        uncached_assets = (
+            set(coingecko_integrated_assets) - set(cached_assets) - self.failed_assets
+        )
         log.info(
             f'Periodic task to query coingecko for {batch_size} uncached asset icons. '
             f'Uncached assets: {len(uncached_assets)}. Cached assets: {len(cached_assets)}',
