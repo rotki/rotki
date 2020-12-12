@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1869` Vote-escrowed CRV will now be auto-detected for Curve.fi users. The amount shown will be the total locked CRV for vote-escrow.
 * :feature:`114` Added a frontend-only setting to make the periodic query of the client customizable. The allowed range of values is from 5 seconds to 3600 seconds.
 * :feature:`1753` Users can now filter the DEX trades by address and date range.
 * :feature:`1858` Rotki detects staked ETH2 balances in Kraken
@@ -17,6 +18,10 @@ Changelog
 * :bug:`1846` AMPL token balance should no longer be double counted.
 * :bug:`1888` Detect balances of Eth2 deposits that are pending and the validator is not yet active in the beacon chain
 * :bug:`1887` The Eth2 validator index should not be incorrectly shown for some users.
+
+* :feature:`-` Added support for the following tokens:
+
+  - `Vote-escrowed CRV (veCRV) <https://etherscan.io/address/0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2>`__
 
 * :release:`1.9.1 <2020-11-29>`
 * :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
