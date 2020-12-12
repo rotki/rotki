@@ -2,7 +2,7 @@ import warnings as test_warnings
 
 import pytest
 
-from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
     wait_until_all_nodes_connected,

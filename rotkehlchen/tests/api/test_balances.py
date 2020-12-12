@@ -325,7 +325,7 @@ def test_query_all_balances_ignore_cache(
             else:
                 assert fn.call_count == 2, msg
         msg = 'etherscan call count should have doubled after forced token detection'
-        expected_count = full_query_etherscan_count * 2 - len(ethereum_accounts)
+        expected_count = full_query_etherscan_count * 2 - len(ethereum_accounts) - 1
         assert etherscan_mock.call_count == expected_count, msg
 
 

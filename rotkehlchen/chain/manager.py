@@ -28,6 +28,8 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
+from rotkehlchen.chain.ethereum.defi.chad import DefiChad
+from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.eth2 import (
     get_eth2_balances,
     get_eth2_details,
@@ -37,7 +39,6 @@ from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
 from rotkehlchen.chain.ethereum.yearn import YearnVaults
-from rotkehlchen.chain.ethereum.zerion import DefiProtocolBalances, Zerion
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
@@ -264,7 +265,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         self.premium = premium
         self.greenlet_manager = greenlet_manager
-        self.zerion = Zerion(ethereum_manager=self.ethereum, msg_aggregator=self.msg_aggregator)
+        self.defichad = DefiChad(
+            ethereum_manager=self.ethereum,
+            msg_aggregator=self.msg_aggregator,
+        )
 
         for name, module in self.iterate_modules():
             self.greenlet_manager.spawn_and_track(
@@ -697,12 +701,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
                 # Also modify and take into account defi balances
                 if append_or_remove == 'append':
-                    balances = self.zerion.all_balances_for_account(address)
-                    if len(balances) != 0:
-                        self.defi_balances[address] = balances
+                    balances = self.defichad.query_defi_balances([address])
+                    address_balances = balances.get(address, [])
+                    if len(address_balances) != 0:
+                        self.defi_balances[address] = address_balances
                         self._add_account_defi_balances_to_token_and_totals(
                             account=address,
-                            balances=balances,
+                            balances=address_balances,
                         )
                 else:  # remove
                     self.defi_balances.pop(address, None)
@@ -822,12 +827,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 return self.defi_balances
 
             # query zerion for defi balances
-            self.defi_balances = {}
-            for account in self.accounts.eth:
-                balances = self.zerion.all_balances_for_account(account)
-                if len(balances) != 0:
-                    self.defi_balances[account] = balances
-
+            self.defi_balances = self.defichad.query_defi_balances(self.accounts.eth)
             self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances
 

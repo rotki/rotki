@@ -8,7 +8,7 @@ from web3 import Web3
 from web3._utils.abi import get_abi_input_types, get_abi_output_types
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.ethereum import ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO

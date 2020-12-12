@@ -35,8 +35,11 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.defi.structures import (
+        GIVEN_DEFI_BALANCES,
+        DefiProtocolBalances,
+    )
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.ethereum.zerion import GIVEN_DEFI_BALANCES, DefiProtocolBalances
     from rotkehlchen.db.dbhandler import DBHandler
 
 BLOCKS_PER_YEAR = 2425846

@@ -6,7 +6,11 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.zerion import DefiBalance, DefiProtocol, DefiProtocolBalances
+from rotkehlchen.chain.ethereum.defi.structures import (
+    DefiBalance,
+    DefiProtocol,
+    DefiProtocolBalances,
+)
 from rotkehlchen.constants.assets import A_BTC, A_DAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_query

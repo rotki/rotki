@@ -15,6 +15,11 @@ from rotkehlchen.chain.ethereum.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.compound import CompoundBalance, CompoundEvent
+from rotkehlchen.chain.ethereum.defi.structures import (
+    DefiBalance,
+    DefiProtocol,
+    DefiProtocolBalances,
+)
 from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit
 from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.makerdao.vaults import (
@@ -35,7 +40,6 @@ from rotkehlchen.chain.ethereum.yearn.vaults import (
     YearnVaultEvent,
     YearnVaultHistory,
 )
-from rotkehlchen.chain.ethereum.zerion import DefiBalance, DefiProtocol, DefiProtocolBalances
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade

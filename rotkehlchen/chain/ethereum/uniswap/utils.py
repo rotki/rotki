@@ -10,9 +10,9 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
+from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.typing import NodeName
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.ethereum.zerion import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress
