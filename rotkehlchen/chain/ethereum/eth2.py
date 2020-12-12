@@ -298,29 +298,14 @@ def get_eth2_balances(
 
 def get_eth2_details(
         beaconchain: 'BeaconChain',
-        deposits: List[Eth2Deposit],
+        addresses: List[ChecksumEthAddress],
 ) -> List[ValidatorDetails]:
-    """Goes through the list of all of our deposits and gets all validator indices,
-    calculates balances and returns performance and balance per address and per validator.
-
-    Then with that info queries the beaconchai.in API. Saves some calls to the API
-    if we already have the list of deposits.
+    """Go through the list of eth1 addresses and find all eth2 validators associated
+    with them along with their details.
 
     May raise RemoteError due to beaconcha.in API"""
-    addresses = set()
     indices = []
     index_to_address = {}
-    # TODO: From the deposits we only get the pubkey, not the validator index. We
-    # can query performance by pubkey but beaconcha.in does not return validators
-    # that are not active yet and only returns index and not pubkey in the response.
-    # So there is no way to match the pubkeys given as arguments
-    # to the returned validator performance entries
-    # --> Make an issue at beaconcha.in for this
-    #
-    # Until then just get all addresses of the user that deposited
-    for deposit in deposits:
-        addresses.add(deposit.from_address)
-
     # and for each address get the validator info (to get the index) -- this could be avoided
     for address in addresses:
         validators = beaconchain.get_eth1_address_validators(address)

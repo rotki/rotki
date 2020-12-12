@@ -30,6 +30,7 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
@@ -1517,20 +1518,47 @@ class RestAPI():
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _get_eth2_stake(self) -> Dict[str, Any]:
+    def _get_eth2_stake_deposits(self) -> Dict[str, Any]:
+        try:
+            result = self.rotkehlchen.chain_manager.get_eth2_staking_deposits()
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        return {'result': process_result_list([x._asdict() for x in result]), 'message': ''}
+
+    @require_premium_user(active_check=False)
+    def get_eth2_stake_deposits(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_eth2_stake_deposits')
+
+        response = self._get_eth2_stake_deposits()
+        result = response['result']
+        msg = response['message']
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def _get_eth2_stake_details(self) -> Dict[str, Any]:
         try:
             result = self.rotkehlchen.chain_manager.get_eth2_staking_details()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        return {'result': process_result(result), 'message': ''}
+        current_usd_price = Inquirer().find_usd_price(A_ETH)
+        return {
+            'result': process_result_list([x.serialize(current_usd_price) for x in result]),
+            'message': '',
+        }
 
     @require_premium_user(active_check=False)
-    def get_eth2_stake(self, async_query: bool) -> Response:
+    def get_eth2_stake_details(self, async_query: bool) -> Response:
         if async_query:
-            return self._query_async(command='_get_eth2_stake')
+            return self._query_async(command='_get_eth2_stake_details')
 
-        response = self._get_eth2_stake()
+        response = self._get_eth2_stake_details()
         result = response['result']
         msg = response['message']
         if result is None:

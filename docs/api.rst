@@ -4318,7 +4318,7 @@ Getting Eth2 Staking details
         "message": "",
       }
 
-   :resjson object result: The result of the Eth2 staking details for all of the user's accounts. It's a list of details per validator. Important thing to note hereis that if all performance entries are 0 then this means that the validator is not active yet and is still waiting in the deposit queue.
+   :resjson result list: The result of the Eth2 staking details for all of the user's accounts. It's a list of details per validator. Important thing to note here is that if all performance entries are 0 then this means that the validator is not active yet and is still waiting in the deposit queue.
 
    :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
    :resjson index int: The Eth2 validator index.
@@ -4363,8 +4363,7 @@ Getting Eth2 Staking deposits
       Content-Type: application/json
 
       {
-        "result": {
-          "deposits": [{
+        "result": [{
               "from_address": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
               "pubkey": "0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b",
               "withdrawal_credentials": "0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499",
@@ -4385,13 +4384,12 @@ Getting Eth2 Staking deposits
               "tx_hash": "0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7",
               "log_index": 221
           }],
-        },
         "message": "",
       }
 
-   :resjson object result: The result of the Eth2 staking deposits for all of the user's accounts. Contains a list of the deposits.
+   :resjson result list: The Eth2 staking deposits for all of the user's accounts. Contains a list of the deposits.
 
-   :resjson from_address: The Eth1 address that made the Eth2 deposit.
+   :resjson from_address string: The Eth1 address that made the Eth2 deposit.
    :resjson pubkey string: The Eth2 public key for which the deposit was made
    :resjson withdrawal_credentials string: The Eth2 withdrawal credentials with which the deposit was made
    :resjson deposit_index int: The index slot for which the deposit was made. NOT the same as the validator index.
