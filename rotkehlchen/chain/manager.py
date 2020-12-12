@@ -28,7 +28,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.aave import Aave
 from rotkehlchen.chain.ethereum.compound import Compound
-from rotkehlchen.chain.ethereum.defi import DefiChad
+from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.eth2 import (
     get_eth2_balances,
@@ -702,11 +702,12 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 # Also modify and take into account defi balances
                 if append_or_remove == 'append':
                     balances = self.defichad.query_defi_balances([address])
-                    if len(balances[address]) != 0:
-                        self.defi_balances[address] = balances[address]
+                    address_balances = balances.get(address, [])
+                    if len(address_balances) != 0:
+                        self.defi_balances[address] = address_balances
                         self._add_account_defi_balances_to_token_and_totals(
                             account=address,
-                            balances=balances[address],
+                            balances=address_balances,
                         )
                 else:  # remove
                     self.defi_balances.pop(address, None)

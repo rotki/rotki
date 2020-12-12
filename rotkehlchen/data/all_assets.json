@@ -2944,6 +2944,15 @@
         "symbol": "CRT",
         "type": "tron token"
     },
+    "veCRV": {
+        "coingecko": "curve-dao-token",
+        "ethereum_address": "0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2",
+        "ethereum_token_decimals": 18,
+        "name": "Vote-escrowed CRV",
+        "started": 1597270820,
+        "symbol": "veCRV",
+        "type": "ethereum token"
+    },
     "CRV": {
         "coingecko": "curve-dao-token",
         "ethereum_address": "0xD533a949740bb3306d119CC777fa900bA034cd52",
