@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1834` Users will not have to close the add account dialog manually while the newly added account balances are queried.
 * :bug:`1671` Users will now see the amounts earned on aave lending aggregated per asset.
 * :bug:`1868` Binance SOL token is now properly mapped to Solana.
 * :bug:`1849` Binance queries should no longer randomly fail with invalid signature.
