@@ -248,7 +248,6 @@ def test_get_eth2_staking_deposits_onchain(  # pylint: disable=unused-argument
     deposits = _get_eth2_staking_deposits_onchain(
         ethereum=ethereum_manager,
         addresses=[ADDR1, ADDR2, ADDR3],
-        has_premium=True,
         msg_aggregator=MessagesAggregator(),
         from_ts=from_ts,
         to_ts=to_ts,
@@ -323,7 +322,6 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
-            has_premium=True,
             msg_aggregator=message_aggregator,
             database=database,
         )
@@ -337,7 +335,6 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
-            has_premium=True,
             msg_aggregator=message_aggregator,
             database=database,
         )
@@ -351,7 +348,6 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
-            has_premium=True,
             msg_aggregator=message_aggregator,
             database=database,
         )
@@ -359,7 +355,6 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         mock_get_eth2_staking_deposits_onchain.assert_called_with(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
-            has_premium=True,
             msg_aggregator=message_aggregator,
             from_ts=Timestamp(ts_now),
             to_ts=Timestamp(ts_now + REQUEST_DELTA_TS),

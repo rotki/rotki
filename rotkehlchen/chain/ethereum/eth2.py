@@ -9,7 +9,6 @@ from rotkehlchen.chain.ethereum.eth2_utils import (
 from rotkehlchen.chain.ethereum.utils import decode_event_data
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
@@ -118,7 +117,6 @@ class Eth2Deposit(NamedTuple):
 def _get_eth2_staking_deposits_onchain(
         ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
-        has_premium: bool,
         msg_aggregator: MessagesAggregator,
         from_ts: Timestamp,
         to_ts: Timestamp,
@@ -149,14 +147,12 @@ def _get_eth2_staking_deposits_onchain(
             if event['transactionHash'] == tx_hash:
                 decoded_data = decode_event_data(event['data'], EVENT_ABI)
                 amount = int.from_bytes(decoded_data[2], byteorder='little')
-                usd_price = ZERO
-                if has_premium:  # won't show this to non-premium so don't bother
-                    usd_price = query_usd_price_zero_if_error(
-                        asset=A_ETH,
-                        time=transaction.timestamp,
-                        location='Eth2 staking query',
-                        msg_aggregator=msg_aggregator,
-                    )
+                usd_price = query_usd_price_zero_if_error(
+                    asset=A_ETH,
+                    time=transaction.timestamp,
+                    location='Eth2 staking query',
+                    msg_aggregator=msg_aggregator,
+                )
                 normalized_amount = from_gwei(FVal(amount))
                 deposits.append(Eth2Deposit(
                     from_address=transaction.from_address,
@@ -176,7 +172,6 @@ def _get_eth2_staking_deposits_onchain(
 def get_eth2_staking_deposits(
         ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
-        has_premium: bool,
         msg_aggregator: MessagesAggregator,
         database: 'DBHandler',
 ) -> List[Eth2Deposit]:
@@ -213,7 +208,6 @@ def get_eth2_staking_deposits(
         deposits_ = _get_eth2_staking_deposits_onchain(
             ethereum=ethereum,
             addresses=new_addresses,
-            has_premium=has_premium,
             msg_aggregator=msg_aggregator,
             from_ts=ETH2_DEPLOYED_TS,
             to_ts=to_ts,
@@ -233,7 +227,6 @@ def get_eth2_staking_deposits(
         deposits_ = _get_eth2_staking_deposits_onchain(
             ethereum=ethereum,
             addresses=existing_addresses,
-            has_premium=has_premium,
             msg_aggregator=msg_aggregator,
             from_ts=Timestamp(min_from_ts),
             to_ts=to_ts,

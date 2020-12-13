@@ -1003,7 +1003,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
         deposits = get_eth2_staking_deposits(
             ethereum=self.ethereum,
             addresses=list(addresses),
-            has_premium=self.premium is not None,
             msg_aggregator=self.msg_aggregator,
             database=self.database,
         )
