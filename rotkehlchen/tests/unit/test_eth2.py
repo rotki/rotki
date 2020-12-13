@@ -248,7 +248,6 @@ def test_get_eth2_staking_deposits_onchain(  # pylint: disable=unused-argument
     deposits = _get_eth2_staking_deposits_onchain(
         ethereum=ethereum_manager,
         addresses=[ADDR1, ADDR2, ADDR3],
-        has_premium=True,
         msg_aggregator=MessagesAggregator(),
         from_ts=from_ts,
         to_ts=to_ts,
@@ -323,7 +322,6 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
-            has_premium=True,
             msg_aggregator=message_aggregator,
             database=database,
         )
@@ -337,7 +335,6 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
-            has_premium=True,
             msg_aggregator=message_aggregator,
             database=database,
         )
@@ -351,7 +348,6 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         deposit_results_onchain = get_eth2_staking_deposits(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
-            has_premium=True,
             msg_aggregator=message_aggregator,
             database=database,
         )
@@ -359,7 +355,6 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         mock_get_eth2_staking_deposits_onchain.assert_called_with(
             ethereum=ethereum_manager,
             addresses=[ADDR1],
-            has_premium=True,
             msg_aggregator=message_aggregator,
             from_ts=Timestamp(ts_now),
             to_ts=Timestamp(ts_now + REQUEST_DELTA_TS),
@@ -446,27 +441,8 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # py
 
     Test for: https://github.com/rotki/rotki/issues/1888
     """
-    deposits = [Eth2Deposit(
-        from_address=ADDR1,
-        pubkey='0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
-        withdrawal_credentials='foo',
-        value=Balance(FVal('32'), FVal('32')),
-        deposit_index=1,
-        tx_hash='0xf00',
-        log_index=1,
-        timestamp=1,
-    ), Eth2Deposit(
-        from_address=ADDR1,
-        pubkey='0xa016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
-        withdrawal_credentials='foo',
-        value=Balance(FVal('32'), FVal('32')),
-        deposit_index=1,
-        tx_hash='0xf00',
-        log_index=2,
-        timestamp=2,
-    )]
     with _create_beacon_mock(beaconchain):
-        details = get_eth2_details(beaconchain, deposits)
+        details = get_eth2_details(beaconchain=beaconchain, addresses=[ADDR1])
 
     expected_details = [
         ValidatorDetails(

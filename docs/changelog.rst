@@ -9,6 +9,7 @@ Changelog
 * :feature:`1810` Users can now set the default timeframe for the net worth graph. The selected timeframe now persist when navigating from and to the dashboard.
 * :feature:`436` Rotki now supports Bitstamp. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`1611` Rotki can now import data and download the tax report csv when running in the browser.
+* :feature:`1851` Eth2 deposits will now be queried separately from Eth2 staking details in the Eth2 staking view. As a result the loading of the staking view for Eth2 is faster. Also usd_value should now properly appear with the historical ETH value for each deposit.
 * :feature:`1413` Users can now refresh their manual balances from the dashboard.
 * :feature:`176` Add an accounting setting to make asset movements fees (deposits/withdrawals to/from exchanges) inclusion in the profit loss report configurable.
 * :feature:`1840` Better handling double crypto.com entries (dust_conversion, swap, ...) from csv export. Also crypto.com imported trades and asset movements now appear in the history UI component

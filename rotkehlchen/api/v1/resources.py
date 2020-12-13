@@ -872,13 +872,22 @@ class DataImportResource(BaseResource):
         return self.rest_api.import_data_from_file(source=(args['source']), file=(args['file']))
 
 
-class Eth2StakeResource(BaseResource):
+class Eth2StakeDepositsResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_eth2_stake(async_query)
+        return self.rest_api.get_eth2_stake_deposits(async_query)
+
+
+class Eth2StakeDetailsResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_eth2_stake_details(async_query)
 
 
 class DefiBalancesResource(BaseResource):

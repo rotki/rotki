@@ -4263,9 +4263,9 @@ Getting yearn finance vaults historical data
 Getting Eth2 Staking details
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH2/stake
+.. http:get:: /api/(version)/blockchains/ETH2/stake/details
 
-   Doing a GET on the ETH2 stake endoint will return detailed information about your ETH2 staking activity.
+   Doing a GET on the ETH2 stake details endpoint will return detailed information about your ETH2 staking activity.
 
    .. note::
       This endpoint is only available for premium users
@@ -4277,7 +4277,7 @@ Getting Eth2 Staking details
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH2/stake HTTP/1.1
+      GET /api/1/blockchains/ETH2/stake/details HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -4290,8 +4290,80 @@ Getting Eth2 Staking details
       Content-Type: application/json
 
       {
-        "result": {
-          "deposits": [{
+        "result": [{
+              "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
+              "index": 9,
+              "balance": {"amount": "32.101", "usd_value": "11399"},
+              "performance_1d": {"amount": "0.1", "usd_value": "100"},
+              "performance_1w": {"amount": "0.7", "usd_value": "700"},
+              "performance_1m": {"amount": "3", "usd_value": "3000"},
+              "performance_1y": {"amount": "36.5", "usd_value": "36500"}
+          }, {
+              "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
+              "index": 10,
+              "balance": {"amount": "32.101", "usd_value": "11399"},
+              "performance_1d": {"amount": "0.1", "usd_value": "100"},
+              "performance_1w": {"amount": "0.7", "usd_value": "700"},
+              "performance_1m": {"amount": "3", "usd_value": "3000"},
+              "performance_1y": {"amount": "36.5", "usd_value": "36500"}
+	  }, {
+              "eth1_depositor": "0xaee017635291ea8E3C70FeAC5B86e1d3B0e23341",
+              "index": 155,
+              "balance": {"amount": "32", "usd_value": "19000"},
+              "performance_1d": {"amount": "0", "usd_value": "0"},
+              "performance_1w": {"amount": "0", "usd_value": "0"},
+              "performance_1m": {"amount": "0", "usd_value": "0"},
+              "performance_1y": {"amount": "0", "usd_value": "0"}
+	  }],
+        "message": "",
+      }
+
+   :resjson result list: The result of the Eth2 staking details for all of the user's accounts. It's a list of details per validator. Important thing to note here is that if all performance entries are 0 then this means that the validator is not active yet and is still waiting in the deposit queue.
+
+   :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
+   :resjson index int: The Eth2 validator index.
+   :resjson balance object: The balance in ETH of the validator and its usd value
+   :resjson performance_1d object: How much has the validator earned in ETH (and USD equivalent value) in the past day.
+   :resjson performance_1w object: How much has the validator earned in ETH (and USD equivalent value) in the past week.
+   :resjson performance_1m object: How much has the validator earned in ETH (and USD equivalent value) in the past month.
+   :resjson performance_1y object: How much has the validator earned in ETH (and USD equivalent value) in the past year.
+
+   :statuscode 200: Eth2 staking details succesfully queried
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+Getting Eth2 Staking deposits
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH2/stake/deposits
+
+   Doing a GET on the ETH2 stake deposits endpoint will return detailed information about your ETH2 staking activity.
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH2/stake/deposits HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": [{
               "from_address": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
               "pubkey": "0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b",
               "withdrawal_credentials": "0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499",
@@ -4312,30 +4384,19 @@ Getting Eth2 Staking details
               "tx_hash": "0x6905f4d1843fb8c003c1fbbc2c8e6c5f9792f4f44ddb1122553412ee0b128da7",
               "log_index": 221
           }],
-          "details": [{
-              "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
-              "index": 9,
-              "balance": {"amount": "32.101", "usd_value": "11399"},
-              "performance_1d": {"amount": "0.1", "usd_value": "100"},
-              "performance_1w": {"amount": "0.7", "usd_value": "700"},
-              "performance_1m": {"amount": "3", "usd_value": "3000"},
-              "performance_1y": {"amount": "36.5", "usd_value": "36500"}
-          }]
-        },
         "message": "",
       }
 
-   :resjson object result: The result of the Eth2 staking details for all of the user's accounts. Contains two attributes. The deposits and the totals
+   :resjson result list: The Eth2 staking deposits for all of the user's accounts. Contains a list of the deposits.
 
-   :resjson from_address: The Eth1 address that made the Eth2 deposit.
+   :resjson from_address string: The Eth1 address that made the Eth2 deposit.
    :resjson pubkey string: The Eth2 public key for which the deposit was made
    :resjson withdrawal_credentials string: The Eth2 withdrawal credentials with which the deposit was made
    :resjson deposit_index int: The index slot for which the deposit was made. NOT the same as the validator index.
    :resjson tx_hash str: The Eth1 transaction hash in which the deposit was made.
    :resjson log_index int: The log index of the deposit
-   :resjson object details: A list of details per validator index. The performance in the last day, week, month, year, the validator index, the eth1 address that deposited and the current balance.
 
-   :statuscode 200: Eth2 staking details succesfully queried
+   :statuscode 200: Eth2 staking deposits succesfully queried
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.

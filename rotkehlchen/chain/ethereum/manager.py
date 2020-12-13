@@ -20,6 +20,7 @@ from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
+from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
@@ -82,7 +83,17 @@ def _query_web3_get_logs(
     until_block = web3.eth.blockNumber if to_block == 'latest' else to_block
     events: List[Dict[str, Any]] = []
     start_block = from_block
-    block_range = WEB3_LOGQUERY_BLOCK_RANGE
+    # we know that in most of its early life the Eth2 contract address returns a
+    # a lot of results. So limit the query range to not hit the infura limits every time
+    # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
+    infura_eth2_log_query = (
+        'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
+        contract_address == ETH2_DEPOSIT.address
+    )
+    block_range = initial_block_range = WEB3_LOGQUERY_BLOCK_RANGE
+    if infura_eth2_log_query:
+        block_range = initial_block_range = 75000
+
     while start_block <= until_block:
         filter_args['fromBlock'] = start_block
         end_block = min(start_block + block_range, until_block)
@@ -128,7 +139,7 @@ def _query_web3_get_logs(
         start_block = end_block + 1
         events.extend(new_events_web3)
         # end of the loop, end of 1 query. Reset the block range to max
-        block_range = WEB3_LOGQUERY_BLOCK_RANGE
+        block_range = initial_block_range
 
     return events
 

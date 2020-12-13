@@ -27,6 +27,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 )
 from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.user_messages import MessagesAggregator
@@ -1125,7 +1126,13 @@ def test_upgrade_db_20_to_21(user_data_dir):
     assert db.get_version() == 21
 
 
-def test_upgrade_db_21_to_22(user_data_dir):
+@pytest.mark.parametrize('mocked_price_queries', [{
+    'ETH': {
+        'USD': {
+            1606262400: FVal(100),
+            1607816130: FVal(200),
+        }}}])
+def test_upgrade_db_21_to_22(user_data_dir, price_historian):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 21 to version 22.
 
     Upgrade the eth2 deposits table to rename validator_index to deposit_index
@@ -1147,26 +1154,29 @@ def test_upgrade_db_21_to_22(user_data_dir):
         'timestamp, '
         'pubkey, '
         'withdrawal_credentials, '
-        'value, '
+        'amount, '
+        'usd_value, '
         'deposit_index from eth2_deposits;',
     )
     expected_entries = [(
         '0x0',
         1,
         '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
-        15,
+        1606262400,
         '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
         '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
         '32',
+        '3200',
         42,
     ), (
         '0x0',
         5,
         '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
-        15,
+        1607816130,
         '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
         '0x7f5D54EEb6411955992454B53C19c8426Fc3649d',
         '32',
+        '6400',
         1337,
     )]
     length = 0

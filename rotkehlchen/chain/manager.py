@@ -31,6 +31,8 @@ from rotkehlchen.chain.ethereum.compound import Compound
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.eth2 import (
+    Eth2Deposit,
+    ValidatorDetails,
     get_eth2_balances,
     get_eth2_details,
     get_eth2_staking_deposits,
@@ -77,6 +79,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
+ETH2_DETAILS_REQUERY_SECONDS = 600
 
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
@@ -204,6 +207,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
+
+        self.eth2_details_last_query_ts = Timestamp(0)
+        self.eth2_details: List[ValidatorDetails] = []
+
         self.defi_lock = Semaphore()
         self.eth2_lock = Semaphore()
 
@@ -986,19 +993,25 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.balances.eth[address].assets[A_ETH2] = balance
             self.totals.assets[A_ETH2] += balance
 
-    def get_eth2_staking_details(self) -> Dict[str, Any]:
-        with self.eth2_lock:
-            deposits = get_eth2_staking_deposits(
-                ethereum=self.ethereum,
-                addresses=self.accounts.eth,
-                has_premium=self.premium is not None,
-                msg_aggregator=self.msg_aggregator,
-                database=self.database,
-            )
+    @protect_with_lock()
+    @cache_response_timewise()
+    def get_eth2_staking_deposits(self) -> List[Eth2Deposit]:
+        # Get the details first, to see which of the user's addresses have deposits
+        details = self.get_eth2_staking_details()
+        addresses = {x.eth1_depositor for x in details}
+        # now narrow down the deposits query to save time
+        deposits = get_eth2_staking_deposits(
+            ethereum=self.ethereum,
+            addresses=list(addresses),
+            msg_aggregator=self.msg_aggregator,
+            database=self.database,
+        )
+        return deposits
 
-        current_usd_price = Inquirer().find_usd_price(A_ETH)
-        details = get_eth2_details(beaconchain=self.beaconchain, deposits=deposits)
-        return {
-            'deposits': [x._asdict() for x in deposits],
-            'details': [x.serialize(current_usd_price) for x in details],
-        }
+    @protect_with_lock()
+    @cache_response_timewise()
+    def get_eth2_staking_details(self) -> List[ValidatorDetails]:
+        return get_eth2_details(
+            beaconchain=self.beaconchain,
+            addresses=self.accounts.eth,
+        )

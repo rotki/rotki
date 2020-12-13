@@ -9,7 +9,6 @@ from rotkehlchen.chain.ethereum.eth2_utils import (
 from rotkehlchen.chain.ethereum.utils import decode_event_data
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
@@ -39,7 +38,8 @@ Eth2DepositDBTuple = (
         int,  # timestamp
         str,  # pubkey
         str,  # withdrawal_credentials
-        str,  # value
+        str,  # amount
+        str,  # usd_value
         int,  # validator_index
     ]
 )
@@ -83,8 +83,9 @@ class Eth2Deposit(NamedTuple):
         3 - timestamp
         4 - pubkey
         5 - withdrawal_credentials
-        6 - value
-        7 - deposit_index
+        6 - amount
+        7 - usd_value
+        8 - deposit_index
         """
         return cls(
             tx_hash=deposit_tuple[0],
@@ -93,8 +94,8 @@ class Eth2Deposit(NamedTuple):
             timestamp=Timestamp(int(deposit_tuple[3])),
             pubkey=deposit_tuple[4],
             withdrawal_credentials=deposit_tuple[5],
-            value=Balance(amount=FVal(deposit_tuple[6])),
-            deposit_index=int(deposit_tuple[7]),
+            value=Balance(amount=FVal(deposit_tuple[6]), usd_value=FVal(deposit_tuple[7])),
+            deposit_index=int(deposit_tuple[8]),
         )
 
     def to_db_tuple(self) -> Eth2DepositDBTuple:
@@ -108,6 +109,7 @@ class Eth2Deposit(NamedTuple):
             self.pubkey,
             self.withdrawal_credentials,
             str(self.value.amount),
+            str(self.value.usd_value),
             self.deposit_index,
         )
 
@@ -115,7 +117,6 @@ class Eth2Deposit(NamedTuple):
 def _get_eth2_staking_deposits_onchain(
         ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
-        has_premium: bool,
         msg_aggregator: MessagesAggregator,
         from_ts: Timestamp,
         to_ts: Timestamp,
@@ -146,14 +147,12 @@ def _get_eth2_staking_deposits_onchain(
             if event['transactionHash'] == tx_hash:
                 decoded_data = decode_event_data(event['data'], EVENT_ABI)
                 amount = int.from_bytes(decoded_data[2], byteorder='little')
-                usd_price = ZERO
-                if has_premium:  # won't show this to non-premium so don't bother
-                    usd_price = query_usd_price_zero_if_error(
-                        asset=A_ETH,
-                        time=transaction.timestamp,
-                        location='Eth2 staking query',
-                        msg_aggregator=msg_aggregator,
-                    )
+                usd_price = query_usd_price_zero_if_error(
+                    asset=A_ETH,
+                    time=transaction.timestamp,
+                    location='Eth2 staking query',
+                    msg_aggregator=msg_aggregator,
+                )
                 normalized_amount = from_gwei(FVal(amount))
                 deposits.append(Eth2Deposit(
                     from_address=transaction.from_address,
@@ -173,7 +172,6 @@ def _get_eth2_staking_deposits_onchain(
 def get_eth2_staking_deposits(
         ethereum: 'EthereumManager',
         addresses: List[ChecksumEthAddress],
-        has_premium: bool,
         msg_aggregator: MessagesAggregator,
         database: 'DBHandler',
 ) -> List[Eth2Deposit]:
@@ -210,7 +208,6 @@ def get_eth2_staking_deposits(
         deposits_ = _get_eth2_staking_deposits_onchain(
             ethereum=ethereum,
             addresses=new_addresses,
-            has_premium=has_premium,
             msg_aggregator=msg_aggregator,
             from_ts=ETH2_DEPLOYED_TS,
             to_ts=to_ts,
@@ -230,7 +227,6 @@ def get_eth2_staking_deposits(
         deposits_ = _get_eth2_staking_deposits_onchain(
             ethereum=ethereum,
             addresses=existing_addresses,
-            has_premium=has_premium,
             msg_aggregator=msg_aggregator,
             from_ts=Timestamp(min_from_ts),
             to_ts=to_ts,
@@ -298,29 +294,14 @@ def get_eth2_balances(
 
 def get_eth2_details(
         beaconchain: 'BeaconChain',
-        deposits: List[Eth2Deposit],
+        addresses: List[ChecksumEthAddress],
 ) -> List[ValidatorDetails]:
-    """Goes through the list of all of our deposits and gets all validator indices,
-    calculates balances and returns performance and balance per address and per validator.
-
-    Then with that info queries the beaconchai.in API. Saves some calls to the API
-    if we already have the list of deposits.
+    """Go through the list of eth1 addresses and find all eth2 validators associated
+    with them along with their details.
 
     May raise RemoteError due to beaconcha.in API"""
-    addresses = set()
     indices = []
     index_to_address = {}
-    # TODO: From the deposits we only get the pubkey, not the validator index. We
-    # can query performance by pubkey but beaconcha.in does not return validators
-    # that are not active yet and only returns index and not pubkey in the response.
-    # So there is no way to match the pubkeys given as arguments
-    # to the returned validator performance entries
-    # --> Make an issue at beaconcha.in for this
-    #
-    # Until then just get all addresses of the user that deposited
-    for deposit in deposits:
-        addresses.add(deposit.from_address)
-
     # and for each address get the validator info (to get the index) -- this could be avoided
     for address in addresses:
         validators = beaconchain.get_eth1_address_validators(address)

@@ -374,7 +374,8 @@ CREATE TABLE IF NOT EXISTS eth2_deposits (
     timestamp INTEGER NOT NULL,
     pubkey TEXT NOT NULL,
     withdrawal_credentials TEXT NOT NULL,
-    value TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
     deposit_index INTEGER NOT NULL,
     PRIMARY KEY (tx_hash, log_index)
 );
