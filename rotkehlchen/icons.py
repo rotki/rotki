@@ -1,7 +1,7 @@
 import itertools
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Set
 
 import gevent
 import requests
@@ -31,7 +31,7 @@ class IconManager():
         self.icons_dir = data_dir / 'icons'
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
-        self.failed_assets = set()
+        self.failed_assets: Set[Asset] = set()
 
     def iconfile_path(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Path:
         return self.icons_dir / f'{asset.identifier}_{size}.png'

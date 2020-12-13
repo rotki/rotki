@@ -2346,10 +2346,11 @@ class DBHandler:
                 timestamp,
                 pubkey,
                 withdrawal_credentials,
-                value,
+                amount,
+                usd_value,
                 deposit_index
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
         cursor = self.conn.cursor()
@@ -2392,7 +2393,8 @@ class DBHandler:
             'timestamp, '
             'pubkey, '
             'withdrawal_credentials, '
-            'value, '
+            'amount, '
+            'usd_value, '
             'deposit_index '
             'FROM eth2_deposits '
         )

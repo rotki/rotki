@@ -39,7 +39,8 @@ Eth2DepositDBTuple = (
         int,  # timestamp
         str,  # pubkey
         str,  # withdrawal_credentials
-        str,  # value
+        str,  # amount
+        str,  # usd_value
         int,  # validator_index
     ]
 )
@@ -83,8 +84,9 @@ class Eth2Deposit(NamedTuple):
         3 - timestamp
         4 - pubkey
         5 - withdrawal_credentials
-        6 - value
-        7 - deposit_index
+        6 - amount
+        7 - usd_value
+        8 - deposit_index
         """
         return cls(
             tx_hash=deposit_tuple[0],
@@ -93,8 +95,8 @@ class Eth2Deposit(NamedTuple):
             timestamp=Timestamp(int(deposit_tuple[3])),
             pubkey=deposit_tuple[4],
             withdrawal_credentials=deposit_tuple[5],
-            value=Balance(amount=FVal(deposit_tuple[6])),
-            deposit_index=int(deposit_tuple[7]),
+            value=Balance(amount=FVal(deposit_tuple[6]), usd_value=FVal(deposit_tuple[7])),
+            deposit_index=int(deposit_tuple[8]),
         )
 
     def to_db_tuple(self) -> Eth2DepositDBTuple:
@@ -108,6 +110,7 @@ class Eth2Deposit(NamedTuple):
             self.pubkey,
             self.withdrawal_credentials,
             str(self.value.amount),
+            str(self.value.usd_value),
             self.deposit_index,
         )
 

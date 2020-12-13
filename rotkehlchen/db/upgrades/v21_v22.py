@@ -1,5 +1,9 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.fval import FVal
+from rotkehlchen.history.price import query_usd_price_zero_if_error
+
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -30,8 +34,8 @@ def upgrade_v21_to_v22(db: 'DBHandler') -> None:
                 'timestamp, '
                 'pubkey, '
                 'withdrawal_credentials, '
-                'value, '
-                'validator_index from eth2_deposits;',
+                'validator_index, '
+                'value from eth2_deposits;',
             )
             for q in query:
                 entries.append(q)
@@ -46,12 +50,23 @@ def upgrade_v21_to_v22(db: 'DBHandler') -> None:
     timestamp INTEGER NOT NULL,
     pubkey TEXT NOT NULL,
     withdrawal_credentials TEXT NOT NULL,
-    value TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
     deposit_index INTEGER NOT NULL,
     PRIMARY KEY (tx_hash, log_index)
 );""")
 
     # and finally put all data to the new table
+    new_entries = []
+    for e in entries:
+        usd_price = query_usd_price_zero_if_error(
+            asset=A_ETH,
+            time=e[3],
+            location='v21 -> v22 DB upgrade',
+            msg_aggregator=db.msg_aggregator,
+        )
+        new_entries.append(list(e) + [str(FVal(e[7]) * usd_price)])
+
     query = ("""
         INSERT INTO eth2_deposits (
         tx_hash,
@@ -60,9 +75,10 @@ def upgrade_v21_to_v22(db: 'DBHandler') -> None:
         timestamp,
         pubkey,
         withdrawal_credentials,
-        value,
-        deposit_index
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        deposit_index,
+        amount,
+        usd_value
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """)
-    cursor.executemany(query, entries)
+    cursor.executemany(query, new_entries)
     db.conn.commit()
