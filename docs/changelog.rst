@@ -34,6 +34,7 @@ Changelog
   - `Panvala pan token (PAN) <https://www.coingecko.com/en/coins/panvala-pan>`__
   - `Cover Protocol (COVER) <https://www.coingecko.com/en/coins/cover-protocol>`__
   - `dForce token (DF) <https://www.coingecko.com/en/coins/dforce-token>`__
+  - `Skale token (SKL) <https://www.coingecko.com/en/coins/skale>`__
 
 * :release:`1.9.2 <2020-12-12>`
 * :bug:`1896` Provide a temporary fix for the breaking change that the Graph introduced into their schemas that breaks all current python implementations. Users should no longer see _SubgraphErrorPolicy_! errors.

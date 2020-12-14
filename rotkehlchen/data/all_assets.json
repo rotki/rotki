@@ -10245,6 +10245,15 @@
         "symbol": "SKIN",
         "type": "ethereum token"
     },
+    "SKL": {
+        "coingecko": "skale",
+        "ethereum_address": "0x00c83aeCC790e8a4453e5dD3B0B4b3680501a7A7",
+        "ethereum_token_decimals": 18,
+        "name": "SKALE",
+        "started": 1593467066,
+        "symbol": "SKL",
+        "type": "ethereum token"
+    },
     "SKM": {
         "coingecko": "skrumble-network",
         "ethereum_address": "0xd99b8A7fA48E25Cce83B81812220A3E03Bf64e5f",
