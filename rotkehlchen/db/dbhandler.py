@@ -835,7 +835,7 @@ class DBHandler:
         if bond_id is not None:
             filters.append(f'bond_id="{bond_id}"')
         if event_type is not None:
-            filters.append(f'type="{event_type}"')
+            filters.append(f'type="{str(event_type)}"')
 
         if filters:
             query += 'WHERE '
