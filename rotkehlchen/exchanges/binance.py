@@ -68,6 +68,9 @@ WAPI_ENDPOINTS = (
 
 SAPI_ENDPOINTS = (
     'futures/loan/wallet',
+    'lending/daily/token/position',
+    'lending/daily/product/list',
+    'lending/union/account',
 )
 
 RETRY_AFTER_LIMIT = 60
@@ -397,6 +400,59 @@ class Binance(ExchangeInterface):
 
         return balances
 
+    def _query_lending_balances(self, balances: Dict) -> Dict:
+        data = self.api_query_dict('lending/union/account')
+        positions = data.get('positionAmountVos', None)
+        if positions is None:
+            raise RemoteError(
+                f'Could not find key positionAmountVos in lending account data '
+                f'{data} returned by binance',
+            )
+
+        for entry in positions:
+            try:
+                asset = asset_from_binance(entry['asset'])
+                amount = FVal(entry['amount'])
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unsupported binance asset {e.asset_name}. '
+                    f' Ignoring its lending balance query.',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unknown binance asset {e.asset_name}. '
+                    f' Ignoring its lending balance query.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    f'Error at deserializing binance asset. {msg}.'
+                    f' Ignoring its lending balance query.',
+                )
+                continue
+
+            try:
+                usd_price = Inquirer().find_usd_price(asset)
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Error processing binance balance entry due to inability to '
+                    f'query USD price: {str(e)}. Skipping balance entry',
+                )
+                continue
+
+            balance = Balance(amount=amount, usd_value=amount * usd_price)
+            if asset not in balances:
+                balances[asset] = balance.to_dict()
+            else:
+                balances[asset]['amount'] += balance.amount
+                balances[asset]['usd_value'] += balance.usd_value
+
+        return balances
+
     def _query_futures_balances(self, balances: Dict) -> Dict:
         futures_response = self.api_query_dict('futures/loan/wallet')
         try:
@@ -455,12 +511,13 @@ class Binance(ExchangeInterface):
         try:
             returned_balances = self._query_spot_balances(returned_balances)
             returned_balances = self._query_futures_balances(returned_balances)
+            returned_balances = self._query_lending_balances(returned_balances)
         except RemoteError as e:
             msg = (
                 'Binance account API request failed. Could not reach binance due '
                 'to {}'.format(e)
             )
-            log.error(msg)
+            self.msg_aggregator.add_error(msg)
             return None, msg
 
         log.debug(

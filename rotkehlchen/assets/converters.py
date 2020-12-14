@@ -503,6 +503,11 @@ def asset_from_bittrex(bittrex_name: str) -> Asset:
 
 
 def asset_from_binance(binance_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
     if not isinstance(binance_name, str):
         raise DeserializationError(f'Got non-string type {type(binance_name)} for binance asset')
 
