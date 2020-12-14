@@ -8616,6 +8616,16 @@
         "symbol": "PAL",
         "type": "ethereum token"
     },
+    "PAN": {
+        "coingecko": "panvala-pan",
+        "cryptocompare": "",
+        "ethereum_address": "0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44",
+        "ethereum_token_decimals": 18,
+        "name": "Panvala pan",
+        "started": 1566378597,
+        "symbol": "PAN",
+        "type": "ethereum token"
+    },
     "PARETO": {
         "coingecko": "pareto-network",
         "ethereum_address": "0xea5f88E54d982Cbb0c441cde4E79bC305e5b43Bc",

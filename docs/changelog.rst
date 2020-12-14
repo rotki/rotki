@@ -28,15 +28,13 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Vote-escrowed CRV (veCRV) <https://etherscan.io/address/0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2>`__
-
-* :release:`1.9.2 <2020-12-12>`
-* :bug:`1896` Provide a temporary fix for the breaking change that the Graph introduced into their schemas that breaks all current python implementations. Users should no longer see _SubgraphErrorPolicy_! errors.
-
-* :feature:`-` Added support for the following tokens:
-
   - `Index cooperative (INDEX) <https://www.coingecko.com/en/coins/index-cooperative>`__
   - `Amp (AMP) <https://www.coingecko.com/en/coins/amp>`__
   - `Harvest finance GRAIN token (GRAIN) <https://www.coingecko.com/en/coins/grain-token>`__
+  - `Panvala pan token (PAN) <https://www.coingecko.com/en/coins/panvala-pan>`__
+
+* :release:`1.9.2 <2020-12-12>`
+* :bug:`1896` Provide a temporary fix for the breaking change that the Graph introduced into their schemas that breaks all current python implementations. Users should no longer see _SubgraphErrorPolicy_! errors.
 
 * :release:`1.9.1 <2020-11-29>`
 * :feature:`1716` Rotki can now also query data from the following ethereum open nodes:
