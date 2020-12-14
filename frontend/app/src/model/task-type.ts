@@ -24,5 +24,6 @@ export enum TaskType {
   DEFI_UNISWAP_BALANCES = 'uniswap_balances',
   DEFI_UNISWAP_TRADES = 'uniswap_trades',
   STAKING_ETH2 = 'staking_eth2',
+  STAKING_ETH2_DEPOSITS = 'staking_eth2_deposits',
   DEFI_UNISWAP_EVENTS = 'uniswap_events'
 }

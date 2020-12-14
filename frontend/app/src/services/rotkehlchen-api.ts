@@ -821,9 +821,21 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async eth2Staking(): Promise<PendingTask> {
+  async eth2StakingDetails(): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<PendingTask>>('/blockchains/ETH2/stake', {
+      .get<ActionResult<PendingTask>>('/blockchains/ETH2/stake/details', {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true
+        }),
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async eth2StakingDeposits(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/blockchains/ETH2/stake/deposits', {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true
         }),

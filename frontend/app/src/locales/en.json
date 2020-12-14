@@ -616,11 +616,20 @@
     "staking": {
       "eth2": {
         "task": {
-          "title": "Querying Eth2 Staking details"
+          "title": "Querying Eth2 staking details"
         },
         "error": {
-          "title": "Querying the ETh2 staking details",
-          "description": "Failed to query the Eth2 Staking details: {error}"
+          "title": "Querying the Eth2 staking details",
+          "description": "Failed to query the Eth2 staking details: {error}"
+        }
+      },
+      "eth2_deposits": {
+        "task": {
+          "title": "Querying Eth2 staking deposits"
+        },
+        "error": {
+          "title": "Querying the Eth2 staking deposits",
+          "description": "Failed to query the Eth2 staking deposits: {error}"
         }
       }
     }
