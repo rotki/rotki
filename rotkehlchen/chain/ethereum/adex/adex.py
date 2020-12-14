@@ -96,7 +96,6 @@ class Adex(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
-        self.trades_lock = Semaphore()
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         try:
