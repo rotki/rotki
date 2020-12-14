@@ -15,6 +15,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
+    DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
     DEFAULT_ACTIVE_MODULES,
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
@@ -31,7 +32,6 @@ from rotkehlchen.db.settings import (
     ROTKEHLCHEN_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
-    DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
 )
 from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
 from rotkehlchen.errors import AuthenticationError, InputError
@@ -96,6 +96,7 @@ TABLES_AT_INIT = [
     'amm_swaps',
     'uniswap_events',
     'eth2_deposits',
+    'adex_events',
 ]
 
 
