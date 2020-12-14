@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
@@ -14,13 +15,15 @@ AdexEventDBTuple = (
         str,  # address
         str,  # identity_address
         int,  # timestamp
-        str,  # bond_id
         str,  # type
-        Optional[str],  # pool_id
-        Optional[str],  # amount
+        str,  # pool_id
+        str,  # amount
+        str,  # usd_value
+        Optional[str],  # bond_id
         Optional[int],  # nonce
         Optional[int],  # slashed_at
         Optional[int],  # unlock_at
+        Optional[str],  # channel_id
     ]
 )
 
@@ -30,6 +33,7 @@ class EventType(Enum):
     BOND = 1
     UNBOND = 2
     UNBOND_REQUEST = 3
+    CHANNEL_WITHDRAW = 4
 
     def __str__(self) -> str:
         if self == EventType.BOND:
@@ -38,6 +42,8 @@ class EventType(Enum):
             return 'unbond'
         if self == EventType.UNBOND_REQUEST:
             return 'unbond_request'
+        if self == EventType.CHANNEL_WITHDRAW:
+            return 'channel_withdraw'
         raise AttributeError(f'Corrupt value {self} for EventType -- Should never happen')
 
     def pretty_name(self) -> str:
@@ -47,27 +53,34 @@ class EventType(Enum):
             return 'withdraw'
         if self == EventType.UNBOND_REQUEST:
             return 'withdraw request'
+        if self == EventType.CHANNEL_WITHDRAW:
+            return 'claim'
         raise AttributeError(f'Corrupt value {self} for EventType -- Should never happen')
 
 
-class Bond(NamedTuple):
+@dataclass(init=True, repr=True)
+class Bond:
     tx_hash: HexStr  # from bond.id
     address: ChecksumAddress
     identity_address: ChecksumAddress
     timestamp: Timestamp
     bond_id: HexStr
-    amount: FVal
     pool_id: HexStr
+    value: Balance
     nonce: int
     slashed_at: Timestamp  # from bond.slashedAtStart
 
     def serialize(self) -> Dict[str, Any]:
+        from .utils import POOL_ID_POOL_NAME
+
         return {
             'tx_hash': self.tx_hash,
             'identity_address': self.identity_address,
             'timestamp': self.timestamp,
             'bond_id': self.bond_id,
-            'amount': str(self.amount),
+            'pool_id': self.pool_id,
+            'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
+            'value': self.value.serialize(),
             'event_type': EventType.BOND.pretty_name(),
         }
 
@@ -77,29 +90,39 @@ class Bond(NamedTuple):
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
-            str(self.bond_id),
             str(EventType.BOND),
             str(self.pool_id),
-            str(self.amount),
+            str(self.value.amount),
+            str(self.value.usd_value),
+            str(self.bond_id),
             self.nonce,
             int(self.slashed_at),
             None,  # unlock_at
+            None,  # channel_id
         )
 
 
-class Unbond(NamedTuple):
+@dataclass(init=True, repr=True)
+class Unbond:
     tx_hash: HexStr  # from unbond.id
     address: ChecksumAddress
     identity_address: ChecksumAddress
     timestamp: Timestamp
     bond_id: HexStr
+    value: Balance  # from bond.amount
+    pool_id: HexStr = HexStr('')  # from bond.pool_id
 
     def serialize(self) -> Dict[str, Any]:
+        from .utils import POOL_ID_POOL_NAME
+
         return {
             'tx_hash': self.tx_hash,
             'identity_address': self.identity_address,
             'timestamp': self.timestamp,
             'bond_id': self.bond_id,
+            'pool_id': self.pool_id,
+            'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
+            'value': self.value.serialize(),
             'event_type': EventType.UNBOND.pretty_name(),
         }
 
@@ -109,30 +132,40 @@ class Unbond(NamedTuple):
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
-            str(self.bond_id),
             str(EventType.UNBOND),
-            None,  # pool_id
-            None,  # amount
+            str(self.pool_id),
+            str(self.value.amount),
+            str(self.value.usd_value),
+            str(self.bond_id),
             None,  # nonce
             None,  # slashed_at
             None,  # unlock_at
+            None,  # channel_id
         )
 
 
-class UnbondRequest(NamedTuple):
+@dataclass(init=True, repr=True)
+class UnbondRequest:
     tx_hash: HexStr  # from unbond.id
     address: ChecksumAddress
     identity_address: ChecksumAddress
     timestamp: Timestamp
     bond_id: HexStr
     unlock_at: Timestamp  # from unbondRequest.willUnlock
+    value: Balance  # from bond.amount
+    pool_id: HexStr = HexStr('')  # from bond.pool_id
 
     def serialize(self) -> Dict[str, Any]:
+        from .utils import POOL_ID_POOL_NAME
+
         return {
             'tx_hash': self.tx_hash,
             'identity_address': self.identity_address,
             'timestamp': self.timestamp,
             'bond_id': self.bond_id,
+            'pool_id': self.pool_id,
+            'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
+            'value': self.value.serialize(),
             'event_type': EventType.UNBOND_REQUEST.pretty_name(),
         }
 
@@ -142,13 +175,56 @@ class UnbondRequest(NamedTuple):
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
-            str(self.bond_id),
             str(EventType.UNBOND_REQUEST),
-            None,  # pool_id
-            None,  # amount
+            str(self.pool_id),
+            str(self.value.amount),
+            str(self.value.usd_value),
+            str(self.bond_id),
             None,  # nonce
             None,  # slashed_at
             int(self.unlock_at),
+            None,  # channel_id
+        )
+
+
+@dataclass(init=True, repr=True)
+class ChannelWithdraw:
+    tx_hash: HexStr  # from channelWithdraw.id
+    address: ChecksumAddress
+    identity_address: ChecksumAddress
+    timestamp: Timestamp
+    value: Balance
+    channel_id: HexStr
+    pool_id: HexStr
+
+    def serialize(self) -> Dict[str, Any]:
+        from .utils import POOL_ID_POOL_NAME
+
+        return {
+            'tx_hash': self.tx_hash,
+            'identity_address': self.identity_address,
+            'timestamp': self.timestamp,
+            'pool_id': self.pool_id,
+            'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
+            'value': self.value.serialize(),
+            'event_type': EventType.CHANNEL_WITHDRAW.pretty_name(),
+        }
+
+    def to_db_tuple(self) -> AdexEventDBTuple:
+        return (
+            str(self.tx_hash),
+            str(self.address),
+            str(self.identity_address),
+            int(self.timestamp),
+            str(EventType.CHANNEL_WITHDRAW),
+            str(self.pool_id),
+            str(self.value.amount),
+            str(self.value.usd_value),
+            None,  # bond_id
+            None,  # nonce
+            None,  # slashed_at
+            None,  # unlocked_at
+            str(self.channel_id),
         )
 
 
@@ -164,20 +240,29 @@ class ADXStakingEvents(NamedTuple):
     bonds: List[Bond]
     unbonds: List[Unbond]
     unbond_requests: List[UnbondRequest]
+    channel_withdraws: List[ChannelWithdraw]
+
+
+class UnclaimedReward(NamedTuple):
+    adx_amount: FVal
+    dai_amount: FVal
 
 
 class ADXStakingBalance(NamedTuple):
     pool_id: HexStr
     pool_name: Optional[str]
-    balance: Balance
-    address: ChecksumAddress  # From staking contract
+    adx_balance: Balance
+    adx_unclaimed_balance: Balance
+    dai_balance: Balance
+    contract_address: ChecksumAddress  # From staking contract
 
     def serialize(self) -> Dict[str, Any]:
         return {
             'pool_id': self.pool_id,
             'pool_name': self.pool_name,
-            'balance': self.balance.serialize(),
-            'address': self.address,
+            'adx_balance': self.adx_balance.serialize(),
+            'dai_balance': self.dai_balance.serialize(),
+            'contract_address': self.contract_address,
         }
 
 
@@ -188,34 +273,38 @@ class TomPoolIncentive(NamedTuple):
     apr: FVal  # from AdEx APY
 
 
-class ADXStakingStat(NamedTuple):
-    address: ChecksumAddress  # From staking contract
+class ADXStakingDetail(NamedTuple):
+    contract_address: ChecksumAddress  # From staking contract
     pool_id: HexStr
     pool_name: Optional[str]
     total_staked_amount: FVal
     apr: FVal
-    balance: Balance
+    adx_balance: Balance
+    dai_balance: Balance
+    profit_loss: Balance
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            'address': self.address,
+            'contract_address': self.contract_address,
             'pool_id': self.pool_id,
             'pool_name': self.pool_name,
             'total_staked_amount': str(self.total_staked_amount),
             'apr': self.apr.to_percentage(precision=2),
-            'balance': self.balance.serialize(),
+            'adx_balance': self.adx_balance.serialize(),
+            'dai_balance': self.dai_balance.serialize(),
+            'profit_loss': self.profit_loss.serialize(),
         }
 
 
 class ADXStakingHistory(NamedTuple):
     events: List[Union[Bond, Unbond, UnbondRequest]]
-    staking_stats: List[ADXStakingStat]
+    staking_details: List[ADXStakingDetail]
 
     def serialize(self) -> Dict[str, Any]:
         return {
             'events': [event.serialize() for event in self.events],
-            'staking_stats': [stat.serialize() for stat in self.staking_stats],
+            'staking_details': [detail.serialize() for detail in self.staking_details],
         }
 
 
-DeserializationMethod = Callable[..., Union[Bond, Unbond, UnbondRequest]]
+DeserializationMethod = Callable[..., Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]

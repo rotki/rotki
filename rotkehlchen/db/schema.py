@@ -387,13 +387,15 @@ CREATE TABLE IF NOT EXISTS adex_events (
     address VARCHAR[42] NOT NULL,
     identity_address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,
-    bond_id TEXT NOT NULL,
     type TEXT NOT NULL,
-    pool_id TEXT,
-    amount TEXT,
+    pool_id TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
+    bond_id TEXT,
     nonce INT,
     slashed_at INTEGER,
     unlock_at INTEGER,
+    channel_id TEXT,
     PRIMARY KEY (tx_hash, address, type)
 );
 """

@@ -1,9 +1,9 @@
-from typing import Union
+from typing import Union, cast
 
 from eth_utils.typing import HexStr
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.errors import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_address,
@@ -11,7 +11,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import Timestamp
 
-from .typing import AdexEventDBTuple, Bond, EventType, Unbond, UnbondRequest
+from .typing import AdexEventDBTuple, Bond, ChannelWithdraw, EventType, Unbond, UnbondRequest
 
 # The data below comes from:
 #
@@ -33,6 +33,7 @@ IDENTITY_PROXY_INIT_CODE = (
 STAKING_ADDR = '0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534'
 CREATE2_SALT = f'0x{bytearray(32).hex()}'
 ADX_AMOUNT_MANTISSA = 10**18
+DAI_AMOUNT_MANTISSA = 10**18
 
 # Pools data
 TOM_POOL_ID = HexStr('0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28')
@@ -42,15 +43,23 @@ POOL_ID_POOL_NAME = {
 
 # Tom pool fee rewards API constants
 TOM_POOL_FEE_REWARDS_API_URL = 'https://tom.adex.network/fee-rewards'
-SECONDS_PER_YEAR = FVal('31536000')
 PERIOD_END_AT_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 ADEX_EVENTS_PREFIX = 'adex_events'
 
+# Defines the expected order of the events given the same timestamp and sorting
+# in ascending mode
+EVENT_TYPE_ORDER_IN_ASC = {
+    Bond: 3,
+    ChannelWithdraw: 1,
+    Unbond: 2,
+    UnbondRequest: 4,
+}
+
 
 def deserialize_adex_event_from_db(
         event_tuple: AdexEventDBTuple,
-) -> Union[Bond, Unbond, UnbondRequest]:
+) -> Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]:
     """Turns a tuple read from DB into an appropriate AdEx event.
     May raise a DeserializationError if something is wrong with the DB data.
 
@@ -60,15 +69,17 @@ def deserialize_adex_event_from_db(
     1 - address
     2 - identity_address
     3 - timestamp
-    4 - bond_id
-    5 - type
-    6 - pool_id
-    7 - amount
-    8 - nonce
-    9 - slashed_at
-    10 - unlock_at
+    4 - type
+    5 - pool_id
+    6 - amount
+    7 - usd_value
+    8 - bond_id
+    9 - nonce
+    10 - slashed_at
+    11 - unlock_at
+    12 - channel_id
     """
-    db_event_type = event_tuple[5]
+    db_event_type = event_tuple[4]
     if db_event_type not in {str(event_type) for event_type in EventType}:
         raise DeserializationError(
             f'Failed to deserialize event type. Unknown event: {db_event_type}.',
@@ -78,53 +89,78 @@ def deserialize_adex_event_from_db(
     address = deserialize_ethereum_address(event_tuple[1])
     identity_address = deserialize_ethereum_address(event_tuple[2])
     timestamp = deserialize_timestamp(event_tuple[3])
-    bond_id = HexStr(event_tuple[4])
+    pool_id = HexStr(event_tuple[5])
+    amount = deserialize_asset_amount(event_tuple[6])
+    usd_value = deserialize_asset_amount(event_tuple[7])
+    value = Balance(amount=amount, usd_value=usd_value)
 
     if db_event_type == str(EventType.BOND):
-        try:
-            assert event_tuple[6] is not None
-            assert event_tuple[7] is not None
-            assert event_tuple[8] is not None
-            assert event_tuple[9] is not None
-        except AssertionError as e:
+        if any(event_tuple[idx] is None for idx in (8, 9, 10)):
             raise DeserializationError(
                 f'Failed to deserialize bond event. Unexpected data: {event_tuple}.',
-            ) from e
+            )
 
         return Bond(
             tx_hash=tx_hash,
             address=address,
             identity_address=identity_address,
             timestamp=timestamp,
-            bond_id=bond_id,
-            pool_id=HexStr(event_tuple[6]),
-            amount=deserialize_asset_amount(event_tuple[7]),
-            nonce=event_tuple[8],
-            slashed_at=Timestamp(event_tuple[9]),
+            pool_id=pool_id,
+            value=value,
+            bond_id=HexStr(cast(str, event_tuple[8])),
+            nonce=cast(int, event_tuple[9]),
+            slashed_at=Timestamp(cast(int, event_tuple[10])),
         )
+
     if db_event_type == str(EventType.UNBOND):
+        if any(event_tuple[idx] is None for idx in (8,)):
+            raise DeserializationError(
+                f'Failed to deserialize bond event. Unexpected data: {event_tuple}.',
+            )
+
         return Unbond(
             tx_hash=tx_hash,
             address=address,
             identity_address=identity_address,
             timestamp=timestamp,
-            bond_id=bond_id,
+            pool_id=pool_id,
+            value=value,
+            bond_id=HexStr(cast(str, event_tuple[8])),
         )
+
     if db_event_type == str(EventType.UNBOND_REQUEST):
-        try:
-            assert event_tuple[10] is not None
-        except AssertionError as e:
+        if any(event_tuple[idx] is None for idx in (8, 11)):
             raise DeserializationError(
-                f'Failed to deserialize bond event. Unexpected data: {event_tuple}.',
-            ) from e
+                f'Failed to deserialize unbond request event. Unexpected data: {event_tuple}.',
+            )
 
         return UnbondRequest(
             tx_hash=tx_hash,
             address=address,
             identity_address=identity_address,
             timestamp=timestamp,
-            bond_id=bond_id,
-            unlock_at=Timestamp(event_tuple[10]),
+            pool_id=pool_id,
+            value=value,
+            bond_id=HexStr(cast(str, event_tuple[8])),
+            unlock_at=Timestamp(cast(int, event_tuple[11])),
         )
 
-    raise AssertionError(f'Unexpected event type case: {db_event_type}.')
+    if db_event_type == str(EventType.CHANNEL_WITHDRAW):
+        if any(event_tuple[idx] is None for idx in (12,)):
+            raise DeserializationError(
+                f'Failed to deserialize unbond request event. Unexpected data: {event_tuple}.',
+            )
+
+        return ChannelWithdraw(
+            tx_hash=tx_hash,
+            address=address,
+            identity_address=identity_address,
+            timestamp=timestamp,
+            value=value,
+            pool_id=pool_id,
+            channel_id=HexStr(cast(str, event_tuple[12])),
+        )
+
+    raise DeserializationError(
+        f'Failed to deserialize event. Unexpected event type case: {db_event_type}.',
+    )

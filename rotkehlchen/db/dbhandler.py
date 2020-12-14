@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 
 from eth_utils import is_checksum_address
+from eth_utils.typing import HexStr
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
@@ -23,7 +24,9 @@ from rotkehlchen.chain.bitcoin.xpub import (
 )
 from rotkehlchen.chain.ethereum.adex import (
     ADEX_EVENTS_PREFIX,
+    AdexEventType,
     Bond,
+    ChannelWithdraw,
     Unbond,
     UnbondRequest,
     deserialize_adex_event_from_db,
@@ -760,7 +763,7 @@ class DBHandler:
 
     def add_adex_events(
             self,
-            events: Sequence[Union[Bond, Unbond, UnbondRequest]],
+            events: Sequence[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]],
     ) -> None:
         query = (
             """
@@ -769,15 +772,17 @@ class DBHandler:
                 address,
                 identity_address,
                 timestamp,
-                bond_id,
                 type,
                 pool_id,
                 amount,
+                usd_value,
+                bond_id,
                 nonce,
                 slashed_at,
-                unlock_at
+                unlock_at,
+                channel_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
         cursor = self.conn.cursor()
@@ -800,7 +805,9 @@ class DBHandler:
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
             address: Optional[ChecksumEthAddress] = None,
-    ) -> List[Union[Bond, Unbond, UnbondRequest]]:
+            bond_id: Optional[HexStr] = None,
+            event_type: Optional[AdexEventType] = None,
+    ) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
         """Returns a list of AdEx events optionally filtered by time and address.
         """
         cursor = self.conn.cursor()
@@ -810,19 +817,25 @@ class DBHandler:
             'address, '
             'identity_address, '
             'timestamp, '
-            'bond_id, '
             'type, '
             'pool_id, '
             'amount, '
+            'usd_value, '
+            'bond_id, '
             'nonce, '
             'slashed_at, '
-            'unlock_at '
+            'unlock_at, '
+            'channel_id '
             'FROM adex_events '
         )
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         filters = []
         if address is not None:
             filters.append(f'address="{address}" ')
+        if bond_id is not None:
+            filters.append(f'bond_id="{bond_id}"')
+        if event_type is not None:
+            filters.append(f'type="{event_type}"')
 
         if filters:
             query += 'WHERE '

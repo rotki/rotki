@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`1681` AdEx's Tom pool staking balances, events and APR are now detected by Rotki for premium users.
+* :feature:`1681` AdEx protocol is now supported. Staking balances, events and APR are now detected by Rotki for premium users.
 * :feature:`1869` Vote-escrowed CRV will now be auto-detected for Curve.fi users. The amount shown will be the total locked CRV for vote-escrow.
 * :feature:`114` Added a frontend-only setting to make the periodic query of the client customizable. The allowed range of values is from 5 seconds to 3600 seconds.
 * :feature:`1753` Users can now filter the DEX trades by address and date range.

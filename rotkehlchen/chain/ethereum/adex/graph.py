@@ -5,7 +5,7 @@ BONDS_QUERY = (
         first: $limit,
         skip: $offset,
         where: {{
-            owner_in: $user_identities,
+            owner_in: $queried_addresses,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
         }}
@@ -27,7 +27,7 @@ UNBONDS_QUERY = (
         first: $limit,
         skip: $offset,
         where: {{
-            owner_in: $user_identities,
+            owner_in: $queried_addresses,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
         }}
@@ -46,7 +46,7 @@ UNBOND_REQUESTS_QUERY = (
         first: $limit,
         skip: $offset,
         where: {{
-            owner_in: $user_identities,
+            owner_in: $queried_addresses,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
         }}
@@ -56,6 +56,26 @@ UNBOND_REQUESTS_QUERY = (
         owner
         timestamp
         willUnlock
+    }}}}
+    """
+)
+CHANNEL_WITHDRAWS_QUERY = (
+    """
+    channelWithdraws
+    (
+        first: $limit,
+        skip: $offset,
+        where: {{
+            user_in: $queried_addresses,
+            timestamp_gte: $start_ts,
+            timestamp_lte: $end_ts,
+        }}
+    ) {{
+        id
+        user
+        channelId
+        amount
+        timestamp
     }}}}
     """
 )
