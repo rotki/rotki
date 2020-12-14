@@ -21,6 +21,7 @@ Changelog
 * :bug:`1846` AMPL token balance should no longer be double counted.
 * :bug:`1888` Detect balances of Eth2 deposits that are pending and the validator is not yet active in the beacon chain
 * :bug:`1887` The Eth2 validator index should not be incorrectly shown for some users.
+* :bug:`-` Ocean protocol token balances should now be properly detected after the token migration.
 
 * :feature:`-` Added support for the following tokens:
 
