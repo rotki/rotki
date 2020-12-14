@@ -1,10 +1,8 @@
 import { StakingState } from '@/store/staking/types';
 
 export const defaultState = (): StakingState => ({
-  eth2: {
-    deposits: [],
-    details: []
-  }
+  eth2Deposits: [],
+  eth2Details: []
 });
 
 export const state: StakingState = defaultState();

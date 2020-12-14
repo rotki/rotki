@@ -13,6 +13,6 @@ export const getters: Getters<
   RotkehlchenState,
   any
 > = {
-  deposits: state => state.eth2.deposits,
-  details: state => state.eth2.details
+  deposits: state => state.eth2Deposits,
+  details: state => state.eth2Details
 };

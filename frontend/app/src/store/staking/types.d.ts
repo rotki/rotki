@@ -1,7 +1,8 @@
 import { Balance } from '@/services/types-api';
 
 export interface StakingState {
-  eth2: Eth2Staking;
+  eth2Details: Eth2Detail[];
+  eth2Deposits: Eth2Deposit[];
 }
 
 export interface Eth2Deposit {
@@ -22,9 +23,4 @@ interface Eth2Detail {
   readonly performance1w: Balance;
   readonly performance1m: Balance;
   readonly performance1y: Balance;
-}
-
-export interface Eth2Staking {
-  readonly deposits: Eth2Deposit[];
-  readonly details: Eth2Detail[];
 }

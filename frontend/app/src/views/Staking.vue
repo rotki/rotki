@@ -9,7 +9,11 @@
             {{ $t('staking.loading') }}
           </template>
         </progress-screen>
-        <eth2-staking v-else :refreshing="refreshing" />
+        <eth2-staking
+          v-else
+          :refreshing="refreshing"
+          :secondary-refreshing="secondaryRefreshing"
+        />
       </div>
     </v-container>
   </v-container>
@@ -39,6 +43,7 @@ import { Eth2Staking } from '@/utils/premium';
 })
 export default class Staking extends Mixins(PremiumMixin, StatusMixin) {
   readonly section = Section.STAKING_ETH2;
+  readonly secondSection = Section.STAKING_ETH2_DEPOSITS;
   fetchStakingDetails!: (refresh: boolean) => Promise<void>;
 
   async mounted() {

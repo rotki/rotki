@@ -7,7 +7,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { Eth2Staking, StakingState } from '@/store/staking/types';
+import { Eth2Deposit, Eth2Detail, StakingState } from '@/store/staking/types';
 import { RotkehlchenState } from '@/store/types';
 import { isLoading, setStatus } from '@/store/utils';
 
@@ -31,32 +31,72 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
 
-    try {
-      const taskType = TaskType.STAKING_ETH2;
-      const { taskId } = await api.eth2Staking();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.staking.eth2.task.title'),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
+    async function fetchDetails() {
+      setStatus(newStatus, section, status, commit);
 
-      commit('tasks/add', task, { root: true });
+      try {
+        const taskType = TaskType.STAKING_ETH2;
+        const { taskId } = await api.eth2StakingDetails();
+        const task = createTask(taskId, taskType, {
+          title: i18n.tc('actions.staking.eth2.task.title'),
+          ignoreResult: false,
+          numericKeys: balanceKeys
+        });
 
-      const { result } = await taskCompletion<Eth2Staking, TaskMeta>(taskType);
+        commit('tasks/add', task, { root: true });
 
-      commit('eth2', result);
-    } catch (e) {
-      notify(
-        i18n.tc('actions.staking.eth2.error.description', undefined, {
-          error: e.message
-        }),
-        i18n.tc('actions.staking.eth2.error.title'),
-        Severity.ERROR,
-        true
-      );
+        const { result } = await taskCompletion<Eth2Detail[], TaskMeta>(
+          taskType
+        );
+
+        commit('eth2Details', result);
+      } catch (e) {
+        notify(
+          i18n.tc('actions.staking.eth2.error.description', undefined, {
+            error: e.message
+          }),
+          i18n.tc('actions.staking.eth2.error.title'),
+          Severity.ERROR,
+          true
+        );
+      }
+      setStatus(Status.LOADED, section, status, commit);
     }
-    setStatus(Status.LOADED, section, status, commit);
+
+    async function fetchDeposits() {
+      const secondarySection = Section.STAKING_ETH2_DEPOSITS;
+      setStatus(newStatus, secondarySection, status, commit);
+
+      try {
+        const taskType = TaskType.STAKING_ETH2_DEPOSITS;
+        const { taskId } = await api.eth2StakingDeposits();
+        const task = createTask(taskId, taskType, {
+          title: `${i18n.t('actions.staking.eth2_deposits.task.title')}`,
+          ignoreResult: false,
+          numericKeys: balanceKeys
+        });
+
+        commit('tasks/add', task, { root: true });
+
+        const { result } = await taskCompletion<Eth2Deposit[], TaskMeta>(
+          taskType
+        );
+
+        commit('eth2Deposits', result);
+      } catch (e) {
+        notify(
+          `${i18n.t('actions.staking.eth2_deposits.error.description', {
+            error: e.message
+          })}`,
+          `${i18n.t('actions.staking.eth2_deposits.error.title')}`,
+          Severity.ERROR,
+          true
+        );
+      }
+      setStatus(Status.LOADED, secondarySection, status, commit);
+    }
+
+    await Promise.all([fetchDetails(), fetchDeposits()]);
   }
 };
