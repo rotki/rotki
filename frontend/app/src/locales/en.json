@@ -1,6 +1,6 @@
 {
   "adex_page": {
-    "loading": "Please wait while your AdEx staked balances are getting loaded..."
+    "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
   "create_account": {
     "title": "Create Account",
@@ -630,6 +630,15 @@
         },
         "task": {
           "title": "Querying AdEx staking balances"
+        }
+      },
+      "adex_events": {
+        "error": {
+          "description": "Failed to query the AdEx staking events: {error}",
+          "title": "Querying AdEx staking events"
+        },
+        "task": {
+          "title": "Querying AdEx staking events"
         }
       },
       "eth2": {

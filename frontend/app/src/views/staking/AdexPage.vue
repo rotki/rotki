@@ -4,6 +4,11 @@
       {{ $t('adex_page.loading') }}
     </template>
   </progress-screen>
+  <adex-staking
+    v-else
+    :history-refreshing="secondaryLoading || secondaryRefreshing"
+    :refreshing="refreshing"
+  />
 </template>
 
 <script lang="ts">
@@ -12,15 +17,18 @@ import { mapActions } from 'vuex';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
+import { AdexStaking } from '@/utils/premium';
 
 @Component({
-  components: { ProgressScreen },
+  components: { AdexStaking, ProgressScreen },
   methods: {
     ...mapActions('staking', ['fetchAdex'])
   }
 })
 export default class AdexPage extends Mixins(StatusMixin) {
   section = Section.STAKING_ADEX;
+  secondSection = Section.STAKING_ADEX_EVENTS;
+
   fetchAdex!: (refresh: boolean) => Promise<void>;
 
   async mounted() {

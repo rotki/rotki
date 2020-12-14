@@ -860,6 +860,18 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
+  async adexEvents(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/blockchains/ETH/modules/adex/history', {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true
+        }),
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
   importFile(data: FormData) {
     return this.axios
       .post<ActionResult<boolean>>('/import', data, {

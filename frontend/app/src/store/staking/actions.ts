@@ -9,6 +9,7 @@ import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import {
   AdexBalances,
+  AdexEvents,
   Eth2Deposit,
   Eth2Detail,
   StakingState
@@ -127,7 +128,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     setStatus(newStatus, section, status, commit);
 
     try {
-      const taskType = TaskType.STAKING_ETH2;
+      const taskType = TaskType.STAKING_ADEX;
       const { taskId } = await api.adexBalances();
       const task = createTask(taskId, taskType, {
         title: `${i18n.t('actions.staking.adex_balances.task.title')}`,
@@ -151,5 +152,33 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       );
     }
     setStatus(Status.LOADED, section, status, commit);
+
+    const secondarySection = Section.STAKING_ADEX_EVENTS;
+    setStatus(newStatus, secondarySection, status, commit);
+    try {
+      const taskType = TaskType.STAKING_ADEX_EVENTS;
+      const { taskId } = await api.adexEvents();
+      const task = createTask(taskId, taskType, {
+        title: `${i18n.t('actions.staking.adex_events.task.title')}`,
+        ignoreResult: false,
+        numericKeys: [...balanceKeys, 'total_staked_amount']
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<AdexEvents, TaskMeta>(taskType);
+
+      commit('adexEvents', result);
+    } catch (e) {
+      notify(
+        `${i18n.t('actions.staking.adex_events.error.description', {
+          error: e.message
+        })}`,
+        `${i18n.t('actions.staking.adex_events.error.title')}`,
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, secondarySection, status, commit);
   }
 };

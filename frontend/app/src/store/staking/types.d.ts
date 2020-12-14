@@ -1,9 +1,11 @@
+import { default as BigNumber } from 'bignumber.js';
 import { Balance } from '@/services/types-api';
 
 export interface StakingState {
   readonly eth2Details: Eth2Detail[];
   readonly eth2Deposits: Eth2Deposit[];
   readonly adexBalances: AdexBalances;
+  readonly adexEvents: AdexEvents;
 }
 
 export interface Eth2Deposit {
@@ -40,4 +42,30 @@ interface AdexBalance {
 
 export interface AdexBalances {
   readonly [address: string]: AdexBalance[];
+}
+
+interface AdexEvent {
+  readonly amount: BigNumber;
+  readonly bondId: string;
+  readonly identityAddress: string;
+  readonly timestamp: number;
+  readonly txHash: string;
+}
+
+interface AdexStat {
+  readonly address: string;
+  readonly apr: string;
+  readonly balance: Balance;
+  readonly poolId: string;
+  readonly poolName: string;
+  readonly totalStakedAmount: BigNumber;
+}
+
+interface AdexDetails {
+  readonly events: AdexEvent[];
+  readonly stakingStats: AdexStat[];
+}
+
+export interface AdexEvents {
+  readonly [address: string]: AdexDetails;
 }

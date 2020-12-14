@@ -1,6 +1,7 @@
 import { Module } from '@/components/defi/wizard/types';
 import {
   MODULE_AAVE,
+  MODULE_ADEX,
   MODULE_COMPOUND,
   MODULE_MAKERDAO_DSR,
   MODULE_MAKERDAO_VAULTS,
@@ -38,5 +39,10 @@ export const DEFI_MODULES: Module[] = [
     identifier: MODULE_UNISWAP,
     name: 'Uniswap',
     icon: require('@/assets/images/defi/uniswap.svg')
+  },
+  {
+    identifier: MODULE_ADEX,
+    name: 'AdEx',
+    icon: require('@/assets/images/adx.svg')
   }
 ];
