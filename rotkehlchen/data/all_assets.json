@@ -3422,6 +3422,15 @@
         "symbol": "DEXT",
         "type": "ethereum token"
     },
+    "DF": {
+        "coingecko": "dforce-token",
+        "ethereum_address": "0x431ad2ff6a9C365805eBaD47Ee021148d6f7DBe0",
+        "ethereum_token_decimals": 18,
+        "name": "dForce",
+        "started": 1564020599,
+        "symbol": "DF",
+        "type": "ethereum token"
+    },
     "DFI": {
         "coingecko": "defichain",
         "name": "DeFiChain",
