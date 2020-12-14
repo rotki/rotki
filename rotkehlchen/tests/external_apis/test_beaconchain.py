@@ -13,10 +13,10 @@ def session_beaconchain(messages_aggregator):
 def _assert_valid_performance_entry(entry):
     """Can't really test for an actual balance so just test it's a valid int"""
     assert entry.balance >= 0
-    assert entry.performance_1d >= 0
-    assert entry.performance_1w >= 0
-    assert entry.performance_1m >= 0
-    assert entry.performance_1y >= 0
+    assert isinstance(entry.performance_1d, int)
+    assert isinstance(entry.performance_1w, int)
+    assert isinstance(entry.performance_1m, int)
+    assert isinstance(entry.performance_1y, int)
 
 
 def test_get_performance_single(session_beaconchain):
