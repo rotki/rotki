@@ -3424,18 +3424,18 @@ Getting AdEx balances
 
       {
         "result": {
-            "0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d": [
+            "0xE74ad5437C6CFB0cCD6bADda1F6b57b6E542E75e": [
                 {
                     "adx_balance": {
-                        "amount": "105978.597379224532143910",
-                        "usd_value": "27787.5882328326723281332020"
+                        "amount": "1050",
+                        "usd_value": "950"
                     },
                     "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
                     "dai_balance": {
                         "amount": "0.221231768887185282",
                         "usd_value": "0.221895464193846837846"
                     },
-                    "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                    "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                     "pool_name": "Tom"
                 }
             ]
@@ -3482,103 +3482,103 @@ Getting AdEx historical data
 
       {
         "result": {
-            "0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d": {
+            "0xE74ad5437C6CFB0cCD6bADda1F6b57b6E542E75e": {
                 "events": [
                     {
                         "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
                         "event_type": "deposit",
                         "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                         "pool_name": "Tom",
                         "timestamp": 1604366004,
                         "tx_hash": "0x9989f47c6c0a761f98f910ac24e2438d858be96c12124a13be4bb4b3150c55ea",
                         "value": {
-                            "amount": "100000",
-                            "usd_value": "21345.00000"
+                            "amount": "1000",
+                            "usd_value": "950"
                         }
                     },
                     {
                         "event_type": "claim",
                         "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                         "pool_name": "Tom",
                         "timestamp": 1607453764,
                         "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
                         "value": {
-                            "amount": "5056.894263641728544592",
-                            "usd_value": "1440.96202042471054878149040"
+                            "amount": "50",
+                            "usd_value": "45.23"
                         }
                     },
                     {
                         "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
                         "event_type": "withdraw",
                         "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                         "pool_name": "Tom",
                         "timestamp": 1607453764,
                         "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
                         "value": {
-                            "amount": "100000",
-                            "usd_value": "28495.00000"
+                            "amount": "1000",
+                            "usd_value": "950"
                         }
                     },
                     {
                         "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
                         "event_type": "deposit",
                         "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                         "pool_name": "Tom",
                         "timestamp": 1607453764,
                         "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
                         "value": {
-                            "amount": "105056.894263641728544592",
-                            "usd_value": "29935.96202042471054878149040"
+                            "amount": "1050",
+                            "usd_value": "1015"
                         }
                     },
                     {
                         "event_type": "claim",
                         "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                         "pool_name": "Tom",
                         "timestamp": 1607915796,
                         "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
                         "value": {
-                            "amount": "786.898540670755865776",
-                            "usd_value": "210.45601470239365630179120"
+                            "amount": "43",
+                            "usd_value": "39.233"
                         }
                     },
                     {
                         "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
                         "event_type": "withdraw",
                         "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                         "pool_name": "Tom",
                         "timestamp": 1607915796,
                         "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
                         "value": {
-                            "amount": "105056.894263641728544592",
-                            "usd_value": "28097.46637081098029925113040"
+                            "amount": "1050",
+                            "usd_value": "1015"
                         }
                     },
                     {
                         "bond_id": "0x30bd07a0cc0c9b94e2d10487c1053fc6a5043c41fb28dcfa3ff80a68013eb501",
                         "event_type": "deposit",
                         "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                         "pool_name": "Tom",
                         "timestamp": 1607915796,
                         "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
                         "value": {
-                            "amount": "105843.792804312484410368",
-                            "usd_value": "28307.92238551337395555292160"
+                            "amount": "1093",
+                            "usd_value": "1075"
                         }
                     }
                 ],
                 "staking_details": [
                     {
                         "adx_balance": {
-                            "amount": "105978.597379224532143910",
-                            "usd_value": "27787.5882328326723281332020"
+                            "amount": "1093",
+                            "usd_value": "1075"
                         },
                         "apr": "52.43%",
                         "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
@@ -3586,11 +3586,11 @@ Getting AdEx historical data
                             "amount": "0.221231768887185282",
                             "usd_value": "0.221895464193846837846"
                         },
-                        "pool_id": "0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
                         "pool_name": "Tom",
                         "profit_loss": {
-                            "amount": "5978.597379224532143910",
-                            "usd_value": "1686.76379466904312081799400"
+                            "amount": "93",
+                            "usd_value": "81"
                         },
                         "total_staked_amount": "28809204.154057988204380985"
                     }
@@ -3612,7 +3612,7 @@ Getting AdEx historical data
        - pool_id: The identifier of the pool.
        - pool_name: The name of the pool.
 
-   :resjson list[object] staking_stats: A list of the staking details of the staking pools the address is currently staking in.
+   :resjson list[object] staking_details: A list of the staking details of the staking pools the address is currently staking in.
 
        - contract_address: The ADX staking contract address.
        - pool_id: The identifier of the pool.
