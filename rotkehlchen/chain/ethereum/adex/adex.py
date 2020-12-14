@@ -740,8 +740,8 @@ class Adex(EthereumModule):
 
         unclaimed_rewards = {}
         for address in addresses:
-            total_adx_amount = FVal(sum(address_adx_amount[address]))
-            total_dai_amount = FVal(sum(address_dai_amount[address]))
+            total_adx_amount = sum(address_adx_amount[address])
+            total_dai_amount = sum(address_dai_amount[address])
             # Discard addresses without amounts
             if total_adx_amount + total_dai_amount > ZERO:
                 unclaimed_rewards[address] = UnclaimedReward(

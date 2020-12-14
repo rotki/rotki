@@ -4,6 +4,7 @@ from eth_utils.typing import HexStr
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_address,
@@ -32,8 +33,8 @@ IDENTITY_PROXY_INIT_CODE = (
 )
 STAKING_ADDR = '0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534'
 CREATE2_SALT = f'0x{bytearray(32).hex()}'
-ADX_AMOUNT_MANTISSA = 10**18
-DAI_AMOUNT_MANTISSA = 10**18
+ADX_AMOUNT_MANTISSA = FVal(10**18)
+DAI_AMOUNT_MANTISSA = FVal(10**18)
 
 # Pools data
 TOM_POOL_ID = HexStr('0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28')
