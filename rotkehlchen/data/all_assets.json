@@ -2788,6 +2788,15 @@
         "symbol": "COVAL",
         "type": "counterparty token"
     },
+    "COVER": {
+        "coingecko": "cover-protocol",
+        "ethereum_address": "0x5D8d9F5b96f4438195BE9b99eee6118Ed4304286",
+        "ethereum_token_decimals": 18,
+        "name": "Cover Protocol",
+        "started": 1605828402,
+        "symbol": "COVER",
+        "type": "ethereum token"
+    },
     "CPAY": {
         "coingecko": "cryptopay",
         "ethereum_address": "0x0Ebb614204E47c09B6C3FeB9AAeCad8EE060E23E",

@@ -428,6 +428,8 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'UNIUP',  # no cryptocompare/coingecko data
     'SXPDOWN',  # no cryptocompare/coingecko data
     'SXPUP',  # no cryptocompare/coingecko data
+    'AAVEDOWN',  # no cryptocompare/coingecko data
+    'AAVEUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
 )
 
