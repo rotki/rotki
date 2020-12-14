@@ -41,6 +41,8 @@ from rotkehlchen.utils.serialization import rlk_jsonloads_list
 
 from .graph import BONDS_QUERY, CHANNEL_WITHDRAWS_QUERY, UNBOND_REQUESTS_QUERY, UNBONDS_QUERY
 from .typing import (
+    POOL_ID_POOL_NAME,
+    TOM_POOL_ID,
     ADXStakingBalance,
     ADXStakingDetail,
     ADXStakingEvents,
@@ -64,10 +66,8 @@ from .utils import (
     IDENTITY_FACTORY_ADDR,
     IDENTITY_PROXY_INIT_CODE,
     PERIOD_END_AT_FORMAT,
-    POOL_ID_POOL_NAME,
     STAKING_ADDR,
     TOM_POOL_FEE_REWARDS_API_URL,
-    TOM_POOL_ID,
 )
 
 if TYPE_CHECKING:

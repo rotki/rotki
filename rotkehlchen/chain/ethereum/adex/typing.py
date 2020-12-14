@@ -9,7 +9,11 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
 
-from .utils import POOL_ID_POOL_NAME
+# Pools data
+TOM_POOL_ID = HexStr('0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28')
+POOL_ID_POOL_NAME = {
+    TOM_POOL_ID: 'Tom',
+}
 
 AdexEventDBTuple = (
     Tuple[

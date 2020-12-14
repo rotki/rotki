@@ -36,12 +36,6 @@ CREATE2_SALT = f'0x{bytearray(32).hex()}'
 ADX_AMOUNT_MANTISSA = FVal(10**18)
 DAI_AMOUNT_MANTISSA = FVal(10**18)
 
-# Pools data
-TOM_POOL_ID = HexStr('0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28')
-POOL_ID_POOL_NAME = {
-    TOM_POOL_ID: 'Tom',
-}
-
 # Tom pool fee rewards API constants
 TOM_POOL_FEE_REWARDS_API_URL = 'https://tom.adex.network/fee-rewards'
 PERIOD_END_AT_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'

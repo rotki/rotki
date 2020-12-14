@@ -1,7 +1,7 @@
 from eth_utils.typing import HexStr
 
 from rotkehlchen.chain.ethereum.adex.adex import Adex
-from rotkehlchen.chain.ethereum.adex.utils import TOM_POOL_ID
+from rotkehlchen.chain.ethereum.adex.typing import TOM_POOL_ID
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 
 TEST_ADDR = deserialize_ethereum_address('0x494B9728BECA6C03269c38Ed86179757F77Cc0dd')
