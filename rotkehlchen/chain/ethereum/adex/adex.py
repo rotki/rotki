@@ -120,8 +120,8 @@ class Adex(EthereumModule):
             adx_usd_price: Price,
             dai_usd_price: Price,
     ) -> Dict[ChecksumAddress, List[ADXStakingBalance]]:
-        """Given a list of bonds, unbonds and unbond requests returns per
-        address the staked amounts per pool.
+        """Given a list of bonds, unbonds and unbond requests returns per address
+        the balance. The balance is the staked amount plus the unclaimed rewards
 
         Given an address, its staked amount per pool is computed by deducting
         the unbonds and the unbond requests from its bonds.
@@ -231,8 +231,8 @@ class Adex(EthereumModule):
             for adx_staking_balance in adx_staking_balances:
                 # NB: currently it only returns staking details for Tom pool
                 if adx_staking_balance.pool_id == TOM_POOL_ID and tom_pool_incentive is not None:
-                    total_profit_amount = FVal(ZERO)
-                    total_profit_usd_value = FVal(ZERO)
+                    total_profit_amount = ZERO
+                    total_profit_usd_value = ZERO
                     # Add claimed amounts and their historical usd value
                     for event in address_staking_events[address]:
                         if type(event) == ChannelWithdraw:
@@ -766,10 +766,10 @@ class Adex(EthereumModule):
         https://github.com/AdExNetwork/adex-staking/issues/94
         """
         fee_rewards = self._get_tom_pool_fee_rewards_from_api()
-        total_staked_amount = FVal(ZERO)
-        total_reward_per_second = FVal(ZERO)
+        total_staked_amount = ZERO
+        total_reward_per_second = ZERO
         period_ends_at = Timestamp(0)
-        apr = FVal(ZERO)
+        apr = ZERO
         for entry in fee_rewards:
             try:
                 if entry['channelArgs']['tokenAddr'] == A_ADX.ethereum_address:
