@@ -9,6 +9,8 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
 
+from .utils import POOL_ID_POOL_NAME
+
 AdexEventDBTuple = (
     Tuple[
         str,  # tx_hash
@@ -37,17 +39,6 @@ class EventType(Enum):
 
     def __str__(self) -> str:
         if self == EventType.BOND:
-            return 'bond'
-        if self == EventType.UNBOND:
-            return 'unbond'
-        if self == EventType.UNBOND_REQUEST:
-            return 'unbond_request'
-        if self == EventType.CHANNEL_WITHDRAW:
-            return 'channel_withdraw'
-        raise AttributeError(f'Corrupt value {self} for EventType -- Should never happen')
-
-    def pretty_name(self) -> str:
-        if self == EventType.BOND:
             return 'deposit'
         if self == EventType.UNBOND:
             return 'withdraw'
@@ -71,8 +62,6 @@ class Bond:
     slashed_at: Timestamp  # from bond.slashedAtStart
 
     def serialize(self) -> Dict[str, Any]:
-        from .utils import POOL_ID_POOL_NAME
-
         return {
             'tx_hash': self.tx_hash,
             'identity_address': self.identity_address,
@@ -81,7 +70,7 @@ class Bond:
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
-            'event_type': EventType.BOND.pretty_name(),
+            'event_type': str(EventType.BOND),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
@@ -113,8 +102,6 @@ class Unbond:
     pool_id: HexStr = HexStr('')  # from bond.pool_id
 
     def serialize(self) -> Dict[str, Any]:
-        from .utils import POOL_ID_POOL_NAME
-
         return {
             'tx_hash': self.tx_hash,
             'identity_address': self.identity_address,
@@ -123,7 +110,7 @@ class Unbond:
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
-            'event_type': EventType.UNBOND.pretty_name(),
+            'event_type': str(EventType.UNBOND),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
@@ -156,8 +143,6 @@ class UnbondRequest:
     pool_id: HexStr = HexStr('')  # from bond.pool_id
 
     def serialize(self) -> Dict[str, Any]:
-        from .utils import POOL_ID_POOL_NAME
-
         return {
             'tx_hash': self.tx_hash,
             'identity_address': self.identity_address,
@@ -166,7 +151,7 @@ class UnbondRequest:
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
-            'event_type': EventType.UNBOND_REQUEST.pretty_name(),
+            'event_type': str(EventType.UNBOND_REQUEST),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
@@ -198,8 +183,6 @@ class ChannelWithdraw:
     pool_id: HexStr
 
     def serialize(self) -> Dict[str, Any]:
-        from .utils import POOL_ID_POOL_NAME
-
         return {
             'tx_hash': self.tx_hash,
             'identity_address': self.identity_address,
@@ -207,7 +190,7 @@ class ChannelWithdraw:
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
-            'event_type': EventType.CHANNEL_WITHDRAW.pretty_name(),
+            'event_type': str(EventType.CHANNEL_WITHDRAW),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
