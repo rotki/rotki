@@ -20,7 +20,6 @@ import requests
 from eth_typing.evm import ChecksumAddress
 from eth_utils import to_checksum_address
 from eth_utils.typing import HexAddress, HexStr
-from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3 import Web3
 
@@ -401,7 +400,6 @@ class Adex(EthereumModule):
             msg = (
                 f'AdEx get request at {TOM_POOL_FEE_REWARDS_API_URL} connection error: {str(e)}.'
             )
-            log.error(msg)
             self.msg_aggregator.add_error(
                 f'Got remote error while querying AdEx fee rewards API: {msg}',
             )
@@ -412,7 +410,6 @@ class Adex(EthereumModule):
                 f'AdEx fee rewards API query responded with error status code: '
                 f'{response.status_code} and text: {response.text}.'
             )
-            log.error(msg)
             self.msg_aggregator.add_error(
                 f'Got remote error while querying AdEx fee rewards API: {msg}',
             )
@@ -422,7 +419,6 @@ class Adex(EthereumModule):
             fee_rewards = rlk_jsonloads_list(response.text)
         except JSONDecodeError:
             msg = f'AdEx fee rewards API returned invalid JSON response: {response.text}.'
-            log.error(msg)
             self.msg_aggregator.add_error(
                 f'Got remote error while querying AdEx fee rewards API: {msg}',
             )
@@ -607,7 +603,6 @@ class Adex(EthereumModule):
                 )
             except RemoteError as e:
                 msg = str(e)
-                log.error(msg)
                 self.msg_aggregator.add_error(
                     f'{msg}. All AdEx balances queries are not functioning until this is fixed.',
                 )
@@ -909,14 +904,11 @@ class Adex(EthereumModule):
                 has_bond = False
 
             if has_bond is False:
-                log.error(
-                    'Unexpected case updating AdEx event data. '
-                    'Unable to find the related bond event.',
-                    event=event,
+                msg = (
+                    f'Failed to update AdEx event data. '
+                    f'Unable to find the related bond event: {event}',
                 )
-                self.msg_aggregator.add_error(
-                    'Failed to update AdEx event data. Check logs for details. Ignoring it.',
-                )
+                self.msg_aggregator.add_error(msg)
 
         # Update usd_value for all events
         adx_usd_price_history: Dict[Timestamp, Price] = {}
