@@ -534,12 +534,7 @@ class Adex(EthereumModule):
     def _get_staking_events_graph(
             self,
             addresses: List[ChecksumEthAddress],
-            event_type: Literal[
-                EventType.BOND,
-                EventType.UNBOND,
-                EventType.UNBOND_REQUEST,
-                EventType.CHANNEL_WITHDRAW,
-            ],
+            event_type: EventType,
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
     ) -> Union[List[Bond], List[Unbond], List[UnbondRequest], List[ChannelWithdraw]]:
@@ -812,27 +807,11 @@ class Adex(EthereumModule):
         """
         all_events: List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]] = []
         for event_type_ in EventType:
-            event_type: Literal[
-                EventType.BOND,
-                EventType.UNBOND,
-                EventType.UNBOND_REQUEST,
-                EventType.CHANNEL_WITHDRAW,
-            ]
-            if event_type_ == EventType.BOND:
-                event_type = EventType.BOND
-            elif event_type_ == EventType.UNBOND:
-                event_type = EventType.UNBOND
-            elif event_type_ == EventType.UNBOND_REQUEST:
-                event_type = EventType.UNBOND_REQUEST
-            elif event_type_ == EventType.CHANNEL_WITHDRAW:
-                event_type = EventType.CHANNEL_WITHDRAW
-            else:
-                raise AssertionError(f'Unexpected AdEx event type: {event_type_}.')
-
             try:
-                events = self._get_staking_events_graph(
+                # TODO: fix. type -> overload does not work well with enum in this case
+                events = self._get_staking_events_graph(  # type: ignore
                     addresses=addresses,
-                    event_type=event_type,
+                    event_type=event_type_,
                     from_timestamp=from_timestamp,
                     to_timestamp=to_timestamp,
                 )
@@ -906,7 +885,7 @@ class Adex(EthereumModule):
             if has_bond is False:
                 msg = (
                     f'Failed to update AdEx event data. '
-                    f'Unable to find the related bond event: {event}',
+                    f'Unable to find the related bond event: {event}'
                 )
                 self.msg_aggregator.add_error(msg)
 
