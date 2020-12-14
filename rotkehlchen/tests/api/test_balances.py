@@ -175,6 +175,8 @@ def test_query_all_balances(
         else:
             outcome = assert_proper_response_with_result(response)
 
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
     assert_all_balances(
         result=outcome,
         db=rotki.data.db,
@@ -276,7 +278,7 @@ def test_query_all_balances_ignore_cache(
         )
         for fn in function_call_counters:
             if fn._mock_wraps == original_binance_query_dict:
-                assert fn.call_count == 2
+                assert fn.call_count == 3
             else:
                 assert fn.call_count == 1
         full_query_etherscan_count = etherscan_mock.call_count
@@ -298,7 +300,7 @@ def test_query_all_balances_ignore_cache(
         msg = 'call count should stay the same since cache should have been used'
         for fn in function_call_counters:
             if fn._mock_wraps == original_binance_query_dict:
-                assert fn.call_count == 2, msg
+                assert fn.call_count == 3, msg
             else:
                 assert fn.call_count == 1, msg
         msg = 'etherscan call_count should have remained the same due to no token detection '
@@ -321,7 +323,7 @@ def test_query_all_balances_ignore_cache(
         msg = 'call count should increase since cache should have been ignored'
         for fn in function_call_counters:
             if fn._mock_wraps == original_binance_query_dict:
-                assert fn.call_count == 4, msg
+                assert fn.call_count == 6, msg
             else:
                 assert fn.call_count == 2, msg
         msg = 'etherscan call count should have doubled after forced token detection'
@@ -504,28 +506,33 @@ def test_multiple_balance_queries_not_concurrent(
         outcome_all = wait_for_async_task_with_result(
             rotkehlchen_api_server_with_exchanges,
             task_id_all,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
         )
         outcome_one_exchange = wait_for_async_task(
             rotkehlchen_api_server_with_exchanges,
             task_id_one_exchange,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
         )
         if separate_blockchain_calls:
             outcome_eth = wait_for_async_task_with_result(
                 rotkehlchen_api_server_with_exchanges,
                 task_id_blockchain_eth,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
             )
             outcome_btc = wait_for_async_task_with_result(
                 rotkehlchen_api_server_with_exchanges,
                 task_id_blockchain_btc,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
             )
         else:
             outcome_blockchain = wait_for_async_task_with_result(
                 rotkehlchen_api_server_with_exchanges,
                 task_id_blockchain,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
             )
         assert eth.call_count == 1, 'eth balance query should only fire once'
         assert btc.call_count == 1, 'btc balance query should only happen once'
-        assert bn.call_count == 2, 'binance balance query should do 2 calls'
+        assert bn.call_count == 3, 'binance balance query should do 2 calls'
 
     assert_all_balances(
         result=outcome_all,

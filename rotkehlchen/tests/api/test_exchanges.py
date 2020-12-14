@@ -507,7 +507,7 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
         json_data = response.json()
         assert json_data['message'] == ''
         assert_binance_balances_result(json_data['result'])
-        assert bn.call_count == 2
+        assert bn.call_count == 3
         # Do the query again. Cache should be used.
         binance_patch = patch_binance_balances_query(binance)
         response = requests.get(api_url_for(
@@ -519,7 +519,7 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
         json_data = response.json()
         assert json_data['message'] == ''
         assert_binance_balances_result(json_data['result'])
-        assert bn.call_count == 2, 'call count should not have changed. Cache must have been used'
+        assert bn.call_count == 3, 'call count should not have changed. Cache must have been used'
         # Finally do the query and request ignoring of the cache
         binance_patch = patch_binance_balances_query(binance)
         response = requests.get(api_url_for(
@@ -531,7 +531,7 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
         json_data = response.json()
         assert json_data['message'] == ''
         assert_binance_balances_result(json_data['result'])
-        assert bn.call_count == 4, 'call count should have changed. Cache should have been ignored'
+        assert bn.call_count == 6, 'call count should have changed. Cache should have been ignored'
 
 
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])

@@ -517,7 +517,7 @@ class Binance(ExchangeInterface):
                 'Binance account API request failed. Could not reach binance due '
                 'to {}'.format(e)
             )
-            log.error(msg)
+            self.msg_aggregator.add_error(msg)
             return None, msg
 
         log.debug(

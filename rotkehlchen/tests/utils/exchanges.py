@@ -170,6 +170,29 @@ BINANCE_FUTURES_WALLET_RESPONSE = """{
     ]
 }"""
 
+BINANCE_LENDING_WALLET_RESPONSE = """{
+    "positionAmountVos": [
+        {
+            "amount": "75.46000000",
+            "amountInBTC": "0.01044819",
+            "amountInUSDT": "75.46000000",
+            "asset": "USDT"
+        },
+        {
+            "amount": "1.67072036",
+            "amountInBTC": "0.00023163",
+            "amountInUSDT": "1.67289230",
+            "asset": "BUSD"
+        }
+    ],
+    "totalAmountInBTC": "0.01067982",
+    "totalAmountInUSDT": "77.13289230",
+    "totalFixedAmountInBTC": "0.00000000",
+    "totalFixedAmountInUSDT": "0.00000000",
+    "totalFlexibleInBTC": "0.01067982",
+    "totalFlexibleInUSDT": "77.13289230"
+}"""
+
 BINANCE_MYTRADES_RESPONSE = """
 [
     {
@@ -202,9 +225,24 @@ def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
     assert balances['ETH']['usd_value'] is not None
 
 
+def mock_binance_balance_response(url):
+    if 'futures' in url:
+        return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
+    if 'lending' in url:
+        return MockResponse(200, BINANCE_LENDING_WALLET_RESPONSE)
+    # else
+    return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+
+
 def patch_binance_balances_query(binance: 'Binance'):
     def mock_binance_asset_return(url, *args):  # pylint: disable=unused-argument
-        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+        if 'futures' in url:
+            response = '{"crossCollaterals":[]}'
+        elif 'lending' in url:
+            response = '{"positionAmountVos":[]}'
+        else:
+            response = BINANCE_BALANCES_RESPONSE
+        return MockResponse(200, response)
 
     binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
     return binance_patch

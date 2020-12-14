@@ -144,6 +144,8 @@ WORLD_TO_BINANCE = {
     'YOYOW': 'YOYO',
     # Solana is SOL-2 in rotki
     'SOL-2': 'SOL',
+    # BETH is the eth staked in beacon chain
+    'BETH': 'ETH2',
 }
 
 

@@ -11,11 +11,7 @@ from rotkehlchen.tests.utils.api import (
     assert_ok_async_response,
     assert_proper_response,
 )
-from rotkehlchen.tests.utils.exchanges import (
-    BINANCE_BALANCES_RESPONSE,
-    BINANCE_FUTURES_WALLET_RESPONSE,
-)
-from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.tests.utils.exchanges import mock_binance_balance_response
 
 
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
@@ -33,13 +29,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     binance = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['binance']
 
-    def mock_binance_asset_return(url):  # pylint: disable=unused-argument
-        if 'futures' in url:
-            return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
-        # else
-        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
-
-    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
+    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_balance_response)
 
     # Check querying the async taks resource when no async task is scheduled
     response = requests.get(api_url_for(server, "asynctasksresource"))
