@@ -14,6 +14,7 @@
               :show-tooltips="showTooltips"
               :text="navItem.text"
               :icon="navItem.icon"
+              :crypto-icon="navItem.cryptoIcon"
             />
           </v-list-item>
           <v-list-group v-else-if="navItem.type === 'group'" :key="i">
@@ -22,6 +23,7 @@
                 :show-tooltips="showTooltips"
                 :text="navItem.text"
                 :icon="navItem.icon"
+                :crypto-icon="navItem.cryptoIcon"
                 :class="`navigation__${navItem.class}`"
               />
             </template>
@@ -36,6 +38,7 @@
                 :show-tooltips="showTooltips"
                 :text="subNavItem.text"
                 :icon="subNavItem.icon"
+                :crypto-icon="subNavItem.cryptoIcon"
               />
             </v-list-item>
           </v-list-group>
@@ -60,6 +63,7 @@ type NavItemDetails = {
   readonly route: string;
   readonly class?: string;
   readonly icon: string;
+  readonly cryptoIcon?: string;
 };
 
 type NavItem = { readonly type: 'item' } & NavItemDetails;
@@ -166,11 +170,29 @@ export default class NavigationMenu extends Vue {
       icon: 'mdi-chart-bar'
     },
     {
-      type: 'item',
+      type: 'group',
       text: this.$tc('navigation_menu.staking'),
       route: Routes.STAKING,
       class: 'staking',
-      icon: 'mdi-inbox-arrow-down'
+      icon: 'mdi-inbox-arrow-down',
+      items: [
+        {
+          type: 'item',
+          text: `${this.$t('navigation_menu.staking_sub.eth2')}`,
+          route: Routes.STAKING_ETH2,
+          icon: '',
+          cryptoIcon: 'ETH2',
+          class: 'staking-adex'
+        },
+        {
+          type: 'item',
+          text: `${this.$t('navigation_menu.staking_sub.adex')}`,
+          route: Routes.STAKING_ADEX,
+          icon: '',
+          cryptoIcon: 'ADX',
+          class: 'staking-adex'
+        }
+      ]
     },
     {
       type: 'item',

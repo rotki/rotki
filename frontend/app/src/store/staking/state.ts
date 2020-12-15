@@ -4,7 +4,7 @@ export const defaultState = (): StakingState => ({
   eth2Deposits: [],
   eth2Details: [],
   adexBalances: {},
-  adexEvents: {}
+  adexHistory: {}
 });
 
 export const state: StakingState = defaultState();

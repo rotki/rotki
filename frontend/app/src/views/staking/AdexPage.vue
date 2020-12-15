@@ -27,7 +27,7 @@ import { AdexStaking } from '@/utils/premium';
 })
 export default class AdexPage extends Mixins(StatusMixin) {
   section = Section.STAKING_ADEX;
-  secondSection = Section.STAKING_ADEX_EVENTS;
+  secondSection = Section.STAKING_ADEX_HISTORY;
 
   fetchAdex!: (refresh: boolean) => Promise<void>;
 

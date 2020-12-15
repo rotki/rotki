@@ -3,13 +3,15 @@
     <v-tooltip v-if="showTooltips" right>
       <template #activator="{ on }">
         <v-list-item-icon v-on="on">
-          <v-icon>{{ icon }}</v-icon>
+          <crypto-icon v-if="!!cryptoIcon" :symbol="cryptoIcon" size="24px" />
+          <v-icon v-else>{{ icon }}</v-icon>
         </v-list-item-icon>
       </template>
       <span>{{ text }}</span>
     </v-tooltip>
     <v-list-item-icon v-else>
-      <v-icon>{{ icon }}</v-icon>
+      <crypto-icon v-if="!!cryptoIcon" :symbol="cryptoIcon" size="24px" />
+      <v-icon v-else>{{ icon }}</v-icon>
     </v-list-item-icon>
     <v-list-item-content class="d-flex flex-grow-1">
       <v-list-item-title>{{ text }}</v-list-item-title>
@@ -22,12 +24,14 @@ import { Component, Vue, Prop } from 'vue-property-decorator';
 
 @Component({})
 export default class NavigationMenuItem extends Vue {
-  @Prop({ required: false, default: false })
+  @Prop({ required: false, type: Boolean, default: false })
   showTooltips!: boolean;
-  @Prop({ required: false, default: '' })
-  icon!: boolean;
-  @Prop({ required: true })
-  text!: boolean;
+  @Prop({ required: false, type: String, default: '' })
+  icon!: string;
+  @Prop({ required: false, type: String, default: '' })
+  cryptoIcon!: string;
+  @Prop({ required: true, type: String })
+  text!: string;
 }
 </script>
 

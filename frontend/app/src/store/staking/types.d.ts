@@ -5,7 +5,7 @@ export interface StakingState {
   readonly eth2Details: Eth2Detail[];
   readonly eth2Deposits: Eth2Deposit[];
   readonly adexBalances: AdexBalances;
-  readonly adexEvents: AdexEvents;
+  readonly adexHistory: AdexHistory;
 }
 
 export interface Eth2Deposit {
@@ -34,8 +34,9 @@ export interface Eth2Staking {
 }
 
 interface AdexBalance {
-  readonly address: string;
-  readonly balance: Balance;
+  readonly contractAddress: string;
+  readonly adxBalance: Balance;
+  readonly daiUnclaimedBalance: Balance;
   readonly poolId: string;
   readonly poolName: string;
 }
@@ -45,17 +46,23 @@ export interface AdexBalances {
 }
 
 interface AdexEvent {
-  readonly amount: BigNumber;
+  readonly value: BigNumber;
+  readonly eventType: 'claim' | 'deposit' | 'withdraw';
   readonly bondId: string;
   readonly identityAddress: string;
+  readonly poolId: string;
+  readonly poolName: string;
   readonly timestamp: number;
   readonly txHash: string;
 }
 
-interface AdexStat {
-  readonly address: string;
+interface AdexStakingDetails {
+  readonly contractAddress: string;
   readonly apr: string;
-  readonly balance: Balance;
+  readonly adxBalance: Balance;
+  readonly daiUnclaimedBalance: Balance;
+  readonly adxUnclaimedBalance: Balance;
+  readonly profitLoss: Balance;
   readonly poolId: string;
   readonly poolName: string;
   readonly totalStakedAmount: BigNumber;
@@ -63,9 +70,9 @@ interface AdexStat {
 
 interface AdexDetails {
   readonly events: AdexEvent[];
-  readonly stakingStats: AdexStat[];
+  readonly stakingDetails: AdexStakingDetails[];
 }
 
-export interface AdexEvents {
+export interface AdexHistory {
   readonly [address: string]: AdexDetails;
 }

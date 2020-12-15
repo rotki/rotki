@@ -860,7 +860,7 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async adexEvents(): Promise<PendingTask> {
+  async adexHistory(): Promise<PendingTask> {
     return this.axios
       .get<ActionResult<PendingTask>>('/blockchains/ETH/modules/adex/history', {
         params: axiosSnakeCaseTransformer({
