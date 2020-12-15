@@ -34,7 +34,7 @@ AdexEventDBTuple = (
 )
 
 
-class EventType(Enum):
+class AdexEventType(Enum):
     """Supported events"""
     BOND = 1
     UNBOND = 2
@@ -42,13 +42,13 @@ class EventType(Enum):
     CHANNEL_WITHDRAW = 4
 
     def __str__(self) -> str:
-        if self == EventType.BOND:
+        if self == AdexEventType.BOND:
             return 'deposit'
-        if self == EventType.UNBOND:
+        if self == AdexEventType.UNBOND:
             return 'withdraw'
-        if self == EventType.UNBOND_REQUEST:
+        if self == AdexEventType.UNBOND_REQUEST:
             return 'withdraw request'
-        if self == EventType.CHANNEL_WITHDRAW:
+        if self == AdexEventType.CHANNEL_WITHDRAW:
             return 'claim'
         raise AttributeError(f'Corrupt value {self} for EventType -- Should never happen')
 
@@ -74,7 +74,7 @@ class Bond:
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
-            'event_type': str(EventType.BOND),
+            'event_type': str(AdexEventType.BOND),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
@@ -83,7 +83,7 @@ class Bond:
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
-            str(EventType.BOND),
+            str(AdexEventType.BOND),
             str(self.pool_id),
             str(self.value.amount),
             str(self.value.usd_value),
@@ -114,7 +114,7 @@ class Unbond:
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
-            'event_type': str(EventType.UNBOND),
+            'event_type': str(AdexEventType.UNBOND),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
@@ -123,7 +123,7 @@ class Unbond:
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
-            str(EventType.UNBOND),
+            str(AdexEventType.UNBOND),
             str(self.pool_id),
             str(self.value.amount),
             str(self.value.usd_value),
@@ -155,7 +155,7 @@ class UnbondRequest:
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
-            'event_type': str(EventType.UNBOND_REQUEST),
+            'event_type': str(AdexEventType.UNBOND_REQUEST),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
@@ -164,7 +164,7 @@ class UnbondRequest:
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
-            str(EventType.UNBOND_REQUEST),
+            str(AdexEventType.UNBOND_REQUEST),
             str(self.pool_id),
             str(self.value.amount),
             str(self.value.usd_value),
@@ -194,7 +194,7 @@ class ChannelWithdraw:
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
-            'event_type': str(EventType.CHANNEL_WITHDRAW),
+            'event_type': str(AdexEventType.CHANNEL_WITHDRAW),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
@@ -203,7 +203,7 @@ class ChannelWithdraw:
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
-            str(EventType.CHANNEL_WITHDRAW),
+            str(AdexEventType.CHANNEL_WITHDRAW),
             str(self.pool_id),
             str(self.value.amount),
             str(self.value.usd_value),
@@ -240,7 +240,7 @@ class ADXStakingBalance(NamedTuple):
     pool_name: Optional[str]
     adx_balance: Balance
     adx_unclaimed_balance: Balance
-    dai_balance: Balance
+    dai_unclaimed_balance: Balance
     contract_address: ChecksumAddress  # From staking contract
 
     def serialize(self) -> Dict[str, Any]:
@@ -248,7 +248,7 @@ class ADXStakingBalance(NamedTuple):
             'pool_id': self.pool_id,
             'pool_name': self.pool_name,
             'adx_balance': self.adx_balance.serialize(),
-            'dai_balance': self.dai_balance.serialize(),
+            'dai_unclaimed_balance': self.dai_unclaimed_balance.serialize(),
             'contract_address': self.contract_address,
         }
 
@@ -267,7 +267,8 @@ class ADXStakingDetail(NamedTuple):
     total_staked_amount: FVal
     apr: FVal
     adx_balance: Balance
-    dai_balance: Balance
+    adx_unclaimed_balance: Balance
+    dai_unclaimed_balance: Balance
     profit_loss: Balance
 
     def serialize(self) -> Dict[str, Any]:
@@ -278,7 +279,8 @@ class ADXStakingDetail(NamedTuple):
             'total_staked_amount': str(self.total_staked_amount),
             'apr': self.apr.to_percentage(precision=2),
             'adx_balance': self.adx_balance.serialize(),
-            'dai_balance': self.dai_balance.serialize(),
+            'adx_unclaimed_balance': self.adx_unclaimed_balance.serialize(),
+            'dai_unclaimed_balance': self.dai_unclaimed_balance.serialize(),
             'profit_loss': self.profit_loss.serialize(),
         }
 

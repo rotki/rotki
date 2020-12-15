@@ -3431,7 +3431,7 @@ Getting AdEx balances
                         "usd_value": "950"
                     },
                     "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
-                    "dai_balance": {
+                    "dai_unclaimed_balance": {
                         "amount": "0.221231768887185282",
                         "usd_value": "0.221895464193846837846"
                     },
@@ -3447,7 +3447,8 @@ Getting AdEx balances
    :resjson string address: The staking contract address.
    :resjson string pool_id: The identifier of the pool.
    :resjson string pool_id: The name of the pool.
-   :resjson object balance: The staked ADX amount and its USD value.
+   :resjson object adx_balance: The sum of the staked ADX plus the unclaimed ADX amount the user has in the pool, and its USD value.
+   :resjson object dai_unclaimed_balance: The unclaimed DAI amount the user has in the pool and its USD value.
 
    :statuscode 200: AdEx balances succesfully queried.
    :statuscode 409: User is not logged in. Or AdEx module is not activated.
@@ -3580,9 +3581,13 @@ Getting AdEx historical data
                             "amount": "1093",
                             "usd_value": "1075"
                         },
+                        "adx_unclaimed_balance": {
+                            "amount": "19.75",
+                            "usd_value": "5.24"
+                        },
                         "apr": "52.43%",
                         "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
-                        "dai_balance": {
+                        "dai_unclaimed_balance": {
                             "amount": "0.221231768887185282",
                             "usd_value": "0.221895464193846837846"
                         },
@@ -3618,8 +3623,9 @@ Getting AdEx historical data
        - pool_id: The identifier of the pool.
        - pool_name: The name of the pool.
        - total_staked_amount: The total amount of ADX staked in the pool.
-       - adx_balance: The sum of the staked ADX plus the unclaimed ADX rewards the user has in the pool, and its USD value.
-       - dai_balance: The unclaimed DAI rewards the user has in the pool.
+       - adx_balance: The sum of the staked ADX plus the unclaimed ADX amount the user has in the pool, and its USD value.
+       - adx_unclaimed_balance: The unclaimed ADX amount the user has in the pool and its USD value.
+       - dai_unclaimed_balance: The unclaimed DAI amount the user has in the pool and its USD value.
        - apr: The current staking APR in the pool.
        - profit_loss: The ADX profit/loss amount and its USD value.
 
