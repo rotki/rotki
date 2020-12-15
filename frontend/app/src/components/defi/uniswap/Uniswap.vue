@@ -157,6 +157,7 @@
       </v-col>
     </v-row>
     <uniswap-details
+      v-if="premium"
       :loading="secondaryLoading"
       :selected-addresses="selectedAddresses"
     />
