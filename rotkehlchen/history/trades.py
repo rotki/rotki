@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.constants.assets import A_DAI, A_USD
+from rotkehlchen.constants.assets import A_ADX, A_DAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -270,6 +270,24 @@ class TradesHistorian():
                         event_type=DefiEventType.COMPOUND_REWARDS,
                         asset=event.asset,
                         amount=event.realized_pnl.amount,
+                    ))
+
+        # include adex staking profit
+        adex = self.chain_manager.adex
+        if adex is not None and has_premium:
+            adx_mapping = adex.get_events_history(
+                addresses=self.chain_manager.queried_addresses_for_module('adex'),
+                reset_db_data=False,
+                from_timestamp=start_ts,
+                to_timestamp=end_ts,
+            )
+            for _, adex_history in adx_mapping.items():
+                for adx_detail in adex_history.staking_details:
+                    defi_events.append(DefiEvent(
+                        timestamp=end_ts,
+                        event_type=DefiEventType.ADEX_STAKE_PROFIT,
+                        asset=A_ADX,
+                        amount=adx_detail.profit_loss.amount,
                     ))
 
         # include aave lending events
