@@ -126,6 +126,9 @@ export default class Overview extends Vue {
 
   get icon(): string {
     const protocol = this.summary.protocol;
+    if (!protocol.icon) {
+      return '';
+    }
     return require(`@/assets/images/defi/${protocol.icon}`);
   }
 }

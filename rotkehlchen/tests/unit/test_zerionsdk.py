@@ -60,6 +60,7 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'Swerve',
     'SashimiSwap',
     'Harvest',
+    'Harvest • Profit Sharing',
     'KIMCHI',
     'SushiSwap',
     'Nexus Mutual',
@@ -95,11 +96,16 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'iearn.finance (v3)',
     'iearn.finance (v2)',
     'Idle',
+    'Idle • Early Rewards',
     'dYdX',
     'Curve',
     'Compound',
     'Balancer',
     'Aave',
+    'SnowSwap',
+    'Aave V2',
+    'Aave V2 • Variable Debt',
+    'Aave V2 • Stable Debt',
 )
 
 

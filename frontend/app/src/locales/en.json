@@ -29,6 +29,9 @@
     "back": "Back",
     "next": "Next"
   },
+  "defi_overview": {
+    "multiple_assets": "Multiple assets"
+  },
   "defi_settings": {
     "active_modules": "Active Defi modules",
     "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
