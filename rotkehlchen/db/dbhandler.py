@@ -780,9 +780,10 @@ class DBHandler:
                 nonce,
                 slashed_at,
                 unlock_at,
-                channel_id
+                channel_id,
+                token
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
         cursor = self.conn.cursor()
@@ -825,7 +826,8 @@ class DBHandler:
             'nonce, '
             'slashed_at, '
             'unlock_at, '
-            'channel_id '
+            'channel_id, '
+            'token '
             'FROM adex_events '
         )
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`

@@ -3508,7 +3508,8 @@ Getting AdEx historical data
                         "value": {
                             "amount": "50",
                             "usd_value": "45.23"
-                        }
+                        },
+                        "token": "ADX",
                     },
                     {
                         "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
@@ -3546,7 +3547,8 @@ Getting AdEx historical data
                         "value": {
                             "amount": "43",
                             "usd_value": "39.233"
-                        }
+                        },
+                        "token": "ADX",
                     },
                     {
                         "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
@@ -3577,6 +3579,10 @@ Getting AdEx historical data
                 ],
                 "staking_details": [
                     {
+                        "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "apr": "52.43%",
                         "adx_balance": {
                             "amount": "1093",
                             "usd_value": "1075"
@@ -3585,17 +3591,17 @@ Getting AdEx historical data
                             "amount": "19.75",
                             "usd_value": "5.24"
                         },
-                        "apr": "52.43%",
-                        "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
                         "dai_unclaimed_balance": {
                             "amount": "0.221231768887185282",
                             "usd_value": "0.221895464193846837846"
                         },
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "profit_loss": {
+                        "adx_profit_loss": {
                             "amount": "93",
                             "usd_value": "81"
+                        },
+                        "dai_profit_loss": {
+                            "amount": "0.22",
+                            "usd_value": "0.21"
                         },
                         "total_staked_amount": "28809204.154057988204380985"
                     }
@@ -3613,9 +3619,10 @@ Getting AdEx historical data
        - identity_address: The contract address associated with the user address in the platform.
        - event_type: The type of event. Can be: ``"deposit"`` (bond), ``"withdraw"`` (unbond), ``"withdraw request"`` (unbond request) and ``"claim"`` (channel withdraw).
        - value: the deposited, withdrawn or claimed ADX amount and its USD value.
-       - bond_id: (except claim events): The identifier of the bond, shared among deposit, withdraw and withdraw requested events that involve the same bond.
+       - bond_id (except claim events): The identifier of the bond, shared among deposit, withdraw and withdraw requested events that involve the same bond.
        - pool_id: The identifier of the pool.
        - pool_name: The name of the pool.
+       - token (only claim events): The identifier of the tokens claimed.
 
    :resjson list[object] staking_details: A list of the staking details of the staking pools the address is currently staking in.
 
@@ -3627,7 +3634,8 @@ Getting AdEx historical data
        - adx_unclaimed_balance: The unclaimed ADX amount the user has in the pool and its USD value.
        - dai_unclaimed_balance: The unclaimed DAI amount the user has in the pool and its USD value.
        - apr: The current staking APR in the pool.
-       - profit_loss: The ADX profit/loss amount and its USD value.
+       - adx_profit_loss: The ADX profit/loss amount and its USD value (includes unclaimed ADX).
+       - dai_profit_loss: The DAI profit/loss amount and its USD value (includes unclaimed DAI).
 
    :statuscode 200: AdEx events history succesfully queried.
    :statuscode 409: User is not logged in. Or AdEx module is not activated.

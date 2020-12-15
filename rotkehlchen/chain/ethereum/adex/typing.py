@@ -31,6 +31,7 @@ AdexEventDBTuple = (
         Optional[int],  # slashed_at
         Optional[int],  # unlock_at
         Optional[str],  # channel_id
+        Optional[str],  # token
     ]
 )
 
@@ -93,6 +94,7 @@ class Bond:
             int(self.slashed_at),
             None,  # unlock_at
             None,  # channel_id
+            None,  # token
         )
 
 
@@ -133,6 +135,7 @@ class Unbond:
             None,  # slashed_at
             None,  # unlock_at
             None,  # channel_id
+            None,  # token
         )
 
 
@@ -174,6 +177,7 @@ class UnbondRequest:
             None,  # slashed_at
             int(self.unlock_at),
             None,  # channel_id
+            None,  # token
         )
 
 
@@ -186,7 +190,7 @@ class ChannelWithdraw:
     value: Balance
     channel_id: HexStr
     pool_id: HexStr
-    token: EthereumToken
+    token: Optional[EthereumToken] = None
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -197,9 +201,11 @@ class ChannelWithdraw:
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
             'event_type': str(AdexEventType.CHANNEL_WITHDRAW),
+            'token': (self.token.serialize() if self.token is not None else None),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
+        token = self.token.serialize() if self.token is not None else None
         return (
             str(self.tx_hash),
             str(self.address),
@@ -214,6 +220,7 @@ class ChannelWithdraw:
             None,  # slashed_at
             None,  # unlocked_at
             str(self.channel_id),
+            token,
         )
 
 
@@ -230,6 +237,14 @@ class ADXStakingEvents(NamedTuple):
     unbonds: List[Unbond]
     unbond_requests: List[UnbondRequest]
     channel_withdraws: List[ChannelWithdraw]
+
+    def get_all(self) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
+        return (
+            self.bonds +
+            self.unbonds +  # type: ignore # concatenating lists
+            self.unbond_requests +  # type: ignore # concatenating lists
+            self.channel_withdraws  # type: ignore # concatenating lists
+        )
 
 
 class UnclaimedReward(NamedTuple):
@@ -271,7 +286,8 @@ class ADXStakingDetail(NamedTuple):
     adx_balance: Balance
     adx_unclaimed_balance: Balance
     dai_unclaimed_balance: Balance
-    profit_loss: Balance
+    adx_profit_loss: Balance
+    dai_profit_loss: Balance
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -283,12 +299,13 @@ class ADXStakingDetail(NamedTuple):
             'adx_balance': self.adx_balance.serialize(),
             'adx_unclaimed_balance': self.adx_unclaimed_balance.serialize(),
             'dai_unclaimed_balance': self.dai_unclaimed_balance.serialize(),
-            'profit_loss': self.profit_loss.serialize(),
+            'adx_profit_loss': self.adx_profit_loss.serialize(),
+            'dai_profit_loss': self.dai_profit_loss.serialize(),
         }
 
 
 class ADXStakingHistory(NamedTuple):
-    events: List[Union[Bond, Unbond, UnbondRequest]]
+    events: List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]
     staking_details: List[ADXStakingDetail]
 
     def serialize(self) -> Dict[str, Any]:
@@ -299,3 +316,4 @@ class ADXStakingHistory(NamedTuple):
 
 
 DeserializationMethod = Callable[..., Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]
+FeeRewards = List[Dict[str, Any]]
