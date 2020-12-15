@@ -3,7 +3,8 @@ from typing import Union, cast
 from eth_utils.typing import HexStr
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
@@ -73,6 +74,7 @@ def deserialize_adex_event_from_db(
     10 - slashed_at
     11 - unlock_at
     12 - channel_id
+    13 - token
     """
     db_event_type = event_tuple[4]
     if db_event_type not in {str(event_type) for event_type in AdexEventType}:
@@ -141,10 +143,22 @@ def deserialize_adex_event_from_db(
         )
 
     if db_event_type == str(AdexEventType.CHANNEL_WITHDRAW):
+        # NB: `token` (event_tuple[13]) could be None, do not check below.
         if any(event_tuple[idx] is None for idx in (12,)):
             raise DeserializationError(
                 f'Failed to deserialize unbond request event. Unexpected data: {event_tuple}.',
             )
+
+        token = None
+        if event_tuple[13] is not None:
+            try:
+                token = EthereumToken(event_tuple[13])
+            except (UnknownAsset, UnsupportedAsset) as e:
+                asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
+                raise DeserializationError(
+                    f'{asset_tag} {e.asset_name} found while processing adex event. '
+                    f'Unexpected data: {event_tuple}',
+                ) from e
 
         return ChannelWithdraw(
             tx_hash=tx_hash,
@@ -154,6 +168,7 @@ def deserialize_adex_event_from_db(
             value=value,
             pool_id=pool_id,
             channel_id=HexStr(cast(str, event_tuple[12])),
+            token=token,
         )
 
     raise DeserializationError(

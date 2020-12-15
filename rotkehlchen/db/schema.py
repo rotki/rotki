@@ -396,6 +396,7 @@ CREATE TABLE IF NOT EXISTS adex_events (
     slashed_at INTEGER,
     unlock_at INTEGER,
     channel_id TEXT,
+    token TEXT,
     PRIMARY KEY (tx_hash, address, type)
 );
 """
