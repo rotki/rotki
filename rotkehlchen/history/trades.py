@@ -287,7 +287,13 @@ class TradesHistorian():
                         timestamp=end_ts,
                         event_type=DefiEventType.ADEX_STAKE_PROFIT,
                         asset=A_ADX,
-                        amount=adx_detail.profit_loss.amount,
+                        amount=adx_detail.adx_profit_loss.amount,
+                    ))
+                    defi_events.append(DefiEvent(
+                        timestamp=end_ts,
+                        event_type=DefiEventType.ADEX_STAKE_PROFIT,
+                        asset=A_DAI,
+                        amount=adx_detail.dai_profit_loss.amount,
                     ))
 
         # include aave lending events
