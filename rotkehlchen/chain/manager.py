@@ -924,7 +924,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
             for address, pool_balances in adex_balances.items():
                 for pool_balance in pool_balances:
                     eth_balances[address].assets[A_ADX] += pool_balance.adx_balance
+                    self.totals.assets[A_ADX] += pool_balance.adx_balance
                     eth_balances[address].assets[A_DAI] += pool_balance.dai_unclaimed_balance
+                    self.totals.assets[A_DAI] += pool_balance.dai_unclaimed_balance
 
         # Count ETH staked in Eth2 beacon chain
         self.account_for_staked_eth2_balances(addresses=self.accounts.eth, at_addition=False)
