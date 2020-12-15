@@ -24,6 +24,7 @@ from typing_extensions import Literal
 from web3 import Web3
 
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.constants import YEAR_IN_SECONDS, ZERO
@@ -694,13 +695,13 @@ class Adex(EthereumModule):
     def _get_tom_pool_unclaimed_rewards(
             self,
             addresses: List[ChecksumEthAddress],
+            fee_rewards: List[Dict[str, Any]],
     ) -> Dict[ChecksumAddress, UnclaimedReward]:
         """Get Tom pool unclaimed rewards per address
 
         NB: the unclaimed rewards are ADX and DAI balances associated with the
         user identity of the address.
         """
-        fee_rewards = self._get_tom_pool_fee_rewards_from_api()
         identity_address_map = self._get_identity_address_map(addresses)
         address_adx_amount = defaultdict(list)
         address_dai_amount = defaultdict(list)
@@ -839,6 +840,20 @@ class Adex(EthereumModule):
             init_code=HexStr(IDENTITY_PROXY_INIT_CODE.format(signer_address=address)),
         )
 
+    def _update_channel_withdraw_events_data(
+            self,
+            channel_withdraws: List[ChannelWithdraw],
+            fee_rewards: List[Dict[str, Any]],
+    ) -> None:
+        if not fee_rewards:
+            return None
+
+        channel_id_token: Dict[HexStr, EthereumToken] = {}
+        for entry in fee_rewards:
+            try:
+                channel_id = entry['channelId']
+                token_addr = entry['channelArgs']['tokenAddr']
+
     def _update_staking_events_data(
             self,
             events: List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]],
@@ -936,7 +951,15 @@ class Adex(EthereumModule):
             except RemoteError:
                 return staking_balances
 
-            unclaimed_rewards = self._get_tom_pool_unclaimed_rewards(addresses=addresses)
+            fee_rewards = self._get_tom_pool_fee_rewards_from_api()
+            self._update_channel_withdraw_events_data(
+                channel_withdraws=channel_withdraws,
+                fee_rewards=fee_rewards,
+            )
+            unclaimed_rewards = self._get_tom_pool_unclaimed_rewards(
+                addresses=addresses,
+                fee_rewards=fee_rewards,
+            )
             adx_usd_price = Inquirer().find_usd_price(A_ADX)
             dai_usd_price = Inquirer().find_usd_price(A_DAI)
             staking_balances = self._calculate_staking_balances(

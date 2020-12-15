@@ -6,6 +6,7 @@ from eth_typing.evm import ChecksumAddress
 from eth_utils.typing import HexStr
 
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
 
@@ -185,6 +186,7 @@ class ChannelWithdraw:
     value: Balance
     channel_id: HexStr
     pool_id: HexStr
+    token: EthereumToken
 
     def serialize(self) -> Dict[str, Any]:
         return {
