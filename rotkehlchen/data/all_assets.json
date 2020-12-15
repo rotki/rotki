@@ -5473,6 +5473,14 @@
         "symbol": "GMT",
         "type": "ethereum token"
     },
+    "GNC": {
+        "coingecko": "galaxy-network",
+        "cryptocompare": "",
+        "name": "Galaxy network",
+        "symbol": "GNC",
+        "started": 1602979200,
+        "type": "own chain"
+    },
     "GNO": {
         "coingecko": "gnosis",
         "ethereum_address": "0x6810e776880C02933D47DB1b9fc05908e5386b96",
