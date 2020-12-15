@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.aave import (
     AaveHistory,
     AaveLendingBalance,
 )
+from rotkehlchen.chain.ethereum.adex import ADXStakingBalance, ADXStakingHistory
 from rotkehlchen.chain.ethereum.compound import CompoundBalance, CompoundEvent
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
@@ -118,6 +119,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             UnknownEthereumToken,
             AMMTrade,
             UniswapPoolEventsBalance,
+            ADXStakingBalance,
+            ADXStakingHistory,
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (

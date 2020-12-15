@@ -18,6 +18,8 @@ from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.api.v1.resources import (
     AaveBalancesResource,
     AaveHistoryResource,
+    AdexBalancesResource,
+    AdexHistoryResource,
     AllAssetsResource,
     AllBalancesResource,
     AssetIconsResource,
@@ -146,6 +148,8 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/makerdao/vaultdetails', MakerDAOVaultDetailsResource),
     ('/blockchains/ETH/modules/aave/balances', AaveBalancesResource),
     ('/blockchains/ETH/modules/aave/history', AaveHistoryResource),
+    ('/blockchains/ETH/modules/adex/balances', AdexBalancesResource),
+    ('/blockchains/ETH/modules/adex/history', AdexHistoryResource),
     ('/blockchains/ETH/modules/compound/balances', CompoundBalancesResource),
     ('/blockchains/ETH/modules/compound/history', CompoundHistoryResource),
     ('/blockchains/ETH/modules/uniswap/balances', UniswapBalancesResource),

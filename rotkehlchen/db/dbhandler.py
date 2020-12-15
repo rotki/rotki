@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 
 from eth_utils import is_checksum_address
+from eth_utils.typing import HexStr
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
@@ -20,6 +21,15 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubData,
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
+)
+from rotkehlchen.chain.ethereum.adex import (
+    ADEX_EVENTS_PREFIX,
+    AdexEventType,
+    Bond,
+    ChannelWithdraw,
+    Unbond,
+    UnbondRequest,
+    deserialize_adex_event_from_db,
 )
 from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSITS_PREFIX, Eth2Deposit
 from rotkehlchen.chain.ethereum.structures import (
@@ -748,6 +758,118 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM aave_events;')
         cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
+        self.conn.commit()
+        self.update_last_write()
+
+    def add_adex_events(
+            self,
+            events: Sequence[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]],
+    ) -> None:
+        query = (
+            """
+            INSERT INTO adex_events (
+                tx_hash,
+                address,
+                identity_address,
+                timestamp,
+                type,
+                pool_id,
+                amount,
+                usd_value,
+                bond_id,
+                nonce,
+                slashed_at,
+                unlock_at,
+                channel_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+        )
+        cursor = self.conn.cursor()
+        for event in events:
+            event_tuple = event.to_db_tuple()
+            try:
+                cursor.execute(query, event_tuple)
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add an AdEx event that already exists in the DB. '
+                    f'Event data: {event_tuple}. Skipping event.',
+                )
+                continue
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_adex_events(
+            self,
+            from_timestamp: Optional[Timestamp] = None,
+            to_timestamp: Optional[Timestamp] = None,
+            address: Optional[ChecksumEthAddress] = None,
+            bond_id: Optional[HexStr] = None,
+            event_type: Optional[AdexEventType] = None,
+    ) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
+        """Returns a list of AdEx events optionally filtered by time and address.
+        """
+        cursor = self.conn.cursor()
+        query = (
+            'SELECT '
+            'tx_hash, '
+            'address, '
+            'identity_address, '
+            'timestamp, '
+            'type, '
+            'pool_id, '
+            'amount, '
+            'usd_value, '
+            'bond_id, '
+            'nonce, '
+            'slashed_at, '
+            'unlock_at, '
+            'channel_id '
+            'FROM adex_events '
+        )
+        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
+        filters = []
+        if address is not None:
+            filters.append(f'address="{address}" ')
+        if bond_id is not None:
+            filters.append(f'bond_id="{bond_id}"')
+        if event_type is not None:
+            filters.append(f'type="{str(event_type)}"')
+
+        if filters:
+            query += 'WHERE '
+            query += 'AND '.join(filters)
+
+        query, bindings = form_query_to_filter_timestamps(
+            query=query,
+            timestamp_attribute='timestamp',
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+        )
+        results = cursor.execute(query, bindings)
+
+        events = []
+        for event_tuple in results:
+            try:
+                event = deserialize_adex_event_from_db(event_tuple)
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing AdEx event from the DB. Skipping event. '
+                    f'Error was: {str(e)}',
+                )
+                continue
+            events.append(event)
+
+        return events
+
+    def delete_adex_events_data(self) -> None:
+        """Delete all historical AdEx events data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM adex_events;')
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{ADEX_EVENTS_PREFIX}%";',
+        )
         self.conn.commit()
         self.update_last_write()
 
@@ -2041,6 +2163,9 @@ class DBHandler:
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="ethtxs_{address}";')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
         cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name="{ADEX_EVENTS_PREFIX}_{address}";',
+        )
+        cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name="{UNISWAP_EVENTS_PREFIX}_{address}";',
         )
         cursor.execute(
@@ -2051,6 +2176,7 @@ class DBHandler:
         )
         cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
+        cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM uniswap_events WHERE address=?;', (address,))
         cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',

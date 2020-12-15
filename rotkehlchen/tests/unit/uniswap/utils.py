@@ -111,7 +111,7 @@ EXP_LIQUIDITY_POOL_1 = (
                 total_amount=FVal('135433.787685858453561892'),
                 user_balance=Balance(
                     amount=FVal('2486.554982222884623101272349'),
-                    usd_value=FVal(ZERO),
+                    usd_value=ZERO,
                 ),
                 usd_price=Price(ZERO),
             ),
@@ -120,7 +120,7 @@ EXP_LIQUIDITY_POOL_1 = (
                 total_amount=FVal('72.576018267058292417'),
                 user_balance=Balance(
                     amount=FVal('1.332490679729371260856256139'),
-                    usd_value=FVal(ZERO),
+                    usd_value=ZERO,
                 ),
                 usd_price=Price(ZERO),
             ),
@@ -128,7 +128,7 @@ EXP_LIQUIDITY_POOL_1 = (
         total_supply=FVal('2885.30760350854829554'),
         user_balance=Balance(
             amount=FVal('52.974048199782328795'),
-            usd_value=FVal(ZERO),
+            usd_value=ZERO,
         ),
     )
 )
@@ -143,7 +143,7 @@ EXP_LIQUIDITY_POOL_2 = (
                 total_amount=FVal('8898126.662476782539378895'),
                 user_balance=Balance(
                     amount=FVal('3773477.536528796798537134308'),
-                    usd_value=FVal(ZERO),
+                    usd_value=ZERO,
                 ),
                 usd_price=Price(ZERO),
             ),
@@ -152,7 +152,7 @@ EXP_LIQUIDITY_POOL_2 = (
                 total_amount=FVal('2351046.688852'),
                 user_balance=Balance(
                     amount=FVal('997021.3061952553312356558897'),
-                    usd_value=FVal(ZERO),
+                    usd_value=ZERO,
                 ),
                 usd_price=Price(ZERO),
             ),
@@ -160,7 +160,7 @@ EXP_LIQUIDITY_POOL_2 = (
         total_supply=FVal('4.565121916083260693'),
         user_balance=Balance(
             amount=FVal('1.935956370962755013'),
-            usd_value=FVal(ZERO),
+            usd_value=ZERO,
         ),
     )
 )
@@ -267,7 +267,7 @@ UPDATED_LIQUIDITY_POOL_2_ONLY_USDT = (
                 total_amount=FVal('8898126.662476782539378895'),
                 user_balance=Balance(
                     amount=FVal('3773477.536528796798537134308'),
-                    usd_value=FVal(ZERO),
+                    usd_value=ZERO,
                 ),
                 usd_price=Price(ZERO),
             ),

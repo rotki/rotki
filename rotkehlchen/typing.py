@@ -14,6 +14,7 @@ ModuleName = Literal[
     'compound',
     'yearn_vaults',
     'uniswap',
+    'adex',
 ]
 AVAILABLE_MODULES = [
     'makerdao_dsr',
@@ -22,6 +23,7 @@ AVAILABLE_MODULES = [
     'compound',
     'yearn_vaults',
     'uniswap',
+    'adex',
 ]
 
 T_BinaryEthAddress = bytes

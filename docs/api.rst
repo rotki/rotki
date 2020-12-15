@@ -3396,6 +3396,238 @@ Getting Aave historical data
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+Getting AdEx balances
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/adex/balances
+
+   Doing a GET on the adex balances resource will return the ADX staked in the pools of the platform.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/adex/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+            "0xE74ad5437C6CFB0cCD6bADda1F6b57b6E542E75e": [
+                {
+                    "adx_balance": {
+                        "amount": "1050",
+                        "usd_value": "950"
+                    },
+                    "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
+                    "dai_balance": {
+                        "amount": "0.221231768887185282",
+                        "usd_value": "0.221895464193846837846"
+                    },
+                    "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                    "pool_name": "Tom"
+                }
+            ]
+        },
+        "message": "",
+      }
+
+   :resjson object result: A mapping between accounts and their balances in the AdEx pools (represented by a list where each item is a pool).
+   :resjson string address: The staking contract address.
+   :resjson string pool_id: The identifier of the pool.
+   :resjson string pool_id: The name of the pool.
+   :resjson object balance: The staked ADX amount and its USD value.
+
+   :statuscode 200: AdEx balances succesfully queried.
+   :statuscode 409: User is not logged in. Or AdEx module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+
+Getting AdEx historical data
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/adex/history
+
+   Doing a GET on the adex events history resource will return the history of staking events (e.g. withdraw, deposit) and the staking details of the pools.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/adex/history HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+            "0xE74ad5437C6CFB0cCD6bADda1F6b57b6E542E75e": {
+                "events": [
+                    {
+                        "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
+                        "event_type": "deposit",
+                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "timestamp": 1604366004,
+                        "tx_hash": "0x9989f47c6c0a761f98f910ac24e2438d858be96c12124a13be4bb4b3150c55ea",
+                        "value": {
+                            "amount": "1000",
+                            "usd_value": "950"
+                        }
+                    },
+                    {
+                        "event_type": "claim",
+                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "timestamp": 1607453764,
+                        "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
+                        "value": {
+                            "amount": "50",
+                            "usd_value": "45.23"
+                        }
+                    },
+                    {
+                        "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
+                        "event_type": "withdraw",
+                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "timestamp": 1607453764,
+                        "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
+                        "value": {
+                            "amount": "1000",
+                            "usd_value": "950"
+                        }
+                    },
+                    {
+                        "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
+                        "event_type": "deposit",
+                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "timestamp": 1607453764,
+                        "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
+                        "value": {
+                            "amount": "1050",
+                            "usd_value": "1015"
+                        }
+                    },
+                    {
+                        "event_type": "claim",
+                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "timestamp": 1607915796,
+                        "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
+                        "value": {
+                            "amount": "43",
+                            "usd_value": "39.233"
+                        }
+                    },
+                    {
+                        "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
+                        "event_type": "withdraw",
+                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "timestamp": 1607915796,
+                        "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
+                        "value": {
+                            "amount": "1050",
+                            "usd_value": "1015"
+                        }
+                    },
+                    {
+                        "bond_id": "0x30bd07a0cc0c9b94e2d10487c1053fc6a5043c41fb28dcfa3ff80a68013eb501",
+                        "event_type": "deposit",
+                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "timestamp": 1607915796,
+                        "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
+                        "value": {
+                            "amount": "1093",
+                            "usd_value": "1075"
+                        }
+                    }
+                ],
+                "staking_details": [
+                    {
+                        "adx_balance": {
+                            "amount": "1093",
+                            "usd_value": "1075"
+                        },
+                        "apr": "52.43%",
+                        "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
+                        "dai_balance": {
+                            "amount": "0.221231768887185282",
+                            "usd_value": "0.221895464193846837846"
+                        },
+                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
+                        "pool_name": "Tom",
+                        "profit_loss": {
+                            "amount": "93",
+                            "usd_value": "81"
+                        },
+                        "total_staked_amount": "28809204.154057988204380985"
+                    }
+                ]
+            }
+        },
+        "message": "",
+      }
+
+   :resjson object result: A mapping between accounts and their events history on the AdEx pools and the staking details of the pools.
+   :resjson list[object] events: A list of all the staking events generated by the address interacting with the pools.
+
+       - tx_hash: The transaction hash of the event.
+       - timestamp: The Unix epoch point in UTC time of the event (in seconds).
+       - identity_address: The contract address associated with the user address in the platform.
+       - event_type: The type of event. Can be: ``"deposit"`` (bond), ``"withdraw"`` (unbond), ``"withdraw request"`` (unbond request) and ``"claim"`` (channel withdraw).
+       - value: the deposited, withdrawn or claimed ADX amount and its USD value.
+       - bond_id: (except claim events): The identifier of the bond, shared among deposit, withdraw and withdraw requested events that involve the same bond.
+       - pool_id: The identifier of the pool.
+       - pool_name: The name of the pool.
+
+   :resjson list[object] staking_details: A list of the staking details of the staking pools the address is currently staking in.
+
+       - contract_address: The ADX staking contract address.
+       - pool_id: The identifier of the pool.
+       - pool_name: The name of the pool.
+       - total_staked_amount: The total amount of ADX staked in the pool.
+       - adx_balance: The sum of the staked ADX plus the unclaimed ADX rewards the user has in the pool, and its USD value.
+       - dai_balance: The unclaimed DAI rewards the user has in the pool.
+       - apr: The current staking APR in the pool.
+       - profit_loss: The ADX profit/loss amount and its USD value.
+
+   :statuscode 200: AdEx events history succesfully queried.
+   :statuscode 409: User is not logged in. Or AdEx module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+
 Getting Compound balances
 ==============================
 
