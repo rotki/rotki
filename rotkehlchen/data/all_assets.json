@@ -5576,7 +5576,7 @@
         "coingecko": "grain-token",
         "cryptocompare": "",
         "ethereum_address": "0x6589fe1271A0F29346796C6bAf0cdF619e25e58e",
-        "ethereum_token_decimals": 12,
+        "ethereum_token_decimals": 18,
         "name": "GRAIN Token",
         "started": 1606500872,
         "symbol": "GRAIN",
