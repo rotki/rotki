@@ -166,7 +166,7 @@ class EthereumTransaction(NamedTuple):
     input_data: bytes
     # The ethereum transaction nonce. Even though for normal ethereum transactions
     # this can't be negative it can be for us. IF it's negative it means that
-    # this is an internal transaction returned by etherscan
+    # this is an internal transaction returned by etherscan.
     nonce: int
 
     def serialize(self) -> Dict[str, Any]:
