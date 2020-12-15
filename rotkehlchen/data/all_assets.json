@@ -10597,6 +10597,13 @@
         "symbol": "SPA",
         "type": "own chain"
     },
+    "SPARTA": {
+        "coingecko": "spartan-protocol-token",
+        "name": "Spartan Protocol Token",
+        "started": 1601251200,
+        "symbol": "SPARTA",
+        "type": "binance token"
+    },
     "SPANK": {
         "coingecko": "spankchain",
         "ethereum_address": "0x42d6622deCe394b54999Fbd73D108123806f6a18",

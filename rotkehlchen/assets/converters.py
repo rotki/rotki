@@ -434,9 +434,6 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'NGN',  # https://www.binance.com/en/support/articles/360035511611
     '123',  # https://twitter.com/rotkiapp/status/1161977327078838272
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
-    'WRX',  # https://info.binance.com/en/currencies/WRX - not listed anywhere else
-    'SCRT',  # no cryptocompare data
-    'SPARTA',  # no cryptocompare data
     'UNIDOWN',  # no cryptocompare/coingecko data
     'UNIUP',  # no cryptocompare/coingecko data
     'SXPDOWN',  # no cryptocompare/coingecko data

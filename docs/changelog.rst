@@ -43,6 +43,7 @@ Changelog
   - `Badger DAO (BADGER) <https://www.coingecko.com/en/coins/badger-dao>`__
   - `API3 (API3) <https://www.coingecko.com/en/coins/api3>`__
   - `Secret (SCRT) <https://www.coingecko.com/en/coins/secret>`__
+  - `Spartan Protocol Token (SPARTA) <https://www.coingecko.com/en/coins/spartan-protocol-token>`__
 
 * :release:`1.9.2 <2020-12-12>`
 * :bug:`1896` Provide a temporary fix for the breaking change that the Graph introduced into their schemas that breaks all current python implementations. Users should no longer see _SubgraphErrorPolicy_! errors.
