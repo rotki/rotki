@@ -4266,7 +4266,8 @@
         "name": "Enigma",
         "started": 1498867200,
         "symbol": "ENG",
-        "type": "ethereum token"
+        "type": "ethereum token",
+        "swapped_for": "SCRT"
     },
     "ENGT": {
         "coingecko": "",
@@ -10080,6 +10081,13 @@
         "started": 1504656000,
         "symbol": "XD",
         "type": "ethereum token"
+    },
+    "SCRT": {
+        "coingecko": "secret",
+        "name": "Secret",
+        "started": 1601510400,
+        "symbol": "SCRT",
+        "type": "own chain"
     },
     "SDC": {
         "coingecko": "",
