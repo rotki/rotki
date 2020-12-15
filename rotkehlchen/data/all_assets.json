@@ -902,6 +902,15 @@
         "symbol": "B2BX",
         "type": "ethereum token"
     },
+    "BADGER": {
+        "coingecko": "badger-dao",
+        "ethereum_address": "0x3472A5A71965499acd81997a54BBA8D852C6E53d",
+        "ethereum_token_decimals": 18,
+        "name": "Badger",
+        "started": 1606584722,
+        "symbol": "BADGER",
+        "type": "ethereum token"
+    },
     "BAKE": {
         "coingecko": "bakerytoken",
         "name": "BakeryToken",
