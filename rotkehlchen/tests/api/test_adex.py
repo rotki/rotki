@@ -90,5 +90,5 @@ def test_get_balances_premium(
         assert staking_balance['contract_address'] is not None
         assert staking_balance['adx_balance']['amount']
         assert staking_balance['adx_balance']['usd_value']
-        assert staking_balance['dai_balance']['amount']
-        assert staking_balance['dai_balance']['usd_value']
+        assert staking_balance['dai_unclaimed_balance']['amount']
+        assert staking_balance['dai_unclaimed_balance']['usd_value']
