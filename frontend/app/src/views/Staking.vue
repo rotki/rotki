@@ -4,16 +4,7 @@
     <v-container class="staking__content">
       <no-premium-placeholder v-if="!premium" :text="$t('staking.title')" />
       <div v-else>
-        <progress-screen v-if="loading">
-          <template #message>
-            {{ $t('staking.loading') }}
-          </template>
-        </progress-screen>
-        <eth2-staking
-          v-else
-          :refreshing="refreshing"
-          :secondary-refreshing="secondaryRefreshing"
-        />
+        <tab-navigation :tab-contents="stakingTabs" />
       </div>
     </v-container>
   </v-container>
@@ -21,34 +12,32 @@
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import TabNavigation, {
+  TabContent
+} from '@/components/helper/TabNavigation.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
-import StatusMixin from '@/mixins/status-mixin';
-import { Section } from '@/store/const';
-import { Eth2Staking } from '@/utils/premium';
+import { Routes } from '@/router/routes';
 
 @Component({
   components: {
+    TabNavigation,
     NoPremiumPlaceholder,
-    ProgressScreen,
-    BasePageHeader,
-    Eth2Staking
-  },
-  methods: {
-    ...mapActions('staking', ['fetchStakingDetails'])
+    BasePageHeader
   }
 })
-export default class Staking extends Mixins(PremiumMixin, StatusMixin) {
-  readonly section = Section.STAKING_ETH2;
-  readonly secondSection = Section.STAKING_ETH2_DEPOSITS;
-  fetchStakingDetails!: (refresh: boolean) => Promise<void>;
-
-  async mounted() {
-    await this.fetchStakingDetails(false);
-  }
+export default class Staking extends Mixins(PremiumMixin) {
+  readonly stakingTabs: TabContent[] = [
+    {
+      routeTo: Routes.STAKING_ETH2,
+      name: `${this.$t('staking.eth2')}`
+    },
+    {
+      routeTo: Routes.STAKING_ADEX,
+      name: `${this.$t('staking.adex')}`
+    }
+  ];
 }
 </script>
 

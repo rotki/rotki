@@ -13,12 +13,14 @@
       :style="{ 'min-width': `${minWidth}ch` }"
     >
       <amount-display
+        :loading-="!!!value"
         :asset="asset"
         :asset-padding="assetPadding"
         :value="value.amount"
         class="d-block font-weight-medium"
       />
       <amount-display
+        :loading-="!!!value"
         fiat-currency="USD"
         :asset-padding="assetPadding"
         :value="value.usdValue"
@@ -37,7 +39,7 @@ export default class BalanceDisplay extends Vue {
   @Prop({ required: true })
   asset!: string;
   @Prop({ required: true })
-  value!: Balance;
+  value!: Balance | null;
   @Prop({ required: false, type: Boolean, default: false })
   noIcon!: boolean;
   @Prop({ required: false, type: Number, default: 16 })

@@ -1,4 +1,7 @@
 {
+  "adex_page": {
+    "loading": "Please wait while your AdEx staking details are getting loaded..."
+  },
   "create_account": {
     "title": "Create Account",
     "select_credentials": {
@@ -45,6 +48,9 @@
   },
   "dex_trades": {
     "loading": "@:common.loading.please_wait DEX Trades are @:common.loading.getting_loaded"
+  },
+  "eth2page": {
+    "loading": "Please wait while your eth2 staking details are getting loaded..."
   },
   "file_upload": {
     "drop_area": "Drop the csv file or {0}",
@@ -617,6 +623,24 @@
       }
     },
     "staking": {
+      "adex_balances": {
+        "error": {
+          "description": "Failed to query the AdEx staking balances: {error}",
+          "title": "Querying AdEx staking balances failed"
+        },
+        "task": {
+          "title": "Querying AdEx staking balances"
+        }
+      },
+      "adex_history": {
+        "error": {
+          "description": "Failed to query the AdEx staking history: {error}",
+          "title": "Querying AdEx staking history"
+        },
+        "task": {
+          "title": "Querying AdEx staking history"
+        }
+      },
       "eth2": {
         "task": {
           "title": "Querying Eth2 staking details"
@@ -657,7 +681,11 @@
       "liabilities": "Liabilities",
       "dex_trades": "DEX Trades"
     },
-    "staking": "Staking"
+    "staking": "Staking",
+    "staking_sub": {
+      "adex": "AdEx",
+      "eth2": "Eth2"
+    }
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded...",
@@ -1182,7 +1210,8 @@
   },
   "staking": {
     "title": "Staking",
-    "loading":"Please wait while your eth2 staking details are getting loaded..."
+    "eth2": "ETH2",
+    "adex": "AdEx"
   },
   "common": {
     "no_premium": "No premium subscription detected. ",

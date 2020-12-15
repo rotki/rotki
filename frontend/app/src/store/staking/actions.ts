@@ -7,7 +7,19 @@ import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { Eth2Deposit, Eth2Detail, StakingState } from '@/store/staking/types';
+import {
+  ADEX_BALANCES,
+  ADEX_HISTORY,
+  ETH2_DEPOSITS,
+  ETH2_DETAILS
+} from '@/store/staking/consts';
+import {
+  AdexBalances,
+  AdexHistory,
+  Eth2Deposit,
+  Eth2Detail,
+  StakingState
+} from '@/store/staking/types';
 import { RotkehlchenState } from '@/store/types';
 import { isLoading, setStatus } from '@/store/utils';
 
@@ -50,7 +62,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
           taskType
         );
 
-        commit('eth2Details', result);
+        commit(ETH2_DETAILS, result);
       } catch (e) {
         notify(
           i18n.tc('actions.staking.eth2.error.description', undefined, {
@@ -83,7 +95,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
           taskType
         );
 
-        commit('eth2Deposits', result);
+        commit(ETH2_DEPOSITS, result);
       } catch (e) {
         notify(
           `${i18n.t('actions.staking.eth2_deposits.error.description', {
@@ -98,5 +110,81 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     }
 
     await Promise.all([fetchDetails(), fetchDeposits()]);
+  },
+
+  async fetchAdex(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean
+  ) {
+    if (!session?.premium) {
+      return;
+    }
+
+    const section = Section.STAKING_ADEX;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.STAKING_ADEX;
+      const { taskId } = await api.adexBalances();
+      const task = createTask(taskId, taskType, {
+        title: `${i18n.t('actions.staking.adex_balances.task.title')}`,
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<AdexBalances, TaskMeta>(taskType);
+
+      commit(ADEX_BALANCES, result);
+    } catch (e) {
+      notify(
+        `${i18n.t('actions.staking.adex_balances.error.description', {
+          error: e.message
+        })}`,
+        `${i18n.t('actions.staking.adex_balances.error.title')}`,
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
+
+    const secondarySection = Section.STAKING_ADEX_HISTORY;
+    setStatus(newStatus, secondarySection, status, commit);
+    try {
+      const taskType = TaskType.STAKING_ADEX_HISTORY;
+      const { taskId } = await api.adexHistory();
+      const task = createTask(taskId, taskType, {
+        title: `${i18n.t('actions.staking.adex_history.task.title')}`,
+        ignoreResult: false,
+        numericKeys: [...balanceKeys, 'total_staked_amount']
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<AdexHistory, TaskMeta>(taskType);
+
+      commit(ADEX_HISTORY, result);
+    } catch (e) {
+      notify(
+        `${i18n.t('actions.staking.adex_history.error.description', {
+          error: e.message
+        })}`,
+        `${i18n.t('actions.staking.adex_history.error.title')}`,
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, secondarySection, status, commit);
   }
 };

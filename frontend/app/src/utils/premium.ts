@@ -157,6 +157,10 @@ export const UniswapDetails = (): Promise<VueConstructor> => {
   return load('UniswapDetails');
 };
 
+export const AdexStaking = (): Promise<VueConstructor> => {
+  return load('AdexStaking');
+};
+
 declare global {
   interface Window {
     Vue: any;

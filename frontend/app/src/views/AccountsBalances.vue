@@ -8,7 +8,9 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
-import TabNavigation from '@/components/helper/TabNavigation.vue';
+import TabNavigation, {
+  TabContent
+} from '@/components/helper/TabNavigation.vue';
 
 @Component({
   components: {
@@ -17,7 +19,7 @@ import TabNavigation from '@/components/helper/TabNavigation.vue';
   }
 })
 export default class AccountsBalances extends Vue {
-  readonly accountsBalancesTabs = [
+  readonly accountsBalancesTabs: TabContent[] = [
     {
       name: 'Blockchain Balances',
       routeTo: '/accounts-balances/blockchain-balances'

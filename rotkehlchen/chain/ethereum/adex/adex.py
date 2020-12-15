@@ -903,7 +903,6 @@ class Adex(EthereumModule):
 
         # Update token property for each channel withdraw event
         for channel_withdraw in channel_withdraws:
-            channel_id = channel_withdraw.channel_id
             channel_withdraw.token = channel_id_token.get(channel_withdraw.channel_id, None)
 
         return None
