@@ -64,6 +64,11 @@ const CHIGASTOKEN = 'Chi Gastoken by 1inch';
 const ZLOTFINANCE = 'zlot.finance';
 export const MAKERDAO = 'MakerDAO';
 const AAVE_V2 = 'Aave V2';
+const AAVE_V2_VARIABLE_DEBT = 'Aave V2 • Variable Debt';
+const AAVE_V2_STABLE_DEBT = 'Aave V2 • Stable Debt';
+const SNOW_SWAP = 'SnowSwap';
+const HARVEST_PROFIT_SHARING = 'Harvest • Profit Sharing';
+const IDLE_EARLY_REWARDS = 'Idle • Early Rewards';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -128,7 +133,12 @@ export const OVERVIEW_PROTOCOLS = [
   AAVE_STAKING,
   AAVE_UNISWAPMARKET,
   MAKERDAO,
-  AAVE_V2
+  AAVE_V2,
+  AAVE_V2_VARIABLE_DEBT,
+  AAVE_V2_STABLE_DEBT,
+  SNOW_SWAP,
+  HARVEST_PROFIT_SHARING,
+  IDLE_EARLY_REWARDS
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
@@ -194,7 +204,12 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [UNISWAPV1]: 'uniswap.svg',
   [UNISWAPV2]: 'uniswap.svg',
   [YEARN_FINANCE_VAULTS]: 'yearn_vaults.svg',
-  [MAKERDAO]: 'makerdao.svg'
+  [MAKERDAO]: 'makerdao.svg',
+  [AAVE_V2_VARIABLE_DEBT]: 'aave.svg',
+  [AAVE_V2_STABLE_DEBT]: 'aave.svg',
+  [SNOW_SWAP]: 'snowswap.svg',
+  [HARVEST_PROFIT_SHARING]: 'harvest.gif',
+  [IDLE_EARLY_REWARDS]: 'idle.svg'
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {
