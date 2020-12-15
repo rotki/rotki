@@ -54,6 +54,7 @@ interface AdexEvent {
   readonly poolName: string;
   readonly timestamp: number;
   readonly txHash: string;
+  readonly token: string | null;
 }
 
 interface AdexStakingDetails {
@@ -62,7 +63,8 @@ interface AdexStakingDetails {
   readonly adxBalance: Balance;
   readonly daiUnclaimedBalance: Balance;
   readonly adxUnclaimedBalance: Balance;
-  readonly profitLoss: Balance;
+  readonly adxProfitLoss: Balance;
+  readonly daiProfitLoss: Balance;
   readonly poolId: string;
   readonly poolName: string;
   readonly totalStakedAmount: BigNumber;
