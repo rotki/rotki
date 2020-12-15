@@ -569,6 +569,15 @@
         "symbol": "APH",
         "type": "neo token"
     },
+    "API3": {
+        "coingecko": "api3",
+        "ethereum_address": "0x0b38210ea11411557c13457D4dA7dC6ea731B88a",
+        "ethereum_token_decimals": 18,
+        "name": "API3",
+        "started": 1604665283,
+        "symbol": "API3",
+        "type": "ethereum token"
+    },
     "APIS": {
         "coingecko": "apis",
         "ethereum_address": "0x4C0fBE1BB46612915E7967d2C3213cd4d87257AD",
