@@ -191,7 +191,7 @@ interface DefiProtocolInfoWithIcon extends DefiProtocolInfo {
   readonly icon: string;
 }
 
-interface TokenInfo {
+export interface TokenInfo {
   readonly tokenName: string;
   readonly tokenSymbol: string;
 }
@@ -200,7 +200,7 @@ export interface DefiProtocolSummary {
   readonly protocol: DefiProtocolInfoWithIcon;
   readonly balanceUsd?: BigNumber;
   readonly assets: DefiAsset[];
-  readonly tokenInfo?: TokenInfo;
+  readonly tokenInfo: TokenInfo | null;
   readonly depositsUrl?: string;
   readonly liabilitiesUrl?: string;
   readonly totalCollateralUsd: BigNumber;

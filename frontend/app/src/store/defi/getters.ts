@@ -1,6 +1,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
 import { truncateAddress } from '@/filters';
+import i18n from '@/i18n';
 import {
   AAVE_BORROWING_EVENTS,
   AAVE_LENDING_EVENTS,
@@ -48,6 +49,7 @@ import {
   MakerDAOVaultModel,
   OverviewDefiProtocol,
   ProfitLossModel,
+  TokenInfo,
   UniswapBalance,
   UniswapEventDetails,
   UniswapPoolProfit,
@@ -939,6 +941,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           name: name,
           icon: getProtcolIcon(name)
         },
+        tokenInfo: null,
         assets: [],
         liabilitiesUrl: noLiabilities
           ? undefined
@@ -1012,6 +1015,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             totalDebtUsd: Zero,
             totalLendingDepositUsd: Zero
           };
+        } else if (
+          summary[protocol].tokenInfo?.tokenName !== entry.baseBalance.tokenName
+        ) {
+          const tokenInfo: Writeable<TokenInfo> = summary[protocol].tokenInfo!;
+          tokenInfo.tokenName = `${i18n.t('defi_overview.multiple_assets')}`;
+          tokenInfo.tokenSymbol = '';
         }
 
         const { balance } = entry.baseBalance;
@@ -1049,6 +1058,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           name: MAKERDAO,
           icon: getProtcolIcon(MAKERDAO)
         },
+        tokenInfo: null,
         assets: [],
         liabilitiesUrl: '/defi/liabilities?protocol=makerdao',
         depositsUrl: '/defi/deposits?protocol=makerdao',

@@ -63,6 +63,7 @@ const ZEROX_STAKING = '0x Staking';
 const CHIGASTOKEN = 'Chi Gastoken by 1inch';
 const ZLOTFINANCE = 'zlot.finance';
 export const MAKERDAO = 'MakerDAO';
+const AAVE_V2 = 'Aave V2';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -126,7 +127,8 @@ export const OVERVIEW_PROTOCOLS = [
   AAVE,
   AAVE_STAKING,
   AAVE_UNISWAPMARKET,
-  MAKERDAO
+  MAKERDAO,
+  AAVE_V2
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
@@ -135,6 +137,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [YGOVFINANCEV2]: 'iearn.png',
   [ZEROX_STAKING]: '0x_staking.svg',
   [AAVE]: 'aave.svg',
+  [AAVE_V2]: 'aave.svg',
   [AAVE_STAKING]: 'aave.svg',
   [AAVE_UNISWAPMARKET]: 'aave.svg',
   [AMPLEFORTH]: 'ampl.svg',
@@ -195,7 +198,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {
-  return ICON_LIST[name];
+  return ICON_LIST[name] ?? '';
 }
 
 export const UNISWAP_EVENT_MINT = 'mint';
