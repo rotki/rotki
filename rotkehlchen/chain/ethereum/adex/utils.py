@@ -12,7 +12,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import Timestamp
 
-from .typing import AdexEventDBTuple, Bond, ChannelWithdraw, EventType, Unbond, UnbondRequest
+from .typing import AdexEventDBTuple, AdexEventType, Bond, ChannelWithdraw, Unbond, UnbondRequest
 
 # The data below comes from:
 #
@@ -75,7 +75,7 @@ def deserialize_adex_event_from_db(
     12 - channel_id
     """
     db_event_type = event_tuple[4]
-    if db_event_type not in {str(event_type) for event_type in EventType}:
+    if db_event_type not in {str(event_type) for event_type in AdexEventType}:
         raise DeserializationError(
             f'Failed to deserialize event type. Unknown event: {db_event_type}.',
         )
@@ -89,7 +89,7 @@ def deserialize_adex_event_from_db(
     usd_value = deserialize_asset_amount(event_tuple[7])
     value = Balance(amount=amount, usd_value=usd_value)
 
-    if db_event_type == str(EventType.BOND):
+    if db_event_type == str(AdexEventType.BOND):
         if any(event_tuple[idx] is None for idx in (8, 9, 10)):
             raise DeserializationError(
                 f'Failed to deserialize bond event. Unexpected data: {event_tuple}.',
@@ -107,7 +107,7 @@ def deserialize_adex_event_from_db(
             slashed_at=Timestamp(cast(int, event_tuple[10])),
         )
 
-    if db_event_type == str(EventType.UNBOND):
+    if db_event_type == str(AdexEventType.UNBOND):
         if any(event_tuple[idx] is None for idx in (8,)):
             raise DeserializationError(
                 f'Failed to deserialize bond event. Unexpected data: {event_tuple}.',
@@ -123,7 +123,7 @@ def deserialize_adex_event_from_db(
             bond_id=HexStr(cast(str, event_tuple[8])),
         )
 
-    if db_event_type == str(EventType.UNBOND_REQUEST):
+    if db_event_type == str(AdexEventType.UNBOND_REQUEST):
         if any(event_tuple[idx] is None for idx in (8, 11)):
             raise DeserializationError(
                 f'Failed to deserialize unbond request event. Unexpected data: {event_tuple}.',
@@ -140,7 +140,7 @@ def deserialize_adex_event_from_db(
             unlock_at=Timestamp(cast(int, event_tuple[11])),
         )
 
-    if db_event_type == str(EventType.CHANNEL_WITHDRAW):
+    if db_event_type == str(AdexEventType.CHANNEL_WITHDRAW):
         if any(event_tuple[idx] is None for idx in (12,)):
             raise DeserializationError(
                 f'Failed to deserialize unbond request event. Unexpected data: {event_tuple}.',

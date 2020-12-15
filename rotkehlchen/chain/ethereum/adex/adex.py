@@ -43,6 +43,7 @@ from .graph import BONDS_QUERY, CHANNEL_WITHDRAWS_QUERY, UNBOND_REQUESTS_QUERY, 
 from .typing import (
     POOL_ID_POOL_NAME,
     TOM_POOL_ID,
+    AdexEventType,
     ADXStakingBalance,
     ADXStakingDetail,
     ADXStakingEvents,
@@ -51,7 +52,6 @@ from .typing import (
     ChannelWithdraw,
     DeserializationMethod,
     EventCoreData,
-    EventType,
     TomPoolIncentive,
     Unbond,
     UnbondRequest,
@@ -182,7 +182,7 @@ class Adex(EthereumModule):
                         amount=adx_unclaimed_amount,
                         usd_value=adx_unclaimed_amount * adx_usd_price,
                     ),
-                    dai_balance=Balance(
+                    dai_unclaimed_balance=Balance(
                         amount=dai_unclaimed_amount,
                         usd_value=dai_unclaimed_amount * dai_usd_price,
                     ),
@@ -251,7 +251,8 @@ class Adex(EthereumModule):
                         ),
                         apr=tom_pool_incentive.apr,
                         adx_balance=adx_staking_balance.adx_balance,
-                        dai_balance=adx_staking_balance.dai_balance,
+                        adx_unclaimed_balance=adx_staking_balance.adx_unclaimed_balance,
+                        dai_unclaimed_balance=adx_staking_balance.dai_unclaimed_balance,
                         profit_loss=Balance(
                             amount=total_profit_amount,
                             usd_value=total_profit_usd_value,
@@ -495,7 +496,7 @@ class Adex(EthereumModule):
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
-            event_type: Literal[EventType.BOND],
+            event_type: Literal[AdexEventType.BOND],
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
     ) -> List[Bond]:
@@ -505,7 +506,7 @@ class Adex(EthereumModule):
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
-            event_type: Literal[EventType.UNBOND],
+            event_type: Literal[AdexEventType.UNBOND],
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
     ) -> List[Unbond]:
@@ -515,7 +516,7 @@ class Adex(EthereumModule):
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
-            event_type: Literal[EventType.UNBOND_REQUEST],
+            event_type: Literal[AdexEventType.UNBOND_REQUEST],
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
     ) -> List[UnbondRequest]:
@@ -525,7 +526,7 @@ class Adex(EthereumModule):
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
-            event_type: Literal[EventType.CHANNEL_WITHDRAW],
+            event_type: Literal[AdexEventType.CHANNEL_WITHDRAW],
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
     ) -> List[ChannelWithdraw]:
@@ -534,7 +535,7 @@ class Adex(EthereumModule):
     def _get_staking_events_graph(
             self,
             addresses: List[ChecksumEthAddress],
-            event_type: EventType,
+            event_type: AdexEventType,
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
     ) -> Union[List[Bond], List[Unbond], List[UnbondRequest], List[ChannelWithdraw]]:
@@ -545,25 +546,25 @@ class Adex(EthereumModule):
         deserialization_method: DeserializationMethod
         querystr: str
         schema: Literal['bonds', 'unbonds', 'unbondRequests', 'channelWithdraws']
-        if event_type == EventType.BOND:
+        if event_type == AdexEventType.BOND:
             queried_addresses = user_identities
             deserialization_method = self._deserialize_bond
             querystr = format_query_indentation(BONDS_QUERY.format())
             schema = 'bonds'
             event_type_pretty = 'bond'
-        elif event_type == EventType.UNBOND:
+        elif event_type == AdexEventType.UNBOND:
             queried_addresses = user_identities
             deserialization_method = self._deserialize_unbond
             querystr = format_query_indentation(UNBONDS_QUERY.format())
             schema = 'unbonds'
             event_type_pretty = 'unbond'
-        elif event_type == EventType.UNBOND_REQUEST:
+        elif event_type == AdexEventType.UNBOND_REQUEST:
             queried_addresses = user_identities
             deserialization_method = self._deserialize_unbond_request
             querystr = format_query_indentation(UNBOND_REQUESTS_QUERY.format())
             schema = 'unbondRequests'
             event_type_pretty = 'unbond request'
-        elif event_type == EventType.CHANNEL_WITHDRAW:
+        elif event_type == AdexEventType.CHANNEL_WITHDRAW:
             queried_addresses = [address.lower() for address in addresses]
             deserialization_method = self._deserialize_channel_withdraw
             querystr = format_query_indentation(CHANNEL_WITHDRAWS_QUERY.format())
@@ -735,8 +736,8 @@ class Adex(EthereumModule):
 
         unclaimed_rewards = {}
         for address in addresses:
-            total_adx_amount = sum(address_adx_amount[address])
-            total_dai_amount = sum(address_dai_amount[address])
+            total_adx_amount = sum(address_adx_amount.get(address, []))
+            total_dai_amount = sum(address_dai_amount.get(address, []))
             # Discard addresses without amounts
             if total_adx_amount + total_dai_amount > ZERO:
                 unclaimed_rewards[address] = UnclaimedReward(
@@ -806,7 +807,7 @@ class Adex(EthereumModule):
         the used query range of the addresses as well.
         """
         all_events: List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]] = []
-        for event_type_ in EventType:
+        for event_type_ in AdexEventType:
             try:
                 # TODO: fix. type -> overload does not work well with enum in this case
                 events = self._get_staking_events_graph(  # type: ignore
@@ -870,7 +871,7 @@ class Adex(EthereumModule):
                 bond_id_bond_map[event.bond_id] = None
                 db_bonds = cast(List[Bond], self.database.get_adex_events(
                     bond_id=event.bond_id,
-                    event_type=EventType.BOND,
+                    event_type=AdexEventType.BOND,
                 ))
                 if db_bonds:
                     db_bond = db_bonds[0]
@@ -918,19 +919,19 @@ class Adex(EthereumModule):
             try:
                 bonds = self._get_staking_events_graph(
                     addresses=addresses,
-                    event_type=EventType.BOND,
+                    event_type=AdexEventType.BOND,
                 )
                 unbonds = self._get_staking_events_graph(
                     addresses=addresses,
-                    event_type=EventType.UNBOND,
+                    event_type=AdexEventType.UNBOND,
                 )
                 unbond_requests = self._get_staking_events_graph(
                     addresses=addresses,
-                    event_type=EventType.UNBOND_REQUEST,
+                    event_type=AdexEventType.UNBOND_REQUEST,
                 )
                 channel_withdraws = self._get_staking_events_graph(
                     addresses=addresses,
-                    event_type=EventType.CHANNEL_WITHDRAW,
+                    event_type=AdexEventType.CHANNEL_WITHDRAW,
                 )
             except RemoteError:
                 return staking_balances
