@@ -4761,6 +4761,13 @@
         "symbol": "FIO",
         "type": "own chain"
     },
+    "FIRO": {
+        "coingecko": "zcoin",
+        "name": "Firo",
+        "started": 1576368000,
+        "symbol": "FIRO",
+        "type": "own chain"
+    },
     "FKX": {
         "coingecko": "fortknoxter",
         "ethereum_address": "0x009e864923b49263c7F10D19B7f8Ab7a9A5AAd33",
@@ -12968,7 +12975,8 @@
         "name": "Zcoin",
         "started": 1474848000,
         "symbol": "XZC",
-        "type": "own chain"
+        "type": "own chain",
+        "swapped_for": "FIRO",
     },
     "YACC": {
         "active": false,

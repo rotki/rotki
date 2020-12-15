@@ -410,6 +410,12 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'UPXAU',  # neither in coingecko nor cryptocompare
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
+    'AMZN',
+    'BABA',
+    'BILI',
+    'BNTX',
+    'BYND',
+    'FB',
 )
 
 
