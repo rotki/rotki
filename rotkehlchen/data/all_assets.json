@@ -8274,6 +8274,15 @@
         "symbol": "NTWK",
         "type": "ethereum token"
     },
+    "NU": {
+        "coingecko": "nucypher",
+        "ethereum_address": "0x4fE83213D56308330EC302a8BD641f1d0113A4Cc",
+        "ethereum_token_decimals": 18,
+        "name": "NuCypher",
+        "started": 1598807335,
+        "symbol": "NU",
+        "type": "ethereum token"
+    },
     "NUG": {
         "active": true,
         "coingecko": "nuggets",
@@ -12993,7 +13002,7 @@
         "started": 1474848000,
         "symbol": "XZC",
         "type": "own chain",
-        "swapped_for": "FIRO",
+        "swapped_for": "FIRO"
     },
     "YACC": {
         "active": false,

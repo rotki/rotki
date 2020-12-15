@@ -419,6 +419,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'GOOGL',
     'NFLX',
     'PFE',
+    'SPY',
+    'TSLA',
 )
 
 
