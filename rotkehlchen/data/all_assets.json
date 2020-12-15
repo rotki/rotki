@@ -226,6 +226,13 @@
         "symbol": "ADI",
         "type": "ethereum token"
     },
+    "ADK": {
+        "coingecko": "aidos-kuneen",
+        "name": "Aidos Kuneen",
+        "started": 1537401600,
+        "symbol": "ADK",
+        "type": "own chain"
+    },
     "ADL": {
         "coingecko": "adelphoi",
         "ethereum_address": "0x660e71483785f66133548B10f6926dC332b06e61",

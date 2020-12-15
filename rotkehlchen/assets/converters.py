@@ -408,6 +408,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'MFA',
     'FCT2',  # neither in coingecko nor cryptocompare
     'UPXAU',  # neither in coingecko nor cryptocompare
+    # bittrex tokenized stocks -- not sure how to handle yet
+    'AAPL',
 )
 
 
@@ -430,6 +432,10 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'SXPUP',  # no cryptocompare/coingecko data
     'AAVEDOWN',  # no cryptocompare/coingecko data
     'AAVEUP',  # no cryptocompare/coingecko data
+    'SUSHIDOWN',  # no cryptocompare/coingecko data
+    'SUSHIUP',  # no cryptocompare/coingecko data
+    'XLMDOWN',  # no cryptocompare/coingecko data
+    'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
 )
 
