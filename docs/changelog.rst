@@ -28,6 +28,22 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Vote-escrowed CRV (veCRV) <https://etherscan.io/address/0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2>`__
+  - `Index cooperative (INDEX) <https://www.coingecko.com/en/coins/index-cooperative>`__
+  - `Amp (AMP) <https://www.coingecko.com/en/coins/amp>`__
+  - `Harvest finance GRAIN token (GRAIN) <https://www.coingecko.com/en/coins/grain-token>`__
+  - `Panvala pan token (PAN) <https://www.coingecko.com/en/coins/panvala-pan>`__
+  - `Cover Protocol (COVER) <https://www.coingecko.com/en/coins/cover-protocol>`__
+  - `dForce token (DF) <https://www.coingecko.com/en/coins/dforce-token>`__
+  - `Skale token (SKL) <https://www.coingecko.com/en/coins/skale>`__
+  - `Aidos Kuneen (ADK) <https://www.coingecko.com/en/coins/aidos-kuneen>`__
+  - `Firo (FIRO) <https://www.coingecko.com/en/coins/firo>`__
+  - `Galaxy Network (GNC) <https://www.coingecko.com/en/coins/galaxy-network>`__
+  - `Social Good (SG) <https://www.coingecko.com/en/coins/socialgood>`__
+  - `NuCypher (NU) <https://www.coingecko.com/en/coins/nucypher>`__
+  - `Badger DAO (BADGER) <https://www.coingecko.com/en/coins/badger-dao>`__
+  - `API3 (API3) <https://www.coingecko.com/en/coins/api3>`__
+  - `Secret (SCRT) <https://www.coingecko.com/en/coins/secret>`__
+  - `Spartan Protocol Token (SPARTA) <https://www.coingecko.com/en/coins/spartan-protocol-token>`__
 
 * :release:`1.9.2 <2020-12-12>`
 * :bug:`1896` Provide a temporary fix for the breaking change that the Graph introduced into their schemas that breaks all current python implementations. Users should no longer see _SubgraphErrorPolicy_! errors.

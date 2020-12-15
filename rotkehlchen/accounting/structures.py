@@ -53,6 +53,7 @@ class DefiEventType(Enum):
     COMPOUND_REWARDS = 7
     YEARN_VAULTS_PNL = 8
     AAVE_LOSS = 9
+    ADEX_STAKE_PROFIT = 10
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_LOAN_GAIN:
@@ -75,6 +76,8 @@ class DefiEventType(Enum):
             return "Compound rewards"
         if self == DefiEventType.YEARN_VAULTS_PNL:
             return "Yearn vaults profit/loss"
+        if self == DefiEventType.ADEX_STAKE_PROFIT:
+            return "AdEx staking profit"
         # else
         raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
 
@@ -86,6 +89,7 @@ class DefiEventType(Enum):
             DefiEventType.COMPOUND_REWARDS,
             DefiEventType.COMPOUND_DEBT_REPAY,
             DefiEventType.YEARN_VAULTS_PNL,
+            DefiEventType.ADEX_STAKE_PROFIT,
         )
 
 

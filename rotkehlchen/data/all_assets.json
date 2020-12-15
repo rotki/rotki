@@ -226,6 +226,13 @@
         "symbol": "ADI",
         "type": "ethereum token"
     },
+    "ADK": {
+        "coingecko": "aidos-kuneen",
+        "name": "Aidos Kuneen",
+        "started": 1537401600,
+        "symbol": "ADK",
+        "type": "own chain"
+    },
     "ADL": {
         "coingecko": "adelphoi",
         "ethereum_address": "0x660e71483785f66133548B10f6926dC332b06e61",
@@ -497,11 +504,13 @@
         "type": "ethereum token"
     },
     "AMP": {
-        "coingecko": "",
-        "name": "HyperSpace",
-        "started": 1426723200,
+        "coingecko": "amp-token",
+        "ethereum_address": "0xfF20817765cB7f73d4bde2e66e067E58D11095C2",
+        "ethereum_token_decimals": 18,
+        "name": "Amp",
+        "started": 1597148839,
         "symbol": "AMP",
-        "type": "omni token"
+        "type": "ethereum token"
     },
     "AMPL": {
         "coingecko": "ampleforth",
@@ -559,6 +568,15 @@
         "started": 1510693460,
         "symbol": "APH",
         "type": "neo token"
+    },
+    "API3": {
+        "coingecko": "api3",
+        "ethereum_address": "0x0b38210ea11411557c13457D4dA7dC6ea731B88a",
+        "ethereum_token_decimals": 18,
+        "name": "API3",
+        "started": 1604665283,
+        "symbol": "API3",
+        "type": "ethereum token"
     },
     "APIS": {
         "coingecko": "apis",
@@ -891,6 +909,15 @@
         "name": "B2BX",
         "started": 1504483200,
         "symbol": "B2BX",
+        "type": "ethereum token"
+    },
+    "BADGER": {
+        "coingecko": "badger-dao",
+        "ethereum_address": "0x3472A5A71965499acd81997a54BBA8D852C6E53d",
+        "ethereum_token_decimals": 18,
+        "name": "Badger",
+        "started": 1606584722,
+        "symbol": "BADGER",
         "type": "ethereum token"
     },
     "BAKE": {
@@ -1734,7 +1761,7 @@
         "type": "fiat"
     },
     "BRX": {
-        "coingecko": "berryx",
+        "coingecko": "",
         "name": "Breakout Stake",
         "started": 1465776000,
         "symbol": "BRX",
@@ -2786,6 +2813,15 @@
         "symbol": "COVAL",
         "type": "counterparty token"
     },
+    "COVER": {
+        "coingecko": "cover-protocol",
+        "ethereum_address": "0x5D8d9F5b96f4438195BE9b99eee6118Ed4304286",
+        "ethereum_token_decimals": 18,
+        "name": "Cover Protocol",
+        "started": 1605828402,
+        "symbol": "COVER",
+        "type": "ethereum token"
+    },
     "CPAY": {
         "coingecko": "cryptopay",
         "ethereum_address": "0x0Ebb614204E47c09B6C3FeB9AAeCad8EE060E23E",
@@ -3294,7 +3330,7 @@
         "type": "ethereum token"
     },
     "DCN": {
-        "coingecko": "dualcoin",
+        "coingecko": "dentacoin",
         "ethereum_address": "0x08d32b0da63e2C3bcF8019c9c5d849d7a9d791e6",
         "ethereum_token_decimals": 0,
         "name": "Dentacoin",
@@ -3409,6 +3445,15 @@
         "name": "DEXTools",
         "started": 1592511275,
         "symbol": "DEXT",
+        "type": "ethereum token"
+    },
+    "DF": {
+        "coingecko": "dforce-token",
+        "ethereum_address": "0x431ad2ff6a9C365805eBaD47Ee021148d6f7DBe0",
+        "ethereum_token_decimals": 18,
+        "name": "dForce",
+        "started": 1564020599,
+        "symbol": "DF",
         "type": "ethereum token"
     },
     "DFI": {
@@ -4221,7 +4266,8 @@
         "name": "Enigma",
         "started": 1498867200,
         "symbol": "ENG",
-        "type": "ethereum token"
+        "type": "ethereum token",
+        "swapped_for": "SCRT"
     },
     "ENGT": {
         "coingecko": "",
@@ -4734,6 +4780,13 @@
         "symbol": "FIO",
         "type": "own chain"
     },
+    "FIRO": {
+        "coingecko": "zcoin",
+        "name": "Firo",
+        "started": 1576368000,
+        "symbol": "FIRO",
+        "type": "own chain"
+    },
     "FKX": {
         "coingecko": "fortknoxter",
         "ethereum_address": "0x009e864923b49263c7F10D19B7f8Ab7a9A5AAd33",
@@ -5167,13 +5220,14 @@
         "type": "ethereum token"
     },
     "FXC": {
-        "coingecko": "flexacoin",
+        "coingecko": "amp-token",
         "cryptocompare": "",
         "ethereum_address": "0x4a57E687b9126435a9B19E4A802113e266AdeBde",
         "ethereum_token_decimals": 18,
         "name": "Flexacoin",
         "started": 1553299450,
         "symbol": "FXC",
+        "swapped_for": "AMP",
         "type": "ethereum token"
     },
     "FXT": {
@@ -5438,6 +5492,14 @@
         "symbol": "GMT",
         "type": "ethereum token"
     },
+    "GNC": {
+        "coingecko": "galaxy-network",
+        "cryptocompare": "",
+        "name": "Galaxy network",
+        "symbol": "GNC",
+        "started": 1602979200,
+        "type": "own chain"
+    },
     "GNO": {
         "coingecko": "gnosis",
         "ethereum_address": "0x6810e776880C02933D47DB1b9fc05908e5386b96",
@@ -5509,6 +5571,16 @@
         "started": 1395100800,
         "symbol": "GPUC",
         "type": "own chain"
+    },
+    "GRAIN": {
+        "coingecko": "grain-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x6589fe1271A0F29346796C6bAf0cdF619e25e58e",
+        "ethereum_token_decimals": 12,
+        "name": "GRAIN Token",
+        "started": 1606500872,
+        "symbol": "GRAIN",
+        "type": "ethereum token"
     },
     "GRC": {
         "coingecko": "gridcoin-research",
@@ -6154,6 +6226,16 @@
         "name": "Indorse Token",
         "started": 1502181444,
         "symbol": "IND",
+        "type": "ethereum token"
+    },
+    "INDEX": {
+        "coingecko": "index-cooperative",
+        "cryptocompare": "",
+        "ethereum_address": "0x0954906da0Bf32d5479e25f46056d22f08464cab",
+        "ethereum_token_decimals": 18,
+        "name": "Index",
+        "started": 1601964283,
+        "symbol": "INDEX",
         "type": "ethereum token"
     },
     "ING": {
@@ -7261,13 +7343,14 @@
         "type": "own chain"
     },
     "MCO": {
-        "coingecko": "monaco",
+        "coingecko": "crypto-com-chain",
         "ethereum_address": "0xB63B606Ac810a52cCa15e44bB630fd42D8d1d83d",
         "ethereum_token_decimals": 8,
         "name": "Crypto.com",
         "started": 1495065600,
         "symbol": "MCO",
-        "type": "ethereum token"
+        "type": "ethereum token",
+        "swapped_for": "CRO"
     },
     "MDA": {
         "coingecko": "moeda-loyalty-points",
@@ -8211,6 +8294,15 @@
         "symbol": "NTWK",
         "type": "ethereum token"
     },
+    "NU": {
+        "coingecko": "nucypher",
+        "ethereum_address": "0x4fE83213D56308330EC302a8BD641f1d0113A4Cc",
+        "ethereum_token_decimals": 18,
+        "name": "NuCypher",
+        "started": 1598807335,
+        "symbol": "NU",
+        "type": "ethereum token"
+    },
     "NUG": {
         "active": true,
         "coingecko": "nuggets",
@@ -8591,6 +8683,16 @@
         "name": "Pal Network",
         "started": 1515628800,
         "symbol": "PAL",
+        "type": "ethereum token"
+    },
+    "PAN": {
+        "coingecko": "panvala-pan",
+        "cryptocompare": "",
+        "ethereum_address": "0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44",
+        "ethereum_token_decimals": 18,
+        "name": "Panvala pan",
+        "started": 1566378597,
+        "symbol": "PAN",
         "type": "ethereum token"
     },
     "PARETO": {
@@ -9980,6 +10082,13 @@
         "symbol": "XD",
         "type": "ethereum token"
     },
+    "SCRT": {
+        "coingecko": "secret",
+        "name": "Secret",
+        "started": 1601510400,
+        "symbol": "SCRT",
+        "type": "own chain"
+    },
     "SDC": {
         "coingecko": "",
         "name": "ShadowCash",
@@ -10054,6 +10163,15 @@
         "name": "Serve",
         "started": 1549065600,
         "symbol": "SERV",
+        "type": "ethereum token"
+    },
+    "SG": {
+        "coingecko": "social-good-project",
+        "ethereum_address": "0xdDF7Fd345D54ff4B40079579d4C4670415DbfD0A",
+        "ethereum_token_decimals": 18,
+        "name": "Social Good",
+        "started": 1595240185,
+        "symbol": "SG",
         "type": "ethereum token"
     },
     "SGN": {
@@ -10192,6 +10310,15 @@
         "name": "SkinCoin",
         "started": 1496793600,
         "symbol": "SKIN",
+        "type": "ethereum token"
+    },
+    "SKL": {
+        "coingecko": "skale",
+        "ethereum_address": "0x00c83aeCC790e8a4453e5dD3B0B4b3680501a7A7",
+        "ethereum_token_decimals": 18,
+        "name": "SKALE",
+        "started": 1593467066,
+        "symbol": "SKL",
         "type": "ethereum token"
     },
     "SKM": {
@@ -10469,6 +10596,13 @@
         "started": 1394668800,
         "symbol": "SPA",
         "type": "own chain"
+    },
+    "SPARTA": {
+        "coingecko": "spartan-protocol-token",
+        "name": "Spartan Protocol Token",
+        "started": 1601251200,
+        "symbol": "SPARTA",
+        "type": "binance token"
     },
     "SPANK": {
         "coingecko": "spankchain",
@@ -12901,7 +13035,8 @@
         "name": "Zcoin",
         "started": 1474848000,
         "symbol": "XZC",
-        "type": "own chain"
+        "type": "own chain",
+        "swapped_for": "FIRO"
     },
     "YACC": {
         "active": false,
@@ -13001,7 +13136,7 @@
         "type": "ethereum token"
     },
     "YFV": {
-        "coingecko": "yfv-finance",
+        "coingecko": "value-liquidity",
         "ethereum_address": "0x45f24BaEef268BB6d63AEe5129015d69702BCDfa",
         "ethereum_token_decimals": 18,
         "name": "YFValue",
