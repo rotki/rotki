@@ -10129,6 +10129,15 @@
         "symbol": "SERV",
         "type": "ethereum token"
     },
+    "SG": {
+        "coingecko": "socialgood",
+        "ethereum_address": "0xdDF7Fd345D54ff4B40079579d4C4670415DbfD0A",
+        "ethereum_token_decimals": 18,
+        "name": "Social Good",
+        "started": 1595240185,
+        "symbol": "SG",
+        "type": "ethereum token"
+    },
     "SGN": {
         "coingecko": "signals",
         "ethereum_address": "0xB2135AB9695a7678Dd590B1A996CB0f37BCB0718",

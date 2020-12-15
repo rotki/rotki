@@ -416,6 +416,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'BNTX',
     'BYND',
     'FB',
+    'GOOGL',
+    'NFLX',
+    'PFE',
 )
 
 

@@ -38,6 +38,7 @@ Changelog
   - `Aidos Kuneen (ADK) <https://www.coingecko.com/en/coins/aidos-kuneen>`__
   - `Firo (FIRO) <https://www.coingecko.com/en/coins/firo>`__
   - `Galaxy Network (GNC) <https://www.coingecko.com/en/coins/galaxy-network>`__
+  - `Social Good (SG) <https://www.coingecko.com/en/coins/socialgood>`__
 
 * :release:`1.9.2 <2020-12-12>`
 * :bug:`1896` Provide a temporary fix for the breaking change that the Graph introduced into their schemas that breaks all current python implementations. Users should no longer see _SubgraphErrorPolicy_! errors.
