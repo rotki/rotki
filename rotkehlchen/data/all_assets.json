@@ -504,7 +504,7 @@
         "type": "ethereum token"
     },
     "AMP": {
-        "coingecko": "amp",
+        "coingecko": "amp-token",
         "ethereum_address": "0xfF20817765cB7f73d4bde2e66e067E58D11095C2",
         "ethereum_token_decimals": 18,
         "name": "Amp",
@@ -1761,7 +1761,7 @@
         "type": "fiat"
     },
     "BRX": {
-        "coingecko": "berryx",
+        "coingecko": "",
         "name": "Breakout Stake",
         "started": 1465776000,
         "symbol": "BRX",
@@ -3330,7 +3330,7 @@
         "type": "ethereum token"
     },
     "DCN": {
-        "coingecko": "dualcoin",
+        "coingecko": "dentacoin",
         "ethereum_address": "0x08d32b0da63e2C3bcF8019c9c5d849d7a9d791e6",
         "ethereum_token_decimals": 0,
         "name": "Dentacoin",
@@ -5219,7 +5219,7 @@
         "type": "ethereum token"
     },
     "FXC": {
-        "coingecko": "flexacoin",
+        "coingecko": "amp-token",
         "cryptocompare": "",
         "ethereum_address": "0x4a57E687b9126435a9B19E4A802113e266AdeBde",
         "ethereum_token_decimals": 18,
@@ -7342,13 +7342,14 @@
         "type": "own chain"
     },
     "MCO": {
-        "coingecko": "monaco",
+        "coingecko": "crypto-com-chain",
         "ethereum_address": "0xB63B606Ac810a52cCa15e44bB630fd42D8d1d83d",
         "ethereum_token_decimals": 8,
         "name": "Crypto.com",
         "started": 1495065600,
         "symbol": "MCO",
-        "type": "ethereum token"
+        "type": "ethereum token",
+        "swapped_for": "CRO"
     },
     "MDA": {
         "coingecko": "moeda-loyalty-points",
@@ -10157,7 +10158,7 @@
         "type": "ethereum token"
     },
     "SG": {
-        "coingecko": "socialgood",
+        "coingecko": "social-good-project",
         "ethereum_address": "0xdDF7Fd345D54ff4B40079579d4C4670415DbfD0A",
         "ethereum_token_decimals": 18,
         "name": "Social Good",
@@ -13120,7 +13121,7 @@
         "type": "ethereum token"
     },
     "YFV": {
-        "coingecko": "yfv-finance",
+        "coingecko": "value-liquidity",
         "ethereum_address": "0x45f24BaEef268BB6d63AEe5129015d69702BCDfa",
         "ethereum_token_decimals": 18,
         "name": "YFValue",
