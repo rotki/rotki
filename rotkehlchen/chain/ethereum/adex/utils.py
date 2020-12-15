@@ -156,7 +156,7 @@ def deserialize_adex_event_from_db(
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
                 raise DeserializationError(
-                    f'{asset_tag} {e.asset_name} found while processing trade pair. '
+                    f'{asset_tag} {e.asset_name} found while processing adex event. '
                     f'Unexpected data: {event_tuple}',
                 ) from e
 

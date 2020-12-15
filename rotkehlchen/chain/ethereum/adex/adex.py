@@ -114,10 +114,6 @@ class Adex(EthereumModule):
 
     @staticmethod
     def _calculate_staking_balances(
-            # bonds: List[Bond],
-            # unbonds: List[Unbond],
-            # unbond_requests: List[UnbondRequest],
-            # channel_withdraws: List[ChannelWithdraw],
             staking_events: ADXStakingEvents,
             unclaimed_rewards: Dict[ChecksumAddress, UnclaimedReward],
             adx_usd_price: Price,
@@ -248,25 +244,19 @@ class Adex(EthereumModule):
             for adx_staking_balance in adx_staking_balances:
                 # NB: currently it only returns staking details for Tom pool
                 if adx_staking_balance.pool_id == TOM_POOL_ID and tom_pool_incentive is not None:
-                    adx_total_profit_amount = ZERO
-                    adx_total_profit_usd_value = ZERO
-                    dai_total_profit_amount = ZERO
-                    dai_total_profit_usd_value = ZERO
+                    adx_total_profit = Balance()
+                    dai_total_profit = Balance()
                     # Add claimed amounts and their historical usd value
                     for event in address_staking_events[address]:
                         if isinstance(event, ChannelWithdraw):
                             if event.token == A_ADX:
-                                adx_total_profit_amount += event.value.amount
-                                adx_total_profit_usd_value += event.value.usd_value
+                                adx_total_profit += event.value
                             elif event.token == A_DAI:
-                                dai_total_profit_amount += event.value.amount
-                                dai_total_profit_usd_value += event.value.usd_value
+                                dai_total_profit += event.value
 
                     # Add unclaimed amounts and their current usd value
-                    adx_total_profit_amount += adx_staking_balance.adx_unclaimed_balance.amount
-                    adx_total_profit_usd_value += adx_staking_balance.adx_unclaimed_balance.usd_value  # noqa: E501
-                    dai_total_profit_amount += adx_staking_balance.dai_unclaimed_balance.amount
-                    dai_total_profit_usd_value += adx_staking_balance.dai_unclaimed_balance.usd_value  # noqa: E501
+                    adx_total_profit += adx_staking_balance.adx_unclaimed_balance
+                    dai_total_profit += adx_staking_balance.dai_unclaimed_balance
 
                     pool_staking_detail = ADXStakingDetail(
                         contract_address=adx_staking_balance.contract_address,
@@ -279,14 +269,8 @@ class Adex(EthereumModule):
                         adx_balance=adx_staking_balance.adx_balance,
                         adx_unclaimed_balance=adx_staking_balance.adx_unclaimed_balance,
                         dai_unclaimed_balance=adx_staking_balance.dai_unclaimed_balance,
-                        adx_profit_loss=Balance(
-                            amount=adx_total_profit_amount,
-                            usd_value=adx_total_profit_usd_value,
-                        ),
-                        dai_profit_loss=Balance(
-                            amount=dai_total_profit_amount,
-                            usd_value=dai_total_profit_usd_value,
-                        ),
+                        adx_profit_loss=adx_total_profit,
+                        dai_profit_loss=dai_total_profit,
                     )
                     adx_staking_details.append(pool_staking_detail)
 
