@@ -1,5 +1,8 @@
 <template>
   <v-card class="overall-balances mt-3 mb-6" :loading="anyLoading">
+    <template #progress>
+      <linear-progress />
+    </template>
     <v-row no-gutters class="pa-5">
       <v-col
         cols="12"
@@ -52,7 +55,7 @@
             :timeframes="timeframes"
           />
           <div v-else class="overall-balances__net-worth-chart__loader">
-            <v-progress-circular indeterminate class="align-self-center" />
+            <circlular-progress class="align-self-center" size="32px" />
             <div class="pt-5 caption">
               {{ $t('overall_balances.loading') }}
             </div>
@@ -73,6 +76,8 @@ import NetWorthChart from '@/components/dashboard/NetworthChart.vue';
 import { Timeframes } from '@/components/dashboard/types';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 
+import CirclularProgress from '@/components/helper/CirclularProgress.vue';
+import LinearProgress from '@/components/helper/LinearProgress.vue';
 import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
@@ -92,7 +97,14 @@ import { ActionStatus } from '@/store/types';
 import { bigNumberify } from '@/utils/bignumbers';
 
 @Component({
-  components: { TimeframeSelector, Loading, AmountDisplay, NetWorthChart },
+  components: {
+    CirclularProgress,
+    LinearProgress,
+    TimeframeSelector,
+    Loading,
+    AmountDisplay,
+    NetWorthChart
+  },
   computed: {
     ...mapGetters('session', ['currencySymbol']),
     ...mapGetters('statistics', ['netValue', 'totalNetWorth']),

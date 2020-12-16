@@ -4,6 +4,9 @@
     :class="`dashboard__summary-card__${name}`"
     class="pb-3"
   >
+    <template #progress>
+      <linear-progress />
+    </template>
     <v-row no-gutters class="pa-3 secondary--text summary-card__header">
       <v-toolbar-title class="font-weight-medium text-capitalize">
         {{ $t('summary_card.title', { name }) }}
@@ -50,8 +53,11 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import LinearProgress from '@/components/helper/LinearProgress.vue';
 
-@Component({})
+@Component({
+  components: { LinearProgress }
+})
 export default class SummaryCard extends Vue {
   @Prop({ required: true })
   name!: string;

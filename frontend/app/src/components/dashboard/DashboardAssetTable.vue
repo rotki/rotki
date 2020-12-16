@@ -25,6 +25,9 @@
         sort-desc
         :footer-props="footerProps"
       >
+        <template #progress>
+          <linear-progress datatable />
+        </template>
         <template #header.usdValue>
           {{
             $t('dashboard_asset_table.headers.value', {
@@ -88,10 +91,12 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
+import LinearProgress from '@/components/helper/LinearProgress.vue';
 import { footerProps } from '@/config/datatable.common';
 import { AssetBalance } from '@/store/balances/types';
 
 @Component({
+  components: { LinearProgress },
   computed: {
     ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
     ...mapGetters('balances', ['exchangeRate']),
