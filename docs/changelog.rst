@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`1838` Allow users to input a beaconcha.in API key for better request limits: https://beaconcha.in/pricing
+* :feature:`-` Support MANA and AAVE in Kraken and also detect staked Kava and ETH2
 
 * :feature:`-` Added support for the following tokens:
 
