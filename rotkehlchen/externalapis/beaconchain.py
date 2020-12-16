@@ -31,7 +31,7 @@ class BeaconChain(ExternalServiceWithApiKey):
     """
 
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
-        super().__init__(database=database, service_name=ExternalService.ETHERSCAN)
+        super().__init__(database=database, service_name=ExternalService.BEACONCHAIN)
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.warning_given = False
@@ -52,6 +52,9 @@ class BeaconChain(ExternalServiceWithApiKey):
             query_str = f'{self.url}{module}/{endpoint}/{encoded_args}'
         else:
             query_str = f'{self.url}{module}/{encoded_args}/{endpoint}'
+        api_key = self._get_api_key()
+        if api_key is not None:
+            query_str += '?apikey={api_key}'
         times = QUERY_RETRY_TIMES
         backoff_in_seconds = 10
 
