@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`1838` Allow users to input a beaconcha.in API key for better request limits: https://beaconcha.in/pricing
+
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
 * :bug:`-` Do not double count Binance lending balances and don't show Zero balances in binance futures and lending.

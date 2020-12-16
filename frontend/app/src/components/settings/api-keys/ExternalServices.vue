@@ -1,25 +1,20 @@
 <template>
   <v-container>
     <v-card>
-      <v-card-title>External Services</v-card-title>
-      <v-card-subtitle>
-        Rotki connects to various service providers in order to obtain
-        information such as historical prices or blockchain data. In certain
-        cases Rotki depends on these APIs for basic information, in which case
-        you will need to provide an API key.
-      </v-card-subtitle>
+      <v-card-title v-text="$t('external_services.title')" />
+      <v-card-subtitle v-text="$t('external_services.subtitle')" />
       <v-card-text>
         <v-row no-gutters>
           <v-col cols="12">
             <service-key
               v-model="etherscanKey"
               class="external-services__etherscan-key"
-              title="Etherscan"
-              description="Recommended for any Ethereum blockchain balances or transactions if you are not using your own node."
-              label="API key"
-              hint="Enter your Etherscan API key"
+              :title="$t('external_services.etherscan.title')"
+              :description="$t('external_services.etherscan.description')"
+              :label="$t('external_services.etherscan.label')"
+              :hint="$t('external_services.etherscan.hint')"
               :loading="loading"
-              tooltip="Deletes the Etherscan API key"
+              :tooltip="$t('external_services.etherscan.delete_tooltip')"
               @save="save('etherscan', $event)"
               @delete-key="deleteKey('etherscan')"
             />
@@ -31,14 +26,31 @@
             <service-key
               v-model="cryptocompareKey"
               class="external-services__cryptocompare-key"
-              title="CryptoCompare"
-              description="Rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited."
-              label="API key"
-              hint="Enter your CryptoCompare API key"
+              :title="$t('external_services.cryptocompare.title')"
+              :description="$t('external_services.cryptocompare.description')"
+              :label="$t('external_services.cryptocompare.label')"
+              :hint="$t('external_services.cryptocompare.hint')"
               :loading="loading"
-              tooltip="Deletes the CryptoCompare API key"
+              :tooltip="$t('external_services.cryptocompare.delete_tooltip')"
               @save="save('cryptocompare', $event)"
               @delete-key="deleteKey('cryptocompare')"
+            />
+          </v-col>
+        </v-row>
+        <v-divider class="mt-3" />
+        <v-row no-gutters>
+          <v-col cols="12">
+            <service-key
+              v-model="beaconchainKey"
+              class="external-services__beaconchain-key"
+              :title="$t('external_services.beaconchain.title')"
+              :description="$t('external_services.beaconchain.description')"
+              :label="$t('external_services.beaconchain.label')"
+              :hint="$t('external_services.beaconchain.hint')"
+              :loading="loading"
+              :tooltip="$t('external_services.beaconchain.delete_tooltip')"
+              @save="save('beaconchain', $event)"
+              @delete-key="deleteKey('beaconchain')"
             />
           </v-col>
         </v-row>
@@ -46,8 +58,8 @@
     </v-card>
 
     <confirm-dialog
-      title="Delete API Key"
-      message="Are you sure you want to delete this API Key?"
+      :title="$t('external_services.confirmation.title')"
+      :message="$t('external_services.confirmation.message')"
       :display="!!serviceToDelete"
       @confirm="confirmDelete"
       @cancel="serviceToDelete = ''"
@@ -69,14 +81,20 @@ import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 export default class ExternalServices extends Vue {
   etherscanKey: string = '';
   cryptocompareKey: string = '';
+  beaconchainKey: string = '';
 
   serviceToDelete: ExternalServiceName | '' = '';
 
   loading: boolean = false;
 
-  private updateKeys({ cryptocompare, etherscan }: ExternalServiceKeys) {
+  private updateKeys({
+    cryptocompare,
+    etherscan,
+    beaconchain
+  }: ExternalServiceKeys) {
     this.cryptocompareKey = cryptocompare?.api_key || '';
     this.etherscanKey = etherscan?.api_key || '';
+    this.beaconchainKey = beaconchain?.api_key || '';
   }
 
   async mounted() {
@@ -94,14 +112,18 @@ export default class ExternalServices extends Vue {
       this.loading = true;
       this.updateKeys(await this.$api.setExternalServices(keys));
       this.$store.commit('setMessage', {
-        title: 'Success',
-        description: `Successfully updated the key for ${serviceName}`,
+        title: this.$t('external_services.set.success.title').toString(),
+        description: this.$t('external_services.set.success.message', {
+          serviceName
+        }).toString(),
         success: true
       } as Message);
     } catch (e) {
       this.$store.commit('setMessage', {
-        title: 'Error',
-        description: `Error while settings external service api keys: ${e.message}`
+        title: this.$t('external_services.set.error.title').toString(),
+        description: this.$t('external_services.set.error.message', {
+          error: e.message
+        }).toString()
       } as Message);
     }
     this.loading = false;
