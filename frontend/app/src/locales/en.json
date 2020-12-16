@@ -52,6 +52,45 @@
   "eth2page": {
     "loading": "Please wait while your eth2 staking details are getting loaded..."
   },
+  "external_services": {
+    "beaconchain": {
+      "delete_tooltip": "Deletes the Beaconcha.in API key",
+      "description": "Rotki uses Beaconchai.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
+      "hint": "Enter your Beaconcha.in API key",
+      "label": "API key",
+      "title": "Beaconcha.in"
+    },
+    "confirmation": {
+      "message": "Are you sure you want to delete this API Key?",
+      "title": "Delete API Key"
+    },
+    "cryptocompare": {
+      "delete_tooltip": "Deletes the CryptoCompare API key",
+      "description": "Rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
+      "hint": "Enter your CryptoCompare API key",
+      "label": "API key",
+      "title": "CryptoCompare"
+    },
+    "etherscan": {
+      "delete_tooltip": "Deletes the Etherscan API key",
+      "description": "Recommended for any Ethereum blockchain balances or transactions if you are not using your own node.",
+      "hint": "Enter your Etherscan API key",
+      "label": "API key",
+      "title": "Etherscan"
+    },
+    "set": {
+      "error": {
+        "message": "Error while settings external service api keys: {error}",
+        "title": "Error"
+      },
+      "success": {
+        "message": "Successfully updated the key for {serviceName}",
+        "title": "Success"
+      }
+    },
+    "subtitle": "Rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases Rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
+    "title": "External Services"
+  },
   "file_upload": {
     "drop_area": "Drop the csv file or {0}",
     "import_complete": "Import was completed successfully.",
