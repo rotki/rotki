@@ -482,10 +482,15 @@ def asset_from_kraken(kraken_name: str) -> Asset:
         # differentiate between them in the balances https://github.com/rotki/rotki/issues/569
         kraken_name = kraken_name[:-2]
 
+    if kraken_name.endswith('.HOLD'):
+        kraken_name = kraken_name[:-5]
+
     # Some names are not in the map since kraken can have multiple representations
     # depending on the pair for the same asset. For example XXBT and XBT, XETH and ETH,
     # ZUSD and USD
-    if kraken_name == 'XBT':
+    if kraken_name == 'SETH':
+        name = 'ETH2'
+    elif kraken_name == 'XBT':
         name = 'BTC'
     elif kraken_name == 'XDG':
         name = 'DOGE'

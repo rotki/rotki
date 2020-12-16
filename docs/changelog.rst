@@ -3,6 +3,12 @@ Changelog
 =========
 
 * :feature:`1838` Allow users to input a beaconcha.in API key for better request limits: https://beaconcha.in/pricing
+* :feature:`-` Support MANA and AAVE in Kraken and also detect staked Kava and ETH2
+
+* :feature:`-` Added support for the following tokens:
+
+  - `Mirror Protocol Token (MIR) <https://www.coingecko.com/en/coins/mirror-protocol>`__
+  - `300Fit Network (FIT) <https://www.coingecko.com/en/coins/300fit>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
