@@ -359,8 +359,9 @@ class Binance(ExchangeInterface):
                 continue
 
             amount = entry['free'] + entry['locked']
-            if amount == FVal(0):
+            if amount == ZERO:
                 continue
+
             try:
                 asset = asset_from_binance(entry['asset'])
             except UnsupportedAsset as e:
@@ -415,8 +416,11 @@ class Binance(ExchangeInterface):
 
         for entry in positions:
             try:
-                asset = asset_from_binance(entry['asset'])
                 amount = FVal(entry['amount'])
+                if amount == ZERO:
+                    continue
+
+                asset = asset_from_binance(entry['asset'])
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unsupported binance asset {e.asset_name}. '
@@ -462,6 +466,10 @@ class Binance(ExchangeInterface):
         try:
             cross_collaterals = futures_response['crossCollaterals']
             for entry in cross_collaterals:
+                amount = FVal(entry['locked'])
+                if amount == ZERO:
+                    continue
+
                 try:
                     asset = asset_from_binance(entry['collateralCoin'])
                 except UnsupportedAsset as e:
@@ -482,7 +490,7 @@ class Binance(ExchangeInterface):
                         f' Ignoring its futures balance query.',
                     )
                     continue
-                amount = FVal(entry['locked'])
+
                 try:
                     usd_price = Inquirer().find_usd_price(asset)
                 except RemoteError as e:
