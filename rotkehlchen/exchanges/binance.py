@@ -354,6 +354,10 @@ class Binance(ExchangeInterface):
     def _query_spot_balances(self, balances: Dict) -> Dict:
         account_data = self.api_query_dict('account')
         for entry in account_data['balances']:
+            if len(entry['asset']) >= 5 and entry['asset'].startswith('LD'):
+                # Some lending coins also appear to start with the LD prefix. Ignore them
+                continue
+
             amount = entry['free'] + entry['locked']
             if amount == FVal(0):
                 continue
