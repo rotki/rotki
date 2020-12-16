@@ -189,10 +189,6 @@ def test_binance_assets_are_known(
                 f'Found unknown asset {e.asset_name} in Binance. Support for it has to be added',
             ))
 
-    # also check that lending assets are properly processed
-    assert asset_from_binance('LDBNB') == Asset('BNB')
-    assert asset_from_binance('LDUSDT') == Asset('USDT')
-
 
 def test_binance_query_balances_include_features(function_scope_binance):
     """Test that querying binance balances includes the futures wallet"""
