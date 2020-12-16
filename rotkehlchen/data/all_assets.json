@@ -7543,6 +7543,16 @@
         "symbol": "MINT",
         "type": "own chain"
     },
+    "MIR": {
+        "coingecko": "mirror-protocol",
+        "cryptocompare": "MIRROR",
+        "ethereum_address": "0x09a3EcAFa817268f77BE1283176B946C4ff2E608",
+        "ethereum_token_decimals": 18,
+        "name": "Mirror protocol",
+        "started": 1606542899,
+        "symbol": "MIR",
+        "type": "ethereum token"
+    },
     "MITH": {
         "coingecko": "mithril",
         "ethereum_address": "0x3893b9422Cd5D70a81eDeFfe3d5A1c6A978310BB",
