@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :release:`1.10.1 <2020-12-16>`
+* :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
+
 * :release:`1.10.0 <2020-12-15>`
 * :feature:`1681` AdEx protocol is now supported. Staking balances, events and APR are now detected by Rotki for premium users.
 * :feature:`1869` Vote-escrowed CRV will now be auto-detected for Curve.fi users. The amount shown will be the total locked CRV for vote-escrow.
