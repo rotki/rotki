@@ -8,6 +8,7 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Mirror Protocol Token (MIR) <https://www.coingecko.com/en/coins/mirror-protocol>`__
+  - `300Fit Network (FIT) <https://www.coingecko.com/en/coins/300fit>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error

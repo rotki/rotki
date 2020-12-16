@@ -4787,6 +4787,16 @@
         "symbol": "FIRO",
         "type": "own chain"
     },
+    "FIT": {
+        "coingecko": "300fit",
+        "cryptocompare": "300F",
+        "ethereum_address": "0x3c72fca8523686fd9e5740b0826FA4bB376E0241",
+        "ethereum_token_decimals": 18,
+        "name": "300FIT Network",
+        "started": 1561633418,
+        "symbol": "FIT",
+        "type": "ethereum token"
+    },
     "FKX": {
         "coingecko": "fortknoxter",
         "ethereum_address": "0x009e864923b49263c7F10D19B7f8Ab7a9A5AAd33",
