@@ -47,7 +47,7 @@ describe('AccountManagement.vue', () => {
   describe('existing account', () => {
     test('non premium users should see the premium dialog', async () => {
       interop.premiumUserLoggedIn = jest.fn();
-      store.dispatch = jest.fn();
+      store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.login({ username: '1234', password: '1234' });
@@ -68,7 +68,7 @@ describe('AccountManagement.vue', () => {
     test('premium users should not see the premium dialog', async () => {
       interop.premiumUserLoggedIn = jest.fn();
       store.commit('session/premium', true);
-      store.dispatch = jest.fn();
+      store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.login({ username: '1234', password: '1234' });
@@ -86,7 +86,7 @@ describe('AccountManagement.vue', () => {
   describe('new account', () => {
     test('non premium users should only see menu', async () => {
       interop.premiumUserLoggedIn = jest.fn();
-      store.dispatch = jest.fn();
+      store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.createAccount({ username: '1234', password: '1234' });
@@ -101,7 +101,7 @@ describe('AccountManagement.vue', () => {
     test('premium users should not see the premium menu entry', async () => {
       expect.assertions(4);
       interop.premiumUserLoggedIn = jest.fn();
-      store.dispatch = jest.fn();
+      store.dispatch = jest.fn().mockResolvedValue({ success: true });
 
       store.commit('session/premium', true);
       // @ts-ignore

@@ -49,7 +49,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('generalSettings', convertToGeneralSettings(settings));
     commit('accountingSettings', convertToAccountingSettings(settings));
   },
-  async unlock({ commit, dispatch, state, rootState }, payload: UnlockPayload) {
+  async unlock(
+    { commit, dispatch, state, rootState },
+    payload: UnlockPayload
+  ): Promise<ActionStatus> {
     let settings: DBSettings;
     let exchanges: string[];
 
@@ -104,12 +107,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       ];
 
       Promise.all(async).then();
+      return { success: true };
     } catch (e) {
       if (e instanceof SyncConflictError) {
         commit('syncConflict', { message: e.message, payload: e.payload });
-        return;
+        return { success: false, message: '' };
       }
-      showError(e.message, 'Login failed');
+      return { success: false, message: e.message };
     }
   },
   async periodicCheck({
