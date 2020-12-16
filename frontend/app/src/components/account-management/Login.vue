@@ -12,10 +12,10 @@
           color="secondary"
           :label="$t('login.label_username')"
           prepend-icon="mdi-account"
-          validate-on-blur
           :rules="usernameRules"
           :disabled="loading || !!syncConflict.message"
           required
+          @keypress.enter="login()"
         />
 
         <revealable-input
@@ -95,6 +95,17 @@
             </v-row>
           </v-alert>
         </transition>
+        <transition name="bounce">
+          <v-alert
+            v-if="errors.length > 0"
+            text
+            outlined
+            type="error"
+            icon="mdi-alert-circle-outline"
+          >
+            <span v-for="(error, i) in errors" :key="i" v-text="error" />
+          </v-alert>
+        </transition>
       </v-form>
     </v-card-text>
     <v-card-actions class="login__actions d-block">
@@ -140,6 +151,19 @@ export default class Login extends Vue {
 
   @Prop({ required: true })
   syncConflict!: SyncConflict;
+
+  @Prop({ required: false, type: Array, default: () => [] })
+  errors!: string[];
+
+  @Watch('username')
+  onUsernameChange() {
+    this.touched();
+  }
+
+  @Watch('password')
+  onPasswordChange() {
+    this.touched();
+  }
 
   get localLastModified(): string {
     return this.syncConflict.payload?.localLastModified ?? '';
@@ -195,6 +219,9 @@ export default class Login extends Vue {
 
   @Emit()
   newAccount() {}
+
+  @Emit()
+  touched() {}
 }
 </script>
 

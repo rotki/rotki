@@ -94,8 +94,8 @@ export type SyncApproval = 'yes' | 'no' | 'unknown';
 export interface UnlockPayload {
   readonly username: string;
   readonly password: string;
-  readonly create: boolean;
-  readonly syncApproval: SyncApproval;
+  readonly create?: boolean;
+  readonly syncApproval?: SyncApproval;
   readonly apiKey?: string;
   readonly apiSecret?: string;
   readonly submitUsageAnalytics?: boolean;
