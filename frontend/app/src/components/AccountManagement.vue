@@ -17,6 +17,8 @@
             :loading="loading"
             :displayed="!accountCreation && connected"
             :sync-conflict="syncConflict"
+            :errors="errors"
+            @touched="errors = []"
             @login="login($event)"
             @new-account="accountCreation = true"
           />
@@ -49,7 +51,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
 import Login from '@/components/account-management/Login.vue';
@@ -57,7 +59,7 @@ import PremiumReminder from '@/components/account-management/PremiumReminder.vue
 import LogLevel from '@/components/helper/LogLevel.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { SyncConflict } from '@/store/session/types';
-import { Message } from '@/store/types';
+import { ActionStatus, Message } from '@/store/types';
 import { Credentials, UnlockPayload } from '@/typing/types';
 import { CRITICAL, DEBUG, Level, levels } from '@/utils/log-level';
 
@@ -76,6 +78,9 @@ const LOG_LEVEL = 'log_level';
     ...mapState('session', ['syncConflict', 'premium']),
     ...mapState(['message', 'connected']),
     ...mapGetters(['updateNeeded', 'message'])
+  },
+  methods: {
+    ...mapActions('session', ['unlock'])
   }
 })
 export default class AccountManagement extends Vue {
@@ -85,6 +90,8 @@ export default class AccountManagement extends Vue {
   message!: Message;
   connected!: boolean;
   syncConflict!: SyncConflict;
+  unlock!: (payload: UnlockPayload) => Promise<ActionStatus>;
+  errors: string[] = [];
 
   loglevel: Level = process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL;
 
@@ -129,11 +136,15 @@ export default class AccountManagement extends Vue {
   async login(credentials: Credentials) {
     const { username, password, syncApproval } = credentials;
     this.loading = true;
-    await this.$store.dispatch('session/unlock', {
+    const { message } = await this.unlock({
       username,
       password,
       syncApproval
-    } as UnlockPayload);
+    });
+
+    if (message) {
+      this.errors = [message];
+    }
     this.loading = false;
     if (this.logged) {
       this.showPremiumDialog();
