@@ -32,7 +32,7 @@ def test_error_response_not_retry():
 
     The exception message raised mimics the one raised by gql v2 in the worst
     case scenario: when the response JSON does not have "data" nor "errors".
-    The method `RequestsHTTPTransport.execute()` is throws this exception.
+    The method `RequestsHTTPTransport.execute()` throws this exception.
     """
     graph = Graph(TEST_URL_1)
     param_types = {'$limit': 'Int!'}
@@ -43,13 +43,17 @@ def test_error_response_not_retry():
     client = MagicMock()
     response = Response()
     response.url = TEST_URL_1
-    response.status_code = HTTPStatus.INTERNAL_SERVER_ERROR.value
+    response.status_code = HTTPStatus.FORBIDDEN.value
     response.reason = 'whatever reason'
     error_msg = (
         f'{response.status_code} Server Error: {response.reason} for url: {response.url}'
     )
     client.execute.side_effect = HTTPError(error_msg, response=response)
 
+    gql_client_patch = patch(
+        'rotkehlchen.chain.ethereum.graph.Client',
+        return_value=MagicMock(),
+    )
     backoff_factor_patch = patch(
         'rotkehlchen.chain.ethereum.graph.RETRY_BACKOFF_FACTOR',
         return_value=0,
@@ -57,6 +61,7 @@ def test_error_response_not_retry():
     client_patch = patch.object(graph, 'client', new=client)
 
     with ExitStack() as stack:
+        stack.enter_context(gql_client_patch)
         stack.enter_context(backoff_factor_patch)
         stack.enter_context(client_patch)
         with pytest.raises(RemoteError) as e:

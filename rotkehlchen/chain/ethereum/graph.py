@@ -19,7 +19,12 @@ log = logging.getLogger(__name__)
 
 GRAPH_QUERY_LIMIT = 1000
 RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
-RETRY_STATUS_CODES = {HTTPStatus.BAD_GATEWAY, HTTPStatus.GATEWAY_TIMEOUT}
+RETRY_STATUS_CODES = {
+    HTTPStatus.INTERNAL_SERVER_ERROR,
+    HTTPStatus.BAD_GATEWAY,
+    HTTPStatus.SERVICE_UNAVAILABLE,
+    HTTPStatus.GATEWAY_TIMEOUT,
+}
 RETRY_BACKOFF_FACTOR = 0.2
 
 
@@ -56,9 +61,9 @@ class Graph():
     def __init__(self, url: str) -> None:
         """
         - May raise requests.RequestException if there is a problem connecting to the subgraph"""
-        transport = RequestsHTTPTransport(url=url, retries=QUERY_RETRY_TIMES)
+        transport = RequestsHTTPTransport(url=url)
         try:
-            self.client = Client(transport=transport, fetch_schema_from_transport=False)
+            self.client = Client(transport=transport)
         except (requests.exceptions.RequestException) as e:
             raise RemoteError(f'Failed to connect to the graph at {url} due to {str(e)}') from e
 
@@ -105,9 +110,7 @@ class Graph():
 
                 # Retry logic
                 retries_left -= 1
-                base_msg = (
-                    f'The Graph query to {querystr} failed due to the service is temporary down'
-                )
+                base_msg = f'The Graph query to {querystr} failed due to {exc_msg}'
                 if retries_left:
                     sleep_seconds = RETRY_BACKOFF_FACTOR * pow(2, QUERY_RETRY_TIMES - retries_left)
                     retry_msg = (
