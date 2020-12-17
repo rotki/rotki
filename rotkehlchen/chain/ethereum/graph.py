@@ -3,6 +3,7 @@ import logging
 import re
 from typing import Any, Dict, Optional, Tuple
 
+import gevent
 import requests
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
@@ -17,6 +18,7 @@ log = logging.getLogger(__name__)
 
 GRAPH_QUERY_LIMIT = 1000
 RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
+RETRY_BACKOFF_FACTOR = 0.2
 
 
 def format_query_indentation(querystr: str) -> str:
@@ -52,7 +54,7 @@ class Graph():
     def __init__(self, url: str) -> None:
         """
         - May raise requests.RequestException if there is a problem connecting to the subgraph"""
-        transport = RequestsHTTPTransport(url=url, retries=QUERY_RETRY_TIMES)
+        transport = RequestsHTTPTransport(url=url)
         try:
             self.client = Client(transport=transport, fetch_schema_from_transport=False)
         except (requests.exceptions.RequestException) as e:
@@ -67,7 +69,8 @@ class Graph():
         """Queries The Graph for a particular query
 
         May raise:
-        - RemoteError: If there is a problem querying the subgraph
+        - RemoteError: If there is a problem querying the subgraph and there
+        are no retries left.
         """
         prefix = ''
         if param_types is not None:
@@ -77,10 +80,32 @@ class Graph():
 
         querystr = prefix + querystr
         log.debug(f'Querying The Graph for {querystr}')
-        try:
-            result = self.client.execute(gql(querystr), variable_values=param_values)
-        except (requests.exceptions.RequestException, Exception) as e:
-            raise RemoteError(f'Failed to query the graph for {querystr} due to {str(e)}') from e
+
+        retries_left = QUERY_RETRY_TIMES
+        while retries_left > 0:
+            try:
+                result = self.client.execute(gql(querystr), variable_values=param_values)
+            except (requests.exceptions.RequestException, Exception) as e:
+                # NB: the lack of a good API error handling by The Graph combined
+                # with gql v2 raising bare exceptions doesn't allow us to act
+                # better on failed requests. Currently all trigger the retry logic.
+                # TODO: upgrade to gql v3 and amend this code on any improvement
+                # The Graph does on its API error handling.
+                exc_msg = str(e)
+                retries_left -= 1
+                base_msg = f'The Graph query to {querystr} failed due to {exc_msg}'
+                if retries_left:
+                    sleep_seconds = RETRY_BACKOFF_FACTOR * pow(2, QUERY_RETRY_TIMES - retries_left)
+                    retry_msg = (
+                        f'Retrying query after {sleep_seconds} seconds. '
+                        f'Retries left: {retries_left}.'
+                    )
+                    log.error(f'{base_msg}. {retry_msg}')
+                    gevent.sleep(sleep_seconds)
+                else:
+                    raise RemoteError(f'{base_msg}. No retries left.') from e
+            else:
+                break
 
         log.debug('Got result from The Graph query')
         return result
