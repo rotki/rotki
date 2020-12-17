@@ -1,7 +1,7 @@
 =========
 Changelog
 =========
-* :feature:`1925` Added the Power Index Pool Token (PIPT).
+
 * :feature:`1838` Allow users to input a beaconcha.in API key for better request limits: https://beaconcha.in/pricing
 * :feature:`-` Support MANA and AAVE in Kraken and also detect staked Kava and ETH2
 * :bug:`1917` Users can now properly login if they input the username after the password.
@@ -10,6 +10,7 @@ Changelog
 
   - `Mirror Protocol Token (MIR) <https://www.coingecko.com/en/coins/mirror-protocol>`__
   - `300Fit Network (FIT) <https://www.coingecko.com/en/coins/300fit>`__
+  - `Power Index Pool Token (PIPT) <https://www.coingecko.com/en/coins/power-index-pool-token>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
