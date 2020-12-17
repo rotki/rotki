@@ -56,7 +56,7 @@ class Graph():
         - May raise requests.RequestException if there is a problem connecting to the subgraph"""
         transport = RequestsHTTPTransport(url=url)
         try:
-            self.client = Client(transport=transport)
+            self.client = Client(transport=transport, fetch_schema_from_transport=False)
         except (requests.exceptions.RequestException) as e:
             raise RemoteError(f'Failed to connect to the graph at {url} due to {str(e)}') from e
 
@@ -88,7 +88,7 @@ class Graph():
             except (requests.exceptions.RequestException, Exception) as e:
                 # NB: the lack of a good API error handling by The Graph combined
                 # with gql v2 raising bare exceptions doesn't allow us to act
-                # better on failed requests. Currently all triggers the retry logic.
+                # better on failed requests. Currently all trigger the retry logic.
                 # TODO: upgrade to gql v3 and amend this code on any improvement
                 # The Graph does on its API error handling.
                 exc_msg = str(e)
