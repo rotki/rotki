@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1916` Querying bitstamp trades should now work properly again.
 * :bug:`1917` Users can now properly login if they input the username after the password.
 
 * :release:`1.10.1 <2020-12-16>`
