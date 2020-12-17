@@ -115,7 +115,8 @@ class Bitstamp(ExchangeInterface):
         super().__init__('bitstamp', api_key, secret, database)
         self.base_uri = 'https://www.bitstamp.net/api'
         self.msg_aggregator = msg_aggregator
-        # NB: X-Auth-Signature, X-Auth-Nonce, X-Auth-Timestamp and Content-Type per request
+        # NB: X-Auth-Signature, X-Auth-Nonce, X-Auth-Timestamp & Content-Type change per request
+        # X-Auth and X-Auth-Version are constant
         self.session.headers.update({
             'X-Auth': f'BITSTAMP {self.api_key}',
             'X-Auth-Version': 'v2',
@@ -313,6 +314,8 @@ class Bitstamp(ExchangeInterface):
         })
         if content_type:
             self.session.headers.update({'Content-Type': content_type})
+        else:
+            self.session.headers.pop('Content-Type', None)
 
         log.debug('Bitstamp API request', request_url=request_url)
         try:

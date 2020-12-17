@@ -837,3 +837,51 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
                 end_ts=Timestamp(2),
             )
             assert mock_api_query_paginated.call_args == expected_call
+
+
+@pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
+@pytest.mark.parametrize('bitstamp_api_key', ['123456'])
+@pytest.mark.parametrize('bitstamp_api_secret', [str.encode('abcdefg')])
+def test_api_query_request_headers_checks(mock_bitstamp):
+    """Test request headers are not polluted by previous requests
+    """
+    options = {
+        'limit': API_MAX_LIMIT,
+        'since_id': USER_TRANSACTION_MIN_SINCE_ID,
+        'sort': USER_TRANSACTION_SORTING_MODE,
+        'offset': 0,
+    }
+    uuid = MagicMock()
+    uuid.uuid4.return_value = 'hijklm'
+
+    session = mock_bitstamp.session
+    with patch('rotkehlchen.exchanges.bitstamp.uuid', new=uuid):
+        mock_bitstamp._api_query(endpoint='balance')
+        assert session.headers['X-Auth'] == 'BITSTAMP 123456'
+        assert session.headers['X-Auth-Version'] == 'v2'
+        assert session.headers['X-Auth-Signature'] == (
+            'eb84d115027532cba9ebab8c692c488284c54551ab4601aa9ce6280187dc9c86'
+        )
+        assert session.headers['X-Auth-Nonce'] == 'hijklm'
+        assert session.headers['X-Auth-Timestamp'] == '1606996800000'
+        assert 'Content-Type' not in session.headers
+
+        mock_bitstamp._api_query(endpoint='balance', options=options.copy())
+        assert session.headers['X-Auth'] == 'BITSTAMP 123456'
+        assert session.headers['X-Auth-Version'] == 'v2'
+        assert session.headers['X-Auth-Signature'] == (
+            '29728913d776144f0c8d522a58e77bb6c4492b25dbf7b3ebd41c4eb64c28cf0c'
+        )
+        assert session.headers['X-Auth-Nonce'] == 'hijklm'
+        assert session.headers['X-Auth-Timestamp'] == '1606996800000'
+        assert session.headers['Content-Type'] == 'application/x-www-form-urlencoded'
+
+        mock_bitstamp._api_query(endpoint='balance')
+        assert session.headers['X-Auth'] == 'BITSTAMP 123456'
+        assert session.headers['X-Auth-Version'] == 'v2'
+        assert session.headers['X-Auth-Signature'] == (
+            'eb84d115027532cba9ebab8c692c488284c54551ab4601aa9ce6280187dc9c86'
+        )
+        assert session.headers['X-Auth-Nonce'] == 'hijklm'
+        assert session.headers['X-Auth-Timestamp'] == '1606996800000'
+        assert 'Content-Type' not in session.headers
