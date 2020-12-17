@@ -8914,6 +8914,15 @@
         "symbol": "PIPL",
         "type": "ethereum token"
     },
+    "PIPT": {
+        "coingecko": "power-index-pool-token",
+           "ethereum_address": "0x26607aC599266b21d13c7aCF7942c7701a8b699c",
+           "ethereum_token_decimals": 18,
+           "name": "Power Index  Pool Token",
+           "started": 1606768910,
+           "symbol": "PIPT",
+           "type": "ethereum token"
+       },
     "PIRL": {
         "coingecko": "pirl",
         "name": "Pirl",

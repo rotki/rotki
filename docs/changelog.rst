@@ -1,7 +1,7 @@
 =========
 Changelog
 =========
-
+* :feature:`1925` Added the Power Index Pool Token (PIPT).
 * :feature:`1838` Allow users to input a beaconcha.in API key for better request limits: https://beaconcha.in/pricing
 * :feature:`-` Support MANA and AAVE in Kraken and also detect staked Kava and ETH2
 * :bug:`1917` Users can now properly login if they input the username after the password.
