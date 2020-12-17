@@ -511,6 +511,18 @@ A very good idea about the rotki data directory would be to be making frequent b
 Troubleshooting
 *****************
 
+Out of gas error during eth_call
+========================================
+
+If you see an error like the following::
+
+
+  [17/12/2020 18:31:29 CET] WARNING rotkehlchen.chain.ethereum.manager: Failed to query own node for <bound method EthereumManager._call_contract of <rotkehlchen.chain.ethereum.manager.EthereumManager object at 0x7f4b16b8bc90>> due to Error doing call on contract 0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672: {'code': -32000, 'message': 'out of gas'}
+
+while rotki is querying your local geth node for something then it means that the query has hit the gas limit cap.
+
+You can fix this by simply adding the ``--rpc.gascap 0`` argument to your geth node. This will have an unlimited gascap. Be careful if it's a node exposed to the public as this may allow a malicious ``eth_call`` to crash your node.
+
 Local system clock is not synchronized
 ========================================
 
