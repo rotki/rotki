@@ -36,6 +36,13 @@ RUN pip install -e . && \
 
 FROM nginx:stable as runtime
 
+LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
+
+ARG REVISION
+ARG ROTKI_VERSION
+ENV REVISION=$REVISION
+ENV ROTKI_VERSION=$ROTKI_VERSION
+
 RUN apt-get update && \
     apt-get install -y procps && \
     apt-get clean && \

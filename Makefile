@@ -5,3 +5,6 @@ lint:
 
 clean:
 	rm -rf build/ rotkehlchen_py_dist/ htmlcov/ rotkehlchen.egg-info/ *.dmg frontend/app/dist/
+
+docker-image:
+	packaging/docker-image.sh
