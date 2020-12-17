@@ -309,10 +309,12 @@ def create_test_bitmex(
 def create_test_bitstamp(
         database,
         msg_aggregator,
+        api_key,
+        secret,
 ) -> Bitstamp:
     return Bitstamp(
-        api_key=make_api_key(),
-        secret=make_api_secret(),
+        api_key=api_key,
+        secret=secret,
         database=database,
         msg_aggregator=msg_aggregator,
     )
