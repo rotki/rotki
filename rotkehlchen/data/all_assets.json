@@ -11498,7 +11498,7 @@
         "type": "ethereum token"
     },
     "TNB": {
-        "coingecko": "turbo-nb",
+        "coingecko": "time-new-bank",
         "ethereum_address": "0xF7920B0768Ecb20A123fAc32311d07D193381d6f",
         "ethereum_token_decimals": 18,
         "name": "Time New Bank",
@@ -13122,6 +13122,16 @@
         "name": "YGGDRASH",
         "started": 1532414987,
         "symbol": "YEED",
+        "type": "ethereum token"
+    },
+    "YETI": {
+        "coingecko": "yearn-ecosystem-token-index",
+        "cryptocompare": "",
+        "ethereum_address": "0xb4bebD34f6DaaFd808f73De0d10235a92Fbb6c3D",
+        "ethereum_token_decimals": 18,
+        "name": "Yearn Ecosystem Token Index",
+        "started": 1607534185,
+        "symbol": "YETI",
         "type": "ethereum token"
     },
     "YFI": {
