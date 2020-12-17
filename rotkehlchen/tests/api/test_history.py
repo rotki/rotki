@@ -165,7 +165,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     # For history processing tests look at test_accounting.py and
     # test_accounting_events.py
     assert 'invalid JSON' in data['message']
-    assert 'Binance' in data['message']
+    assert 'binance' in data['message']
     assert 'Bittrex' in data['message']
     assert 'Bitmex' in data['message']
     assert 'Kraken' in data['message']

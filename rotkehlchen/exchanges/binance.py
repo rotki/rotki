@@ -12,7 +12,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants import BINANCE_BASE_URL
+from rotkehlchen.constants import BINANCE_BASE_URL, BINANCE_US_BASE_URL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
@@ -88,6 +88,7 @@ class BinancePair(NamedTuple):
 def trade_from_binance(
         binance_trade: Dict,
         binance_symbols_to_pair: Dict[str, BinancePair],
+        name: str = 'binance',
 ) -> Trade:
     """Turn a binance trade returned from trade history to our common trade
     history format
@@ -107,7 +108,7 @@ def trade_from_binance(
     rate = deserialize_price(binance_trade['price'])
     if binance_trade['symbol'] not in binance_symbols_to_pair:
         raise DeserializationError(
-            f'Error reading a binance trade. Could not find '
+            f'Error reading a {name} trade. Could not find '
             f'{binance_trade["symbol"]} in binance_symbols_to_pair',
         )
 
@@ -127,7 +128,7 @@ def trade_from_binance(
     fee = deserialize_fee(binance_trade['commission'])
 
     log.debug(
-        'Processing binance Trade',
+        f'Processing {name} Trade',
         sensitive_log=True,
         amount=amount,
         rate=rate,
@@ -173,8 +174,15 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
 
 
 class Binance(ExchangeInterface):
-    """Binance exchange api docs:
+    """This class supports:
+      - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
+      - Binance US: when instantiated with uri equals BINANCE_US_BASE_URL.
+
+    Binance exchange api docs:
     https://github.com/binance-exchange/binance-official-api-docs/
+
+    Binance US exchange api docs:
+    https://github.com/binance-us/binance-official-api-docs
 
     An unofficial python binance package:
     https://github.com/binance-exchange/python-binance/
@@ -187,9 +195,14 @@ class Binance(ExchangeInterface):
             msg_aggregator: MessagesAggregator,
             initial_backoff: int = 4,
             backoff_limit: int = 180,
+            uri: str = BINANCE_BASE_URL,
     ):
-        super(Binance, self).__init__('binance', api_key, secret, database)
-        self.uri = BINANCE_BASE_URL
+        exchange_name = str(Location.BINANCE)
+        if uri == BINANCE_US_BASE_URL:
+            exchange_name = str(Location.BINANCE_US)
+
+        super(Binance, self).__init__(exchange_name, api_key, secret, database)
+        self.uri = uri
         self.session.headers.update({
             'Accept': 'application/json',
             'X-MBX-APIKEY': self.api_key,
@@ -233,8 +246,8 @@ class Binance(ExchangeInterface):
                 return False, 'API Key does not match the given secret'
             if 'Timestamp for this request was' in error:
                 return False, (
-                    "Local system clock is not in sync with binance server. "
-                    "Try syncing your system's clock"
+                    f"Local system clock is not in sync with {self.name} server. "
+                    f"Try syncing your system's clock"
                 )
             # else reraise
             raise
@@ -270,7 +283,7 @@ class Binance(ExchangeInterface):
                 elif method in V1_ENDPOINTS:
                     api_version = 1
                 else:
-                    raise ValueError('Unexpected binance api method {}'.format(method))
+                    raise ValueError(f'Unexpected {self.name} API method {method}')
 
                 if method in WAPI_ENDPOINTS:
                     apistr = 'wapi/'
@@ -280,11 +293,13 @@ class Binance(ExchangeInterface):
                     apistr = 'api/'
                 request_url = f'{self.uri}{apistr}v{str(api_version)}/{method}?'
                 request_url += urlencode(call_options)
-                log.debug('Binance API request', request_url=request_url)
+                log.debug(f'{self.name} API request', request_url=request_url)
                 try:
                     response = self.session.get(request_url)
                 except requests.exceptions.RequestException as e:
-                    raise RemoteError(f'Binance API request failed due to {str(e)}') from e
+                    raise RemoteError(
+                        f'{self.name} API request failed due to {str(e)}',
+                    ) from e
 
             if response.status_code not in (200, 418, 429):
                 code = 'no code found'
@@ -298,8 +313,9 @@ class Binance(ExchangeInterface):
                     pass
 
                 raise RemoteError(
-                    'Binance API request {} for {} failed with HTTP status '
+                    '{} API request {} for {} failed with HTTP status '
                     'code: {}, error code: {} and error message: {}'.format(
+                        self.name,
                         response.url,
                         method,
                         response.status_code,
@@ -316,13 +332,14 @@ class Binance(ExchangeInterface):
                 # https://binance-docs.github.io/apidocs/spot/en/#limits
                 retry_after = int(response.headers.get('retry-after', '0'))
                 log.debug(
-                    f'Got status code {response.status_code} from Binance. Backing off',
+                    f'Got status code {response.status_code} from {self.name}. Backing off',
                     seconds=retry_after,
                 )
                 if retry_after > RETRY_AFTER_LIMIT:
                     raise RemoteError(
-                        'Binance API request {} for {} failed with HTTP status '
+                        '{} API request {} for {} failed with HTTP status '
                         'code: {} due to a too long retry after value (> {})'.format(
+                            self.name,
                             response.url,
                             method,
                             response.status_code,
@@ -338,7 +355,9 @@ class Binance(ExchangeInterface):
         try:
             json_ret = rlk_jsonloads(response.text)
         except JSONDecodeError as e:
-            raise RemoteError(f'Binance returned invalid JSON response: {response.text}') from e
+            raise RemoteError(
+                f'{self.name} returned invalid JSON response: {response.text}',
+            ) from e
         return json_ret
 
     def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:
@@ -366,20 +385,20 @@ class Binance(ExchangeInterface):
                 asset = asset_from_binance(entry['asset'])
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported binance asset {e.asset_name}. '
-                    f' Ignoring its balance query.',
+                    f'Found unsupported {self.name} asset {e.asset_name}. '
+                    f'Ignoring its balance query.',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unknown binance asset {e.asset_name}. '
-                    f' Ignoring its balance query.',
+                    f'Found unknown {self.name} asset {e.asset_name}. '
+                    f'Ignoring its balance query.',
                 )
                 continue
             except DeserializationError:
                 self.msg_aggregator.add_error(
-                    f'Found binance asset with non-string type {type(entry["asset"])}. '
-                    f' Ignoring its balance query.',
+                    f'Found {self.name} asset with non-string type {type(entry["asset"])}. '
+                    f'Ignoring its balance query.',
                 )
                 continue
 
@@ -387,7 +406,7 @@ class Binance(ExchangeInterface):
                 usd_price = Inquirer().find_usd_price(asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    f'Error processing binance balance entry due to inability to '
+                    f'Error processing {self.name} balance entry due to inability to '
                     f'query USD price: {str(e)}. Skipping balance entry',
                 )
                 continue
@@ -411,7 +430,7 @@ class Binance(ExchangeInterface):
         if positions is None:
             raise RemoteError(
                 f'Could not find key positionAmountVos in lending account data '
-                f'{data} returned by binance',
+                f'{data} returned by {self.name}.',
             )
 
         for entry in positions:
@@ -423,14 +442,14 @@ class Binance(ExchangeInterface):
                 asset = asset_from_binance(entry['asset'])
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported binance asset {e.asset_name}. '
-                    f' Ignoring its lending balance query.',
+                    f'Found unsupported {self.name} asset {e.asset_name}. '
+                    f'Ignoring its lending balance query.',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unknown binance asset {e.asset_name}. '
-                    f' Ignoring its lending balance query.',
+                    f'Found unknown {self.name} asset {e.asset_name}. '
+                    f'Ignoring its lending balance query.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -438,8 +457,8 @@ class Binance(ExchangeInterface):
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 self.msg_aggregator.add_error(
-                    f'Error at deserializing binance asset. {msg}.'
-                    f' Ignoring its lending balance query.',
+                    f'Error at deserializing {self.name} asset. {msg}. '
+                    f'Ignoring its lending balance query.',
                 )
                 continue
 
@@ -447,7 +466,7 @@ class Binance(ExchangeInterface):
                 usd_price = Inquirer().find_usd_price(asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    f'Error processing binance balance entry due to inability to '
+                    f'Error processing {self.name} balance entry due to inability to '
                     f'query USD price: {str(e)}. Skipping balance entry',
                 )
                 continue
@@ -474,20 +493,20 @@ class Binance(ExchangeInterface):
                     asset = asset_from_binance(entry['collateralCoin'])
                 except UnsupportedAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unsupported binance asset {e.asset_name}. '
-                        f' Ignoring its futures balance query.',
+                        f'Found unsupported {self.name} asset {e.asset_name}. '
+                        f'Ignoring its futures balance query.',
                     )
                     continue
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unknown binance asset {e.asset_name}. '
-                        f' Ignoring its futures balance query.',
+                        f'Found unknown {self.name} asset {e.asset_name}. '
+                        f'Ignoring its futures balance query.',
                     )
                     continue
                 except DeserializationError:
                     self.msg_aggregator.add_error(
-                        f'Found binance asset with non-string type {type(entry["asset"])}. '
-                        f' Ignoring its futures balance query.',
+                        f'Found {self.name} asset with non-string type '
+                        f'{type(entry["asset"])}. Ignoring its futures balance query.',
                     )
                     continue
 
@@ -495,7 +514,7 @@ class Binance(ExchangeInterface):
                     usd_price = Inquirer().find_usd_price(asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
-                        f'Error processing binance balance entry due to inability to '
+                        f'Error processing {self.name} balance entry due to inability to '
                         f'query USD price: {str(e)}. Skipping balance entry',
                     )
                     continue
@@ -509,8 +528,8 @@ class Binance(ExchangeInterface):
 
         except KeyError as e:
             self.msg_aggregator.add_error(
-                f'At binance futures balance query did not find expected key '
-                f' {str(e)}. Skipping futures query ...',
+                f'At {self.name} futures balance query did not find expected key '
+                f'{str(e)}. Skipping futures query...',
             )
 
         return balances
@@ -526,14 +545,14 @@ class Binance(ExchangeInterface):
             returned_balances = self._query_lending_balances(returned_balances)
         except RemoteError as e:
             msg = (
-                'Binance account API request failed. Could not reach binance due '
-                'to {}'.format(e)
+                f'{self.name} account API request failed. '
+                f'Could not reach binance due to {str(e)}'
             )
             self.msg_aggregator.add_error(msg)
             return None, msg
 
         log.debug(
-            'binance balance query result',
+            f'{self.name} balance query result',
             sensitive_log=True,
             balances=returned_balances,
         )
@@ -574,7 +593,7 @@ class Binance(ExchangeInterface):
                 if result:
                     last_trade_id = result[-1]['id'] + 1
                 len_result = len(result)
-                log.debug('binance myTrades query result', results_num=len_result)
+                log.debug(f'{self.name} myTrades query result', results_num=len_result)
                 for r in result:
                     r['symbol'] = symbol
                 raw_data.extend(result)
@@ -584,16 +603,20 @@ class Binance(ExchangeInterface):
         trades = []
         for raw_trade in raw_data:
             try:
-                trade = trade_from_binance(raw_trade, self.symbols_to_pair)
+                trade = trade_from_binance(
+                    binance_trade=raw_trade,
+                    binance_symbols_to_pair=self.symbols_to_pair,
+                    name=self.name,
+                )
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found binance trade with unknown asset '
+                    f'Found {self.name} trade with unknown asset '
                     f'{e.asset_name}. Ignoring it.',
                 )
                 continue
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found binance trade with unsupported asset '
+                    f'Found {self.name} trade with unsupported asset '
                     f'{e.asset_name}. Ignoring it.',
                 )
                 continue
@@ -602,11 +625,11 @@ class Binance(ExchangeInterface):
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 self.msg_aggregator.add_error(
-                    'Error processing a binance trade. Check logs '
-                    'for details. Ignoring it.',
+                    f'Error processing a {self.name} trade. Check logs '
+                    f'for details. Ignoring it.',
                 )
                 log.error(
-                    'Error processing a binance trade',
+                    f'Error processing a {self.name} trade',
                     trade=raw_trade,
                     error=msg,
                 )
@@ -654,12 +677,12 @@ class Binance(ExchangeInterface):
 
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found binance deposit/withdrawal with unknown asset '
+                f'Found {self.name} deposit/withdrawal with unknown asset '
                 f'{e.asset_name}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found binance deposit/withdrawal with unsupported asset '
+                f'Found {self.name} deposit/withdrawal with unsupported asset '
                 f'{e.asset_name}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
@@ -667,11 +690,11 @@ class Binance(ExchangeInterface):
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
-                'Error processing a binance deposit/withdrawal. Check logs '
-                'for details. Ignoring it.',
+                f'Error processing a {self.name} deposit/withdrawal. Check logs '
+                f'for details. Ignoring it.',
             )
             log.error(
-                'Error processing a binance deposit_withdrawal',
+                f'Error processing a {self.name} deposit_withdrawal',
                 asset_movement=raw_data,
                 error=msg,
             )
@@ -699,7 +722,7 @@ class Binance(ExchangeInterface):
         elif method == 'withdrawHistory.html':
             query_schema = 'withdrawList'
         else:
-            raise AssertionError(f'Unexpected binance method case: {method}.')
+            raise AssertionError(f'Unexpected {self.name} method case: {method}.')
 
         results: List[Dict[str, Any]] = []
 
@@ -754,7 +777,7 @@ class Binance(ExchangeInterface):
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             method='depositHistory.html',
         )
-        log.debug('binance deposit history result', results_num=len(deposits))
+        log.debug(f'{self.name} deposit history result', results_num=len(deposits))
 
         withdraws = self._api_query_dict_within_time_delta(
             start_ts=start_ts,
@@ -762,7 +785,7 @@ class Binance(ExchangeInterface):
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             method='withdrawHistory.html',
         )
-        log.debug('binance withdraw history result', results_num=len(withdraws))
+        log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
 
         movements = []
         for raw_movement in deposits + withdraws:

@@ -2,9 +2,10 @@ import logging
 from importlib import import_module
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCE_US_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiCredentials, ApiKey, ApiSecret
+from rotkehlchen.typing import ApiCredentials, ApiKey, ApiSecret, Location
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -23,6 +24,7 @@ SUPPORTED_EXCHANGES = [
     'coinbasepro',
     'gemini',
     'bitstamp',
+    'binance_us',
 ]
 
 
@@ -31,6 +33,12 @@ class ExchangeManager():
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.connected_exchanges: Dict[str, ExchangeInterface] = {}
         self.msg_aggregator = msg_aggregator
+
+    @staticmethod
+    def _get_exchange_module_name(name: str) -> str:
+        if name == str(Location.BINANCE_US):
+            return str(Location.BINANCE)
+        return name
 
     def has_exchange(self, name: str, database: Optional['DBHandler'] = None) -> bool:
         """Check if an exchange is registered.
@@ -112,22 +120,27 @@ class ExchangeManager():
         log.debug('Initializing exchanges')
         # initialize exchanges for which we have keys and are not already initialized
         for name, credentials in exchange_credentials.items():
+            module_name = self._get_exchange_module_name(name)
             if name not in self.connected_exchanges:
                 try:
-                    module = import_module(f'rotkehlchen.exchanges.{name}')
+                    module = import_module(f'rotkehlchen.exchanges.{module_name}')
                 except ModuleNotFoundError:
                     # This should never happen
                     raise AssertionError(
                         f'Tried to initialize unknown exchange {name}. Should never happen.',
                     ) from None
 
-                exchange_ctor = getattr(module, name.capitalize())
+                exchange_ctor = getattr(module, module_name.capitalize())
                 extra_args: Dict[str, Any] = {}
                 if credentials.passphrase is not None:
                     extra_args['passphrase'] = credentials.passphrase
-                if name == 'kraken':
+                if name == str(Location.KRAKEN):
                     settings = database.get_settings()
                     extra_args['account_type'] = settings.kraken_account_type
+                elif name == str(Location.BINANCE):
+                    extra_args['uri'] = BINANCE_BASE_URL
+                elif name == str(Location.BINANCE_US):
+                    extra_args['uri'] = BINANCE_US_BASE_URL
                 exchange_obj = exchange_ctor(
                     api_key=credentials.api_key,
                     secret=credentials.api_secret,
