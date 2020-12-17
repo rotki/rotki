@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-from http import HTTPStatus
 from typing import Any, Dict, Optional, Tuple
 
 import gevent
@@ -19,12 +18,6 @@ log = logging.getLogger(__name__)
 
 GRAPH_QUERY_LIMIT = 1000
 RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
-RETRY_STATUS_CODES = {
-    HTTPStatus.INTERNAL_SERVER_ERROR,
-    HTTPStatus.BAD_GATEWAY,
-    HTTPStatus.SERVICE_UNAVAILABLE,
-    HTTPStatus.GATEWAY_TIMEOUT,
-}
 RETRY_BACKOFF_FACTOR = 0.2
 
 
@@ -76,10 +69,8 @@ class Graph():
         """Queries The Graph for a particular query
 
         May raise:
-        - RemoteError: If there is a problem querying the subgraph
-
-        Retry logic is triggered by a specific status code in the exception
-        message.
+        - RemoteError: If there is a problem querying the subgraph and there
+        are no retries left.
         """
         prefix = ''
         if param_types is not None:
@@ -95,20 +86,12 @@ class Graph():
             try:
                 result = self.client.execute(gql(querystr), variable_values=param_values)
             except (requests.exceptions.RequestException, Exception) as e:
-                # NB: error status code expected to be in exception message
+                # NB: the lack of a good API error handling by The Graph combined
+                # with gql v2 raising bare exceptions doesn't allow us to act
+                # better on failed requests. Currently all triggers the retry logic.
+                # TODO: upgrade to gql v3 and amend this code on any improvement
+                # The Graph does on its API error handling.
                 exc_msg = str(e)
-                is_retry_status_code = False
-                for status_code in RETRY_STATUS_CODES:
-                    if str(status_code.value) in exc_msg:
-                        is_retry_status_code = True
-                        break
-
-                if not is_retry_status_code:
-                    raise RemoteError(
-                        f'Failed to query the graph for {querystr} due to {str(e)}',
-                    ) from e
-
-                # Retry logic
                 retries_left -= 1
                 base_msg = f'The Graph query to {querystr} failed due to {exc_msg}'
                 if retries_left:
