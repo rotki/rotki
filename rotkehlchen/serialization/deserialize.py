@@ -359,6 +359,8 @@ def deserialize_location(symbol: str) -> Location:
         return Location.UNISWAP
     if symbol == 'bitstamp':
         return Location.BITSTAMP
+    if symbol == 'binance_us':
+        return Location.BINANCE_US
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -455,6 +457,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.UNISWAP
     if symbol == 'R':
         return Location.BITSTAMP
+    if symbol == 'S':
+        return Location.BINANCE_US
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
