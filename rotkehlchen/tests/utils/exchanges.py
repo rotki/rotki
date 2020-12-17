@@ -309,9 +309,14 @@ def create_test_bitmex(
 def create_test_bitstamp(
         database,
         msg_aggregator,
-        api_key,
-        secret,
+        api_key=None,
+        secret=None,
 ) -> Bitstamp:
+    if api_key is None:
+        api_key = make_api_key()
+    if secret is None:
+        secret = make_api_secret()
+
     return Bitstamp(
         api_key=api_key,
         secret=secret,
