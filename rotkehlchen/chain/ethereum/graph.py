@@ -3,20 +3,31 @@ import logging
 import re
 from typing import Any, Dict, Optional, Tuple
 
+import gevent
 import requests
 from gql import Client, gql
+from gql.transport.exceptions import (
+    TransportAlreadyConnected,
+    TransportClosed,
+    TransportProtocolError,
+    TransportQueryError,
+    TransportServerError,
+)
 from gql.transport.requests import RequestsHTTPTransport
 from typing_extensions import Literal
 
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 GRAPH_QUERY_LIMIT = 1000
 RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
+RETRY_BACKOFF_FACTOR = 0.2
 
 
 def format_query_indentation(querystr: str) -> str:
@@ -50,13 +61,8 @@ def get_common_params(
 class Graph():
 
     def __init__(self, url: str) -> None:
-        """
-        - May raise requests.RequestException if there is a problem connecting to the subgraph"""
-        transport = RequestsHTTPTransport(url=url, retries=QUERY_RETRY_TIMES)
-        try:
-            self.client = Client(transport=transport, fetch_schema_from_transport=False)
-        except (requests.exceptions.RequestException) as e:
-            raise RemoteError(f'Failed to connect to the graph at {url} due to {str(e)}') from e
+        transport = RequestsHTTPTransport(url=url)
+        self.client = Client(transport=transport)
 
     def query(
             self,
@@ -67,7 +73,15 @@ class Graph():
         """Queries The Graph for a particular query
 
         May raise:
-        - RemoteError: If there is a problem querying the subgraph
+        - RemoteError: there is a server/protocol/connection problem querying
+        the subgraph.
+
+        Gql v3 exceptions handling:
+          - TransportServerError: request fails with status code >= 400.
+          - TransportProtocolError: request fails with status code < 400, or
+          request does not fail but response doesn't have 'errors' nor 'data'.
+          - TransportQueryError: request does not fail but the result returned
+          by the transport (an <ExecutionResult>) has 'errors'.
         """
         prefix = ''
         if param_types is not None:
@@ -77,10 +91,42 @@ class Graph():
 
         querystr = prefix + querystr
         log.debug(f'Querying The Graph for {querystr}')
-        try:
-            result = self.client.execute(gql(querystr), variable_values=param_values)
-        except (requests.exceptions.RequestException, Exception) as e:
-            raise RemoteError(f'Failed to query the graph for {querystr} due to {str(e)}') from e
+
+        retries_left = QUERY_RETRY_TIMES
+        while retries_left > 0:
+            try:
+                result = self.client.execute(gql(querystr), variable_values=param_values)
+            except (
+                TransportProtocolError,
+                TransportQueryError,
+                TransportServerError,
+            ) as e:
+                exc_msg = e.errors if isinstance(e, TransportQueryError) else str(e)
+                data = e.data if isinstance(e, TransportQueryError) else None
+                base_msg = f'The Graph query: {querystr} failed due to: {exc_msg}'
+
+                retries_left -= 1
+                if retries_left:
+                    sleep_seconds = RETRY_BACKOFF_FACTOR * pow(2, QUERY_RETRY_TIMES - retries_left)
+                    retry_msg = (
+                        f'Retrying query after {sleep_seconds} seconds. '
+                        f'Retries left: {retries_left}.'
+                    )
+                    log.error(f'{base_msg}. {retry_msg}', data=data)
+                    gevent.sleep(sleep_seconds)
+                else:
+                    raise RemoteError(f'{base_msg}. No retries left.') from e
+
+            except (
+                TransportAlreadyConnected,
+                TransportClosed,
+                requests.exceptions.RequestException,
+            ) as e:
+                raise RemoteError(
+                    f'The Graph query: {querystr} failed due to: {str(e)}',
+                ) from e
+            else:
+                break
 
         log.debug('Got result from The Graph query')
         return result
