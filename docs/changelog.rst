@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1287` Querying bitmex balances should now work properly again.
 * :bug:`1916` Querying bitstamp trades should now work properly again.
 * :bug:`1917` Users can now properly login if they input the username after the password.
 
