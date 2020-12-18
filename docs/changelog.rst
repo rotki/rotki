@@ -2,8 +2,9 @@
 Changelog
 =========
 
+* :feature:`1515` Rotki now supports Binance US. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`1838` Allow users to input a beaconcha.in API key for better request limits: https://beaconcha.in/pricing
-* :feature:`-` Support MANA and AAVE in Kraken and also detect staked Kava and ETH2
+* :feature:`-` Support MANA and AAVE in Kraken and also detect staked Kava and ETH2.
 * :bug:`1916` Querying bitstamp trades should now work properly again.
 * :bug:`1917` Users can now properly login if they input the username after the password.
 
