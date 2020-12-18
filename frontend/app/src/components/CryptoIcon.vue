@@ -20,6 +20,7 @@ import GeneretedIcon from '@/components/helper/GeneretedIcon.vue';
 import { currencies } from '@/data/currencies';
 import { TokenDetails } from '@/services/defi/types';
 import { assetName } from '@/store/defi/utils';
+import { BTC, ETH } from '@/typing/types';
 
 @Component({
   components: { GeneretedIcon }
@@ -49,7 +50,10 @@ export default class CryptoIcon extends Vue {
   }
 
   get currency(): string | undefined {
-    return currencies.find(currency => currency.ticker_symbol === this.asset)
+    if (this.asset === BTC || this.asset === ETH) {
+      return undefined;
+    }
+    return currencies.find(({ ticker_symbol }) => ticker_symbol === this.asset)
       ?.unicode_symbol;
   }
 

@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { SupportedCurrency } from '@/data/currencies';
 import {
   AccountState,
   DBSettings,
@@ -349,9 +350,11 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  getFiatExchangeRates(currencies: string[]): Promise<FiatExchangeRates> {
+  getFiatExchangeRates(
+    currencies: SupportedCurrency[]
+  ): Promise<FiatExchangeRates> {
     return this.axios
-      .get<ActionResult<FiatExchangeRates>>('/fiat_exchange_rates', {
+      .get<ActionResult<FiatExchangeRates>>('/exchange_rates', {
         params: {
           currencies: currencies.join(',')
         },
