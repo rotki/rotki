@@ -10,7 +10,6 @@ typing-extensions==3.7.4.2
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
-uuid==1.30
 
 # For the rest api
 flask-cors==3.0.8
