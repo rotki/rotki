@@ -46,6 +46,8 @@
           width="20px"
           color="primary"
           class="grey lighten-4 ml-1"
+          :href="href"
+          :target="target"
           v-on="on"
           @click="openLink()"
         >
@@ -97,7 +99,36 @@ export default class HashLink extends Mixins(ScrambleMixin) {
   privacyMode!: boolean;
 
   copyText(text: string) {
-    navigator.clipboard.writeText(text);
+    if (!navigator.clipboard) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed'; //avoid scrolling to bottom
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    } else {
+      navigator.clipboard.writeText(text);
+    }
+  }
+
+  get href(): string | undefined {
+    if (this.$interop.isPackaged) {
+      return undefined;
+    }
+
+    return this.baseUrl + this.text;
+  }
+
+  get target(): string | undefined {
+    if (this.$interop.isPackaged) {
+      return undefined;
+    }
+    return '_blank';
   }
 
   openLink() {
