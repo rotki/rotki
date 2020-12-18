@@ -40,9 +40,7 @@
                 <v-icon>mdi-close</v-icon>
               </v-btn>
             </template>
-            <span>
-              Dismiss Notification
-            </span>
+            <span v-text="$t('notification.dismiss_tooltip')" />
           </v-tooltip>
           <v-tooltip bottom>
             <template #activator="{ on }">
@@ -56,7 +54,7 @@
                 <v-icon>mdi-content-copy</v-icon>
               </v-btn>
             </template>
-            <span>Copy the message to clipboard</span>
+            <span v-text="$t('notification.copy_tooltip')" />
           </v-tooltip>
         </div>
       </v-col>

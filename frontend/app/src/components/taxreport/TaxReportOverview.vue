@@ -2,13 +2,19 @@
   <v-row>
     <v-col>
       <v-card>
-        <v-card-title>Overview</v-card-title>
+        <v-card-title v-text="$t('tax_report_overview.title')" />
         <v-card-text>
           <v-simple-table>
             <thead>
               <tr>
-                <th class="text-left">Result</th>
-                <th class="text-right">{{ currency.ticker_symbol }} value</th>
+                <th
+                  class="text-left"
+                  v-text="$t('tax_report_overview.columns.result')"
+                />
+                <th
+                  class="text-right"
+                  v-text="$t('tax_report_overview.columns.value', { symbol })"
+                />
               </tr>
             </thead>
             <tbody>
@@ -46,5 +52,9 @@ export default class TaxReportOverview extends Vue {
   overview!: TaxReportOverview;
   currency!: Currency;
   exchangeRate!: (currency: string) => number;
+
+  get symbol(): string {
+    return this.currency.ticker_symbol;
+  }
 }
 </script>

@@ -28,6 +28,45 @@
       "button_create": "Create"
     }
   },
+  "data_management": {
+    "confirm": {
+      "exchange": {
+        "message": "Are you sure you want to purge the cached data for the selected exchange?",
+        "title": "Purge cached exchange data"
+      },
+      "transactions": {
+        "message": "Are you sure you want to purge the cached data for ethereum transactions?",
+        "title": "Purge ethereum transaction data"
+      },
+      "all_exchanges": {
+        "message": "Are you sure you want to purge the cached data for all the exchanges?",
+        "title": "Purge all cached exchange data"
+      }
+    },
+    "ethereum_transactions": {
+      "purge_button": "Purge transaction cache",
+      "purge_error": "Failed to purge cached ethereum transaction data: {transactionPurgeError}",
+      "purge_success": "Ethereum transaction data were successfully purged.",
+      "purge_tooltip": "Purge the cached ethereum data",
+      "title": "Ethereum Transactions"
+    },
+    "exchange_data": {
+      "purge_all_button": "Purge All Exchanges Cache",
+      "purge_all_error": "Failed to purge cached data for all the exchanges: {allExchangePurgeError}",
+      "purge_all_success": "Cached data for all the available exchanges were successfully purged.",
+      "purge_all_tooltip": "Purge all the cached exchange data. (deposits/withdrawals/trades)",
+      "purge_success": "Cached data for {exchangePurgeSuccess} were successfully purged.",
+      "purge_tooltip": "Purge cached data for the selected exchange",
+      "title": "Exchange Data"
+    },
+    "errors": {
+      "all_exchanges": "Purging the cached data for all the exchanges failed: {message}",
+      "exchange": "Purging cached data for {name} failed: {message}",
+      "transactions": "Purging ethereum transaction cached data failed: {message}"
+    },
+    "subtitle": "Allows you to purge data cached by rotki",
+    "title": "Manage Data"
+  },
   "defi_address_selector": {
     "back": "Back",
     "next": "Next"
@@ -97,6 +136,97 @@
     "select_file": "Select file",
     "many_files_selected": "One one csv file must be selected",
     "only_csv": "Only csv files are allowed"
+  },
+  "generate": {
+    "generate": "Generate",
+    "title": "Generate",
+    "validation": {
+      "empty_end_date": "End date cannot be empty",
+      "empty_start_date": "Start date cannot be empty",
+      "end_after_start": "The end time should be after the start time."
+    }
+  },
+  "node_status_indicator": {
+    "connected": "Connected to an ethereum node",
+    "disconnected": "Not connected to an ethereum node"
+  },
+  "notification": {
+    "copy_tooltip": "Copy the message to clipboard",
+    "dismiss_tooltip": "Dismiss Notification"
+  },
+  "notification_indicator": {
+    "tooltip": "Notifications"
+  },
+  "notification_popup": {
+    "tooltip": "Number of Pending notifications"
+  },
+  "notification_sidebar": {
+    "clear_tooltip": "Clear all notifications",
+    "close_tooltip": "Close the notification area",
+    "confirmation": {
+      "message": "This action will clear all the active notifications. Do you want to proceed?",
+      "title": "Clear active notifications"
+    },
+    "no_messages": "No messages!",
+    "title": "Notifications"
+  },
+  "progress_indicator": {
+    "no_tasks": "No running tasks"
+  },
+  "tag_creator": {
+    "buttons": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "labels": {
+      "background": "Background",
+      "description": "Description",
+      "foreground": "Foreground",
+      "name": "Name"
+    },
+    "refresh_tooltip": "Creates a random color combination",
+    "validation": {
+      "empty_name": "Please provide a tag name"
+    }
+  },
+  "tag_manager": {
+    "confirmation": {
+      "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
+      "title": "Confirm tag deletion"
+    },
+    "headers": {
+      "actions": "Actions",
+      "description": "Description",
+      "name": "Name"
+    },
+    "my_tags": "My Tags",
+    "search": "Search",
+    "subtitle": "Create new tags or modify existing",
+    "title": "Tag Manager"
+  },
+  "tax_report_events": {
+    "headers": {
+      "location": "Location",
+      "paid_asset": "Paid Asset",
+      "paid_in": "Paid in {currency}",
+      "paid_in_asset": "Paid in Asset",
+      "received_asset": "Received Asset",
+      "received_in_asset": "Received in Asset",
+      "taxable_amount": "Taxable Amount",
+      "taxable_bought_cost_in": "Taxable Bought Cost in {currency}",
+      "taxable_received_in": "Taxable Received in {currency}",
+      "time": "Time",
+      "type": "Type",
+      "virtual": "Virtual?"
+    },
+    "title": "Events"
+  },
+  "tax_report_overview": {
+    "columns": {
+      "result": "Result",
+      "value": "{symbol} value"
+    },
+    "title": "Overview"
   },
  "timeframe_settings": {
    "default_timeframe": "Dashboard graph default timeframe",
@@ -340,6 +470,9 @@
     "details_dialog": {
       "subtitle": "Protocol asset details"
     }
+  },
+  "update_indicator": {
+    "version": "An Updated Version ({appVersion}) of Rotki is available"
   },
   "upgrade_row": {
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",

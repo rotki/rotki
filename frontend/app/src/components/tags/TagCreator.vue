@@ -11,10 +11,10 @@
             v-on="on"
             @click="randomize"
           >
-            <v-icon color="primary">fa-refresh</v-icon>
+            <v-icon color="primary">mdi-refresh</v-icon>
           </v-btn>
         </template>
-        <span>Creates a random color combination</span>
+        <span v-text="$t('tag_creator.refresh_tooltip')" />
       </v-tooltip>
     </v-row>
     <v-row no-gutters align="center">
@@ -23,7 +23,7 @@
           <v-col cols="12">
             <v-text-field
               class="tag_creator__name"
-              label="Name"
+              :label="$t('tag_creator.labels.name')"
               :rules="rules"
               :value="tag.name"
               :disabled="editMode"
@@ -36,7 +36,7 @@
             <v-text-field
               class="tag_creator__description"
               :value="tag.description"
-              label="Description"
+              :label="$t('tag_creator.labels.description')"
               @input="changed({ description: $event })"
             />
           </v-col>
@@ -47,7 +47,10 @@
       <v-col cols="6">
         <v-row>
           <v-col cols="12">
-            <div class="text-h6 text-center">Foreground</div>
+            <div
+              class="text-h6 text-center"
+              v-text="$t('tag_creator.labels.foreground')"
+            />
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -68,7 +71,10 @@
       <v-col cols="6">
         <v-row>
           <v-col cols="12">
-            <div class="text-h6 text-center">Background</div>
+            <div
+              class="text-h6 text-center"
+              v-text="$t('tag_creator.labels.background')"
+            />
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -96,12 +102,15 @@
           color="primary"
           :disabled="!valid"
           @click="save"
-        >
-          Save
-        </v-btn>
-        <v-btn v-if="editMode" width="100" depressed @click="cancel">
-          Cancel
-        </v-btn>
+          v-text="$t('tag_creator.buttons.save')"
+        />
+        <v-btn
+          v-if="editMode"
+          width="100"
+          depressed
+          @click="cancel"
+          v-text="$t('tag_creator.buttons.cancel')"
+        />
       </v-col>
     </v-row>
   </v-form>
@@ -125,7 +134,10 @@ export default class TagCreator extends Vue {
 
   valid: boolean = false;
 
-  readonly rules = [(v: string) => !!v || 'Please provide a tag name'];
+  readonly rules = [
+    (v: string) =>
+      !!v || this.$t('tag_creator.validation.empty_name').toString()
+  ];
 
   @Emit()
   changed(event: TagEvent): Tag {

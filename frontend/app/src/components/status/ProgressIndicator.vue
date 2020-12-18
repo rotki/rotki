@@ -13,10 +13,10 @@
           :on-menu="on"
         >
           <v-icon v-if="hasRunningTasks" class="top-loading-icon">
-            fa fa-circle-o-notch fa-spin
+            mdi-spin mdi-loading
           </v-icon>
           <v-icon v-else>
-            fa fa-check-circle
+            mdi-check-circle
           </v-icon>
         </menu-tooltip-button>
       </template>
@@ -49,8 +49,11 @@
           </v-list>
         </v-col>
         <v-col v-else class="progress-indicator__no-tasks align justify">
-          <v-icon color="primary">fa fa-info-circle</v-icon>
-          <p class="progress-indicator__no-tasks__label">No running tasks</p>
+          <v-icon color="primary">mdi-information</v-icon>
+          <p
+            class="progress-indicator__no-tasks__label"
+            v-text="$t('progress_indicator.no_tasks')"
+          />
         </v-col>
       </v-row>
     </v-menu>
@@ -59,18 +62,15 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapGetters } from 'vuex';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { Task, TaskMeta } from '@/model/task';
-
-const { mapGetters } = createNamespacedHelpers('tasks');
-const { mapGetters: mapReportGetters } = createNamespacedHelpers('reports');
 
 @Component({
   components: { MenuTooltipButton },
   computed: {
-    ...mapGetters(['hasRunningTasks', 'tasks']),
-    ...mapReportGetters(['progress'])
+    ...mapGetters('tasks', ['hasRunningTasks', 'tasks']),
+    ...mapGetters('reports', ['progress'])
   }
 })
 export default class ProgressIndicator extends Vue {

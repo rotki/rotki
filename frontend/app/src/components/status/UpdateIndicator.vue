@@ -7,9 +7,7 @@
         </v-icon>
       </v-btn>
     </template>
-    <span>
-      An Updated Version ({{ version.latestVersion }}) of Rotki is available
-    </span>
+    <span v-text="$t('update_indicator.version', { appVersion })" />
   </v-tooltip>
 </template>
 
@@ -27,6 +25,10 @@ import { Version } from '@/store/types';
 export default class UpdateIndicator extends Vue {
   updateNeeded!: boolean;
   version!: Version;
+
+  get appVersion(): string {
+    return this.version.latestVersion;
+  }
 
   openLink() {
     this.$interop.openUrl(this.version.downloadUrl);

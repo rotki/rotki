@@ -2,26 +2,21 @@
   <v-row no-gutters>
     <v-col>
       <v-card>
-        <v-card-title>Manage Data</v-card-title>
-        <v-card-subtitle>
-          Allows you to purge data cached by rotki
-        </v-card-subtitle>
+        <v-card-title v-text="$t('data_management.title')" />
+        <v-card-subtitle v-text="$t('data_management.subtitle')" />
         <v-form ref="form">
           <v-card-text>
-            <div class="title">Exchange Data</div>
+            <div
+              class="title"
+              v-text="$t('data_management.exchange_data.title')"
+            />
             <v-row align="center">
               <v-col>
                 <v-select
                   v-model="exchange"
                   class="data-management__fields__exchange"
                   :items="exchanges"
-                  :success-messages="
-                    !!exchangePurgeSuccess
-                      ? [
-                          `Cached data for ${exchangePurgeSuccess} were successfully purged.`
-                        ]
-                      : []
-                  "
+                  :success-messages="purgeSuccessMessages"
                   :error-messages="exchangePurgeError"
                   label="Exchange"
                 >
@@ -50,45 +45,34 @@
                       <v-icon>mdi-delete</v-icon>
                     </v-btn>
                   </template>
-                  <span>Purge cached data for the selected exchange</span>
+                  <span
+                    v-text="$t('data_management.exchange_data.purge_tooltip')"
+                  />
                 </v-tooltip>
               </v-col>
             </v-row>
             <status-button
               class="data-management__purge-all-exchange"
-              tooltip="Purge all the cached exchange data. (deposits/withdrawals/trades)"
-              :success-message="
-                allExchangePurgeSuccess
-                  ? 'Cached data for all the available exchanges were successfully purged.'
-                  : null
-              "
-              :error-message="
-                !!allExchangePurgeError
-                  ? `Failed to purge cached data for all the exchanges: ${allExchangePurgeError}`
-                  : null
-              "
+              :tooltip="$t('data_management.exchange_data.purge_all_tooltip')"
+              :success-message="purgeAllSuccessMessage"
+              :error-message="purgeAllErrorMessage"
               @click="confirmationType = 'exchanges'"
-            >
-              Purge All Exchanges Cache
-            </status-button>
-            <div class="title">Ethereum Transactions</div>
+              v-text="$t('data_management.exchange_data.purge_all_button')"
+            />
+            <div
+              class="title"
+              v-text="$t('data_management.ethereum_transactions.title')"
+            />
             <status-button
               class="data-management__purge-transactions"
-              tooltip="Purge the cached ethereum data"
-              :success-message="
-                transactionPurgeSuccess
-                  ? 'Ethereum transaction data were successfully purged.'
-                  : null
+              :tooltip="
+                $t('data_management.ethereum_transactions.purge_tooltip')
               "
-              :error-message="
-                !!transactionPurgeError
-                  ? `Failed to purge cached ethereum transaction data: ${transactionPurgeError}`
-                  : null
-              "
+              :success-message="transactionPurgeSuccessMessage"
+              :error-message="transactionPurgeErrorMessage"
               @click="confirmationType = 'transactions'"
-            >
-              Purge transaction cache
-            </status-button>
+              v-text="$t('data_management.ethereum_transactions.purge_button')"
+            />
           </v-card-text>
         </v-form>
       </v-card>
@@ -137,23 +121,61 @@ export default class DataManagement extends Vue {
 
   confirmationType: ConfirmationType = '';
 
+  get purgeSuccessMessages(): string[] {
+    const exchangePurgeSuccess = this.exchangePurgeSuccess;
+    if (exchangePurgeSuccess) {
+      const message = this.$t('data_management.exchange_data.purge_success', {
+        exchangePurgeSuccess
+      });
+      return [message.toString()];
+    }
+    return [];
+  }
+
+  get purgeAllSuccessMessage(): string | null {
+    return this.allExchangePurgeSuccess
+      ? this.$t('data_management.exchange_data.purge_all_success').toString()
+      : null;
+  }
+
+  get purgeAllErrorMessage(): string | null {
+    return this.allExchangePurgeError
+      ? this.$t('data_management.exchange_data.purge_all_error').toString()
+      : null;
+  }
+
+  get transactionPurgeSuccessMessage(): string | null {
+    return this.transactionPurgeSuccess
+      ? this.$t(
+          'data_management.ethereum_transactions.purge_success'
+        ).toString()
+      : null;
+  }
+
+  get transactionPurgeErrorMessage(): string | null {
+    return this.transactionPurgeError
+      ? this.$t('data_management.ethereum_transactions.purge_error').toString()
+      : null;
+  }
+
   readonly confirmations: AllConfirmations = {
     transactions: {
-      title: 'Purge ethereum transaction data',
-      message:
-        'Are you sure you want to purge the cached data for ethereum transactions?',
+      title: this.$t('data_management.confirm.transactions.title').toString(),
+      message: this.$t(
+        'data_management.confirm.transactions.message'
+      ).toString(),
       confirm: this.purgeEthereumTransactions
     },
     exchanges: {
-      title: 'Purge all cached exchange data',
-      message:
-        'Are you sure you want to purge the cached data for all the exchanges?',
+      title: this.$t('data_management.confirm.all_exchanges.title').toString(),
+      message: this.$t(
+        'data_management.confirm.all_exchanges.message'
+      ).toString(),
       confirm: this.purgeAllExchangeData
     },
     single: {
-      title: 'Purge cached exchange data',
-      message:
-        'Are you sure you want to purge the cached data for the selected exchange?',
+      title: this.$t('data_management.confirm.exchange.title').toString(),
+      message: this.$t('data_management.confirm.exchange.message').toString(),
       confirm: this.purgeExchangeData
     }
   };
@@ -173,7 +195,10 @@ export default class DataManagement extends Vue {
       }, 5000);
     } catch (e) {
       this.exchangePurgeError.push(
-        `Purging cached data for ${name} failed: ${e.message}`
+        this.$t('data_management.errors.exchange', {
+          name,
+          message: e.message
+        }).toString()
       );
     }
   }
@@ -187,7 +212,10 @@ export default class DataManagement extends Vue {
         this.allExchangePurgeSuccess = false;
       }, 5000);
     } catch (e) {
-      this.allExchangePurgeError = `Purging the cached data for all the exchanges failed: ${e.message}`;
+      this.allExchangePurgeError = this.$t(
+        'data_management.errors.all_exchanges',
+        { message: e.message }
+      ).toString();
     }
   }
 
@@ -201,7 +229,10 @@ export default class DataManagement extends Vue {
         this.transactionPurgeSuccess = false;
       }, 5000);
     } catch (e) {
-      this.transactionPurgeError = `Purging ethereum transaction cached data failed: ${e.message}`;
+      this.transactionPurgeError = this.$t(
+        'data_management.errors.transactions',
+        { message: e.message }
+      ).toString();
     }
   }
 }
