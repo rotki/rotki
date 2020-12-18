@@ -245,8 +245,8 @@ class Inquirer():
     @staticmethod
     def get_fiat_usd_exchange_rates(
             currencies: Optional[Iterable[Asset]] = None,
-    ) -> Dict[Asset, FVal]:
-        rates = {A_USD: FVal(1)}
+    ) -> Dict[Asset, Price]:
+        rates = {A_USD: Price(FVal(1))}
         if not currencies:
             currencies = FIAT_CURRENCIES[1:]
         for currency in currencies:

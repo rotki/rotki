@@ -3,18 +3,18 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import FIAT_CURRENCIES
+from rotkehlchen.constants.assets import A_BTC, A_ETH, FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_querying_fiat_exchange_rates(rotkehlchen_api_server):
-    """Make sure that querying fiat exchange rates works also without logging in"""
+def test_querying_exchange_rates(rotkehlchen_api_server):
+    """Make sure that querying exchange rates works also without logging in"""
     # Test with empty list of currencies
     data = {'currencies': []}
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource'), json=data,
+        api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
     )
     assert_error_response(
         response=response,
@@ -28,43 +28,45 @@ def test_querying_fiat_exchange_rates(rotkehlchen_api_server):
         json_data = response.json()
         assert json_data['message'] == ''
         result = json_data['result']
-        assert len(result) == 3
+        assert len(result) == 4
         assert FVal(result['EUR']) > 0
         assert FVal(result['USD']) > 0
         assert FVal(result['KRW']) > 0
+        assert FVal(result['ETH']) > 0
 
     # Test with some currencies, both JSON body and query parameters
-    data = {'currencies': ['EUR', 'USD', 'KRW']}
+    data = {'currencies': ['EUR', 'USD', 'KRW', 'ETH']}
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource'), json=data,
+        api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
     )
     assert_okay(response)
     # The query parameters test serves as a test that a list of parametrs works with query args too
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource') + '?currencies=' +
+        api_url_for(rotkehlchen_api_server, 'exchangeratesresource') + '?currencies=' +
         ','.join(data['currencies']),
     )
     assert_okay(response)
 
     # Test with all currencies (give no input)
-    response = requests.get(api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource'))
+    expected_currencies = list(FIAT_CURRENCIES) + [A_ETH, A_BTC]
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangeratesresource'))
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
     result = json_data['result']
-    assert len(result) == len(FIAT_CURRENCIES)
-    for currency in FIAT_CURRENCIES:
+    assert len(result) == len(expected_currencies)
+    for currency in expected_currencies:
         assert FVal(result[currency.identifier]) > 0
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_querying_fiat_exchange_rates_errors(rotkehlchen_api_server):
-    """Make sure that querying fiat exchange rates with wrong input is handled"""
+def test_querying_exchange_rates_errors(rotkehlchen_api_server):
+    """Make sure that querying exchange rates with wrong input is handled"""
 
     # Test with invalid type for currency
     data = {'currencies': [4234324.21]}
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource'), json=data,
+        api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
     )
     assert_error_response(
         response=response,
@@ -75,21 +77,10 @@ def test_querying_fiat_exchange_rates_errors(rotkehlchen_api_server):
     # Test with invalid asset
     data = {'currencies': ['DDSAS']}
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource'), json=data,
+        api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
     )
     assert_error_response(
         response=response,
         contained_in_msg='Unknown asset DDSAS provided',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # Test with non FIAT asset
-    data = {'currencies': ['ETH']}
-    response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource'), json=data,
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Asset ETH is not a FIAT asset',
         status_code=HTTPStatus.BAD_REQUEST,
     )

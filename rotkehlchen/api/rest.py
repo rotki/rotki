@@ -30,7 +30,7 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
@@ -322,14 +322,30 @@ class RestAPI():
         return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
 
     @staticmethod
-    def get_fiat_exchange_rates(currencies: Optional[List[Asset]]) -> Response:
-        if currencies is not None and len(currencies) == 0:
+    def get_exchange_rates(given_currencies: Optional[List[Asset]]) -> Response:
+        if given_currencies is not None and len(given_currencies) == 0:
             return api_response(
                 wrap_in_fail_result('Empty list of currencies provided'),
                 status_code=HTTPStatus.BAD_REQUEST,
             )
-        rates = Inquirer().get_fiat_usd_exchange_rates(currencies)
-        res = process_result(rates)
+
+        if given_currencies is None:
+            currencies = [A_BTC, A_ETH]
+        else:
+            currencies = given_currencies
+        fiat_currencies = []
+        asset_rates = {}
+        for asset in currencies:
+            if asset.is_fiat():
+                fiat_currencies.append(asset)
+                continue
+
+            asset_rates[asset] = Inquirer().find_usd_price(asset)
+
+        fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
+        asset_rates.update(fiat_rates)
+
+        res = process_result(asset_rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
     def _query_all_balances(self, save_data: bool, ignore_cache: bool) -> Dict[str, Any]:

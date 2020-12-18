@@ -28,12 +28,12 @@ from rotkehlchen.api.v1.encoding import (
     EditSettingsSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
+    ExchangeRatesSchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
-    FiatExchangeRatesSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
     IgnoredAssetsSchema,
@@ -178,13 +178,13 @@ class AsyncTasksResource(BaseResource):
         return self.rest_api.query_tasks_outcome(task_id=task_id)
 
 
-class FiatExchangeRatesResource(BaseResource):
+class ExchangeRatesResource(BaseResource):
 
-    get_schema = FiatExchangeRatesSchema()
+    get_schema = ExchangeRatesSchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, currencies: Optional[List[Asset]]) -> Response:
-        return self.rest_api.get_fiat_exchange_rates(currencies=currencies)
+        return self.rest_api.get_exchange_rates(given_currencies=currencies)
 
 
 class ExchangesResource(BaseResource):
