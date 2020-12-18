@@ -566,4 +566,4 @@ Please, make sure you are using your premium subscription API keys/secret and th
 Data with multiple accounts/devices is not synced
 ===================================================
 
-Please, make sure all your accounts have the "Allow data sync with Rotki Server" switched on, and that on each log you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
+Please, make sure all your accounts have the "Allow data sync with Rotki Server" switched on, and that on each log-in you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
