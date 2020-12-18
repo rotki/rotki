@@ -421,17 +421,6 @@ def test_set_settings_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # non FIAT asset for main currency
-    data = {
-        'settings': {'main_currency': 'ETH'},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Asset ETH is not a FIAT asset',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
     # invalid type main currency
     data = {
         'settings': {'main_currency': 243243},

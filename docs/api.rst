@@ -590,7 +590,7 @@ Getting or modifying settings
    :resjson bool include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :resjson string historical_data_start: A date in the DAY/MONTH/YEAR format at which we consider historical data to have started.
    :resjson string eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
-   :resjson string main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
+   :resjson string main_currency: The asset to use for all profit/loss calculation. USD by default.
    :resjson string date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :resjson int last_balance_save: The timestamp at which the balances were last saved in the database.
    :resjson bool submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the Rotki server.
@@ -785,12 +785,12 @@ Query the result of an ongoing backend task
    :statuscode 409: No user is currently logged in
    :statuscode 500: Internal Rotki error
 
-Query the current fiat currencies exchange rate
-===============================================
+Query the current exchange rate for select assets
+======================================================
 
-.. http:get:: /api/(version)/fiat_exchange_rates
+.. http:get:: /api/(version)/exchange_rates
 
-   Querying this endpoint with a list of strings representing FIAT currencies will return a dictionary of their current exchange rates compared to USD. If no list is given then the exchange rates of all currencies is returned. Providing an empty list is an error.
+   Querying this endpoint with a list of strings representing some assets will return a dictionary of their current exchange rates compared to USD. If no list is given then the exchange rates of all currencies is returned. Providing an empty list is an error.
 
    .. note::
       This endpoint also accepts parameters as query arguments. List as a query argument here would be given as: ``?currencies=EUR,CNY,GBP``
@@ -802,10 +802,10 @@ Query the current fiat currencies exchange rate
       GET /api/1/fiat_exchange_rates HTTP/1.1
       Host: localhost:5042
 
-      {"currencies": ["EUR", "CNY", "GBP"]}
+      {"currencies": ["EUR", "CNY", "GBP", "BTC"]}
 
-   :query strings-list currencies: A comma separated list of fiat currencies to query. e.g.: /api/1/fiat_exchange_rates?currencies=EUR,CNY,GBP
-   :reqjson list currencies: A list of fiat currencies to query
+   :query strings-list currencies: A comma separated list of currencies to query. e.g.: /api/1/fiat_exchange_rates?currencies=EUR,CNY,GBP
+   :reqjson list currencies: A list of assets to query
 
    **Example Response**:
 
@@ -815,11 +815,11 @@ Query the current fiat currencies exchange rate
       Content-Type: application/json
 
       {
-          "result": {"EUR": "0.8973438622", "CNY": "7.0837221823", "GBP": "0.7756191673"},
+          "result": {"EUR": "0.8973438622", "CNY": "7.0837221823", "GBP": "0.7756191673", "BTC": "19420.23},
           "message": ""
       }
 
-   :resjson object result: A JSON object with each element being a FIAT currency symbol and each value its USD exchange rate.
+   :resjson object result: A JSON object with each element being an asset symbol and each value its USD exchange rate.
    :statuscode 200: The exchange rates have been sucesfully returned
    :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
    :statuscode 500: Internal Rotki error

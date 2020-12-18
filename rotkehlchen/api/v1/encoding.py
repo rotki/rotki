@@ -313,22 +313,6 @@ class AssetField(fields.Field):
         return asset
 
 
-class FiatAssetField(AssetField):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],
-            data: Optional[Mapping[str, Any]],
-            **kwargs: Any,
-    ) -> Asset:
-        asset = super()._deserialize(value, attr, data, **kwargs)
-        if not asset.is_fiat():
-            raise ValidationError(f'Asset {asset.identifier} is not a FIAT asset')
-
-        return asset
-
-
 class EthereumAddressField(fields.Field):
 
     @staticmethod
@@ -703,7 +687,7 @@ class ModifiableSettingsSchema(Schema):
     # TODO: Add some validation to this field
     # even though it gets validated since we try to connect to it
     eth_rpc_endpoint = fields.String(missing=None)
-    main_currency = FiatAssetField(missing=None)
+    main_currency = AssetField(missing=None)
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
     thousand_separator = fields.String(missing=None)
@@ -1110,8 +1094,8 @@ class DataImportSchema(Schema):
     filepath = FileField(required=True)
 
 
-class FiatExchangeRatesSchema(Schema):
-    currencies = DelimitedOrNormalList(FiatAssetField(), missing=None)
+class ExchangeRatesSchema(Schema):
+    currencies = DelimitedOrNormalList(AssetField(), missing=None)
 
 
 class WatcherSchema(Schema):
