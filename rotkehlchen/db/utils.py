@@ -81,27 +81,24 @@ def form_query_to_filter_timestamps(
         to_ts: Optional[Timestamp],
 ) -> Tuple[str, Union[Tuple, Tuple[Timestamp], Tuple[Timestamp, Timestamp]]]:
     """Formulates the query string and its bindings to filter for timestamps"""
-    bindings: Union[Tuple, Tuple[Timestamp], Tuple[Timestamp, Timestamp]] = ()
     got_from_ts = from_ts is not None
     got_to_ts = to_ts is not None
-    if (got_from_ts or got_to_ts):
-        if 'WHERE' not in query:
-            query += 'WHERE '
-        else:
-            query += 'AND '
+    if got_from_ts or got_to_ts:
+        query += 'WHERE' if 'WHERE' not in query else 'AND '
 
+    filters = []
+    bindings = []
     if got_from_ts:
-        query += f'{timestamp_attribute} >= ? '
-        bindings = (from_ts,)
-        if got_to_ts:
-            query += f'AND {timestamp_attribute} <= ? '
-            bindings = (from_ts, to_ts)
-    elif got_to_ts:
-        query += f'AND {timestamp_attribute} <= ? '
-        bindings = (to_ts,)
+        filters.append(f'{timestamp_attribute} >= ? ')
+        bindings.append(from_ts)
+    if got_to_ts:
+        filters.append(f'{timestamp_attribute} <= ? ')
+        bindings.append(to_ts)
 
+    query += 'AND '.join(filters)
     query += f'ORDER BY {timestamp_attribute} ASC;'
-    return query, bindings
+
+    return query, tuple(bindings)
 
 
 def deserialize_tags_from_db(val: Optional[str]) -> Optional[List[str]]:
