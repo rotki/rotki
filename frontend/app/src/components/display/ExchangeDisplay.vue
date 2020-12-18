@@ -5,20 +5,38 @@
       height="24px"
       contain
       class="exchange-display__icon"
-      :src="require(`@/assets/images/${exchange}.png`)"
+      :src="icon"
     />
-    <div class="ml-2">{{ exchange | capitalize }}</div>
+    <div class="ml-2" v-text="name" />
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import { tradeLocations } from '@/components/history/consts';
+import { TradeLocationData } from '@/components/history/type';
+import { capitalize } from '@/filters';
 import { SupportedExchange } from '@/services/balances/types';
 
 @Component({})
 export default class ExchangeDisplay extends Vue {
   @Prop({ required: true })
   exchange!: SupportedExchange;
+  readonly locations = tradeLocations;
+
+  get location(): TradeLocationData | undefined {
+    return this.locations.find(
+      ({ identifier }) => identifier === this.exchange
+    );
+  }
+
+  get name(): string {
+    return this.location?.name ?? capitalize(this.exchange);
+  }
+
+  get icon(): string {
+    return this.location?.icon ?? '';
+  }
 }
 </script>
 
