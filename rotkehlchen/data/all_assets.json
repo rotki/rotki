@@ -5632,6 +5632,16 @@
         "symbol": "GRS",
         "type": "own chain"
     },
+    "GRT": {
+        "coingecko": "the-graph",
+	"cryptocompare": "",
+        "ethereum_address": "0xc944E90C64B2c07662A292be6244BDf05Cda44a7",
+        "ethereum_token_decimals": 18,
+        "name": "Graph Token",
+        "started": 1607890633,
+        "symbol": "GRT",
+        "type": "ethereum token"
+    },
     "GSC": {
         "coingecko": "global-social-chain",
         "ethereum_address": "0x228ba514309FFDF03A81a205a6D040E429d6E80C",
