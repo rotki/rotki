@@ -9,8 +9,9 @@ Introduction
 
 In this section we are going to see how to use various parts of the Rotki application.
 
-Sign-in/Signup
-==================
+
+First time sign-up
+====================
 
 When you start Rotki you are greeted with a sign-in/signup prompt.
 
@@ -18,20 +19,43 @@ When you start Rotki you are greeted with a sign-in/signup prompt.
    :alt: Creating a new account
    :align: center
 
-If you have never created an account before press "Create New Account". Provide a username and a password. Don't forget this password. It will be used to encrypt all your local files. The username is just an identifier for your database. It's a local user.
+.. role:: red
+
+For creating an account press "Create New Account" and provide a username and a password:
+
+  - **Username**: it is just an identifier for your database; a local user.
+  - **Password**: :red:`Do not forget this password`. It is used to encrypt all your local files.
+
+If you have purchased a premium subscription you can also add the **API Key** and the **secret** here. See the section :ref:`sync-data-with-rotki-server` to know how to sync your data with Roki Server (this option is disabled by default).
 
 .. image:: images/sc_newacc2.png
    :alt: Creating a new account with a premium Rotki API key/secret pair
    :align: center
 
-If you have purchased a premium subscription you can also add the API Key and the secret here. This will essentially populate the new account with the data saved in the server for your premium subscription. Important thing to note here is that the password of the new account must be the same as the data saved in the server. If not, opening the database will fail.
+All accounts are created in the rotki directory, see the section :ref:`rotki_data_directory` to know where it is located.
+
+
+Create a new account that restores a backed up database (premium user only)
+=============================================================================
+
+If you have a premium subscription and you want to create a new local account that restores the backed up database, for example in a different device, you must add the **API key/secret** and :red:`use the same password`. If the password is not the same, opening the database will fail.
+
+.. image:: images/rotki_premium_signup_failed.png
+   :alt: Sign-up with existing premium subscription using a wrong password
+   :align: center
+
+See the section :ref:`sync-data-with-rotki-server` to know more about how the premium subscription will behave with multiple accounts/devices and how to sync your data with Roki Server (this option is disabled by default).
+
+
+Sign-in
+=========
 
 If you already have an account just write the name and the password at the sign in prompt.
 
-All accounts are created in the rotki directory which is located in: ``$HOME/.rotkehlchen``. Each user has their own subdirectory.
 
-Rotki Premium
-==================
+Set up Rotki Premium
+======================
+
 If you decide to purchase `Rotki Premium <https://rotki.com/products/>`_ at a later time, you can set it up via API Keys -> Rotki Premium.
 
 .. image:: images/rotki_premium_set.png
@@ -43,6 +67,24 @@ If after you have set up premium you wish to replace or disassociate keys with t
 .. image:: images/rotki_premium_del.png
    :alt: Delete up Rotki premium API key/secret pair in a premium account
    :align: center
+
+.. _sync-data-with-rotki-server:
+
+Sync data with Rotki Server
+-----------------------------
+
+To back up your data in the Rotki Server switch on "Allow data sync with Rotki Server". This allows you to restore it later on in any account/device as long as :red:`the same API Key/secret and account password are used`.
+
+.. image:: images/rotki_premium_set_sync_data.png
+   :alt: Sync data with Rotki Server
+   :align: center
+
+Bear in mind that in case of using multiple accounts/devices with the data sync enabled, the one with the most recent login will upload the most up-to-date data to Rotki Server. After that, using the same account from another device may ask you whether you want to replace your local database with the remote one.
+
+.. image:: images/rotki_premium_replace_local_db_with_remote.png
+   :alt: Replace local database with remote backup
+   :align: center
+
 
 Customizing
 **************
@@ -257,22 +299,6 @@ To stop tracking a particular account scroll down to the accounts tables and cli
 
 If an ethereum account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
-Adding and Removing Ethereum Tokens
-=========================================
-
-Rotki will autodetect what tokens you have in your ethereum accounts thanks to Alethio. If the query to alethio fails for some reason then you can provide a list of tokens to be tracked and whose balances to query your ethereum node or etherscan for. This list can be provided and modified by you.
-
-To do so scroll down to the "Blockchain Balances" section and look for the "Owned Tokens" fields.
-
-.. image:: images/track_tokens.gif
-   :alt: Add a new owned ethereum token
-   :align: center
-
-In order to add a token to the tracked tokens start typing its name and the auto-completion of the widget should show it to you. If it does not it may mean that it's not supported by Rotki. Try to make an issue in our github repository to add it.
-
-In order to stop tracking a token simply click the [X] next to the token's name from the list of owned tokens.
-
-All account balances will be updated after addition or removal of tokens.
 
 Checking Exchange Balances
 ===========================
@@ -495,6 +521,8 @@ The above arguments are:
 - **sleep-secs**: This is the amount of seconds that the main loop of rotki sleeps for. Default is 20.
 
 
+.. _rotki_data_directory:
+
 Rotki data directory
 ***********************
 
@@ -529,3 +557,13 @@ Local system clock is not synchronized
 Some remote servers (e.g. exchanges) require your local system clock synchronized with theirs. In case of not having it synchronized the request will fail and Rotki will either display a specific error message (i.e. 409 status code and a *local system clock is not sync* message) or the generic 500 error one (please, :ref:`report it to us <bug_reporting>`).
 
 Follow your OS official guidelines about how to synchronize the clock with an Internet Time Server and try again.
+
+Restoring backed up database at new account creation fails
+============================================================
+
+Please, make sure you are using your premium subscription API keys/secret and the same password.
+
+Data with multiple accounts/devices is not synced
+===================================================
+
+Please, make sure all your accounts have the "Allow data sync with Rotki Server" switched on, and that on each log you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
