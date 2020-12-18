@@ -21,7 +21,7 @@
             <exchange-badge
               v-for="exchange in connectedExchanges"
               :key="exchange"
-              :name="exchange"
+              :identifier="exchange"
               class="mr-2"
               removeable
               @remove="confirmRemoval(exchange)"

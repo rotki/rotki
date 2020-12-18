@@ -1,11 +1,11 @@
 <template>
-  <div :id="`${name}_badge`" class="exchange-badge">
+  <div :id="`${identifier}_badge`" class="exchange-badge">
     <v-img
       :title="name"
       width="50px"
       contain
       class="exchange-badge__icon ml-2 mr-2"
-      :src="require(`@/assets/images/${name}.png`)"
+      :src="icon"
       :alt="$t('exchange_badge.icon_alt')"
     />
 
@@ -31,13 +31,32 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { tradeLocations } from '@/components/history/consts';
+import { TradeLocationData } from '@/components/history/type';
+import { capitalize } from '@/filters';
 
 @Component({})
 export default class ExchangeBadge extends Vue {
   @Prop({ required: true, type: String })
-  name!: string;
+  identifier!: string;
   @Prop({ required: false, type: Boolean, default: false })
   removeable!: boolean;
+
+  readonly locations = tradeLocations;
+
+  get location(): TradeLocationData | undefined {
+    return this.locations.find(
+      ({ identifier }) => identifier === this.identifier
+    );
+  }
+
+  get name(): string {
+    return this.location?.name ?? capitalize(this.identifier);
+  }
+
+  get icon(): string {
+    return this.location?.icon ?? '';
+  }
 
   @Emit()
   remove() {}
