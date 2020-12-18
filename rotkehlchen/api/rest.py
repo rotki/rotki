@@ -50,6 +50,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -340,7 +341,7 @@ class RestAPI():
                 fiat_currencies.append(asset)
                 continue
 
-            asset_rates[asset] = Inquirer().find_usd_price(asset)
+            asset_rates[asset] = Price(FVal(1) / Inquirer().find_usd_price(asset))
 
         fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         asset_rates.update(fiat_rates)
