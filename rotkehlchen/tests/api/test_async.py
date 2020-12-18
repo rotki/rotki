@@ -36,7 +36,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
-    assert json_data['result'] == []
+    assert json_data['result'] == {'completed': [], 'pending': []}
 
     # Create an async task
     with binance_patch:
@@ -52,7 +52,8 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
         assert_proper_response(response)
         json_data = response.json()
         assert json_data['message'] == ''
-        assert json_data['result'] == [task_id]
+        assert json_data['result'] == {'completed': [], 'pending': [task_id]}
+        # assert json_data['result'] == {'completed': [], 'pending': []}
 
         # now query for the task result and see it's still pending (test for task lists)
         response = requests.get(
@@ -126,7 +127,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
-    assert json_data['result'] == [task_id]
+    assert json_data['result'] == {'completed': [task_id], 'pending': []}
 
     while True:
         # and now query for the task result and assert on it
