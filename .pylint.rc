@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    return-in-init,
     undefined-loop-variable,
     assignment-from-none,
     simplifiable-if-expression,
