@@ -49,6 +49,7 @@ enable=
     no-else-raise,
     no-else-return,
     raise-missing-from,
+    useless-return,
     rotki-lognokwargs,
     rotki-nonbooleannot
 

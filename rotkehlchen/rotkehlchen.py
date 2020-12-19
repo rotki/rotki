@@ -475,8 +475,6 @@ class Rotkehlchen():
             account_data=account_data,
         )
 
-        return None
-
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,

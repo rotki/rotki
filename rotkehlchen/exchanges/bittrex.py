@@ -199,7 +199,6 @@ class Bittrex(ExchangeInterface):
                     current_time=str(datetime.now()),
                     remote_server='Bittrex',
                 )
-        return None
 
     def api_query(  # noqa: F811
             self,
