@@ -226,7 +226,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
         asset_movements = self.db.get_asset_movements(
             from_ts=start_ts,
             to_ts=end_ts,
-            location=self.name,
+            location=deserialize_location(self.name),
         )
         ranges = DBQueryRanges(self.db)
         ranges_to_query = ranges.get_location_query_ranges(

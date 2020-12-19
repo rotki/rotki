@@ -204,7 +204,7 @@ class Bitstamp(ExchangeInterface):
         if start_ts != Timestamp(0):
             db_asset_movements = self.db.get_asset_movements(
                 to_ts=start_ts,
-                location=str(Location.BITSTAMP),
+                location=Location.BITSTAMP,
             )
             # NB: sort asset_movements by int(link) in asc mode
             db_asset_movements.sort(key=lambda asset_movement: int(asset_movement.link))
