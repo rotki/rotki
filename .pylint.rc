@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    consider-using-in,
     superfluous-parens,
     return-in-init,
     undefined-loop-variable,

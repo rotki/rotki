@@ -273,7 +273,7 @@ class Poloniex(ExchangeInterface):
          - RemoteError if there is a problem with the response
          - ConnectionError if there is a problem connecting to poloniex.
         """
-        if command == 'returnTicker' or command == 'returnCurrencies':
+        if command in ('returnTicker', 'returnCurrencies'):
             log.debug(f'Querying poloniex for {command}')
             response = self.session.get(self.public_uri + command)
         else:
@@ -541,7 +541,7 @@ class Poloniex(ExchangeInterface):
             for trade in trades:
                 category = trade.get('category', None)
                 try:
-                    if category == 'exchange' or category == 'settlement':
+                    if category in ('exchange', 'settlement'):
                         timestamp = deserialize_timestamp_from_poloniex_date(trade['date'])
                         if timestamp < start_ts or timestamp > end_ts:
                             continue
