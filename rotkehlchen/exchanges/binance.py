@@ -348,9 +348,9 @@ class Binance(ExchangeInterface):
 
                 gevent.sleep(retry_after)
                 continue
-            else:
-                # success
-                break
+
+            # else success
+            break
 
         try:
             json_ret = rlk_jsonloads(response.text)

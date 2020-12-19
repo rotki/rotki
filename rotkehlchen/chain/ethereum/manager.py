@@ -123,9 +123,8 @@ def _query_web3_get_logs(
                 # repeat the query with smaller block range
                 block_range = int(block_range / 2)
                 continue
-            else:
-                # well we tried .. reraise the Value error
-                raise e
+            # else, well we tried .. reraise the Value error
+            raise e
 
         # Turn all HexBytes into hex strings
         for e_idx, event in enumerate(new_events_web3):

@@ -75,8 +75,8 @@ class BeaconChain(ExternalServiceWithApiKey):
                 # We got rate limited. Let's try incremental backoff
                 gevent.sleep(backoff_in_seconds * (QUERY_RETRY_TIMES - times + 1))
                 continue
-            else:
-                break
+            # else
+            break
 
         if response.status_code != 200:
             raise RemoteError(

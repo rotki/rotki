@@ -69,7 +69,8 @@ def test_set_settings(rotkehlchen_api_server):
     for setting, value in original_settings.items():
         if setting in unmodifiable_settings:
             continue
-        elif setting == 'historical_data_start':
+
+        if setting == 'historical_data_start':
             value = '10/10/2016'
         elif setting == 'date_display_format':
             value = '%d/%m/%Y-%H:%M:%S'
