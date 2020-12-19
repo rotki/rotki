@@ -1970,7 +1970,7 @@ class DBHandler:
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            location: Optional[str] = None,
+            location: Optional[Location] = None,
     ) -> List[AssetMovement]:
         """Returns a list of asset movements optionally filtered by time and location
 
@@ -1991,7 +1991,7 @@ class DBHandler:
             '  transaction_id FROM asset_movements '
         )
         if location is not None:
-            query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
+            query += f'WHERE location="{location.serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 

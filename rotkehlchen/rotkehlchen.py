@@ -814,7 +814,7 @@ class Rotkehlchen():
             location_movements = self.data.db.get_asset_movements(
                 from_ts=from_ts,
                 to_ts=to_ts,
-                location=str(location),
+                location=location,
             )
 
         movements: List[AssetMovement] = []
