@@ -22,7 +22,7 @@ def divide_number_in_parts(number: int, parts_number: int):
     number_rest = number
 
     for i in range(1, parts_number + 1):
-        if (i == parts_number):
+        if i == parts_number:
             yield number_rest
             break
         else:

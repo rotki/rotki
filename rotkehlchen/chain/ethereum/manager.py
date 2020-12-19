@@ -131,7 +131,7 @@ def _query_web3_get_logs(
         for e_idx, event in enumerate(new_events_web3):
             new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
             new_topics = []
-            for topic in (event['topics']):
+            for topic in event['topics']:
                 new_topics.append(topic.hex())
             new_events_web3[e_idx]['topics'] = new_topics
             new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()

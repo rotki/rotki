@@ -204,10 +204,10 @@ def process_polo_loans(
 def _post_process(before: Dict) -> Dict:
     """Poloniex uses datetimes so turn them into timestamps here"""
     after = before
-    if('return' in after):
-        if(isinstance(after['return'], list)):
+    if 'return' in after:
+        if isinstance(after['return'], list):
             for x in range(0, len(after['return'])):
-                if(isinstance(after['return'][x], dict)):
+                if isinstance(after['return'][x], dict):
                     if('datetime' in after['return'][x] and
                        'timestamp' not in after['return'][x]):
                         after['return'][x]['timestamp'] = float(
