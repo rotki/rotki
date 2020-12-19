@@ -278,7 +278,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-            exchange_specific_data = self.query_exchange_specific_history(
+            exchange_specific_data = self.query_exchange_specific_history(  # pylint: disable=assignment-from-none  # noqa: E501
                 start_ts=start_ts,
                 end_ts=end_ts,
             )

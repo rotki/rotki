@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    assignment-from-none,
     simplifiable-if-expression,
     bad-super-call,
     duplicate-string-formatting-argument,
