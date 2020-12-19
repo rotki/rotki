@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    duplicate-string-formatting-argument,
     misplaced-comparison-constant,
     unidiomatic-typecheck,
     rotki-lognokwargs,

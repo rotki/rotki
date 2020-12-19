@@ -739,13 +739,9 @@ class TaxableEvents():
             # found buys to partially satisfy the sell
             adjusted_amount = selling_amount - taxfree_amount
             log.critical(
-                'Not enough documented buys found for "{}" before {}.'
-                'Only found buys for {} {}'.format(
-                    selling_asset,
-                    timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-                    taxable_amount + taxfree_amount,
-                    selling_asset,
-                ),
+                f'Not enough documented buys found for "{selling_asset}" before '
+                f'{timestamp_to_date(timestamp, formatstr="%d/%m/%Y %H:%M:%S")}.'
+                f'Only found buys for {taxable_amount + taxfree_amount} {selling_asset}',
             )
             return adjusted_amount, taxable_bought_cost, taxfree_bought_cost
 

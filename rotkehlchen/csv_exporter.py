@@ -104,7 +104,7 @@ class CSVExporter():
                 net_profit_or_loss = FVal(0)
             else:
                 net_profit_or_loss = taxable_received_in_profit_currency - taxable_bought_cost
-            net_profit_or_loss_csv = '=IF(E{}=0,0,L{}-M{})'.format(row, row, row)
+            net_profit_or_loss_csv = f'=IF(E{row}=0,0,L{row}-M{row})'
         elif event_type in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
             net_profit_or_loss = paid_in_profit_currency
             net_profit_or_loss_csv = '=-K{}'.format(row)
@@ -229,7 +229,7 @@ class CSVExporter():
             selling_amount=selling_amount,
         )
         row = len(self.trades_csv) + 2
-        taxable_profit_formula = '=IF(H{}=0,0,L{}-K{})'.format(row, row, row)
+        taxable_profit_formula = f'=IF(H{row}=0,0,L{row}-K{row})'
         self.trades_csv.append({
             'type': 'sell',
             'location': str(location),
@@ -276,7 +276,7 @@ class CSVExporter():
             return
 
         row = len(self.loan_settlements_csv) + 2
-        loss_formula = '=C{}*D{}+E{}'.format(row, row, row)
+        loss_formula = f'=C{row}*D{row}+E{row}'
         self.loan_settlements_csv.append({
             'asset': asset.identifier,
             'location': str(location),
