@@ -1085,6 +1085,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
         'ORDER BY time ASC;',
     )
     length = 0
+    entry = None
     for entry in query:
         assert BalanceType.deserialize_from_db(entry[0]) == BalanceType.ASSET
         # Check the last 3 entries to make sure no data is lost during upgrade
@@ -1183,6 +1184,7 @@ def test_db_newer_than_software_raises_error(data_dir, username):
 
 
 def test_upgrades_list_is_sane():
+    idx = None
     for idx, entry in enumerate(UPGRADES_LIST):
         msg = (
             f'{idx} upgrade record was expected to have {idx + 1} '
