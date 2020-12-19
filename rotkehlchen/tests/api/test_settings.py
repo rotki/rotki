@@ -83,9 +83,11 @@ def test_set_settings(rotkehlchen_api_server):
             value = 'http://working.nodes.com:8545'
         elif setting == 'main_currency':
             value = 'JPY'
-        elif type(value) == bool:
+        elif type(value) == bool:  # pylint: disable=unidiomatic-typecheck
+            # here and below we HAVE to use type() equality checks since
+            # isinstance of a bool succeeds for both bool and int (due to inheritance)
             value = not value
-        elif type(value) == int:
+        elif type(value) == int:  # pylint: disable=unidiomatic-typecheck
             value += 1
         elif setting == 'kraken_account_type':
             # Change the account type to anything other than default

@@ -212,14 +212,13 @@ class HDKey():
         Returns:
             (int): the index as an integer
         """
-        if type(idx) is int:
-            return cast(int, idx)
-        if type(idx) is not str:
+        if isinstance(idx, int):
+            return idx
+        if not isinstance(idx, str):
             raise XPUBError('XPUB path index must be string or integer')
-        str_idx = cast(str, idx)
-        if str_idx[-1] in ['h', "'"]:  # account for h or ' conventions
-            return int(str_idx[:-1]) + BIP32_HARDEN
-        return int(str_idx)
+        if idx[-1] in ['h', "'"]:  # account for h or ' conventions
+            return int(idx[:-1]) + BIP32_HARDEN
+        return int(idx)
 
     def _child_from_xpub(self, index: int, child_xpub: str) -> 'HDKey':
         """
