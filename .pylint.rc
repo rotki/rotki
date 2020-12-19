@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    deprecated-method,
     consider-using-in,
     superfluous-parens,
     return-in-init,
