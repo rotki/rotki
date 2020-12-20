@@ -135,10 +135,11 @@ class TaxableEvents():
                 remaining_amount_from_last_buy = buy_event.amount - remaining_amount
                 # stop iterating since we found all buys to satisfy reduction
                 break
-            else:
-                remaining_amount -= buy_event.amount
-                if idx == len(self.events[asset].buys) - 1:
-                    stop_index = idx + 1
+
+            # else
+            remaining_amount -= buy_event.amount
+            if idx == len(self.events[asset].buys) - 1:
+                stop_index = idx + 1
 
         # Otherwise, delete all the used up buys from the list
         del self.events[asset].buys[:stop_index]
@@ -689,33 +690,34 @@ class TaxableEvents():
                 )
                 # stop iterating since we found all buys to satisfy this sell
                 break
+
+            # else
+            buying_cost = buy_event.amount.fma(
+                buy_event.rate,
+                (buy_event.fee_rate * buy_event.amount),
+            )
+            remaining_sold_amount -= buy_event.amount
+            if at_taxfree_period:
+                taxfree_amount += buy_event.amount
+                taxfree_bought_cost += buying_cost
             else:
-                buying_cost = buy_event.amount.fma(
-                    buy_event.rate,
-                    (buy_event.fee_rate * buy_event.amount),
-                )
-                remaining_sold_amount -= buy_event.amount
-                if at_taxfree_period:
-                    taxfree_amount += buy_event.amount
-                    taxfree_bought_cost += buying_cost
-                else:
-                    taxable_amount += buy_event.amount
-                    taxable_bought_cost += buying_cost
+                taxable_amount += buy_event.amount
+                taxable_bought_cost += buying_cost
 
-                log.debug(
-                    'Sell uses up entire historical buy',
-                    sensitive_log=True,
-                    tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                    bought_amount=buy_event.amount,
-                    asset=selling_asset,
-                    trade_buy_rate=buy_event.rate,
-                    profit_currency=self.profit_currency,
-                    trade_timestamp=buy_event.timestamp,
-                )
+            log.debug(
+                'Sell uses up entire historical buy',
+                sensitive_log=True,
+                tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
+                bought_amount=buy_event.amount,
+                asset=selling_asset,
+                trade_buy_rate=buy_event.rate,
+                profit_currency=self.profit_currency,
+                trade_timestamp=buy_event.timestamp,
+            )
 
-                # If the sell used up the last historical buy
-                if idx == len(self.events[selling_asset].buys) - 1:
-                    stop_index = idx + 1
+            # If the sell used up the last historical buy
+            if idx == len(self.events[selling_asset].buys) - 1:
+                stop_index = idx + 1
 
         if len(self.events[selling_asset].buys) == 0:
             log.critical(
