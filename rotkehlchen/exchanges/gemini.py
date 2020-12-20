@@ -92,7 +92,7 @@ class Gemini(ExchangeInterface):
             msg_aggregator: MessagesAggregator,
             base_uri: str = 'https://api.gemini.com',
     ):
-        super(Gemini, self).__init__('gemini', api_key, secret, database)
+        super().__init__('gemini', api_key, secret, database)
         self.base_uri = base_uri
         self.msg_aggregator = msg_aggregator
 

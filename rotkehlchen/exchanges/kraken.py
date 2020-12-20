@@ -299,7 +299,7 @@ class Kraken(ExchangeInterface):
             msg_aggregator: MessagesAggregator,
             account_type: KrakenAccountType = KrakenAccountType.STARTER,
     ):
-        super(Kraken, self).__init__('kraken', api_key, secret, database)
+        super().__init__('kraken', api_key, secret, database)
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({
             'API-Key': self.api_key,

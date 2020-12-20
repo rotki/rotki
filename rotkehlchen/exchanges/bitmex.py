@@ -95,7 +95,7 @@ class Bitmex(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super(Bitmex, self).__init__('bitmex', api_key, secret, database)
+        super().__init__('bitmex', api_key, secret, database)
         self.uri = 'https://bitmex.com'
         self.session.headers.update({'api-key': api_key})
         self.msg_aggregator = msg_aggregator

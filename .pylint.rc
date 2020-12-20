@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    super-with-arguments,
     unneeded-not,
     unreachable,
     unnecessary-pass,

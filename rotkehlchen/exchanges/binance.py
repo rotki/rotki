@@ -201,7 +201,7 @@ class Binance(ExchangeInterface):
         if uri == BINANCE_US_BASE_URL:
             exchange_name = str(Location.BINANCE_US)
 
-        super(Binance, self).__init__(exchange_name, api_key, secret, database)
+        super().__init__(exchange_name, api_key, secret, database)
         self.uri = uri
         self.session.headers.update({
             'Accept': 'application/json',

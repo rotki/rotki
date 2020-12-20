@@ -316,7 +316,7 @@ class MockKraken(Kraken):
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
-        super(MockKraken, self).__init__(
+        super().__init__(
             api_key=api_key,
             secret=secret,
             database=database,
