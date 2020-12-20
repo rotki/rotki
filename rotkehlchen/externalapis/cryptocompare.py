@@ -517,8 +517,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     return False
 
             in_range = (
-                self.price_history[cache_key].start_time <= timestamp and
-                self.price_history[cache_key].end_time > timestamp
+                self.price_history[cache_key].start_time <= timestamp <
+                self.price_history[cache_key].end_time
             )
             if in_range:
                 log.debug('Found cached price', cache_key=cache_key, timestamp=timestamp)

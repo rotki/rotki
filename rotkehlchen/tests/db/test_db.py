@@ -257,7 +257,7 @@ def test_writing_fetching_data(data_dir, username):
     result = data.db.get_settings()
     last_write_diff = ts_now() - result.last_write_ts
     # make sure last_write was within 3 secs
-    assert last_write_diff >= 0 and last_write_diff < 3
+    assert 0 <= last_write_diff < 3
     expected_dict = {
         'have_premium': False,
         'historical_data_start': DEFAULT_START_DATE,
