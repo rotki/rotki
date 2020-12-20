@@ -124,7 +124,7 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
       "ready": true
     }]}"""
 
-    def query_coinbase_and_test(
+    def query_coinbase_and_test_local_mock(
             response_str,
             expected_warnings_num,
             expected_errors_num,
@@ -155,11 +155,11 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
             assert len(balances) == 0
 
     # test that all is fine with normal data
-    query_coinbase_and_test(data, expected_warnings_num=0, expected_errors_num=0)
+    query_coinbase_and_test_local_mock(data, expected_warnings_num=0, expected_errors_num=0)
 
     # From now on unexpected data
     # no data key
-    query_coinbase_and_test(
+    query_coinbase_and_test_local_mock(
         '{"foo": 1}',
         expected_warnings_num=0,
         expected_errors_num=0,
@@ -167,22 +167,22 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
     )
     # account entry without "balance" key
     input_data = data.replace('"balance"', '"foo"')
-    query_coinbase_and_test(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
     # account entry without amount in "balance"
     input_data = data.replace('"amount"', '"foo"')
-    query_coinbase_and_test(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
     # account entry without currency in "balance"
     input_data = data.replace('"currency"', '"foo"')
-    query_coinbase_and_test(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
     # account entry with invalid balance amount
     input_data = data.replace('"4.00000000"', '"csadasdsd"')
-    query_coinbase_and_test(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
     # account entry with unknown asset
     input_data = data.replace('"BTC"', '"DDSADSAD"')
-    query_coinbase_and_test(input_data, expected_warnings_num=1, expected_errors_num=0)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=1, expected_errors_num=0)
     # account entry with invalid asset
     input_data = data.replace('"BTC"', 'null')
-    query_coinbase_and_test(input_data, expected_warnings_num=0, expected_errors_num=1)
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=1)
 
 
 BUYS_RESPONSE = """{

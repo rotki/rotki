@@ -95,7 +95,8 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
                 self.fail("invalid")
             else:
                 raise self.make_error("invalid") from e
-        return super(webargs.fields.DelimitedList, self)._deserialize(ret, attr, data, **kwargs)
+        # purposefully skip the superclass here
+        return super(webargs.fields.DelimitedList, self)._deserialize(ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
 
 
 class TimestampField(fields.Field):

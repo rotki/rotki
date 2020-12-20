@@ -14,14 +14,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 
 
-@pytest.fixture
-def use_clean_caching_directory():
+@pytest.fixture(name='use_clean_caching_directory')
+def fixture_use_clean_caching_directory():
     """If this is set to True then a clean test user directory will be used."""
     return False
 
 
-@pytest.fixture
-def data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
+@pytest.fixture(name='data_dir')
+def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
     """The tests data dir is peristent so that we can cache price queries between
     tests. If use_clean_caching_directory is True then a completely fresh dir is returned"""
     if use_clean_caching_directory:
@@ -50,8 +50,8 @@ def data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
     return data_directory
 
 
-@pytest.fixture
-def should_mock_price_queries():
+@pytest.fixture(name='should_mock_price_queries')
+def fixture_should_mock_price_queries():
     return True
 
 
@@ -72,16 +72,16 @@ def mocked_price_queries():
     return defaultdict(defaultdict)
 
 
-@pytest.fixture
-def accounting_create_csv():
+@pytest.fixture(name='accounting_create_csv')
+def fixture_accounting_create_csv():
     # TODO: The whole create_csv argument should be deleted.
     # Or renamed. Since it's not about actually creating the CSV
     # but keeping the events in memory
     return True
 
 
-@pytest.fixture
-def accounting_initialize_parameters():
+@pytest.fixture(name='accounting_initialize_parameters')
+def fixture_accounting_initialize_parameters():
     """
     If True initialize the DB parameters of the accountant and the events
 
@@ -91,8 +91,8 @@ def accounting_initialize_parameters():
     return False
 
 
-@pytest.fixture
-def accountant(
+@pytest.fixture(name='accountant')
+def fixture_accountant(
         price_historian,  # pylint: disable=unused-argument
         database,
         data_dir,
@@ -118,23 +118,23 @@ def accountant(
     return accountant
 
 
-@pytest.fixture
-def should_mock_current_price_queries():
+@pytest.fixture(name='should_mock_current_price_queries')
+def fixture_should_mock_current_price_queries():
     return True
 
 
-@pytest.fixture(scope='session')
-def session_should_mock_current_price_queries():
+@pytest.fixture(scope='session', name='session_should_mock_current_price_queries')
+def fixture_session_should_mock_current_price_queries():
     return True
 
 
-@pytest.fixture
-def mocked_current_prices():
+@pytest.fixture(name='mocked_current_prices')
+def fixture_mocked_current_prices():
     return {}
 
 
-@pytest.fixture(scope='session')
-def session_mocked_current_prices():
+@pytest.fixture(scope='session', name='session_mocked_current_prices')
+def fixture_session_mocked_current_prices():
     return {}
 
 
@@ -163,8 +163,8 @@ def create_inquirer(data_directory, should_mock_current_price_queries, mocked_pr
     return inquirer
 
 
-@pytest.fixture
-def inquirer(data_dir, should_mock_current_price_queries, mocked_current_prices):
+@pytest.fixture(name='inquirer')
+def fixture_inquirer(data_dir, should_mock_current_price_queries, mocked_current_prices):
     return create_inquirer(data_dir, should_mock_current_price_queries, mocked_current_prices)
 
 

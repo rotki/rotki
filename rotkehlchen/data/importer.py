@@ -134,7 +134,7 @@ class DataImporter():
                 notes=notes,
             )
             self.db.add_trades([trade])
-        elif row_type == 'Deposit' or row_type == 'Withdrawal':
+        elif row_type in ('Deposit', 'Withdrawal'):
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
                 amount = deserialize_asset_amount(csv_row['Buy'])
@@ -267,7 +267,7 @@ class DataImporter():
             )
             self.db.add_trades([trade])
 
-        elif row_type == 'crypto_withdrawal' or row_type == 'crypto_deposit':
+        elif row_type in ('crypto_withdrawal', 'crypto_deposit'):
             if row_type == 'crypto_withdrawal':
                 category = AssetMovementCategory.WITHDRAWAL
                 amount = deserialize_asset_amount_force_positive(csv_row['Amount'])

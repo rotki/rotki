@@ -39,6 +39,7 @@ class RotkehlchenPermissionError(Exception):
     they can decide what to do
     """
     def __init__(self, error_message: str, payload: Optional[Dict[str, Any]]) -> None:
+        super().__init__(error_message)
         self.error_message = error_message
         self.message_payload = payload if payload is not None else {}
 
@@ -49,7 +50,6 @@ class SystemPermissionError(Exception):
 
 class RemoteError(Exception):
     """Thrown when a remote API can't be reached or throws unexpected error"""
-    pass
 
 
 class SystemClockNotSyncedError(RemoteError):
@@ -97,12 +97,11 @@ class DBUpgradeError(Exception):
 
 class DeserializationError(Exception):
     """Raised when deserializing data from the outside and something unexpected is found"""
-    pass
 
 
 class NoPriceForGivenTimestamp(Exception):
     def __init__(self, from_asset: 'Asset', to_asset: 'Asset', date: str) -> None:
-        super(NoPriceForGivenTimestamp, self).__init__(
+        super().__init__(
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
                 from_asset.identifier, to_asset.identifier, date,
             ),
@@ -122,12 +121,10 @@ class BlockchainQueryError(Exception):
 
     For example a VM Execution error in ethereum contract calls
     """
-    pass
 
 
 class XPUBError(Exception):
     """Error XPUB Parsing and address derivation"""
-    pass
 
 
 class EncodingError(Exception):

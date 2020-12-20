@@ -201,7 +201,7 @@ class Binance(ExchangeInterface):
         if uri == BINANCE_US_BASE_URL:
             exchange_name = str(Location.BINANCE_US)
 
-        super(Binance, self).__init__(exchange_name, api_key, secret, database)
+        super().__init__(exchange_name, api_key, secret, database)
         self.uri = uri
         self.session.headers.update({
             'Accept': 'application/json',
@@ -348,9 +348,9 @@ class Binance(ExchangeInterface):
 
                 gevent.sleep(retry_after)
                 continue
-            else:
-                # success
-                break
+
+            # else success
+            break
 
         try:
             json_ret = rlk_jsonloads(response.text)
@@ -362,12 +362,12 @@ class Binance(ExchangeInterface):
 
     def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:
         result = self.api_query(method, options)
-        assert isinstance(result, Dict)
+        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def api_query_list(self, method: str, options: Optional[Dict] = None) -> List:
         result = self.api_query(method, options)
-        assert isinstance(result, List)
+        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def _query_spot_balances(self, balances: Dict) -> Dict:

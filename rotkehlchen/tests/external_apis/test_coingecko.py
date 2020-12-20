@@ -5,8 +5,8 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.externalapis.coingecko import Coingecko, CoingeckoAssetData, CoingeckoImageURLs
 
 
-@pytest.fixture(scope='session')
-def session_coingecko():
+@pytest.fixture(scope='session', name='session_coingecko')
+def fixture_session_coingecko():
     return Coingecko()
 
 

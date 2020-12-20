@@ -118,8 +118,6 @@ def mock_jug_ilks(_, ilk) -> Tuple[int, int]:
     whatever = 1
     return duty, whatever
 
-    raise AssertionError(f'Could not find a mock for spot ilks for ilk {ilk}')
-
 
 def create_web3_mock(web3: Web3, test_data: VaultTestData):
     def mock_contract(address, abi):  # pylint: disable=unused-argument

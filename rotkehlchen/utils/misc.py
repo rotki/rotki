@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import operator
+import platform
 import re
 import sys
 import time
@@ -12,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, DefaultDict, Dict, Iterator, List, TypeVar, Union, overload
 
 import gevent
+import pkg_resources
 import requests
 from eth_utils.address import to_checksum_address
 from rlp.sedes import big_endian_int
@@ -130,7 +132,8 @@ def combine_dicts(
         op: Callable = operator.add,
 ) -> Union[Dict[K, V], DefaultDict[K, V]]:
     new_dict = a.copy()
-    if op == operator.sub:
+    # issue for pylint's false positive here: https://github.com/PyCQA/pylint/issues/3987
+    if op == operator.sub:  # pylint: disable=comparison-with-callable
         new_dict.update({k: -v for k, v in b.items()})  # type: ignore
     else:
         new_dict.update(b)
@@ -276,7 +279,7 @@ def request_get_dict(
     - Remote error if the get request fails
     """
     response = request_get(url, timeout, handle_429, backoff_in_seconds)
-    assert isinstance(response, Dict)
+    assert isinstance(response, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return response
 
 
@@ -335,10 +338,6 @@ def hexstring_to_bytes(hexstr: str) -> bytes:
 
 def get_system_spec() -> Dict[str, str]:
     """Collect information about the system and installation."""
-    import platform
-
-    import pkg_resources
-
     if sys.platform == 'darwin':
         system_info = 'macOS {} {}'.format(
             platform.mac_ver()[0],

@@ -34,13 +34,13 @@ def assert_vaults_equal(a: MakerDAOVault, b: MakerDAOVault) -> None:
             assert vala == valb, msg
 
 
-@pytest.fixture
-def use_etherscan() -> bool:
+@pytest.fixture(name='use_etherscan')
+def fixture_use_etherscan() -> bool:
     return False
 
 
-@pytest.fixture
-def makerdao_test_data(
+@pytest.fixture(name='makerdao_test_data')
+def fixture_makerdao_test_data(
         ethereum_accounts,
         inquirer,  # pylint: disable=unused-argument
 ) -> VaultTestData:
@@ -80,8 +80,8 @@ def makerdao_test_data(
     )
 
 
-@pytest.fixture
-def makerdao_vaults(
+@pytest.fixture(name='makerdao_vaults')
+def fixture_makerdao_vaults(
         ethereum_manager,
         database,
         function_scope_messages_aggregator,

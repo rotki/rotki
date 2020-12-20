@@ -10,8 +10,8 @@ from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 
 
-@pytest.fixture
-def ethtokens(ethereum_manager, database):
+@pytest.fixture(name='ethtokens')
+def fixture_ethtokens(ethereum_manager, database):
     return EthTokens(database, ethereum_manager)
 
 
@@ -60,7 +60,7 @@ def test_detected_tokens_cache(ethtokens, inquirer):  # pylint: disable=unused-a
         new=800,
     )
 
-    with etherscan_patch as etherscan_mock, ethtokens_max_chunks_patch:
+    with ethtokens_max_chunks_patch, etherscan_patch as etherscan_mock:
         # Initially autodetect the tokens at the first call
         result1, _ = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
         initial_call_count = etherscan_mock.call_count

@@ -106,7 +106,7 @@ class Coinbase(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super(Coinbase, self).__init__('coinbase', api_key, secret, database)
+        super().__init__('coinbase', api_key, secret, database)
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.msg_aggregator = msg_aggregator

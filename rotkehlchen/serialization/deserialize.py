@@ -391,7 +391,7 @@ def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
 
 def get_pair_position_str(pair: TradePair, position: str) -> str:
     """Get the string representation of an asset of a trade pair"""
-    assert position == 'first' or position == 'second'
+    assert position in ('first', 'second')
     base_str, quote_str = _split_pair(pair)
     return base_str if position == 'first' else quote_str
 

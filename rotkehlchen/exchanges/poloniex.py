@@ -204,10 +204,10 @@ def process_polo_loans(
 def _post_process(before: Dict) -> Dict:
     """Poloniex uses datetimes so turn them into timestamps here"""
     after = before
-    if('return' in after):
-        if(isinstance(after['return'], list)):
+    if 'return' in after:
+        if isinstance(after['return'], list):
             for x in range(0, len(after['return'])):
-                if(isinstance(after['return'][x], dict)):
+                if isinstance(after['return'][x], dict):
                     if('datetime' in after['return'][x] and
                        'timestamp' not in after['return'][x]):
                         after['return'][x]['timestamp'] = float(
@@ -226,7 +226,7 @@ class Poloniex(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super(Poloniex, self).__init__('poloniex', api_key, secret, database)
+        super().__init__('poloniex', api_key, secret, database)
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
@@ -255,12 +255,12 @@ class Poloniex(ExchangeInterface):
 
     def api_query_dict(self, command: str, req: Optional[Dict] = None) -> Dict:
         result = self._api_query(command, req)
-        assert isinstance(result, Dict)
+        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def api_query_list(self, command: str, req: Optional[Dict] = None) -> List:
         result = self._api_query(command, req)
-        assert isinstance(result, List)
+        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def _single_query(self, command: str, req: Dict[str, Any]) -> Optional[requests.Response]:
@@ -273,7 +273,7 @@ class Poloniex(ExchangeInterface):
          - RemoteError if there is a problem with the response
          - ConnectionError if there is a problem connecting to poloniex.
         """
-        if command == 'returnTicker' or command == 'returnCurrencies':
+        if command in ('returnTicker', 'returnCurrencies'):
             log.debug(f'Querying poloniex for {command}')
             response = self.session.get(self.public_uri + command)
         else:
@@ -541,7 +541,7 @@ class Poloniex(ExchangeInterface):
             for trade in trades:
                 category = trade.get('category', None)
                 try:
-                    if category == 'exchange' or category == 'settlement':
+                    if category in ('exchange', 'settlement'):
                         timestamp = deserialize_timestamp_from_poloniex_date(trade['date'])
                         if timestamp < start_ts or timestamp > end_ts:
                             continue

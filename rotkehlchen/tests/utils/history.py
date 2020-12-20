@@ -201,7 +201,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
         payload = ''
         if remote_errors:
             payload = invalid_payload
-        elif 'returnTradeHistory' == req['command']:
+        elif req['command'] == 'returnTradeHistory':
             payload = """{
                 "BTC_ETH": [{
                     "globalTradeID": 394131412,
@@ -264,7 +264,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 }]
             }"""
 
-        elif 'returnLendingHistory' == req['command']:
+        elif req['command'] == 'returnLendingHistory':
             payload = """[{
                 "id": 246300115,
                 "currency": "BTC",
@@ -310,7 +310,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 "open": "2017-01-01 23:36:32",
                 "close": "2017-01-01 23:38:45"
             }]"""
-        elif 'returnDepositsWithdrawals' == req['command']:
+        elif req['command'] == 'returnDepositsWithdrawals':
             data = json.loads(POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE)
             new_data = {}
             for x in ('deposits', 'withdrawals'):
@@ -327,7 +327,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             )
         return MockResponse(200, payload)
 
-    def mock_bittrex_api_queries(url, method, json):  # pylint: disable=unused-argument
+    def mock_bittrex_api_queries(url, method, json):  # pylint: disable=unused-argument,redefined-outer-name  # noqa: E501
         if remote_errors:
             payload = invalid_payload
         elif 'orders/closed' in url:

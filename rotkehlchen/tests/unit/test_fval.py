@@ -161,11 +161,11 @@ def test_conversion():
 
 
 def test_to_percentage():
-    assert '50.0000%' == FVal('0.5').to_percentage()
-    assert '23.4500%' == FVal('0.2345').to_percentage()
-    assert '23.45%' == FVal('0.2345').to_percentage(2)
-    assert '23%' == FVal('0.2345').to_percentage(0)
-    assert '153.2100%' == FVal('1.5321').to_percentage()
+    assert FVal('0.5').to_percentage() == '50.0000%'
+    assert FVal('0.2345').to_percentage() == '23.4500%'
+    assert FVal('0.2345').to_percentage(2) == '23.45%'
+    assert FVal('0.2345').to_percentage(0) == '23%'
+    assert FVal('1.5321').to_percentage() == '153.2100%'
 
 
 def test_initialize_with_bool_fails():

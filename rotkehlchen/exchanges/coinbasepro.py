@@ -87,7 +87,7 @@ class Coinbasepro(ExchangeInterface):
             msg_aggregator: MessagesAggregator,
             passphrase: str,
     ):
-        super(Coinbasepro, self).__init__('coinbasepro', api_key, secret, database)
+        super().__init__('coinbasepro', api_key, secret, database)
         self.base_uri = 'https://api.pro.coinbase.com'
         self.msg_aggregator = msg_aggregator
 

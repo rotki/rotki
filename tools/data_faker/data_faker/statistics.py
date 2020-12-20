@@ -22,11 +22,11 @@ def divide_number_in_parts(number: int, parts_number: int):
     number_rest = number
 
     for i in range(1, parts_number + 1):
-        if (i == parts_number):
+        if i == parts_number:
             yield number_rest
             break
-        else:
-            new_number = random.randint(1, (number_rest - (parts_number - i)) // 2)
+
+        new_number = random.randint(1, (number_rest - (parts_number - i)) // 2)
         number_rest -= new_number
         yield new_number
 

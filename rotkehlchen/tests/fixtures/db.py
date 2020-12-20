@@ -20,86 +20,86 @@ from rotkehlchen.tests.utils.database import (
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-@pytest.fixture
-def username():
+@pytest.fixture(name='username')
+def fixture_username():
     return 'testuser'
 
 
-@pytest.fixture(scope='session')
-def session_ignored_assets() -> Optional[List[Asset]]:
+@pytest.fixture(scope='session', name='session_ignored_assets')
+def fixture_session_ignored_assets() -> Optional[List[Asset]]:
     return None
 
 
-@pytest.fixture
-def ignored_assets() -> Optional[List[Asset]]:
+@pytest.fixture(name='ignored_assets')
+def fixture_ignored_assets() -> Optional[List[Asset]]:
     return None
 
 
-@pytest.fixture(scope='session')
-def session_username():
+@pytest.fixture(scope='session', name='session_username')
+def fixture_session_username():
     return 'session_test_user'
 
 
-@pytest.fixture(scope='session')
-def session_data_dir(tmpdir_factory) -> Path:
+@pytest.fixture(scope='session', name='session_data_dir')
+def fixture_session_data_dir(tmpdir_factory) -> Path:
     return Path(tmpdir_factory.mktemp('session_data'))
 
 
-@pytest.fixture
-def user_data_dir(data_dir, username) -> Path:
+@pytest.fixture(name='user_data_dir')
+def fixture_user_data_dir(data_dir, username) -> Path:
     """Create and return the user data directory"""
     user_data_dir = data_dir / username
     user_data_dir.mkdir(exist_ok=True)
     return user_data_dir
 
 
-@pytest.fixture(scope='session')
-def session_user_data_dir(session_data_dir, session_username) -> Path:
+@pytest.fixture(scope='session', name='session_user_data_dir')
+def fixture_session_user_data_dir(session_data_dir, session_username) -> Path:
     """Create and return the session scoped user data directory"""
     user_data_dir = session_data_dir / session_username
     user_data_dir.mkdir(exist_ok=True)
     return user_data_dir
 
 
-@pytest.fixture
-def include_cryptocompare_key() -> bool:
+@pytest.fixture(name='include_cryptocompare_key')
+def fixture_include_cryptocompare_key() -> bool:
     """By default use a cryptocompare API key only in the OSX CI"""
     return 'CI' in os.environ and sys.platform == 'darwin'
 
 
-@pytest.fixture(scope='session')
-def session_include_cryptocompare_key() -> bool:
+@pytest.fixture(scope='session', name='session_include_cryptocompare_key')
+def fixture_session_include_cryptocompare_key() -> bool:
     """By default use a cryptocompare API key only in the OSX CI"""
     return 'CI' in os.environ and sys.platform == 'darwin'
 
 
-@pytest.fixture
-def include_etherscan_key() -> bool:
+@pytest.fixture(name='include_etherscan_key')
+def fixture_include_etherscan_key() -> bool:
     return True
 
 
-@pytest.fixture(scope='session')
-def session_include_etherscan_key() -> bool:
+@pytest.fixture(scope='session', name='session_include_etherscan_key')
+def fixture_session_include_etherscan_key() -> bool:
     return True
 
 
-@pytest.fixture
-def tags() -> List[Dict[str, Any]]:
+@pytest.fixture(name='tags')
+def fixture_tags() -> List[Dict[str, Any]]:
     return []
 
 
-@pytest.fixture(scope='session')
-def session_tags() -> List[Dict[str, Any]]:
+@pytest.fixture(scope='session', name='session_tags')
+def fixture_session_tags() -> List[Dict[str, Any]]:
     return []
 
 
-@pytest.fixture
-def manually_tracked_balances() -> List[ManuallyTrackedBalance]:
+@pytest.fixture(name='manually_tracked_balances')
+def fixture_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
     return []
 
 
-@pytest.fixture(scope='session')
-def session_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
+@pytest.fixture(scope='session', name='session_manually_tracked_balances')
+def fixture_session_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
     return []
 
 
@@ -195,11 +195,11 @@ def session_database(
     )
 
 
-@pytest.fixture
-def db_settings() -> Optional[Dict[str, Any]]:
+@pytest.fixture(name='db_settings')
+def fixture_db_settings() -> Optional[Dict[str, Any]]:
     return None
 
 
-@pytest.fixture(scope='session')
-def session_db_settings() -> Optional[Dict[str, Any]]:
+@pytest.fixture(scope='session', name='session_db_settings')
+def fixture_session_db_settings() -> Optional[Dict[str, Any]]:
     return None

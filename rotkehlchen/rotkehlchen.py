@@ -475,8 +475,6 @@ class Rotkehlchen():
             account_data=account_data,
         )
 
-        return None
-
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
@@ -656,7 +654,7 @@ class Rotkehlchen():
             # should only be an exchange
             exchange = self.exchange_manager.get(str(location))
             if not exchange:
-                logger.warn(
+                logger.warning(
                     f'Tried to query trades from {location} which is either not an '
                     f'exchange or not an exchange the user has connected to',
                 )
@@ -856,7 +854,7 @@ class Rotkehlchen():
             else:
                 exchange = self.exchange_manager.get(str(location))
                 if not exchange:
-                    logger.warn(
+                    logger.warning(
                         f'Tried to query deposits/withdrawals from {location} which is either '
                         f'not at exchange or not an exchange the user has connected to',
                     )

@@ -158,7 +158,7 @@ class Bittrex(ExchangeInterface):
             initial_backoff: int = 4,
             backoff_limit: int = 180,
     ):
-        super(Bittrex, self).__init__('bittrex', api_key, secret, database)
+        super().__init__('bittrex', api_key, secret, database)
         self.uri = 'https://api.bittrex.com/v3/'
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({
@@ -199,7 +199,6 @@ class Bittrex(ExchangeInterface):
                     current_time=str(datetime.now()),
                     remote_server='Bittrex',
                 )
-        return None
 
     def api_query(  # noqa: F811
             self,

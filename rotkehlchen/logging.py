@@ -89,7 +89,7 @@ class LoggingSettings():
 class RotkehlchenLogsAdapter(logging.LoggerAdapter):
 
     def __init__(self, logger: logging.Logger):
-        return super().__init__(logger, extra={})
+        super().__init__(logger, extra={})
 
     def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> Tuple[str, Dict]:
         """

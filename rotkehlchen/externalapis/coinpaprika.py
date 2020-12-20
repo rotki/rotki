@@ -611,7 +611,7 @@ class CoinPaprika():
                 gevent.sleep(backoff)
                 backoff *= 2
                 continue
-            elif response.status_code != 200:
+            if response.status_code != 200:
                 raise RemoteError(
                     f'Coinpaprika API request {response.url} for {path} failed '
                     f'with HTTP status code {response.status_code} and text '

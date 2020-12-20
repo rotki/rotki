@@ -2876,7 +2876,7 @@ class DBHandler:
         """
         existing_tags = self.get_tags()
         # tag comparison is case-insensitive
-        existing_tag_keys = [key.lower() for key in existing_tags.keys()]
+        existing_tag_keys = [key.lower() for key in existing_tags]
 
         unknown_tags: Set[str] = set()
         for entry in given_data:

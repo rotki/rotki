@@ -452,14 +452,13 @@ class AaveGraphInquirer(AaveInquirer):
                     # and once done break off the loop
                     break
 
-                else:
-                    # this atoken history is not due to an action, so skip it
-                    # it's probably due to a simple transfer
-                    atoken_balances[action.asset] = entry.balance
-                    if action.event_type == 'deposit':
-                        atoken_balances[action.asset] += action.value.amount
-                    else:  # withdrawal
-                        atoken_balances[action.asset] -= action.value.amount
+                # else this atoken history is not due to an action, so skip it.
+                # It's probably due to a simple transfer
+                atoken_balances[action.asset] = entry.balance
+                if action.event_type == 'deposit':
+                    atoken_balances[action.asset] += action.value.amount
+                else:  # withdrawal
+                    atoken_balances[action.asset] -= action.value.amount
 
         # Take aave unpaid interest into account
         for symbol, lending_balance in balances.lending.items():

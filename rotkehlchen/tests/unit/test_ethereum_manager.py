@@ -227,4 +227,3 @@ def test_nodes_sets():
 )
 def test_nodes_speed():
     """TODO"""
-    pass

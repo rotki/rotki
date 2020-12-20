@@ -24,7 +24,7 @@ if sys.platform == 'darwin':
     @pytest.fixture(scope='session', autouse=True)
     def _tmpdir_short(request):
         """Shorten tmpdir paths"""
-        from _pytest.tmpdir import TempdirFactory
+        from _pytest.tmpdir import TempdirFactory  # pylint: disable=import-outside-toplevel
 
         def getbasetemp(self):
             """ return base temporary directory. """

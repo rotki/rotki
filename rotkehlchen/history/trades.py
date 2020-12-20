@@ -192,7 +192,7 @@ class TradesHistorian():
             # to find owed debt at any given timestamp
             for detail in vault_details:
                 last_event_ts = detail.events[-1].timestamp
-                if last_event_ts >= start_ts and last_event_ts <= end_ts:
+                if start_ts <= last_event_ts <= end_ts:
                     defi_events.append(DefiEvent(
                         timestamp=last_event_ts,
                         event_type=DefiEventType.MAKERDAO_VAULT_LOSS,
@@ -353,7 +353,7 @@ class TradesHistorian():
                         amount=balance.amount,
                     ))
 
-        history.sort(key=lambda trade: action_get_timestamp(trade))
+        history.sort(key=action_get_timestamp)
         return (
             empty_or_error,
             history,

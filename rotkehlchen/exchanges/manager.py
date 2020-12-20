@@ -47,7 +47,8 @@ class ExchangeManager():
         then it checks for credentials there. If not just relies on the mapping
         """
         credentials = database.get_exchange_credentials() if database else None
-        if credentials is not None and name not in credentials:
+        # pylint false positive here. Probably: https://github.com/PyCQA/pylint/issues/3045
+        if credentials is not None and name not in credentials:  # pylint: disable=unsupported-membership-test  # noqa: E501
             if name in self.connected_exchanges:
                 log.warning(
                     f'{name} exchange had no credentials in the DB but was in the '

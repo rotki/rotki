@@ -69,7 +69,8 @@ def test_set_settings(rotkehlchen_api_server):
     for setting, value in original_settings.items():
         if setting in unmodifiable_settings:
             continue
-        elif setting == 'historical_data_start':
+
+        if setting == 'historical_data_start':
             value = '10/10/2016'
         elif setting == 'date_display_format':
             value = '%d/%m/%Y-%H:%M:%S'
@@ -83,9 +84,11 @@ def test_set_settings(rotkehlchen_api_server):
             value = 'http://working.nodes.com:8545'
         elif setting == 'main_currency':
             value = 'JPY'
-        elif type(value) == bool:
+        elif type(value) == bool:  # pylint: disable=unidiomatic-typecheck
+            # here and below we HAVE to use type() equality checks since
+            # isinstance of a bool succeeds for both bool and int (due to inheritance)
             value = not value
-        elif type(value) == int:
+        elif type(value) == int:  # pylint: disable=unidiomatic-typecheck
             value += 1
         elif setting == 'kraken_account_type':
             # Change the account type to anything other than default

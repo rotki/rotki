@@ -71,7 +71,7 @@ class DBStartupAction(Enum):
 
 
 def str_to_bool(s: str) -> bool:
-    return True if s == 'True' else False
+    return s == 'True'
 
 
 def form_query_to_filter_timestamps(

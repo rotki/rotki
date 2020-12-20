@@ -6,24 +6,24 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.tests.utils.mock import MockResponse
 
 
-@pytest.fixture()
-def mock_asset_meta_github_response() -> str:
+@pytest.fixture(name='mock_asset_meta_github_response')
+def fixture_mock_asset_meta_github_response() -> str:
     return '{"md5": "", "version": 0}'
 
 
-@pytest.fixture()
-def mock_asset_github_response() -> str:
+@pytest.fixture(name='mock_asset_github_response')
+def fixture_mock_asset_github_response() -> str:
     return '{}'
 
 
-@pytest.fixture()
-def query_github_for_assets() -> bool:
+@pytest.fixture(name='query_github_for_assets')
+def fixture_query_github_for_assets() -> bool:
     """If True, the default behavior of querying github for latest assets will occur"""
     return False
 
 
-@pytest.fixture()
-def force_reinitialize_asset_resolver() -> bool:
+@pytest.fixture(name='force_reinitialize_asset_resolver')
+def fixture_force_reinitialize_asset_resolver() -> bool:
     """If True, the asset resolver instance will be force to start frm scratch"""
     return False
 

@@ -290,12 +290,13 @@ class Cryptocompare(ExternalServiceWithApiKey):
                         gevent.sleep(backoff_seconds)
                         tries -= 1
                         continue
-                    else:
-                        log.debug(
-                            f'Got rate limited by cryptocompare and did not manage to get a '
-                            f'request through even after {CRYPTOCOMPARE_QUERY_RETRY_TIMES} '
-                            f'incremental backoff retries',
-                        )
+
+                    # else
+                    log.debug(
+                        f'Got rate limited by cryptocompare and did not manage to get a '
+                        f'request through even after {CRYPTOCOMPARE_QUERY_RETRY_TIMES} '
+                        f'incremental backoff retries',
+                    )
 
                 if json_ret.get('Response', 'Success') != 'Success':
                     error_message = f'Failed to query cryptocompare for: "{querystr}"'
@@ -516,8 +517,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     return False
 
             in_range = (
-                self.price_history[cache_key].start_time <= timestamp and
-                self.price_history[cache_key].end_time > timestamp
+                self.price_history[cache_key].start_time <= timestamp <
+                self.price_history[cache_key].end_time
             )
             if in_range:
                 log.debug('Found cached price', cache_key=cache_key, timestamp=timestamp)

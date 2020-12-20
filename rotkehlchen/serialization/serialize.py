@@ -172,12 +172,12 @@ def process_result(result: Any) -> Dict[Any, Any]:
         - all enums and more
     """
     processed_result = _process_entry(result)
-    assert isinstance(processed_result, (Dict, AttributeDict))
+    assert isinstance(processed_result, (Dict, AttributeDict))  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return processed_result  # type: ignore
 
 
 def process_result_list(result: List[Any]) -> List[Any]:
     """Just like process_result but for lists"""
     processed_result = _process_entry(result)
-    assert isinstance(processed_result, List)
+    assert isinstance(processed_result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return processed_result
