@@ -107,7 +107,7 @@ class ActionWriter():
                 try:
                     self.create_action(created_trades, current_ts)
                     created_trades += 1
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     logger.error(f'failed to create trade: {e}')
 
             if save_balances:

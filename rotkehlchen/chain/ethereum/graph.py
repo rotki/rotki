@@ -85,7 +85,8 @@ class Graph():
         while retries_left > 0:
             try:
                 result = self.client.execute(gql(querystr), variable_values=param_values)
-            except (requests.exceptions.RequestException, Exception) as e:
+            # need to catch Exception here due to stupidity of gql library
+            except (requests.exceptions.RequestException, Exception) as e:  # pylint: disable=broad-except  # noqa: E501
                 # NB: the lack of a good API error handling by The Graph combined
                 # with gql v2 raising bare exceptions doesn't allow us to act
                 # better on failed requests. Currently all trigger the retry logic.

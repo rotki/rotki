@@ -6,7 +6,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.errors import UnprocessableTradePair
+from rotkehlchen.errors import DeserializationError, UnknownAsset, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, kraken_to_world_pair
 from rotkehlchen.fval import FVal
@@ -123,9 +123,9 @@ def test_kraken_to_world_pair(kraken):
     for pair in pairs:
         try:
             kraken_to_world_pair(pair)
-        except Exception:
+        except (UnknownAsset, UnprocessableTradePair, DeserializationError) as e:
             test_warnings.warn(UserWarning(
-                f'Could not process kraken pair {pair}',
+                f'Could not process kraken pair {pair} due to {str(e)}',
             ))
 
     # Finally test that wrong pairs raise proper exception
