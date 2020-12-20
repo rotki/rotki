@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    isinstance-second-argument-not-valid-type,
     unsupported-membership-test,
     confusing-with-statement,
     no-else-break,

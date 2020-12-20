@@ -362,12 +362,12 @@ class Binance(ExchangeInterface):
 
     def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:
         result = self.api_query(method, options)
-        assert isinstance(result, Dict)
+        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def api_query_list(self, method: str, options: Optional[Dict] = None) -> List:
         result = self.api_query(method, options)
-        assert isinstance(result, List)
+        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def _query_spot_balances(self, balances: Dict) -> Dict:

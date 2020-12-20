@@ -276,7 +276,7 @@ def request_get_dict(
     - Remote error if the get request fails
     """
     response = request_get(url, timeout, handle_429, backoff_in_seconds)
-    assert isinstance(response, Dict)
+    assert isinstance(response, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return response
 
 

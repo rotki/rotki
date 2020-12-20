@@ -200,7 +200,7 @@ class Bitmex(ExchangeInterface):
             options: Optional[Dict] = None,
     ) -> Dict:
         result = self._api_query(verb, path, options)
-        assert isinstance(result, Dict)
+        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def _api_query_list(
@@ -210,7 +210,7 @@ class Bitmex(ExchangeInterface):
             options: Optional[Dict] = None,
     ) -> List:
         result = self._api_query(verb, path, options)
-        assert isinstance(result, List)
+        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     @protect_with_lock()
