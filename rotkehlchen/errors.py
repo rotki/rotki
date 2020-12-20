@@ -49,7 +49,6 @@ class SystemPermissionError(Exception):
 
 class RemoteError(Exception):
     """Thrown when a remote API can't be reached or throws unexpected error"""
-    pass
 
 
 class SystemClockNotSyncedError(RemoteError):
@@ -97,7 +96,6 @@ class DBUpgradeError(Exception):
 
 class DeserializationError(Exception):
     """Raised when deserializing data from the outside and something unexpected is found"""
-    pass
 
 
 class NoPriceForGivenTimestamp(Exception):
@@ -122,12 +120,10 @@ class BlockchainQueryError(Exception):
 
     For example a VM Execution error in ethereum contract calls
     """
-    pass
 
 
 class XPUBError(Exception):
     """Error XPUB Parsing and address derivation"""
-    pass
 
 
 class EncodingError(Exception):
