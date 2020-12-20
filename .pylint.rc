@@ -27,6 +27,36 @@ logging-modules=logging
 
 [MESSAGES CONTROL]
 
+# These are rules we either want to completely ignore or have no time to fix yet
+#disable=
+#    missing-module-docstring,
+#    missing-function-docstring,
+#    invalid-name,
+#    line-too-long,
+#    too-many-locals,
+#    missing-class-docstring,
+#    too-many-lines,
+#    too-many-arguments,
+#    too-many-return-statements,
+#    fixme,
+#    redefined-outer-name,
+#    logging-fstring-interpolation,
+#    arguments-differ,
+#    protected-access,
+#    too-few-public-methods,
+#    too-many-public-methods,
+#    too-many-statements,
+#    too-many-branches,
+#    unused-wildcard-import,
+#    too-many-instance-attributes,
+#    too-many-nested-blocks,
+#    wrong-import-position,
+#    attribute-defined-outside-init,
+#    wildcard-import,
+#    wrong-import-order,
+#    abstract-method
+
+# When wanting to discover new things to check for comment the following line and uncomment above
 disable=all
 enable=
     no-value-for-parameter,
