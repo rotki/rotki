@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import operator
+import platform
 import re
 import sys
 import time
@@ -12,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, DefaultDict, Dict, Iterator, List, TypeVar, Union, overload
 
 import gevent
+import pkg_resources
 import requests
 from eth_utils.address import to_checksum_address
 from rlp.sedes import big_endian_int
@@ -335,10 +337,6 @@ def hexstring_to_bytes(hexstr: str) -> bytes:
 
 def get_system_spec() -> Dict[str, str]:
     """Collect information about the system and installation."""
-    import platform
-
-    import pkg_resources
-
     if sys.platform == 'darwin':
         system_info = 'macOS {} {}'.format(
             platform.mac_ver()[0],

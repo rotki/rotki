@@ -1,17 +1,16 @@
 from gevent import monkey  # isort:skip # noqa
 monkey.patch_all()  # isort:skip # noqa
 import logging
+import sys
+import traceback
 
 from rotkehlchen.errors import SystemPermissionError
+from rotkehlchen.server import RotkehlchenServer
 
 logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    import sys
-    import traceback
-
-    from rotkehlchen.server import RotkehlchenServer
     try:
         rotkehlchen_server = RotkehlchenServer()
     except SystemPermissionError as e:
