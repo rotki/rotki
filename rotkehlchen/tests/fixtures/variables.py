@@ -26,7 +26,7 @@ def random_marker():
     return random_hex[2:]
 
 
-@pytest.fixture(scope='session', name='fixture_port_generator')
+@pytest.fixture(scope='session', name='port_generator')
 def fixture_port_generator(request):
     """ count generator used to get a unique port number. """
     return get_free_port('127.0.0.1', request.config.option.initial_port)
