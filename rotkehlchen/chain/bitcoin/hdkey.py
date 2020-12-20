@@ -303,11 +303,11 @@ class HDKey():
 
         # Go over all other nodes, and convert to indexes
         nodes = nodes[1:]
-        for i in range(len(nodes)):
-            if nodes[i][-1] in ['h', "'"]:  # Support 0h and 0' conventions
-                int_nodes.append(int(nodes[i][:-1]) + BIP32_HARDEN)
+        for node in nodes:
+            if node[-1] in ['h', "'"]:  # Support 0h and 0' conventions
+                int_nodes.append(int(node[:-1]) + BIP32_HARDEN)
             else:
-                int_nodes.append(int(nodes[i]))
+                int_nodes.append(int(node))
         return int_nodes
 
     def derive_path(self, path: str) -> 'HDKey':
@@ -328,8 +328,8 @@ class HDKey():
         my_nodes = self._parse_derivation(own_path)
 
         # compare own path to requested path see if it is a descendant
-        for i in range(len(my_nodes)):
-            if my_nodes[i] != path_nodes[i]:
+        for i, my_node in enumerate(my_nodes):
+            if my_node != path_nodes[i]:
                 raise XPUBError('XPUB requested child not in descendant branches')
 
         # iteratively derive descendants through the path
