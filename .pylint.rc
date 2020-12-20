@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    bare-except,
     no-else-continue,
     deprecated-method,
     consider-using-in,

@@ -8,8 +8,9 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    import traceback
     import sys
+    import traceback
+
     from rotkehlchen.server import RotkehlchenServer
     try:
         rotkehlchen_server = RotkehlchenServer()
@@ -28,7 +29,7 @@ def main() -> None:
             logging.critical(tb)
             print("Failed to start rotkehlchen backend:\n{}".format(tb))
             sys.exit(1)
-    except: # noqa
+    except: # noqa  # pylint: disable=bare-except
         tb = traceback.format_exc()
         logging.critical(tb)
         print("Failed to start rotkehlchen backend:\n{}".format(tb))
