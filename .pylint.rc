@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    confusing-with-statement,
     no-else-break,
     method-hidden,
     chained-comparison,
