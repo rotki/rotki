@@ -234,20 +234,22 @@ def test_xpub_data_comparison():
     xpubdata1 = XpubData(xpub=hdkey1)
     xpubdata2 = XpubData(xpub=hdkey2)
     mapping = {xpubdata1: 1}
-    assert not xpubdata1 == xpubdata2  # there is a reason for both queries. In the first
-    assert xpubdata1 != xpubdata2  # implementation they did not both work correctly
+    # there is a reason for both queries (unneeded-not). In the first
+    # implementation they did not both work correctly
+    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not
+    assert xpubdata1 != xpubdata2
     assert xpubdata1 in mapping
     assert xpubdata2 not in mapping
 
     xpubdata1 = XpubData(xpub=hdkey1)
     xpubdata2 = XpubData(xpub=hdkey1)
     assert xpubdata1 == xpubdata2
-    assert not xpubdata1 != xpubdata2
+    assert not xpubdata1 != xpubdata2  # pylint: disable=unneeded-not
 
     xpubdata1 = XpubData(xpub=hdkey1, derivation_path='m')
     xpubdata2 = XpubData(xpub=hdkey1, derivation_path='m/0/0')
     assert xpubdata1 != xpubdata2
-    assert not xpubdata1 == xpubdata2
+    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not
 
 
 def test_is_valid_derivation_path():

@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    unneeded-not,
     unreachable,
     unnecessary-pass,
     broad-except,
