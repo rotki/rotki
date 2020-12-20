@@ -666,12 +666,6 @@ class MakerDAODSR(MakerDAOCommon):
         return gains
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        super().on_startup()
-
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
-        super().on_account_addition(address)
-
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         super().on_account_removal(address)
         with self.lock:

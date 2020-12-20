@@ -710,9 +710,6 @@ class MakerDAOVaults(MakerDAOCommon):
         return balances
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        super().on_startup()
-
     def on_account_addition(self, address: ChecksumEthAddress) -> None:
         super().on_account_addition(address)
         # Check if it has been added to the mapping
@@ -720,6 +717,3 @@ class MakerDAOVaults(MakerDAOCommon):
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
-
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
-        super().on_account_removal(address)
