@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    unsubscriptable-object,
     unnecessary-lambda,
     isinstance-second-argument-not-valid-type,
     unsupported-membership-test,

@@ -868,7 +868,8 @@ def find_cmc_coin_data(
         if coin['symbol'] == asset_symbol:
             if found_coin_data:
                 print(
-                    f'Asset with symbol {asset_symbol} was found in coinmarketcap '
+                    # pylint false positive: https://github.com/PyCQA/pylint/issues/1498
+                    f'Asset with symbol {asset_symbol} was found in coinmarketcap '  # pylint: disable=unsubscriptable-object  # noqa: E501
                     f'both as {found_coin_data["id"]} - {found_coin_data["name"]} '
                     f'and {coin["id"]} - {coin["name"]}',
                 )

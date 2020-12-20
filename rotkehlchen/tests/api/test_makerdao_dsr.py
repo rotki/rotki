@@ -129,6 +129,10 @@ def mock_etherscan_for_dsr(
     account2_join1_deposit = params.account2_join1_normalized_balance * params.account2_join1_chi
     account2_join1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account2_join1_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0fx00", "transactionIndex": "0x79"}}"""  # noqa: E501
 
+    # Not sure how to convince pylint that this ChecksumEthAddress IS a subscriptable object
+    proxy1_contents = proxy1[2:].lower()  # pylint: disable=unsubscriptable-object
+    proxy2_contents = proxy2[2:].lower()  # pylint: disable=unsubscriptable-object
+
     def mock_requests_get(url, *args, **kwargs):
         if 'etherscan.io/api?module=proxy&action=eth_blockNumber' in url:
             response = f'{{"status":"1","message":"OK","result":"{TEST_LATEST_BLOCKNUMBER_HEX}"}}'
@@ -154,9 +158,9 @@ def mock_etherscan_for_dsr(
                 response = f'{{"status":"1","message":"OK","result":"{proxy_account}"}}'
             elif to_address == MAKERDAO_POT.address:
                 if input_data.startswith('0x0bebac86'):  # pie
-                    if proxy1[2:].lower() in input_data:
+                    if proxy1_contents in input_data:
                         result = int_to_32byteshexstr(params.account1_current_normalized_balance)
-                    elif proxy2[2:].lower() in input_data:
+                    elif proxy2_contents in input_data:
                         result = int_to_32byteshexstr(params.account2_current_normalized_balance)
                     else:
                         # result = int_to_32byteshexstr(0)
@@ -190,12 +194,12 @@ def mock_etherscan_for_dsr(
                 if topic0.startswith('0x049878f3'):  # join
 
                     events = []
-                    if proxy1[2:].lower() in topic1:
+                    if proxy1_contents in topic1:
                         if from_block <= params.account1_join1_blocknumber <= to_block:
                             events.append(account1_join1_event)
                         if from_block <= params.account1_join2_blocknumber <= to_block:
                             events.append(account1_join2_event)
-                    elif proxy2[2:].lower() in topic1:
+                    elif proxy2_contents in topic1:
                         if from_block <= params.account2_join1_blocknumber <= to_block:
                             events.append(account2_join1_event)
                     else:
@@ -207,7 +211,7 @@ def mock_etherscan_for_dsr(
 
                 elif topic0.startswith('0x7f8661a1'):  # exit
                     events = []
-                    if proxy1[2:].lower() in topic1:
+                    if proxy1_contents in topic1:
                         if from_block <= params.account1_exit1_blocknumber <= to_block:
                             events.append(account1_exit1_event)
 
@@ -218,15 +222,15 @@ def mock_etherscan_for_dsr(
             elif contract_address == MAKERDAO_VAT.address:
                 if topic0.startswith('0xbb35783b'):  # move
                     events = []
-                    if proxy1[2:].lower() in topic1:  # deposit from acc1
+                    if proxy1_contents in topic1:  # deposit from acc1
                         if from_block <= params.account1_join1_blocknumber <= to_block:
                             events.append(account1_join1_move_event)
                         if from_block <= params.account1_join2_blocknumber <= to_block:
                             events.append(account1_join2_move_event)
-                    elif proxy2[2:].lower() in topic1:  # deposit from acc2
+                    elif proxy2_contents in topic1:  # deposit from acc2
                         if from_block <= params.account2_join1_blocknumber <= to_block:
                             events.append(account2_join1_move_event)
-                    elif proxy1[2:].lower() in topic2:  # withdrawal from acc1
+                    elif proxy1_contents in topic2:  # withdrawal from acc1
 
                         if from_block <= params.account1_exit1_blocknumber <= to_block:
                             events.append(account1_exit1_move_event)
@@ -237,12 +241,12 @@ def mock_etherscan_for_dsr(
             elif contract_address == MAKERDAO_DAI_JOIN.address:
                 events = []
                 if topic0.startswith('0x3b4da69f'):  # join
-                    if proxy1[2:].lower() in topic1:  # deposit from acc1
+                    if proxy1_contents in topic1:  # deposit from acc1
                         if from_block <= params.account1_join1_blocknumber <= to_block:
                             events.append(account1_join1_move_event)
                         if from_block <= params.account1_join2_blocknumber <= to_block:
                             events.append(account1_join2_move_event)
-                    elif proxy2[2:].lower() in topic1:  # deposit from acc2
+                    elif proxy2_contents in topic1:  # deposit from acc2
                         if from_block <= params.account2_join1_blocknumber <= to_block:
                             events.append(account2_join1_move_event)
                 elif topic0.startswith('0xef693bed'):  # exit
