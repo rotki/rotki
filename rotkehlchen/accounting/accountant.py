@@ -304,9 +304,7 @@ class Accountant():
         if len(defi_events) != 0:
             actions.extend(defi_events)
 
-        actions.sort(
-            key=lambda action: action_get_timestamp(action),
-        )
+        actions.sort(key=action_get_timestamp)
         # The first ts is the ts of the first action we have in history or 0 for empty history
         first_ts = Timestamp(0) if len(actions) == 0 else action_get_timestamp(actions[0])
         self.currently_processing_timestamp = first_ts

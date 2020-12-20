@@ -353,7 +353,7 @@ class TradesHistorian():
                         amount=balance.amount,
                     ))
 
-        history.sort(key=lambda trade: action_get_timestamp(trade))
+        history.sort(key=action_get_timestamp)
         return (
             empty_or_error,
             history,
