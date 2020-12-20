@@ -39,6 +39,7 @@ class RotkehlchenPermissionError(Exception):
     they can decide what to do
     """
     def __init__(self, error_message: str, payload: Optional[Dict[str, Any]]) -> None:
+        super().__init__(error_message)
         self.error_message = error_message
         self.message_payload = payload if payload is not None else {}
 
