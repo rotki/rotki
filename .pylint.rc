@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    unsupported-membership-test,
     confusing-with-statement,
     no-else-break,
     method-hidden,
