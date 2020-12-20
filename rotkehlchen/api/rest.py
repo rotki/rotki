@@ -1952,8 +1952,8 @@ class RestAPI():
         if name:
             self.rotkehlchen.data.db.purge_exchange_data(name)
         else:
-            for name in SUPPORTED_EXCHANGES:
-                self.rotkehlchen.data.db.purge_exchange_data(name)
+            for exchange_name in SUPPORTED_EXCHANGES:
+                self.rotkehlchen.data.db.purge_exchange_data(exchange_name)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
