@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    comparison-with-callable,
     import-outside-toplevel,
     redefined-outer-name,
     redefined-argument-from-local,

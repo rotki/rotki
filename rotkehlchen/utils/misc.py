@@ -132,7 +132,8 @@ def combine_dicts(
         op: Callable = operator.add,
 ) -> Union[Dict[K, V], DefaultDict[K, V]]:
     new_dict = a.copy()
-    if op == operator.sub:
+    # issue for pylint's false positive here: https://github.com/PyCQA/pylint/issues/3987
+    if op == operator.sub:  # pylint: disable=comparison-with-callable
         new_dict.update({k: -v for k, v in b.items()})  # type: ignore
     else:
         new_dict.update(b)
