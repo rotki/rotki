@@ -14,7 +14,7 @@ class RKLDecoder(json.JSONDecoder):
         kwargs['object_hook'] = self.object_hook
         json.JSONDecoder.__init__(self, *args, **kwargs)
 
-    def object_hook(self, obj: DecodableValue) -> DecodedValue:  # pylint: disable=no-self-use
+    def object_hook(self, obj: DecodableValue) -> DecodedValue:  # pylint: disable=no-self-use,method-hidden  # noqa: E501
         return rkl_decode_value(obj)
 
 
