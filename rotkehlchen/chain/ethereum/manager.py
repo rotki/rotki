@@ -614,13 +614,13 @@ class EthereumManager():
                 tx_receipt['status'] = int(tx_receipt['status'], 16)
                 tx_index = int(tx_receipt['transactionIndex'], 16)
                 tx_receipt['transactionIndex'] = tx_index
-                for log in tx_receipt['logs']:
-                    log['blockNumber'] = block_number
-                    log['logIndex'] = deserialize_int_from_hex(
-                        symbol=log['logIndex'],
+                for receipt_log in tx_receipt['logs']:
+                    receipt_log['blockNumber'] = block_number
+                    receipt_log['logIndex'] = deserialize_int_from_hex(
+                        symbol=receipt_log['logIndex'],
                         location='etherscan tx receipt',
                     )
-                    log['transactionIndex'] = tx_index
+                    receipt_log['transactionIndex'] = tx_index
             except (DeserializationError, ValueError) as e:
                 raise RemoteError(
                     f'Couldnt deserialize transaction receipt data from etherscan {tx_receipt}',

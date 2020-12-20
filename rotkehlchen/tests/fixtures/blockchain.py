@@ -14,36 +14,36 @@ from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
 
 
-@pytest.fixture
-def number_of_eth_accounts():
+@pytest.fixture(name='number_of_eth_accounts')
+def fixture_number_of_eth_accounts():
     return 4
 
 
-@pytest.fixture
-def ethereum_accounts(number_of_eth_accounts) -> List[ChecksumEthAddress]:
+@pytest.fixture(name='ethereum_accounts')
+def fixture_ethereum_accounts(number_of_eth_accounts) -> List[ChecksumEthAddress]:
     return [make_ethereum_address() for x in range(number_of_eth_accounts)]
 
 
-@pytest.fixture
-def btc_accounts() -> List[BTCAddress]:
+@pytest.fixture(name='btc_accounts')
+def fixture_btc_accounts() -> List[BTCAddress]:
     return []
 
 
-@pytest.fixture
-def blockchain_accounts(
+@pytest.fixture(name='blockchain_accounts')
+def fixture_blockchain_accounts(
         ethereum_accounts: List[ChecksumEthAddress],
         btc_accounts: List[BTCAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(eth=ethereum_accounts, btc=btc_accounts.copy())
 
 
-@pytest.fixture
-def ethrpc_endpoint() -> Optional[str]:
+@pytest.fixture(name='ethrpc_endpoint')
+def fixture_ethrpc_endpoint() -> Optional[str]:
     return None
 
 
-@pytest.fixture
-def ethereum_manager_connect_at_start() -> Sequence[NodeName]:
+@pytest.fixture(name='ethereum_manager_connect_at_start')
+def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
     return ()
 
 
@@ -52,13 +52,13 @@ def all_eth_tokens() -> List[EthTokenInfo]:
     return AssetResolver().get_all_eth_token_info()
 
 
-@pytest.fixture
-def etherscan(database, messages_aggregator):
+@pytest.fixture(name='etherscan')
+def fixture_etherscan(database, messages_aggregator):
     return Etherscan(database=database, msg_aggregator=messages_aggregator)
 
 
-@pytest.fixture
-def ethereum_manager(
+@pytest.fixture(name='ethereum_manager')
+def fixture_ethereum_manager(
         etherscan,
         messages_aggregator,
         ethrpc_endpoint,
@@ -87,13 +87,13 @@ def ethereum_manager(
     return manager
 
 
-@pytest.fixture
-def ethereum_modules() -> List[str]:
+@pytest.fixture(name='ethereum_modules')
+def fixture_ethereum_modules() -> List[str]:
     return []
 
 
-@pytest.fixture
-def beaconchain(database, messages_aggregator):
+@pytest.fixture(name='beaconchain')
+def fixture_beaconchain(database, messages_aggregator):
     return BeaconChain(database=database, msg_aggregator=messages_aggregator)
 
 

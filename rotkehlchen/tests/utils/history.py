@@ -327,7 +327,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             )
         return MockResponse(200, payload)
 
-    def mock_bittrex_api_queries(url, method, json):  # pylint: disable=unused-argument
+    def mock_bittrex_api_queries(url, method, json):  # pylint: disable=unused-argument,redefined-outer-name  # noqa: E501
         if remote_errors:
             payload = invalid_payload
         elif 'orders/closed' in url:

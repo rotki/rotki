@@ -5,8 +5,8 @@ import pytest
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 
 
-@pytest.fixture(scope='session')
-def session_beaconchain(messages_aggregator):
+@pytest.fixture(scope='session', name='session_beaconchain')
+def fixture_session_beaconchain(messages_aggregator):
     return BeaconChain(database=None, msg_aggregator=messages_aggregator)
 
 

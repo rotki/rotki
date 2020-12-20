@@ -3,8 +3,8 @@ import pytest
 from rotkehlchen.tests.utils.exchanges import create_test_coinbasepro
 
 
-@pytest.fixture(scope='session')
-def coinbasepro_passphrase():
+@pytest.fixture(scope='session', name='coinbasepro_passphrase')
+def fixture_coinbasepro_passphrase():
     return 'supersecretpassphrase'
 
 

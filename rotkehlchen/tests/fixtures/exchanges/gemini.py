@@ -29,18 +29,18 @@ def mock_gemini(
     return gemini
 
 
-@pytest.fixture
-def gemini_sandbox_api_key():
+@pytest.fixture(name='gemini_sandbox_api_key')
+def fixture_gemini_sandbox_api_key():
     return SANDBOX_GEMINI_API_KEY
 
 
-@pytest.fixture
-def gemini_sandbox_api_secret():
+@pytest.fixture(name='gemini_sandbox_api_secret')
+def fixture_gemini_sandbox_api_secret():
     return SANDBOX_GEMINI_API_SECRET
 
 
-@pytest.fixture
-def gemini_test_base_uri():
+@pytest.fixture(name='gemini_test_base_uri')
+def fixture_gemini_test_base_uri():
     return 'https://api.sandbox.gemini.com'
 
 

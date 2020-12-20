@@ -50,6 +50,7 @@ enable=
     no-else-return,
     raise-missing-from,
     useless-return,
+    redefined-outer-name,
     redefined-argument-from-local,
     useless-super-delegation,
     super-init-not-called,

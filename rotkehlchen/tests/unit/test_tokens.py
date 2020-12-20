@@ -10,8 +10,8 @@ from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 
 
-@pytest.fixture
-def ethtokens(ethereum_manager, database):
+@pytest.fixture(name='ethtokens')
+def fixture_ethtokens(ethereum_manager, database):
     return EthTokens(database, ethereum_manager)
 
 

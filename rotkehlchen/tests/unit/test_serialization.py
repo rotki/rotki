@@ -40,7 +40,7 @@ def test_rlk_jsonloads():
     }
 
 
-data = {
+TEST_DATA = {
     'a': FVal('5.4'),
     'b': 'foo',
     'c': FVal('32.1'),
@@ -52,7 +52,7 @@ data = {
 
 
 def test_rlk_jsondumps():
-    result = rlk_jsondumps(data)
+    result = rlk_jsondumps(TEST_DATA)
     assert result == (
         '{"a": "5.4", "b": "foo", "c": "32.1", "d": 5, '
         '"e": [1, "a", "5.1"], "f": "ETH", "BTC": "test_with_asset_key"}'
@@ -62,7 +62,7 @@ def test_rlk_jsondumps():
 def test_pretty_json_dumps():
     """Simply test that pretty json dumps also works. That means that sorting
     of all serializable assets is enabled"""
-    result = pretty_json_dumps(data)
+    result = pretty_json_dumps(TEST_DATA)
     assert result
 
 

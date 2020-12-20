@@ -10,8 +10,8 @@ from rotkehlchen.typing import BlockchainAccountData, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-@pytest.fixture
-def setup_db_for_xpub_tests(data_dir, username):
+@pytest.fixture(name='setup_db_for_xpub_tests')
+def fixture_setup_db_for_xpub_tests(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)

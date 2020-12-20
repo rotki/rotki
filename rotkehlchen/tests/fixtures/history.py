@@ -9,13 +9,13 @@ from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 TEST_HISTORY_DATA_START = "01/01/2015"
 
 
-@pytest.fixture
-def cryptocompare(data_dir, database):
+@pytest.fixture(name='cryptocompare')
+def fixture_cryptocompare(data_dir, database):
     return Cryptocompare(data_directory=data_dir, database=database)
 
 
-@pytest.fixture(scope='session')
-def session_cryptocompare(session_data_dir, session_database):
+@pytest.fixture(scope='session', name='session_cryptocompare')
+def fixture_session_cryptocompare(session_data_dir, session_database):
     return Cryptocompare(data_directory=session_data_dir, database=session_database)
 
 

@@ -23,31 +23,31 @@ from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 
 
-@pytest.fixture
-def start_with_logged_in_user():
+@pytest.fixture(name='start_with_logged_in_user')
+def fixture_start_with_logged_in_user():
     return True
 
 
-@pytest.fixture(scope='session')
-def session_start_with_logged_in_user():
+@pytest.fixture(scope='session', name='session_start_with_logged_in_user')
+def fixture_session_start_with_logged_in_user():
     return True
 
 
-@pytest.fixture
-def start_with_valid_premium():
+@pytest.fixture(name='start_with_valid_premium')
+def fixture_start_with_valid_premium():
     return False
 
 
-@pytest.fixture
-def rotki_premium_credentials() -> PremiumCredentials:
+@pytest.fixture(name='rotki_premium_credentials')
+def fixture_rotki_premium_credentials() -> PremiumCredentials:
     return PremiumCredentials(
         given_api_key=base64.b64encode(make_random_b64bytes(128)).decode(),
         given_api_secret=base64.b64encode(make_random_b64bytes(128)).decode(),
     )
 
 
-@pytest.fixture()
-def cli_args(data_dir, ethrpc_endpoint):
+@pytest.fixture(name='cli_args')
+def fixture_cli_args(data_dir, ethrpc_endpoint):
     args = namedtuple('args', [
         'sleep_secs',
         'data_dir',
@@ -142,8 +142,8 @@ def initialize_mock_rotkehlchen_instance(
         aave.use_graph = aave_use_graph
 
 
-@pytest.fixture()
-def uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver):  # pylint: disable=unused-argument  # noqa: E501
+@pytest.fixture(name='uninitialized_rotkehlchen')
+def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver):  # pylint: disable=unused-argument  # noqa: E501
     """A rotkehlchen instance that has only had __init__ run but is not unlocked
 
     Adding the inquirer fixture as a requirement to make sure that any mocking that
@@ -163,8 +163,8 @@ def uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver):  # pylint: di
     return rotki
 
 
-@pytest.fixture()
-def rotkehlchen_api_server(
+@pytest.fixture(name='rotkehlchen_api_server')
+def fixture_rotkehlchen_api_server(
         uninitialized_rotkehlchen,
         api_port,
         start_with_logged_in_user,

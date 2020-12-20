@@ -9,8 +9,8 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import EthereumTransaction, ExternalService, ExternalServiceApiCredentials
 
 
-@pytest.fixture(scope='function')
-def temp_etherscan(function_scope_messages_aggregator, tmpdir_factory):
+@pytest.fixture(scope='function', name='temp_etherscan')
+def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory):
     directory = tmpdir_factory.mktemp('data')
     db = DBHandler(
         user_data_dir=directory,
