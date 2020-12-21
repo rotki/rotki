@@ -5,6 +5,7 @@ Changelog
 * :bug:`1287` Querying bitmex balances should now work properly again.
 * :bug:`1916` Querying bitstamp trades should now work properly again.
 * :bug:`1917` Users can now properly login if they input the username after the password.
+* :bug:`1953` Show a proper error when a user inputs an invalid xpub or derivation path.
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
