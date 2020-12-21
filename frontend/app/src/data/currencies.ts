@@ -1,6 +1,6 @@
 import { Currency } from '@/model/currency';
 
-const CURRENCY_USD = 'USD';
+export const CURRENCY_USD = 'USD';
 const CURRENCY_EUR = 'EUR';
 const CURRENCY_GBP = 'GBP';
 const CURRENCY_JPY = 'JPY';

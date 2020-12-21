@@ -1,16 +1,13 @@
 <template>
   <v-card>
-    <v-alert color="error" icon="fa-warning" outlined prominent>
-      <span class="font-weight-medium">
-        There was an error loading the component.
-      </span>
-      <p class="mt-1">
-        This might indicate a problem with the premium component service.
-      </p>
-      <p>
-        Please try again later.
-      </p>
-      <p>If the problem persists open an issue in our issue tracker.</p>
+    <v-alert color="error" icon="mdi-alert" outlined prominent>
+      <span
+        class="font-weight-medium"
+        v-text="$t('premium_loading_failed.title')"
+      />
+      <p class="mt-1" v-text="$t('premium_loading_failed.description')" />
+      <p v-text="$t('premium_loading_failed.try_again')" />
+      <p v-text="$t('premium_loading_failed.open_issue')" />
     </v-alert>
   </v-card>
 </template>

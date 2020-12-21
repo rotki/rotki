@@ -2,32 +2,32 @@
   <v-row no-gutters>
     <v-col>
       <v-card>
-        <v-card-title>User Account & Security</v-card-title>
+        <v-card-title v-text="$t('change_password.title')" />
         <v-form ref="form">
           <v-card-text>
-            <v-alert v-if="premiumSync" type="warning" prominent outlined>
-              Changing the password with premium sync enabled will affect other
-              synced instances of the application. Upon login with other synced
-              instances, you will be asked to overwrite the local DB with the
-              synced version on the server. After that, you must log in with the
-              newly set password.
-            </v-alert>
+            <v-alert
+              v-if="premiumSync"
+              type="warning"
+              prominent
+              outlined
+              v-text="$t('change_password.sync_warning')"
+            />
             <revealable-input
               v-model="currentPassword"
               class="user-security-settings__fields__current-password"
-              label="Current Password"
+              :label="$t('change_password.labels.password')"
               :rules="passwordRules"
             />
             <revealable-input
               v-model="newPassword"
               class="user-security-settings__fields__new-password"
-              label="New Password"
+              :label="$t('change_password.labels.new_password')"
               :rules="passwordRules"
             />
             <revealable-input
               v-model="newPasswordConfirm"
               class="user-security-settings__fields__new-password-confirm"
-              label="Confirm New Password"
+              :label="$t('change_password.labels.confirm_password')"
               prepend-icon="mdi-repeat"
               :rules="passwordConfirmRules"
               :error-messages="errorMessages"
@@ -46,9 +46,8 @@
                 )
               "
               @click="change()"
-            >
-              Change Password
-            </v-btn>
+              v-text="$t('change_password.button')"
+            />
           </v-card-actions>
         </v-form>
       </v-card>
@@ -84,9 +83,13 @@ export default class ChangePassword extends Vue {
   premiumSync!: string;
   changePassword!: (payload: ChangePasswordPayload) => Promise<ActionStatus>;
 
-  readonly passwordRules = [(v: string) => !!v || 'Please provide a password'];
+  readonly passwordRules = [
+    (v: string) =>
+      !!v || this.$t('change_password.validation.empty_password').toString()
+  ];
   readonly passwordConfirmRules = [
-    (v: string) => !!v || 'Please provide a password confirmation'
+    (v: string) =>
+      !!v || this.$t('change_password.validation.empty_confirmation').toString()
   ];
 
   private updateConfirmationError() {
@@ -94,7 +97,7 @@ export default class ChangePassword extends Vue {
       return;
     }
     this.errorMessages.push(
-      'The password confirmation does not match the provided password'
+      this.$t('change_password.validation.password_missmatch').toString()
     );
   }
 

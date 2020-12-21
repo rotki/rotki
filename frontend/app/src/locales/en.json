@@ -2,6 +2,34 @@
   "adex_page": {
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
+  "asset_balances": {
+    "headers": {
+      "amount": "Amount",
+      "asset": "Asset",
+      "value": "{symbol} Value"
+    },
+    "loading": "Please wait while rotki queries the blockchain...",
+    "total": "Total"
+  },
+  "blockchain_account_selector": {
+    "default_label": "Filter account(s)",
+    "hint": "Showing results across {hintText} accounts."
+  },
+  "change_password": {
+    "button": "Change Password",
+    "labels": {
+      "confirm_password": "Confirm New Password",
+      "new_password": "New Password",
+      "password": "Current Password"
+    },
+    "sync_warning": "Changing the password with premium sync enabled will affect other synced instances of the application. Upon login with other synced instances, you will be asked to overwrite the local DB with the synced version on the server. After that, you must log in with the newly set password.",
+    "title": "User Account & Security",
+    "validation": {
+      "empty_confirmation": "Please provide a password confirmation",
+      "empty_password": "Please provide a password",
+      "password_missmatch": "The password confirmation does not match the provided password"
+    }
+  },
   "create_account": {
     "title": "Create Account",
     "select_credentials": {
@@ -73,6 +101,11 @@
   },
   "defi_overview": {
     "multiple_assets": "Multiple assets"
+  },
+  "defi_protocol_selector": {
+    "filter_all": "Showing all results",
+    "filter_specific": "Showing results for selected protocol",
+    "label": "Filter protocol(s)"
   },
   "defi_settings": {
     "active_modules": "Active Defi modules",
@@ -170,8 +203,27 @@
     "no_messages": "No messages!",
     "title": "Notifications"
   },
+  "premium_loading_failed": {
+    "description": "This might indicate a problem with the premium component service.",
+    "open_issue": "If the problem persists open an issue in our issue tracker.",
+    "title": "There was an error loading the component.",
+    "try_again": "Please try again later."
+  },
+  "premium_lock": {
+    "tooltip": "Feature is only supported with a premium subscription"
+  },
   "progress_indicator": {
     "no_tasks": "No running tasks"
+  },
+  "progress_screen": {
+    "progress": "{progress} %"
+  },
+  "service_key": {
+    "actions": {
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "save": "Save"
+    }
   },
   "tag_creator": {
     "buttons": {
