@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1955` Users can now set their main currency to Swiss Franc.
 * :feature:`1270` Users can now set their main currency to ETH or BTC and see everything in that currency. Their net value, the valueof each asset they own, value of each trade, event e.t.c.
 * :feature:`1515` Rotki now supports Binance US. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`1838` Allow users to input a beaconcha.in API key for better request limits: https://beaconcha.in/pricing
