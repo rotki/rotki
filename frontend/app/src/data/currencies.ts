@@ -15,6 +15,7 @@ const CURRENCY_ZAR = 'ZAR';
 const CURRENCY_TRY = 'TRY';
 const CURRENCY_BTC = 'BTC';
 const CURRENCY_ETH = 'ETH';
+const CURRENCY_CHF = 'CHF';
 
 const SUPPORTED_CURRENCIES = [
   CURRENCY_USD,
@@ -30,6 +31,7 @@ const SUPPORTED_CURRENCIES = [
   CURRENCY_RUB,
   CURRENCY_ZAR,
   CURRENCY_TRY,
+  CURRENCY_CHF,
   CURRENCY_BTC,
   CURRENCY_ETH
 ] as const;
@@ -50,6 +52,7 @@ export const currencies: Currency[] = [
   new Currency('Russian Ruble', CURRENCY_RUB, '₽'),
   new Currency('South African Rand', CURRENCY_ZAR, 'R'),
   new Currency('Turkish Lira', CURRENCY_TRY, '₺'),
+  new Currency('Swiss Franc', CURRENCY_CHF, 'Fr.'),
   new Currency('Bitcoin', CURRENCY_BTC, '₿'),
   new Currency('Ether', CURRENCY_ETH, 'Ξ')
 ];
