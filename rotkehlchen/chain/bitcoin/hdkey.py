@@ -164,7 +164,7 @@ class HDKey():
         try:
             xpub_bytes = b58decode(xpub)
         except ValueError as e:
-            raise XPUBError('Given XPUB {xpub} is not b58 encoded') from e
+            raise XPUBError(f'Given XPUB {xpub} is not b58 encoded') from e
 
         if len(xpub_bytes) < 78:
             raise XPUBError(f'Given XPUB {xpub} is too small')
