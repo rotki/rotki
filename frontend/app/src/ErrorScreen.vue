@@ -1,32 +1,33 @@
 <template>
   <div class="error-screen">
     <div>
-      <v-icon size="120" color="error">fa-exclamation-circle</v-icon>
+      <v-icon size="120" color="error">mdi-alert-circle</v-icon>
     </div>
     <div class="error-screen__title">
-      <div class="text-h1">Rotki failed to start</div>
+      <div class="text-h1" v-text="$t('error_screen.start_failure')" />
     </div>
 
-    <v-btn depressed color="primary" @click="terminate()">
-      Terminate
-    </v-btn>
+    <v-btn
+      depressed
+      color="primary"
+      @click="terminate()"
+      v-text="$t('error_screen.terminate')"
+    />
 
     <v-card outlined class="error-screen__message mt-3">
       <v-card-title>
-        There is a problem with the backend. <v-spacer />
+        <span v-text="$t('error_screen.backend_error')" />
+        <v-spacer />
         <v-tooltip top>
           <template #activator="{ on, attrs }">
             <v-btn v-bind="attrs" icon v-on="on" @click="copy()">
-              <v-icon>fa-copy</v-icon>
+              <v-icon>mdi-content-copy</v-icon>
             </v-btn>
           </template>
-          <span>Copy the error text to the clipboard</span>
+          <span v-text="$t('error_screen.copy_tooltip')" />
         </v-tooltip>
       </v-card-title>
-      <v-card-subtitle>
-        Open an issue in Github and include rotki_electron.log and
-        rotkehlchen.log. The backend's output follows below:
-      </v-card-subtitle>
+      <v-card-subtitle v-text="$t('error_screen.message')" />
       <v-card-text class="font-weight-light error-screen__description">
         <pre class="font-weight-regular text-caption">{{ message }}</pre>
         <textarea

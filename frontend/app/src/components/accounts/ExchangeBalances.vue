@@ -1,6 +1,6 @@
 <template>
   <v-card class="exchange-balances mt-8">
-    <v-card-title>Exchange Balances</v-card-title>
+    <v-card-title v-text="$t('exchange_balances.title')" />
     <v-card-text>
       <v-btn
         absolute
@@ -26,7 +26,7 @@
             filled
             :items="connectedExchanges"
             hide-details
-            label="Select Exchange"
+            :label="$t('exchange_balances.select_exchange')"
             class="exchange-balances__content__select"
             @change="openExchangeDetails"
           >
@@ -130,18 +130,21 @@
             v-if="exchange"
             :balances="exchangeBalances(exchange)"
           />
-          <div v-else class="pa-4">
-            Select an exchange to view asset details.
-          </div>
+          <div
+            v-else
+            class="pa-4"
+            v-text="$t('exchange_balances.select_hint')"
+          />
         </v-col>
       </v-row>
       <v-row v-else>
         <v-col>
-          You do not have any connected exchanges.
-          <router-link to="/settings/api-keys/exchanges">
-            Click here
-          </router-link>
-          to set up an Exchange Connection.
+          <i18n path="exchange_balances.no_connected_exchanges">
+            <router-link
+              to="/settings/api-keys/exchanges"
+              v-text="$t('exchange_balances.click_here')"
+            />
+          </i18n>
         </v-col>
       </v-row>
     </v-card-text>
@@ -151,14 +154,12 @@
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { AssetBalance } from '@/store/balances/types';
 import { ExchangeInfo } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
-
-const { mapState, mapGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
@@ -166,8 +167,8 @@ const { mapState, mapGetters } = createNamespacedHelpers('balances');
     AmountDisplay
   },
   computed: {
-    ...mapState(['connectedExchanges']),
-    ...mapGetters(['exchangeBalances', 'exchanges'])
+    ...mapState('balances', ['connectedExchanges']),
+    ...mapGetters('balances', ['exchangeBalances', 'exchanges'])
   }
 })
 export default class ExchangeBalances extends Vue {

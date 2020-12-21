@@ -3,6 +3,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import store from '@/store/store';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
+import '../../i18n';
 
 Vue.use(Vuetify);
 

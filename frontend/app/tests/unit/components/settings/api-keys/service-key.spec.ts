@@ -3,6 +3,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import store from '@/store/store';
+import '../../../i18n';
 
 Vue.use(Vuetify);
 

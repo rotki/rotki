@@ -57,8 +57,9 @@
               :success-message="purgeAllSuccessMessage"
               :error-message="purgeAllErrorMessage"
               @click="confirmationType = 'exchanges'"
-              v-text="$t('data_management.exchange_data.purge_all_button')"
-            />
+            >
+              {{ $t('data_management.exchange_data.purge_all_button') }}
+            </status-button>
             <div
               class="title"
               v-text="$t('data_management.ethereum_transactions.title')"
@@ -71,8 +72,9 @@
               :success-message="transactionPurgeSuccessMessage"
               :error-message="transactionPurgeErrorMessage"
               @click="confirmationType = 'transactions'"
-              v-text="$t('data_management.ethereum_transactions.purge_button')"
-            />
+            >
+              {{ $t('data_management.ethereum_transactions.purge_button') }}
+            </status-button>
           </v-card-text>
         </v-form>
       </v-card>

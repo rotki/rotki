@@ -56,6 +56,10 @@
       "button_create": "Create"
     }
   },
+  "currency_drop_down": {
+    "hint": "Select as the main currency",
+    "profit_currency": "Profit Currency"
+  },
   "data_management": {
     "confirm": {
       "exchange": {
@@ -115,14 +119,55 @@
     "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
     "title": "Defi Settings"
   },
+  "defi_wizard": {
+    "steps": {
+      "select_accounts": {
+        "back": "Back",
+        "continue": "Complete",
+        "hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
+        "subtitle": "Select accounts",
+        "title": "Select accounts"
+      },
+      "select_modules": {
+        "back": "Back",
+        "continue": "Continue",
+        "hint": "If no modules are specified, querying for the supported modules will be disabled.",
+        "subtitle": "Select the modules you would like to activate.",
+        "title": "Select Modules"
+      },
+      "setup": {
+        "continue": "Continue",
+        "description_line_one": "rotki will attempt by default to retrieve information for all your accounts and available modules. The retrieval might require a lot of time based on the number of accounts you have.",
+        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Defi Settings can be changed at a later time).",
+        "description_line_two": "To reduce the query time you can specify only the DeFi modules and accounts you are interested in.",
+        "subtitle": "Select options to improve your rotki DeFi experience",
+        "title": "Setup DeFi",
+        "used_default": "Use Default"
+      }
+    }
+  },
   "dex_trade": {
     "title": "DEX Trades"
   },
   "dex_trades": {
     "loading": "@:common.loading.please_wait DEX Trades are @:common.loading.getting_loaded"
   },
+  "error_screen": {
+    "backend_error": "There is a problem with the backend.",
+    "copy_tooltip": "Copy the error text to the clipboard",
+    "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
+    "start_failure": "Rotki failed to start",
+    "terminate": "Terminate"
+  },
   "eth2page": {
     "loading": "Please wait while your eth2 staking details are getting loaded..."
+  },
+  "exchange_balances": {
+    "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
+    "click_here": "Click here",
+    "select_exchange": "Select Exchange",
+    "select_hint": "Select an exchange to view asset details.",
+    "title": "Exchange Balances"
   },
   "external_services": {
     "beaconchain": {
@@ -178,6 +223,19 @@
       "empty_start_date": "Start date cannot be empty",
       "end_after_start": "The end time should be after the start time."
     }
+  },
+  "loan_liquidation": {
+    "liquidated_collateral": "Liquidated collateral",
+    "liquidation_events": "Liquidation Events",
+    "liquidation_price": "Liquidation price",
+    "minimum_ratio": "Minimum ratio",
+    "no_events": "No liquidation events have occurred for this loan.",
+    "outstanding_debt": "Outstanding debt at liquidation",
+    "title": "Liquidation",
+    "total_value_lost": "Total value lost"
+  },
+  "message_dialog": {
+    "button": "Ok"
   },
   "node_status_indicator": {
     "connected": "Connected to an ethereum node",
@@ -955,13 +1013,19 @@
     "refresh": {
       "tooltip": "Refresh manual balances"
     },
-    "data_table": {
-      "profit_currency_header": "{currencyTicker} Value"
+    "headers": {
+      "actions": "Actions",
+      "amount": "Amount",
+      "asset": "Asset",
+      "label": "Label",
+      "location": "Location",
+      "value": "{symbol} Value"
     },
     "delete_dialog": {
       "title": "Delete manually tracked balance",
       "message": "Are you sure you want to delete this entry?"
-    }
+    },
+    "total": "Total"
   },
   "labeled_address_display": {
     "label": "{label} |",
@@ -1126,6 +1190,30 @@
   "decentralized_overview": {
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
+  },
+  "watcher_dialog": {
+    "add_error": "Error adding the watcher: {message}",
+    "add_success": "Successfully added watcher.",
+    "add_watcher": "Add watcher",
+    "close": "Close",
+    "delete_error": "Error deleting the watcher: {message}",
+    "delete_success": "Successfully deleted watcher.",
+    "edit": "Edit watchers",
+    "edit_error": "Error editing the watcher: {message}",
+    "edit_success": "Successfully edited watcher.",
+    "labels": {
+      "operation": "Operation",
+      "type": "Watcher Type"
+    },
+    "ratio": {
+      "ge": "greater than or equal to",
+      "gt": "greater than",
+      "le": "less than or equal to",
+      "lt": "less than"
+    },
+    "types": {
+      "make_collateralization_ratio": "Collateralization Ratio Watcher (Maker)"
+    }
   },
   "yearn_asset_table": {
     "title": "Yearn Vaults",

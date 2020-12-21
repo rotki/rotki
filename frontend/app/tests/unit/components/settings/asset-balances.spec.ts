@@ -5,6 +5,7 @@ import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import store from '@/store/store';
+import '../../i18n';
 
 Vue.use(Vuetify);
 
@@ -42,7 +43,7 @@ describe('AssetBalances.vue', () => {
 
     expect(wrapper.find('.v-data-table__progress').exists()).toBeTruthy();
     expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
-      'Please wait while rotki queries the blockchain...'
+      'asset_balances.loading'
     );
 
     store.commit('tasks/remove', 1);

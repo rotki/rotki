@@ -24,7 +24,7 @@
                 :items="watcherTypes"
                 dense
                 outlined
-                label="Watcher Type"
+                :label="$t('watcher_dialog.labels.type')"
                 required
               />
             </v-col>
@@ -33,9 +33,11 @@
             <v-col cols="5">
               <v-divider />
             </v-col>
-            <v-col cols="2" class="pa-0 text-center">
-              Edit watchers
-            </v-col>
+            <v-col
+              cols="2"
+              class="pa-0 text-center"
+              v-text="$t('watcher_dialog.edit')"
+            />
             <v-col cols="5">
               <v-divider />
             </v-col>
@@ -50,7 +52,7 @@
                 hide-details
                 outlined
                 dense
-                label="Operation"
+                :label="$t('watcher_dialog.labels.operation')"
                 required
                 @input="loadedWatchers[key].args.op = $event"
               />
@@ -70,14 +72,10 @@
             </v-col>
             <v-col cols="2" class="d-flex align-center justify-space-between">
               <v-btn small icon @click="editWatcher(loadedWatchers[key])">
-                <v-icon small>
-                  fa
-                  {{
-                    existingWatchersEdit[watcher.identifier]
-                      ? 'fa-check'
-                      : 'fa-pencil'
-                  }}
-                </v-icon>
+                <v-icon
+                  small
+                  v-text="existingWatchersIcon(watcher.identifier)"
+                />
               </v-btn>
               <v-btn small icon @click="deleteWatcher(watcher.identifier)">
                 <v-icon small>
@@ -90,9 +88,11 @@
             <v-col cols="5">
               <v-divider />
             </v-col>
-            <v-col cols="2" class="pa-0 text-center justify-center">
-              Add watcher
-            </v-col>
+            <v-col
+              cols="2"
+              class="pa-0 text-center justify-center"
+              v-text="$t('watcher_dialog.add_watcher')"
+            />
             <v-col cols="5">
               <v-divider />
             </v-col>
@@ -106,7 +106,7 @@
                 outlined
                 hide-details
                 :disabled="!watcherType"
-                label="Operation"
+                :label="$t('watcher_dialog.labels.operation')"
                 required
               />
             </v-col>
@@ -152,9 +152,8 @@
           color="primary"
           class="watcher-dialog__buttons__close"
           @click="cancel()"
-        >
-          Close
-        </v-btn>
+          v-text="$t('watcher_dialog.close')"
+        />
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -212,6 +211,10 @@ export default class WatcherDialog extends Vue {
     [identifier: string]: boolean;
   } = {};
 
+  existingWatchersIcon(identifier: string): string {
+    return this.existingWatchersEdit[identifier] ? 'mdi-check' : 'mdi-pencil';
+  }
+
   @Watch('display')
   onDialogToggle() {
     if (this.display) {
@@ -229,7 +232,9 @@ export default class WatcherDialog extends Vue {
 
   watcherTypes = [
     {
-      text: 'Collateralization Ratio Watcher (Maker)',
+      text: this.$t(
+        'watcher_dialog.types.make_collateralization_ratio'
+      ).toString(),
       type: 'makervault_collateralization_ratio',
       value: 'makervault_collateralization_ratio'
     }
@@ -237,10 +242,26 @@ export default class WatcherDialog extends Vue {
 
   watcherOperations = {
     makervault_collateralization_ratio: [
-      { op: 'gt', value: 'gt', text: 'greater than' },
-      { op: 'ge', value: 'ge', text: 'greater than or equal to' },
-      { op: 'lt', value: 'lt', text: 'less than' },
-      { op: 'le', value: 'le', text: 'less than or equal to' }
+      {
+        op: 'gt',
+        value: 'gt',
+        text: this.$t('watcher_dialog.ratio.gt').toString()
+      },
+      {
+        op: 'ge',
+        value: 'ge',
+        text: this.$t('watcher_dialog.ratio.ge').toString()
+      },
+      {
+        op: 'lt',
+        value: 'lt',
+        text: this.$t('watcher_dialog.ratio.lt').toString()
+      },
+      {
+        op: 'le',
+        value: 'le',
+        text: this.$t('watcher_dialog.ratio.le').toString()
+      }
     ]
   };
 
@@ -254,13 +275,18 @@ export default class WatcherDialog extends Vue {
   async deleteWatcher(identifier: string) {
     try {
       const updatedWatchers = await this.deleteWatchers([identifier]);
-      this.validateSettingChange('success', 'Successfully deleted watcher.');
+      this.validateSettingChange(
+        'success',
+        this.$t('watcher_dialog.delete_success').toString()
+      );
       this.clear();
       this.updateLoadedWatchers(updatedWatchers);
     } catch (e) {
       this.validateSettingChange(
         'error',
-        `Error deleting the watcher: ${e.message}`
+        this.$t('watcher_dialog.delete_error', {
+          message: e.message
+        }).toString()
       );
     }
   }
@@ -296,13 +322,18 @@ export default class WatcherDialog extends Vue {
       ) {
         try {
           const updatedWatchers = await this.editWatchers([watcher]);
-          this.validateSettingChange('success', 'Successfully edited watcher.');
+          this.validateSettingChange(
+            'success',
+            this.$t('watcher_dialog.edit_success').toString()
+          );
           this.changeEditMode(watcher.identifier);
           this.updateLoadedWatchers(updatedWatchers);
         } catch (e) {
           this.validateSettingChange(
             'error',
-            `Error editing the watcher: ${e.message}`
+            this.$t('watcher_dialog.edit_error', {
+              message: e.message
+            }).toString()
           );
         }
       } else {
@@ -334,13 +365,16 @@ export default class WatcherDialog extends Vue {
 
     try {
       const updatedWatchers = await this.addWatchers([watcherData]);
-      this.validateSettingChange('success', 'Successfully added watcher.');
+      this.validateSettingChange(
+        'success',
+        this.$t('watcher_dialog.add_success').toString()
+      );
       this.clear();
       this.updateLoadedWatchers(updatedWatchers);
     } catch (e) {
       this.validateSettingChange(
         'error',
-        `Error adding the watcher: ${e.message}`
+        this.$t('watcher_dialog.add_error', { message: e.message }).toString()
       );
     }
   }
