@@ -14,7 +14,7 @@
               class="mb-3 ml-1 summary-card__header__tooltip"
               v-on="on"
             >
-              fa fa-info-circle
+              mdi-information-circle
             </v-icon>
           </template>
           <div>
@@ -35,7 +35,7 @@
               @click="refresh(name)"
               v-on="on"
             >
-              <v-icon color="primary">fa-refresh</v-icon>
+              <v-icon color="primary">mdi-refresh</v-icon>
             </v-btn>
           </template>
           <span>{{ $t('summary_card.refresh_tooltip', { name }) }}</span>

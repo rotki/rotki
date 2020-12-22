@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-container>
     <v-card class="manual-balances mt-8">
       <v-card-title>{{ $t('manual_balances.title') }}</v-card-title>
       <v-card-text>
@@ -36,7 +36,7 @@
         <manual-balances-list @editBalance="edit($event)" />
       </v-card-text>
     </v-card>
-  </div>
+  </v-container>
 </template>
 
 <script lang="ts">

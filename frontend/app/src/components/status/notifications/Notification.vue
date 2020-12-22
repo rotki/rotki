@@ -80,11 +80,11 @@ export default class Notification extends Vue {
   icon(notification: NotificationData) {
     switch (notification.severity) {
       case Severity.ERROR:
-        return 'fa-exclamation-circle';
+        return 'mdi-alert-circle';
       case Severity.INFO:
-        return 'fa-info-circle';
+        return 'mdi-help-circle';
       case Severity.WARNING:
-        return 'fa-exclamation-triangle';
+        return 'mdi-alert';
     }
   }
 

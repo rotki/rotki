@@ -30,7 +30,6 @@
     "chart.js": "2.9.4",
     "core-js": "3.8.0",
     "electron-window-state": "5.0.3",
-    "font-awesome": "4.7.0",
     "lodash": "4.17.20",
     "moment": "2.29.1",
     "roboto-fontface": "*",

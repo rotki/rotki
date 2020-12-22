@@ -16,7 +16,7 @@
           :hint="hint"
           :persistent-hint="persistentHint"
           :rules="allRules"
-          append-icon="fa-clock-o"
+          append-icon="mdi-clock-outline"
           @input="input($event)"
           @click:append="setNow()"
           v-on="on"

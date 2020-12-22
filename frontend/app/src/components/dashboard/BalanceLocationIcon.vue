@@ -7,7 +7,7 @@
     :src="require(`@/assets/images/${name}.png`)"
   />
   <v-icon v-else>
-    fa fa-{{ manualBalanceIcons[name.replace(/\s+/g, '')] }}
+    mdi-{{ manualBalanceIcons[name.replace(/\s+/g, '')] }}
   </v-icon>
 </template>
 
@@ -22,9 +22,9 @@ export default class BalanceLocationIcon extends Vue {
   manualBalanceIcons = {
     external: 'book',
     banks: 'bank',
-    equities: 'suitcase',
+    equities: 'bag-suitcase',
     realestate: 'home',
-    commodities: 'shopping-basket',
+    commodities: 'basket',
     blockchain: 'link'
   };
 

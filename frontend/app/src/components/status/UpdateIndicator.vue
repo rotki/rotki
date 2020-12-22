@@ -3,7 +3,7 @@
     <template #activator="{ on }">
       <v-btn text icon @click="openLink()">
         <v-icon color="error" dark v-on="on">
-          fa fa-arrow-circle-o-up
+          mdi-arrow-up-bold-circle
         </v-icon>
       </v-btn>
     </template>

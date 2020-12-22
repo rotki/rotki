@@ -1,154 +1,156 @@
 <template>
-  <v-card class="exchange-balances mt-8">
-    <v-card-title v-text="$t('exchange_balances.title')" />
-    <v-card-text>
-      <v-btn
-        absolute
-        fab
-        top
-        right
-        dark
-        color="primary"
-        to="/settings/api-keys/exchanges"
-      >
-        <v-icon>
-          mdi-plus
-        </v-icon>
-      </v-btn>
-      <v-row
-        v-if="connectedExchanges.length > 0"
-        no-gutters
-        class="exchange-balances__content"
-      >
-        <v-col cols="12" class="hidden-md-and-up">
-          <v-select
-            v-model="selectedExchange"
-            filled
-            :items="connectedExchanges"
-            hide-details
-            :label="$t('exchange_balances.select_exchange')"
-            class="exchange-balances__content__select"
-            @change="openExchangeDetails"
-          >
-            <template #selection="{ item }">
-              <div class="exchange-balances__select__image ml-2 mr-6">
-                <v-img
-                  contain
-                  height="42"
-                  width="42"
-                  :title="exchange"
-                  :src="require(`@/assets/images/${item}.png`)"
-                  class="exchange-balances__select__icon"
-                />
-              </div>
-              <div
-                class="exchange-balances__select__item d-flex flex-column my-3"
-              >
-                <span class="exchange-balances__select__item__title text-h6">
-                  {{ item.charAt(0).toUpperCase() + item.slice(1) }}
-                </span>
-                <span
-                  class="exchange-balances__select__item__amount secondary--text text--lighten-5"
-                >
-                  <amount-display
-                    show-currency="symbol"
-                    fiat-currency="USD"
-                    :value="exchangeBalance(item)"
-                  />
-                </span>
-              </div>
-            </template>
-            <template #item="{ item }">
-              <div class="exchange-balances__select__image ml-2 mr-6">
-                <v-img
-                  contain
-                  height="42"
-                  width="42"
-                  :title="exchange"
-                  :src="require(`@/assets/images/${item}.png`)"
-                  class="exchange-balances__select__icon"
-                />
-              </div>
-              <div
-                class="exchange-balances__select__item d-flex flex-column my-3"
-              >
-                <span class="exchange-balances__select__item__title text-h6">
-                  {{ item.charAt(0).toUpperCase() + item.slice(1) }}
-                </span>
-                <span
-                  class="exchange-balances__select__item__amount secondary--text text--lighten-5"
-                >
-                  <amount-display
-                    show-currency="symbol"
-                    fiat-currency="USD"
-                    :value="exchangeBalance(item)"
-                  />
-                </span>
-              </div>
-            </template>
-          </v-select>
-        </v-col>
-        <v-col cols="2" class="hidden-sm-and-down">
-          <v-tabs
-            fixed-tabs
-            vertical
-            hide-slider
-            optional
-            class="exchange-balances__tabs"
-          >
-            <v-tab
-              v-for="(exchange, i) in connectedExchanges"
-              :key="i"
-              class="exchange-balances__tab ml-3 my-3 py-3"
-              active-class="exchange-balances__tab--active"
-              :to="`/accounts-balances/exchange-balances/${exchange}`"
-              @click="selectedExchange = exchange"
+  <v-container>
+    <v-card class="exchange-balances mt-8">
+      <v-card-title v-text="$t('exchange_balances.title')" />
+      <v-card-text>
+        <v-btn
+          absolute
+          fab
+          top
+          right
+          dark
+          color="primary"
+          to="/settings/api-keys/exchanges"
+        >
+          <v-icon>
+            mdi-plus
+          </v-icon>
+        </v-btn>
+        <v-row
+          v-if="connectedExchanges.length > 0"
+          no-gutters
+          class="exchange-balances__content"
+        >
+          <v-col cols="12" class="hidden-md-and-up">
+            <v-select
+              v-model="selectedExchange"
+              filled
+              :items="connectedExchanges"
+              hide-details
+              :label="$t('exchange_balances.select_exchange')"
+              class="exchange-balances__content__select"
+              @change="openExchangeDetails"
             >
-              <v-img
-                contain
-                height="48"
-                width="48"
-                :title="exchange"
-                :src="require(`@/assets/images/${exchange}.png`)"
-                class="exchange-balances__tab__icon"
-              />
-              <div class="exchange-balances__tab__title d-block mt-2">
-                {{ exchange }}
-              </div>
-              <div class="exchange-balances__tab__amount d-block">
-                <amount-display
-                  show-currency="symbol"
-                  fiat-currency="USD"
-                  :value="exchangeBalance(exchange)"
+              <template #selection="{ item }">
+                <div class="exchange-balances__select__image ml-2 mr-6">
+                  <v-img
+                    contain
+                    height="42"
+                    width="42"
+                    :title="exchange"
+                    :src="require(`@/assets/images/${item}.png`)"
+                    class="exchange-balances__select__icon"
+                  />
+                </div>
+                <div
+                  class="exchange-balances__select__item d-flex flex-column my-3"
+                >
+                  <span class="exchange-balances__select__item__title text-h6">
+                    {{ item.charAt(0).toUpperCase() + item.slice(1) }}
+                  </span>
+                  <span
+                    class="exchange-balances__select__item__amount secondary--text text--lighten-5"
+                  >
+                    <amount-display
+                      show-currency="symbol"
+                      fiat-currency="USD"
+                      :value="exchangeBalance(item)"
+                    />
+                  </span>
+                </div>
+              </template>
+              <template #item="{ item }">
+                <div class="exchange-balances__select__image ml-2 mr-6">
+                  <v-img
+                    contain
+                    height="42"
+                    width="42"
+                    :title="exchange"
+                    :src="require(`@/assets/images/${item}.png`)"
+                    class="exchange-balances__select__icon"
+                  />
+                </div>
+                <div
+                  class="exchange-balances__select__item d-flex flex-column my-3"
+                >
+                  <span class="exchange-balances__select__item__title text-h6">
+                    {{ item.charAt(0).toUpperCase() + item.slice(1) }}
+                  </span>
+                  <span
+                    class="exchange-balances__select__item__amount secondary--text text--lighten-5"
+                  >
+                    <amount-display
+                      show-currency="symbol"
+                      fiat-currency="USD"
+                      :value="exchangeBalance(item)"
+                    />
+                  </span>
+                </div>
+              </template>
+            </v-select>
+          </v-col>
+          <v-col cols="2" class="hidden-sm-and-down">
+            <v-tabs
+              fixed-tabs
+              vertical
+              hide-slider
+              optional
+              class="exchange-balances__tabs"
+            >
+              <v-tab
+                v-for="(exchange, i) in connectedExchanges"
+                :key="i"
+                class="exchange-balances__tab ml-3 my-3 py-3"
+                active-class="exchange-balances__tab--active"
+                :to="`/accounts-balances/exchange-balances/${exchange}`"
+                @click="selectedExchange = exchange"
+              >
+                <v-img
+                  contain
+                  height="48"
+                  width="48"
+                  :title="exchange"
+                  :src="require(`@/assets/images/${exchange}.png`)"
+                  class="exchange-balances__tab__icon"
                 />
-              </div>
-            </v-tab>
-          </v-tabs>
-        </v-col>
-        <v-col>
-          <asset-balances
-            v-if="exchange"
-            :balances="exchangeBalances(exchange)"
-          />
-          <div
-            v-else
-            class="pa-4"
-            v-text="$t('exchange_balances.select_hint')"
-          />
-        </v-col>
-      </v-row>
-      <v-row v-else>
-        <v-col>
-          <i18n path="exchange_balances.no_connected_exchanges">
-            <router-link
-              to="/settings/api-keys/exchanges"
-              v-text="$t('exchange_balances.click_here')"
+                <div class="exchange-balances__tab__title d-block mt-2">
+                  {{ exchange }}
+                </div>
+                <div class="exchange-balances__tab__amount d-block">
+                  <amount-display
+                    show-currency="symbol"
+                    fiat-currency="USD"
+                    :value="exchangeBalance(exchange)"
+                  />
+                </div>
+              </v-tab>
+            </v-tabs>
+          </v-col>
+          <v-col>
+            <asset-balances
+              v-if="exchange"
+              :balances="exchangeBalances(exchange)"
             />
-          </i18n>
-        </v-col>
-      </v-row>
-    </v-card-text>
-  </v-card>
+            <div
+              v-else
+              class="pa-4"
+              v-text="$t('exchange_balances.select_hint')"
+            />
+          </v-col>
+        </v-row>
+        <v-row v-else>
+          <v-col>
+            <i18n path="exchange_balances.no_connected_exchanges">
+              <router-link
+                to="/settings/api-keys/exchanges"
+                v-text="$t('exchange_balances.click_here')"
+              />
+            </i18n>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 
 <script lang="ts">

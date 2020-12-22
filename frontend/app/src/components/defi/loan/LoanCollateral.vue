@@ -75,7 +75,7 @@
       class="loan-collateral__watcher-button"
       @click="openWatcherDialog"
     >
-      <v-icon x-small left>fa fa-bell-o</v-icon>
+      <v-icon x-small left>mdi-bell-outline</v-icon>
       <span v-if="watchers.length > 0" class="text-caption">
         {{
           $tc('loan_collateral.watchers.edit', watchers.length, {

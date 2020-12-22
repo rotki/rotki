@@ -6,7 +6,6 @@ import '@/filters';
 import '@/main.scss';
 import { Api } from '@/plugins/api';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
-import 'font-awesome/css/font-awesome.css';
 import 'typeface-roboto-mono';
 import { Interop } from '@/plugins/interop';
 import vuetify from '@/plugins/vuetify';

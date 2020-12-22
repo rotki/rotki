@@ -26,7 +26,13 @@ export const EXCHANGE_BITSTAMP = 'bitstamp';
 export const EXCHANGE_BINANCE_US = 'binance_us';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
+
 export const TRADE_LOCATION_EXTERNAL = 'external';
+export const TRADE_LOCATION_BANKS = 'banks';
+export const TRADE_LOCATION_EQUITIES = 'equities';
+export const TRADE_LOCATION_REALESTATE = 'realestate';
+export const TRADE_LOCATION_COMMODITIES = 'commodities';
+export const TRADE_LOCATION_BLOCKCHAIN = 'blockchain';
 
 export const exchanges = [
   EXCHANGE_POLONIEX,
