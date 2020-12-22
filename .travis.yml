@@ -18,9 +18,6 @@ stages:
 
 env:
   global:
-  - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz'
-  - GETH_URL_MACOS='https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.13-225171a4.tar.gz'
-  - GETH_VERSION='1.8.13'
   - secure: GHP9nhN+M8aYU+XY7R2vzpIftCEv9J/rPnvtJZ8mcYT591Fpom8OvWFrJlHgDDVU0kGKNNE6kMcvZ4zKpOakiKzghONemclUSMotaJSTnWkdEUHi7oUFWtP/VQMv4/ywBbhrIY7R6kZzlJ0QAGh9Yl62Azlq2cal3XrURNP1ehOr5yENgg+rQwPoeqyv5lvcTbI8D5dq+7XqodKdh4toCb2BRbBzj8xPE+m71hzA3McwEBXa5Hn1A2U7HUWM74mOPV1JFoG8ED0qIHfprLWW2mwHZNYgwuLgSsyzNeqN2+jL6OIFoBSzugzfLojD9hmiAJTLI/QNR/7lXN7N/CjBlQos7aeWdaZhnVfj+ca2w0qJ1MLGz17fJWzko5UbWBWFqNF2IMBvI9VB0MXCMYVZEAns7r//ymPM4i6rVD8Tnh0vOkCoRdaM5MEGMfO8hYDKzrcava59CGJA5XjBIka3feb5fkYhUdqnvZCcbZu7upCKQXadTxFxHhKxWXjUD/yOw7o20gujVRnzcsJ51/rKy9gwbGjWh0t/6+2SgWdaM20TJDbrzTLSnI1GHwMphCHkl2vHY10uclauihdjruvh4fwIYhU+Ic1FXsvaKexCDgArOSdp5UxX/xiK/AlHu/8EKV4bg7efKxYTi+EK/sm815GaOi1AVHd/2tm7OLdkfJQ=
 
 _templates:

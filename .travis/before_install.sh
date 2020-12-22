@@ -22,5 +22,3 @@ else
     # source terryfy/travis_tools.sh
     # get_python_environment $INSTALL_TYPE $VERSION $VENV
 fi
-
-.travis/download_geth.sh
