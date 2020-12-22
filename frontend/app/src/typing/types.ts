@@ -24,6 +24,7 @@ export interface GeneralSettings {
   readonly selectedCurrency: Currency;
   readonly krakenAccountType: string;
   readonly activeModules: SupportedModules[];
+  readonly btcDerivationGapLimit: number;
 }
 
 export interface AccountingSettings {
@@ -116,7 +117,7 @@ interface SettingsPayload {
   date_display_format: string;
   thousand_separator: string;
   decimal_separator: string;
-  currency_location: GeneralSettings['currencyLocation'];
+  currency_location: CurrencyLocation;
   include_gas_costs: boolean;
   include_crypto2crypto: boolean;
   taxfree_after_period: number;
@@ -125,6 +126,7 @@ interface SettingsPayload {
   active_modules: SupportedModules[];
   frontend_settings: string;
   account_for_assets_movements: boolean;
+  btc_derivation_gap_limit: number;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';
