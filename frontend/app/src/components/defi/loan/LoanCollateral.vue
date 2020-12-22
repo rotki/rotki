@@ -167,9 +167,18 @@ export default class LoanCollateral extends Mixins(
     }
     const { collateralizationRatio, identifier, liquidationRatio } = this
       .loan as MakerDAOVaultModel;
+
+    const params = {
+      collateralizationRatio,
+      identifier,
+      liquidationRatio
+    };
     this.showWatcherDialog = true;
     this.watcherVaultId = identifier;
-    this.watcherMessage = `Add / Edit / Delete watchers for Maker Vault #${identifier} with current collateralization ratio ${collateralizationRatio} and liquidation ratio ${liquidationRatio}.`;
+    this.watcherMessage = this.$t(
+      'loan_collateral.watchers.dialog.message',
+      params
+    ).toString();
   }
 }
 </script>

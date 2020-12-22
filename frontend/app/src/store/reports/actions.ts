@@ -1,4 +1,5 @@
 import { ActionTree } from 'vuex';
+import i18n from '@/i18n';
 import { createTask } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
@@ -15,12 +16,17 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
       const result = await api.processTradeHistoryAsync(start, end);
       commit('reportPeriod', { start, end });
       const task = createTask(result.task_id, TaskType.TRADE_HISTORY, {
-        title: 'Create tax report',
+        title: i18n.t('actions.reports.generate.task.title').toString(),
         ignoreResult: false
       });
       commit('tasks/add', task, { root: true });
     } catch (e) {
-      notify(e.message, 'Trade History Report', Severity.ERROR, true);
+      notify(
+        e.message,
+        i18n.t('actions.reports.generate.error.title').toString(),
+        Severity.ERROR,
+        true
+      );
     }
   },
 
@@ -29,15 +35,15 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
     try {
       const success = await api.exportHistoryCSV(path);
       message = {
-        title: 'CSV Export',
+        title: i18n.t('actions.reports.csv_export.title').toString(),
         description: success
-          ? 'History exported to CSV successfully'
-          : 'History export failed',
+          ? i18n.t('actions.reports.csv_export.message.success').toString()
+          : i18n.t('actions.reports.csv_export.message.failure').toString(),
         success
       };
     } catch (e) {
       message = {
-        title: 'CSV Export',
+        title: i18n.t('actions.reports.csv_export.title').toString(),
         description: e.message,
         success: false
       };

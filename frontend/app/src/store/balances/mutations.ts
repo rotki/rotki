@@ -10,11 +10,7 @@ import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import { defaultState } from '@/store/balances/state';
 import { BalanceState } from '@/store/balances/types';
-import {
-  ExchangeData,
-  ExchangeInfo,
-  UsdToFiatExchangeRates
-} from '@/typing/types';
+import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
 
 export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: EthBalances) {
@@ -31,7 +27,7 @@ export const mutations: MutationTree<BalanceState> = {
   },
   usdToFiatExchangeRates(
     state: BalanceState,
-    usdToFiatExchangeRates: UsdToFiatExchangeRates
+    usdToFiatExchangeRates: ExchangeRates
   ) {
     state.usdToFiatExchangeRates = usdToFiatExchangeRates;
   },

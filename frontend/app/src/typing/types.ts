@@ -46,7 +46,7 @@ export interface Credentials {
   readonly submitUsageAnalytics?: boolean;
 }
 
-export type UsdToFiatExchangeRates = { [key: string]: number };
+export type ExchangeRates = { [key: string]: number };
 
 export interface ExchangeInfo {
   readonly name: string;

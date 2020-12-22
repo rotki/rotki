@@ -145,8 +145,10 @@ export default class ExternalServices extends Vue {
       );
     } catch (e) {
       this.$store.commit('setMessage', {
-        title: 'Error',
-        description: `Error while removing the external service api keys: ${e.message}`
+        title: this.$t('external_services.delete_error.title').toString(),
+        description: this.$t('external_services.delete_error.description', {
+          message: e.message
+        }).toString()
       } as Message);
     }
     this.loading = false;

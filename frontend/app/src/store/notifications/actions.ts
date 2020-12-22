@@ -1,4 +1,5 @@
 import { ActionTree } from 'vuex';
+import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/store/notifications/consts';
 import { NotificationState } from '@/store/notifications/state';
@@ -16,7 +17,9 @@ const unique = function (
 
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
   consume({ commit, getters, state: { data } }): any {
-    const title = 'Backend messages';
+    const title = i18n
+      .t('actions.notitifcations.consume.message_title')
+      .toString();
     api
       .consumeMessages()
       .then(value => {

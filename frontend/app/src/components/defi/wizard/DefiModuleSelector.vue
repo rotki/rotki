@@ -12,7 +12,7 @@
     :disabled="loading"
     :loading="loading"
     :open-on-clear="false"
-    label="Select modules(s)"
+    :label="$t('defi_module_selector.label')"
     item-text="name"
     item-value="identifier"
     class="defi-module-selector"

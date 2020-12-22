@@ -56,6 +56,22 @@
       "button_create": "Create"
     }
   },
+  "currencies": {
+    "aud": "Australian Dollar",
+    "brl": "Brazilian Real",
+    "cad": "Canadian Dollar",
+    "chf": "Swiss Franc",
+    "cny": "Chinese Yuan",
+    "eur": "Euro",
+    "gbp": "British Pound",
+    "jpy": "Japanese Yen",
+    "krw": "Korean Won",
+    "nzd": "New Zealand Dollar",
+    "rub": "Russian Ruble",
+    "try": "Turkish Lira",
+    "usd": "United States Dollar",
+    "zar": "South African Rand"
+  },
   "currency_drop_down": {
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
@@ -103,6 +119,9 @@
     "back": "Back",
     "next": "Next"
   },
+  "defi_module_selector": {
+    "label": "Select modules(s)"
+  },
   "defi_overview": {
     "multiple_assets": "Multiple assets"
   },
@@ -110,6 +129,9 @@
     "filter_all": "Showing all results",
     "filter_specific": "Showing results for selected protocol",
     "label": "Filter protocol(s)"
+  },
+  "defi_queriable_addres": {
+    "label": "Select address(es)"
   },
   "defi_settings": {
     "active_modules": "Active Defi modules",
@@ -188,6 +210,10 @@
       "label": "API key",
       "title": "CryptoCompare"
     },
+    "delete_error": {
+      "description": "Error while removing the external service api keys: {message}",
+      "title": "Error"
+    },
     "etherscan": {
       "delete_tooltip": "Deletes the Etherscan API key",
       "description": "Recommended for any Ethereum blockchain balances or transactions if you are not using your own node.",
@@ -233,6 +259,14 @@
     "outstanding_debt": "Outstanding debt at liquidation",
     "title": "Liquidation",
     "total_value_lost": "Total value lost"
+  },
+  "message": {
+    "error": {
+      "title": "Error"
+    },
+    "success": {
+      "title": "Success"
+    }
   },
   "message_dialog": {
     "button": "Ok"
@@ -298,6 +332,9 @@
     "validation": {
       "empty_name": "Please provide a tag name"
     }
+  },
+  "tag_filter": {
+    "label": "Filter by tag(s)"
   },
   "tag_manager": {
     "confirmation": {
@@ -654,6 +691,36 @@
         "title": "Deposits & withdrawals for {exchange}"
       }
     },
+    "notitifcations": {
+      "consume": {
+        "message_title": "Backend messages"
+      }
+    },
+    "reports": {
+      "csv_export": {
+        "message": {
+          "failure": "History export failed",
+          "success": "History exported to CSV successfully"
+        },
+        "title": "CSV Export"
+      },
+      "generate": {
+        "error": {
+          "title": "Trade History Report"
+        },
+        "task": {
+          "title": "Create tax report"
+        }
+      }
+    },
+    "statistics": {
+      "net_value": {
+        "error": {
+          "message": "Failed: {message}",
+          "title": "Retrieving net value data"
+        }
+      }
+    },
     "trades": {
       "task": {
         "title": "Trades",
@@ -803,6 +870,21 @@
       }
     },
     "balances": {
+      "all_balances": {
+        "error": {
+          "message": "Failed to fetch all balances: {message}",
+          "title": "Querying all Balances"
+        },
+        "task": {
+          "title": "Query All Balances"
+        }
+      },
+      "exchange_rates": {
+        "error": {
+          "message": "Failed fetching exchange rates: {message}",
+          "title": "Exchange Rates"
+        }
+      },
       "exchange_setup": {
         "title": "Exchange setup",
         "description": "The setup of {exchange} failed due to: {error}"
@@ -840,6 +922,39 @@
           "message": "Failed to query {name} balances: {error}"
         }
       },
+      "manual_add": {
+        "error": {
+          "title": "Adding Manual Balance"
+        }
+      },
+      "manual_balances": {
+        "error": {
+          "message": "Failed: {message}",
+          "title": "Retrieving manual balances"
+        }
+      },
+      "manual_delete": {
+        "error": {
+          "title": "Deleting Manual Balance"
+        }
+      },
+      "manual_edit": {
+        "error": {
+          "title": "Editing Manual Balance"
+        }
+      },
+      "net_value": {
+        "error": {
+          "message": "Failed to fetch net value data: {message}",
+          "title": "Retrieving net value data"
+        }
+      },
+      "supported_assets": {
+        "error": {
+          "message": "Failed to retrieve supported assets: {message}",
+          "title": "Fetching supported assets"
+        }
+      },
       "xpub_removal": {
         "task": {
           "title": "Removing xpub",
@@ -872,6 +987,27 @@
       }
     },
     "session": {
+      "add_queriable_address": {
+        "error": {
+          "message": "Failure to add a queriable address: {message}"
+        }
+      },
+      "delete_queriable_address": {
+        "error": {
+          "message": "Failure to delete a queriable address: {message}"
+        }
+      },
+      "fetch_queriable_address": {
+        "error": {
+          "message": "Failure to fetch the queriable addresses: {message}"
+        }
+      },
+      "fetch_watchers": {
+        "error": {
+          "message": "Error: {message}",
+          "title": "Fetching watchers"
+        }
+      },
       "ignored_assets": {
         "error": {
           "title": "Querying ignored assets",
@@ -882,6 +1018,45 @@
         "error": {
           "title": "Ignoring {asset}",
           "message": "Failed to ignore asset: {error}"
+        }
+      },
+      "kraken_account": {
+        "error": {
+          "title": "Error setting kraken account type"
+        },
+        "success": {
+          "message": "Successfully set kraken account type",
+          "title": "Success"
+        }
+      },
+      "password_change": {
+        "error": "Error while changing the user password",
+        "success": "Successfully changed user password"
+      },
+      "periodic_query": {
+        "error": {
+          "message": "Error at periodic client query: {message}",
+          "title": "Periodic client query"
+        }
+      },
+      "settings_update": {
+        "error": {
+          "message": "Updating settings was not successful: {message}"
+        }
+      },
+      "tag_add": {
+        "error": {
+          "title": "Adding tag"
+        }
+      },
+      "tag_delete": {
+        "error": {
+          "title": "Deleting tag"
+        }
+      },
+      "tag_edit": {
+        "error": {
+          "title": "Editing tag"
         }
       },
       "unignore_asset": {
@@ -1098,6 +1273,7 @@
       "edit": "Edit {n} collateralization watcher | Edit {n} collateralization watchers",
       "add": "Add collateralization ratio watcher",
       "dialog": {
+        "message": "Add / Edit / Delete watchers for Maker Vault #{identifier} with current collateralization ratio {collateralizationRatio} and liquidation ratio {liquidationRatio}.",
         "title": "Collateralization watchers",
         "label": "Collateralization Ratio"
       }
