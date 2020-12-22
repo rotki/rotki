@@ -28,6 +28,7 @@ DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 DEFAULT_ACTIVE_MODULES = AVAILABLE_MODULES
 DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
+DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
 
 
 class DBSettings(NamedTuple):
@@ -55,6 +56,7 @@ class DBSettings(NamedTuple):
     active_modules: List[str] = DEFAULT_ACTIVE_MODULES
     frontend_settings: str = ''
     account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
+    btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -77,6 +79,7 @@ class ModifiableDBSettings(NamedTuple):
     active_modules: Optional[List[str]] = None
     frontend_settings: Optional[str] = None
     account_for_assets_movements: Optional[bool] = None
+    btc_derivation_gap_limit: Optional[int] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -150,6 +153,8 @@ def db_settings_from_dict(
 
                 specified_args[key] = value
         elif key == 'balance_save_frequency':
+            specified_args[key] = int(value)
+        elif key == 'btc_derivation_gap_limit':
             specified_args[key] = int(value)
         elif key == 'main_currency':
             specified_args[key] = Asset(str(value))

@@ -705,6 +705,14 @@ class ModifiableSettingsSchema(Schema):
     active_modules = fields.List(fields.String(), missing=None)
     frontend_settings = fields.String(missing=None)
     account_for_assets_movements = fields.Bool(missing=None)
+    btc_derivation_gap_limit = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=1,
+            error='The bitcoin address derivation gap limit should be >= 1',
+        ),
+        missing=None,
+    )
 
     @validates_schema  # type: ignore
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -746,6 +754,7 @@ class ModifiableSettingsSchema(Schema):
             active_modules=data['active_modules'],
             frontend_settings=data['frontend_settings'],
             account_for_assets_movements=data['account_for_assets_movements'],
+            btc_derivation_gap_limit=data['btc_derivation_gap_limit'],
         )
 
 

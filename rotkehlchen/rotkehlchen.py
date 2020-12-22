@@ -267,6 +267,7 @@ class Rotkehlchen():
             eth_modules=settings.active_modules,
             data_directory=self.data_dir,
             beaconchain=self.beaconchain,
+            btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
@@ -897,6 +898,9 @@ class Rotkehlchen():
                 kraken = self.exchange_manager.get('kraken')
                 if kraken:
                     kraken.set_account_type(settings.kraken_account_type)  # type: ignore
+
+            if settings.btc_derivation_gap_limit is not None:
+                self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
 
             self.data.db.set_settings(settings)
             return True, ''
