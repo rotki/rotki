@@ -12,7 +12,7 @@
           class-name="user-dropdown secondary--text text--lighten-2"
           :on-menu="on"
         >
-          <v-icon>fa fa-user-circle</v-icon>
+          <v-icon>mdi-account-circle</v-icon>
         </menu-tooltip-button>
       </template>
       <v-list>
@@ -28,7 +28,7 @@
           to="/settings/general"
         >
           <v-list-item-avatar>
-            <v-icon color="primary">fa fa-gear</v-icon>
+            <v-icon color="primary">mdi-cog</v-icon>
           </v-list-item-avatar>
           <v-list-item-title>
             {{ $t('user_dropdown.settings') }}
@@ -54,7 +54,7 @@
           @click="confirmLogout = true"
         >
           <v-list-item-avatar>
-            <v-icon color="primary">fa fa-sign-out</v-icon>
+            <v-icon color="primary">mdi-logout-variant</v-icon>
           </v-list-item-avatar>
           <v-list-item-title>
             {{ $t('user_dropdown.logout') }}

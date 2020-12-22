@@ -3,6 +3,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import store from '@/store/store';
+import '../../i18n';
 
 Vue.use(Vuetify);
 

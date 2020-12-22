@@ -1,6 +1,7 @@
+import i18n from '@/i18n';
 import { Currency } from '@/model/currency';
 
-const CURRENCY_USD = 'USD';
+export const CURRENCY_USD = 'USD';
 const CURRENCY_EUR = 'EUR';
 const CURRENCY_GBP = 'GBP';
 const CURRENCY_JPY = 'JPY';
@@ -39,20 +40,20 @@ const SUPPORTED_CURRENCIES = [
 export type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
 
 export const currencies: Currency[] = [
-  new Currency('United States Dollar', CURRENCY_USD, '$'),
-  new Currency('Euro', CURRENCY_EUR, '€'),
-  new Currency('British Pound', CURRENCY_GBP, '£'),
-  new Currency('Japanese Yen', CURRENCY_JPY, '¥'),
-  new Currency('Chinese Yuan', CURRENCY_CNY, '¥'),
-  new Currency('Korean Won', CURRENCY_KRW, '₩'),
-  new Currency('Canadian Dollar', CURRENCY_CAD, '$'),
-  new Currency('Australian Dollar', CURRENCY_AUD, '$'),
-  new Currency('New Zealand Dollar', CURRENCY_NZD, '$'),
-  new Currency('Brazilian Real', CURRENCY_BRL, 'R$'),
-  new Currency('Russian Ruble', CURRENCY_RUB, '₽'),
-  new Currency('South African Rand', CURRENCY_ZAR, 'R'),
-  new Currency('Turkish Lira', CURRENCY_TRY, '₺'),
-  new Currency('Swiss Franc', CURRENCY_CHF, 'Fr.'),
+  new Currency(i18n.t('currencies.usd').toString(), CURRENCY_USD, '$'),
+  new Currency(i18n.t('currencies.eur').toString(), CURRENCY_EUR, '€'),
+  new Currency(i18n.t('currencies.gbp').toString(), CURRENCY_GBP, '£'),
+  new Currency(i18n.t('currencies.jpy').toString(), CURRENCY_JPY, '¥'),
+  new Currency(i18n.t('currencies.cny').toString(), CURRENCY_CNY, '¥'),
+  new Currency(i18n.t('currencies.krw').toString(), CURRENCY_KRW, '₩'),
+  new Currency(i18n.t('currencies.cad').toString(), CURRENCY_CAD, '$'),
+  new Currency(i18n.t('currencies.aud').toString(), CURRENCY_AUD, '$'),
+  new Currency(i18n.t('currencies.nzd').toString(), CURRENCY_NZD, '$'),
+  new Currency(i18n.t('currencies.brl').toString(), CURRENCY_BRL, 'R$'),
+  new Currency(i18n.t('currencies.rub').toString(), CURRENCY_RUB, '₽'),
+  new Currency(i18n.t('currencies.zar').toString(), CURRENCY_ZAR, 'R'),
+  new Currency(i18n.t('currencies.try').toString(), CURRENCY_TRY, '₺'),
+  new Currency(i18n.t('currencies.chf').toString(), CURRENCY_CHF, 'Fr.'),
   new Currency('Bitcoin', CURRENCY_BTC, '₿'),
   new Currency('Ether', CURRENCY_ETH, 'Ξ')
 ];

@@ -1,7 +1,7 @@
 <template>
   <v-form v-model="valid">
     <v-card>
-      <v-card-title>Generate</v-card-title>
+      <v-card-title v-text="$t('generate.title')" />
       <v-card-text>
         <v-row>
           <v-col cols="12">
@@ -33,9 +33,8 @@
           depressed
           :disabled="!valid || invalidRange"
           @click="generate()"
-        >
-          Generate
-        </v-btn>
+          v-text="$t('generate.generate')"
+        />
       </v-card-actions>
     </v-card>
   </v-form>
@@ -59,11 +58,13 @@ export default class Generate extends Vue {
   message: string = '';
 
   startRules: ((v: string) => boolean | string)[] = [
-    (v: string) => !!v || 'Start date cannot be empty'
+    (v: string) =>
+      !!v || this.$t('generate.validation.empty_start_date').toString()
   ];
 
   endRules: ((v: string) => boolean | string)[] = [
-    (v: string) => !!v || 'End date cannot be empty'
+    (v: string) =>
+      !!v || this.$t('generate.validation.empty_end_date').toString()
   ];
 
   private convertToTimestamp(date: string): number {
@@ -77,7 +78,7 @@ export default class Generate extends Vue {
       !!this.start &&
       !!this.end &&
       this.convertToTimestamp(this.start) > this.convertToTimestamp(this.end);
-    this.message = 'The end time should be after the start time.';
+    this.message = this.$t('generate.validation.end_after_start').toString();
   }
 
   @Watch('end')
@@ -86,7 +87,7 @@ export default class Generate extends Vue {
       !!this.start &&
       !!this.end &&
       this.convertToTimestamp(this.start) > this.convertToTimestamp(this.end);
-    this.message = 'The end time should be after the start time.';
+    this.message = this.$t('generate.validation.end_after_start').toString();
   }
 
   generate() {

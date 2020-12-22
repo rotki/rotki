@@ -1,4 +1,5 @@
 import { ActionTree } from 'vuex';
+import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -11,7 +12,15 @@ export const actions: ActionTree<StatisticsState, RotkehlchenState> = {
       const netValue = await api.queryNetvalueData();
       commit('netValue', netValue);
     } catch (e) {
-      notify(`Failed: ${e}`, 'Retrieving net value data', Severity.ERROR);
+      notify(
+        i18n
+          .t('actions.statistics.net_value.error.message', {
+            message: e.message
+          })
+          .toString(),
+        i18n.t('actions.statistics.net_value.error.title').toString(),
+        Severity.ERROR
+      );
     }
   }
 };

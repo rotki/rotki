@@ -8,7 +8,7 @@
       />
       <v-tooltip bottom max-width="400px">
         <template #activator="{ on }">
-          <v-icon small class="mb-3 ml-1" v-on="on">fa fa-info-circle</v-icon>
+          <v-icon small class="mb-3 ml-1" v-on="on">mdi-information</v-icon>
         </template>
         <span>
           {{ $t('premium_credentials.tooltip') }}

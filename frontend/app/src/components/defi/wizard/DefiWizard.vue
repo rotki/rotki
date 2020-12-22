@@ -1,54 +1,46 @@
 <template>
   <v-card>
     <v-stepper v-model="step" vertical>
-      <v-stepper-step :complete="step > 1" step="1">
-        Setup DeFi
-      </v-stepper-step>
+      <v-stepper-step
+        :complete="step > 1"
+        step="1"
+        v-text="$t('defi_wizard.steps.setup.title')"
+      />
       <v-stepper-content step="1">
         <v-card class="mb-12" height="200px" outlined color="grey lighten-4">
-          <v-card-title>
-            Select options to improve your rotki DeFi experience
-          </v-card-title>
+          <v-card-title v-text="$t('defi_wizard.steps.setup.subtitle')" />
           <v-card-text>
-            <p>
-              rotki will attempt by default to retrieve information for all your
-              accounts and available modules. The retrieval might require a lot
-              of time based on the number of accounts you have.
-            </p>
-            <p>
-              To reduce the query time you can specify only the DeFi modules and
-              accounts you are interested in.
-            </p>
-            <p>
-              You can use the default settings if you want to have information
-              for all protocols fetched for all accounts automatically. (Defi
-              Settings can be changed at a later time).
-            </p>
+            <p v-text="$t('defi_wizard.steps.setup.description_line_one')" />
+            <p v-text="$t('defi_wizard.steps.setup.description_line_two')" />
+            <p v-text="$t('defi_wizard.steps.setup.description_line_three')" />
           </v-card-text>
         </v-card>
-        <v-btn text class="defi-wizard__use-default" @click="done">
-          Use Default
-        </v-btn>
+        <v-btn
+          text
+          class="defi-wizard__use-default"
+          @click="done"
+          v-text="$t('defi_wizard.steps.setup.used_default')"
+        />
         <v-btn
           color="primary"
           class="defi-wizard__select-modules"
           @click="step = 2"
-        >
-          Continue
-        </v-btn>
+          v-text="$t('defi_wizard.steps.setup.continue')"
+        />
       </v-stepper-content>
-      <v-stepper-step :complete="step > 2" step="2">
-        Select Modules
-      </v-stepper-step>
+      <v-stepper-step
+        :complete="step > 2"
+        step="2"
+        v-text="$t('defi_wizard.steps.select_modules.title')"
+      />
       <v-stepper-content step="2">
         <v-card outlined color="grey lighten-4" class="mb-12" height="300px">
-          <v-card-title>
-            Select the modules you would like to activate.
-          </v-card-title>
-          <v-card-subtitle>
-            If no modules are specified, querying for the supported modules will
-            be disabled.
-          </v-card-subtitle>
+          <v-card-title
+            v-text="$t('defi_wizard.steps.select_modules.subtitle')"
+          />
+          <v-card-subtitle
+            v-text="$t('defi_wizard.steps.select_modules.hint')"
+          />
           <v-card-text>
             <v-row>
               <v-col>
@@ -57,32 +49,44 @@
             </v-row>
           </v-card-text>
         </v-card>
-        <v-btn text @click="step = 1">Back</v-btn>
+        <v-btn
+          text
+          @click="step = 1"
+          v-text="$t('defi_wizard.steps.select_modules.back')"
+        />
         <v-btn
           color="primary"
           class="defi-wizard__select-accounts"
           @click="step = 3"
-        >
-          Continue
-        </v-btn>
+          v-text="$t('defi_wizard.steps.select_modules.continue')"
+        />
       </v-stepper-content>
-      <v-stepper-step :complete="step > 3" step="3">
-        Select accounts
-      </v-stepper-step>
+      <v-stepper-step
+        :complete="step > 3"
+        step="3"
+        v-text="$t('defi_wizard.steps.select_accounts.title')"
+      />
       <v-stepper-content step="3">
         <v-card outlined color="grey lighten-4" class="mb-12" height="400px">
-          <v-card-title>Select accounts</v-card-title>
-          <v-card-subtitle>
-            Select accounts for which data will be retrieved for each submodule.
-            If no addresses are selected data will be retrieved for all
-            available addresses
-          </v-card-subtitle>
+          <v-card-title
+            v-text="$t('defi_wizard.steps.select_accounts.subtitle')"
+          />
+          <v-card-subtitle
+            v-text="$t('defi_wizard.steps.select_accounts.hint')"
+          />
           <defi-address-selector />
         </v-card>
-        <v-btn text @click="step = 2">Back</v-btn>
-        <v-btn color="primary" class="defi-wizard__done" @click="done()">
-          Complete
-        </v-btn>
+        <v-btn
+          text
+          @click="step = 2"
+          v-text="$t('defi_wizard.steps.select_accounts.back')"
+        />
+        <v-btn
+          color="primary"
+          class="defi-wizard__done"
+          @click="done()"
+          v-text="$t('defi_wizard.steps.select_accounts.continue')"
+        />
       </v-stepper-content>
     </v-stepper>
   </v-card>

@@ -35,7 +35,7 @@
             {{ secondaryAction }}
           </v-btn>
           <v-btn
-            :color="confirmTypeProps[confirmType].color"
+            :color="themes[confirmType].color"
             :disabled="actionDisabled"
             depressed
             class="big-dialog__buttons__confirm"
@@ -51,6 +51,8 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { themes } from '@/components/dialogs/consts';
+import { DialogThemes } from '@/components/dialogs/types';
 
 @Component({})
 export default class BigDialog extends Vue {
@@ -71,11 +73,7 @@ export default class BigDialog extends Vue {
   @Prop({ type: String, required: false, default: 'info' }) // must be one of the types defined in confirmTypesProps below
   confirmType!: string;
 
-  confirmTypeProps = {
-    info: { icon: 'fa-question-circle', color: 'primary' }, // TODO: change color: 'primary' -> 'info' when we start to use it as a variable in the new color scheme
-    warning: { icon: 'fa-warning', color: 'error' },
-    success: { icon: 'fa-check-circle', color: 'success' }
-  };
+  readonly themes: DialogThemes = themes;
 
   @Emit()
   confirm() {}

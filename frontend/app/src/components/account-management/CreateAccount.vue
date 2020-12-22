@@ -31,7 +31,7 @@
                 v-model="password"
                 class="create-account__fields__password"
                 :label="$t('create_account.select_credentials.label_password')"
-                prepend-icon="fa-lock"
+                prepend-icon="mdi-lock"
                 :rules="passwordRules"
                 :disabled="loading"
                 required

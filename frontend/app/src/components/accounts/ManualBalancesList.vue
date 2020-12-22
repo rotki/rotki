@@ -44,8 +44,8 @@
           </template>
           <template #header.usdValue>
             {{
-              $t('manual_balances_list.data_table.profit_currency_header', {
-                currencyTicker: currency.ticker_symbol
+              $t('manual_balances_list.headers.value', {
+                symbol
               })
             }}
           </template>
@@ -91,7 +91,7 @@
           </template>
           <template v-if="visibleBalances.length > 0" #body.append>
             <tr class="manual-balances-list__total">
-              <td>Total</td>
+              <td v-text="$t('manual_balances_list.total')" />
               <td />
               <td />
               <td class="text-end">
@@ -127,6 +127,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -135,6 +136,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { footerProps } from '@/config/datatable.common';
+import { CURRENCY_USD } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import {
   ManualBalance,
@@ -167,13 +169,42 @@ export default class ManualBalancesList extends Vue {
   edited: ManualBalance | null = null;
   fetchManualBalances!: () => Promise<void>;
 
-  headers = [
-    { text: 'Label', value: 'label' },
-    { text: 'Asset', value: 'asset', width: '200' },
-    { text: 'Amount', value: 'amount', align: 'end' },
-    { text: 'USD Value', value: 'usdValue', align: 'end' },
-    { text: 'Location', value: 'location' },
-    { text: 'Actions', value: 'actions', sortable: false, width: '50' }
+  get symbol(): string {
+    return this.currency.ticker_symbol;
+  }
+
+  readonly headers: DataTableHeader[] = [
+    {
+      text: this.$t('manual_balances_list.headers.label').toString(),
+      value: 'label'
+    },
+    {
+      text: this.$t('manual_balances_list.headers.asset').toString(),
+      value: 'asset',
+      width: '200'
+    },
+    {
+      text: this.$t('manual_balances_list.headers.amount').toString(),
+      value: 'amount',
+      align: 'end'
+    },
+    {
+      text: this.$t('manual_balances_list.headers.value', {
+        symbol: CURRENCY_USD
+      }).toString(),
+      value: 'usdValue',
+      align: 'end'
+    },
+    {
+      text: this.$t('manual_balances_list.headers.location').toString(),
+      value: 'location'
+    },
+    {
+      text: this.$t('manual_balances_list.headers.actions').toString(),
+      value: 'actions',
+      sortable: false,
+      width: '50'
+    }
   ];
 
   manualBalances!: ManualBalanceWithValue[];

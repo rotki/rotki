@@ -26,7 +26,7 @@
           />
         </div>
       </template>
-      <span>Number of Pending notifications</span>
+      <span v-text="$t('notification_popup.tooltip')" />
     </v-tooltip>
   </v-snackbar>
 </template>

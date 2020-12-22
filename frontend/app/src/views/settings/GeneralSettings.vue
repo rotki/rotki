@@ -43,7 +43,7 @@
                   class="general-settings__fields__historic-data-start"
                   :label="$t('general_settings.labels.historical_data_start')"
                   :hint="$t('general_settings.historic_start_hint')"
-                  prepend-icon="fa-calendar"
+                  prepend-icon="mdi-calendar"
                   :success-messages="
                     settingsMessages['historicDataStart'].success
                   "

@@ -11,7 +11,7 @@
         clearable
         chips
         :open-on-clear="false"
-        label="Filter protocol(s)"
+        :label="$t('defi_protocol_selector.label')"
         item-text="name"
         item-value="identifier"
         class="defi-protocol-selector"
@@ -27,7 +27,9 @@
     </div>
     <v-card-text>
       {{
-        value ? 'Showing results for selected protocol' : 'Showing all results'
+        value
+          ? $t('defi_protocol_selector.filter_specific')
+          : $t('defi_protocol_selector.filter_all')
       }}
     </v-card-text>
   </v-card>

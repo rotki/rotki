@@ -12,8 +12,8 @@
       </v-card-title>
       <v-row align="center" class="mx-0 confirm-dialog__body">
         <v-col cols="2" class="text-center">
-          <v-icon :color="confirmTypeProps[confirmType].color" x-large>
-            fa {{ confirmTypeProps[confirmType].icon }}
+          <v-icon :color="themes[confirmType].color" x-large>
+            {{ themes[confirmType].icon }}
           </v-icon>
         </v-col>
         <v-col cols="10">
@@ -35,7 +35,7 @@
           {{ secondaryAction }}
         </v-btn>
         <v-btn
-          :color="confirmTypeProps[confirmType].color"
+          :color="themes[confirmType].color"
           depressed
           :disabled="disabled"
           class="confirm-dialog__buttons__confirm"
@@ -50,6 +50,8 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { themes } from '@/components/dialogs/consts';
+import { DialogThemes } from '@/components/dialogs/types';
 
 @Component({})
 export default class ConfirmDialog extends Vue {
@@ -68,17 +70,13 @@ export default class ConfirmDialog extends Vue {
   @Prop({ type: Boolean, required: false, default: false })
   disabled!: boolean;
 
-  confirmTypeProps = {
-    info: { icon: 'fa-question-circle', color: 'primary' }, // TODO: change color: 'primary' -> 'info' when we start to use it as a variable in the new color scheme
-    warning: { icon: 'fa-warning', color: 'error' },
-    success: { icon: 'fa-check-circle', color: 'success' }
-  };
-
   @Emit()
   confirm() {}
 
   @Emit()
   cancel() {}
+
+  readonly themes: DialogThemes = themes;
 }
 </script>
 

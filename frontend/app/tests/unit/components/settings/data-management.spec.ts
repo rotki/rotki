@@ -7,6 +7,7 @@ import { exchanges } from '@/data/defaults';
 import { Api } from '@/plugins/api';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
+import '../../i18n';
 
 jest.mock('@/services/rotkehlchen-api');
 

@@ -2,6 +2,34 @@
   "adex_page": {
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
+  "asset_balances": {
+    "headers": {
+      "amount": "Amount",
+      "asset": "Asset",
+      "value": "{symbol} Value"
+    },
+    "loading": "Please wait while rotki queries the blockchain...",
+    "total": "Total"
+  },
+  "blockchain_account_selector": {
+    "default_label": "Filter account(s)",
+    "hint": "Showing results across {hintText} accounts."
+  },
+  "change_password": {
+    "button": "Change Password",
+    "labels": {
+      "confirm_password": "Confirm New Password",
+      "new_password": "New Password",
+      "password": "Current Password"
+    },
+    "sync_warning": "Changing the password with premium sync enabled will affect other synced instances of the application. Upon login with other synced instances, you will be asked to overwrite the local DB with the synced version on the server. After that, you must log in with the newly set password.",
+    "title": "User Account & Security",
+    "validation": {
+      "empty_confirmation": "Please provide a password confirmation",
+      "empty_password": "Please provide a password",
+      "password_missmatch": "The password confirmation does not match the provided password"
+    }
+  },
   "create_account": {
     "title": "Create Account",
     "select_credentials": {
@@ -28,12 +56,82 @@
       "button_create": "Create"
     }
   },
+  "currencies": {
+    "aud": "Australian Dollar",
+    "brl": "Brazilian Real",
+    "cad": "Canadian Dollar",
+    "chf": "Swiss Franc",
+    "cny": "Chinese Yuan",
+    "eur": "Euro",
+    "gbp": "British Pound",
+    "jpy": "Japanese Yen",
+    "krw": "Korean Won",
+    "nzd": "New Zealand Dollar",
+    "rub": "Russian Ruble",
+    "try": "Turkish Lira",
+    "usd": "United States Dollar",
+    "zar": "South African Rand"
+  },
+  "currency_drop_down": {
+    "hint": "Select as the main currency",
+    "profit_currency": "Profit Currency"
+  },
+  "data_management": {
+    "confirm": {
+      "exchange": {
+        "message": "Are you sure you want to purge the cached data for the selected exchange?",
+        "title": "Purge cached exchange data"
+      },
+      "transactions": {
+        "message": "Are you sure you want to purge the cached data for ethereum transactions?",
+        "title": "Purge ethereum transaction data"
+      },
+      "all_exchanges": {
+        "message": "Are you sure you want to purge the cached data for all the exchanges?",
+        "title": "Purge all cached exchange data"
+      }
+    },
+    "ethereum_transactions": {
+      "purge_button": "Purge transaction cache",
+      "purge_error": "Failed to purge cached ethereum transaction data: {transactionPurgeError}",
+      "purge_success": "Ethereum transaction data were successfully purged.",
+      "purge_tooltip": "Purge the cached ethereum data",
+      "title": "Ethereum Transactions"
+    },
+    "exchange_data": {
+      "purge_all_button": "Purge All Exchanges Cache",
+      "purge_all_error": "Failed to purge cached data for all the exchanges: {allExchangePurgeError}",
+      "purge_all_success": "Cached data for all the available exchanges were successfully purged.",
+      "purge_all_tooltip": "Purge all the cached exchange data. (deposits/withdrawals/trades)",
+      "purge_success": "Cached data for {exchangePurgeSuccess} were successfully purged.",
+      "purge_tooltip": "Purge cached data for the selected exchange",
+      "title": "Exchange Data"
+    },
+    "errors": {
+      "all_exchanges": "Purging the cached data for all the exchanges failed: {message}",
+      "exchange": "Purging cached data for {name} failed: {message}",
+      "transactions": "Purging ethereum transaction cached data failed: {message}"
+    },
+    "subtitle": "Allows you to purge data cached by rotki",
+    "title": "Manage Data"
+  },
   "defi_address_selector": {
     "back": "Back",
     "next": "Next"
   },
+  "defi_module_selector": {
+    "label": "Select modules(s)"
+  },
   "defi_overview": {
     "multiple_assets": "Multiple assets"
+  },
+  "defi_protocol_selector": {
+    "filter_all": "Showing all results",
+    "filter_specific": "Showing results for selected protocol",
+    "label": "Filter protocol(s)"
+  },
+  "defi_queriable_addres": {
+    "label": "Select address(es)"
   },
   "defi_settings": {
     "active_modules": "Active Defi modules",
@@ -43,14 +141,55 @@
     "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
     "title": "Defi Settings"
   },
+  "defi_wizard": {
+    "steps": {
+      "select_accounts": {
+        "back": "Back",
+        "continue": "Complete",
+        "hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
+        "subtitle": "Select accounts",
+        "title": "Select accounts"
+      },
+      "select_modules": {
+        "back": "Back",
+        "continue": "Continue",
+        "hint": "If no modules are specified, querying for the supported modules will be disabled.",
+        "subtitle": "Select the modules you would like to activate.",
+        "title": "Select Modules"
+      },
+      "setup": {
+        "continue": "Continue",
+        "description_line_one": "rotki will attempt by default to retrieve information for all your accounts and available modules. The retrieval might require a lot of time based on the number of accounts you have.",
+        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Defi Settings can be changed at a later time).",
+        "description_line_two": "To reduce the query time you can specify only the DeFi modules and accounts you are interested in.",
+        "subtitle": "Select options to improve your rotki DeFi experience",
+        "title": "Setup DeFi",
+        "used_default": "Use Default"
+      }
+    }
+  },
   "dex_trade": {
     "title": "DEX Trades"
   },
   "dex_trades": {
     "loading": "@:common.loading.please_wait DEX Trades are @:common.loading.getting_loaded"
   },
+  "error_screen": {
+    "backend_error": "There is a problem with the backend.",
+    "copy_tooltip": "Copy the error text to the clipboard",
+    "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
+    "start_failure": "Rotki failed to start",
+    "terminate": "Terminate"
+  },
   "eth2page": {
     "loading": "Please wait while your eth2 staking details are getting loaded..."
+  },
+  "exchange_balances": {
+    "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
+    "click_here": "Click here",
+    "select_exchange": "Select Exchange",
+    "select_hint": "Select an exchange to view asset details.",
+    "title": "Exchange Balances"
   },
   "external_services": {
     "beaconchain": {
@@ -70,6 +209,10 @@
       "hint": "Enter your CryptoCompare API key",
       "label": "API key",
       "title": "CryptoCompare"
+    },
+    "delete_error": {
+      "description": "Error while removing the external service api keys: {message}",
+      "title": "Error"
     },
     "etherscan": {
       "delete_tooltip": "Deletes the Etherscan API key",
@@ -97,6 +240,140 @@
     "select_file": "Select file",
     "many_files_selected": "One one csv file must be selected",
     "only_csv": "Only csv files are allowed"
+  },
+  "generate": {
+    "generate": "Generate",
+    "title": "Generate",
+    "validation": {
+      "empty_end_date": "End date cannot be empty",
+      "empty_start_date": "Start date cannot be empty",
+      "end_after_start": "The end time should be after the start time."
+    }
+  },
+  "loan_liquidation": {
+    "liquidated_collateral": "Liquidated collateral",
+    "liquidation_events": "Liquidation Events",
+    "liquidation_price": "Liquidation price",
+    "minimum_ratio": "Minimum ratio",
+    "no_events": "No liquidation events have occurred for this loan.",
+    "outstanding_debt": "Outstanding debt at liquidation",
+    "title": "Liquidation",
+    "total_value_lost": "Total value lost"
+  },
+  "message": {
+    "error": {
+      "title": "Error"
+    },
+    "success": {
+      "title": "Success"
+    }
+  },
+  "message_dialog": {
+    "button": "Ok"
+  },
+  "node_status_indicator": {
+    "connected": "Connected to an ethereum node",
+    "disconnected": "Not connected to an ethereum node"
+  },
+  "notification": {
+    "copy_tooltip": "Copy the message to clipboard",
+    "dismiss_tooltip": "Dismiss Notification"
+  },
+  "notification_indicator": {
+    "tooltip": "Notifications"
+  },
+  "notification_popup": {
+    "tooltip": "Number of Pending notifications"
+  },
+  "notification_sidebar": {
+    "clear_tooltip": "Clear all notifications",
+    "close_tooltip": "Close the notification area",
+    "confirmation": {
+      "message": "This action will clear all the active notifications. Do you want to proceed?",
+      "title": "Clear active notifications"
+    },
+    "no_messages": "No messages!",
+    "title": "Notifications"
+  },
+  "premium_loading_failed": {
+    "description": "This might indicate a problem with the premium component service.",
+    "open_issue": "If the problem persists open an issue in our issue tracker.",
+    "title": "There was an error loading the component.",
+    "try_again": "Please try again later."
+  },
+  "premium_lock": {
+    "tooltip": "Feature is only supported with a premium subscription"
+  },
+  "progress_indicator": {
+    "no_tasks": "No running tasks"
+  },
+  "progress_screen": {
+    "progress": "{progress} %"
+  },
+  "service_key": {
+    "actions": {
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "save": "Save"
+    }
+  },
+  "tag_creator": {
+    "buttons": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "labels": {
+      "background": "Background",
+      "description": "Description",
+      "foreground": "Foreground",
+      "name": "Name"
+    },
+    "refresh_tooltip": "Creates a random color combination",
+    "validation": {
+      "empty_name": "Please provide a tag name"
+    }
+  },
+  "tag_filter": {
+    "label": "Filter by tag(s)"
+  },
+  "tag_manager": {
+    "confirmation": {
+      "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
+      "title": "Confirm tag deletion"
+    },
+    "headers": {
+      "actions": "Actions",
+      "description": "Description",
+      "name": "Name"
+    },
+    "my_tags": "My Tags",
+    "search": "Search",
+    "subtitle": "Create new tags or modify existing",
+    "title": "Tag Manager"
+  },
+  "tax_report_events": {
+    "headers": {
+      "location": "Location",
+      "paid_asset": "Paid Asset",
+      "paid_in": "Paid in {currency}",
+      "paid_in_asset": "Paid in Asset",
+      "received_asset": "Received Asset",
+      "received_in_asset": "Received in Asset",
+      "taxable_amount": "Taxable Amount",
+      "taxable_bought_cost_in": "Taxable Bought Cost in {currency}",
+      "taxable_received_in": "Taxable Received in {currency}",
+      "time": "Time",
+      "type": "Type",
+      "virtual": "Virtual?"
+    },
+    "title": "Events"
+  },
+  "tax_report_overview": {
+    "columns": {
+      "result": "Result",
+      "value": "{symbol} value"
+    },
+    "title": "Overview"
   },
  "timeframe_settings": {
    "default_timeframe": "Dashboard graph default timeframe",
@@ -341,6 +618,9 @@
       "subtitle": "Protocol asset details"
     }
   },
+  "update_indicator": {
+    "version": "An Updated Version ({appVersion}) of Rotki is available"
+  },
   "upgrade_row": {
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
     "rotki_premium": "rotki Premium"
@@ -409,6 +689,36 @@
       "error": {
         "description": "Failed query for {exchange}: {error}",
         "title": "Deposits & withdrawals for {exchange}"
+      }
+    },
+    "notitifcations": {
+      "consume": {
+        "message_title": "Backend messages"
+      }
+    },
+    "reports": {
+      "csv_export": {
+        "message": {
+          "failure": "History export failed",
+          "success": "History exported to CSV successfully"
+        },
+        "title": "CSV Export"
+      },
+      "generate": {
+        "error": {
+          "title": "Trade History Report"
+        },
+        "task": {
+          "title": "Create tax report"
+        }
+      }
+    },
+    "statistics": {
+      "net_value": {
+        "error": {
+          "message": "Failed: {message}",
+          "title": "Retrieving net value data"
+        }
       }
     },
     "trades": {
@@ -560,6 +870,21 @@
       }
     },
     "balances": {
+      "all_balances": {
+        "error": {
+          "message": "Failed to fetch all balances: {message}",
+          "title": "Querying all Balances"
+        },
+        "task": {
+          "title": "Query All Balances"
+        }
+      },
+      "exchange_rates": {
+        "error": {
+          "message": "Failed fetching exchange rates: {message}",
+          "title": "Exchange Rates"
+        }
+      },
       "exchange_setup": {
         "title": "Exchange setup",
         "description": "The setup of {exchange} failed due to: {error}"
@@ -597,6 +922,39 @@
           "message": "Failed to query {name} balances: {error}"
         }
       },
+      "manual_add": {
+        "error": {
+          "title": "Adding Manual Balance"
+        }
+      },
+      "manual_balances": {
+        "error": {
+          "message": "Failed: {message}",
+          "title": "Retrieving manual balances"
+        }
+      },
+      "manual_delete": {
+        "error": {
+          "title": "Deleting Manual Balance"
+        }
+      },
+      "manual_edit": {
+        "error": {
+          "title": "Editing Manual Balance"
+        }
+      },
+      "net_value": {
+        "error": {
+          "message": "Failed to fetch net value data: {message}",
+          "title": "Retrieving net value data"
+        }
+      },
+      "supported_assets": {
+        "error": {
+          "message": "Failed to retrieve supported assets: {message}",
+          "title": "Fetching supported assets"
+        }
+      },
       "xpub_removal": {
         "task": {
           "title": "Removing xpub",
@@ -629,6 +987,27 @@
       }
     },
     "session": {
+      "add_queriable_address": {
+        "error": {
+          "message": "Failure to add a queriable address: {message}"
+        }
+      },
+      "delete_queriable_address": {
+        "error": {
+          "message": "Failure to delete a queriable address: {message}"
+        }
+      },
+      "fetch_queriable_address": {
+        "error": {
+          "message": "Failure to fetch the queriable addresses: {message}"
+        }
+      },
+      "fetch_watchers": {
+        "error": {
+          "message": "Error: {message}",
+          "title": "Fetching watchers"
+        }
+      },
       "ignored_assets": {
         "error": {
           "title": "Querying ignored assets",
@@ -639,6 +1018,45 @@
         "error": {
           "title": "Ignoring {asset}",
           "message": "Failed to ignore asset: {error}"
+        }
+      },
+      "kraken_account": {
+        "error": {
+          "title": "Error setting kraken account type"
+        },
+        "success": {
+          "message": "Successfully set kraken account type",
+          "title": "Success"
+        }
+      },
+      "password_change": {
+        "error": "Error while changing the user password",
+        "success": "Successfully changed user password"
+      },
+      "periodic_query": {
+        "error": {
+          "message": "Error at periodic client query: {message}",
+          "title": "Periodic client query"
+        }
+      },
+      "settings_update": {
+        "error": {
+          "message": "Updating settings was not successful: {message}"
+        }
+      },
+      "tag_add": {
+        "error": {
+          "title": "Adding tag"
+        }
+      },
+      "tag_delete": {
+        "error": {
+          "title": "Deleting tag"
+        }
+      },
+      "tag_edit": {
+        "error": {
+          "title": "Editing tag"
         }
       },
       "unignore_asset": {
@@ -770,13 +1188,19 @@
     "refresh": {
       "tooltip": "Refresh manual balances"
     },
-    "data_table": {
-      "profit_currency_header": "{currencyTicker} Value"
+    "headers": {
+      "actions": "Actions",
+      "amount": "Amount",
+      "asset": "Asset",
+      "label": "Label",
+      "location": "Location",
+      "value": "{symbol} Value"
     },
     "delete_dialog": {
       "title": "Delete manually tracked balance",
       "message": "Are you sure you want to delete this entry?"
-    }
+    },
+    "total": "Total"
   },
   "labeled_address_display": {
     "label": "{label} |",
@@ -849,6 +1273,7 @@
       "edit": "Edit {n} collateralization watcher | Edit {n} collateralization watchers",
       "add": "Add collateralization ratio watcher",
       "dialog": {
+        "message": "Add / Edit / Delete watchers for Maker Vault #{identifier} with current collateralization ratio {collateralizationRatio} and liquidation ratio {liquidationRatio}.",
         "title": "Collateralization watchers",
         "label": "Collateralization Ratio"
       }
@@ -941,6 +1366,30 @@
   "decentralized_overview": {
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
+  },
+  "watcher_dialog": {
+    "add_error": "Error adding the watcher: {message}",
+    "add_success": "Successfully added watcher.",
+    "add_watcher": "Add watcher",
+    "close": "Close",
+    "delete_error": "Error deleting the watcher: {message}",
+    "delete_success": "Successfully deleted watcher.",
+    "edit": "Edit watchers",
+    "edit_error": "Error editing the watcher: {message}",
+    "edit_success": "Successfully edited watcher.",
+    "labels": {
+      "operation": "Operation",
+      "type": "Watcher Type"
+    },
+    "ratio": {
+      "ge": "greater than or equal to",
+      "gt": "greater than",
+      "le": "less than or equal to",
+      "lt": "less than"
+    },
+    "types": {
+      "make_collateralization_ratio": "Collateralization Ratio Watcher (Maker)"
+    }
   },
   "yearn_asset_table": {
     "title": "Yearn Vaults",

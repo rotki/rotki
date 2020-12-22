@@ -16,7 +16,7 @@
         chips
         clearable
         :open-on-clear="false"
-        :label="label ? label : 'Filter account(s)'"
+        :label="label ? label : $t('blockchain_account_selector.default_label')"
         item-text="address"
         item-value="address"
         class="blockchain-account-selector"
@@ -60,9 +60,10 @@
         </template>
       </v-autocomplete>
     </div>
-    <v-card-text v-if="hint">
-      Showing results across {{ hintText }} accounts.
-    </v-card-text>
+    <v-card-text
+      v-if="hint"
+      v-text="$t('blockchain_account_selector.hint', { hintText })"
+    />
   </v-card>
 </template>
 

@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 
-import 'font-awesome/css/font-awesome.min.css';
 import '@mdi/font/css/materialdesignicons.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify/lib';

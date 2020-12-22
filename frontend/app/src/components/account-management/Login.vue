@@ -39,7 +39,7 @@
             prominent
             outlined
             type="info"
-            icon="fa-cloud-download"
+            icon="mdi-cloud-download"
           >
             <div class="login__sync-error__header title">
               {{ $t('login.sync_error.title') }}

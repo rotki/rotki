@@ -5,7 +5,7 @@
     :items="tags"
     class="tag-filter"
     small-chips
-    label="Filter by tag(s)"
+    :label="$t('tag_filter.label')"
     prepend-inner-icon="mdi-magnify"
     item-text="name"
     :menu-props="{ closeOnContentClick: true }"

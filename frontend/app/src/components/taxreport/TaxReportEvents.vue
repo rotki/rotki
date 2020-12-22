@@ -2,7 +2,7 @@
   <v-row>
     <v-col>
       <v-card>
-        <v-card-title>Events</v-card-title>
+        <v-card-title>{{ $t('tax_report_events.title') }}</v-card-title>
         <v-card-text>
           <v-data-table
             :headers="headers"
@@ -13,13 +13,21 @@
               <date-display :timestamp="item.time" />
             </template>
             <template #header.paidInProfitCurrency>
-              Paid in {{ currency }}
+              {{ $t('tax_report_events.headers.paid_in', { currency }) }}
             </template>
             <template #header.taxableBoughtCostInProfitCurrency>
-              Taxable Bought Cost in {{ currency }}
+              {{
+                $t('tax_report_events.headers.taxable_bought_cost_in', {
+                  currency
+                })
+              }}
             </template>
             <template #header.taxableReceivedInProfitCurrency>
-              Taxable Received in {{ currency }}
+              {{
+                $t('tax_report_events.headers.taxable_received_in', {
+                  currency
+                })
+              }}
             </template>
             <template #item.paidInProfitCurrency="{ item }">
               <amount-display :value="item.paidInProfitCurrency" />
@@ -47,7 +55,7 @@
             </template>
             <template #item.isVirtual="{ item }">
               <v-icon v-if="item.isVirtual" color="success">
-                fa-check
+                mdi-check
               </v-icon>
             </template>
           </v-data-table>
@@ -59,6 +67,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -80,29 +89,70 @@ export default class TaxReportEvents extends Vue {
   currency!: string;
   exchangeRate!: (currency: string) => number;
 
-  headers = [
-    { text: 'Type', value: 'type' },
-    { text: 'Location', value: 'location' },
-    { text: 'Paid in USD', value: 'paidInProfitCurrency', align: 'end' },
-    { text: 'Paid Asset', value: 'paidAsset' },
-    { text: 'Paid in Asset', value: 'paidInAsset', align: 'end' },
-    { text: 'Taxable Amount', value: 'taxableAmount', align: 'end' },
+  readonly headers: DataTableHeader[] = [
     {
-      text: 'Taxable Bought Cost in USD',
+      text: this.$t('tax_report_events.headers.type').toString(),
+      value: 'type'
+    },
+    {
+      text: this.$t('tax_report_events.headers.location').toString(),
+      value: 'location'
+    },
+    {
+      text: this.$t('tax_report_events.headers.paid_in', {
+        currency: 'USD'
+      }).toString(),
+      value: 'paidInProfitCurrency',
+      align: 'end'
+    },
+    {
+      text: this.$t('tax_report_events.headers.paid_asset').toString(),
+      value: 'paidAsset'
+    },
+    {
+      text: this.$t('tax_report_events.headers.paid_in_asset').toString(),
+      value: 'paidInAsset',
+      align: 'end'
+    },
+    {
+      text: this.$t('tax_report_events.headers.taxable_amount').toString(),
+      value: 'taxableAmount',
+      align: 'end'
+    },
+    {
+      text: this.$t('tax_report_events.headers.taxable_bought_cost_in', {
+        currency: 'USD'
+      }).toString(),
       value: 'taxableBoughtCostInProfitCurrency',
       align: 'end'
     },
-    { text: 'Received Asset', value: 'receivedAsset' },
-    { text: 'Received in Asset', value: 'receivedInAsset', align: 'end' },
     {
-      text: 'Taxable Received in USD',
+      text: this.$t('tax_report_events.headers.received_asset').toString(),
+      value: 'receivedAsset'
+    },
+    {
+      text: this.$t('tax_report_events.headers.received_in_asset').toString(),
+      value: 'receivedInAsset',
+      align: 'end'
+    },
+    {
+      text: this.$t('tax_report_events.headers.taxable_received_in', {
+        currency: 'USD'
+      }).toString(),
       value: 'taxableReceivedInProfitCurrency',
       align: 'end'
     },
-    { text: 'Time', value: 'time' },
-    { text: 'Virtual?', value: 'isVirtual', align: 'center' }
+    {
+      text: this.$t('tax_report_events.headers.time').toString(),
+      value: 'time'
+    },
+    {
+      text: this.$t('tax_report_events.headers.virtual').toString(),
+      value: 'isVirtual',
+      align: 'center'
+    }
   ];
 
-  footerProps = footerProps;
+  readonly footerProps = footerProps;
 }
 </script>

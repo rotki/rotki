@@ -5,9 +5,8 @@
       align="center"
       justify="center"
       class="font-weight-light progress-screen__progress__percentage"
-    >
-      {{ progress }} %
-    </v-row>
+      v-text="$t('progress_screen.progress', { progress })"
+    />
     <v-row
       align="center"
       justify="center"

@@ -16,9 +16,8 @@
           :class="`node-status-indicator__icon--${
             nodeConnection ? 'connected' : 'disconnected'
           }`"
-        >
-          fa {{ nodeConnection ? 'fa-link' : 'fa-unlink' }}
-        </v-icon>
+          v-text="nodeConnection ? 'mdi-link' : 'mdi-link-off'"
+        />
       </menu-tooltip-button>
     </template>
     <v-row class="node-status-indicator__content">
@@ -28,26 +27,27 @@
           color="primary"
           class="node-status-indicator__content__icon--connected"
         >
-          fa fa-check-circle
+          mdi-check-circle
         </v-icon>
         <v-icon
           v-else
           color="warning"
           class="node-status-indicator__content__icon--disconnected"
         >
-          fa fa-exclamation-triangle
+          mdi-alert
         </v-icon>
       </v-col>
       <v-col cols="10">
         <span
           v-if="nodeConnection"
           class="node-status-indicator__content__text--connected"
-        >
-          Connected to an ethereum node
-        </span>
-        <span v-else class="node-status-indicator__content__text--disconnected">
-          Not connected to an ethereum node
-        </span>
+          v-text="$t('node_status_indicator.connected')"
+        />
+        <span
+          v-else
+          class="node-status-indicator__content__text--disconnected"
+          v-text="$t('node_status_indicator.disconnected')"
+        />
       </v-col>
     </v-row>
   </v-menu>
@@ -55,13 +55,12 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { mapState } from 'vuex';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: { MenuTooltipButton },
-  computed: mapState(['nodeConnection'])
+  computed: mapState('session', ['nodeConnection'])
 })
 export default class NodeStatusIndicator extends Vue {
   nodeConnection!: boolean;

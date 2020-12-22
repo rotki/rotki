@@ -1,11 +1,12 @@
 import { Commit } from 'vuex';
+import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
 import store from '@/store/store';
 import { Message, StatusPayload } from '@/store/types';
 
 export function showError(description: string, title?: string) {
   const message = {
-    title: title ?? 'Error',
+    title: title ?? i18n.t('message.error.title').toString(),
     description: description || '',
     success: false
   };
@@ -14,7 +15,7 @@ export function showError(description: string, title?: string) {
 
 export function showMessage(description: string, title?: string): void {
   const message: Message = {
-    title: title ?? 'Success',
+    title: title ?? i18n.t('message.success.title').toString(),
     description,
     success: true
   };

@@ -16,13 +16,13 @@
       </v-tooltip>
     </v-col>
     <v-col v-if="!!successMessage">
-      <v-icon color="success">fa-check-circle</v-icon>
+      <v-icon color="success">mdi-check-circle</v-icon>
       <span class="ml-2 success--text status-button__message--success">
         {{ successMessage }}
       </span>
     </v-col>
     <v-col v-else-if="!!errorMessage">
-      <v-icon color="error">fa-warning</v-icon>
+      <v-icon color="error">mdi-alert</v-icon>
       <span class="ml-2 error--text status-button__message--error">
         {{ errorMessage }}
       </span>

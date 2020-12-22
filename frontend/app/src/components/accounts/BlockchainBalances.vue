@@ -1,44 +1,46 @@
 <template>
-  <v-card class="blockchain-balances mt-8">
-    <v-card-title>{{ $t('blockchain_balances.title') }}</v-card-title>
-    <v-card-text>
-      <v-btn absolute fab top right color="primary" @click="newAccount()">
-        <v-icon>
-          mdi-plus
-        </v-icon>
-      </v-btn>
-      <big-dialog
-        :display="openDialog"
-        :title="dialogTitle"
-        :subtitle="dialogSubtitle"
-        :primary-action="$t('blockchain_balances.form_dialog.save')"
-        :secondary-action="$t('blockchain_balances.form_dialog.cancel')"
-        :action-disabled="!valid"
-        @confirm="save()"
-        @cancel="clearDialog()"
-      >
-        <account-form ref="form" v-model="valid" :edit="accountToEdit" />
-      </big-dialog>
-      <asset-balances
-        :title="$t('blockchain_balances.per_asset.title')"
-        :balances="totals"
-      />
-      <v-divider />
-      <account-balances
-        :title="$t('blockchain_balances.balances.eth')"
-        blockchain="ETH"
-        :balances="ethAccounts"
-        @edit-account="edit($event)"
-      />
-      <v-divider />
-      <account-balances
-        :title="$t('blockchain_balances.balances.btc')"
-        blockchain="BTC"
-        :balances="btcAccounts"
-        @edit-account="edit($event)"
-      />
-    </v-card-text>
-  </v-card>
+  <v-container>
+    <v-card class="blockchain-balances mt-8">
+      <v-card-title>{{ $t('blockchain_balances.title') }}</v-card-title>
+      <v-card-text>
+        <v-btn absolute fab top right color="primary" @click="newAccount()">
+          <v-icon>
+            mdi-plus
+          </v-icon>
+        </v-btn>
+        <big-dialog
+          :display="openDialog"
+          :title="dialogTitle"
+          :subtitle="dialogSubtitle"
+          :primary-action="$t('blockchain_balances.form_dialog.save')"
+          :secondary-action="$t('blockchain_balances.form_dialog.cancel')"
+          :action-disabled="!valid"
+          @confirm="save()"
+          @cancel="clearDialog()"
+        >
+          <account-form ref="form" v-model="valid" :edit="accountToEdit" />
+        </big-dialog>
+        <asset-balances
+          :title="$t('blockchain_balances.per_asset.title')"
+          :balances="totals"
+        />
+        <v-divider />
+        <account-balances
+          :title="$t('blockchain_balances.balances.eth')"
+          blockchain="ETH"
+          :balances="ethAccounts"
+          @edit-account="edit($event)"
+        />
+        <v-divider />
+        <account-balances
+          :title="$t('blockchain_balances.balances.btc')"
+          blockchain="BTC"
+          :balances="btcAccounts"
+          @edit-account="edit($event)"
+        />
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 
 <script lang="ts">

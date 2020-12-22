@@ -1,15 +1,13 @@
 <template>
   <v-card light class="tag-manager">
     <v-card-title>
-      Tag Manager
+      {{ $t('tag_manager.title') }}
       <v-spacer v-if="dialog" />
       <v-btn v-if="dialog" class="tag-manager__close" icon text @click="close">
         <v-icon>mdi-close</v-icon>
       </v-btn>
     </v-card-title>
-    <v-card-subtitle>
-      Create new tags or modify existing
-    </v-card-subtitle>
+    <v-card-subtitle v-text="$t('tag_manager.subtitle')" />
     <v-card-text>
       <tag-creator
         :tag="tag"
@@ -23,13 +21,13 @@
 
       <v-row no-gutters justify="space-between" align="end">
         <v-col cols="8">
-          <div class="text-h5">My Tags</div>
+          <div class="text-h5" v-text="$t('tag_manager.my_tags')" />
         </v-col>
         <v-col cols="4">
           <v-text-field
             v-model="search"
             append-icon="mdi-magnify"
-            label="Search"
+            :label="$t('tag_manager.search')"
             single-line
             hide-details
           />
@@ -55,8 +53,8 @@
         </template>
       </v-data-table>
       <confirm-dialog
-        title="Confirm tag deletion"
-        :message="`Are you sure you want to delete ${tagToDelete}? This will also remove all mappings of this tag.`"
+        :title="$t('tag_manager.confirmation.title')"
+        :message="$t('tag_manager.confirmation.message', { tagToDelete })"
         :display="!!tagToDelete"
         @confirm="confirmDelete"
         @cancel="tagToDelete = ''"
@@ -67,7 +65,8 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { DataTableHeader } from 'vuetify';
+import { mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
@@ -75,12 +74,10 @@ import { defaultTag } from '@/components/tags/types';
 import { footerProps } from '@/config/datatable.common';
 import { Tag } from '@/typing/types';
 
-const { mapGetters } = createNamespacedHelpers('session');
-
 @Component({
   components: { TagIcon, ConfirmDialog, TagCreator },
   computed: {
-    ...mapGetters(['tags'])
+    ...mapGetters('session', ['tags'])
   }
 })
 export default class TagManager extends Vue {
@@ -99,10 +96,22 @@ export default class TagManager extends Vue {
   @Emit()
   close() {}
 
-  headers = [
-    { text: 'Name', value: 'name', width: '200' },
-    { text: 'Description', value: 'description' },
-    { text: 'Actions', value: 'action', sortable: false, width: '50' }
+  readonly headers: DataTableHeader[] = [
+    {
+      text: this.$t('tag_manager.headers.name').toString(),
+      value: 'name',
+      width: '200'
+    },
+    {
+      text: this.$t('tag_manager.headers.description').toString(),
+      value: 'description'
+    },
+    {
+      text: this.$t('tag_manager.headers.actions').toString(),
+      value: 'action',
+      sortable: false,
+      width: '50'
+    }
   ];
 
   onChange(tag: Tag) {

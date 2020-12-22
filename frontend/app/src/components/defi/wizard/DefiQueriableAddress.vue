@@ -2,7 +2,7 @@
   <blockchain-account-selector
     :value="selectedAccounts"
     flat
-    label="Select address(es)"
+    :label="$t('defi_queriable_addres.label')"
     multiple
     :loading="loading"
     @input="added($event)"

@@ -10,12 +10,12 @@
       <span>{{ count }}</span>
     </template>
     <menu-tooltip-button
-      tooltip="Notifications"
+      :tooltip="$t('notification_indicator.tooltip')"
       class-name="secondary--text text--lighten-2"
       @click="click"
     >
       <v-icon :class="visible ? 'notification-indicator--visible' : null">
-        fa fa-bell
+        mdi-bell
       </v-icon>
     </menu-tooltip-button>
   </v-badge>

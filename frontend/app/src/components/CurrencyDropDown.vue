@@ -3,7 +3,7 @@
     <v-menu transition="slide-y-transition" bottom offset-y>
       <template #activator="{ on }">
         <menu-tooltip-button
-          tooltip="Profit Currency"
+          :tooltip="$t('currency_drop_down.profit_currency')"
           class-name="currency-dropdown secondary--text text--lighten-2"
           :on-menu="on"
         >
@@ -24,9 +24,7 @@
             <v-list-item-title>
               {{ currency.name }}
             </v-list-item-title>
-            <v-list-item-subtitle>
-              Select as the main currency
-            </v-list-item-subtitle>
+            <v-list-item-subtitle v-text="$t('currency_drop_down.hint')" />
           </v-list-item-content>
         </v-list-item>
       </v-list>

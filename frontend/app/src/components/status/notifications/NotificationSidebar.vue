@@ -24,15 +24,14 @@
               <v-icon>mdi-chevron-right</v-icon>
             </v-btn>
           </template>
-          <span>Close the notification area</span>
+          <span v-text="$t('notification_sidebar.close_tooltip')" />
         </v-tooltip>
       </v-col>
       <v-col>
         <span
           class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
-        >
-          Notifications
-        </span>
+          v-text="$t('notification_sidebar.title')"
+        />
       </v-col>
       <v-col cols="auto">
         <v-btn
@@ -41,9 +40,8 @@
           color="accent"
           :disabled="notifications.length === 0"
           @click="confirmClear = true"
-        >
-          Clear all notifications
-        </v-btn>
+          v-text="$t('notification_sidebar.clear_tooltip')"
+        />
       </v-col>
     </v-row>
     <v-row no-gutters class="notification-sidebar__details">
@@ -52,7 +50,10 @@
         class="notification-sidebar__no-messages"
       >
         <v-icon size="64px" color="primary">mdi-information</v-icon>
-        <p class="notification-sidebar__no-messages__label">No messages!</p>
+        <p
+          class="notification-sidebar__no-messages__label"
+          v-text="$t('notification_sidebar.no_messages')"
+        />
       </v-col>
       <v-col v-else class="notification-sidebar__messages pl-2">
         <notification
@@ -66,8 +67,8 @@
     </v-row>
     <confirm-dialog
       :display="confirmClear"
-      title="Clear active notifications"
-      message="This action will clear all the active notifications. Do you want to proceed?"
+      :title="$t('notification_sidebar.confirmation.title')"
+      :message="$t('notification_sidebar.confirmation.message')"
       @cancel="confirmClear = false"
       @confirm="clear()"
     />

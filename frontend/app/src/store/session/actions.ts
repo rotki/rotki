@@ -165,8 +165,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       }
     } catch (e) {
       notify(
-        `Error at periodic client query: ${e}`,
-        'Periodic client query',
+        i18n
+          .t('actions.session.periodic_query.error.message', {
+            message: e.message
+          })
+          .toString(),
+        i18n.t('actions.session.periodic_query.error.title').toString(),
         Severity.ERROR,
         true
       );
@@ -201,7 +205,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       commit('tags', await api.addTag(tag));
     } catch (e) {
-      showError(e.message, 'Adding tag');
+      showError(
+        e.message,
+        i18n.t('actions.session.tag_add.error.title').toString()
+      );
     }
   },
 
@@ -209,7 +216,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       commit('tags', await api.editTag(tag));
     } catch (e) {
-      showError(e.message, 'Editing tag');
+      showError(
+        e.message,
+        i18n.t('actions.session.tag_edit.error.title').toString()
+      );
     }
   },
 
@@ -217,7 +227,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       commit('tags', await api.deleteTag(tagName));
     } catch (e) {
-      showError(e.message, 'Deleting tag');
+      showError(
+        e.message,
+        i18n.t('actions.session.tag_delete.error.title').toString()
+      );
     }
     dispatch('balances/removeTag', tagName, { root: true });
   },
@@ -231,14 +244,21 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit(
         'setMessage',
         {
-          title: 'Success',
-          description: 'Successfully set kraken account type',
+          title: i18n
+            .t('actions.session.kraken_account.success.title')
+            .toString(),
+          description: i18n
+            .t('actions.session.kraken_account.success.message')
+            .toString(),
           success: true
         } as Message,
         { root: true }
       );
     } catch (e) {
-      showError(e.message, 'Error setting kraken account type');
+      showError(
+        e.message,
+        i18n.t('actions.session.kraken_account.error.title').toString()
+      );
     }
   },
 
@@ -246,7 +266,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   async updateSettings({ dispatch }, update: SettingsUpdate): Promise<void> {
     const { success, message } = await dispatch('settingsUpdate', update);
     if (!success) {
-      showError(`Updating settings was not successful: ${message}`);
+      showError(
+        i18n
+          .t('actions.session.settings_update.error.message', { message })
+          .toString()
+      );
     }
   },
 
@@ -287,7 +311,16 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const watchers = await api.session.watchers();
       commit('watchers', watchers);
     } catch (e) {
-      notify(`Error: ${e}`, 'Fetching watchers', Severity.ERROR, true);
+      notify(
+        i18n
+          .t('actions.session.fetch_watchers.error.message', {
+            message: e.message
+          })
+          .toString(),
+        i18n.t('actions.session.fetch_watchers.error.title').toString(),
+        Severity.ERROR,
+        true
+      );
     }
   },
 
@@ -317,7 +350,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const queriedAddresses = await api.session.queriedAddresses();
       commit('queriedAddresses', queriedAddresses);
     } catch (e) {
-      showError(`Failure to fetch the queriable addresses: ${e.message}`);
+      showError(
+        i18n
+          .t('actions.session.fetch_queriable_address.error.message', {
+            message: e.message
+          })
+          .toString()
+      );
     }
   },
 
@@ -326,7 +365,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const queriedAddresses = await api.session.addQueriedAddress(payload);
       commit('queriedAddresses', queriedAddresses);
     } catch (e) {
-      showError(`Failure to add a queriable address: ${e.message}`);
+      showError(
+        i18n
+          .t('actions.session.add_queriable_address.error.message', {
+            message: e.message
+          })
+          .toString()
+      );
     }
   },
 
@@ -335,7 +380,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const queriedAddresses = await api.session.deleteQueriedAddress(payload);
       commit('queriedAddresses', queriedAddresses);
     } catch (e) {
-      showError(`Failure to delete a queriable address: ${e.message}`);
+      showError(
+        i18n
+          .t('actions.session.delete_queriable_address.error.message', {
+            message: e.message
+          })
+          .toString()
+      );
     }
   },
 
@@ -387,12 +438,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         currentPassword,
         newPassword
       );
-      showMessage('Successfully changed user password');
+      showMessage(i18n.t('actions.session.password_change.success').toString());
       return {
         success
       };
     } catch (e) {
-      showError('Error while changing the user password');
+      showError(i18n.t('actions.session.password_change.error').toString());
       return {
         success: false,
         message: e.message

@@ -17,7 +17,7 @@ import {
   Blockchain,
   ExchangeData,
   GeneralAccount,
-  UsdToFiatExchangeRates
+  ExchangeRates
 } from '@/typing/types';
 
 export interface LocationBalance {
@@ -38,7 +38,7 @@ export interface BalanceState {
   btc: BtcBalances;
   totals: AssetBalances;
   liabilities: AssetBalances;
-  usdToFiatExchangeRates: UsdToFiatExchangeRates;
+  usdToFiatExchangeRates: ExchangeRates;
   connectedExchanges: SupportedExchange[];
   exchangeBalances: ExchangeData;
   ethAccounts: GeneralAccountData[];

@@ -1,18 +1,19 @@
 <template>
-  <stat-card title="Liquidation" class="liquidation">
+  <stat-card :title="$t('loan_liquidation.title')" class="liquidation">
     <div class="liquidation__upper pb-5">
-      <loan-row title="Liquidation price">
+      <loan-row :title="$t('loan_liquidation.liquidation_price')">
         <amount-display fiat-currency="USD" :value="loan.liquidationPrice" />
       </loan-row>
       <v-divider class="my-4" />
-      <loan-row title="Minimum ratio" :medium="false">
+      <loan-row :title="$t('loan_liquidation.minimum_ratio')" :medium="false">
         <percentage-display :value="loan.liquidationRatio" />
       </loan-row>
     </div>
     <div>
-      <span class="liquidation__liquidation-events__header">
-        Liquidation Events
-      </span>
+      <span
+        class="liquidation__liquidation-events__header"
+        v-text="$t('loan_liquidation.liquidation_events')"
+      />
       <v-skeleton-loader
         v-if="premium"
         :loading="typeof loan.totalLiquidated === 'undefined'"
@@ -25,7 +26,7 @@
           class="liquidation-events__content"
         >
           <div class="liquidation-events__content__liquidated-collateral mb-2">
-            <loan-row title="Liquidated collateral">
+            <loan-row :title="$t('loan_liquidation.liquidated_collateral')">
               <amount-display
                 :asset-padding="assetPadding"
                 :value="loan.totalLiquidated.amount"
@@ -40,7 +41,7 @@
               />
             </loan-row>
           </div>
-          <loan-row title="Outstanding debt at liquidation">
+          <loan-row :title="$t('loan_liquidation.outstanding_debt')">
             <amount-display
               :asset-padding="assetPadding"
               :value="loan.totalInterestOwed"
@@ -48,7 +49,7 @@
             />
           </loan-row>
           <v-divider class="my-4" />
-          <loan-row title="Total value lost">
+          <loan-row :title="$t('loan_liquidation.total_value_lost')">
             <amount-display
               :asset-padding="assetPadding"
               :value="
@@ -58,9 +59,7 @@
             />
           </loan-row>
         </div>
-        <div v-else>
-          No liquidation events have occurred for this loan.
-        </div>
+        <div v-else v-text="$t('loan_liquidation.no_events')" />
       </v-skeleton-loader>
       <div v-else class="text-right">
         <premium-lock />

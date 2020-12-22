@@ -14,7 +14,7 @@
             class="dialog-icon"
             :class="{ 'green--text': success, 'red--text': !success }"
           >
-            fa {{ success ? 'fa-check-circle' : 'fa-exclamation-circle' }}
+            {{ icon }}
           </v-icon>
         </v-col>
         <v-col cols="11">
@@ -31,9 +31,8 @@
           text
           class="message-dialog__buttons__confirm"
           @click="dismiss()"
-        >
-          Ok
-        </v-btn>
+          v-text="$t('message_dialog.button')"
+        />
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -52,6 +51,10 @@ export default class MessageDialog extends Vue {
   success!: boolean;
 
   visible: boolean = false;
+
+  get icon(): string {
+    return this.success ? 'mdi-check-circle ' : 'mdi-alert-circle';
+  }
 
   @Watch('message')
   onMessage() {

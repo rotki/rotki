@@ -5,6 +5,7 @@ import DefiModuleSelector from '@/components/defi/wizard/DefiModuleSelector.vue'
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
 import { GeneralSettings } from '@/typing/types';
+import '../../../i18n';
 
 jest.mock('@/services/rotkehlchen-api');
 
