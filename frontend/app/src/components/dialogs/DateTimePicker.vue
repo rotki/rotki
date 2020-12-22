@@ -25,7 +25,7 @@
 
       <div class="menu-body">
         <v-date-picker v-model="dateModel" :max="maxDate" />
-        <v-time-picker v-model="timeModel" :max="maxTime" />
+        <v-time-picker v-model="timeModel" :max="maxTime" format="24hr" />
       </div>
     </v-menu>
   </div>
