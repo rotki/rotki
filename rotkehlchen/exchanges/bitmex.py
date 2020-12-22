@@ -148,13 +148,15 @@ class Bitmex(ExchangeInterface):
         data = ''
         if not options:
             request_path = request_path_no_args
+            signature_path = request_path
         else:
             request_path = request_path_no_args + '?' + urlencode(options)
+            signature_path = request_path_no_args if path == 'user/wallet' else request_path
 
         if path in BITMEX_PRIVATE_ENDPOINTS:
             self._generate_signature(
                 verb=verb,
-                path=request_path,
+                path=signature_path,
                 expires=expires,
                 data=data,
             )

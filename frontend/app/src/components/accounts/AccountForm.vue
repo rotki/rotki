@@ -40,6 +40,7 @@
           class="account-form__xpub"
           :label="$t('account_form.labels.btc.xpub')"
           autocomplete="off"
+          :error-messages="errorMessages[FIELD_XPUB]"
           :disabled="accountOperation || loading || !!edit"
           @paste="onPasteXpub"
         />
@@ -64,6 +65,7 @@
           v-model="derivationPath"
           class="account-form__derivation-path"
           :label="$t('account_form.labels.btc.derivation_path')"
+          :error-messages="errorMessages[FIELD_DERIVATION_PATH]"
           autocomplete="off"
           :disabled="accountOperation || loading || !!edit"
           persistent-hint
@@ -87,7 +89,7 @@
           class="account-form__address"
           :label="$t('account_form.labels.account')"
           :rules="rules"
-          :error-messages="errorMessages"
+          :error-messages="errorMessages[FIELD_ADDRESS]"
           autocomplete="off"
           :disabled="accountOperation || loading || !!edit"
           @paste="onPasteAddress"
@@ -212,6 +214,20 @@ const getKeyType: (key: XpubPrefix) => XpubKeyType = key => {
   throw new Error(`${key} is not acceptable`);
 };
 
+const FIELD_ADDRESS = 'address';
+const FIELD_XPUB = 'xpub';
+const FIELD_DERIVATION_PATH = 'derivation_path';
+
+const FIELDS = [FIELD_ADDRESS, FIELD_XPUB, FIELD_DERIVATION_PATH] as const;
+type ValidationFields = typeof FIELDS[number];
+type ValidationErrors = { [field in ValidationFields]: string[] };
+
+const validationErrors: () => ValidationErrors = () => ({
+  [FIELD_XPUB]: [],
+  [FIELD_ADDRESS]: [],
+  [FIELD_DERIVATION_PATH]: []
+});
+
 @Component({
   components: { InputModeSelect, TagInput },
   computed: {
@@ -234,7 +250,7 @@ export default class AccountForm extends Vue {
   label: string = '';
   tags: string[] = [];
   multiple: boolean = false;
-  errorMessages: string[] = [];
+  readonly errorMessages: ValidationErrors = validationErrors();
   xpubKeyPrefix: XpubPrefix = XPUB_VALUE;
   account!: (address: string) => GeneralAccount | undefined;
   addAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
@@ -242,6 +258,10 @@ export default class AccountForm extends Vue {
   editAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   advanced: boolean = false;
   inputMode: AccountInput = MANUAL_ADD;
+
+  readonly FIELD_XPUB = FIELD_XPUB;
+  readonly FIELD_ADDRESS = FIELD_ADDRESS;
+  readonly FIELD_DERIVATION_PATH = FIELD_DERIVATION_PATH;
 
   get entries(): string[] {
     return this.addresses
@@ -340,11 +360,7 @@ export default class AccountForm extends Vue {
 
   @Watch('address')
   onAddressChanged() {
-    if (this.errorMessages.length === 0) {
-      return;
-    }
-
-    this.clearErrors();
+    this.clearErrors(FIELD_ADDRESS);
   }
 
   @Watch('multiple')
@@ -372,7 +388,13 @@ export default class AccountForm extends Vue {
     if (!value) {
       return;
     }
+    this.clearErrors(FIELD_XPUB);
     this.setXpubKeyType(value);
+  }
+
+  @Watch('derivationPath')
+  onDerivationPathChange() {
+    this.clearErrors(FIELD_DERIVATION_PATH);
   }
 
   private setXpubKeyType(value: string) {
@@ -518,18 +540,22 @@ export default class AccountForm extends Vue {
     } catch (e) {
       const apiErrorMessage = deserializeApiErrorMessage(e.message);
       if (apiErrorMessage && Object.keys(apiErrorMessage).length > 0) {
-        const fields = ['address', 'xpub'];
-        let errors: string[] = [];
-        this.clearErrors();
-        for (const field of fields) {
+        const errors: ValidationErrors = validationErrors();
+        this.clearErrors(FIELD_ADDRESS);
+        this.clearErrors(FIELD_XPUB);
+        this.clearErrors(FIELD_DERIVATION_PATH);
+
+        for (const field of FIELDS) {
           if (!(field in apiErrorMessage)) {
             continue;
           }
 
-          errors = errors.concat(apiErrorMessage[field]);
+          errors[field] = errors[field].concat(apiErrorMessage[field]);
         }
 
-        this.setErrors(errors);
+        this.setErrors(FIELD_ADDRESS, errors[FIELD_ADDRESS]);
+        this.setErrors(FIELD_XPUB, errors[FIELD_XPUB]);
+        this.setErrors(FIELD_DERIVATION_PATH, errors[FIELD_DERIVATION_PATH]);
         this.pending = false;
         return false;
       }
@@ -559,14 +585,19 @@ export default class AccountForm extends Vue {
     return result;
   }
 
-  private setErrors(errors: string[]) {
-    this.errorMessages.push(...errors);
+  private setErrors(field: ValidationFields, errors: string[]) {
+    this.errorMessages[field].push(...errors);
     this.input(false);
   }
 
-  private clearErrors() {
-    for (let i = 0; i < this.errorMessages.length; i++) {
-      this.errorMessages.pop();
+  private clearErrors(field: ValidationFields) {
+    const errorMessages = this.errorMessages[field];
+    if (errorMessages.length === 0) {
+      return;
+    }
+
+    for (let i = 0; i < errorMessages.length; i++) {
+      errorMessages.pop();
     }
     this.input(true);
   }
