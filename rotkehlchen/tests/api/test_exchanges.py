@@ -67,6 +67,14 @@ API_KEYPAIR_COINBASE_VALIDATION_PATCH = patch(
     return_value=(True, ''),
 )
 
+SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITFINEX = patch(
+    'rotkehlchen.exchanges.bitfinex.Bitfinex.validate_api_key',
+    side_effect=SystemClockNotSyncedError(
+        current_time=str(datetime.now()),
+        remote_server='Bitfinex',
+    ),
+)
+
 SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITTREX = patch(
     'rotkehlchen.exchanges.bittrex.Bittrex._check_for_system_clock_not_synced_error',
     side_effect=SystemClockNotSyncedError(
@@ -167,6 +175,10 @@ def test_setup_exchange(rotkehlchen_api_server):
     (
         {'name': 'bitstamp', 'api_key': 'ddddd', 'api_secret': 'fffff'},
         SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITSTAMP,
+    ),
+    (
+        {'name': 'bitfinex', 'api_key': 'ddddd', 'api_secret': 'fffff'},
+        SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITFINEX,
     ),
 ])
 def test_setup_exchange_raises_system_clock_not_synced_error(

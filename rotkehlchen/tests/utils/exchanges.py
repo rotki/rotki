@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.binance import Binance, create_binance_symbols_to_pair
+from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
@@ -320,6 +321,25 @@ def create_test_binance(
     binance._symbols_to_pair = create_binance_symbols_to_pair(json_data)
     binance.first_connection_made = True
     return binance
+
+
+def create_test_bitfinex(
+        database,
+        msg_aggregator,
+        api_key=None,
+        secret=None,
+) -> Bitfinex:
+    if api_key is None:
+        api_key = make_api_key()
+    if secret is None:
+        secret = make_api_secret()
+
+    return Bitfinex(
+        api_key=api_key,
+        secret=secret,
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
 
 
 def create_test_bitmex(

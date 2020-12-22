@@ -423,7 +423,7 @@ class Bitstamp(ExchangeInterface):
 
             has_results = False
             is_result_timesamp_gt_end_ts = False
-            result: Union[List, AssetMovement]
+            result: Union[Trade, AssetMovement]
             for raw_result in response_list:
                 if raw_result['type'] not in raw_result_type_filter:
                     continue
@@ -436,7 +436,7 @@ class Bitstamp(ExchangeInterface):
                         is_result_timesamp_gt_end_ts = True  # prevent extra request
                         break
 
-                    result = deserialization_method(raw_result)  # type: ignore
+                    result = deserialization_method(raw_result)
 
                 except DeserializationError as e:
                     msg = str(e)
