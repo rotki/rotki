@@ -93,7 +93,7 @@ class Iconomi(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super(Iconomi, self).__init__('iconomi.com', api_key, secret, database)
+        super().__init__('iconomi.com', api_key, secret, database)
         self.uri = 'https://api.iconomi.com'
         self.session.headers.update({'ICN-API-KEY': api_key})
         self.msg_aggregator = msg_aggregator

@@ -86,7 +86,7 @@ class Bitcoinde(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super(Bitcoinde, self).__init__('bitcoin.de', api_key, secret, database)
+        super().__init__('bitcoin.de', api_key, secret, database)
         self.uri = 'https://api.bitcoin.de'
         self.session.headers.update({'x-api-key': api_key})
         self.msg_aggregator = msg_aggregator
