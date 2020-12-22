@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`1949` All time pickers now use a 24h format to avoid user confusion.
+* :feature:`1961` Users can configure the BTC address derivation gap limit.
 * :feature:`1955` Users can now set their main currency to Swiss Franc.
 * :feature:`1270` Users can now set their main currency to ETH or BTC and see everything in that currency. Their net value, the valueof each asset they own, value of each trade, event e.t.c.
 * :feature:`1515` Rotki now supports Binance US. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.

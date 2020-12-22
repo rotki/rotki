@@ -142,6 +142,7 @@ STRING_KEYS = (
 )
 TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
 
+
 def db_settings_from_dict(
         settings_dict: Dict[str, Any],
         msg_aggregator: MessagesAggregator,
