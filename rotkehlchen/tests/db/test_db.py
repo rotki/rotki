@@ -19,6 +19,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_ACTIVE_MODULES,
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
+    DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CURRENCY_LOCATION,
     DEFAULT_DATE_DISPLAY_FORMAT,
     DEFAULT_DECIMAL_SEPARATOR,
@@ -283,6 +284,7 @@ def test_writing_fetching_data(data_dir, username):
         'active_modules': DEFAULT_ACTIVE_MODULES,
         'frontend_settings': '',
         'account_for_assets_movements': DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
+        'btc_derivation_gap_limit': DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
