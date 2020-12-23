@@ -26,6 +26,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import BITFINEX_TO_WORLD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
@@ -91,10 +92,22 @@ API_MOVEMENTS_MIN_RESULT_LENGTH = 22
 DeserializationMethod = Callable[..., Union[Trade, AssetMovement]]  # ... due to keyword args
 
 
+class CurrenciesResponse(NamedTuple):
+    success: bool
+    response: Response
+    currencies: List[str]
+
+
 class CurrencyMapResponse(NamedTuple):
     success: bool
     response: Response
     currency_map: Dict[str, str]
+
+
+class ExchangePairsResponse(NamedTuple):
+    success: bool
+    response: Response
+    pairs: List[str]
 
 
 class ErrorResponseData(NamedTuple):
@@ -124,7 +137,14 @@ class Bitfinex(ExchangeInterface):
 
     def _api_query(
             self,
-            endpoint: Literal['configs_map_currency_symbol', 'movements', 'trades', 'wallets'],
+            endpoint: Literal[
+                'configs_list_currency',
+                'configs_list_pair_exchange',
+                'configs_map_currency_symbol',
+                'movements',
+                'trades',
+                'wallets',
+            ],
             options: Optional[Dict[str, Any]] = None,
     ) -> Response:
         """Request a Bitfinex API v2 endpoint (from `endpoint`).
@@ -133,7 +153,15 @@ class Bitfinex(ExchangeInterface):
         for header in ('Content-Type', 'bfx-nonce', 'bfx-signature'):
             self.session.headers.pop(header, None)
 
-        if endpoint == 'configs_map_currency_symbol':
+        if endpoint == 'configs_list_currency':
+            method = 'get'
+            api_path = 'v2/conf/pub:list:currency'
+            request_url = f'{self.base_uri}/{api_path}'
+        elif endpoint == 'configs_list_pair_exchange':
+            method = 'get'
+            api_path = 'v2/conf/pub:list:pair:exchange'
+            request_url = f'{self.base_uri}/{api_path}'
+        elif endpoint == 'configs_map_currency_symbol':
             method = 'get'
             api_path = 'v2/conf/pub:map:currency:sym'
             request_url = f'{self.base_uri}/{api_path}'
@@ -524,11 +552,45 @@ class Bitfinex(ExchangeInterface):
             reason=reason,
         )
 
-    def _query_currency_map(self) -> CurrencyMapResponse:
-        """Queries the list that maps standard currency symbols with the version
-        of the Bitfinex API.
+    def _query_currencies(self) -> CurrenciesResponse:
+        """Query and return the list of all the currencies supported in
+        `<CurrenciesResponse>.currencies`.
+        Otherwise populate <CurrenciesResponse> with data that each endpoint
+        can process as an unsuccessful request.
+        """
+        was_successful = True
+        currencies = []
+        response = self._api_query('configs_list_currency')
 
-        Result format is: [[[<bitfinex_symbol>, <symbol>], ...]]
+        if response.status_code != HTTPStatus.OK:
+            was_successful = False
+            log.error(f'{self.name} currencies list query failed. Check further logs')
+        else:
+            try:
+                response_list = rlk_jsonloads_list(response.text)
+            except JSONDecodeError:
+                was_successful = False
+                log.error(
+                    f'{self.name} currencies list returned invalid JSON response. '
+                    f'Check further logs',
+                )
+            else:
+                currencies = response_list[0]
+
+        return CurrenciesResponse(
+            success=was_successful,
+            response=response,
+            currencies=currencies,
+        )
+
+    def _query_currency_map(self) -> CurrencyMapResponse:
+        """Query the list that maps standard currency symbols with the version
+        of the Bitfinex API. If the request is successful and the list format
+        as well, return it as dict in `<CurrencyMapResponse>.currency_map`.
+        Otherwise populate <CurrencyMapResponse> with data that each endpoint
+        can process as an unsuccessful request.
+
+        API result format is: [[[<bitfinex_symbol>, <symbol>], ...]]
 
         May raise IndexError if the list is empty.
         """
@@ -549,11 +611,43 @@ class Bitfinex(ExchangeInterface):
                 )
             else:
                 currency_map = dict(response_list[0])
+                currency_map.update(BITFINEX_TO_WORLD)
 
         return CurrencyMapResponse(
             success=was_successful,
             response=response,
             currency_map=currency_map,
+        )
+
+    def _query_exchange_pairs(self) -> ExchangePairsResponse:
+        """Query and return the list of the exchange (trades) pairs in
+        `<ExchangePairsResponse>.pairs`.
+        Otherwise populate <ExchangePairsResponse> with data that each endpoint
+        can process as an unsuccessful request.
+        """
+        was_successful = True
+        pairs = []
+        response = self._api_query('configs_list_pair_exchange')
+
+        if response.status_code != HTTPStatus.OK:
+            was_successful = False
+            log.error(f'{self.name} exchange pairs list query failed. Check further logs')
+        else:
+            try:
+                response_list = rlk_jsonloads_list(response.text)
+            except JSONDecodeError:
+                was_successful = False
+                log.error(
+                    f'{self.name} exchange pairs list returned invalid JSON response. '
+                    f'Check further logs',
+                )
+            else:
+                pairs = response_list[0]
+
+        return ExchangePairsResponse(
+            success=was_successful,
+            response=response,
+            pairs=pairs,
         )
 
     @overload  # noqa: F811

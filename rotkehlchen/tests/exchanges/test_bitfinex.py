@@ -1,3 +1,4 @@
+import warnings as test_warnings
 from contextlib import ExitStack
 from datetime import datetime
 from http import HTTPStatus
@@ -8,7 +9,16 @@ from requests import Response
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import RemoteError, SystemClockNotSyncedError
+from rotkehlchen.assets.converters import (
+    BITFINEX_EXCHANGE_TEST_ASSETS,
+    UNSUPPORTED_BITFINEX_ASSETS,
+)
+from rotkehlchen.errors import (
+    RemoteError,
+    SystemClockNotSyncedError,
+    UnknownAsset,
+    UnsupportedAsset,
+)
 from rotkehlchen.exchanges.bitfinex import (
     API_KEY_ERROR_CODE,
     API_KEY_ERROR_MESSAGE,
@@ -34,6 +44,64 @@ from rotkehlchen.typing import (
 def test_name():
     exchange = Bitfinex('a', b'a', object(), object())
     assert exchange.name == str(Location.BITFINEX)
+
+
+def test_bitfinex_exchange_assets_are_known(mock_bitfinex):
+    """This tests only exchange (trades) assets (not margin, nor futures ones).
+    """
+    currencies_response = mock_bitfinex._query_currencies()
+    if currencies_response.success is False:
+        response = currencies_response.response
+        test_warnings.warn(UserWarning(
+            f'Failed to request {mock_bitfinex.name} currencies list. '
+            f'Response status code: {response.status_code}. '
+            f'Response text: {response.text}. Xfailing this test',
+        ))
+        pytest.xfail('xfailing this test')
+
+    exchange_pairs_response = mock_bitfinex._query_exchange_pairs()
+    if exchange_pairs_response.success is False:
+        response = exchange_pairs_response.response
+        test_warnings.warn(UserWarning(
+            f'Failed to request {mock_bitfinex.name} exchange pairs list. '
+            f'Response status code: {response.status_code}. '
+            f'Response text: {response.text}. Xfailing this test',
+        ))
+        pytest.xfail('xfailing this test')
+
+    currency_map_response = mock_bitfinex._query_currency_map()
+    if currency_map_response.success is False:
+        response = currency_map_response.response
+        test_warnings.warn(UserWarning(
+            f'Failed to request {mock_bitfinex.name} currency map. '
+            f'Response status code: {response.status_code}. '
+            f'Response text: {response.text}. Xfailing this test',
+        ))
+        pytest.xfail('xfailing this test')
+
+    test_assets = set(BITFINEX_EXCHANGE_TEST_ASSETS)
+    unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
+    assets_to_ignore = test_assets.union(unsupported_assets)
+    currency_map = currency_map_response.currency_map
+    symbols = set()
+    for symbol in currencies_response.currencies:
+        if symbol in assets_to_ignore:
+            continue
+        for pair in exchange_pairs_response.pairs:
+            if pair.startswith(symbol) or pair.endswith(symbol):
+                symbols.add(currency_map.get(symbol, symbol))
+                break
+
+    for symbol in symbols:
+        try:
+            Asset(symbol)
+        except UnsupportedAsset:
+            assert symbol in unsupported_assets
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.asset_name} in {mock_bitfinex.name}. '
+                f'Support for it has to be added',
+            ))
 
 
 def test_validate_api_key_system_clock_not_synced_error_code(mock_bitfinex):

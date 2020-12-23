@@ -155,6 +155,14 @@ WORLD_TO_BINANCE = {
     'BETH': 'ETH2',
 }
 
+WORLD_TO_BITFINEX = {
+    'BCH': 'BCHABC',
+    'CNY': 'CNH',
+    'DOGE': 'DOG',
+    'REPV2': 'REP',
+    'ZB': 'ZBT',
+}
+
 
 @total_ordering
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
