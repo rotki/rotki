@@ -160,6 +160,7 @@ WORLD_TO_BITFINEX = {
     'CNY': 'CNH',
     'DOGE': 'DOG',
     'REPV2': 'REP',
+    'TRIO': 'TRI',
     'ZB': 'ZBT',
 }
 

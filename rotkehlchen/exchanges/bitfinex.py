@@ -742,7 +742,7 @@ class Bitfinex(ExchangeInterface):
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Balance]], str]:
-        """Return the account balances on Bitfinex
+        """Return the account exchange balances on Bitfinex
 
         The wallets endpoint returns a list where each item is a currency wallet.
         Each currency wallet has type (i.e. exchange, margin, funding), currency,

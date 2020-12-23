@@ -453,6 +453,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
 UNSUPPORTED_BITFINEX_ASSETS = (
     'BCHN',  # https://www.bitfinex.com/posts/566  no cryptocompare/coingecko data
     'B21X',  # no cryptocompare/coingecko data
+    'GTX',  # no cryptocompare/coingecko data (GT, Gate.io token)
     'IQX',  # no cryptocompare/coingecko data (EOS token)
 )
 
