@@ -195,6 +195,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             premium: Optional[Premium],
             data_directory: Path,
             beaconchain: 'BeaconChain',
+            btc_derivation_gap_limit: int,
             eth_modules: Optional[List[str]] = None,
     ):
         log.debug('Initializing ChainManager')
@@ -205,7 +206,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.accounts = blockchain_accounts
         self.data_directory = data_directory
         self.beaconchain = beaconchain
-
+        self.btc_derivation_gap_limit = btc_derivation_gap_limit
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
 

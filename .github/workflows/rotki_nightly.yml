@@ -18,14 +18,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - name: Download Geth
-        run: |
-          .travis/download_geth.sh ${{ matrix.os }}
-          echo "PATH=$HOME/.bin:$PATH" >> $GITHUB_ENV
-        env:
-          GETH_URL_LINUX: https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz
-          GETH_URL_MACOS: https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.13-225171a4.tar.gz
-          GETH_VERSION: 1.8.13
       - name: Setup SQLCipher
         run: |
           if [ ${{ matrix.os }} == 'ubuntu-latest' ];

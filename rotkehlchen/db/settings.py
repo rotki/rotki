@@ -28,6 +28,7 @@ DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 DEFAULT_ACTIVE_MODULES = AVAILABLE_MODULES
 DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
+DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
 
 
 class DBSettings(NamedTuple):
@@ -55,6 +56,7 @@ class DBSettings(NamedTuple):
     active_modules: List[str] = DEFAULT_ACTIVE_MODULES
     frontend_settings: str = ''
     account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
+    btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -77,6 +79,7 @@ class ModifiableDBSettings(NamedTuple):
     active_modules: Optional[List[str]] = None
     frontend_settings: Optional[str] = None
     account_for_assets_movements: Optional[bool] = None
+    btc_derivation_gap_limit: Optional[int] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -113,24 +116,45 @@ def read_boolean(value: Union[str, bool]) -> bool:
     )
 
 
+BOOLEAN_KEYS = (
+    'have_premium',
+    'include_crypto2crypto',
+    'anonymized_logs',
+    'include_gas_costs',
+    'premium_should_sync',
+    'submit_usage_analytics',
+    'account_for_assets_movements',
+)
+INTEGER_KEYS = (
+    'version',
+    'ui_floating_precision',
+    'balance_save_frequency',
+    'btc_derivation_gap_limit',
+)
+STRING_KEYS = (
+    'historical_data_start',
+    'eth_rpc_endpoint',
+    'date_display_format',
+    'thousand_separator',
+    'decimal_separator',
+    'currency_location',
+    'frontend_settings',
+)
+TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
+
+
 def db_settings_from_dict(
         settings_dict: Dict[str, Any],
         msg_aggregator: MessagesAggregator,
 ) -> DBSettings:
     specified_args: Dict[str, Any] = {}
     for key, value in settings_dict.items():
-        if key == 'have_premium':
+        if key in BOOLEAN_KEYS:
             specified_args[key] = read_boolean(value)
-        elif key == 'version':
+        elif key in INTEGER_KEYS:
             specified_args[key] = int(value)
-        elif key == 'historical_data_start':
+        elif key in STRING_KEYS:
             specified_args[key] = str(value)
-        elif key == 'eth_rpc_endpoint':
-            specified_args[key] = str(value)
-        elif key == 'ui_floating_precision':
-            specified_args[key] = int(value)
-        elif key == 'include_crypto2crypto':
-            specified_args[key] = read_boolean(value)
         elif key == 'taxfree_after_period':
             # taxfree_after_period can also be None, to signify disabled setting
             if value is None:
@@ -149,40 +173,14 @@ def db_settings_from_dict(
                     value = int_value
 
                 specified_args[key] = value
-        elif key == 'balance_save_frequency':
-            specified_args[key] = int(value)
         elif key == 'main_currency':
             specified_args[key] = Asset(str(value))
-        elif key == 'anonymized_logs':
-            specified_args[key] = read_boolean(value)
-        elif key == 'include_gas_costs':
-            specified_args[key] = read_boolean(value)
-        elif key == 'date_display_format':
-            specified_args[key] = str(value)
-        elif key == 'thousand_separator':
-            specified_args[key] = str(value)
-        elif key == 'decimal_separator':
-            specified_args[key] = str(value)
-        elif key == 'currency_location':
-            specified_args[key] = str(value)
-        elif key == 'premium_should_sync':
-            specified_args[key] = read_boolean(value)
-        elif key == 'last_write_ts':
+        elif key in TIMESTAMP_KEYS:
             specified_args[key] = Timestamp(int(value))
-        elif key == 'last_data_upload_ts':
-            specified_args[key] = Timestamp(int(value))
-        elif key == 'last_balance_save':
-            specified_args[key] = Timestamp(int(value))
-        elif key == 'submit_usage_analytics':
-            specified_args[key] = read_boolean(value)
         elif key == 'kraken_account_type':
             specified_args[key] = KrakenAccountType.deserialize(value)
         elif key == 'active_modules':
             specified_args[key] = json.loads(value)
-        elif key == 'frontend_settings':
-            specified_args[key] = str(value)
-        elif key == 'account_for_assets_movements':
-            specified_args[key] = read_boolean(value)
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

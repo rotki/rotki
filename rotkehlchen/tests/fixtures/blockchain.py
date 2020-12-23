@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
+from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -97,6 +98,11 @@ def fixture_beaconchain(database, messages_aggregator):
     return BeaconChain(database=database, msg_aggregator=messages_aggregator)
 
 
+@pytest.fixture(name='btc_derivation_gap_limit')
+def fixture_btc_derivation_gap_limit():
+    return DEFAULT_BTC_DERIVATION_GAP_LIMIT
+
+
 @pytest.fixture
 def blockchain(
         ethereum_manager,
@@ -110,6 +116,7 @@ def blockchain(
         database,
         data_dir,
         beaconchain,
+        btc_derivation_gap_limit,
 ):
     premium = None
     if start_with_valid_premium:
@@ -125,6 +132,7 @@ def blockchain(
         eth_modules=ethereum_modules,
         data_directory=data_dir,
         beaconchain=beaconchain,
+        btc_derivation_gap_limit=btc_derivation_gap_limit,
     )
 
     return chain_manager

@@ -409,12 +409,17 @@
       "anonymized_logs": "Should logs be anonymized?",
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
+      "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "historical_data_start": "Date from when to count historical data",
       "rpc_endpoint": "Eth RPC Endpoint"
     },
     "title": "General Settings",
     "validation": {
+      "btc_derivation_gap": {
+        "error": "Error setting the BTC derivation gap limit",
+        "success": "The BTC derivation gap limit was successfully changed to {limit}"
+      },
       "analytics": {
         "error": "Error setting anonymous usage analytics"
       },

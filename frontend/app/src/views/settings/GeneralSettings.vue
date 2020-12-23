@@ -10,8 +10,8 @@
               class="general-settings__fields__anonymized-logs"
               :label="$t('general_settings.labels.anonymized_logs')"
               color="primary"
-              :success-messages="settingsMessages['anonymizedLogs'].success"
-              :error-messages="settingsMessages['anonymizedLogs'].error"
+              :success-messages="settingsMessages[ANONYMIZED_LOGS].success"
+              :error-messages="settingsMessages[ANONYMIZED_LOGS].error"
               @change="onAnonymizedLogsChange($event)"
             />
             <v-switch
@@ -20,10 +20,10 @@
               color="primary"
               :label="$t('general_settings.labels.anonymous_analytics')"
               :success-messages="
-                settingsMessages['anonymousUsageAnalytics'].success
+                settingsMessages[ANONYMOUS_USAGE_ANALYTICS].success
               "
               :error-messages="
-                settingsMessages['anonymousUsageAnalytics'].error
+                settingsMessages[ANONYMOUS_USAGE_ANALYTICS].error
               "
               @change="onAnonymousUsageAnalyticsChange($event)"
             />
@@ -45,9 +45,9 @@
                   :hint="$t('general_settings.historic_start_hint')"
                   prepend-icon="mdi-calendar"
                   :success-messages="
-                    settingsMessages['historicDataStart'].success
+                    settingsMessages[HISTORIC_DATA_START].success
                   "
-                  :error-messages="settingsMessages['historicDataStart'].error"
+                  :error-messages="settingsMessages[HISTORIC_DATA_START].error"
                   readonly
                   v-on="on"
                   @change="onHistoricDataStartChange($event)"
@@ -66,8 +66,8 @@
               :label="$t('general_settings.labels.rpc_endpoint')"
               type="text"
               data-vv-name="eth_rpc_endpoint"
-              :success-messages="settingsMessages['rpcEndpoint'].success"
-              :error-messages="settingsMessages['rpcEndpoint'].error"
+              :success-messages="settingsMessages[RPC_ENDPOINT].success"
+              :error-messages="settingsMessages[RPC_ENDPOINT].error"
               clearable
               @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
               @click:clear="onRpcEndpointChange('')"
@@ -80,9 +80,9 @@
               :label="$t('general_settings.labels.balance_saving_frequency')"
               type="number"
               :success-messages="
-                settingsMessages['balanceSaveFrequency'].success
+                settingsMessages[BALANCE_SAVE_FREQUENCY].success
               "
-              :error-messages="settingsMessages['balanceSaveFrequency'].error"
+              :error-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].error"
               @change="onBalanceSaveFrequencyChange($event)"
             />
 
@@ -91,9 +91,21 @@
               class="general-settings__fields__date-display-format"
               :label="$t('general_settings.labels.date_display_format')"
               type="text"
-              :success-messages="settingsMessages['dateDisplayFormat'].success"
-              :error-messages="settingsMessages['dateDisplayFormat'].error"
+              :success-messages="settingsMessages[DATE_DISPLAY_FORMAT].success"
+              :error-messages="settingsMessages[DATE_DISPLAY_FORMAT].error"
               @change="onDateDisplayFormatChange($event)"
+            />
+
+            <v-text-field
+              v-model="btcDerivationGapLimit"
+              class="general-settings__fields__btc-derivation-gap"
+              :label="$t('general_settings.labels.btc_derivation_gap')"
+              type="number"
+              :success-messages="
+                settingsMessages[BTC_DERIVATION_GAP_LIMIT].success
+              "
+              :error-messages="settingsMessages[BTC_DERIVATION_GAP_LIMIT].error"
+              @change="onBtcDerivationGapLimitChanged($event)"
             />
           </v-card-text>
         </v-card>
@@ -107,8 +119,8 @@
               class="general-settings__fields__floating-precision"
               :label="$t('general_settings.amount.labels.floating_precision')"
               type="number"
-              :success-messages="settingsMessages['floatingPrecision'].success"
-              :error-messages="settingsMessages['floatingPrecision'].error"
+              :success-messages="settingsMessages[FLOATING_PRECISION].success"
+              :error-messages="settingsMessages[FLOATING_PRECISION].error"
               @change="onFloatingPrecisionChange($event)"
             />
 
@@ -119,8 +131,8 @@
               item-text="ticker_symbol"
               return-object
               :items="currencies"
-              :success-messages="settingsMessages['selectedCurrency'].success"
-              :error-messages="settingsMessages['selectedCurrency'].error"
+              :success-messages="settingsMessages[SELECTED_CURRENCY].success"
+              :error-messages="settingsMessages[SELECTED_CURRENCY].error"
               @change="onSelectedCurrencyChange($event)"
             >
               <template #item="{ item, attrs, on }">
@@ -155,8 +167,8 @@
               class="general-settings__fields__thousand-separator"
               :label="$t('general_settings.amount.label.thousand_separator')"
               type="text"
-              :success-messages="settingsMessages['thousandSeparator'].success"
-              :error-messages="settingsMessages['thousandSeparator'].error"
+              :success-messages="settingsMessages[THOUSAND_SEPARATOR].success"
+              :error-messages="settingsMessages[THOUSAND_SEPARATOR].error"
               @change="onThousandSeparatorChange($event)"
             />
 
@@ -165,8 +177,8 @@
               class="general-settings__fields__decimal-separator"
               :label="$t('general_settings.amount.label.decimal_separator')"
               type="text"
-              :success-messages="settingsMessages['decimalSeparator'].success"
-              :error-messages="settingsMessages['decimalSeparator'].error"
+              :success-messages="settingsMessages[DECIMAL_SEPARATOR].success"
+              :error-messages="settingsMessages[DECIMAL_SEPARATOR].error"
               @change="onDecimalSeparatorChange($event)"
             />
 
@@ -175,8 +187,8 @@
               class="general-settings__fields__currency-location"
               :label="$t('general_settings.amount.label.currency_location')"
               row
-              :success-messages="settingsMessages['currencyLocation'].success"
-              :error-messages="settingsMessages['currencyLocation'].error"
+              :success-messages="settingsMessages[CURRENCY_LOCATION].success"
+              :error-messages="settingsMessages[CURRENCY_LOCATION].error"
               @change="onCurrencyLocationChange($event)"
             >
               <v-radio
@@ -204,12 +216,12 @@
               v-model="scrambleData"
               class="general-settings__fields__scramble-data"
               :label="$t('general_settings.frontend.label.scramble')"
-              :success-messages="settingsMessages['scrambleData'].success"
-              :error-messages="settingsMessages['scrambleData'].error"
+              :success-messages="settingsMessages[SCRAMBLE_DATA].success"
+              :error-messages="settingsMessages[SCRAMBLE_DATA].error"
               @change="onScrambleDataChange($event)"
             />
             <time-frame-settings
-              :message="settingsMessages['timeframe']"
+              :message="settingsMessages[TIMEFRAME]"
               :value="defaultGraphTimeframe"
               @timeframe-change="onTimeframeChange"
             />
@@ -221,8 +233,8 @@
               type="number"
               min="5"
               max="3600"
-              :success-messages="settingsMessages['queryPeriod'].success"
-              :error-messages="settingsMessages['queryPeriod'].error"
+              :success-messages="settingsMessages[QUERY_PERIOD].success"
+              :error-messages="settingsMessages[QUERY_PERIOD].error"
               @change="onQueryPeriodChange($event)"
             />
           </v-card-text>
@@ -257,9 +269,56 @@ import {
   SettingsUpdate
 } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
-import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
+import Settings from '@/views/settings/Settings.vue';
 
 type BaseMessage = { success: string; error: string };
+
+const message: () => BaseMessage = () => ({ success: '', error: '' });
+
+const SETTING_FLOATING_PRECISION = 'floatingPrecision';
+const SETTING_ANONYMIZED_LOGS = 'anonymizedLogs';
+const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
+const SETTING_HISTORIC_DATA_START = 'historicDataStart';
+const SETTING_RPC_ENDPOINT = 'rpcEndpoint';
+const SETTING_BALANCE_SAVE_FREQUENCY = 'balanceSaveFrequency';
+const SETTING_DATE_DISPLAY_FORMAT = 'dateDisplayFormat';
+const SETTING_THOUSAND_SEPARATOR = 'thousandSeparator';
+const SETTING_DECIMAL_SEPARATOR = 'decimalSeparator';
+const SETTING_CURRENCY_LOCATION = 'currencyLocation';
+const SETTING_SELECTED_CURRENCY = 'selectedCurrency';
+const SETTING_SCRAMBLE_DATA = 'scrambleData';
+const SETTING_TIMEFRAME = 'timeframe';
+const SETTING_QUERY_PERIOD = 'queryPeriod';
+const SETTING_BTC_DERIVATION_GAP_LIMIT = 'btcDerivationGapLimit';
+
+const SETTINGS = [
+  SETTING_FLOATING_PRECISION,
+  SETTING_ANONYMIZED_LOGS,
+  SETTING_ANONYMOUS_USAGE_ANALYTICS,
+  SETTING_HISTORIC_DATA_START,
+  SETTING_RPC_ENDPOINT,
+  SETTING_BALANCE_SAVE_FREQUENCY,
+  SETTING_DATE_DISPLAY_FORMAT,
+  SETTING_THOUSAND_SEPARATOR,
+  SETTING_DECIMAL_SEPARATOR,
+  SETTING_CURRENCY_LOCATION,
+  SETTING_SELECTED_CURRENCY,
+  SETTING_SCRAMBLE_DATA,
+  SETTING_TIMEFRAME,
+  SETTING_QUERY_PERIOD,
+  SETTING_BTC_DERIVATION_GAP_LIMIT
+] as const;
+
+type SettingsEntries = typeof SETTINGS[number];
+type GeneralSettingsMessages = { [setting in SettingsEntries]: BaseMessage };
+
+const settingsMessages: () => GeneralSettingsMessages = () => {
+  const settings: GeneralSettingsMessages = {} as GeneralSettingsMessages;
+  for (const setting of SETTINGS) {
+    settings[setting] = message();
+  }
+  return settings;
+};
 
 @Component({
   components: {
@@ -295,23 +354,24 @@ export default class General extends Settings {
   settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
   queryPeriod: string = '5';
+  btcDerivationGapLimit: string = '20';
 
-  settingsMessages: SettingsMessages = {
-    floatingPrecision: { success: '', error: '' },
-    anonymizedLogs: { success: '', error: '' },
-    anonymousUsageAnalytics: { success: '', error: '' },
-    historicDataStart: { success: '', error: '' },
-    rpcEndpoint: { success: '', error: '' },
-    balanceSaveFrequency: { success: '', error: '' },
-    dateDisplayFormat: { success: '', error: '' },
-    thousandSeparator: { success: '', error: '' },
-    decimalSeparator: { success: '', error: '' },
-    currencyLocation: { success: '', error: '' },
-    selectedCurrency: { success: '', error: '' },
-    scrambleData: { success: '', error: '' },
-    timeframe: { success: '', error: '' },
-    queryPeriod: { success: '', error: '' }
-  };
+  readonly settingsMessages: GeneralSettingsMessages = settingsMessages();
+  readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
+  readonly ANONYMIZED_LOGS = SETTING_ANONYMIZED_LOGS;
+  readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
+  readonly HISTORIC_DATA_START = SETTING_HISTORIC_DATA_START;
+  readonly RPC_ENDPOINT = SETTING_RPC_ENDPOINT;
+  readonly BALANCE_SAVE_FREQUENCY = SETTING_BALANCE_SAVE_FREQUENCY;
+  readonly DATE_DISPLAY_FORMAT = SETTING_DATE_DISPLAY_FORMAT;
+  readonly THOUSAND_SEPARATOR = SETTING_THOUSAND_SEPARATOR;
+  readonly DECIMAL_SEPARATOR = SETTING_DECIMAL_SEPARATOR;
+  readonly CURRENCY_LOCATION = SETTING_CURRENCY_LOCATION;
+  readonly SELECTED_CURRENCY = SETTING_SELECTED_CURRENCY;
+  readonly SCRAMBLE_DATA = SETTING_SCRAMBLE_DATA;
+  readonly TIMEFRAME = SETTING_TIMEFRAME;
+  readonly QUERY_PERIOD = SETTING_QUERY_PERIOD;
+  readonly BTC_DERIVATION_GAP_LIMIT = SETTING_BTC_DERIVATION_GAP_LIMIT;
 
   historicDateMenu: boolean = false;
   date: string = '';
@@ -326,12 +386,30 @@ export default class General extends Settings {
     }
   }
 
+  async onBtcDerivationGapLimitChanged(limit: string) {
+    const message: BaseMessage = {
+      success: this.$t(
+        'general_settings.validation.btc_derivation_gap.success',
+        { limit }
+      ).toString(),
+      error: this.$t(
+        'general_settings.validation.btc_derivation_gap.error'
+      ).toString()
+    };
+
+    await this.update(
+      { btc_derivation_gap_limit: parseInt(limit) },
+      SETTING_BTC_DERIVATION_GAP_LIMIT,
+      message
+    );
+  }
+
   async onTimeframeChange(timeframe: TimeFrameSetting) {
     const { success, message } = await this.updateSetting({
       [TIMEFRAME_SETTING]: timeframe
     });
     this.validateSettingChange(
-      'timeframe',
+      SETTING_TIMEFRAME,
       success ? 'success' : 'error',
       success
         ? `${this.$t('general_settings.validation.timeframe.success', {
@@ -378,7 +456,7 @@ export default class General extends Settings {
     }
 
     this.validateSettingChange(
-      'scrambleData',
+      SETTING_SCRAMBLE_DATA,
       success ? 'success' : 'error',
       success
         ? ''
@@ -399,7 +477,7 @@ export default class General extends Settings {
         }
       )}`;
       this.validateSettingChange(
-        'queryPeriod',
+        SETTING_QUERY_PERIOD,
         'error',
         `${this.$t('general_settings.validation.periodic_query.error', {
           message
@@ -412,7 +490,7 @@ export default class General extends Settings {
       [QUERY_PERIOD]: period
     });
     this.validateSettingChange(
-      'queryPeriod',
+      SETTING_QUERY_PERIOD,
       success ? 'success' : 'error',
       success
         ? `${this.$t('general_settings.validation.periodic_query.success', {
@@ -437,7 +515,11 @@ export default class General extends Settings {
       })}`,
       error: `${this.$t('general_settings.validation.currency.error')}`
     };
-    await this.update({ main_currency: symbol }, 'selectedCurrency', message);
+    await this.update(
+      { main_currency: symbol },
+      SETTING_SELECTED_CURRENCY,
+      message
+    );
   }
 
   async onThousandSeparatorChange(thousandSeparator: string) {
@@ -453,7 +535,7 @@ export default class General extends Settings {
 
     await this.update(
       { thousand_separator: thousandSeparator },
-      'thousandSeparator',
+      SETTING_THOUSAND_SEPARATOR,
       message
     );
   }
@@ -471,7 +553,7 @@ export default class General extends Settings {
 
     await this.update(
       { decimal_separator: decimalSeparator },
-      'decimalSeparator',
+      SETTING_DECIMAL_SEPARATOR,
       message
     );
   }
@@ -489,7 +571,7 @@ export default class General extends Settings {
 
     await this.update(
       { currency_location: currencyLocation },
-      'currencyLocation',
+      SETTING_CURRENCY_LOCATION,
       message
     );
   }
@@ -517,7 +599,7 @@ export default class General extends Settings {
 
     const success = await this.update(
       { ui_floating_precision: parseInt(precision) },
-      'floatingPrecision',
+      SETTING_FLOATING_PRECISION,
       message
     );
 
@@ -543,7 +625,7 @@ export default class General extends Settings {
 
     await this.update(
       { submit_usage_analytics: enabled },
-      'anonymousUsageAnalytics',
+      SETTING_ANONYMOUS_USAGE_ANALYTICS,
       message
     );
   }
@@ -573,7 +655,7 @@ export default class General extends Settings {
 
     const success = await this.update(
       { historical_data_start: date },
-      'historicDataStart',
+      SETTING_HISTORIC_DATA_START,
       message
     );
 
@@ -605,7 +687,7 @@ export default class General extends Settings {
 
     const success = await this.update(
       { balance_save_frequency: parseInt(frequency) },
-      'balanceSaveFrequency',
+      SETTING_BALANCE_SAVE_FREQUENCY,
       message
     );
 
@@ -624,7 +706,7 @@ export default class General extends Settings {
 
     await this.update(
       { date_display_format: dateFormat },
-      'dateDisplayFormat',
+      SETTING_DATE_DISPLAY_FORMAT,
       message
     );
   }
@@ -647,7 +729,7 @@ export default class General extends Settings {
 
     const success = await this.update(
       { eth_rpc_endpoint: endpoint },
-      'rpcEndpoint',
+      SETTING_RPC_ENDPOINT,
       message
     );
 
@@ -697,6 +779,7 @@ export default class General extends Settings {
     this.decimalSeparator = settings.decimalSeparator;
     this.currencyLocation = settings.currencyLocation;
     this.date = this.parseDate(settings.historicDataStart) || '';
+    this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();
     const state = this.$store.state;
     this.scrambleData = state.session.scrambleData;
     this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];

@@ -15,7 +15,8 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   anonymousUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
   selectedCurrency: currencies[0],
   krakenAccountType: Defaults.KRAKEN_DEFAULT_ACCOUNT_TYPE,
-  activeModules: []
+  activeModules: [],
+  btcDerivationGapLimit: Defaults.BTC_DERIVATION_GAP_LIMIT
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({

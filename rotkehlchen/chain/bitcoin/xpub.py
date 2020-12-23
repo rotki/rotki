@@ -13,7 +13,6 @@ from rotkehlchen.typing import BlockchainAccountData, BTCAddress, SupportedBlock
 if TYPE_CHECKING:
     from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 
-XPUB_ADDRESS_STEP = 20
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +66,7 @@ def _derive_addresses_loop(
         account_index: int,
         start_index: int,
         root: HDKey,
+        gap_limit: int,
 ) -> List[XpubDerivedAddressData]:
     """May raise:
     - RemoteError: if blockstream/blockchain.info can't be reached
@@ -76,7 +76,7 @@ def _derive_addresses_loop(
     should_continue = True
     while should_continue:
         batch_addresses: List[Tuple[int, BTCAddress]] = []
-        for idx in range(step_index, step_index + XPUB_ADDRESS_STEP):
+        for idx in range(step_index, step_index + gap_limit):
             child = root.derive_child(idx)
             batch_addresses.append((idx, child.address()))
 
@@ -107,15 +107,16 @@ def _derive_addresses_loop(
                         balance=balance,
                     ))
 
-        step_index += XPUB_ADDRESS_STEP
+        step_index += gap_limit
 
     return addresses
 
 
-def derive_addresses_from_xpub_data(
+def _derive_addresses_from_xpub_data(
         xpub_data: XpubData,
         start_receiving_index: int,
         start_change_index: int,
+        gap_limit: int,
 ) -> List[XpubDerivedAddressData]:
     """Derive all addresses from the xpub that have had transactions. Also includes
     any addresses until the biggest index derived addresses that have had no transactions.
@@ -136,6 +137,7 @@ def derive_addresses_from_xpub_data(
             account_index=0,
             start_index=start_receiving_index,
             root=receiving_xpub,
+            gap_limit=gap_limit,
         ),
     )
     change_xpub = account_xpub.derive_child(1)
@@ -144,6 +146,7 @@ def derive_addresses_from_xpub_data(
             account_index=1,
             start_index=start_change_index,
             root=change_xpub,
+            gap_limit=gap_limit,
         ),
     )
     return addresses
@@ -166,10 +169,11 @@ class XpubManager():
         - RemoteError: if blockstream/blockchain.info and others can't be reached
         """
         last_receiving_idx, last_change_idx = self.db.get_last_xpub_derived_indices(xpub_data)
-        derived_addresses_data = derive_addresses_from_xpub_data(
+        derived_addresses_data = _derive_addresses_from_xpub_data(
             xpub_data=xpub_data,
             start_receiving_index=last_receiving_idx,
             start_change_index=last_change_idx,
+            gap_limit=self.chain_manager.btc_derivation_gap_limit,
         )
         known_btc_addresses = self.db.get_blockchain_accounts().btc
 

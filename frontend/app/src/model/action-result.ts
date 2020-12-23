@@ -32,6 +32,7 @@ export interface DBSettings {
   readonly active_modules: SupportedModules[];
   readonly frontend_settings: string;
   readonly account_for_assets_movements: boolean;
+  readonly btc_derivation_gap_limit: number;
 }
 
 interface ApiKey {

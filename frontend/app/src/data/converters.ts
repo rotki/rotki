@@ -28,7 +28,8 @@ export const convertToGeneralSettings = (
   anonymizedLogs: settings.anonymized_logs,
   anonymousUsageAnalytics: settings.submit_usage_analytics,
   krakenAccountType: settings.kraken_account_type,
-  activeModules: settings.active_modules
+  activeModules: settings.active_modules,
+  btcDerivationGapLimit: settings.btc_derivation_gap_limit
 });
 
 export const convertToAccountingSettings = (
