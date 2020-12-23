@@ -2,10 +2,15 @@ import warnings as test_warnings
 
 import pytest
 
-from rotkehlchen.chain.ethereum.defi.zerionsdk import ZerionSDK
+from rotkehlchen.chain.ethereum.defi.zerionsdk import KNOWN_ZERION_PROTOCOL_NAMES, ZerionSDK
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.ethereum import (
+    ETHEREUM_TEST_PARAMETERS,
+    wait_until_all_nodes_connected,
+)
 
 
+@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 @pytest.mark.parametrize('mocked_current_prices', [{
     'SNX': FVal('1'),
     'cUSDT': FVal('1'),
@@ -15,6 +20,8 @@ def test_query_all_protocol_balances_for_account(
         ethereum_manager,
         function_scope_messages_aggregator,
         inquirer,  # pylint: disable=unused-argument
+        ethereum_manager_connect_at_start,
+        call_order,  # pylint: disable=unused-argument
 ):
     """Simple test that we can get balances for various defi protocols via zerion
 
@@ -25,8 +32,13 @@ def test_query_all_protocol_balances_for_account(
     certain balance in a few DeFi protocols and does not change them. This way
     we can have something stable to check again.
     """
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=ethereum_manager,
+    )
     zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator)
     balances = zerion.all_balances_for_account('0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662')
+
     if len(balances) == 0:
         test_warnings.warn(UserWarning('Test account for DeFi balances has no balances'))
         return
@@ -36,77 +48,6 @@ def test_query_all_protocol_balances_for_account(
     assert len(errors) == 0
     warnings = function_scope_messages_aggregator.consume_warnings()
     assert len(warnings) == 0
-
-
-KNOWN_ZERION_PROTOCOL_NAMES = (
-    'Curve • Vesting',
-    'Curve • Liquidity Gauges',
-    'ygov.finance (v1)',
-    'ygov.finance (v2)',
-    'mStable • Staking',
-    'Swerve • Liquidity Gauges',
-    'Pickle Finance • Farms',
-    'Pickle Finance • Staking',
-    'Aave • Staking',
-    'C.R.E.A.M. • Staking',
-    'Compound Governance',
-    'zlot.finance',
-    'FinNexus',
-    'Pickle Finance',
-    'DODO',
-    'Berezka',
-    'bZx',
-    'C.R.E.A.M.',
-    'Swerve',
-    'SashimiSwap',
-    'Harvest',
-    'Harvest • Profit Sharing',
-    'KIMCHI',
-    'SushiSwap',
-    'Nexus Mutual',
-    'Mooniswap',
-    'Matic',
-    'Aragon',
-    'Melon',
-    'yearn.finance • Vaults',
-    'KeeperDAO',
-    'mStable',
-    'KyberDAO',
-    'DDEX • Spot',
-    'DDEX • Margin',
-    'DDEX • Lending',
-    'Ampleforth',
-    'Maker Governance',
-    'Gnosis Protocol',
-    'Chi Gastoken by 1inch',
-    'Idle • Risk-Adjusted',
-    'Aave • Uniswap Market',
-    'Uniswap V2',
-    'PieDAO',
-    'Multi-Collateral Dai',
-    'Bancor',
-    'DeFi Money Market',
-    'TokenSets',
-    '0x Staking',
-    'Uniswap V1',
-    'Synthetix',
-    'PoolTogether',
-    'Dai Savings Rate',
-    'Chai',
-    'iearn.finance (v3)',
-    'iearn.finance (v2)',
-    'Idle',
-    'Idle • Early Rewards',
-    'dYdX',
-    'Curve',
-    'Compound',
-    'Balancer',
-    'Aave',
-    'SnowSwap',
-    'Aave V2',
-    'Aave V2 • Variable Debt',
-    'Aave V2 • Stable Debt',
-)
 
 
 def test_protocol_names_are_known(
