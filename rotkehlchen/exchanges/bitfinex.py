@@ -19,6 +19,7 @@ from typing import (
 )
 from urllib.parse import urlencode
 
+import gevent
 import requests
 from requests.adapters import Response
 from typing_extensions import Literal
@@ -57,7 +58,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_list
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -69,6 +70,14 @@ log = RotkehlchenLogsAdapter(logger)
 # Error codes that we handle nicely
 API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE = 10114  # small nonce (from timestamp in ms)
 API_KEY_ERROR_CODE = 10100
+API_KEY_ERROR_MESSAGE = (
+    'Provided API key/secret is invalid or does not have enough permissions. '
+    'Make sure it has get/read permission of both "Balances" and "Account History" enabled.'
+)
+# Rate Limits and retry
+API_RATE_LIMITS_ERROR_MESSAGE = 'ERR_RATE_LIMIT'
+API_REQUEST_RETRY_TIMES = 2
+API_REQUEST_RETRY_AFTER_SECONDS = 60
 # Max limits for all API v2 endpoints
 API_TRADES_MAX_LIMIT = 2500
 API_MOVEMENTS_MAX_LIMIT = 1000
@@ -76,8 +85,8 @@ API_MOVEMENTS_MAX_LIMIT = 1000
 API_TRADES_SORTING_MODE = 1  # ascending
 API_MOVEMENTS_SORTING_MODE = 1  # ascending, TBC
 # Minimum response item length per endpoint
-API_TRADES_MIN_ENTRY_LENGTH = 11
-API_MOVEMENTS_MIN_ENTRY_LENGTH = 22
+API_TRADES_MIN_RESULT_LENGTH = 11
+API_MOVEMENTS_MIN_RESULT_LENGTH = 22
 
 DeserializationMethod = Callable[..., Union[Trade, AssetMovement]]  # ... due to keyword args
 
@@ -200,6 +209,12 @@ class Bitfinex(ExchangeInterface):
         Pagination attribute criteria per endpoint:
           - trades: from `start_ts` to `end_ts` (as offset) with limit 2500.
           - movements: from `start_ts` to `end_ts` (as offset) with limit 1000.
+
+        Error codes documentation:
+        https://docs.bitfinex.com/docs/abbreviations-glossary#errorinfo-codes
+
+        Rates limit documentation:
+        https://docs.bitfinex.com/docs/requirements-and-limitations#rest-rate-limits
         """
         deserialization_method: DeserializationMethod
         endpoint: Literal['trades', 'movements']
@@ -207,17 +222,15 @@ class Bitfinex(ExchangeInterface):
         if case == 'trades':
             endpoint = 'trades'
             response_case = 'trades'
-            case_pretty = 'trade'
             deserialization_method = self._deserialize_trade
-            expected_raw_result_length = API_TRADES_MIN_ENTRY_LENGTH
+            expected_raw_result_length = API_TRADES_MIN_RESULT_LENGTH
             id_index = 0
             timestamp_index = 2
         elif case == 'asset_movements':
             endpoint = 'movements'
             response_case = 'asset_movements'
-            case_pretty = 'asset movement'
             deserialization_method = self._deserialize_asset_movement
-            expected_raw_result_length = API_MOVEMENTS_MIN_ENTRY_LENGTH
+            expected_raw_result_length = API_MOVEMENTS_MIN_RESULT_LENGTH
             id_index = 0
             timestamp_index = 5
         else:
@@ -228,12 +241,45 @@ class Bitfinex(ExchangeInterface):
         results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
         last_result_id = None
         last_result_timestamp = None
-        while True:
+        retries_left = API_REQUEST_RETRY_TIMES
+        while retries_left >= 0:
             response = self._api_query(
                 endpoint=endpoint,
                 options=call_options,
             )
             if response.status_code != HTTPStatus.OK:
+                # NB: check if the rate limits have been hit (response JSON as dict)
+                try:
+                    response_dict = rlk_jsonloads_dict(response.text)
+                except (AssertionError, JSONDecodeError):
+                    msg = (
+                        f'Error decoding {self.name} {case} unsuccessful response JSON as dict. '
+                        f'Continue decoding unsuccessful response as a JSON list.'
+                    )
+                    log.debug(msg, options=call_options)
+                else:
+                    if response_dict.get('error', None) == API_RATE_LIMITS_ERROR_MESSAGE:
+                        if retries_left == 0:
+                            raise RemoteError(
+                                f'{self.name} {case} request failed after retrying '
+                                f'{API_REQUEST_RETRY_TIMES} times.',
+                            )
+                        # Trigger retry
+                        log.debug(
+                            f'{self.name} {case} request reached the rate limits. Backing off',
+                            seconds=API_REQUEST_RETRY_AFTER_SECONDS,
+                            options=call_options,
+                        )
+                        retries_left -= 1
+                        gevent.sleep(API_REQUEST_RETRY_AFTER_SECONDS)
+                        continue
+                    # As this should not happend, better to log it
+                    log.error(
+                        f'Unexpected {self.name} {case} unsuccessful response JSON. '
+                        f'Continue decoding unsuccessful response a JSON list.',
+                        options=call_options,
+                    )
+
                 return self._process_unsuccessful_response(
                     response=response,
                     case=response_case,
@@ -241,29 +287,30 @@ class Bitfinex(ExchangeInterface):
             try:
                 response_list = rlk_jsonloads_list(response.text)
             except JSONDecodeError:
-                msg = f'{self.name} returned invalid JSON response: {response.text}.'
+                msg = f'{self.name} {case} returned invalid JSON response: {response.text}.'
                 log.error(msg)
                 self.msg_aggregator.add_error(
-                    f'Got remote error while querying Bistamp trades: {msg}',
+                    f'Got remote error while querying {self.name} {case}: {msg}',
                 )
                 return []  # type: ignore # bug list nothing
 
             for raw_result in response_list:
                 if len(raw_result) < expected_raw_result_length:
                     log.error(
-                        f'Error processing a {self.name} {case}. Found less items than expected',
+                        f'Error processing a {self.name} {case} result. '
+                        f'Found less items than expected',
                         raw_result=raw_result,
                     )
                     self.msg_aggregator.add_error(
-                        f'Failed to deserialize a {self.name} {case_pretty}. '
+                        f'Failed to deserialize a {self.name} {case} result. '
                         f'Check logs for details. Ignoring it.',
                     )
                     continue
 
                 if raw_result[timestamp_index] > options['end']:
                     log.debug(
-                        f'Unexpected result requesting {self.name} {case_pretty}. '
-                        f'Entry timestamp {raw_result[timestamp_index]} is greater than '
+                        f'Unexpected result requesting {self.name} {case}. '
+                        f'Result timestamp {raw_result[timestamp_index]} is greater than '
                         f'end filter {options["end"]}. Stop requesting.',
                         raw_result=raw_result,
                     )
@@ -275,7 +322,7 @@ class Bitfinex(ExchangeInterface):
                     raw_result[timestamp_index] <= last_result_timestamp
                 ):
                     log.debug(
-                        f'Skipped {self.name} {case_pretty}. Entry already processed',
+                        f'Skipped {self.name} {case} result. Already processed',
                         raw_result=raw_result,
                     )
                     continue
@@ -283,7 +330,7 @@ class Bitfinex(ExchangeInterface):
                 # Only asset movements: skip if raw_result status is not 'COMPLETED'
                 if case == 'asset_movements' and raw_result[9] != 'COMPLETED':
                     log.debug(
-                        f'Skipped {self.name} {case_pretty}. Status is not completed',
+                        f'Skipped {self.name} {case} result. Status is not completed',
                         raw_result=raw_result,
                     )
                     continue
@@ -296,12 +343,12 @@ class Bitfinex(ExchangeInterface):
                 except DeserializationError as e:
                     msg = str(e)
                     log.error(
-                        f'Error processing a {self.name} {case_pretty}.',
+                        f'Error processing a {self.name} {case} result.',
                         raw_result=raw_result,
                         error=msg,
                     )
                     self.msg_aggregator.add_error(
-                        f'Failed to deserialize a {self.name} {case_pretty}. '
+                        f'Failed to deserialize a {self.name} {case} result. '
                         f'Check logs for details. Ignoring it.',
                     )
                     continue
@@ -573,7 +620,7 @@ class Bitfinex(ExchangeInterface):
         self._check_for_system_clock_not_synced_error(error_data.error_code)
         # Errors related with the API key return a human readable message
         if case == 'validate_api_key' and error_data.error_code == API_KEY_ERROR_CODE:
-            return False, 'Provided API key or secret is invalid'
+            return False, API_KEY_ERROR_MESSAGE
 
         # Below any other error not related with the system clock or the API key
         reason = error_data.reason or response.text
@@ -660,7 +707,7 @@ class Bitfinex(ExchangeInterface):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} balance result due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry.',
+                    f'query USD price: {str(e)}. Skipping balance result.',
                 )
                 continue
 

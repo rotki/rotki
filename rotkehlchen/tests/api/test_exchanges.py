@@ -10,6 +10,7 @@ import requests
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import SystemClockNotSyncedError
+from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
 )
@@ -118,6 +119,7 @@ def test_setup_exchange(rotkehlchen_api_server):
                 'Provided API Secret is invalid',
                 'Provided Gemini API key needs to have "Auditor" permission activated',
                 BITSTAMP_API_KEY_ERROR_CODE_ACTION['API0011'],
+                BITFINEX_API_KEY_ERROR_MESSAGE,
             ],
             status_code=HTTPStatus.CONFLICT,
         )

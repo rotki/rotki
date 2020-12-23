@@ -8,8 +8,15 @@ from requests import Response
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import SystemClockNotSyncedError
-from rotkehlchen.exchanges.bitfinex import Bitfinex, CurrencyMapResponse
+from rotkehlchen.errors import RemoteError, SystemClockNotSyncedError
+from rotkehlchen.exchanges.bitfinex import (
+    API_KEY_ERROR_CODE,
+    API_KEY_ERROR_MESSAGE,
+    API_RATE_LIMITS_ERROR_MESSAGE,
+    API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE,
+    Bitfinex,
+    CurrencyMapResponse,
+)
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -36,7 +43,7 @@ def test_validate_api_key_system_clock_not_synced_error_code(mock_bitfinex):
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.INTERNAL_SERVER_ERROR,
-            '["error", 10114, "nonce: small"]',
+            f'["error", {API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE}, "nonce: small"]',
         )
 
     with patch.object(mock_bitfinex, '_api_query', side_effect=mock_api_query_response):
@@ -51,19 +58,19 @@ def test_validate_api_key_invalid_key(mock_bitfinex):
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.INTERNAL_SERVER_ERROR,
-            '["error", 10100, "apikey: invalid"]',
+            f'["error", {API_KEY_ERROR_CODE}, "apikey: invalid"]',
         )
 
     with patch.object(mock_bitfinex, '_api_query', side_effect=mock_api_query_response):
         result, msg = mock_bitfinex.validate_api_key()
 
         assert result is False
-        assert msg == 'Provided API key or secret is invalid'
+        assert msg == API_KEY_ERROR_MESSAGE
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disable=unused-argument
-    """Test an entry that can't get its USD price is skipped
+    """Test a result that can't get its USD price is skipped
     """
     response = Response()
     response.status_code = HTTPStatus.OK
@@ -129,6 +136,89 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
             ),
         }
         assert msg == ''
+
+
+def test_api_query_paginated_stops_requesting(mock_bitfinex):
+    """Test requests are stopped after retry limit is reached.
+    """
+
+    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+        return MockResponse(
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            f'{{"error":"{API_RATE_LIMITS_ERROR_MESSAGE}"}}',
+        )
+
+    api_request_retry_times_patch = patch(
+        target='rotkehlchen.exchanges.bitfinex.API_REQUEST_RETRY_TIMES',
+        new=0,
+    )
+    # Just in case the test fails, we don't want to wait 60s
+    api_request_retry_after_seconds_patch = patch(
+        target='rotkehlchen.exchanges.bitfinex.API_REQUEST_RETRY_AFTER_SECONDS',
+        new=0,
+    )
+    api_query_patch = patch.object(
+        target=mock_bitfinex,
+        attribute='_api_query',
+        side_effect=mock_api_query_response,
+    )
+    with ExitStack() as stack:
+        stack.enter_context(api_request_retry_times_patch)
+        stack.enter_context(api_request_retry_after_seconds_patch)
+        stack.enter_context(api_query_patch)
+        with pytest.raises(RemoteError) as e:
+            mock_bitfinex._api_query_paginated(
+                options={'limit': 2},
+                case='trades',
+                currency_map={},
+            )
+        expected_msg = f'{mock_bitfinex.name} trades request failed after retrying 0 times.'
+        assert expected_msg in str(e.value)
+
+
+def test_api_query_paginated_retries_request(mock_bitfinex):
+    """Test retry logic works as expected.
+
+    It also tests that that trying to decode first the unsuccessful response
+    JSON as a dict and later as a list (via `_process_unsuccessful_response()`)
+    works as expected.
+    """
+
+    def get_paginated_response():
+        results = [
+            f'{{"error":"{API_RATE_LIMITS_ERROR_MESSAGE}"}}',
+            '["error", 10000, "unknown error"]',
+        ]
+        for result_ in results:
+            yield result_
+
+    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+        return MockResponse(HTTPStatus.INTERNAL_SERVER_ERROR, next(get_response))
+
+    get_response = get_paginated_response()
+    api_request_retry_times_patch = patch(
+        target='rotkehlchen.exchanges.bitfinex.API_REQUEST_RETRY_TIMES',
+        new=1,
+    )
+    api_request_retry_after_seconds_patch = patch(
+        target='rotkehlchen.exchanges.bitfinex.API_REQUEST_RETRY_AFTER_SECONDS',
+        new=0,
+    )
+    api_query_patch = patch.object(
+        target=mock_bitfinex,
+        attribute='_api_query',
+        side_effect=mock_api_query_response,
+    )
+    with ExitStack() as stack:
+        stack.enter_context(api_request_retry_times_patch)
+        stack.enter_context(api_request_retry_after_seconds_patch)
+        stack.enter_context(api_query_patch)
+        result = mock_bitfinex._api_query_paginated(
+            options={'limit': 2},
+            case='trades',
+            currency_map={},
+        )
+        assert result == []
 
 
 def test_deserialize_trade_buy(mock_bitfinex):
@@ -205,10 +295,10 @@ def test_deserialize_trade_sell(mock_bitfinex):
 @pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
 def test_query_online_trade_history_case_1(mock_bitfinex):
     """Test pagination logic for trades works as expected when each request
-    does not return an entry already processed.
+    does not return a result already processed.
 
     Other things tested:
-      - Stop requesting (break the loop) when entry timestamp is greater than
+      - Stop requesting (break the loop) when result timestamp is greater than
       'end_ts'.
       - '_api_query' call arguments.
 
@@ -432,7 +522,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
 # def test_query_online_trade_history_case_2(mock_bitfinex):
 def test_pepe(mock_bitfinex):
     """Test pagination logic for trades works as expected when a request
-    returns an entry already processed in the previous request.
+    returns a result already processed in the previous request.
 
     Other things tested:
       - Stop requesting when number of entries is less than limit.
@@ -707,11 +797,11 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
 @pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
 def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     """Test pagination logic for asset movements works as expected when each
-    request does not return an entry already processed.
+    request does not return a result already processed.
 
     Other things tested:
-      - Skip entry when status is not 'COMPLETED'.
-      - Stop requesting (break the loop) when entry timestamp is greater than
+      - Skip result when status is not 'COMPLETED'.
+      - Stop requesting (break the loop) when result timestamp is greater than
       'end_ts'.
       - '_api_query' call arguments.
 
@@ -977,7 +1067,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
 @pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
 def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     """Test pagination logic for asset movements works as expected when a
-    request returns an entry already processed in the previous request.
+    request returns a result already processed in the previous request.
 
     Other things tested:
       - Stop requesting when number of entries is less than limit.
