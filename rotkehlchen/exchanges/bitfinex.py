@@ -86,6 +86,7 @@ API_MOVEMENTS_MAX_LIMIT = 1000
 API_TRADES_SORTING_MODE = 1  # ascending
 API_MOVEMENTS_SORTING_MODE = 1  # ascending, TBC
 # Minimum response item length per endpoint
+API_WALLET_MIN_RESULT_LENGTH = 3
 API_TRADES_MIN_RESULT_LENGTH = 11
 API_MOVEMENTS_MIN_RESULT_LENGTH = 22
 
@@ -780,13 +781,22 @@ class Bitfinex(ExchangeInterface):
             log.error(msg)
             raise RemoteError(msg) from e
 
+        # Wallet items indexes
+        type_index = 0
+        currency_index = 1
+        balance_index = 2
         asset_balance: Dict[Asset, Balance] = {}
         for wallet in response_list:
-            if len(wallet) < 3 or wallet[0] != 'exchange' or wallet[2] <= 0:
+            if (
+                len(wallet) < API_WALLET_MIN_RESULT_LENGTH or
+                wallet[type_index] != 'exchange' or
+                wallet[balance_index] <= 0
+            ):
                 continue
 
-            amount = FVal(wallet[2])
-            symbol = currency_map_response.currency_map.get(wallet[1], wallet[1])
+            amount = FVal(wallet[balance_index])
+            bfx_symbol = wallet[currency_index]
+            symbol = currency_map_response.currency_map.get(bfx_symbol, bfx_symbol)
             try:
                 asset = Asset(symbol)
             except (UnknownAsset, UnsupportedAsset) as e:
