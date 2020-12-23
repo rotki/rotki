@@ -54,9 +54,7 @@
               {{ item.paidAsset ? item.paidAsset : '-' }}
             </template>
             <template #item.isVirtual="{ item }">
-              <v-icon v-if="item.isVirtual" color="success">
-                mdi-check
-              </v-icon>
+              <v-icon v-if="item.isVirtual" color="success"> mdi-check </v-icon>
             </template>
           </v-data-table>
         </v-card-text>

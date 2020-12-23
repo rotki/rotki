@@ -11,9 +11,7 @@
           v-on="on"
           @click="editClick"
         >
-          <v-icon small>
-            mdi-pencil-outline
-          </v-icon>
+          <v-icon small> mdi-pencil-outline </v-icon>
         </v-btn>
       </template>
       <span>{{ editTooltip }}</span>
@@ -29,9 +27,7 @@
           v-on="on"
           @click="deleteClick"
         >
-          <v-icon small>
-            mdi-delete-outline
-          </v-icon>
+          <v-icon small> mdi-delete-outline </v-icon>
         </v-btn>
       </template>
       <span>{{ deleteTooltip }}</span>

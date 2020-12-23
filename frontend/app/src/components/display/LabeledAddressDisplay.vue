@@ -47,9 +47,7 @@
             v-on="on"
             @click="openLink"
           >
-            <v-icon small>
-              mdi-launch
-            </v-icon>
+            <v-icon small> mdi-launch </v-icon>
           </v-btn>
         </template>
         <span>{{ $t('labeled_address_display.open_link') }}</span>

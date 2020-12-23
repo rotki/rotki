@@ -13,9 +13,7 @@
           class="manual-balances__add-balance"
           @click="newBalance()"
         >
-          <v-icon>
-            mdi-plus
-          </v-icon>
+          <v-icon> mdi-plus </v-icon>
         </v-btn>
         <big-dialog
           :display="openDialog"

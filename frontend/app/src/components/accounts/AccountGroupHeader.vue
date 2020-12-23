@@ -67,9 +67,7 @@
             v-on="on"
             @click="editClicked(xpub)"
           >
-            <v-icon small>
-              mdi-pencil-outline
-            </v-icon>
+            <v-icon small> mdi-pencil-outline </v-icon>
           </v-btn>
         </template>
         <span>{{ $t('account_group_header.edit_tooltip') }}</span>

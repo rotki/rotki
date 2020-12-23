@@ -6,9 +6,7 @@
     <v-card-text>
       <v-row class="mx-auto text-justify">
         <v-col cols="auto" align-self="center">
-          <v-icon color="success" size="48">
-            mdi-information
-          </v-icon>
+          <v-icon color="success" size="48"> mdi-information </v-icon>
         </v-col>
         <v-col cols="10">{{ $t('premium_reminder.description') }}</v-col>
       </v-row>

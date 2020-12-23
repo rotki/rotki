@@ -4,9 +4,7 @@
       <v-card-title>{{ $t('blockchain_balances.title') }}</v-card-title>
       <v-card-text>
         <v-btn absolute fab top right color="primary" @click="newAccount()">
-          <v-icon>
-            mdi-plus
-          </v-icon>
+          <v-icon> mdi-plus </v-icon>
         </v-btn>
         <big-dialog
           :display="openDialog"
