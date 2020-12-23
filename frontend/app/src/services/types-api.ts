@@ -113,3 +113,8 @@ export interface BtcAccountData {
   readonly standalone: GeneralAccountData[];
   readonly xpubs: XpubAccountData[];
 }
+
+export interface TaskStatus {
+  readonly pending: number[];
+  readonly completed: number[];
+}

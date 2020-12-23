@@ -30,6 +30,7 @@ import {
   SupportedAssets,
   SyncAction,
   TaskNotFoundError,
+  TaskStatus,
   VersionCheck
 } from '@/services/types-api';
 import {
@@ -244,6 +245,15 @@ export class RotkehlchenApi {
           save_data: saveData ? true : undefined
         },
         validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  queryTasks(): Promise<TaskStatus> {
+    return this.axios
+      .get<ActionResult<TaskStatus>>(`/tasks/`, {
+        validateStatus: validTaskStatus,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }
