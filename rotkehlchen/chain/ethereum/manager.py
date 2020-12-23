@@ -393,7 +393,7 @@ class EthereumManager():
         # no node in the call order list was succesfully queried
         raise RemoteError(
             f'Failed to query {str(method)} after trying the following '
-            f'nodes: {[str(x) for x in call_order]}',
+            f'nodes: {[str(x) for x in call_order]}. Check logs for details.',
         )
 
     def _get_latest_block_number(self, web3: Optional[Web3]) -> int:

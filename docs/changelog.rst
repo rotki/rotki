@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1969` Users who were using open nodes only and were seeing an out of gas error during defi balances query, should be able to query defi balances properly again.
 * :bug:`1287` Querying bitmex balances should now work properly again.
 * :bug:`1916` Querying bitstamp trades should now work properly again.
 * :bug:`1917` Users can now properly login if they input the username after the password.

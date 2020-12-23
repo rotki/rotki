@@ -12,21 +12,94 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
+from rotkehlchen.chain.ethereum.typing import NodeName
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 log = logging.getLogger(__name__)
+
+
+KNOWN_ZERION_PROTOCOL_NAMES = (
+    'Curve • Vesting',
+    'Curve • Liquidity Gauges',
+    'ygov.finance (v1)',
+    'ygov.finance (v2)',
+    'mStable • Staking',
+    'Swerve • Liquidity Gauges',
+    'Pickle Finance • Farms',
+    'Pickle Finance • Staking',
+    'Aave • Staking',
+    'C.R.E.A.M. • Staking',
+    'Compound Governance',
+    'zlot.finance',
+    'FinNexus',
+    'Pickle Finance',
+    'DODO',
+    'Berezka',
+    'bZx',
+    'C.R.E.A.M.',
+    'Swerve',
+    'SashimiSwap',
+    'Harvest',
+    'Harvest • Profit Sharing',
+    'KIMCHI',
+    'SushiSwap',
+    'Nexus Mutual',
+    'Mooniswap',
+    'Matic',
+    'Aragon',
+    'Melon',
+    'yearn.finance • Vaults',
+    'KeeperDAO',
+    'mStable',
+    'KyberDAO',
+    'DDEX • Spot',
+    'DDEX • Margin',
+    'DDEX • Lending',
+    'Ampleforth',
+    'Maker Governance',
+    'Gnosis Protocol',
+    'Chi Gastoken by 1inch',
+    'Idle • Risk-Adjusted',
+    'Aave • Uniswap Market',
+    'Uniswap V2',
+    'PieDAO',
+    'Multi-Collateral Dai',
+    'Bancor',
+    'DeFi Money Market',
+    'TokenSets',
+    '0x Staking',
+    'Uniswap V1',
+    'Synthetix',
+    'PoolTogether',
+    'Dai Savings Rate',
+    'Chai',
+    'iearn.finance (v3)',
+    'iearn.finance (v2)',
+    'Idle',
+    'Idle • Early Rewards',
+    'dYdX',
+    'Curve',
+    'Compound',
+    'Balancer',
+    'Aave',
+    'SnowSwap',
+    'Aave V2',
+    'Aave V2 • Variable Debt',
+    'Aave V2 • Stable Debt',
+)
 
 
 def _is_token_non_standard(symbol: str, address: ChecksumEthAddress) -> bool:
@@ -95,16 +168,50 @@ class ZerionSDK():
             deployed_block=1586199170,
         )
 
+    def _query_chain_for_all_balances(self, account: ChecksumEthAddress) -> List:
+        if NodeName.OWN in self.ethereum.web3_mapping:
+            try:
+                # In this case we don't care about the gas limit
+                return self.contract.call(
+                    ethereum=self.ethereum,
+                    method_name='getBalances',
+                    arguments=[account],
+                    call_order=[NodeName.OWN, NodeName.ONEINCH],
+                )
+            except RemoteError:
+                log.warning(
+                    'Failed to query zerionsdk balances with own node. Falling '
+                    'back to multiple calls to getProtocolBalances',
+                )
+
+        # but if we are not connected to our own node the zerion sdk get balances call
+        # has unfortunately crossed the default limits of almost all open nodes apart from 1inch
+        # https://github.com/rotki/rotki/issues/1969
+        # For now split the list in 2. In the near future we probably need
+        # a more flexible/dynamic approach
+        result = []
+        protocol_chunks: List[List[str]] = list(get_chunks(
+            list(KNOWN_ZERION_PROTOCOL_NAMES),
+            n=int(len(KNOWN_ZERION_PROTOCOL_NAMES) / 2),
+        ))
+        for protocol_names in protocol_chunks:
+            contract_result = self.contract.call(
+                ethereum=self.ethereum,
+                method_name='getProtocolBalances',
+                arguments=[account, protocol_names],
+            )
+            if len(contract_result) == 0:
+                continue
+            result.extend(contract_result)
+
+        return result
+
     def all_balances_for_account(self, account: ChecksumEthAddress) -> List[DefiProtocolBalances]:
         """Calls the contract's getBalances() to get all protocol balances for account
 
         https://docs.zerion.io/smart-contracts/adapterregistry-v3#getbalances
         """
-        result = self.contract.call(
-            ethereum=self.ethereum,
-            method_name='getBalances',
-            arguments=[account],
-        )
+        result = self._query_chain_for_all_balances(account=account)
         protocol_balances = []
         for entry in result:
             protocol = DefiProtocol(
