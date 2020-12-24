@@ -59,7 +59,10 @@ jobs:
             ${{ runner.os }}-node--ci-
       - name: Install dependencies
         working-directory: ./frontend/app
-        run: npm ci
+        run: |
+          if ! npm ci --exit-code; then
+            npm ci
+          fi
       - name: Lint code
         working-directory: ./frontend/app
         run: npm run lint:check

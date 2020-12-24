@@ -34,6 +34,7 @@ def test_is_valid_btc_address():
     assert is_valid_btc_address('BC1SW50QA3JX3S')
     assert is_valid_btc_address('bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj')
 
+    assert not is_valid_btc_address('')
     assert not is_valid_btc_address('foo')
     assert not is_valid_btc_address('18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1')
     assert not is_valid_btc_address(
