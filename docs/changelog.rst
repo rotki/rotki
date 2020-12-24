@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1974` Binance USDT margined future and Coin margined future balances should now be visible in Rotki.
 * :bug:`1969` Users who were using open nodes only and were seeing an out of gas error during defi balances query, should be able to query defi balances properly again.
 * :bug:`1287` Querying bitmex balances should now work properly again.
 * :feature:`1515` Rotki now supports Binance US. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
