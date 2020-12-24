@@ -28,6 +28,7 @@ A_CNY = Asset('CNY')
 A_JPY = Asset('JPY')
 A_ZEC = Asset('ZEC')
 A_BUSD = Asset('BUSD')
+A_DOT = Asset('DOT')
 
 ETH_ADDRESS1 = deserialize_ethereum_address('0x5153493bB1E1642A63A098A65dD3913daBB6AE24')
 ETH_ADDRESS2 = deserialize_ethereum_address('0x4FED1fC4144c223aE3C1553be203cDFcbD38C581')

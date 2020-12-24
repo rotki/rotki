@@ -49,31 +49,38 @@ log = RotkehlchenLogsAdapter(logger)
 # https://www.binance.com/en/support/articles/115000599831-Binance-Exchange-Launched-Date-Set
 BINANCE_LAUNCH_TS = Timestamp(1500001200)
 API_TIME_INTERVAL_CONSTRAINT_TS = Timestamp(7776000)  # 90 days
-V3_ENDPOINTS = (
+V3_METHODS = (
     'account',
     'myTrades',
     'openOrders',
 )
 
-V1_ENDPOINTS = (
+V1_METHODS = (
     'exchangeInfo',
     'time',
-    'futures/loan/wallet',
 )
 
-WAPI_ENDPOINTS = (
+WAPI_METHODS = (
     'depositHistory.html',
     'withdrawHistory.html',
 )
 
-SAPI_ENDPOINTS = (
+SAPI_METHODS = (
     'futures/loan/wallet',
     'lending/daily/token/position',
     'lending/daily/product/list',
     'lending/union/account',
 )
 
+FAPI_METHODS = (
+    'balance',
+    'account',
+)
+
 RETRY_AFTER_LIMIT = 60
+
+
+BINANCE_API_TYPE = Literal['api', 'sapi', 'wapi', 'dapi', 'fapi']
 
 
 class BinancePair(NamedTuple):
@@ -219,10 +226,10 @@ class Binance(ExchangeInterface):
 
         # If it's the first time, populate the binance pair trade symbols
         # We know exchangeInfo returns a dict
-        exchange_data = self.api_query_dict('exchangeInfo')
+        exchange_data = self.api_query_dict('api', 'exchangeInfo')
         self._symbols_to_pair = create_binance_symbols_to_pair(exchange_data)
 
-        server_time = self.api_query_dict('time')
+        server_time = self.api_query_dict('api', 'time')
         self.offset_ms = server_time['serverTime'] - ts_now_in_ms()
 
         self.first_connection_made = True
@@ -235,7 +242,7 @@ class Binance(ExchangeInterface):
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
             # We know account endpoint returns a dict
-            self.api_query_dict('account')
+            self.api_query_dict('api', 'account')
         except RemoteError as e:
             error = str(e)
             if 'API-key format invalid' in error:
@@ -254,7 +261,12 @@ class Binance(ExchangeInterface):
 
         return True, ''
 
-    def api_query(self, method: str, options: Optional[Dict] = None) -> Union[List, Dict]:
+    def api_query(
+            self,
+            api_type: BINANCE_API_TYPE,
+            method: str,
+            options: Optional[Dict] = None,
+    ) -> Union[List, Dict]:
         call_options = options.copy() if options else {}
 
         while True:
@@ -265,11 +277,27 @@ class Binance(ExchangeInterface):
                 if 'signature' in call_options:
                     del call_options['signature']
 
-                if method in V3_ENDPOINTS or method in WAPI_ENDPOINTS or method in SAPI_ENDPOINTS:
-                    if method in SAPI_ENDPOINTS:
+                is_v3_api_method = api_type == 'api' and method in V3_METHODS
+                is_new_futures_api = api_type in ('fapi', 'dapi')
+                call_needs_signature = (
+                    (api_type == 'fapi' and method in FAPI_METHODS) or
+                    (api_type == 'dapi' and method in FAPI_METHODS) or  # same as fapi
+                    (api_type == 'sapi' and method in SAPI_METHODS) or
+                    (api_type == 'wapi' and method in WAPI_METHODS) or
+                    is_v3_api_method
+                )
+                if call_needs_signature:
+                    if api_type in ('sapi', 'dapi'):
                         api_version = 1
-                    else:
+                    elif api_type == 'fapi':
+                        api_version = 2
+                    elif api_type == 'wapi' or is_v3_api_method:
                         api_version = 3
+                    else:
+                        raise AssertionError(
+                            f'Should never get to signed binance api call for '
+                            f'api_type: {api_type} and method {method}',
+                        )
 
                     # Recommended recvWindows is 5000 but we get timeouts with it
                     call_options['recvWindow'] = 10000
@@ -280,18 +308,15 @@ class Binance(ExchangeInterface):
                         hashlib.sha256,
                     ).hexdigest()
                     call_options['signature'] = signature
-                elif method in V1_ENDPOINTS:
+                elif api_type == 'api' and method in V1_METHODS:
                     api_version = 1
                 else:
                     raise ValueError(f'Unexpected {self.name} API method {method}')
 
-                if method in WAPI_ENDPOINTS:
-                    apistr = 'wapi/'
-                elif method in SAPI_ENDPOINTS:
-                    apistr = 'sapi/'
-                else:
-                    apistr = 'api/'
-                request_url = f'{self.uri}{apistr}v{str(api_version)}/{method}?'
+                api_subdomain = api_type if is_new_futures_api else 'api'
+                request_url = (
+                    f'https://{api_subdomain}.{self.uri}{api_type}/v{str(api_version)}/{method}?'
+                )
                 request_url += urlencode(call_options)
                 log.debug(f'{self.name} API request', request_url=request_url)
                 try:
@@ -360,18 +385,28 @@ class Binance(ExchangeInterface):
             ) from e
         return json_ret
 
-    def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:
-        result = self.api_query(method, options)
-        assert isinstance(result, Dict)
+    def api_query_dict(
+            self,
+            api_type: BINANCE_API_TYPE,
+            method: str,
+            options: Optional[Dict] = None,
+    ) -> Dict:
+        result = self.api_query(api_type, method, options)
+        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
-    def api_query_list(self, method: str, options: Optional[Dict] = None) -> List:
-        result = self.api_query(method, options)
-        assert isinstance(result, List)
+    def api_query_list(
+            self,
+            api_type: BINANCE_API_TYPE,
+            method: str,
+            options: Optional[Dict] = None,
+    ) -> List:
+        result = self.api_query(api_type, method, options)
+        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def _query_spot_balances(self, balances: Dict) -> Dict:
-        account_data = self.api_query_dict('account')
+        account_data = self.api_query_dict('api', 'account')
         for entry in account_data['balances']:
             if len(entry['asset']) >= 5 and entry['asset'].startswith('LD'):
                 # Some lending coins also appear to start with the LD prefix. Ignore them
@@ -425,7 +460,7 @@ class Binance(ExchangeInterface):
         return balances
 
     def _query_lending_balances(self, balances: Dict) -> Dict:
-        data = self.api_query_dict('lending/union/account')
+        data = self.api_query_dict('sapi', 'lending/union/account')
         positions = data.get('positionAmountVos', None)
         if positions is None:
             raise RemoteError(
@@ -480,8 +515,8 @@ class Binance(ExchangeInterface):
 
         return balances
 
-    def _query_futures_balances(self, balances: Dict) -> Dict:
-        futures_response = self.api_query_dict('futures/loan/wallet')
+    def _query_cross_collateral_futures_balances(self, balances: Dict) -> Dict:
+        futures_response = self.api_query_dict('sapi', 'futures/loan/wallet')
         try:
             cross_collaterals = futures_response['crossCollaterals']
             for entry in cross_collaterals:
@@ -534,6 +569,63 @@ class Binance(ExchangeInterface):
 
         return balances
 
+    def _query_margined_futures_balances(
+            self,
+            api_type: Literal['fapi', 'dapi'],
+            balances: Dict,
+    ) -> Dict:
+        response = self.api_query_list(api_type, 'balance')
+        try:
+            for entry in response:
+                amount = FVal(entry['balance'])
+                if amount == ZERO:
+                    continue
+
+                try:
+                    asset = asset_from_binance(entry['asset'])
+                except UnsupportedAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unsupported {self.name} asset {e.asset_name}. '
+                        f'Ignoring its margined futures balance query.',
+                    )
+                    continue
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unknown {self.name} asset {e.asset_name}. '
+                        f'Ignoring its margined futures balance query.',
+                    )
+                    continue
+                except DeserializationError:
+                    self.msg_aggregator.add_error(
+                        f'Found {self.name} asset with non-string type '
+                        f'{type(entry["asset"])}. Ignoring its margined futures balance query.',
+                    )
+                    continue
+
+                try:
+                    usd_price = Inquirer().find_usd_price(asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing {self.name} balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping margined futures balance entry',
+                    )
+                    continue
+
+                balance = Balance(amount=amount, usd_value=amount * usd_price)
+                if asset not in balances:
+                    balances[asset] = balance.to_dict()
+                else:
+                    balances[asset]['amount'] += balance.amount
+                    balances[asset]['usd_value'] += balance.usd_value
+
+        except KeyError as e:
+            self.msg_aggregator.add_error(
+                f'At {self.name} margined futures balance query did not find '
+                f'expected key {str(e)}. Skipping margined futures query...',
+            )
+
+        return balances
+
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict], str]:
@@ -541,8 +633,10 @@ class Binance(ExchangeInterface):
         returned_balances: Dict = {}
         try:
             returned_balances = self._query_spot_balances(returned_balances)
-            returned_balances = self._query_futures_balances(returned_balances)
             returned_balances = self._query_lending_balances(returned_balances)
+            returned_balances = self._query_cross_collateral_futures_balances(returned_balances)
+            returned_balances = self._query_margined_futures_balances('fapi', returned_balances)
+            returned_balances = self._query_margined_futures_balances('dapi', returned_balances)
         except RemoteError as e:
             msg = (
                 f'{self.name} account API request failed. '
@@ -580,6 +674,7 @@ class Binance(ExchangeInterface):
             while len_result == limit:
                 # We know that myTrades returns a list from the api docs
                 result = self.api_query_list(
+                    'api',
                     'myTrades',
                     options={
                         'symbol': symbol,
@@ -706,6 +801,7 @@ class Binance(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             time_delta: Timestamp,
+            api_type: BINANCE_API_TYPE,
             method: Literal['depositHistory.html', 'withdrawHistory.html'],
     ) -> List[Dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
@@ -746,7 +842,7 @@ class Binance(ExchangeInterface):
                 'startTime': from_ts,
                 'endTime': to_ts,
             }
-            result = self.api_query_dict(method, options=options)
+            result = self.api_query_dict(api_type, method, options=options)
             results.extend(result.get(query_schema, []))
             # Case stop requesting
             if to_ts >= end_ts:
@@ -775,6 +871,7 @@ class Binance(ExchangeInterface):
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+            api_type='wapi',
             method='depositHistory.html',
         )
         log.debug(f'{self.name} deposit history result', results_num=len(deposits))
@@ -783,6 +880,7 @@ class Binance(ExchangeInterface):
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+            api_type='wapi',
             method='withdrawHistory.html',
         )
         log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
