@@ -256,6 +256,7 @@ def mock_binance_balance_response(url):
         return MockResponse(200, BINANCE_USDT_FUTURES_BALANCES_RESPONSE)
     if 'https://dapi' in url:
         return MockResponse(200, BINANCE_COIN_FUTURES_BALANCES_RESPONSE)
+
     # else
     return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
@@ -266,6 +267,10 @@ def patch_binance_balances_query(binance: 'Binance'):
             response = '{"crossCollaterals":[]}'
         elif 'lending' in url:
             response = '{"positionAmountVos":[]}'
+        elif 'https://fapi' in url:
+            response = '[]'
+        elif 'https://dapi' in url:
+            response = '[]'
         else:
             response = BINANCE_BALANCES_RESPONSE
         return MockResponse(200, response)
