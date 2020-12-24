@@ -4,6 +4,7 @@ import Vue, { VueConstructor } from 'vue';
 import Vuex from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
+import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
@@ -28,7 +29,7 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 5
+    version: 6
   };
   // Globally registered components are also provided to the premium components.
   Vue.component('AmountDisplay', AmountDisplay);
@@ -51,6 +52,8 @@ export const setupPremium = () => {
   Vue.component('UniswapPoolAsset', UniswapPoolAsset);
   // version 5
   Vue.component('AssetSelect', AssetSelect);
+  // version 6
+  Vue.component('DateTimePicker', DateTimePicker);
 };
 
 function findComponents(): string[] {
