@@ -13,6 +13,7 @@ import { ActionResult, TaskNotFoundError } from '@/services/types-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
+import { TaskMap } from '@/store/tasks/state';
 
 class TaskManager {
   onTradeHistory(data: ActionResult<TradeHistory>, _meta: TaskMeta) {
@@ -43,10 +44,21 @@ class TaskManager {
     const taskState = state.tasks!;
     const { tasks: taskMap, locked } = taskState;
 
-    for (const id in taskMap) {
-      if (!Object.prototype.hasOwnProperty.call(taskMap, id)) {
-        continue;
-      }
+    if (Object.keys(taskMap).length === 0) {
+      return;
+    }
+
+    api
+      .queryTasks()
+      .then(({ completed }) => this.handleTasks(completed, taskMap, locked));
+  }
+
+  private async handleTasks(
+    complete: number[],
+    taskMap: TaskMap<TaskMeta>,
+    locked: number[]
+  ) {
+    for (const id of complete) {
       const task = taskMap[id];
       if (task.id === null) {
         notify(

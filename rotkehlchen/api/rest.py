@@ -286,8 +286,17 @@ class RestAPI():
     @require_loggedin_user()
     def query_tasks_outcome(self, task_id: Optional[int]) -> Response:
         if task_id is None:
-            # If no task id is given return list of all pending/completed tasks
-            result = _wrap_in_ok_result([greenlet.task_id for greenlet in self.killable_greenlets])
+            # If no task id is given return list of all pending and completed tasks
+            completed = []
+            pending = []
+            for greenlet in self.killable_greenlets:
+                task_id = greenlet.task_id
+                if task_id in self.task_results:
+                    completed.append(task_id)
+                else:
+                    pending.append(task_id)
+
+            result = _wrap_in_ok_result({'pending': pending, 'completed': completed})
             return api_response(result=result, status_code=HTTPStatus.OK)
 
         with self.task_lock:

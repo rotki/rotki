@@ -678,7 +678,7 @@ Query the result of an ongoing backend task
 
 .. http:get:: /api/(version)/tasks
 
-   By querying this endpoint without any given task id a list of all pending/completed tasks is returned.
+   By querying this endpoint without any given task id a list of all pending and all completed tasks is returned.
 
    **Example Request**:
 
@@ -697,11 +697,14 @@ Query the result of an ongoing backend task
       Content-Type: application/json
 
       {
-          "result": [4, 23],
+          "result": {
+	      "pending": [4, 23],
+	      "completed": [2]
+	  },
           "message": ""
       }
 
-   :resjson list result: A list of integers representing the pending/completed task IDs.
+   :resjson list result: A mapping of "pending" to a list of pending task ids, and of "completed" to completed task ids.
 
    :statuscode 200: Querying was succesful
    :statuscode 500: Internal Rotki error
