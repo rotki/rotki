@@ -20,7 +20,8 @@ ONE = FVal(1)
 # API URLS
 KRAKEN_BASE_URL = 'https://api.kraken.com'
 KRAKEN_API_VERSION = '0'
-BINANCE_BASE_URL = 'https://api.binance.com/'
+BINANCE_BASE_URL = 'binance.com/'
+BINANCE_US_BASE_URL = 'binance.us/'
 # KRAKEN_BASE_URL = 'http://localhost:5001/kraken'
 # KRAKEN_API_VERSION = 'mock'
 # BINANCE_BASE_URL = 'http://localhost:5001/binance/api/'

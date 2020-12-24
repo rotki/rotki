@@ -22,7 +22,7 @@ from rotkehlchen.exchanges.binance import (
 )
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_BNB, A_BUSD, A_RDN, A_USDT, A_XMR
+from rotkehlchen.tests.utils.constants import A_BNB, A_BUSD, A_DOT, A_RDN, A_USDT, A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_MYTRADES_RESPONSE,
     mock_binance_balance_response,
@@ -186,7 +186,8 @@ def test_binance_assets_are_known(
             assert binance_asset in UNSUPPORTED_BINANCE_ASSETS
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in Binance. Support for it has to be added',
+                f'Found unknown asset {e.asset_name} in binance. '
+                f'Support for it has to be added',
             ))
 
 
@@ -197,11 +198,12 @@ def test_binance_query_balances_include_features(function_scope_binance):
         balances, msg = binance.query_balances()
 
     assert msg == ''
-    assert len(balances) == 4
-    assert balances[A_BTC]['amount'] == FVal('4723846.89208129')
+    assert len(balances) == 5
+    assert balances[A_BTC]['amount'] == FVal('4723847.39208129')
     assert balances[A_ETH]['amount'] == FVal('4763368.68006011')
     assert balances[A_BUSD]['amount'] == FVal('7.49283144')
-    assert balances[A_USDT]['amount'] == FVal('75.46')
+    assert balances[A_USDT]['amount'] == FVal('201.01')
+    assert balances[A_DOT]['amount'] == FVal('500.55')
 
     warnings = binance.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
@@ -697,6 +699,7 @@ def test_api_query_dict_calls_with_time_delta(function_scope_binance):
     end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
     expected_calls = [
         call(
+            'wapi',
             'depositHistory.html',
             options={
                 'timestamp': now_ts_ms,
@@ -705,6 +708,7 @@ def test_api_query_dict_calls_with_time_delta(function_scope_binance):
             },
         ),
         call(
+            'wapi',
             'depositHistory.html',
             options={
                 'timestamp': now_ts_ms,
@@ -713,6 +717,7 @@ def test_api_query_dict_calls_with_time_delta(function_scope_binance):
             },
         ),
         call(
+            'wapi',
             'withdrawHistory.html',
             options={
                 'timestamp': now_ts_ms,
@@ -721,6 +726,7 @@ def test_api_query_dict_calls_with_time_delta(function_scope_binance):
             },
         ),
         call(
+            'wapi',
             'withdrawHistory.html',
             options={
                 'timestamp': now_ts_ms,
@@ -823,6 +829,7 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
         binance_mock_get = stack.enter_context(binance_patch)
         with pytest.raises(RemoteError) as e:
             binance.api_query(
+                api_type='api',
                 method='myTrades',
                 options={
                     'fromId': 0,

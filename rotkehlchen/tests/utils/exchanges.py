@@ -170,6 +170,28 @@ BINANCE_FUTURES_WALLET_RESPONSE = """{
     ]
 }"""
 
+BINANCE_USDT_FUTURES_BALANCES_RESPONSE = """[
+{"accountAlias": "foo", "asset": "USDT", "availableBalance": "125.55", "balance": "125.55", "crossUnPnl": "0", "crossWalletBalance": "125.55", "maxWithdrawAmount": "125.55"},
+ {"accountAlias": "foo", "asset": "BNB", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "maxWithdrawAmount": "0"},
+ {"accountAlias": "foo", "asset": "BUSD", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "maxWithdrawAmount": "0"}
+]"""  # noqa: E501
+
+BINANCE_COIN_FUTURES_BALANCES_RESPONSE = """[{"accountAlias": "boo", "asset": "ETC", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "BTC", "availableBalance": "0.5", "balance": "0.5", "crossUnPnl": "0", "crossWalletBalance": "0.5", "updateTime": 1608764079532, "withdrawAvailable": "0.5"},
+ {"accountAlias": "boo", "asset": "ADA", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "FIL", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "LINK", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "ETH", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "BNB", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "TRX", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "DOT", "availableBalance": "500.55", "balance": "500.55", "crossUnPnl": "0", "crossWalletBalance": "500.55", "updateTime": 1608764079532, "withdrawAvailable": "500.55"},
+ {"accountAlias": "boo", "asset": "EOS", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "LTC", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "BCH", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "XRP", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+ {"accountAlias": "boo", "asset": "EGLD", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"}
+ ]"""  # noqa: E501
+
 BINANCE_LENDING_WALLET_RESPONSE = """{
     "positionAmountVos": [
         {
@@ -230,6 +252,11 @@ def mock_binance_balance_response(url):
         return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
     if 'lending' in url:
         return MockResponse(200, BINANCE_LENDING_WALLET_RESPONSE)
+    if 'https://fapi' in url:
+        return MockResponse(200, BINANCE_USDT_FUTURES_BALANCES_RESPONSE)
+    if 'https://dapi' in url:
+        return MockResponse(200, BINANCE_COIN_FUTURES_BALANCES_RESPONSE)
+
     # else
     return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
@@ -240,6 +267,10 @@ def patch_binance_balances_query(binance: 'Binance'):
             response = '{"crossCollaterals":[]}'
         elif 'lending' in url:
             response = '{"positionAmountVos":[]}'
+        elif 'https://fapi' in url:
+            response = '[]'
+        elif 'https://dapi' in url:
+            response = '[]'
         else:
             response = BINANCE_BALANCES_RESPONSE
         return MockResponse(200, response)
