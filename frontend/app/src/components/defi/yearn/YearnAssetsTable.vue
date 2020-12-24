@@ -10,13 +10,13 @@
         sort-desc
         :loading="loading"
       >
-        <template #item.underlyingValue.usdValue="{item}">
+        <template #item.underlyingValue.usdValue="{ item }">
           <balance-display
             :asset="item.underlyingToken"
             :value="item.underlyingValue"
           />
         </template>
-        <template #item.vaultValue.usdValue="{item}">
+        <template #item.vaultValue.usdValue="{ item }">
           <balance-display :asset="item.vaultToken" :value="item.vaultValue" />
         </template>
         <template #item.roi="{ item }">

@@ -78,9 +78,7 @@
                 />
               </v-btn>
               <v-btn small icon @click="deleteWatcher(watcher.identifier)">
-                <v-icon small>
-                  mdi-delete
-                </v-icon>
+                <v-icon small> mdi-delete </v-icon>
               </v-btn>
             </v-col>
           </v-row>
@@ -128,9 +126,7 @@
                 :disabled="watcherOperation === null || watcherValue === null"
                 @click="addWatcher()"
               >
-                <v-icon>
-                  mdi-plus
-                </v-icon>
+                <v-icon> mdi-plus </v-icon>
               </v-btn>
             </v-col>
           </v-row>

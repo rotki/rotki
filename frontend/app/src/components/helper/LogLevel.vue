@@ -1,6 +1,6 @@
 <template>
   <v-menu class="log-level">
-    <template #activator="{ on: menu, attrs}">
+    <template #activator="{ on: menu, attrs }">
       <v-tooltip left max-width="280">
         <template #activator="{ on: tooltip }">
           <v-btn

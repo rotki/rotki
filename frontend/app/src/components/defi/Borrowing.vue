@@ -58,10 +58,10 @@
               clearable
               :open-on-clear="false"
             >
-              <template #selection="{item}">
+              <template #selection="{ item }">
                 <defi-selector-item :item="item" />
               </template>
-              <template #item="{item}">
+              <template #item="{ item }">
                 <defi-selector-item :item="item" />
               </template>
             </v-autocomplete>

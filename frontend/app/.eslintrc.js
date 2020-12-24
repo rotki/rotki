@@ -126,6 +126,12 @@ module.exports = {
         svg: 'always',
         math: 'always'
       }
+    ],
+    'vue/valid-v-slot': [
+      'error',
+      {
+        allowModifiers: true
+      }
     ]
   },
 

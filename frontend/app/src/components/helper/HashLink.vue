@@ -29,9 +29,7 @@
           v-on="on"
           @click="copyText(text)"
         >
-          <v-icon x-small>
-            mdi-content-copy
-          </v-icon>
+          <v-icon x-small> mdi-content-copy </v-icon>
         </v-btn>
       </template>
       <span>{{ $t('hash_link.copy') }}</span>
@@ -51,9 +49,7 @@
           v-on="on"
           @click="openLink()"
         >
-          <v-icon x-small>
-            mdi-launch
-          </v-icon>
+          <v-icon x-small> mdi-launch </v-icon>
         </v-btn>
       </template>
       <span>{{ $t('hash_link.open_link') }}</span>

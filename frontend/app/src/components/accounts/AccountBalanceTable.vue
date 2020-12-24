@@ -123,7 +123,7 @@
         @click="expanded = expanded.includes(item) ? [] : [item]"
       />
     </template>
-    <template #group.header="{ group, headers, items, isOpen, toggle }">
+    <template #group.header="{ group, isOpen, toggle }">
       <account-group-header
         :group="group ? group : ''"
         :items="getItems(group.split(':')[0], group.split(':')[1])"

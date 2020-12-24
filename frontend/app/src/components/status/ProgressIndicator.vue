@@ -15,9 +15,7 @@
           <v-icon v-if="hasRunningTasks" class="top-loading-icon">
             mdi-spin mdi-loading
           </v-icon>
-          <v-icon v-else>
-            mdi-check-circle
-          </v-icon>
+          <v-icon v-else> mdi-check-circle </v-icon>
         </menu-tooltip-button>
       </template>
       <v-row class="progress-indicator__details">

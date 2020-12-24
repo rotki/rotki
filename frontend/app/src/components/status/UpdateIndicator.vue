@@ -2,9 +2,7 @@
   <v-tooltip v-if="updateNeeded" bottom>
     <template #activator="{ on }">
       <v-btn text icon @click="openLink()">
-        <v-icon color="error" dark v-on="on">
-          mdi-arrow-up-bold-circle
-        </v-icon>
+        <v-icon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </v-icon>
       </v-btn>
     </template>
     <span v-text="$t('update_indicator.version', { appVersion })" />

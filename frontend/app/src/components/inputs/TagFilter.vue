@@ -28,14 +28,10 @@
       </v-chip>
     </template>
     <template #item="{ item }">
-      <template>
-        <div>
-          <tag-icon :tag="item" />
-          <span class="tag-input__tag__description">
-            {{ item.description }}
-          </span>
-        </div>
-      </template>
+      <tag-icon :tag="item" />
+      <span class="tag-input__tag__description">
+        {{ item.description }}
+      </span>
     </template>
     <template #append-outer>
       <v-btn icon text class="tag-filter__clear" @click="input([])">

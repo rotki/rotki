@@ -12,9 +12,7 @@
           class="closed-trades__add-trade"
           @click="newExternalTrade()"
         >
-          <v-icon>
-            mdi-plus
-          </v-icon>
+          <v-icon> mdi-plus </v-icon>
         </v-btn>
         <v-card-title>
           {{ $t('closed_trades.title') }}

@@ -5,7 +5,7 @@
     offset-x
     :close-on-content-click="false"
   >
-    <template #activator="{ on: menu, attrs}">
+    <template #activator="{ on: menu, attrs }">
       <v-tooltip top>
         <template #activator="{ on: tooltip }">
           <v-btn

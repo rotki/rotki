@@ -12,9 +12,7 @@
           color="primary"
           to="/settings/api-keys/exchanges"
         >
-          <v-icon>
-            mdi-plus
-          </v-icon>
+          <v-icon> mdi-plus </v-icon>
         </v-btn>
         <v-row
           v-if="connectedExchanges.length > 0"

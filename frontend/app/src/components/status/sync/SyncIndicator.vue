@@ -13,9 +13,7 @@
           class-name="secondary--text text--lighten-2"
           :on-menu="on"
         >
-          <v-icon>
-            mdi-content-save
-          </v-icon>
+          <v-icon> mdi-content-save </v-icon>
         </menu-tooltip-button>
       </template>
       <div class="balance-saved-indicator__content">
