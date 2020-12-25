@@ -162,6 +162,10 @@ def test_coingecko_identifiers_are_reachable():
         'EBC',
         'RCN-2',
         'SKYM',
+        'BTT-2',
+        'GBX-2',
+        'MIC',
+        'SND',
     ]
     coingecko = Coingecko()
     all_coins = coingecko.all_coins()
