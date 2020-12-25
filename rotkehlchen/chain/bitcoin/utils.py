@@ -37,7 +37,7 @@ def is_valid_base58_address(value: str) -> bool:
     except ValueError:
         return False
 
-    if not abytes[0] in (0x00, 0x05):
+    if len(abytes) == 0 or not abytes[0] in (0x00, 0x05):
         return False
 
     checksum = hashlib.sha256(hashlib.sha256(abytes[:-4]).digest()).digest()[:4]
