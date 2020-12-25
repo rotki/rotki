@@ -24,6 +24,7 @@ Changelog
   - `Power Index Pool Token (PIPT) <https://www.coingecko.com/en/coins/power-index-pool-token>`__
   - `Yearn Ecosystem Token Index (YETI) <https://www.coingecko.com/en/coins/yearn-ecosystem-token-index>`__
   - `Graph Token (GRT) <https://www.coingecko.com/en/coins/the-graph>`__
+  - `1INCH Token (1INCH) <https://www.coingecko.com/en/coins/1inch>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
