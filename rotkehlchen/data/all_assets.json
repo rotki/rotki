@@ -18,6 +18,16 @@
         "symbol": "1CR",
         "type": "own chain"
     },
+    "1INCH": {
+        "coingecko": "1inch",
+        "cryptocompare": "",
+        "ethereum_address": "0x111111111117dC0aa78b770fA6A738034120C302",
+        "ethereum_token_decimals": 18,
+        "name": "1INCH Token",
+        "started": 1608747211,
+        "symbol": "1INCH",
+        "type": "ethereum token"
+    },
     "1SG": {
         "coingecko": "1sg",
         "cryptocompare": "",
@@ -10492,7 +10502,7 @@
     },
     "SND": {
         "active": false,
-        "coingecko": "snodecoin",
+        "coingecko": "",
         "ended": 1555011477,
         "ethereum_address": "0xf333b2Ace992ac2bBD8798bF57Bc65a06184afBa",
         "ethereum_token_decimals": 0,
