@@ -9319,6 +9319,13 @@
         "symbol": "PRQ",
         "type": "ethereum token"
     },
+    "PSG": {
+        "coingecko": "paris-saint-germain-fan-token",
+        "name": "Paris Saint-Germain Fan Token",
+        "started": 1592006400,
+        "symbol": "PSG",
+        "type": "own chain"
+    },
     "PST": {
         "coingecko": "primas",
         "ethereum_address": "0x5d4ABC77B8405aD177d8ac6682D584ecbFd46CEc",

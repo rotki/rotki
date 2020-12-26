@@ -28,6 +28,7 @@ Changelog
   - `Stobox Token (STBU) <https://www.coingecko.com/en/coins/stobox-token>`__
   - `Binance VND (VND) <https://www.coingecko.com/en/coins/binance-vnd>`__
   - `Juventus Fan Token (JUV) <https://www.coingecko.com/en/coins/juventus-fan-token>`__
+  - `Paris Saint-Germain Fan Token (PSG) <https://www.coingecko.com/en/coins/paris-saint-germain-fan-token>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
