@@ -408,6 +408,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'MFA',
     'FCT2',  # neither in coingecko nor cryptocompare
     'UPXAU',  # neither in coingecko nor cryptocompare
+    'TEA',  # neither in coingecko nor cryptocompare
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
     'AMZN',

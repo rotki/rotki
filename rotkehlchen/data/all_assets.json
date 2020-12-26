@@ -9572,9 +9572,10 @@
     },
     "RADS": {
         "coingecko": "radium",
-        "name": "Radium",
+        "cryptocompare": "RADS",
+        "name": "Validity",
         "started": 1453075200,
-        "symbol": "RADS",
+        "symbol": "VAL",
         "type": "own chain"
     },
     "RARI": {

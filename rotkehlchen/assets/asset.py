@@ -23,6 +23,8 @@ WORLD_TO_BITTREX = {
     'LUNA-2': 'LUNA',
     # In Rotkehlchen WorldWideAssetExchange is WAX but in Bittrex it's WASP
     'WAX': 'WAXP',
+    # In Rotkehlchen Validity is RADS, the old name but in Bittrex it's VAL
+    'RADS': 'VAL',
 }
 
 WORLD_TO_POLONIEX = {
