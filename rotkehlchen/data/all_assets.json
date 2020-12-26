@@ -4425,6 +4425,16 @@
         "symbol": "ERT",
         "type": "ethereum token"
     },
+    "ESD": {
+        "cryptocompare": "",
+        "coingecko": "empty-set-dollar",
+        "ethereum_address": "0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723",
+        "ethereum_token_decimals": 18,
+        "name": "Empty Set Dollar",
+        "started": 1598265060,
+        "symbol": "ESD",
+        "type": "ethereum token"
+    },
     "ESZ": {
         "active": true,
         "coingecko": "ethersportz",

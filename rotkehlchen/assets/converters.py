@@ -331,6 +331,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BCC',  # neither in coingecko nor cryptocompare
     'BTCTRON',  # neither in coingecko nor cryptocompare
     'FCT2',  # neither in coingecko nor cryptocompare
+    'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (

@@ -62,6 +62,8 @@ WORLD_TO_POLONIEX = {
     'XLM': 'STR',
     # Poloniex still has the old name WC for WhiteCoin
     'XWC': 'WC',
+    # Poloniex uses a different name for 1inch. Maybe due to starting with number?
+    '1INCH': 'ONEINCH',
 }
 
 WORLD_TO_KRAKEN = {
