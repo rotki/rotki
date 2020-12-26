@@ -16,6 +16,7 @@ Changelog
 * :bug:`1916` Querying bitstamp trades should now work properly again.
 * :bug:`1917` Users can now properly login if they input the username after the password.
 * :bug:`1953` Show a proper error when a user inputs an invalid xpub or derivation path.
+* :bug:`1983` Balances and historical accounting for y3Crv vault should work properly again
 
 * :feature:`-` Added support for the following tokens:
 
