@@ -161,6 +161,16 @@
         "symbol": "ACH",
         "type": "own chain"
     },
+    "ACXT": {
+        "coingecko": "ac-exchange-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x7bE00ed6796B21656732E8f739Fc1b8F1C53DA0D",
+        "ethereum_token_decimals": 18,
+        "name": "AC eXchange Token",
+        "started": 1602667438,
+        "symbol": "ACXT",
+        "type": "ethereum token"
+    },
     "ADA": {
         "coingecko": "cardano",
         "name": "Cardano",
