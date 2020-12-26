@@ -130,6 +130,7 @@ WORLD_TO_KRAKEN = {
     'ETH2': 'ETH2',
     'AAVE': 'AAVE',
     'MANA': 'MANA',
+    'GRT': 'GRT',
 }
 
 WORLD_TO_BINANCE = {
