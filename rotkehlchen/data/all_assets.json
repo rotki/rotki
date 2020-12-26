@@ -7874,6 +7874,16 @@
         "symbol": "MTL",
         "type": "ethereum token"
     },
+    "MTLX": {
+        "coingecko": "mettalex",
+        "cryptocompare": "",
+        "ethereum_address": "0x2e1E15C44Ffe4Df6a0cb7371CD00d5028e571d14",
+        "ethereum_token_decimals": 18,
+        "name": "Mettalex",
+        "started": 1599569311,
+        "symbol": "MTLX",
+        "type": "ethereum token"
+    },
     "MTN": {
         "coingecko": "medicalchain",
         "cryptocompare": "MDCL",
