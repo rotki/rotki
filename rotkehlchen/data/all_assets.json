@@ -8518,6 +8518,15 @@
         "symbol": "OK",
         "type": "own chain"
     },
+    "OKB": {
+        "coingecko": "okb",
+        "ethereum_address": "0x75231F58b43240C9718Dd58B4967c5114342a86c",
+        "ethereum_token_decimals": 18,
+        "name": "OKB",
+        "started": 1556264879,
+        "symbol": "OKB",
+        "type": "ethereum token"
+    },
     "OLE": {
         "coingecko": "olive",
         "ethereum_address": "0x9d9223436dDD466FC247e9dbbD20207e640fEf58",
