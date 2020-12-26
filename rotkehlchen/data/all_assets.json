@@ -151,16 +151,6 @@
         "symbol": "ACE",
         "type": "ethereum token"
     },
-    "ACH": {
-        "active": false,
-        "coingecko": "automatic-clearing-high-speed",
-        "cryptocompare": "",
-        "ended": 1434844800,
-        "name": "Altcoin Herald",
-        "started": 1412380800,
-        "symbol": "ACH",
-        "type": "own chain"
-    },
     "ACXT": {
         "coingecko": "ac-exchange-token",
         "cryptocompare": "",
