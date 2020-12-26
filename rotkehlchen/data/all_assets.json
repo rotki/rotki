@@ -11741,6 +11741,16 @@
         "symbol": "TRUMPWIN",
         "type": "ethereum token"
     },
+    "TRU": {
+        "coingecko": "truefi",
+        "cryptocompare": "",
+        "ethereum_address": "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784",
+        "ethereum_token_decimals": 8,
+        "name": "TrustToken",
+        "started": 1591124602,
+        "symbol": "TRU",
+        "type": "ethereum token"
+    },
     "TRUST": {
         "active": false,
         "coingecko": "trustdao",

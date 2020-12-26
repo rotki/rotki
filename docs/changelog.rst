@@ -32,6 +32,7 @@ Changelog
   - `AC eXchange Token (ACXT) <https://www.coingecko.com/en/coins/ac-exchange-token>`__
   - `Validity Token (VAL) <https://www.coingecko.com/en/coins/validity>`__
   - `Empty Set Dollar (ESD) <https://www.coingecko.com/en/coins/empty-set-dollar>`__
+  - `TrueFi Trust Token (TRU) <https://www.coingecko.com/en/coins/truefi>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
