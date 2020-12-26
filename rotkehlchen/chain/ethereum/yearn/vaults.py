@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import (
     ERC20TOKEN_ABI,
     MAX_BLOCKTIME_CACHE,
+    YEARN_3CRV_VAULT,
     YEARN_ALINK_VAULT,
     YEARN_BCURVE_VAULT,
     YEARN_DAI_VAULT,
@@ -111,6 +112,12 @@ YEARN_VAULTS = {
         contract=YEARN_SRENCURVE_VAULT,
         underlying_token=EthereumToken('crvRenWSBTC'),
         token=EthereumToken('ycrvRenWSBTC'),
+    ),
+    'y3Crv': YearnVault(
+        name='Y3CRV Vault',
+        contract=YEARN_3CRV_VAULT,
+        underlying_token=EthereumToken('3Crv'),
+        token=EthereumToken('y3Crv'),
     ),
 }
 

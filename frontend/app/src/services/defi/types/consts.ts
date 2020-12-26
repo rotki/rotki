@@ -6,8 +6,10 @@ export const YEARN_ALINK_VAULT = 'YALINK Vault';
 export const YEARN_USDT_VAULT = 'YUSDT Vault';
 export const YEARN_USDC_VAULT = 'YUSDC Vault';
 export const YEARN_TUSD_VAULT = 'YTUSD Vault';
+export const YEARN_GUSD_VAULT = 'GUSD Vault';
 export const YEARN_BCURVE_VAULT = 'YBCURVE Vault';
 export const YEARN_SRENCURVE_VAULT = 'YSRENCURVE Vault';
+export const YEARN_3CRV_VAULT = 'Y3CRV Vault';
 
 export const YEARN_VAULTS = [
   YEARN_YCRV_VAULT,
@@ -18,8 +20,10 @@ export const YEARN_VAULTS = [
   YEARN_USDT_VAULT,
   YEARN_USDC_VAULT,
   YEARN_TUSD_VAULT,
+  YEARN_GUSD_VAULT,
   YEARN_BCURVE_VAULT,
-  YEARN_SRENCURVE_VAULT
+  YEARN_SRENCURVE_VAULT,
+  YEARN_3CRV_VAULT
 ] as const;
 
 export const WITHDRAW = 'withdraw';

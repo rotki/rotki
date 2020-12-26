@@ -17,7 +17,7 @@ from requests import Response
 
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
@@ -84,6 +84,8 @@ def kraken_to_world_pair(pair: str) -> TradePair:
         quote_asset_str = pair[3:]
     elif pair == 'ETHDAI':
         return trade_pair_from_assets(base=A_ETH, quote=A_DAI)
+    elif pair == 'ETH2.SETH':
+        return trade_pair_from_assets(base=A_ETH2, quote=A_ETH)
     elif pair[0:2] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:2]
         quote_asset_str = pair[2:]

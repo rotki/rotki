@@ -16,6 +16,7 @@ Changelog
 * :bug:`1916` Querying bitstamp trades should now work properly again.
 * :bug:`1917` Users can now properly login if they input the username after the password.
 * :bug:`1953` Show a proper error when a user inputs an invalid xpub or derivation path.
+* :bug:`1983` Balances and historical accounting for y3Crv vault should work properly again
 
 * :feature:`-` Added support for the following tokens:
 
@@ -25,6 +26,16 @@ Changelog
   - `Yearn Ecosystem Token Index (YETI) <https://www.coingecko.com/en/coins/yearn-ecosystem-token-index>`__
   - `Graph Token (GRT) <https://www.coingecko.com/en/coins/the-graph>`__
   - `1INCH Token (1INCH) <https://www.coingecko.com/en/coins/1inch>`__
+  - `Stobox Token (STBU) <https://www.coingecko.com/en/coins/stobox-token>`__
+  - `Binance VND (VND) <https://www.coingecko.com/en/coins/binance-vnd>`__
+  - `Juventus Fan Token (JUV) <https://www.coingecko.com/en/coins/juventus-fan-token>`__
+  - `Paris Saint-Germain Fan Token (PSG) <https://www.coingecko.com/en/coins/paris-saint-germain-fan-token>`__
+  - `AC eXchange Token (ACXT) <https://www.coingecko.com/en/coins/ac-exchange-token>`__
+  - `Validity Token (VAL) <https://www.coingecko.com/en/coins/validity>`__
+  - `Empty Set Dollar (ESD) <https://www.coingecko.com/en/coins/empty-set-dollar>`__
+  - `TrueFi Trust Token (TRU) <https://www.coingecko.com/en/coins/truefi>`__
+  - `Mettalex (MTLX) <https://www.coingecko.com/en/coins/mettalex>`__
+  - `Okex OKB Token (OKB) <https://www.coingecko.com/en/coins/okb>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error

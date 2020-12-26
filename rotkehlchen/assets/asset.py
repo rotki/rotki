@@ -23,6 +23,8 @@ WORLD_TO_BITTREX = {
     'LUNA-2': 'LUNA',
     # In Rotkehlchen WorldWideAssetExchange is WAX but in Bittrex it's WASP
     'WAX': 'WAXP',
+    # In Rotkehlchen Validity is RADS, the old name but in Bittrex it's VAL
+    'RADS': 'VAL',
 }
 
 WORLD_TO_POLONIEX = {
@@ -60,6 +62,8 @@ WORLD_TO_POLONIEX = {
     'XLM': 'STR',
     # Poloniex still has the old name WC for WhiteCoin
     'XWC': 'WC',
+    # Poloniex uses a different name for 1inch. Maybe due to starting with number?
+    '1INCH': 'ONEINCH',
 }
 
 WORLD_TO_KRAKEN = {
@@ -130,6 +134,7 @@ WORLD_TO_KRAKEN = {
     'ETH2': 'ETH2',
     'AAVE': 'AAVE',
     'MANA': 'MANA',
+    'GRT': 'GRT',
 }
 
 WORLD_TO_BINANCE = {

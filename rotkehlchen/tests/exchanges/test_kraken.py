@@ -116,6 +116,7 @@ def test_kraken_to_world_pair(kraken):
     assert kraken_to_world_pair('XRPGBP') == 'XRP_GBP'
     assert kraken_to_world_pair('XRPUSDT') == 'XRP_USDT'
     assert kraken_to_world_pair('AUDJPY') == 'AUD_JPY'
+    assert kraken_to_world_pair('ETH2.SETH') == 'ETH2_ETH'
 
     # now try to test all pairs that kraken returns and if one does not work note
     # down a test warning so that it can be fixed by us later

@@ -151,15 +151,15 @@
         "symbol": "ACE",
         "type": "ethereum token"
     },
-    "ACH": {
-        "active": false,
-        "coingecko": "automatic-clearing-high-speed",
+    "ACXT": {
+        "coingecko": "ac-exchange-token",
         "cryptocompare": "",
-        "ended": 1434844800,
-        "name": "Altcoin Herald",
-        "started": 1412380800,
-        "symbol": "ACH",
-        "type": "own chain"
+        "ethereum_address": "0x7bE00ed6796B21656732E8f739Fc1b8F1C53DA0D",
+        "ethereum_token_decimals": 18,
+        "name": "AC eXchange Token",
+        "started": 1602667438,
+        "symbol": "ACXT",
+        "type": "ethereum token"
     },
     "ADA": {
         "coingecko": "cardano",
@@ -2058,6 +2058,13 @@
         "started": 1567641600,
         "symbol": "BUSD",
         "type": "ethereum token"
+    },
+    "BVND": {
+        "coingecko": "binance-vnd",
+        "name": "Binance VND",
+        "started": 1608508800,
+        "symbol": "BVND",
+        "type": "binance token"
     },
     "BWF": {
         "coingecko": "beowulf",
@@ -4408,6 +4415,16 @@
         "symbol": "ERT",
         "type": "ethereum token"
     },
+    "ESD": {
+        "cryptocompare": "",
+        "coingecko": "empty-set-dollar",
+        "ethereum_address": "0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723",
+        "ethereum_token_decimals": 18,
+        "name": "Empty Set Dollar",
+        "started": 1598265060,
+        "symbol": "ESD",
+        "type": "ethereum token"
+    },
     "ESZ": {
         "active": true,
         "coingecko": "ethersportz",
@@ -6554,6 +6571,13 @@
         "symbol": "JST",
         "type": "tron token"
     },
+    "JUV": {
+        "coingecko": "juventus-fan-token",
+        "name": "Juventus Fan Token",
+        "started": 1587081600,
+        "symbol": "JUV",
+        "type": "own chain"
+    },
     "KAI": {
         "coingecko": "kardiachain",
         "ethereum_address": "0x1410434b0346f5bE678d0FB554E5c7ab620f8f4a",
@@ -7840,6 +7864,16 @@
         "symbol": "MTL",
         "type": "ethereum token"
     },
+    "MTLX": {
+        "coingecko": "mettalex",
+        "cryptocompare": "",
+        "ethereum_address": "0x2e1E15C44Ffe4Df6a0cb7371CD00d5028e571d14",
+        "ethereum_token_decimals": 18,
+        "name": "Mettalex",
+        "started": 1599569311,
+        "symbol": "MTLX",
+        "type": "ethereum token"
+    },
     "MTN": {
         "coingecko": "medicalchain",
         "cryptocompare": "MDCL",
@@ -8474,6 +8508,15 @@
         "symbol": "OK",
         "type": "own chain"
     },
+    "OKB": {
+        "coingecko": "okb",
+        "ethereum_address": "0x75231F58b43240C9718Dd58B4967c5114342a86c",
+        "ethereum_token_decimals": 18,
+        "name": "OKB",
+        "started": 1556264879,
+        "symbol": "OKB",
+        "type": "ethereum token"
+    },
     "OLE": {
         "coingecko": "olive",
         "ethereum_address": "0x9d9223436dDD466FC247e9dbbD20207e640fEf58",
@@ -8635,7 +8678,7 @@
     },
     "ORN": {
         "coingecko": "orion-protocol",
-        "ethereum_address": "0x8fB00FDeBb4E83f2C58b3bcD6732AC1B6A7b7221",
+        "ethereum_address": "0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a",
         "ethereum_token_decimals": 8,
         "name": "Orion Protocol",
         "started": 1594674901,
@@ -9305,6 +9348,13 @@
         "symbol": "PRQ",
         "type": "ethereum token"
     },
+    "PSG": {
+        "coingecko": "paris-saint-germain-fan-token",
+        "name": "Paris Saint-Germain Fan Token",
+        "started": 1592006400,
+        "symbol": "PSG",
+        "type": "own chain"
+    },
     "PST": {
         "coingecko": "primas",
         "ethereum_address": "0x5d4ABC77B8405aD177d8ac6682D584ecbFd46CEc",
@@ -9541,9 +9591,10 @@
     },
     "RADS": {
         "coingecko": "radium",
-        "name": "Radium",
+        "cryptocompare": "RADS",
+        "name": "Validity",
         "started": 1453075200,
-        "symbol": "RADS",
+        "symbol": "VAL",
         "type": "own chain"
     },
     "RARI": {
@@ -10859,6 +10910,16 @@
         "symbol": "STAR",
         "type": "ethereum token"
     },
+    "STBU": {
+        "coingecko": "stobox-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x212DD60D4Bf0DA8372fe8116474602d429E5735F",
+        "ethereum_token_decimals": 18,
+        "name": "Stobox Token ",
+        "started": 1599031222,
+        "symbol": "STBU",
+        "type": "ethereum token"
+    },
     "STC": {
         "coingecko": "starchain",
         "ethereum_address": "0x8f136Cc8bEf1fEA4A7b71aa2301ff1A52F084384",
@@ -11687,6 +11748,16 @@
         "name": "Trump Wins Token",
         "started": 1595588594,
         "symbol": "TRUMPWIN",
+        "type": "ethereum token"
+    },
+    "TRU": {
+        "coingecko": "truefi",
+        "cryptocompare": "",
+        "ethereum_address": "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784",
+        "ethereum_token_decimals": 8,
+        "name": "TrustToken",
+        "started": 1591124602,
+        "symbol": "TRU",
         "type": "ethereum token"
     },
     "TRUST": {

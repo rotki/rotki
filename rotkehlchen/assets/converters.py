@@ -331,6 +331,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BCC',  # neither in coingecko nor cryptocompare
     'BTCTRON',  # neither in coingecko nor cryptocompare
     'FCT2',  # neither in coingecko nor cryptocompare
+    'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -408,6 +409,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'MFA',
     'FCT2',  # neither in coingecko nor cryptocompare
     'UPXAU',  # neither in coingecko nor cryptocompare
+    'TEA',  # neither in coingecko nor cryptocompare
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
     'AMZN',
