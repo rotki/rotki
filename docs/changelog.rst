@@ -26,6 +26,7 @@ Changelog
   - `Graph Token (GRT) <https://www.coingecko.com/en/coins/the-graph>`__
   - `1INCH Token (1INCH) <https://www.coingecko.com/en/coins/1inch>`__
   - `Stobox Token (STBU) <https://www.coingecko.com/en/coins/stobox-token>`__
+  - `Binance VND (VND) <https://www.coingecko.com/en/coins/binance-vnd>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error

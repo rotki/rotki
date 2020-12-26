@@ -2059,6 +2059,13 @@
         "symbol": "BUSD",
         "type": "ethereum token"
     },
+    "BVND": {
+        "coingecko": "binance-vnd",
+        "name": "Binance VND",
+        "started": 1608508800,
+        "symbol": "BVND",
+        "type": "binance token"
+    },
     "BWF": {
         "coingecko": "beowulf",
         "ethereum_address": "0xF7E04D8a32229B4cA63aA51eEA9979C7287FEa48",
