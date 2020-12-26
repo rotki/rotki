@@ -6561,6 +6561,13 @@
         "symbol": "JST",
         "type": "tron token"
     },
+    "JUV": {
+        "coingecko": "juventus-fan-token",
+        "name": "Juventus Fan Token",
+        "started": 1587081600,
+        "symbol": "JUV",
+        "type": "own chain"
+    },
     "KAI": {
         "coingecko": "kardiachain",
         "ethereum_address": "0x1410434b0346f5bE678d0FB554E5c7ab620f8f4a",
