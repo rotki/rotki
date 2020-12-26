@@ -8669,7 +8669,7 @@
     },
     "ORN": {
         "coingecko": "orion-protocol",
-        "ethereum_address": "0x8fB00FDeBb4E83f2C58b3bcD6732AC1B6A7b7221",
+        "ethereum_address": "0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a",
         "ethereum_token_decimals": 8,
         "name": "Orion Protocol",
         "started": 1594674901,
