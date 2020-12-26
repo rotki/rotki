@@ -10859,6 +10859,16 @@
         "symbol": "STAR",
         "type": "ethereum token"
     },
+    "STBU": {
+        "coingecko": "stobox-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x212DD60D4Bf0DA8372fe8116474602d429E5735F",
+        "ethereum_token_decimals": 18,
+        "name": "Stobox Token ",
+        "started": 1599031222,
+        "symbol": "STBU",
+        "type": "ethereum token"
+    },
     "STC": {
         "coingecko": "starchain",
         "ethereum_address": "0x8f136Cc8bEf1fEA4A7b71aa2301ff1A52F084384",
