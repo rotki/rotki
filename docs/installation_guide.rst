@@ -77,7 +77,7 @@ OSX
 Homebrew
 --------
 
-``brew cask install rotki``
+``brew install --cask rotki``
 
 Manual installation
 -------------------
