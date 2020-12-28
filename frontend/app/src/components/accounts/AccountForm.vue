@@ -400,7 +400,11 @@ export default class AccountForm extends Vue {
   private setXpubKeyType(value: string) {
     const match = AccountForm.isPrefixed(value);
     if (match && match.length === 3) {
-      this.xpubKeyPrefix = match[1] as XpubPrefix;
+      const prefix = match[1] as XpubPrefix;
+      if (prefix === XPUB_VALUE) {
+        return;
+      }
+      this.xpubKeyPrefix = prefix;
     }
   }
 
