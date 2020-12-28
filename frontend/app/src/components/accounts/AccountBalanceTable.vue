@@ -241,7 +241,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       if (index >= 0) {
         selection.splice(index, 1);
       }
-    } else if (!address && !selection.includes(address)) {
+    } else if (address && !selection.includes(address)) {
       selection.push(address);
     }
     this.addressesSelected(selection);
