@@ -148,7 +148,6 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
       type (i.e. exchange, margin and funding).
       - The balance of an asset in UNSUPPORTED_BITFINEX_ASSETS is skipped.
       - The asset ticker is standardized (e.g. WBT to WBTC, UST to USDT).
-      - The balance of an asset that can't get its USD price is skipped.
     """
     response = Response()
     response.status_code = HTTPStatus.OK
@@ -610,8 +609,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
 
 
 @pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
-# def test_query_online_trade_history_case_2(mock_bitfinex):
-def test_pepe(mock_bitfinex):
+def test_query_online_trade_history_case_2(mock_bitfinex):
     """Test pagination logic for trades works as expected when a request
     returns a result already processed in the previous request.
 

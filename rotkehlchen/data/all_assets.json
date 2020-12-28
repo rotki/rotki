@@ -14242,7 +14242,7 @@
         "type": "ethereum token"
     },
     "CLO": {
-        "coingecko": "callisto-network",
+        "coingecko": "callisto",
         "name": "Callisto Network",
         "started": 1575590400,
         "symbol": "CLO",
@@ -14265,7 +14265,7 @@
         "type": "own chain"
     },
     "EOSDT": {
-        "coingecko": "eosdt",
+        "coingecko": "equilibrium-eosdt",
         "name": "EOSDT",
         "started": 1606089600,
         "symbol": "EOSDT",
@@ -14297,7 +14297,7 @@
         "type": "ethereum token"
     },
     "DAPP": {
-        "coingecko": "liquidapps",
+        "coingecko": "dapp",
         "name": "LiquidApps",
         "started": 1602979200,
         "symbol": "DAPP",
@@ -14339,7 +14339,7 @@
         "type": "ethereum token"
     },
     "XDC": {
-        "coingecko": "xinfin",
+        "coingecko": "xdce-crowd-sale",
         "name": "XinFin",
         "started": 1585699200,
         "symbol": "XDC",
@@ -14371,7 +14371,7 @@
         "type": "ethereum token"
     },
     "HEZ": {
-        "coingecko": "hermez-network",
+        "coingecko": "hermez-network-token",
         "ethereum_address": "0xEEF9f339514298C6A857EfCfC1A762aF84438dEE",
         "ethereum_token_decimals": 18,
         "name": "Hermez Network",
@@ -14424,7 +14424,7 @@
         "type": "ethereum token"
     },
     "XD": {
-        "coingecko": "data-transaction-token",
+        "coingecko": "scroll-token",
         "ethereum_address": "0x24DCc881E7Dd730546834452F21872D5cb4b5293",
         "ethereum_token_decimals": 18,
         "name": "Data Transaction Token",
