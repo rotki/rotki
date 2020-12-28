@@ -159,6 +159,13 @@ export default class NavigationMenu extends Vue {
           route: Routes.DEFI_DEX_TRADES,
           icon: 'mdi-shuffle-variant',
           class: 'defi-dex-trades'
+        },
+        {
+          type: 'item',
+          text: this.$t('navigation_menu.defi_sub.airdrops').toString(),
+          route: Routes.DEFI_AIRDROPS,
+          icon: 'mdi-parachute',
+          class: 'defi-airdrops'
         }
       ]
     },

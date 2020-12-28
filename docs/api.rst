@@ -4654,7 +4654,7 @@ Getting Eth2 Staking deposits
 Querying ethereum airdrops
 ==============================
 
-.. http:get:: /api/(version)/blockchain/ETH/airdrops
+.. http:get:: /api/(version)/blockchains/ETH/airdrops
 
    Doing a GET on the ethereum airdrops endpoint will return how much and of which token any of the tracked ethereum addresses are entitled to.
 

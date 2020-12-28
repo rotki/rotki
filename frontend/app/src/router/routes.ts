@@ -8,5 +8,6 @@ export const Routes = {
   DEFI_DEX_TRADES: '/defi/dex-trades',
   STAKING: '/staking',
   STAKING_ETH2: '/staking/eth2',
-  STAKING_ADEX: '/staking/adex'
+  STAKING_ADEX: '/staking/adex',
+  DEFI_AIRDROPS: '/defi/airdrops'
 };

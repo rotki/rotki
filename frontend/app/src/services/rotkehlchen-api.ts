@@ -924,6 +924,18 @@ export class RotkehlchenApi {
         return { success: false, message: reason.message };
       });
   }
+
+  async airdrops(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/blockchains/ETH/airdrops', {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true
+        }),
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
 }
 
 export const api = new RotkehlchenApi();

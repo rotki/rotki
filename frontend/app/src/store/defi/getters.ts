@@ -38,6 +38,8 @@ import {
 } from '@/store/defi/const';
 import {
   AaveLoan,
+  Airdrop,
+  AirdropType,
   BaseDefiBalance,
   Collateral,
   DefiBalance,
@@ -121,6 +123,8 @@ interface DefiGetters {
   uniswapEvents: (addresses: string[]) => UniswapEventDetails[];
   uniswapAddresses: string[];
   dexTrades: (addresses: string[]) => UniswapTrade[];
+  airdrops: (addresses: string[]) => Airdrop[];
+  airdropAddresses: string[];
 }
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
@@ -1341,5 +1345,25 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       trades.push(...uniswapTrades[address]);
     }
     return sortBy(trades, 'timestamp').reverse();
-  }
+  },
+  airdrops: ({ airdrops }) => (addresses): Airdrop[] => {
+    const data: Airdrop[] = [];
+    for (const address in airdrops) {
+      if (addresses.length > 0 && !addresses.includes(address)) {
+        continue;
+      }
+      const airdrop = airdrops[address];
+      for (const source in airdrop) {
+        const { amount, asset } = airdrop[source];
+        data.push({
+          address,
+          amount,
+          source: source as AirdropType,
+          asset
+        });
+      }
+    }
+    return data;
+  },
+  airdropAddresses: ({ airdrops }) => Object.keys(airdrops)
 };

@@ -250,3 +250,13 @@ export const uniswapEventsNumericKeys = [
   'profit_loss1',
   'usd_profit_loss'
 ];
+
+export const AIRDROP_UNISWAP = 'uniswap';
+export const AIRDROP_1INCH = '1inch';
+export const AIRDROP_TORNADO = 'tornado';
+
+export const AIRDROPS = [
+  AIRDROP_1INCH,
+  AIRDROP_TORNADO,
+  AIRDROP_UNISWAP
+] as const;

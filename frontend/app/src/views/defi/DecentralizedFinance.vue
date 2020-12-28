@@ -67,6 +67,10 @@ export default class DecentralizedFinance extends Vue {
     {
       name: this.$tc('decentralized_finance.tabs.dex_trades'),
       routeTo: Routes.DEFI_DEX_TRADES
+    },
+    {
+      name: this.$t('decentralized_finance.tabs.airdrops').toString(),
+      routeTo: Routes.DEFI_AIRDROPS
     }
   ];
 }

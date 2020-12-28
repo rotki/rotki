@@ -28,7 +28,11 @@ import {
 } from '@/services/defi/types/yearn';
 import { TradeType } from '@/services/history/types';
 import { Balance, HasBalance } from '@/services/types-api';
-import { OVERVIEW_PROTOCOLS, UNISWAP_EVENT_TYPE } from '@/store/defi/const';
+import {
+  AIRDROPS,
+  OVERVIEW_PROTOCOLS,
+  UNISWAP_EVENT_TYPE
+} from '@/store/defi/const';
 
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
@@ -47,7 +51,30 @@ export interface DefiState {
   uniswapBalances: UniswapBalances;
   uniswapTrades: UniswapTrades;
   uniswapEvents: UniswapEvents;
+  airdrops: Airdrops;
 }
+
+export interface Airdrop {
+  readonly address: string;
+  readonly source: AirdropType;
+  readonly amount: string;
+  readonly asset: string;
+}
+
+export interface AirdropDetail {
+  readonly amount: string;
+  readonly asset: string;
+}
+
+interface AirdropDetails {
+  readonly [source: string]: AirdropDetail;
+}
+
+export interface Airdrops {
+  readonly [address: string]: AirdropDetails;
+}
+
+export type AirdropType = typeof AIRDROPS[number];
 
 export interface DSRBalances {
   readonly currentDSR: BigNumber;

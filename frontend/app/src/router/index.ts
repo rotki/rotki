@@ -176,6 +176,10 @@ export default new Router({
         {
           path: Routes.DEFI_DEX_TRADES,
           component: () => import('../views/defi/DexTrades.vue')
+        },
+        {
+          path: Routes.DEFI_AIRDROPS,
+          component: () => import('../views/defi/Airdrops.vue')
         }
       ]
     },
