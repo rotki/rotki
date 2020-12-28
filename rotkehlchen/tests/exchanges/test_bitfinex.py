@@ -58,7 +58,7 @@ def test_bitfinex_exchange_assets_are_known(mock_bitfinex):
             f'Response status code: {response.status_code}. '
             f'Response text: {response.text}. Xfailing this test',
         ))
-        pytest.xfail('xfailing this test')
+        pytest.xfail('Failed to request {mock_bitfinex.name} currencies list')
 
     exchange_pairs_response = mock_bitfinex._query_exchange_pairs()
     if exchange_pairs_response.success is False:
@@ -68,7 +68,7 @@ def test_bitfinex_exchange_assets_are_known(mock_bitfinex):
             f'Response status code: {response.status_code}. '
             f'Response text: {response.text}. Xfailing this test',
         ))
-        pytest.xfail('xfailing this test')
+        pytest.xfail('Failed to request {mock_bitfinex.name} exchange pairs list')
 
     currency_map_response = mock_bitfinex._query_currency_map()
     if currency_map_response.success is False:
@@ -78,7 +78,7 @@ def test_bitfinex_exchange_assets_are_known(mock_bitfinex):
             f'Response status code: {response.status_code}. '
             f'Response text: {response.text}. Xfailing this test',
         ))
-        pytest.xfail('xfailing this test')
+        pytest.xfail('Failed to request {mock_bitfinex.name} currency map')
 
     test_assets = set(BITFINEX_EXCHANGE_TEST_ASSETS)
     unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
@@ -318,7 +318,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
     }
     raw_result = [
         399251013,
-        'WBT:UST',
+        'tWBT:UST',
         1573485493000,
         33963608932,
         0.26334268,
@@ -352,7 +352,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
     currency_map = {'UST': 'USDt'}
     raw_result = [
         399251013,
-        'ETHUST',
+        'tETHUST',
         1573485493000,
         33963608932,
         -0.26334268,
@@ -413,7 +413,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     trade_1 = """
     [
         1,
-        "ETH:UST",
+        "tETH:UST",
         1606899600000,
         10,
         0.26334268,
@@ -429,7 +429,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     trade_2 = """
     [
         2,
-        "ETH:UST",
+        "tETH:UST",
         1606901400000,
         20,
         -0.26334268,
@@ -445,7 +445,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     trade_3 = """
     [
         3,
-        "WBTUSD",
+        "tWBTUSD",
         1606932000000,
         30,
         10000.00000000,
@@ -461,7 +461,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     trade_4 = """
     [
         4,
-        "WBTUSD",
+        "tWBTUSD",
         1606986000000,
         40,
         -10000.00000000,
@@ -477,7 +477,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     trade_5 = """
     [
         5,
-        "ETH:EUR",
+        "tETH:EUR",
         1606996801000,
         50,
         -0.26334268,
@@ -638,7 +638,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     trade_1 = """
     [
         1,
-        "ETH:UST",
+        "tETH:UST",
         1606899600000,
         10,
         0.26334268,
@@ -654,7 +654,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     trade_2 = """
     [
         2,
-        "ETH:UST",
+        "tETH:UST",
         1606901400000,
         20,
         -0.26334268,
@@ -670,7 +670,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     trade_3 = """
     [
         3,
-        "WBTUSD",
+        "tWBTUSD",
         1606932000000,
         30,
         10000.00000000,
@@ -686,7 +686,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     trade_4 = """
     [
         4,
-        "WBTUSD",
+        "tWBTUSD",
         1606986000000,
         40,
         -10000.00000000,
@@ -889,6 +889,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     request does not return a result already processed.
 
     Other things tested:
+      - Results are sorted by id in ascending mode.
       - Skip result when status is not 'COMPLETED'.
       - Stop requesting (break the loop) when result timestamp is greater than
       'end_ts'.
@@ -1050,7 +1051,6 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
                 'start': 0,
                 'end': 1606996800000,
                 'limit': 2,
-                'sort': 1,
             },
         ),
         call(
@@ -1059,7 +1059,6 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
                 'start': 1606901400000,
                 'end': 1606996800000,
                 'limit': 2,
-                'sort': 1,
             },
         ),
         call(
@@ -1068,15 +1067,14 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
                 'start': 1606986000000,
                 'end': 1606996800000,
                 'limit': 2,
-                'sort': 1,
             },
         ),
     ]
 
     def get_paginated_response():
         results = [
-            f'[{movement_1},{movement_2}]',
-            f'[{movement_3},{movement_4}]',
+            f'[{movement_2},{movement_1}]',
+            f'[{movement_4},{movement_3}]',
             f'[{movement_5}]',
         ]
         for result_ in results:
@@ -1287,9 +1285,9 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
 
     def get_paginated_response():
         results = [
-            f'[{movement_1},{movement_2}]',
-            f'[{movement_1},{movement_2}]',
-            f'[{movement_2},{movement_3}]',
+            f'[{movement_2},{movement_1}]',
+            f'[{movement_2},{movement_1}]',
+            f'[{movement_3},{movement_2}]',
             f'[{movement_4}]',
         ]
         for result_ in results:

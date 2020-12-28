@@ -55,7 +55,6 @@ from rotkehlchen.typing import (
     AssetMovementCategory,
     Fee,
     Location,
-    Price,
     Timestamp,
     TradePair,
     TradeType,
@@ -88,7 +87,6 @@ API_TRADES_MAX_LIMIT = 2500
 API_MOVEMENTS_MAX_LIMIT = 1000
 # Sorting mode
 API_TRADES_SORTING_MODE = 1  # ascending
-API_MOVEMENTS_SORTING_MODE = 1  # ascending, TBC
 # Minimum response item length per endpoint
 API_WALLET_MIN_RESULT_LENGTH = 3
 API_TRADES_MIN_RESULT_LENGTH = 11
@@ -184,7 +182,7 @@ class Bitfinex(ExchangeInterface):
         with self.nonce_lock:
             # Protect this region with a lock since Bitfinex will reject
             # non-increasing nonces for authenticated endpoints
-            if endpoint in {'movements', 'trades', 'wallets'}:
+            if endpoint in ('movements', 'trades', 'wallets'):
                 nonce = str(ts_now_in_ms())
                 message = f'/api/{api_path}{nonce}'
                 signature = hmac.new(
@@ -272,8 +270,9 @@ class Bitfinex(ExchangeInterface):
         call_options = options.copy()
         limit = options['limit']
         results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
-        last_result_id = None
-        last_result_timestamp = None
+        # last_result_id = None
+        # last_result_timestamp = None
+        processed_result_ids = set()
         retries_left = API_REQUEST_RETRY_TIMES
         while retries_left >= 0:
             response = self._api_query(
@@ -327,7 +326,15 @@ class Bitfinex(ExchangeInterface):
                 )
                 return []  # type: ignore # bug list nothing
 
+            # NB: sort movements in ascending mode (via its identifier) due to
+            # the lack of 'sort' query parameter.
+            if case == 'asset_movements':
+                response_list.sort(key=lambda raw_result: raw_result[id_index])
+
             for raw_result in response_list:
+                # TODO: remove this log
+                log.debug(f'Bitfinex raw_result for {case}: ', raw_result=raw_result)
+
                 if len(raw_result) < expected_raw_result_length:
                     log.error(
                         f'Error processing a {self.name} {case} result. '
@@ -349,11 +356,7 @@ class Bitfinex(ExchangeInterface):
                     )
                     break
 
-                if (
-                    results and
-                    raw_result[id_index] <= last_result_id and
-                    raw_result[timestamp_index] <= last_result_timestamp
-                ):
+                if raw_result[id_index] in processed_result_ids:
                     log.debug(
                         f'Skipped {self.name} {case} result. Already processed',
                         raw_result=raw_result,
@@ -387,14 +390,13 @@ class Bitfinex(ExchangeInterface):
                     continue
                 else:
                     results.append(result)  # type: ignore # type is known
-                    last_result_id = raw_result[id_index]
-                    last_result_timestamp = raw_result[timestamp_index]
+                    processed_result_ids.add(raw_result[id_index])
 
             if len(response_list) < limit:
                 break
 
             # Update pagination params per endpoint
-            # NB: re-assign dict instead of update, prevent lose call args values
+            # NB: Copying the dict instead of updating it prevents losing the call args values
             call_options = call_options.copy()
             call_options.update({
                 'start': results[-1].timestamp * 1000,
@@ -497,10 +499,10 @@ class Bitfinex(ExchangeInterface):
         trade_type = TradeType.BUY if amount >= ZERO else TradeType.SELL
         bfx_pair = raw_result[1]
         bfx_fee_currency_symbol = raw_result[10]
-        if bfx_pair.startswith(bfx_fee_currency_symbol):
-            regex = re.compile(fr'^({bfx_fee_currency_symbol})\W*(\w+)$')
+        if bfx_pair.startswith(f't{bfx_fee_currency_symbol}'):
+            regex = re.compile(fr'^t({bfx_fee_currency_symbol})\W*(\w+)$')
         elif bfx_pair.endswith(bfx_fee_currency_symbol):
-            regex = re.compile(fr'^(\w+)\W*({bfx_fee_currency_symbol})$')
+            regex = re.compile(fr'^t(\w+)\W*({bfx_fee_currency_symbol})$')
         else:
             raise DeserializationError(
                 f'Could not deserialize bitfinex trade pair {raw_result[1]} '
@@ -701,8 +703,8 @@ class Bitfinex(ExchangeInterface):
         Tuple[bool, str],
         Tuple[Optional[Dict[Asset, Balance]], str],
     ]:
-        """This function processes not successful responses for the following
-        cases listed in `case`.
+        """This function processes not successful responses for the cases listed
+        in `case`.
         """
         try:
             response_list = rlk_jsonloads_list(response.text)
@@ -710,9 +712,9 @@ class Bitfinex(ExchangeInterface):
             msg = f'{self.name} returned invalid JSON response: {response.text}.'
             log.error(msg)
 
-            if case in {'validate_api_key', 'balances'}:
+            if case in ('validate_api_key', 'balances'):
                 raise RemoteError(msg) from e
-            if case in {'trades', 'asset_movements'}:
+            if case in ('trades', 'asset_movements'):
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying {self.name} {case}: {msg}',
                 )
@@ -738,7 +740,7 @@ class Bitfinex(ExchangeInterface):
             raise RemoteError(msg)
         if case == 'balances':
             return None, msg
-        if case in {'trades', 'asset_movements'}:
+        if case in ('trades', 'asset_movements'):
             self.msg_aggregator.add_error(
                 f'Got remote error while querying {self.name} {case}: {msg}',
             )
@@ -790,13 +792,21 @@ class Bitfinex(ExchangeInterface):
             log.error(msg)
             raise RemoteError(msg) from e
 
-        # Wallet items indexes
+        # Wallet items indices
         currency_index = 1
         balance_index = 2
         asset_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
-        asset_usd_price: Dict[Asset, Price] = {}
         for wallet in response_list:
             if len(wallet) < API_WALLET_MIN_RESULT_LENGTH or wallet[balance_index] <= 0:
+                log.error(
+                    f'Error processing a {self.name} balance result. '
+                    f'Found less items than expected',
+                    wallet=wallet,
+                )
+                self.msg_aggregator.add_error(
+                    f'Failed to deserialize a {self.name} balance result. '
+                    f'Check logs for details. Ignoring it.',
+                )
                 continue
 
             try:
@@ -812,22 +822,19 @@ class Bitfinex(ExchangeInterface):
                 )
                 continue
 
-            if asset not in asset_usd_price:
-                try:
-                    usd_price = Inquirer().find_usd_price(asset=asset)
-                except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Error processing {self.name} balance result due to inability to '
-                        f'query USD price: {str(e)}. Skipping balance result.',
-                    )
-                    continue
-
-                asset_usd_price[asset] = usd_price
+            try:
+                usd_price = Inquirer().find_usd_price(asset=asset)
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Error processing {self.name} balance result due to inability to '
+                    f'query USD price: {str(e)}. Skipping balance result.',
+                )
+                continue
 
             amount = FVal(wallet[balance_index])
             asset_balance[asset] += Balance(
                 amount=amount,
-                usd_value=amount * asset_usd_price[asset],
+                usd_value=amount * usd_price,
             )
 
         return dict(asset_balance), ''
@@ -868,7 +875,6 @@ class Bitfinex(ExchangeInterface):
             'start': start_ts * 1000,
             'end': end_ts * 1000,
             'limit': API_MOVEMENTS_MAX_LIMIT,
-            'sort': API_MOVEMENTS_SORTING_MODE,
         }
         asset_movements: List[AssetMovement] = self._api_query_paginated(
             options=options,
