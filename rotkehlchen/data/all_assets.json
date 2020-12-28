@@ -14477,5 +14477,14 @@
         "started": 1599041294,
         "symbol": "BTSE",
         "type": "ethereum token"
+    },
+    "SYN": {
+        "coingecko": "synlev",
+        "ethereum_address": "0x1695936d6a953df699C38CA21c2140d497C08BD9",
+        "ethereum_token_decimals": 18,
+        "name": "SynLev",
+        "started": 1597091217,
+        "symbol": "SYN",
+        "type": "ethereum token"
     }
 }
