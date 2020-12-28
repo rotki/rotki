@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -78,9 +78,20 @@ FAPI_METHODS = (
 )
 
 RETRY_AFTER_LIMIT = 60
+# Binance api error codes we check for (all below apis seem to have the same)
+# https://binance-docs.github.io/apidocs/spot/en/#error-codes-2
+# https://binance-docs.github.io/apidocs/futures/en/#error-codes-2
+# https://binance-docs.github.io/apidocs/delivery/en/#error-codes-2
+REJECTED_MBX_KEY = -2015
 
 
 BINANCE_API_TYPE = Literal['api', 'sapi', 'wapi', 'dapi', 'fapi']
+
+
+class BinancePermissionError(RemoteError):
+    """Exception raised when a binance permission problem is detected
+
+    Example is when there is no margin account to query or insufficient api key permissions."""
 
 
 class BinancePair(NamedTuple):
@@ -337,7 +348,14 @@ class Binance(ExchangeInterface):
                 except JSONDecodeError:
                     pass
 
-                raise RemoteError(
+                exception_class: Union[Type[RemoteError], Type[BinancePermissionError]]
+                if response.status_code == 401 and code == REJECTED_MBX_KEY:
+                    # Either API key permission error or if futures/dapi then not enables yet
+                    exception_class = BinancePermissionError
+                else:
+                    exception_class = RemoteError
+
+                raise exception_class(
                     '{} API request {} for {} failed with HTTP status '
                     'code: {}, error code: {} and error message: {}'.format(
                         self.name,
@@ -574,7 +592,15 @@ class Binance(ExchangeInterface):
             api_type: Literal['fapi', 'dapi'],
             balances: Dict,
     ) -> Dict:
-        response = self.api_query_list(api_type, 'balance')
+        try:
+            response = self.api_query_list(api_type, 'balance')
+        except BinancePermissionError as e:
+            log.warning(
+                f'Insufficient permission to query {self.name} {api_type} balances.'
+                f'Skipping query. Response details: {str(e)}',
+            )
+            return balances
+
         try:
             for entry in response:
                 amount = FVal(entry['balance'])
