@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 
 from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
@@ -532,6 +532,27 @@ def asset_from_poloniex(poloniex_name: str) -> Asset:
 
     our_name = POLONIEX_TO_WORLD.get(poloniex_name, poloniex_name)
     return Asset(our_name)
+
+
+def asset_from_bitfinex(
+        bitfinex_name: str,
+        currency_map: Dict[str, str],
+        is_currency_map_updated: bool = True,
+) -> Asset:
+    """Currency map coming from `<Bitfinex>._query_currency_map()` is already
+    updated with BITFINEX_TO_WORLD (prevent updating it on each call)
+    """
+    if not isinstance(bitfinex_name, str):
+        raise DeserializationError(f'Got non-string type {type(bitfinex_name)} for bitfinex asset')
+
+    if bitfinex_name in UNSUPPORTED_BITFINEX_ASSETS:
+        raise UnsupportedAsset(bitfinex_name)
+
+    if is_currency_map_updated is False:
+        currency_map.update(BITFINEX_TO_WORLD)
+
+    name = currency_map.get(bitfinex_name, bitfinex_name)
+    return Asset(name)
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:

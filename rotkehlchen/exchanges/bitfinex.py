@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import logging
 import re
+from collections import defaultdict
 from datetime import datetime
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -9,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    DefaultDict,
     Dict,
     List,
     NamedTuple,
@@ -21,12 +23,13 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
+from gevent.lock import Semaphore
 from requests.adapters import Response
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import BITFINEX_TO_WORLD
+from rotkehlchen.assets.converters import BITFINEX_TO_WORLD, asset_from_bitfinex
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
@@ -52,6 +55,7 @@ from rotkehlchen.typing import (
     AssetMovementCategory,
     Fee,
     Location,
+    Price,
     Timestamp,
     TradePair,
     TradeType,
@@ -130,11 +134,7 @@ class Bitfinex(ExchangeInterface):
         super().__init__(str(Location.BITFINEX), api_key, secret, database)
         self.base_uri = 'https://api.bitfinex.com'
         self.msg_aggregator = msg_aggregator
-        # Constant headers: 'bfx-nonce', 'bfx-signature'
-        # Variable headers: 'Content-Type', 'bfx-apikey'
-        self.session.headers.update({
-            'bfx-apikey': self.api_key,
-        })
+        self.nonce_lock = Semaphore()
 
     def _api_query(
             self,
@@ -151,7 +151,7 @@ class Bitfinex(ExchangeInterface):
         """Request a Bitfinex API v2 endpoint (from `endpoint`).
         """
         call_options = options.copy() if options else {}
-        for header in ('Content-Type', 'bfx-nonce', 'bfx-signature'):
+        for header in ('Content-Type', 'bfx-apikey', 'bfx-nonce', 'bfx-signature'):
             self.session.headers.pop(header, None)
 
         if endpoint == 'configs_list_currency':
@@ -181,30 +181,34 @@ class Bitfinex(ExchangeInterface):
         else:
             raise AssertionError(f'Unexpected {self.name} endpoint type: {endpoint}')
 
-        if endpoint in {'movements', 'trades', 'wallets'}:
-            nonce = str(ts_now_in_ms() + 20_000)  # prevent small nonce
-            message = f'/api/{api_path}{nonce}'
-            signature = hmac.new(
-                self.secret,
-                msg=message.encode('utf-8'),
-                digestmod=hashlib.sha384,
-            ).hexdigest()
-            self.session.headers.update({
-                'Content-Type': 'application/json',
-                'bfx-nonce': nonce,
-                'bfx-signature': signature,
-            })
+        with self.nonce_lock:
+            # Protect this region with a lock since Bitfinex will reject
+            # non-increasing nonces for authenticated endpoints
+            if endpoint in {'movements', 'trades', 'wallets'}:
+                nonce = str(ts_now_in_ms())
+                message = f'/api/{api_path}{nonce}'
+                signature = hmac.new(
+                    self.secret,
+                    msg=message.encode('utf-8'),
+                    digestmod=hashlib.sha384,
+                ).hexdigest()
+                self.session.headers.update({
+                    'Content-Type': 'application/json',
+                    'bfx-apikey': self.api_key,
+                    'bfx-nonce': nonce,
+                    'bfx-signature': signature,
+                })
 
-        log.debug(f'{self.name} API request', request_url=request_url)
-        try:
-            response = self.session.request(
-                method=method,
-                url=request_url,
-            )
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(
-                f'{self.name} {method} request at {request_url} connection error: {str(e)}.',
-            ) from e
+            log.debug(f'{self.name} API request', request_url=request_url)
+            try:
+                response = self.session.request(
+                    method=method,
+                    url=request_url,
+                )
+            except requests.exceptions.RequestException as e:
+                raise RemoteError(
+                    f'{self.name} {method} request at {request_url} connection error: {str(e)}.',
+                ) from e
 
         return response
 
@@ -434,10 +438,11 @@ class Bitfinex(ExchangeInterface):
                 f'Unexpected bitfinex movement with status: {raw_result[5]}. '
                 f'Only completed movements are processed. Raw movement: {raw_result}',
             )
-        bfx_asset_symbol = raw_result[1]
-        asset_symbol = currency_map.get(bfx_asset_symbol, bfx_asset_symbol)
         try:
-            fee_asset = Asset(asset_symbol)
+            fee_asset = asset_from_bitfinex(
+                bitfinex_name=raw_result[1],
+                currency_map=currency_map,
+            )
         except (UnknownAsset, UnsupportedAsset) as e:
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
             raise DeserializationError(
@@ -512,11 +517,15 @@ class Bitfinex(ExchangeInterface):
             )
 
         bfx_base_asset_symbol, bfx_quote_asset_symbol = match.groups()
-        base_asset_symbol = currency_map.get(bfx_base_asset_symbol, bfx_base_asset_symbol)
-        quote_asset_symbol = currency_map.get(bfx_quote_asset_symbol, bfx_quote_asset_symbol)
         try:
-            base_asset = Asset(base_asset_symbol)
-            quote_asset = Asset(quote_asset_symbol)
+            base_asset = asset_from_bitfinex(
+                bitfinex_name=bfx_base_asset_symbol,
+                currency_map=currency_map,
+            )
+            quote_asset = asset_from_bitfinex(
+                bitfinex_name=bfx_quote_asset_symbol,
+                currency_map=currency_map,
+            )
         except (UnknownAsset, UnsupportedAsset) as e:
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
             raise DeserializationError(
@@ -782,23 +791,19 @@ class Bitfinex(ExchangeInterface):
             raise RemoteError(msg) from e
 
         # Wallet items indexes
-        type_index = 0
         currency_index = 1
         balance_index = 2
-        asset_balance: Dict[Asset, Balance] = {}
+        asset_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        asset_usd_price: Dict[Asset, Price] = {}
         for wallet in response_list:
-            if (
-                len(wallet) < API_WALLET_MIN_RESULT_LENGTH or
-                wallet[type_index] != 'exchange' or
-                wallet[balance_index] <= 0
-            ):
+            if len(wallet) < API_WALLET_MIN_RESULT_LENGTH or wallet[balance_index] <= 0:
                 continue
 
-            amount = FVal(wallet[balance_index])
-            bfx_symbol = wallet[currency_index]
-            symbol = currency_map_response.currency_map.get(bfx_symbol, bfx_symbol)
             try:
-                asset = Asset(symbol)
+                asset = asset_from_bitfinex(
+                    bitfinex_name=wallet[currency_index],
+                    currency_map=currency_map_response.currency_map,
+                )
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
@@ -806,21 +811,26 @@ class Bitfinex(ExchangeInterface):
                     f'Ignoring its balance query.',
                 )
                 continue
-            try:
-                usd_price = Inquirer().find_usd_price(asset=asset)
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Error processing {self.name} balance result due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance result.',
-                )
-                continue
 
-            asset_balance[asset] = Balance(
+            if asset not in asset_usd_price:
+                try:
+                    usd_price = Inquirer().find_usd_price(asset=asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing {self.name} balance result due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance result.',
+                    )
+                    continue
+
+                asset_usd_price[asset] = usd_price
+
+            amount = FVal(wallet[balance_index])
+            asset_balance[asset] += Balance(
                 amount=amount,
-                usd_value=amount * usd_price,
+                usd_value=amount * asset_usd_price[asset],
             )
 
-        return asset_balance, ''
+        return dict(asset_balance), ''
 
     def query_online_deposits_withdrawals(
             self,

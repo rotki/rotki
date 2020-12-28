@@ -12,6 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import (
     BITFINEX_EXCHANGE_TEST_ASSETS,
     UNSUPPORTED_BITFINEX_ASSETS,
+    asset_from_bitfinex,
 )
 from rotkehlchen.errors import (
     RemoteError,
@@ -81,20 +82,22 @@ def test_bitfinex_exchange_assets_are_known(mock_bitfinex):
 
     test_assets = set(BITFINEX_EXCHANGE_TEST_ASSETS)
     unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
-    assets_to_ignore = test_assets.union(unsupported_assets)
     currency_map = currency_map_response.currency_map
     symbols = set()
     for symbol in currencies_response.currencies:
-        if symbol in assets_to_ignore:
+        if symbol in test_assets:
             continue
         for pair in exchange_pairs_response.pairs:
             if pair.startswith(symbol) or pair.endswith(symbol):
-                symbols.add(currency_map.get(symbol, symbol))
+                symbols.add(symbol)
                 break
 
     for symbol in symbols:
         try:
-            Asset(symbol)
+            asset_from_bitfinex(
+                bitfinex_name=symbol,
+                currency_map=currency_map,
+            )
         except UnsupportedAsset:
             assert symbol in unsupported_assets
         except UnknownAsset as e:
@@ -138,7 +141,14 @@ def test_validate_api_key_invalid_key(mock_bitfinex):
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disable=unused-argument
-    """Test a result that can't get its USD price is skipped
+    """Test the balances of the assets are returned as expected.
+
+    Also test the following logic:
+      - An asset balance is the result of aggregating its balances per wallet
+      type (i.e. exchange, margin and funding).
+      - The balance of an asset in UNSUPPORTED_BITFINEX_ASSETS is skipped.
+      - The asset ticker is standardized (e.g. WBT to WBTC, UST to USDT).
+      - The balance of an asset that can't get its USD price is skipped.
     """
     response = Response()
     response.status_code = HTTPStatus.OK
@@ -148,6 +158,7 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
         currency_map={
             'UST': 'USDt',
             'GNT': 'GLM',
+            'WBT': 'WBTC',
         },
     )
     balances_data = (
@@ -157,12 +168,16 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
             ["exchange", "UST"],
             ["exchange", "", 12345],
             ["exchange", "WBT", 0.0000000],
-            ["margin", "UST", 19788.6529257],
             ["exchange", "", 19788.6529257],
             ["exchange", "UST", 19788.6529257],
+            ["margin", "UST", 0.50000000],
+            ["funding", "UST", 1],
             ["exchange", "LINK", 777.777777],
             ["exchange", "GNT", 0.0000001],
-            ["exchange", "EUR", 99.9999999]
+            ["exchange", "EUR", 99.9999999],
+            ["margin", "WBT", 1.00000000],
+            ["funding", "NEO", 1.00000000],
+            ["exchange", "B21X", 1.00000000]
         ]
         """
     )
@@ -186,21 +201,29 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
         asset_balance, msg = mock_bitfinex.query_balances()
 
         assert asset_balance == {
-            Asset('USDT'): Balance(
-                amount=FVal('19788.6529257'),
-                usd_value=FVal('29682.97938855'),
-            ),
-            Asset('LINK'): Balance(
-                amount=FVal('777.777777'),
-                usd_value=FVal('1166.6666655'),
+            Asset('EUR'): Balance(
+                amount=FVal('99.9999999'),
+                usd_value=FVal('149.99999985'),
             ),
             Asset('GLM'): Balance(
                 amount=FVal('0.0000001'),
                 usd_value=FVal('0.00000015'),
             ),
-            Asset('EUR'): Balance(
-                amount=FVal('99.9999999'),
-                usd_value=FVal('149.99999985'),
+            Asset('LINK'): Balance(
+                amount=FVal('777.777777'),
+                usd_value=FVal('1166.6666655'),
+            ),
+            Asset('NEO'): Balance(
+                amount=FVal('1'),
+                usd_value=FVal('1.5'),
+            ),
+            Asset('USDT'): Balance(
+                amount=FVal('19790.1529257'),
+                usd_value=FVal('29685.22938855'),
+            ),
+            Asset('WBTC'): Balance(
+                amount=FVal('1'),
+                usd_value=FVal('1.5'),
             ),
         }
         assert msg == ''

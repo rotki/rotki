@@ -233,6 +233,9 @@ class Asset():
     def to_kraken(self) -> str:
         return WORLD_TO_KRAKEN[self.identifier]
 
+    def to_bitfinex(self) -> str:
+        return WORLD_TO_BITFINEX.get(self.identifier, self.identifier)
+
     def to_bittrex(self) -> str:
         return WORLD_TO_BITTREX.get(self.identifier, self.identifier)
 
