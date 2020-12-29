@@ -1354,10 +1354,11 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
       const airdrop = airdrops[address];
       for (const source in airdrop) {
-        const { amount, asset } = airdrop[source];
+        const { amount, asset, link } = airdrop[source];
         data.push({
           address,
           amount,
+          link,
           source: source as AirdropType,
           asset
         });

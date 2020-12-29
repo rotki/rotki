@@ -58,12 +58,14 @@ export interface Airdrop {
   readonly address: string;
   readonly source: AirdropType;
   readonly amount: string;
+  readonly link: string;
   readonly asset: string;
 }
 
 export interface AirdropDetail {
   readonly amount: string;
   readonly asset: string;
+  readonly link: string;
 }
 
 interface AirdropDetails {

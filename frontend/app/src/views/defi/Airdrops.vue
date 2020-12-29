@@ -47,6 +47,19 @@
                 <span class="ms-2" v-text="getLabel(item.source)" />
               </div>
             </template>
+            <template #item.link="{ item }">
+              <v-btn
+                icon
+                color="primary"
+                :target="$interop.isPackaged ? undefined : '_blank'"
+                :href="$interop.isPackaged ? undefined : item.link"
+                @click="
+                  $interop.isPackaged ? $interop.navigate(item.link) : undefined
+                "
+              >
+                <v-icon>mdi-link</v-icon>
+              </v-btn>
+            </template>
           </v-data-table>
         </v-card-text>
       </v-card>
@@ -105,6 +118,11 @@ export default class Airdrops extends Mixins(StatusMixin) {
     {
       text: this.$t('airdrops.headers.amount').toString(),
       value: 'amount',
+      align: 'end'
+    },
+    {
+      text: '',
+      value: 'link',
       align: 'end'
     }
   ];

@@ -308,16 +308,7 @@ app.on('ready', async () => {
   });
   ipcMain.on('CLOSE_APP', async () => await closeApp());
   ipcMain.on('OPEN_URL', (event, args) => {
-    if (
-      !(
-        args.startsWith('https://rotki.com/') ||
-        args.startsWith('https://rotki.readthedocs.io/') ||
-        args.startsWith('https://github.com/rotki/rotki/') ||
-        args.startsWith('https://etherscan.io/') ||
-        args.startsWith('https://blockstream.info/') ||
-        args.startsWith('https://blockscout.com/')
-      )
-    ) {
+    if (!args.startsWith('https://')) {
       console.error(`Error: Requested to open untrusted URL: ${args} `);
       return;
     }
