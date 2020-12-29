@@ -31,6 +31,12 @@
           @keypress.enter="login()"
         />
 
+        <v-checkbox
+          v-model="rememberUser"
+          color="primary"
+          :label="$t('login.remember_me')"
+        />
+
         <transition name="bounce">
           <v-alert
             v-if="!!syncConflict.message"
@@ -139,6 +145,9 @@ import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { SyncConflict } from '@/store/session/types';
 import { Credentials, SyncApproval } from '@/typing/types';
 
+const KEY_REMEMBER = 'rotki.remember';
+const KEY_USERNAME = 'rotki.username';
+
 @Component({
   components: { RevealableInput }
 })
@@ -190,10 +199,12 @@ export default class Login extends Vue {
     if (form) {
       form.reset();
     }
+    this.loadSettings();
   }
 
   username: string = '';
   password: string = '';
+  rememberUser: boolean = false;
 
   valid = false;
 
@@ -208,6 +219,29 @@ export default class Login extends Vue {
     (v: string) => !!v || this.$t('login.validation.non_empty_password')
   ];
 
+  mounted() {
+    this.loadSettings();
+  }
+
+  private loadSettings() {
+    this.rememberUser = !!localStorage.getItem(KEY_REMEMBER);
+    this.username = localStorage.getItem(KEY_USERNAME) ?? '';
+  }
+
+  @Watch('rememberUser')
+  onRememberChange(remember: boolean, previous: boolean) {
+    if (remember === previous) {
+      return;
+    }
+
+    if (!remember) {
+      localStorage.removeItem(KEY_REMEMBER);
+      localStorage.removeItem(KEY_USERNAME);
+    } else {
+      localStorage.setItem(KEY_REMEMBER, `${true}`);
+    }
+  }
+
   login(syncApproval: SyncApproval = 'unknown') {
     const credentials: Credentials = {
       username: this.username,
@@ -215,6 +249,9 @@ export default class Login extends Vue {
       syncApproval
     };
     this.$emit('login', credentials);
+    if (this.rememberUser) {
+      localStorage.setItem(KEY_USERNAME, this.username);
+    }
   }
 
   @Emit()
