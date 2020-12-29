@@ -1,3 +1,4 @@
+import warnings as test_warnings
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from unittest.mock import MagicMock, call, patch
@@ -6,13 +7,20 @@ import pytest
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import RemoteError, SystemClockNotSyncedError
+from rotkehlchen.assets.converters import UNSUPPORTED_BITSTAMP_ASSETS, asset_from_bitstamp
+from rotkehlchen.errors import (
+    RemoteError,
+    SystemClockNotSyncedError,
+    UnknownAsset,
+    UnsupportedAsset,
+)
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION,
     API_MAX_LIMIT,
     API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE,
     USER_TRANSACTION_MIN_SINCE_ID,
     USER_TRANSACTION_SORTING_MODE,
+    Bitstamp,
 )
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -23,6 +31,39 @@ from rotkehlchen.exchanges.data_structures import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Fee, Location, Timestamp, TradePair
+
+
+def test_name():
+    exchange = Bitstamp('a', b'a', object(), object())
+    assert exchange.name == str(Location.BITSTAMP)
+
+
+def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
+    exchange_pairs_response = mock_bitstamp._query_exchange_pairs()
+    if exchange_pairs_response.success is False:
+        response = exchange_pairs_response.response
+        test_warnings.warn(UserWarning(
+            f'Failed to request {mock_bitstamp.name} exchange pairs list. '
+            f'Response status code: {response.status_code}. '
+            f'Response text: {response.text}. Xfailing this test',
+        ))
+        pytest.xfail('Failed to request {mock_bitstamp.name} currencies list')
+
+    unsupported_assets = set(UNSUPPORTED_BITSTAMP_ASSETS)
+    symbols = set()
+    for pair in exchange_pairs_response.pairs:
+        symbols.update(set(pair.split('/')))
+
+    for symbol in symbols:
+        try:
+            asset_from_bitstamp(symbol)
+        except UnsupportedAsset:
+            assert symbol in unsupported_assets
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.asset_name} in {mock_bitstamp.name}. '
+                f'Support for it has to be added',
+            ))
 
 
 def test_validate_api_key_invalid_json(mock_bitstamp):

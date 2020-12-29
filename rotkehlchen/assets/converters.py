@@ -469,6 +469,9 @@ BITFINEX_EXCHANGE_TEST_ASSETS = (
 )
 
 
+UNSUPPORTED_BITSTAMP_ASSETS = ()
+
+
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
@@ -553,6 +556,16 @@ def asset_from_bitfinex(
 
     name = currency_map.get(bitfinex_name, bitfinex_name)
     return Asset(name)
+
+
+def asset_from_bitstamp(bitstamp_name: str) -> Asset:
+    if not isinstance(bitstamp_name, str):
+        raise DeserializationError(f'Got non-string type {type(bitstamp_name)} for bitstamp asset')
+
+    if bitstamp_name in UNSUPPORTED_BITSTAMP_ASSETS:
+        raise UnsupportedAsset(bitstamp_name)
+
+    return Asset(bitstamp_name)
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:

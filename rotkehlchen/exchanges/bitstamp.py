@@ -25,6 +25,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
@@ -87,6 +88,12 @@ USER_TRANSACTION_MIN_SINCE_ID = 1
 USER_TRANSACTION_TRADE_TYPE = {2}
 # Asset movement type int: 0 - deposit, 1 - withdrawal
 USER_TRANSACTION_ASSET_MOVEMENT_TYPE = {0, 1}
+
+
+class ExchangePairsResponse(NamedTuple):
+    success: bool
+    response: Response
+    pairs: List[str]
 
 
 class TradePairData(NamedTuple):
@@ -158,7 +165,7 @@ class Bitstamp(ExchangeInterface):
 
             symbol = entry.split('_')[0]  # If no `_`, defaults to entry
             try:
-                asset = Asset(symbol)
+                asset = asset_from_bitstamp(symbol)
             except (UnknownAsset, UnsupportedAsset) as e:
                 log.error(str(e))
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
@@ -614,8 +621,8 @@ class Bitstamp(ExchangeInterface):
         # storing the raw pair strings.
         base_asset_symbol, quote_asset_symbol = pair.split('_')
         try:
-            base_asset = Asset(base_asset_symbol)
-            quote_asset = Asset(quote_asset_symbol)
+            base_asset = asset_from_bitstamp(base_asset_symbol)
+            quote_asset = asset_from_bitstamp(quote_asset_symbol)
         except (UnknownAsset, UnsupportedAsset) as e:
             log.error(str(e))
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
@@ -721,3 +728,40 @@ class Bitstamp(ExchangeInterface):
             return []
 
         raise AssertionError(f'Unexpected Bitstamp response_case: {case}.')
+
+    def _query_exchange_pairs(self) -> ExchangePairsResponse:
+        """Query the exchange pairs data and return the list of names in
+        `<ExchangePairsResponse>.pairs`.
+        Otherwise populate <ExchangePairsResponse> with data that each endpoint
+        can process as an unsuccessful request.
+        """
+        was_successful = True
+        pairs = []
+        request_url = f'{self.base_uri}/v2/trading-pairs-info'
+        log.debug(f'{self.name} API request', request_url=request_url)
+        try:
+            response = self.session.get(request_url)
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(
+                f'{self.name} get request at {request_url} connection error: {str(e)}.',
+            ) from e
+
+        if response.status_code != HTTPStatus.OK:
+            was_successful = False
+            log.error(f'{self.name} pairs query failed. Check further logs')
+        else:
+            try:
+                response_list = rlk_jsonloads_list(response.text)
+            except JSONDecodeError:
+                was_successful = False
+                log.error(
+                    f'{self.name} pairs returned an invalid JSON response. Check further logs',
+                )
+            else:
+                pairs = [raw_result.get('name') for raw_result in response_list]
+
+        return ExchangePairsResponse(
+            success=was_successful,
+            response=response,
+            pairs=pairs,
+        )
