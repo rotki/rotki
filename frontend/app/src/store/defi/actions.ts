@@ -42,6 +42,7 @@ import {
 } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import {
+  Airdrops,
   AllDefiProtocols,
   DefiState,
   DSRBalances,
@@ -916,6 +917,52 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
           error: e.message
         }),
         i18n.tc('actions.defi.uniswap_events.error.title'),
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
+  },
+
+  async fetchAirdrops(
+    { commit, rootGetters: { status } },
+    refresh: boolean = false
+  ) {
+    const section = Section.DEFI_AIRDROPS;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.DEFI_AIRDROPS;
+      const { taskId } = await api.airdrops();
+      const task = createTask(taskId, taskType, {
+        title: i18n.t('actions.defi.airdrops.task.title').toString(),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<Airdrops, TaskMeta>(taskType);
+
+      commit('airdrops', result);
+    } catch (e) {
+      notify(
+        i18n
+          .t('actions.defi.airdrops.error.description', {
+            error: e.message
+          })
+          .toString(),
+        i18n.t('actions.defi.airdrops.error.title').toString(),
         Severity.ERROR,
         true
       );

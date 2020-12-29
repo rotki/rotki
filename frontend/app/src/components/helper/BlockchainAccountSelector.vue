@@ -60,10 +60,10 @@
         </template>
       </v-autocomplete>
     </div>
-    <v-card-text
-      v-if="hint"
-      v-text="$t('blockchain_account_selector.hint', { hintText })"
-    />
+    <v-card-text v-if="hint">
+      {{ $t('blockchain_account_selector.hint', { hintText }) }}
+      <slot />
+    </v-card-text>
   </v-card>
 </template>
 

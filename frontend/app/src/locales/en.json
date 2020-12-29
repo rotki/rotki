@@ -2,6 +2,16 @@
   "adex_page": {
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
+  "airdrops": {
+    "description": "* These are the airdrops Rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "headers": {
+      "address": "Address",
+      "amount": "Amount",
+      "source": "Source"
+    },
+    "loading": "Please wait while rotki queries the airdrops for your addresses...",
+    "title": "Airdrops"
+  },
   "asset_balances": {
     "headers": {
       "amount": "Amount",
@@ -748,6 +758,15 @@
       }
     },
     "defi": {
+      "airdrops": {
+        "error": {
+          "description": "Failed to retrieve airdrops: {error}",
+          "title": "Airdrops"
+        },
+        "task": {
+          "title": "Querying airdrops"
+        }
+      },
       "balances": {
         "task": {
           "title": "Querying DeFi balances"
@@ -1142,7 +1161,8 @@
       "overview": "Overview",
       "deposits": "Deposits",
       "liabilities": "Liabilities",
-      "dex_trades": "DEX Trades"
+      "dex_trades": "DEX Trades",
+      "airdrops": "Airdrops"
     },
     "staking": "Staking",
     "staking_sub": {
@@ -1366,7 +1386,8 @@
       "overview": "Overview",
       "deposits": "Deposits",
       "liabilities": "Liabilities",
-      "dex_trades": "DEX Trades"
+      "dex_trades": "DEX Trades",
+      "airdrops": "Airdrops"
     }
   },
   "decentralized_overview": {

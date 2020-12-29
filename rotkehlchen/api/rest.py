@@ -29,6 +29,7 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
+from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -1614,6 +1615,32 @@ class RestAPI():
             return self._query_async(command='_get_defi_balances')
 
         response = self._get_defi_balances()
+        result = response['result']
+        msg = response['message']
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def _get_ethereum_airdrops(self) -> Dict[str, Any]:
+        try:
+            data = check_airdrops(
+                addresses=self.rotkehlchen.chain_manager.accounts.eth,
+                data_dir=self.rotkehlchen.data_dir,
+            )
+        except RemoteError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+
+        return _wrap_in_ok_result(process_result(data))
+
+    @require_loggedin_user()
+    def get_ethereum_airdrops(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_ethereum_airdrops')
+
+        response = self._get_ethereum_airdrops()
         result = response['result']
         msg = response['message']
         if result is None:

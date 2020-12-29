@@ -11,6 +11,7 @@ import {
 } from '@/services/defi/types/yearn';
 import { defaultState } from '@/store/defi/state';
 import {
+  Airdrops,
   AllDefiProtocols,
   DefiState,
   DSRBalances,
@@ -66,6 +67,9 @@ export const mutations: MutationTree<DefiState> = {
   },
   uniswapEvents(state: DefiState, events: UniswapEvents) {
     state.uniswapEvents = events;
+  },
+  airdrops(state: DefiState, airdrops: Airdrops) {
+    state.airdrops = airdrops;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

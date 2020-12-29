@@ -12,6 +12,10 @@ export class ElectronInterop {
     return this.packagedApp;
   }
 
+  navigate(url: string) {
+    window.interop?.openUrl(url);
+  }
+
   navigateToPremium() {
     window.interop?.openUrl(this.premiumURL);
   }

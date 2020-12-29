@@ -11643,6 +11643,16 @@
         "symbol": "TOR",
         "type": "own chain"
     },
+    "TORN": {
+        "coingecko": "tornado-cash",
+	"cryptocompare": "",
+        "ethereum_address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C",
+        "ethereum_token_decimals": 18,
+        "name": "TornadoCash",
+        "started": 1608260437,
+        "symbol": "TORN",
+        "type": "ethereum token"
+    },
     "TRAC": {
         "coingecko": "origintrail",
         "ethereum_address": "0xaA7a9CA87d3694B5755f213B5D04094b8d0F0A6F",

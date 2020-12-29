@@ -4650,6 +4650,61 @@ Getting Eth2 Staking deposits
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+
+Querying ethereum airdrops
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH/airdrops
+
+   Doing a GET on the ethereum airdrops endpoint will return how much and of which token any of the tracked ethereum addresses are entitled to.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchain/ETH/airdrops HTTP/1.1
+      Host: localhost:5042
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "0xe5B3330A43CeC5A01A80E75ebaB2d3bc17e70819": {
+	          "1inch": {
+		      "amount": "675.55",
+		      "asset": "1INCH",
+		      "link": "https://app.uniswap.org/"
+		  }
+	      },
+	      "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
+	          "1inch": {
+		      "amount": "1823.23",
+		      "asset": "1INCH",
+		      "link": "https://1inch.exchange/"
+		  },
+		  "uniswap": {
+		      "amount": "400",
+		      "asset": "UNI",
+		      "link": "https://app.uniswap.org/"
+		  }
+	      },
+          "message": ""
+      }
+
+   :reqjson object result: A mapping of addresses to protocols for which claimable airdrops exist
+
+   :statuscode 200: Tags succesfully queried.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Could not query an airdrop file
+
 Get addresses to query per protocol
 =======================================
 

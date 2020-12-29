@@ -241,6 +241,15 @@ class EthereumTransactionsResource(BaseResource):
         return self.rest_api.purge_ethereum_transaction_data()
 
 
+class EthereumAirdropsResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_ethereum_airdrops(async_query)
+
+
 class ExternalServicesResource(BaseResource):
 
     put_schema = ExternalServicesResourceAddSchema()

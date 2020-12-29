@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`438` Rotki now supports Bitfinex. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`-` Users can now save the login username across sessions.
+* :feature:`972` Users can now see which aidrops any of their addresses is eligible for.
 * :feature:`1949` All time pickers now use a 24h format to avoid user confusion.
 * :feature:`1961` Users can configure the BTC address derivation gap limit.
 * :feature:`1955` Users can now set their main currency to Swiss Franc.
@@ -64,6 +65,7 @@ Changelog
   - `Tether CNH (CNHT) <https://www.cryptocompare.com/coins/cnht/overview>`__
   - `Xriba (XRA) <https://www.coingecko.com/en/coins/xriba>`__
   - `BTSE Token (BTSE) <https://www.coingecko.com/en/coins/btse-token>`__
+  - `Tornado Cash Token (TORN) <https://www.coingecko.com/en/coins/tornado-cash>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
