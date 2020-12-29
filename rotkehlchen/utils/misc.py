@@ -18,7 +18,7 @@ import requests
 from eth_utils.address import to_checksum_address
 from rlp.sedes import big_endian_int
 
-from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
+from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT, ZERO
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     ConversionError,
@@ -234,7 +234,7 @@ def retry_calls(
 
 def request_get(
         url: str,
-        timeout: int = ALL_REMOTES_TIMEOUT,
+        timeout: int = GLOBAL_REQUESTS_TIMEOUT,
         handle_429: bool = False,
         backoff_in_seconds: Union[int, float] = 0,
 ) -> Union[Dict, List]:
@@ -268,7 +268,7 @@ def request_get(
 
 def request_get_dict(
         url: str,
-        timeout: int = ALL_REMOTES_TIMEOUT,
+        timeout: int = GLOBAL_REQUESTS_TIMEOUT,
         handle_429: bool = False,
         backoff_in_seconds: Union[int, float] = 0,
 ) -> Dict:
