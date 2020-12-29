@@ -9,25 +9,29 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 
 AIRDROPS = {
-    "uniswap": (
+    'uniswap': (
         # is checksummed
-        "https://raw.githubusercontent.com/banteg/uniswap-distribution/master/uniswap-distribution.csv",  # noqa: E501
+        'https://raw.githubusercontent.com/banteg/uniswap-distribution/master/uniswap-distribution.csv',  # noqa: E501
         A_UNI,
+        'https://app.uniswap.org/',
     ),
-    "1inch": (
+    '1inch': (
         # is checksummed
-        "https://gist.githubusercontent.com/banteg/12708815fb63239d9f28dec5df8641f9/raw/28a9dffe9d5681ef5f75b0ab6c39fe5ea0064712/1inch.csv",  # noqa: E501
+        'https://gist.githubusercontent.com/banteg/12708815fb63239d9f28dec5df8641f9/raw/28a9dffe9d5681ef5f75b0ab6c39fe5ea0064712/1inch.csv',  # noqa: E501
         A_1INCH,
+        'https://1inch.exchange/',
     ),
-    "tornado": (
+    'tornado': (
         # is checksummed
-        "https://raw.githubusercontent.com/tornadocash/airdrop/master/airdrop.csv",
+        'https://raw.githubusercontent.com/tornadocash/airdrop/master/airdrop.csv',
         A_TORN,  # Don't have TORN token yet?
+        'https://tornado.cash/',
     ),
-    "cornichon": (
+    'cornichon': (
         # is checksummed
-        "https://gist.githubusercontent.com/LefterisJP/5199d8bc6caa3253c343cd5084489088/raw/7e9ca4c4772fc50780bfe9997e1c43525e1b7445/cornichon_airdrop.csv",  # noqa: E501
+        'https://gist.githubusercontent.com/LefterisJP/5199d8bc6caa3253c343cd5084489088/raw/7e9ca4c4772fc50780bfe9997e1c43525e1b7445/cornichon_airdrop.csv',  # noqa: E501
         A_CORN,
+        'https://cornichon.ape.tax/',
     )
 }
 
@@ -73,6 +77,7 @@ def check_airdrops(
                 found_data[addr][protocol_name] = {
                     'amount': amount,
                     'asset': airdrop_data[1],
+                    'link': airdrop_data[2],
                 }
         csvfile.close()
 

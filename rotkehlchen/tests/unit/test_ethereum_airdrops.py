@@ -19,10 +19,12 @@ def test_check_airdrops(ethereum_accounts, data_dir):
     assert data[TEST_ADDR]['uniswap'] == {
         'amount': '400',
         'asset': A_UNI,
+        'link': 'https://app.uniswap.org/',
     }
     assert data[TEST_ADDR]['1inch'] == {
         'amount': '630.374421472277638654',
         'asset': A_1INCH,
+        'link': 'https://1inch.exchange/',
     }
 
     # Test cache files are created

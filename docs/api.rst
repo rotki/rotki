@@ -4680,16 +4680,19 @@ Querying ethereum airdrops
 	          "1inch": {
 		      "amount": "675.55",
 		      "asset": "1INCH",
+		      "link": "https://app.uniswap.org/"
 		  }
 	      },
 	      "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
 	          "1inch": {
 		      "amount": "1823.23",
 		      "asset": "1INCH",
+		      "link": "https://1inch.exchange/"
 		  },
 		  "uniswap": {
 		      "amount": "400",
 		      "asset": "UNI",
+		      "link": "https://app.uniswap.org/"
 		  }
 	      },
           "message": ""
