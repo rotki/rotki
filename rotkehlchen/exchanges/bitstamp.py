@@ -25,6 +25,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
@@ -158,7 +159,18 @@ class Bitstamp(ExchangeInterface):
 
             symbol = entry.split('_')[0]  # If no `_`, defaults to entry
             try:
-                asset = Asset(symbol)
+                asset = asset_from_bitstamp(symbol)
+            except DeserializationError as e:
+                log.error(
+                    'Error processing a Bitstamp balance.',
+                    entry=entry,
+                    error=str(e),
+                )
+                self.msg_aggregator.add_error(
+                    'Failed to deserialize a Bitstamp balance. '
+                    'Check logs for details. Ignoring it.',
+                )
+                continue
             except (UnknownAsset, UnsupportedAsset) as e:
                 log.error(str(e))
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
@@ -614,8 +626,8 @@ class Bitstamp(ExchangeInterface):
         # storing the raw pair strings.
         base_asset_symbol, quote_asset_symbol = pair.split('_')
         try:
-            base_asset = Asset(base_asset_symbol)
-            quote_asset = Asset(quote_asset_symbol)
+            base_asset = asset_from_bitstamp(base_asset_symbol)
+            quote_asset = asset_from_bitstamp(quote_asset_symbol)
         except (UnknownAsset, UnsupportedAsset) as e:
             log.error(str(e))
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'

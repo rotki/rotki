@@ -1,18 +1,23 @@
+import warnings as test_warnings
 from datetime import datetime, timedelta
 from http import HTTPStatus
+from json.decoder import JSONDecodeError
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import RemoteError, SystemClockNotSyncedError
+from rotkehlchen.assets.converters import asset_from_bitstamp
+from rotkehlchen.errors import RemoteError, SystemClockNotSyncedError, UnknownAsset
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION,
     API_MAX_LIMIT,
     API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE,
     USER_TRANSACTION_MIN_SINCE_ID,
     USER_TRANSACTION_SORTING_MODE,
+    Bitstamp,
 )
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -23,6 +28,47 @@ from rotkehlchen.exchanges.data_structures import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Fee, Location, Timestamp, TradePair
+from rotkehlchen.utils.serialization import rlk_jsonloads_list
+
+
+def test_name():
+    exchange = Bitstamp('a', b'a', object(), object())
+    assert exchange.name == str(Location.BITSTAMP)
+
+
+def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
+    request_url = f'{mock_bitstamp.base_uri}/v2/trading-pairs-info'
+    try:
+        response = requests.get(request_url)
+    except requests.exceptions.RequestException as e:
+        raise RemoteError(
+            f'Bitstamp get request at {request_url} connection error: {str(e)}.',
+        ) from e
+
+    if response.status_code != 200:
+        raise RemoteError(
+            f'Bitstamp query responded with error status code: {response.status_code} '
+            f'and text: {response.text}',
+        )
+    try:
+        response_list = rlk_jsonloads_list(response.text)
+    except JSONDecodeError as e:
+        raise RemoteError(f'Bitstamp returned invalid JSON response: {response.text}') from e
+
+    # Extract the unique symbols from the exchange pairs
+    pairs = [raw_result.get('name') for raw_result in response_list]
+    symbols = set()
+    for pair in pairs:
+        symbols.update(set(pair.split('/')))
+
+    for symbol in symbols:
+        try:
+            asset_from_bitstamp(symbol)
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.asset_name} in {mock_bitstamp.name}. '
+                f'Support for it has to be added',
+            ))
 
 
 def test_validate_api_key_invalid_json(mock_bitstamp):
