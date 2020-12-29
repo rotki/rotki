@@ -13,7 +13,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
+from rotkehlchen.constants.timing import QUERY_RETRY_TIMES, GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -171,7 +171,11 @@ class Gemini(ExchangeInterface):
                 })
 
             try:
-                response = self.session.request(method=method, url=url)
+                response = self.session.request(
+                    method=method,
+                    url=url,
+                    timeout=GLOBAL_REQUESTS_TIMEOUT,
+                )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Gemini {method} query at {url} connection error: {str(e)}',

@@ -16,6 +16,7 @@ const SASHIMISWAP = 'SashimiSwap';
 const HARVEST = 'Harvest';
 const KIMCHI = 'KIMCHI';
 const SUSHISWAP = 'SushiSwap';
+const SUSHISWAP_STAKING = 'SushiSwap • Staking';
 const NEXUS_MUTUAL = 'Nexus Mutual';
 const MOONISWAP = 'Mooniswap';
 const MATIC = 'Matic';
@@ -46,8 +47,11 @@ const UNISWAPV2 = 'Uniswap V2';
 const IDLE = 'Idle';
 const IDLE_RISKADJUSTED = 'Idle • Risk-Adjusted';
 const PIEDAO = 'PieDAO';
+const PIEDAO_EXPERIPIES = 'PieDAO ExperiPies';
 const MULTICOLLATERAL_DAI = 'Multi-Collateral Dai';
 const BANCOR = 'Bancor';
+const BANCOR_LOCKED_BNT = 'Bancor • Locked BNT';
+const BANCOR_LIQUIDITY_PROTECTION = 'Bancor • Liquidity Protection';
 const DEFI_MONEY_MARKET = 'DeFi Money Market';
 const TOKENSETS = 'TokenSets';
 const UNISWAPV1 = 'Uniswap V1';
@@ -61,6 +65,7 @@ const YGOVFINANCEV1 = 'ygov.finance (v1)';
 const YGOVFINANCEV2 = 'ygov.finance (v2)';
 const ZEROX_STAKING = '0x Staking';
 const CHIGASTOKEN = 'Chi Gastoken by 1inch';
+const ONEINCH_LIQUIDITY = '1inch Liquidity Protocol';
 const ZLOTFINANCE = 'zlot.finance';
 export const MAKERDAO = 'MakerDAO';
 const AAVE_V2 = 'Aave V2';
@@ -69,6 +74,10 @@ const AAVE_V2_STABLE_DEBT = 'Aave V2 • Stable Debt';
 const SNOW_SWAP = 'SnowSwap';
 const HARVEST_PROFIT_SHARING = 'Harvest • Profit Sharing';
 const IDLE_EARLY_REWARDS = 'Idle • Early Rewards';
+const MUSHROOMS_FINANCE = 'Mushrooms Finance';
+const MUSHROOMS_FINANCE_STAKING = 'Mushrooms Finance • Staking';
+const AKROPOLIS_AKRO_STAKING = 'Akropolis • AKRO Staking';
+const AKROPOLIS_ADEL_STAKING = 'Akropolis • ADEL Staking';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -89,6 +98,7 @@ export const OVERVIEW_PROTOCOLS = [
   HARVEST,
   KIMCHI,
   SUSHISWAP,
+  SUSHISWAP_STAKING,
   NEXUS_MUTUAL,
   MOONISWAP,
   MATIC,
@@ -108,8 +118,11 @@ export const OVERVIEW_PROTOCOLS = [
   CHIGASTOKEN,
   UNISWAPV2,
   PIEDAO,
+  PIEDAO_EXPERIPIES,
   MULTICOLLATERAL_DAI,
   BANCOR,
+  BANCOR_LOCKED_BNT,
+  BANCOR_LIQUIDITY_PROTECTION,
   DEFI_MONEY_MARKET,
   TOKENSETS,
   ZEROX_STAKING,
@@ -138,10 +151,20 @@ export const OVERVIEW_PROTOCOLS = [
   AAVE_V2_STABLE_DEBT,
   SNOW_SWAP,
   HARVEST_PROFIT_SHARING,
-  IDLE_EARLY_REWARDS
+  IDLE_EARLY_REWARDS,
+  ONEINCH_LIQUIDITY,
+  MUSHROOMS_FINANCE,
+  MUSHROOMS_FINANCE_STAKING,
+  AKROPOLIS_AKRO_STAKING,
+  AKROPOLIS_ADEL_STAKING
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
+  [ONEINCH_LIQUIDITY]: '1inch.svg',
+  [MUSHROOMS_FINANCE]: 'mushroom.png',
+  [MUSHROOMS_FINANCE_STAKING]: 'mushroom.png',
+  [AKROPOLIS_AKRO_STAKING]: 'acropolis.svg',
+  [AKROPOLIS_ADEL_STAKING]: 'acropolis.svg',
   [ZLOTFINANCE]: 'zlotfinance.png',
   [YGOVFINANCEV1]: 'iearn.png',
   [YGOVFINANCEV2]: 'iearn.png',
@@ -154,6 +177,8 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [ARAGON]: 'aragon.svg',
   [BALANCER]: 'balancer.svg',
   [BANCOR]: 'bancor.svg',
+  [BANCOR_LOCKED_BNT]: 'bancor.svg',
+  [BANCOR_LIQUIDITY_PROTECTION]: 'bancor.svg',
   [BEREZKA]: 'berezka.png',
   [BZX]: 'bzx.svg',
   [CHAI]: 'chai.png',
@@ -194,10 +219,12 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [PICKLE_FINANCE_FARMS]: 'pickle.png',
   [PICKLE_FINANCE_STAKING]: 'pickle.png',
   [PIEDAO]: 'piedao.png',
+  [PIEDAO_EXPERIPIES]: 'piedao.png',
   [POOLTOGETHER]: 'pooltogether.svg',
   [SASHIMISWAP]: 'sashimi.png',
   [TOKENSETS]: 'set.svg',
   [SUSHISWAP]: 'sushi.png',
+  [SUSHISWAP_STAKING]: 'sushi.png',
   [SWERVE]: 'swerve.png',
   [SWERVE_LIQUIDITY_GAUGES]: 'swerve.png',
   [SYNTHETIX]: 'synthetix.svg',

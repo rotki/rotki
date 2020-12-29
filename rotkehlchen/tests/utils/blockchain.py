@@ -258,6 +258,22 @@ def mock_etherscan_query(
                 args = []
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+            elif 'data=0x3b692f52' in url:  # getProtocolNames
+                data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
+
+                fn_abi = contract._find_matching_fn_abi(
+                    fn_identifier='getProtocolNames',
+                )
+                input_types = get_abi_input_types(fn_abi)
+                output_types = get_abi_output_types(fn_abi)
+                decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
+                # TODO: This here always returns empty response. If/when we want to
+                # mock it for etherscan, this is where we do it
+                args = []
+                result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
+                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN.address}' in url:

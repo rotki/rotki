@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+PROTOCOLS_QUERY_NUM = 40  # number of protocols to query in a single call
 KNOWN_ZERION_PROTOCOL_NAMES = (
     'Curve • Vesting',
     'Curve • Liquidity Gauges',
@@ -56,6 +57,7 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'Harvest • Profit Sharing',
     'KIMCHI',
     'SushiSwap',
+    'SushiSwap • Staking',
     'Nexus Mutual',
     'Mooniswap',
     'Matic',
@@ -72,12 +74,16 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'Maker Governance',
     'Gnosis Protocol',
     'Chi Gastoken by 1inch',
+    '1inch Liquidity Protocol',
     'Idle • Risk-Adjusted',
     'Aave • Uniswap Market',
     'Uniswap V2',
     'PieDAO',
+    'PieDAO ExperiPies',
     'Multi-Collateral Dai',
     'Bancor',
+    'Bancor • Locked BNT',
+    'Bancor • Liquidity Protection',
     'DeFi Money Market',
     'TokenSets',
     '0x Staking',
@@ -99,6 +105,10 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'Aave V2',
     'Aave V2 • Variable Debt',
     'Aave V2 • Stable Debt',
+    'Mushrooms Finance',
+    'Mushrooms Finance • Staking',
+    'Akropolis • AKRO Staking',
+    'Akropolis • ADEL Staking',
 )
 
 
@@ -167,6 +177,27 @@ class ZerionSDK():
             abi=ZERION_ABI,
             deployed_block=1586199170,
         )
+        self.protocol_names: Optional[List[str]] = None
+
+    def _get_protocol_names(self) -> List[str]:
+        if self.protocol_names is not None:
+            return self.protocol_names
+
+        try:
+            protocol_names = self.contract.call(
+                ethereum=self.ethereum,
+                method_name='getProtocolNames',
+                arguments=[],
+            )
+        except RemoteError as e:
+            log.warning(
+                f'Failed to query zerion defi sdk for protocol names due to {str(e)}'
+                f'Falling back to known list of names.',
+            )
+            return list(KNOWN_ZERION_PROTOCOL_NAMES)
+
+        self.protocol_names = protocol_names
+        return protocol_names
 
     def _query_chain_for_all_balances(self, account: ChecksumEthAddress) -> List:
         if NodeName.OWN in self.ethereum.web3_mapping:
@@ -187,12 +218,12 @@ class ZerionSDK():
         # but if we are not connected to our own node the zerion sdk get balances call
         # has unfortunately crossed the default limits of almost all open nodes apart from 1inch
         # https://github.com/rotki/rotki/issues/1969
-        # For now split the list in 2. In the near future we probably need
-        # a more flexible/dynamic approach
+        # So now we get all supported protocols and query in batches
+        protocol_names = self._get_protocol_names()
         result = []
         protocol_chunks: List[List[str]] = list(get_chunks(
-            list(KNOWN_ZERION_PROTOCOL_NAMES),
-            n=int(len(KNOWN_ZERION_PROTOCOL_NAMES) / 2),
+            list(protocol_names),
+            n=PROTOCOLS_QUERY_NUM,
         ))
         for protocol_names in protocol_chunks:
             contract_result = self.contract.call(
