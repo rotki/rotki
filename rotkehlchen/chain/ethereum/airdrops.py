@@ -1,11 +1,12 @@
 from rotkehlchen.typing import ChecksumEthAddress
 from typing import List, Dict, TextIO, Iterator, Tuple
-from rotkehlchen.constants.assets import A_UNI, A_1INCH
+from rotkehlchen.constants.assets import A_UNI, A_1INCH, A_TORN, A_CORN
 import csv
 import requests
 from pathlib import Path
 from collections import defaultdict
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 
 AIRDROPS = {
     "uniswap": (
@@ -21,8 +22,13 @@ AIRDROPS = {
     "tornado": (
         # is checksummed
         "https://raw.githubusercontent.com/tornadocash/airdrop/master/airdrop.csv",
-        A_UNI,  # Don't have TORN token yet?
+        A_TORN,  # Don't have TORN token yet?
     ),
+    "cornichon": (
+        # is checksummed
+        "https://gist.githubusercontent.com/LefterisJP/5199d8bc6caa3253c343cd5084489088/raw/7e9ca4c4772fc50780bfe9997e1c43525e1b7445/cornichon_airdrop.csv",  # noqa: E501
+        A_CORN,
+    )
 }
 
 
@@ -61,6 +67,8 @@ def check_airdrops(
         for addr, amount, *_ in data:
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
+            if protocol_name in ('cornichon', 'tornado'):
+                amount = token_normalized_value_decimals(int(amount), 18)
             if addr in addresses:
                 found_data[addr][protocol_name] = {
                     'amount': amount,

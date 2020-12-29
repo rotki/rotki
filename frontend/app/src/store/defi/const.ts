@@ -254,9 +254,11 @@ export const uniswapEventsNumericKeys = [
 export const AIRDROP_UNISWAP = 'uniswap';
 export const AIRDROP_1INCH = '1inch';
 export const AIRDROP_TORNADO = 'tornado';
+export const AIRDROP_CORNICHON = 'cornichon';
 
 export const AIRDROPS = [
   AIRDROP_1INCH,
   AIRDROP_TORNADO,
-  AIRDROP_UNISWAP
+  AIRDROP_UNISWAP,
+  AIRDROP_CORNICHON
 ] as const;
