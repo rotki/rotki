@@ -3,6 +3,7 @@
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
   "airdrops": {
+    "description": "* These are the airdrops Rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
     "headers": {
       "address": "Address",
       "amount": "Amount",
