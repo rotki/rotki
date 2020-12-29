@@ -32,7 +32,7 @@ AIRDROPS = {
         'https://gist.githubusercontent.com/LefterisJP/5199d8bc6caa3253c343cd5084489088/raw/7e9ca4c4772fc50780bfe9997e1c43525e1b7445/cornichon_airdrop.csv',  # noqa: E501
         A_CORN,
         'https://cornichon.ape.tax/',
-    )
+    ),
 }
 
 
