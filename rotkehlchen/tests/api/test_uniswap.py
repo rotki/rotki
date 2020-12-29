@@ -1029,27 +1029,19 @@ def test_get_events_history_filtering_by_timestamp_case2(
     assert EXPECTED_EVENTS_BALANCES_2[1].serialize() == events_balances[3]
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
+PNL_TEST_ACC = '0x1F9fbD2F6a8754Cd56D4F56ED35338A63C5Bfd1f'
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[PNL_TEST_ACC]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_events_history_get_all_events(
+def test_events_pnl(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
         rotki_premium_credentials,  # pylint: disable=unused-argument
         start_with_valid_premium,  # pylint: disable=unused-argument
 ):
-    """Test get all the events balances
-
-    LPs involved by the address: minimum 6
-
-    By calling the endpoint without a specific time range:
-      - All the events are queried.
-      - The events balances factorise in the current balances in the
-      protocol (do not assert amounts).
-
-    As the structures are already tested in the tests above, only the response
-    length is tested.
-    """
+    """Test the uniswap events history profit and loss calculation"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -1068,12 +1060,17 @@ def test_get_events_history_get_all_events(
         btc_accounts=None,
         original_queries=['zerion', 'logs', 'blocknobytime'],
     )
+    json_data = {
+        'async_query': async_query,
+        'from_timestamp': 0,
+        'to_timestamp': 1609282296,  # time until which pnl was checked
+    }
     with ExitStack() as stack:
         # patch ethereum/etherscan to not autodetect tokens
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server, 'uniswapeventshistoryresource'),
-            json={'async_query': async_query},
+            json=json_data
         )
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -1083,9 +1080,22 @@ def test_get_events_history_get_all_events(
         else:
             result = assert_proper_response_with_result(response)
 
-    events_balances = result[AAVE_TEST_ACC_1]
-
-    assert len(events_balances) >= 6
+    events_balances = result[PNL_TEST_ACC]
+    assert len(events_balances) == 3
+    # Assert some event details
+    assert events_balances[0]['events'][0]['amount0'] == '42.247740079122297434'
+    assert events_balances[0]['events'][0]['amount1'] == '0.453409755976350622'
+    assert events_balances[0]['events'][0]['event_type'] == 'mint'
+    assert events_balances[0]['events'][1]['amount0'] == '64.052160560025177012'
+    assert events_balances[0]['events'][1]['amount1'] == '0.455952395125600548'
+    assert events_balances[0]['events'][1]['event_type'] == 'burn'
+    # Most importantly assert the profit loss
+    assert FVal(events_balances[0]['profit_loss0']) >= FVal('21.8')
+    assert FVal(events_balances[0]['profit_loss1']) >= FVal('0.00254')
+    assert FVal(events_balances[1]['profit_loss0']) >= FVal('-0.0013')
+    assert FVal(events_balances[1]['profit_loss1']) >= FVal('0.054')
+    assert FVal(events_balances[2]['profit_loss0']) >= FVal('50.684')
+    assert FVal(events_balances[2]['profit_loss1']) >= FVal('-0.04')
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_FACTORY_CONTRACT]])
