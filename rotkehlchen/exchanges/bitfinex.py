@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 import logging
-import re
 from collections import defaultdict
 from datetime import datetime
 from http import HTTPStatus
@@ -12,11 +11,14 @@ from typing import (
     Callable,
     DefaultDict,
     Dict,
+    Iterable,
     List,
     NamedTuple,
     Optional,
+    Set,
     Tuple,
     Union,
+    cast,
     overload,
 )
 from urllib.parse import urlencode
@@ -62,7 +64,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -247,32 +249,21 @@ class Bitfinex(ExchangeInterface):
         Rates limit documentation:
         https://docs.bitfinex.com/docs/requirements-and-limitations#rest-rate-limits
         """
-        deserialization_method: DeserializationMethod
         endpoint: Literal['trades', 'movements']
-        response_case: Literal['trades', 'asset_movements']
+        case_: Literal['trades', 'asset_movements']
         if case == 'trades':
             endpoint = 'trades'
-            response_case = 'trades'
-            deserialization_method = self._deserialize_trade
-            expected_raw_result_length = API_TRADES_MIN_RESULT_LENGTH
-            id_index = 0
-            timestamp_index = 2
+            case_ = 'trades'
         elif case == 'asset_movements':
             endpoint = 'movements'
-            response_case = 'asset_movements'
-            deserialization_method = self._deserialize_asset_movement
-            expected_raw_result_length = API_MOVEMENTS_MIN_RESULT_LENGTH
-            id_index = 0
-            timestamp_index = 5
+            case_ = 'asset_movements'
         else:
             raise AssertionError(f'Unexpected {self.name} case: {case}')
 
         call_options = options.copy()
         limit = options['limit']
         results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
-        # last_result_id = None
-        # last_result_timestamp = None
-        processed_result_ids = set()
+        processed_result_ids: Set[int] = set()
         retries_left = API_REQUEST_RETRY_TIMES
         while retries_left >= 0:
             response = self._api_query(
@@ -280,22 +271,29 @@ class Bitfinex(ExchangeInterface):
                 options=call_options,
             )
             if response.status_code != HTTPStatus.OK:
-                # NB: check if the rate limits have been hit (response JSON as dict)
                 try:
-                    response_dict = rlk_jsonloads_dict(response.text)
-                except (AssertionError, JSONDecodeError):
-                    msg = (
-                        f'Error decoding {self.name} {case} unsuccessful response JSON as dict. '
-                        f'Continue decoding unsuccessful response as a JSON list.'
+                    error_response = rlk_jsonloads(response.text)
+                except JSONDecodeError:
+                    msg = f'{self.name} {case} returned an invalid JSON response: {response.text}.'
+                    log.error(msg, options=call_options)
+                    self.msg_aggregator.add_error(
+                        f'Got remote error while querying {self.name} {case}: {msg}',
                     )
-                    log.debug(msg, options=call_options)
-                else:
-                    if response_dict.get('error', None) == API_RATE_LIMITS_ERROR_MESSAGE:
+                    return []  # type: ignore # bug list nothing
+
+                # Check if the rate limits have been hit (response JSON as dict)
+                if isinstance(error_response, dict):
+                    if error_response.get('error', None) == API_RATE_LIMITS_ERROR_MESSAGE:
                         if retries_left == 0:
-                            raise RemoteError(
+                            msg = (
                                 f'{self.name} {case} request failed after retrying '
-                                f'{API_REQUEST_RETRY_TIMES} times.',
+                                f'{API_REQUEST_RETRY_TIMES} times.'
                             )
+                            self.msg_aggregator.add_error(
+                                f'Got remote error while querying {self.name} {case}: {msg}',
+                            )
+                            return []  # type: ignore # bug list nothing
+
                         # Trigger retry
                         log.debug(
                             f'{self.name} {case} request reached the rate limits. Backing off',
@@ -305,17 +303,20 @@ class Bitfinex(ExchangeInterface):
                         retries_left -= 1
                         gevent.sleep(API_REQUEST_RETRY_AFTER_SECONDS)
                         continue
-                    # As this should not happend, better to log it
-                    log.error(
-                        f'Unexpected {self.name} {case} unsuccessful response JSON. '
-                        f'Continue decoding unsuccessful response a JSON list.',
-                        options=call_options,
+
+                    # Unexpected JSON dict case, better to log it
+                    msg = f'Unexpected {self.name} {case} unsuccessful response JSON'
+                    log.error(msg, error_response=error_response)
+                    self.msg_aggregator.add_error(
+                        f'Got remote error while querying {self.name} {case}: {msg}',
                     )
+                    return []  # type: ignore # bug list nothing
 
                 return self._process_unsuccessful_response(
                     response=response,
-                    case=response_case,
+                    case=case_,
                 )
+
             try:
                 response_list = rlk_jsonloads_list(response.text)
             except JSONDecodeError:
@@ -326,77 +327,22 @@ class Bitfinex(ExchangeInterface):
                 )
                 return []  # type: ignore # bug list nothing
 
-            # NB: sort movements in ascending mode (via its identifier) due to
-            # the lack of 'sort' query parameter.
-            if case == 'asset_movements':
-                response_list.sort(key=lambda raw_result: raw_result[id_index])
-
-            for raw_result in response_list:
-                # TODO: remove this log
-                log.debug(f'Bitfinex raw_result for {case}: ', raw_result=raw_result)
-
-                if len(raw_result) < expected_raw_result_length:
-                    log.error(
-                        f'Error processing a {self.name} {case} result. '
-                        f'Found less items than expected',
-                        raw_result=raw_result,
-                    )
-                    self.msg_aggregator.add_error(
-                        f'Failed to deserialize a {self.name} {case} result. '
-                        f'Check logs for details. Ignoring it.',
-                    )
-                    continue
-
-                if raw_result[timestamp_index] > options['end']:
-                    log.debug(
-                        f'Unexpected result requesting {self.name} {case}. '
-                        f'Result timestamp {raw_result[timestamp_index]} is greater than '
-                        f'end filter {options["end"]}. Stop requesting.',
-                        raw_result=raw_result,
-                    )
-                    break
-
-                if raw_result[id_index] in processed_result_ids:
-                    log.debug(
-                        f'Skipped {self.name} {case} result. Already processed',
-                        raw_result=raw_result,
-                    )
-                    continue
-
-                # Only asset movements: skip if raw_result status is not 'COMPLETED'
-                if case == 'asset_movements' and raw_result[9] != 'COMPLETED':
-                    log.debug(
-                        f'Skipped {self.name} {case} result. Status is not completed',
-                        raw_result=raw_result,
-                    )
-                    continue
-
-                try:
-                    result = deserialization_method(
-                        raw_result=raw_result,
-                        currency_map=currency_map,
-                    )
-                except DeserializationError as e:
-                    msg = str(e)
-                    log.error(
-                        f'Error processing a {self.name} {case} result.',
-                        raw_result=raw_result,
-                        error=msg,
-                    )
-                    self.msg_aggregator.add_error(
-                        f'Failed to deserialize a {self.name} {case} result. '
-                        f'Check logs for details. Ignoring it.',
-                    )
-                    continue
-                else:
-                    results.append(result)  # type: ignore # type is known
-                    processed_result_ids.add(raw_result[id_index])
+            results_ = self._deserialize_api_query_paginated_results(
+                case=case_,
+                options=call_options,
+                currency_map=currency_map,
+                raw_results=response_list,
+                processed_result_ids=processed_result_ids,
+            )
+            results.extend(cast(Iterable, results_))
+            # NB: Copying the set before updating it prevents losing the call args values
+            processed_result_ids = processed_result_ids.copy()
+            processed_result_ids.update({int(result.link) for result in results_})
 
             if len(response_list) < limit:
                 break
-
             # Update pagination params per endpoint
-            # NB: Copying the dict instead of updating it prevents losing the call args values
+            # NB: Copying the dict before updating it prevents losing the call args values
             call_options = call_options.copy()
             call_options.update({
                 'start': results[-1].timestamp * 1000,
@@ -413,6 +359,117 @@ class Bitfinex(ExchangeInterface):
                 current_time=str(datetime.now()),
                 remote_server=f'{self.name}',
             )
+
+    @overload  # noqa: F811
+    def _deserialize_api_query_paginated_results(  # pylint: disable=no-self-use
+            self,
+            case: Literal['trades'],
+            options: Dict[str, Any],
+            currency_map: Dict[str, str],
+            raw_results: List[List[Any]],
+            processed_result_ids: Set[int],
+    ) -> List[Trade]:
+        ...
+
+    @overload  # noqa: F811
+    def _deserialize_api_query_paginated_results(  # pylint: disable=no-self-use
+            self,
+            case: Literal['asset_movements'],
+            options: Dict[str, Any],
+            currency_map: Dict[str, str],
+            raw_results: List[List[Any]],
+            processed_result_ids: Set[int],
+    ) -> List[AssetMovement]:
+        ...
+
+    def _deserialize_api_query_paginated_results(
+            self,
+            case: Literal['trades', 'asset_movements'],
+            options: Dict[str, Any],
+            currency_map: Dict[str, str],
+            raw_results: List[List[Any]],
+            processed_result_ids: Set[int],
+    ) -> Union[List[Trade], List[AssetMovement]]:
+        """TODO
+        """
+        deserialization_method: DeserializationMethod
+        if case == 'trades':
+            deserialization_method = self._deserialize_trade
+            expected_raw_result_length = API_TRADES_MIN_RESULT_LENGTH
+            id_index = 0
+            timestamp_index = 2
+        elif case == 'asset_movements':
+            deserialization_method = self._deserialize_asset_movement
+            expected_raw_result_length = API_MOVEMENTS_MIN_RESULT_LENGTH
+            id_index = 0
+            timestamp_index = 5
+        else:
+            raise AssertionError(f'Unexpected {self.name} case: {case}')
+
+        # NB: sort movements in ascending mode (via its identifier) due to
+        # the lack of 'sort' query parameter.
+        if case == 'asset_movements':
+            raw_results.sort(key=lambda raw_result: raw_result[id_index])
+
+        results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
+        for raw_result in raw_results:
+            if len(raw_result) < expected_raw_result_length:
+                log.error(
+                    f'Error processing a {self.name} {case} result. '
+                    f'Found less items than expected',
+                    raw_result=raw_result,
+                )
+                self.msg_aggregator.add_error(
+                    f'Failed to deserialize a {self.name} {case} result. '
+                    f'Check logs for details. Ignoring it.',
+                )
+                continue
+
+            if raw_result[timestamp_index] > options['end']:
+                log.debug(
+                    f'Unexpected result requesting {self.name} {case}. '
+                    f'Result timestamp {raw_result[timestamp_index]} is greater than '
+                    f'end filter {options["end"]}. Stop requesting.',
+                    raw_result=raw_result,
+                )
+                break
+
+            if raw_result[id_index] in processed_result_ids:
+                log.debug(
+                    f'Skipped {self.name} {case} result. Already processed',
+                    raw_result=raw_result,
+                )
+                continue
+
+            # Only asset movements: skip if raw_result status is not 'COMPLETED'
+            if case == 'asset_movements' and raw_result[9] != 'COMPLETED':
+                log.debug(
+                    f'Skipped {self.name} {case} result. Status is not completed',
+                    raw_result=raw_result,
+                )
+                continue
+
+            try:
+                result = deserialization_method(
+                    raw_result=raw_result,
+                    currency_map=currency_map,
+                )
+            except DeserializationError as e:
+                msg = str(e)
+                log.error(
+                    f'Error processing a {self.name} {case} result.',
+                    raw_result=raw_result,
+                    error=msg,
+                )
+                self.msg_aggregator.add_error(
+                    f'Failed to deserialize a {self.name} {case} result. '
+                    f'Check logs for details. Ignoring it.',
+                )
+                continue
+
+            results.append(result)  # type: ignore # type is known
+
+        return results
 
     @staticmethod
     def _deserialize_asset_movement(
@@ -488,7 +545,7 @@ class Bitfinex(ExchangeInterface):
         The base and quote assets are instantiated using the `fee_currency_symbol`
         (from raw_result[10]) over the pair (from raw_result[1]).
 
-        Known pairs format: 'ETHUST', 'ETH:UST'.
+        Known pairs format: 'tETHUST', 'tETH:UST'.
 
         Can raise DeserializationError.
 
@@ -497,28 +554,22 @@ class Bitfinex(ExchangeInterface):
         """
         amount = deserialize_asset_amount(raw_result[4])
         trade_type = TradeType.BUY if amount >= ZERO else TradeType.SELL
-        bfx_pair = raw_result[1]
+        bfx_pair = raw_result[1].replace(':', '')
+        if bfx_pair.startswith('t'):  # Don't replace 't' just in case it appeared within the pair
+            bfx_pair = bfx_pair[1:]
         bfx_fee_currency_symbol = raw_result[10]
-        if bfx_pair.startswith(f't{bfx_fee_currency_symbol}'):
-            regex = re.compile(fr'^t({bfx_fee_currency_symbol})\W*(\w+)$')
+        if bfx_pair.startswith(bfx_fee_currency_symbol):
+            bfx_base_asset_symbol = bfx_fee_currency_symbol
+            bfx_quote_asset_symbol = bfx_pair[len(bfx_fee_currency_symbol):]
         elif bfx_pair.endswith(bfx_fee_currency_symbol):
-            regex = re.compile(fr'^t(\w+)\W*({bfx_fee_currency_symbol})$')
+            bfx_base_asset_symbol = bfx_pair[:-len(bfx_fee_currency_symbol)]
+            bfx_quote_asset_symbol = bfx_fee_currency_symbol
         else:
             raise DeserializationError(
                 f'Could not deserialize bitfinex trade pair {raw_result[1]} '
                 f'using fee_currency symbol {bfx_fee_currency_symbol}. '
                 f'Raw trade: {raw_result}',
             )
-
-        match = regex.match(bfx_pair)
-        if match is None:
-            raise DeserializationError(
-                f'Unexpected error deserializing bitfinex trade pair: {raw_result[1]} '
-                f'using fee_currency symbol {bfx_fee_currency_symbol}. '
-                f'Trade pair does not match the pattern. Raw trade: {raw_result}',
-            )
-
-        bfx_base_asset_symbol, bfx_quote_asset_symbol = match.groups()
         try:
             base_asset = asset_from_bitfinex(
                 bitfinex_name=bfx_base_asset_symbol,
@@ -709,7 +760,7 @@ class Bitfinex(ExchangeInterface):
         try:
             response_list = rlk_jsonloads_list(response.text)
         except JSONDecodeError as e:
-            msg = f'{self.name} returned invalid JSON response: {response.text}.'
+            msg = f'{self.name} {case} returned an invalid JSON response: {response.text}.'
             log.error(msg)
 
             if case in ('validate_api_key', 'balances'):
@@ -848,14 +899,6 @@ class Bitfinex(ExchangeInterface):
 
         Endpoint documentation:
         https://docs.bitfinex.com/reference#rest-auth-movements
-
-        TODO: Check if 'sort' by ascending works.
-        I got in touch with Bitfinex support asking about the default
-        sorting mode, as per their documentation this endpoint does not accept
-        a 'sort' query parameter and it is unknown in which mode the results
-        come.
-        They email me back confirming sorting is in descending mode and that I
-        could try using the 'sort' query parameter.
         """
         try:
             currency_map_response = self._query_currency_map()

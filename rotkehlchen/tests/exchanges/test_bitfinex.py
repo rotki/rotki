@@ -14,12 +14,7 @@ from rotkehlchen.assets.converters import (
     UNSUPPORTED_BITFINEX_ASSETS,
     asset_from_bitfinex,
 )
-from rotkehlchen.errors import (
-    RemoteError,
-    SystemClockNotSyncedError,
-    UnknownAsset,
-    UnsupportedAsset,
-)
+from rotkehlchen.errors import SystemClockNotSyncedError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bitfinex import (
     API_KEY_ERROR_CODE,
     API_KEY_ERROR_MESSAGE,
@@ -256,14 +251,12 @@ def test_api_query_paginated_stops_requesting(mock_bitfinex):
         stack.enter_context(api_request_retry_times_patch)
         stack.enter_context(api_request_retry_after_seconds_patch)
         stack.enter_context(api_query_patch)
-        with pytest.raises(RemoteError) as e:
-            mock_bitfinex._api_query_paginated(
-                options={'limit': 2},
-                case='trades',
-                currency_map={},
-            )
-        expected_msg = f'{mock_bitfinex.name} trades request failed after retrying 0 times.'
-        assert expected_msg in str(e.value)
+        result = mock_bitfinex._api_query_paginated(
+            options={'limit': 2},
+            case='trades',
+            currency_map={},
+        )
+        assert result == []
 
 
 def test_api_query_paginated_retries_request(mock_bitfinex):
