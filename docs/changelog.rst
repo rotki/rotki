@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`438` Rotki now supports Bitfinex. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`1949` All time pickers now use a 24h format to avoid user confusion.
 * :feature:`1961` Users can configure the BTC address derivation gap limit.
 * :feature:`1955` Users can now set their main currency to Swiss Franc.
@@ -36,6 +37,32 @@ Changelog
   - `TrueFi Trust Token (TRU) <https://www.coingecko.com/en/coins/truefi>`__
   - `Mettalex (MTLX) <https://www.coingecko.com/en/coins/mettalex>`__
   - `Okex OKB Token (OKB) <https://www.coingecko.com/en/coins/okb>`__
+  - `Callisto Network (CLO) <https://www.coingecko.com/en/coins/callisto-network>`__
+  - `Ultra (UOS) <https://www.coingecko.com/en/coins/ultra>`__
+  - `Metaverse ETP (ETP) <https://www.coingecko.com/en/coins/metaverse-etp>`__
+  - `EOSDT (EOSDT) <https://www.coingecko.com/en/coins/eosdt>`__
+  - `Tether EUR (EURT) <https://www.cryptocompare.com/coins/eurt/overview>`__
+  - `LiquidApps (DAPP) <https://www.coingecko.com/en/coins/liquidapps>`__
+  - `V.SYSTEMS (VSYS) <https://www.coingecko.com/en/coins/v-systems>`__
+  - `Dragon Token (DT) <https://www.coingecko.com/en/coins/dragon-token>`__
+  - `CryptoFranc (XCHF) <https://www.coingecko.com/en/coins/cryptofranc>`__
+  - `Tether Gold (XAUT) <https://www.coingecko.com/en/coins/tether-gold>`__
+  - `XinFin (XDC) <https://www.coingecko.com/en/coins/xinfin>`__
+  - `RIF Token (RIF) <https://www.coingecko.com/en/coins/rif-token>`__
+  - `ZB Token (ZB) <https://www.coingecko.com/en/coins/zb-token>`__
+  - `RING X PLATFORM (RINGX) <https://www.coingecko.com/en/coins/ring-x-platform>`__
+  - `Hermez Network (HEZ) <https://www.coingecko.com/en/coins/hermez-network>`__
+  - `Essentia (ESS) <https://www.coingecko.com/en/coins/essentia>`__
+  - `Native Utility Token (NUT) <https://www.coingecko.com/en/coins/native-utility-token>`__
+  - `LEO Token (LEO) <https://www.coingecko.com/en/coins/leo-token>`__
+  - `Utopia Genesis Foundation (UOP) <https://www.coingecko.com/en/coins/utopia-genesis-foundation>`__
+  - `Rebitcoin (RBTC) <https://www.coingecko.com/en/coins/rebitcoin>`__
+  - `Data Transaction Token (XD) <https://www.coingecko.com/en/coins/data-transaction-token>`__
+  - `Ether Kingdoms Token (IMP) <https://www.coingecko.com/en/coins/ether-kingdoms-token>`__
+  - `Renrenbit (RRB) <https://www.coingecko.com/en/coins/renrenbit>`__
+  - `Tether CNH (CNHT) <https://www.cryptocompare.com/coins/cnht/overview>`__
+  - `Xriba (XRA) <https://www.coingecko.com/en/coins/xriba>`__
+  - `BTSE Token (BTSE) <https://www.coingecko.com/en/coins/btse-token>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error

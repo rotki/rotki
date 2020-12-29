@@ -12831,7 +12831,8 @@
         "name": "XinFin Network",
         "started": 1498608000,
         "symbol": "XDCE",
-        "type": "ethereum token"
+        "type": "ethereum token",
+        "swapped_for": "XDC"
     },
     "XDN": {
         "coingecko": "digitalnote",
@@ -14238,6 +14239,252 @@
         "name": "tBTC",
         "started": 1600188723,
         "symbol": "TBTC",
+        "type": "ethereum token"
+    },
+    "CLO": {
+        "coingecko": "callisto",
+        "name": "Callisto Network",
+        "started": 1575590400,
+        "symbol": "CLO",
+        "type": "own chain"
+    },
+    "UOS": {
+        "coingecko": "ultra",
+        "ethereum_address": "0xD13c7342e1ef687C5ad21b27c2b65D772cAb5C8c",
+        "ethereum_token_decimals": 4,
+        "name": "Ultra",
+        "started": 1563321887,
+        "symbol": "UOS",
+        "type": "ethereum token"
+    },
+    "ETP": {
+        "coingecko": "metaverse-etp",
+        "name": "Metaverse ETP",
+        "started": 1513209600,
+        "symbol": "ETP",
+        "type": "own chain"
+    },
+    "EOSDT": {
+        "coingecko": "equilibrium-eosdt",
+        "name": "EOSDT",
+        "started": 1606089600,
+        "symbol": "EOSDT",
+        "type": "own chain"
+    },
+    "USDK": {
+        "coingecko": "usdk",
+        "ethereum_address": "0x1c48f86ae57291F7686349F12601910BD8D470bb",
+        "ethereum_token_decimals": 18,
+        "name": "USDK",
+        "started": 1557991300,
+        "symbol": "USDK",
+        "type": "ethereum token"
+    },
+    "RRT": {
+        "coingecko": "recovery-right-token",
+        "name": "Recovery Right Token",
+        "started": 1513209600,
+        "symbol": "RRT",
+        "type": "own chain"
+    },
+    "EURT": {
+        "coingecko": "",
+        "ethereum_address": "0xAbdf147870235FcFC34153828c769A70B3FAe01F",
+        "ethereum_token_decimals": 6,
+        "name": "Tether EUR",
+        "started": 1514821711,
+        "symbol": "EURT",
+        "type": "ethereum token"
+    },
+    "DAPP": {
+        "coingecko": "dapp",
+        "name": "LiquidApps",
+        "started": 1602979200,
+        "symbol": "DAPP",
+        "type": "own chain"
+    },
+    "VSYS": {
+        "coingecko": "v-systems",
+        "name": "V.SYSTEMS",
+        "started": 1551916800,
+        "symbol": "VSYS",
+        "type": "own chain"
+    },
+    "DT": {
+        "coingecko": "dragon-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x1da015eA4AD2d3e5586E54b9fB0682Ca3CA8A17a",
+        "ethereum_token_decimals": 8,
+        "name": "Dragon Token",
+        "started": 1525258292,
+        "symbol": "DT",
+        "type": "ethereum token"
+    },
+    "XCHF": {
+        "coingecko": "cryptofranc",
+        "ethereum_address": "0xB4272071eCAdd69d933AdcD19cA99fe80664fc08",
+        "ethereum_token_decimals": 18,
+        "name": "CryptoFranc",
+        "started": 1540888325,
+        "symbol": "XCHF",
+        "type": "ethereum token"
+    },
+    "XAUT": {
+        "coingecko": "tether-gold",
+        "ethereum_address": "0x4922a015c4407F87432B179bb209e125432E4a2A",
+        "ethereum_token_decimals": 6,
+        "name": "Tether Gold",
+        "started": 1578500586,
+        "symbol": "XAUT",
+        "type": "ethereum token"
+    },
+    "XDC": {
+        "coingecko": "xdce-crowd-sale",
+        "name": "XinFin",
+        "started": 1585699200,
+        "symbol": "XDC",
+        "type": "own chain"
+    },
+    "RIF": {
+        "coingecko": "rif-token",
+        "name": "RIF Token",
+        "started": 1516147200,
+        "symbol": "RIF",
+        "type": "own chain"
+    },
+    "ZB": {
+        "coingecko": "zb-token",
+        "ethereum_address": "0xBd0793332e9fB844A52a205A233EF27a5b34B927",
+        "ethereum_token_decimals": 18,
+        "name": "ZB Token",
+        "started": 1529751168,
+        "symbol": "ZB",
+        "type": "ethereum token"
+    },
+    "RINGX": {
+        "coingecko": "ring-x-platform",
+        "ethereum_address": "0x7F86C782EC802ac402e0369d2E6d500256F7abC5",
+        "ethereum_token_decimals": 18,
+        "name": "RING X PLATFORM",
+        "started": 1588230484,
+        "symbol": "RINGX",
+        "type": "ethereum token"
+    },
+    "HEZ": {
+        "coingecko": "hermez-network-token",
+        "ethereum_address": "0xEEF9f339514298C6A857EfCfC1A762aF84438dEE",
+        "ethereum_token_decimals": 18,
+        "name": "Hermez Network",
+        "started": 1602717322,
+        "symbol": "HEZ",
+        "type": "ethereum token"
+    },
+    "ESS": {
+        "coingecko": "essentia",
+        "ethereum_address": "0xfc05987bd2be489ACCF0f509E44B0145d68240f7",
+        "ethereum_token_decimals": 18,
+        "name": "Essentia",
+        "started": 1529792284,
+        "symbol": "ESS",
+        "type": "ethereum token"
+    },
+    "NUT": {
+        "coingecko": "native-utility-token",
+        "name": "Native Utility Token",
+        "started": 1581033600,
+        "symbol": "NUT",
+        "type": "own chain"
+    },
+    "LEO": {
+        "coingecko": "leo-token",
+        "ethereum_address": "0x2AF5D2aD76741191D15Dfe7bF6aC92d4Bd912Ca3",
+        "ethereum_token_decimals": 18,
+        "name": "LEO Token",
+        "started": 1558444909,
+        "symbol": "LEO",
+        "type": "ethereum token and more"
+    },
+    "UOP": {
+        "coingecko": "utopia-genesis-foundation",
+        "cryptocompare": "",
+        "ethereum_address": "0xE4AE84448DB5CFE1DaF1e6fb172b469c161CB85F",
+        "ethereum_token_decimals": 18,
+        "name": "Utopia Genesis Foundation",
+        "started": 1607431737,
+        "symbol": "UOP",
+        "type": "ethereum token"
+    },
+    "RBTC": {
+        "coingecko": "rebitcoin",
+        "ethereum_address": "0x7f65BE7FAd0c22813e51746E7e8f13a20bAa9411",
+        "ethereum_token_decimals": 18,
+        "name": "Rebitcoin",
+        "started": 1546473600,
+        "symbol": "RBTC",
+        "type": "ethereum token"
+    },
+    "XD": {
+        "coingecko": "scroll-token",
+        "ethereum_address": "0x24DCc881E7Dd730546834452F21872D5cb4b5293",
+        "ethereum_token_decimals": 18,
+        "name": "Data Transaction Token",
+        "started": 1523950865,
+        "symbol": "XD",
+        "type": "ethereum token"
+    },
+    "IMP": {
+        "coingecko": "ether-kingdoms-token",
+        "cryptocompare": "impt",
+        "ethereum_address": "0x48FF53777F747cFB694101222a944dE070c15D36",
+        "ethereum_token_decimals": 7,
+        "name": "Ether Kingdoms Token",
+        "started": 1525513729,
+        "symbol": "IMP",
+        "type": "ethereum token"
+    },
+    "RRB": {
+        "coingecko": "renrenbit",
+        "ethereum_address": "0x02f02e0cA8a521EF73daA9C45353b9fBEFc5Ee10",
+        "ethereum_token_decimals": 8,
+        "name": "Renrenbit",
+        "started": 1563461989,
+        "symbol": "RRB",
+        "type": "ethereum token"
+    },
+    "CNHT": {
+        "coingecko": "",
+        "ethereum_address": "0x6E109E9dD7Fa1a58BC3eff667e8e41fC3cc07AEF",
+        "ethereum_token_decimals": 6,
+        "name": "Tether CNH",
+        "started": 1555159152,
+        "symbol": "CNHT",
+        "type": "ethereum token"
+    },
+    "XRA": {
+        "coingecko": "xriba",
+        "ethereum_address": "0x7025baB2EC90410de37F488d1298204cd4D6b29d",
+        "ethereum_token_decimals": 18,
+        "name": "Xriba",
+        "started": 1519159592,
+        "symbol": "XRA",
+        "type": "ethereum token"
+    },
+    "BTSE": {
+        "coingecko": "btse-token",
+        "ethereum_address": "0x666d875C600AA06AC1cf15641361dEC3b00432Ef",
+        "ethereum_token_decimals": 8,
+        "name": "BTSE Token",
+        "started": 1599041294,
+        "symbol": "BTSE",
+        "type": "ethereum token"
+    },
+    "SYN": {
+        "coingecko": "synlev",
+        "ethereum_address": "0x1695936d6a953df699C38CA21c2140d497C08BD9",
+        "ethereum_token_decimals": 18,
+        "name": "SynLev",
+        "started": 1597091217,
+        "symbol": "SYN",
         "type": "ethereum token"
     }
 }

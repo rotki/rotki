@@ -58,6 +58,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('Q', 17);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('R', 18);
 /* Binance US */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('S', 19);
+/* Bitfinex */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('T', 20);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

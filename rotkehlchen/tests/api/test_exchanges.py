@@ -10,6 +10,7 @@ import requests
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import SystemClockNotSyncedError
+from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
 )
@@ -67,6 +68,14 @@ API_KEYPAIR_COINBASE_VALIDATION_PATCH = patch(
     return_value=(True, ''),
 )
 
+SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITFINEX = patch(
+    'rotkehlchen.exchanges.bitfinex.Bitfinex.validate_api_key',
+    side_effect=SystemClockNotSyncedError(
+        current_time=str(datetime.now()),
+        remote_server='Bitfinex',
+    ),
+)
+
 SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITTREX = patch(
     'rotkehlchen.exchanges.bittrex.Bittrex._check_for_system_clock_not_synced_error',
     side_effect=SystemClockNotSyncedError(
@@ -110,6 +119,7 @@ def test_setup_exchange(rotkehlchen_api_server):
                 'Provided API Secret is invalid',
                 'Provided Gemini API key needs to have "Auditor" permission activated',
                 BITSTAMP_API_KEY_ERROR_CODE_ACTION['API0011'],
+                BITFINEX_API_KEY_ERROR_MESSAGE,
             ],
             status_code=HTTPStatus.CONFLICT,
         )
@@ -167,6 +177,10 @@ def test_setup_exchange(rotkehlchen_api_server):
     (
         {'name': 'bitstamp', 'api_key': 'ddddd', 'api_secret': 'fffff'},
         SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITSTAMP,
+    ),
+    (
+        {'name': 'bitfinex', 'api_key': 'ddddd', 'api_secret': 'fffff'},
+        SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITFINEX,
     ),
 ])
 def test_setup_exchange_raises_system_clock_not_synced_error(

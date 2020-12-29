@@ -155,6 +155,15 @@ WORLD_TO_BINANCE = {
     'BETH': 'ETH2',
 }
 
+WORLD_TO_BITFINEX = {
+    'BCH': 'BCHABC',
+    'CNY': 'CNH',
+    'DOGE': 'DOG',
+    'REPV2': 'REP',
+    'TRIO': 'TRI',
+    'ZB': 'ZBT',
+}
+
 
 @total_ordering
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
@@ -223,6 +232,9 @@ class Asset():
 
     def to_kraken(self) -> str:
         return WORLD_TO_KRAKEN[self.identifier]
+
+    def to_bitfinex(self) -> str:
+        return WORLD_TO_BITFINEX.get(self.identifier, self.identifier)
 
     def to_bittrex(self) -> str:
         return WORLD_TO_BITTREX.get(self.identifier, self.identifier)

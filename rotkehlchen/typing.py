@@ -306,6 +306,7 @@ class Location(Enum):
     UNISWAP = 17
     BITSTAMP = 18
     BINANCE_US = 19
+    BITFINEX = 20
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -346,6 +347,8 @@ class Location(Enum):
             return 'bitstamp'
         if self == Location.BINANCE_US:
             return 'binance_us'
+        if self == Location.BITFINEX:
+            return 'bitfinex'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -388,6 +391,8 @@ class Location(Enum):
             return 'R'
         if self == Location.BINANCE_US:
             return 'S'
+        if self == Location.BITFINEX:
+            return 'T'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

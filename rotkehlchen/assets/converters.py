@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Dict, Optional
 
 from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
+    WORLD_TO_BITFINEX,
     WORLD_TO_BITTREX,
     WORLD_TO_KRAKEN,
     WORLD_TO_POLONIEX,
@@ -449,10 +450,29 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'UAH',  # no cryptocompare/coingecko data
 )
 
+UNSUPPORTED_BITFINEX_ASSETS = (
+    'BCHN',  # https://www.bitfinex.com/posts/566  no cryptocompare/coingecko data
+    'B21X',  # no cryptocompare/coingecko data
+    'GTX',  # no cryptocompare/coingecko data (GT, Gate.io token)
+    'IQX',  # no cryptocompare/coingecko data (EOS token)
+)
+
+# Exchange symbols that are clearly for testing purposes. They appear in all
+# these places: supported currencies list, supported exchange pairs list and
+# currency map.
+BITFINEX_EXCHANGE_TEST_ASSETS = (
+    'AAA',
+    'BBB',
+    'TESTBTC',
+    'TESTUSD',
+    'TESTUSDT',
+)
+
 
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
+BITFINEX_TO_WORLD = {v: k for k, v in WORLD_TO_BITFINEX.items()}
 KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 
 RENAMED_BINANCE_ASSETS = {
@@ -512,6 +532,27 @@ def asset_from_poloniex(poloniex_name: str) -> Asset:
 
     our_name = POLONIEX_TO_WORLD.get(poloniex_name, poloniex_name)
     return Asset(our_name)
+
+
+def asset_from_bitfinex(
+        bitfinex_name: str,
+        currency_map: Dict[str, str],
+        is_currency_map_updated: bool = True,
+) -> Asset:
+    """Currency map coming from `<Bitfinex>._query_currency_map()` is already
+    updated with BITFINEX_TO_WORLD (prevent updating it on each call)
+    """
+    if not isinstance(bitfinex_name, str):
+        raise DeserializationError(f'Got non-string type {type(bitfinex_name)} for bitfinex asset')
+
+    if bitfinex_name in UNSUPPORTED_BITFINEX_ASSETS:
+        raise UnsupportedAsset(bitfinex_name)
+
+    if is_currency_map_updated is False:
+        currency_map.update(BITFINEX_TO_WORLD)
+
+    name = currency_map.get(bitfinex_name, bitfinex_name)
+    return Asset(name)
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:

@@ -18,6 +18,7 @@ export const EXCHANGE_POLONIEX = 'poloniex';
 export const EXCHANGE_KRAKEN = 'kraken';
 export const EXCHANGE_BITTREX = 'bittrex';
 export const EXCHANGE_BITMEX = 'bitmex';
+export const EXCHANGE_BITFINEX = 'bitfinex';
 export const EXCHANGE_BINANCE = 'binance';
 export const EXCHANGE_COINBASE = 'coinbase';
 export const EXCHANGE_COINBASEPRO = 'coinbasepro';
@@ -40,6 +41,7 @@ export const exchanges = [
   EXCHANGE_KRAKEN,
   EXCHANGE_BITTREX,
   EXCHANGE_BITMEX,
+  EXCHANGE_BITFINEX,
   EXCHANGE_BINANCE,
   EXCHANGE_BINANCE_US,
   EXCHANGE_COINBASE,

@@ -2,6 +2,7 @@ import { TradeLocationData } from '@/components/history/type';
 import {
   EXCHANGE_BINANCE,
   EXCHANGE_BINANCE_US,
+  EXCHANGE_BITFINEX,
   EXCHANGE_BITMEX,
   EXCHANGE_BITSTAMP,
   EXCHANGE_BITTREX,
@@ -46,6 +47,11 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_BITTREX,
     name: 'Bittrex',
     icon: require('@/assets/images/bittrex.png')
+  },
+  {
+    identifier: EXCHANGE_BITFINEX,
+    name: 'Bitfinex',
+    icon: require('@/assets/images/bitfinex.svg')
   },
   {
     identifier: EXCHANGE_GEMINI,

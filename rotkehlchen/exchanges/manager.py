@@ -25,6 +25,7 @@ SUPPORTED_EXCHANGES = [
     'gemini',
     'bitstamp',
     'binance_us',
+    'bitfinex',
 ]
 
 
