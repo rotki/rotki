@@ -1,6 +1,6 @@
 from rotkehlchen.typing import ChecksumEthAddress
 from typing import List, Dict, TextIO, Iterator, Tuple
-from rotkehlchen.constants.assets import A_UNI, A_1INCH, A_TORN, A_CORN
+from rotkehlchen.constants.assets import A_UNI, A_1INCH, A_TORN, A_CORN, A_GRAIN
 import csv
 import requests
 from pathlib import Path
@@ -11,13 +11,13 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 AIRDROPS = {
     'uniswap': (
         # is checksummed
-        'https://raw.githubusercontent.com/banteg/uniswap-distribution/master/uniswap-distribution.csv',  # noqa: E501
+        'https://gist.githubusercontent.com/LefterisJP/d883cb7187a7c4fcf98c7a62f45568e7/raw/3718c95d572a29b9c3906d7c64726d3bd7524bfd/uniswap.csv',  # noqa: E501
         A_UNI,
         'https://app.uniswap.org/',
     ),
     '1inch': (
         # is checksummed
-        'https://gist.githubusercontent.com/banteg/12708815fb63239d9f28dec5df8641f9/raw/28a9dffe9d5681ef5f75b0ab6c39fe5ea0064712/1inch.csv',  # noqa: E501
+        'https://gist.githubusercontent.com/LefterisJP/8f41d1511bf354d7e56810188116a410/raw/87d967e86e1435aa3a9ddb97ce20531e4e52dbad/1inch.csv',  # noqa: E501
         A_1INCH,
         'https://1inch.exchange/',
     ),
@@ -32,6 +32,12 @@ AIRDROPS = {
         'https://gist.githubusercontent.com/LefterisJP/5199d8bc6caa3253c343cd5084489088/raw/7e9ca4c4772fc50780bfe9997e1c43525e1b7445/cornichon_airdrop.csv',  # noqa: E501
         A_CORN,
         'https://cornichon.ape.tax/',
+    ),
+    'grain': (
+        # is checksummed
+        'https://gist.githubusercontent.com/LefterisJP/08d7a5b28876741b300c944650c89280/raw/987ab4a92d5363fdbe262f639565732bd1fd3921/grain_iou.csv',  # noqa: E501
+        A_GRAIN,
+        'https://claim.harvest.finance/',
     ),
 }
 
@@ -71,11 +77,11 @@ def check_airdrops(
         for addr, amount, *_ in data:
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
-            if protocol_name in ('cornichon', 'tornado'):
+            if protocol_name in ('cornichon', 'tornado', 'grain'):
                 amount = token_normalized_value_decimals(int(amount), 18)
             if addr in addresses:
                 found_data[addr][protocol_name] = {
-                    'amount': amount,
+                    'amount': str(amount),
                     'asset': airdrop_data[1],
                     'link': airdrop_data[2],
                 }

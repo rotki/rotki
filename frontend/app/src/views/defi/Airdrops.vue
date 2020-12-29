@@ -81,7 +81,8 @@ import {
   AIRDROP_1INCH,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
-  AIRDROP_CORNICHON
+  AIRDROP_CORNICHON,
+  AIRDROP_GRAIN
 } from '@/store/defi/const';
 import { Airdrop, AirdropType } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
@@ -162,6 +163,10 @@ export default class Airdrops extends Mixins(StatusMixin) {
     [AIRDROP_CORNICHON]: {
       icon: require(`@/assets/images/cornichon.svg`),
       name: 'Cornichon'
+    },
+    [AIRDROP_GRAIN]: {
+      icon: require(`@/assets/images/grain.png`),
+      name: 'Grain'
     }
   };
 

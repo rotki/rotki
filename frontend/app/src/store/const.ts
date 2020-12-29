@@ -58,5 +58,6 @@ export const defiSections: Section[] = [
   Section.DEFI_YEARN_VAULTS_HISTORY,
   Section.DEFI_UNISWAP_BALANCES,
   Section.DEFI_UNISWAP_TRADES,
-  Section.DEFI_UNISWAP_EVENTS
+  Section.DEFI_UNISWAP_EVENTS,
+  Section.DEFI_AIRDROPS
 ];

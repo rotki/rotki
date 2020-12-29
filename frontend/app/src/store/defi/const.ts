@@ -255,10 +255,12 @@ export const AIRDROP_UNISWAP = 'uniswap';
 export const AIRDROP_1INCH = '1inch';
 export const AIRDROP_TORNADO = 'tornado';
 export const AIRDROP_CORNICHON = 'cornichon';
+export const AIRDROP_GRAIN = 'grain';
 
 export const AIRDROPS = [
   AIRDROP_1INCH,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
-  AIRDROP_CORNICHON
+  AIRDROP_CORNICHON,
+  AIRDROP_GRAIN
 ] as const;
