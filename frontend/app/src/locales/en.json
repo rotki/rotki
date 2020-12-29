@@ -483,6 +483,7 @@
     }
   },
   "login": {
+    "remember_me": "Remember User",
     "title": "Sign In",
     "label_username": "Username",
     "label_password": "Password",

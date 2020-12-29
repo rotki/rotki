@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`438` Rotki now supports Bitfinex. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
+* :feature:`-` Users can now save the login username across sessions.
 * :feature:`1949` All time pickers now use a 24h format to avoid user confusion.
 * :feature:`1961` Users can configure the BTC address derivation gap limit.
 * :feature:`1955` Users can now set their main currency to Swiss Franc.
