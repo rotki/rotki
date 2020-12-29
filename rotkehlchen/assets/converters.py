@@ -469,9 +469,6 @@ BITFINEX_EXCHANGE_TEST_ASSETS = (
 )
 
 
-UNSUPPORTED_BITSTAMP_ASSETS = ()
-
-
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
@@ -498,6 +495,10 @@ ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
 
 
 def asset_from_kraken(kraken_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
+    """
     if not isinstance(kraken_name, str):
         raise DeserializationError(f'Got non-string type {type(kraken_name)} for kraken asset')
 
@@ -527,6 +528,11 @@ def asset_from_kraken(kraken_name: str) -> Asset:
 
 
 def asset_from_poloniex(poloniex_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
     if not isinstance(poloniex_name, str):
         raise DeserializationError(f'Got non-string type {type(poloniex_name)} for poloniex asset')
 
@@ -542,7 +548,12 @@ def asset_from_bitfinex(
         currency_map: Dict[str, str],
         is_currency_map_updated: bool = True,
 ) -> Asset:
-    """Currency map coming from `<Bitfinex>._query_currency_map()` is already
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+
+    Currency map coming from `<Bitfinex>._query_currency_map()` is already
     updated with BITFINEX_TO_WORLD (prevent updating it on each call)
     """
     if not isinstance(bitfinex_name, str):
@@ -559,16 +570,22 @@ def asset_from_bitfinex(
 
 
 def asset_from_bitstamp(bitstamp_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
+    """
     if not isinstance(bitstamp_name, str):
         raise DeserializationError(f'Got non-string type {type(bitstamp_name)} for bitstamp asset')
-
-    if bitstamp_name in UNSUPPORTED_BITSTAMP_ASSETS:
-        raise UnsupportedAsset(bitstamp_name)
 
     return Asset(bitstamp_name)
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
     if not isinstance(bittrex_name, str):
         raise DeserializationError(f'Got non-string type {type(bittrex_name)} for bittrex asset')
 
@@ -599,6 +616,8 @@ def asset_from_binance(binance_name: str) -> Asset:
 
 
 def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset:
+    """May raise UnknownAsset
+    """
     # During the transition from DAI(SAI) to MCDAI(DAI) coinbase introduced an MCDAI
     # wallet for the new DAI during the transition period. We should be able to handle this
     # https://support.coinbase.com/customer/portal/articles/2982947
