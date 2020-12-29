@@ -160,11 +160,11 @@ export const OVERVIEW_PROTOCOLS = [
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
-  [ONEINCH_LIQUIDITY]: 'FIXME.png',
-  [MUSHROOMS_FINANCE]: 'FIXME.png',
-  [MUSHROOMS_FINANCE_STAKING]: 'FIXME.png',
-  [AKROPOLIS_AKRO_STAKING]: 'FIXME.png',
-  [AKROPOLIS_ADEL_STAKING]: 'FIXME.png',
+  [ONEINCH_LIQUIDITY]: '1inch.svg',
+  [MUSHROOMS_FINANCE]: 'mushroom.png',
+  [MUSHROOMS_FINANCE_STAKING]: 'mushroom.png',
+  [AKROPOLIS_AKRO_STAKING]: 'acropolis.svg',
+  [AKROPOLIS_ADEL_STAKING]: 'acropolis.svg',
   [ZLOTFINANCE]: 'zlotfinance.png',
   [YGOVFINANCEV1]: 'iearn.png',
   [YGOVFINANCEV2]: 'iearn.png',
