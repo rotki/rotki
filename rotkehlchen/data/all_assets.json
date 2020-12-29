@@ -9721,6 +9721,15 @@
         "symbol": "REDC",
         "type": "ethereum token"
     },
+    "REEF": {
+        "coingecko": "reef-finance",
+        "ethereum_address": "0xFE3E6a25e6b192A42a44ecDDCd13796471735ACf",
+        "ethereum_token_decimals": 18,
+        "name": "Reef.finance",
+        "started": 1607628365,
+        "symbol": "REEF",
+        "type": "ethereum token"
+    },
     "REF": {
         "coingecko": "",
         "ethereum_address": "0x89303500a7Abfb178B274FD89F2469C264951e1f",
