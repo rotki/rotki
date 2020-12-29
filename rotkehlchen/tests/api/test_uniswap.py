@@ -1070,7 +1070,7 @@ def test_events_pnl(
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server, 'uniswapeventshistoryresource'),
-            json=json_data
+            json=json_data,
         )
         if async_query:
             task_id = assert_ok_async_response(response)
