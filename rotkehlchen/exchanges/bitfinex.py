@@ -390,8 +390,6 @@ class Bitfinex(ExchangeInterface):
             raw_results: List[List[Any]],
             processed_result_ids: Set[int],
     ) -> Union[List[Trade], List[AssetMovement]]:
-        """TODO
-        """
         deserialization_method: DeserializationMethod
         if case == 'trades':
             deserialization_method = self._deserialize_trade
@@ -555,7 +553,7 @@ class Bitfinex(ExchangeInterface):
         amount = deserialize_asset_amount(raw_result[4])
         trade_type = TradeType.BUY if amount >= ZERO else TradeType.SELL
         bfx_pair = raw_result[1].replace(':', '')
-        if bfx_pair.startswith('t'):  # Don't replace 't' just in case it appeared within the pair
+        if bfx_pair.startswith('t'):
             bfx_pair = bfx_pair[1:]
         bfx_fee_currency_symbol = raw_result[10]
         if bfx_pair.startswith(bfx_fee_currency_symbol):
