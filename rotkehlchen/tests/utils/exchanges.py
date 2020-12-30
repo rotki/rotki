@@ -235,6 +235,7 @@ BINANCE_MYTRADES_RESPONSE = """
     "isBestMatch": true
     }]"""
 
+
 def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
     assert balances['BTC']['amount'] == '4723846.89208129'
     assert balances['BTC']['usd_value'] is not None
