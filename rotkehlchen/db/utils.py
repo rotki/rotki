@@ -83,8 +83,9 @@ def form_query_to_filter_timestamps(
     """Formulates the query string and its bindings to filter for timestamps"""
     got_from_ts = from_ts is not None
     got_to_ts = to_ts is not None
+    query += ' '
     if got_from_ts or got_to_ts:
-        query += 'WHERE' if 'WHERE' not in query else 'AND '
+        query += 'WHERE ' if 'WHERE' not in query else 'AND '
 
     filters = []
     bindings = []
