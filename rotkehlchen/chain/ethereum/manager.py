@@ -846,3 +846,40 @@ class EthereumManager():
         block_number = event['blockNumber']
         block_data = self.get_block_by_number(block_number)
         return Timestamp(block_data['timestamp'])
+
+    def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
+        """Queries Ethereum Blocks Subgraph for closest block with at or before given timestamp"""
+        from rotkehlchen.chain.ethereum.graph import Graph
+        blocks_subgraph = Graph("https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks")
+        response = blocks_subgraph.query(
+            f"""
+            {{
+              blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: {{timestamp_lte: "{ts}"}}) {{
+                id
+                number
+                timestamp
+              }}
+            }}
+            """
+        )
+        try:
+            result = int(response['blocks'][0]['number'])
+        except (IndexError, KeyError):
+            raise RemoteError(
+                f'Got unexpected ethereum blocks subgraph response: {response}',
+            )
+        else:
+            return result
+
+    def get_blocknumber_by_time(self, ts: Timestamp, etherscan = True) -> int:
+        """Searches for the blocknumber of a specific timestamp
+        - Performs the etherscan api call by default first
+        - If RemoteError raised or etherscan flag set to false
+            -> queries blocks subgraph
+        """
+        if etherscan:
+            try:
+                return self.etherscan.get_blocknumber_by_time(ts)
+            except RemoteError:
+                pass
+        return self._get_blocknumber_by_time_from_subgraph(ts)

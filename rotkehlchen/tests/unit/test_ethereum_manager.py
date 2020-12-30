@@ -227,3 +227,11 @@ def test_nodes_sets():
 )
 def test_nodes_speed():
     """TODO"""
+
+
+def test_get_blocknumber_by_time(ethereum_manager):
+    """
+    Queries the graph for known block times
+    """
+    result = ethereum_manager.get_blocknumber_by_time(1577836800, etherscan=False)
+    assert result == 9193265
