@@ -21,6 +21,7 @@ from web3.middleware.exception_retry_request import http_retry_request_middlewar
 from web3.types import FilterParams
 
 from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSIT
+from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
@@ -849,18 +850,22 @@ class EthereumManager():
 
     def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
         """Queries Ethereum Blocks Subgraph for closest block with at or before given timestamp"""
-        from rotkehlchen.chain.ethereum.graph import Graph
-        blocks_subgraph = Graph("https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks")
+        blocks_subgraph = Graph(
+            "https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks",
+        )
         response = blocks_subgraph.query(
             f"""
             {{
-              blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: {{timestamp_lte: "{ts}"}}) {{
-                id
-                number
-                timestamp
-              }}
+                blocks(
+                    first: 1, orderBy: timestamp, orderDirection: desc,
+                    where: {{timestamp_lte: "{ts}"}}
+                ) {{
+                    id
+                    number
+                    timestamp
+                }}
             }}
-            """
+            """,
         )
         try:
             result = int(response['blocks'][0]['number'])
@@ -871,7 +876,7 @@ class EthereumManager():
         else:
             return result
 
-    def get_blocknumber_by_time(self, ts: Timestamp, etherscan = True) -> int:
+    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
         """Searches for the blocknumber of a specific timestamp
         - Performs the etherscan api call by default first
         - If RemoteError raised or etherscan flag set to false
