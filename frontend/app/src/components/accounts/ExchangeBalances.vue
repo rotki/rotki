@@ -36,7 +36,7 @@
                     height="42"
                     width="42"
                     :title="exchange"
-                    :src="require(`@/assets/images/${item}.png`)"
+                    :src="getIcon(item)"
                     class="exchange-balances__select__icon"
                   />
                 </div>
@@ -64,7 +64,7 @@
                     height="42"
                     width="42"
                     :title="exchange"
-                    :src="require(`@/assets/images/${item}.png`)"
+                    :src="getIcon(item)"
                     class="exchange-balances__select__icon"
                   />
                 </div>
@@ -108,7 +108,7 @@
                   height="48"
                   width="48"
                   :title="exchange"
-                  :src="require(`@/assets/images/${exchange}.png`)"
+                  :src="getIcon(exchange)"
                   class="exchange-balances__tab__icon"
                 />
                 <div class="exchange-balances__tab__title d-block mt-2">
@@ -156,6 +156,7 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapState, mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { tradeLocations } from '@/components/history/consts';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { AssetBalance } from '@/store/balances/types';
 import { ExchangeInfo } from '@/typing/types';
@@ -182,6 +183,13 @@ export default class ExchangeBalances extends Vue {
 
   mounted() {
     this.selectedExchange = this.$route.params.exchange;
+  }
+
+  getIcon(exchange: string): string {
+    const location = tradeLocations.find(
+      ({ identifier }) => identifier === exchange
+    );
+    return location?.icon ?? '';
   }
 
   @Watch('$route')
