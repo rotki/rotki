@@ -727,6 +727,13 @@
         "symbol": "ARY",
         "type": "ethereum token"
     },
+    "ASR": {
+        "coingecko": "as-roma-fan-token",
+        "name": "AS Roma Fan Token",
+        "started": 1592784000,
+        "symbol": "ASR",
+        "type": "own chain"
+    },
     "AST": {
         "coingecko": "airswap",
         "ethereum_address": "0x27054b13b1B798B345b591a4d22e6562d47eA75a",
@@ -8491,6 +8498,13 @@
         "started": 1519808432,
         "symbol": "ODE",
         "type": "ethereum token"
+    },
+    "OG": {
+        "coingecko": "og-fan-token",
+        "name": "OG Fan Token",
+        "started": 1592784000,
+        "symbol": "OG",
+        "type": "own chain"
     },
     "OGN": {
         "coingecko": "origin-protocol",
