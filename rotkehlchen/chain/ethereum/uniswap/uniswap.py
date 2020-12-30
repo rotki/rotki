@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from datetime import datetime, time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
@@ -198,10 +198,9 @@ class Uniswap(EthereumModule):
 
         return events_balances
 
-    @staticmethod
     def _get_balances_graph(
-        addresses: List[ChecksumEthAddress],
-        graph_query: Callable,
+            self,
+            addresses: List[ChecksumEthAddress],
     ) -> ProtocolBalance:
         """Get the addresses' pools data querying the Uniswap subgraph
 
@@ -226,7 +225,7 @@ class Uniswap(EthereumModule):
             'balance': '0',
         }
         while True:
-            result = graph_query(
+            result = self.graph.query(  # type: ignore # caller already checks
                 querystr=querystr,
                 param_types=param_types,
                 param_values=param_values,
@@ -331,7 +330,6 @@ class Uniswap(EthereumModule):
     def _get_known_asset_price(
             known_assets: Set[EthereumToken],
             unknown_assets: Set[UnknownEthereumToken],
-            price_query: Callable,
     ) -> AssetPrice:
         """Get the tokens prices via Inquirer
 
@@ -341,7 +339,7 @@ class Uniswap(EthereumModule):
         asset_price: AssetPrice = {}
 
         for known_asset in known_assets:
-            asset_usd_price = price_query(known_asset)
+            asset_usd_price = Inquirer().find_usd_price(known_asset)
 
             if asset_usd_price != Price(ZERO):
                 asset_price[known_asset.ethereum_address] = asset_usd_price
@@ -834,10 +832,9 @@ class Uniswap(EthereumModule):
             }
         return trades
 
-    @staticmethod
     def _get_unknown_asset_price_graph(
+            self,
             unknown_assets: Set[UnknownEthereumToken],
-            graph_query: Callable,
     ) -> AssetPrice:
         """Get today's tokens prices via the Uniswap subgraph
 
@@ -869,7 +866,7 @@ class Uniswap(EthereumModule):
             'datetime': today_epoch,
         }
         while True:
-            result = graph_query(
+            result = self.graph.query(  # type: ignore # caller already checks
                 querystr=querystr,
                 param_types=param_types,
                 param_values=param_values,
@@ -933,13 +930,10 @@ class Uniswap(EthereumModule):
         Premium users can request balances either via the Uniswap subgraph or
         on-chain.
         """
-        is_graph_mode = self.graph and self.premium
+        is_graph_mode = self.graph is not None and self.premium
 
         if is_graph_mode:
-            protocol_balance = self._get_balances_graph(
-                addresses=addresses,
-                graph_query=self.graph.query,  # type: ignore # caller already checks
-            )
+            protocol_balance = self._get_balances_graph(addresses=addresses)
         else:
             protocol_balance = self.get_balances_chain(addresses)
 
@@ -949,15 +943,11 @@ class Uniswap(EthereumModule):
         known_asset_price = self._get_known_asset_price(
             known_assets=known_assets,
             unknown_assets=unknown_assets,
-            price_query=Inquirer().find_usd_price,
         )
 
         unknown_asset_price: AssetPrice = {}
         if is_graph_mode:
-            unknown_asset_price = self._get_unknown_asset_price_graph(
-                unknown_assets=unknown_assets,
-                graph_query=self.graph.query,  # type: ignore # caller already checks
-            )
+            unknown_asset_price = self._get_unknown_asset_price_graph(unknown_assets=unknown_assets)  # noqa:E501
 
         self._update_assets_prices_in_address_balances(
             address_balances=protocol_balance.address_balances,

@@ -10,14 +10,14 @@ from .utils import (
     UPDATED_LIQUIDITY_POOL_1,
     UPDATED_LIQUIDITY_POOL_2,
     UPDATED_LIQUIDITY_POOL_2_ONLY_USDT,
-    USD_PRICE_WETH,
-    USD_PRICE_USDT,
     USD_PRICE_SHUF,
     USD_PRICE_TGX,
+    USD_PRICE_USDT,
+    USD_PRICE_WETH,
 )
 
 
-def test_half_asset_prices_are_updated(uniswap_module):
+def test_half_asset_prices_are_updated(mock_uniswap):
     """Test when an asset price is not found in `known_asset_price`,
     nor in `unknown_asset_price`, its `usd_price` and `usd_value` remain 0,
     and the liquidity pool `usd_value` does not count it.
@@ -32,7 +32,7 @@ def test_half_asset_prices_are_updated(uniswap_module):
     unknown_asset_price = {}  # TGX not in it
 
     # Main call
-    uniswap_module._update_assets_prices_in_address_balances(
+    mock_uniswap._update_assets_prices_in_address_balances(
         address_balances=address_balances,
         known_asset_price=known_asset_price,
         unknown_asset_price=unknown_asset_price,
@@ -44,7 +44,7 @@ def test_half_asset_prices_are_updated(uniswap_module):
     )
 
 
-def test_all_asset_prices_are_updated(uniswap_module):
+def test_all_asset_prices_are_updated(mock_uniswap):
     """Test when all the assets prices are found either in
     `known_asset_price` or `unknown_asset_price`, all pool assets have
     their `usd_price` and `usd_value` updated, and the pool `usd_value` is
@@ -64,7 +64,7 @@ def test_all_asset_prices_are_updated(uniswap_module):
     }
 
     # Main call
-    uniswap_module._update_assets_prices_in_address_balances(
+    mock_uniswap._update_assets_prices_in_address_balances(
         address_balances=address_balances,
         known_asset_price=known_asset_price,
         unknown_asset_price=unknown_asset_price,
