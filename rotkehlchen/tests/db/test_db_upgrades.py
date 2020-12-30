@@ -1,3 +1,4 @@
+import json
 import os
 from contextlib import contextmanager
 from pathlib import Path
@@ -1158,6 +1159,40 @@ def test_upgrade_db_21_to_22(user_data_dir):  # pylint: disable=unused-argument
     assert length == 0
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 22
+
+
+def test_upgrade_db_22_to_23(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 22 to version 23.
+
+    Migrates the settings entries 'thousand_separator', 'decimal_separator' and
+    'currency_location' into the 'frontend_settings' entry.
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v22_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=23,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # Make sure the settings have been removed
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM settings WHERE name IN '
+        '("thousand_separator", "decimal_separator", "currency_location");',
+    ).fetchone()[0] == 0
+
+    # Make sure the settings have been migrated into 'frontend_settings'
+    frontend_settings = cursor.execute(
+        'SELECT value FROM settings WHERE name = "frontend_settings";',
+    ).fetchone()[0]
+    frontend_settings_map = json.loads(frontend_settings)
+    assert frontend_settings_map['thousand_separator'] == ','
+    assert frontend_settings_map['decimal_separator'] == '.'
+    assert frontend_settings_map['currency_location'] == 'after'
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 23
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

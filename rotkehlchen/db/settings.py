@@ -10,7 +10,7 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.typing import AVAILABLE_MODULES, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 22
+ROTKEHLCHEN_DB_VERSION = 23
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
@@ -21,9 +21,6 @@ DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
-DEFAULT_THOUSAND_SEPARATOR = ','
-DEFAULT_DECIMAL_SEPARATOR = '.'
-DEFAULT_CURRENCY_LOCATION = 'after'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 DEFAULT_ACTIVE_MODULES = AVAILABLE_MODULES
@@ -47,9 +44,6 @@ class DBSettings(NamedTuple):
     eth_rpc_endpoint: str = 'http://localhost:8545'
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
-    thousand_separator: str = DEFAULT_THOUSAND_SEPARATOR
-    decimal_separator: str = DEFAULT_DECIMAL_SEPARATOR
-    currency_location: str = DEFAULT_CURRENCY_LOCATION
     last_balance_save: Timestamp = Timestamp(0)
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
     kraken_account_type: KrakenAccountType = DEFAULT_KRAKEN_ACCOUNT_TYPE
@@ -71,9 +65,6 @@ class ModifiableDBSettings(NamedTuple):
     eth_rpc_endpoint: Optional[str] = None
     main_currency: Optional[Asset] = None
     date_display_format: Optional[str] = None
-    thousand_separator: Optional[str] = None
-    decimal_separator: Optional[str] = None
-    currency_location: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
     kraken_account_type: Optional[KrakenAccountType] = None
     active_modules: Optional[List[str]] = None
@@ -135,9 +126,6 @@ STRING_KEYS = (
     'historical_data_start',
     'eth_rpc_endpoint',
     'date_display_format',
-    'thousand_separator',
-    'decimal_separator',
-    'currency_location',
     'frontend_settings',
 )
 TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')

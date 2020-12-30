@@ -74,12 +74,6 @@ def test_set_settings(rotkehlchen_api_server):
             value = '10/10/2016'
         elif setting == 'date_display_format':
             value = '%d/%m/%Y-%H:%M:%S'
-        elif setting == 'thousand_separator':
-            value = ','
-        elif setting == 'decimal_separator':
-            value = '.'
-        elif setting == 'currency_location':
-            value = 'after'
         elif setting == 'eth_rpc_endpoint':
             value = 'http://working.nodes.com:8545'
         elif setting == 'main_currency':
@@ -438,39 +432,6 @@ def test_set_settings_errors(rotkehlchen_api_server):
     # invalid type date_display_format
     data = {
         'settings': {'date_display_format': 124.1},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Not a valid string',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # invalid type thousand_separator
-    data = {
-        'settings': {'thousand_separator': 124.1},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Not a valid string',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # invalid type decimal_separator
-    data = {
-        'settings': {'decimal_separator': 124.1},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Not a valid string',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # invalid type currency_location
-    data = {
-        'settings': {'currency_location': 124.1},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
