@@ -99,6 +99,13 @@
       @cancel="cancel"
       @confirm="performSync"
     >
+      <div
+        v-if="isDownload"
+        class="font-weight-medium mt-3"
+        v-text="
+          $t('sync_indicator.upload_confirmation.message_download_relogin')
+        "
+      />
       <v-checkbox
         v-model="confirmChecked"
         :label="$t('sync_indicator.upload_confirmation.confirm_check')"
@@ -115,7 +122,7 @@ import Fragment from '@/components/helper/Fragment';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
-import { SYNC_UPLOAD, SyncAction } from '@/services/types-api';
+import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { AllBalancePayload } from '@/store/balances/types';
 
 @Component({
@@ -143,6 +150,10 @@ export default class SyncIndicator extends Mixins(PremiumMixin) {
   forceSync!: (action: SyncAction) => Promise<void>;
   fetchBalances!: (payload: AllBalancePayload) => Promise<void>;
   displayConfirmation: boolean = false;
+
+  get isDownload(): boolean {
+    return this.syncAction === SYNC_DOWNLOAD;
+  }
 
   get textChoice(): number {
     return this.syncAction === SYNC_UPLOAD ? 1 : 2;

@@ -500,12 +500,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
   async forceSync(
-    {
-      state,
-      commit,
-      dispatch,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning }
-    },
+    { commit, dispatch, rootGetters: { 'tasks/isTaskRunning': isTaskRunning } },
     action: SyncAction
   ): Promise<void> {
     const taskType = TaskType.FORCE_SYNC;
@@ -526,10 +521,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       notify(message, title, Severity.INFO, true);
 
       if (action === SYNC_DOWNLOAD) {
-        const username = state.username;
-        await dispatch('stop');
-        await dispatch('unlock', { username: username });
-        commit('completeLogin', true);
+        await dispatch('logout');
       }
     } catch (e) {
       const title = i18n.tc('actions.session.force_sync.error.title');

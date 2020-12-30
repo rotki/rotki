@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1929` Premium users will be able to see the proper balances after a force pull.
 * :feature:`438` Rotki now supports Bitfinex. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`-` Users can now save the login username across sessions.
 * :feature:`972` Users can now see which aidrops any of their addresses is eligible for.
