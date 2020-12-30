@@ -11,7 +11,7 @@ from rotkehlchen.db.utils import form_query_to_filter_timestamps
             'timestamp',
             None,
             None,
-            'SELECT * FROM adex_events ORDER BY timestamp ASC;',  # noqa:E501
+            'SELECT * FROM adex_events ORDER BY timestamp ASC;',
             (),
         ),
         (
