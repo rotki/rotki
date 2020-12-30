@@ -93,7 +93,7 @@ class Iconomi(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__('iconomi.com', api_key, secret, database)
+        super().__init__('iconomi', api_key, secret, database)
         self.uri = 'https://api.iconomi.com'
         self.session.headers.update({'ICN-API-KEY': api_key})
         self.msg_aggregator = msg_aggregator
@@ -199,7 +199,10 @@ class Iconomi(ExchangeInterface):
                     'usd_value': balance_info['value'],
                 }
             except UnknownAsset:
-                log.warning('Ignoring unsupported ICONOMI asset "%s"', ticker)
+                self.msg_aggregator.add_warning(
+                    f'Found unsupported ICONOMI asset {ticker}. '
+                    f' Ignoring its balance query.',
+                )
 
         for balance_info in resp_info['daaList']:
             ticker = balance_info['ticker']
@@ -213,7 +216,10 @@ class Iconomi(ExchangeInterface):
                     'usd_value': balance_info['value'],
                 }
             except UnknownAsset:
-                log.warning('Ignoring unsupported ICONOMI fund "%s"', ticker)
+                self.msg_aggregator.add_warning(
+                    f'Found unsupported ICONOMI fund {ticker}. '
+                    f' Ignoring its balance query.',
+                )
 
         return (balances, "")
 
