@@ -358,9 +358,9 @@ LP_1_EVENTS_BALANCE = (
         token0=TOKEN_BASED,
         token1=ASSET_WETH,
         events=LP_1_EVENTS,
-        profit_loss0=AssetAmount(FVal('-35.489683548121546956')),
-        profit_loss1=AssetAmount(FVal('0.059966416263997186')),
-        usd_profit_loss=Price(FVal('35.19515540870021242982170811')),
+        profit_loss0=AssetAmount(FVal('35.489683548121546956')),
+        profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
+        usd_profit_loss=Price(FVal('-35.19515540870021242982170811')),
     )
 )
 LP_2_EVENTS_BALANCE = (
@@ -370,9 +370,9 @@ LP_2_EVENTS_BALANCE = (
         token0=ASSET_WETH,
         token1=TOKEN_DICE,
         events=LP_2_EVENTS,
-        profit_loss0=AssetAmount(FVal('0.610130605729210250')),
-        profit_loss1=AssetAmount(FVal('-1.971799615456732408')),
-        usd_profit_loss=Price(FVal('352.3903567533354058260380955')),
+        profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
+        profit_loss1=AssetAmount(FVal('1.971799615456732408')),
+        usd_profit_loss=Price(FVal('-352.3903567533354058260380955')),
     )
 )
 LP_3_EVENTS = [
@@ -442,9 +442,9 @@ LP_3_EVENTS_BALANCE = (
         token0=TOKEN_BASED,
         token1=ASSET_WETH,
         events=LP_3_EVENTS,
-        profit_loss0=AssetAmount(FVal('0.773209925184996494')),
-        profit_loss1=AssetAmount(FVal('0.056631443395672732')),
-        usd_profit_loss=Price(FVal('36.2389300619698095220125311')),
+        profit_loss0=AssetAmount(FVal('-0.773209925184996494')),
+        profit_loss1=AssetAmount(FVal('-0.056631443395672732')),
+        usd_profit_loss=Price(FVal('-36.2389300619698095220125311')),
     )
 )
 

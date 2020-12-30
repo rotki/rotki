@@ -779,9 +779,9 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 lp_amount=AssetAmount(FVal('1.220680531244355402')),
             ),
         ],
-        profit_loss0=AssetAmount(FVal('-35.489683548121546956')),
-        profit_loss1=AssetAmount(FVal('0.059966416263997186')),
-        usd_profit_loss=Price(FVal('35.19515540870021242982170811')),
+        profit_loss0=AssetAmount(FVal('35.489683548121546956')),
+        profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
+        usd_profit_loss=Price(FVal('-35.19515540870021242982170811')),
     ),
 ]
 EXPECTED_EVENTS_BALANCES_2 = [
@@ -833,9 +833,9 @@ EXPECTED_EVENTS_BALANCES_2 = [
                 lp_amount=AssetAmount(FVal('2.074549918528068811')),
             ),
         ],
-        profit_loss0=AssetAmount(FVal('0.610130605729210250')),
-        profit_loss1=AssetAmount(FVal('-1.971799615456732408')),
-        usd_profit_loss=Price(FVal('352.3903567533354058260380955')),
+        profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
+        profit_loss1=AssetAmount(FVal('1.971799615456732408')),
+        usd_profit_loss=Price(FVal('-352.3903567533354058260380955')),
     ),
     # Response index 3
     UniswapPoolEventsBalance(
@@ -885,9 +885,9 @@ EXPECTED_EVENTS_BALANCES_2 = [
                 lp_amount=AssetAmount(FVal('18.297385821424685079')),
             ),
         ],
-        profit_loss0=AssetAmount(FVal('97.450299238691232377')),
-        profit_loss1=AssetAmount(FVal('-0.607335819235337397')),
-        usd_profit_loss=Price(FVal('-497.9538322903351201689338200')),
+        profit_loss0=AssetAmount(FVal('-97.450299238691232377')),
+        profit_loss1=AssetAmount(FVal('0.607335819235337397')),
+        usd_profit_loss=Price(FVal('497.9538322903351201689338200')),
     ),
 ]
 
