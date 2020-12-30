@@ -352,7 +352,7 @@ class Location(Enum):
         if self == Location.BITFINEX:
             return 'bitfinex'
         if self == Location.BITCOINDE:
-            return 'bitcoinde'
+            return 'bitcoin.de'
         if self == Location.ICONOMI:
             return 'iconomi'
         # else
