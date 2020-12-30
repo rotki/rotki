@@ -727,6 +727,13 @@
         "symbol": "ARY",
         "type": "ethereum token"
     },
+    "ASR": {
+        "coingecko": "as-roma",
+        "name": "AS Roma Fan Token",
+        "started": 1592784000,
+        "symbol": "ASR",
+        "type": "own chain"
+    },
     "AST": {
         "coingecko": "airswap",
         "ethereum_address": "0x27054b13b1B798B345b591a4d22e6562d47eA75a",
@@ -8492,6 +8499,13 @@
         "symbol": "ODE",
         "type": "ethereum token"
     },
+    "OG": {
+        "coingecko": "og",
+        "name": "OG Fan Token",
+        "started": 1592784000,
+        "symbol": "OG",
+        "type": "own chain"
+    },
     "OGN": {
         "coingecko": "origin-protocol",
         "ethereum_address": "0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26",
@@ -9719,6 +9733,15 @@
         "name": "Red Cab",
         "started": 1526203977,
         "symbol": "REDC",
+        "type": "ethereum token"
+    },
+    "REEF": {
+        "coingecko": "reef-finance",
+        "ethereum_address": "0xFE3E6a25e6b192A42a44ecDDCd13796471735ACf",
+        "ethereum_token_decimals": 18,
+        "name": "Reef.finance",
+        "started": 1607628365,
+        "symbol": "REEF",
         "type": "ethereum token"
     },
     "REF": {

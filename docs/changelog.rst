@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.11.0 <2020-12-30>`
 * :bug:`1929` Premium users will be able to see the proper balances after a force pull.
 * :feature:`438` Rotki now supports Bitfinex. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`-` Users can now save the login username across sessions.
@@ -68,6 +69,9 @@ Changelog
   - `Xriba (XRA) <https://www.coingecko.com/en/coins/xriba>`__
   - `BTSE Token (BTSE) <https://www.coingecko.com/en/coins/btse-token>`__
   - `Tornado Cash Token (TORN) <https://www.coingecko.com/en/coins/tornado-cash>`__
+  - `Reef Finance (REEF) <https://www.coingecko.com/en/coins/reef-finance>`__
+  - `AS Roma Fan Token (ASR) <https://www.coingecko.com/en/coins/as-roma-fan-token>`__
+  - `OG Fan Token (OG) <https://www.coingecko.com/en/coins/og-fan-token>`__
 
 * :release:`1.10.1 <2020-12-16>`
 * :bug:`-` This release should fix the "Failed at database upgrade from version 21 to 22: arguments should be given at the first instantiation" error
