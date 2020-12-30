@@ -56,7 +56,7 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
         )
 
     trade_type = deserialize_trade_type(raw_trade['type'])
-    tx_amount = AssetAmount(raw_trade['amount_currency_to_trade'])
+    tx_amount = AssetAmount(FVal(raw_trade['amount_currency_to_trade']))
     native_amount = FVal(raw_trade['volume_currency_to_pay'])
     tx_asset, native_asset = bitcoinde_pair_to_world(raw_trade['trading_pair'])
     pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')

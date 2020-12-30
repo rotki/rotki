@@ -51,8 +51,7 @@ def test_query_trade_history(function_scope_iconomi):
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
         if 'pageNumber=0' in url:
             return MockResponse(200, ICONOMI_TRADES_RESPONSE)
-        else:
-            return MockResponse(200, ICONOMI_TRADES_EMPTY_RESPONSE)
+        return MockResponse(200, ICONOMI_TRADES_EMPTY_RESPONSE)
 
     with patch.object(iconomi.session, 'get', side_effect=mock_api_return):
         trades = iconomi.query_trade_history(
