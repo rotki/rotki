@@ -1643,8 +1643,9 @@
       "cancel": "Cancel",
       "action": "Push | Pull",
       "title": "Force Push | Force Pull",
-      "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
-      "message_download": "By force pulling, your local database will be replaced with data pulled from the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action",
+      "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
+      "message_download": "By force pulling, your local database will be replaced with data pulled from the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
+      "message_download_relogin": "After performing the pull, a manual re-login will be required.",
       "confirm_check": "I understand"
     }
   },
