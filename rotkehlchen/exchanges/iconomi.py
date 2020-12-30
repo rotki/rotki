@@ -217,7 +217,7 @@ class Iconomi(ExchangeInterface):
                 }
             except UnknownAsset:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported ICONOMI fund {ticker}. '
+                    f'Found unsupported ICONOMI strategy {ticker}. '
                     f' Ignoring its balance query.',
                 )
 

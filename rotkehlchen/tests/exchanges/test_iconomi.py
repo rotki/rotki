@@ -43,5 +43,5 @@ def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
 
     warnings = iconomi.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
-    assert 'unsupported ICONOMI fund CAR' in warnings[0]
-    assert 'unsupported ICONOMI fund SCND' in warnings[1]
+    assert 'unsupported ICONOMI strategy CAR' in warnings[0]
+    assert 'unsupported ICONOMI strategy SCND' in warnings[1]
