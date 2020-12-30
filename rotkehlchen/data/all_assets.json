@@ -728,7 +728,7 @@
         "type": "ethereum token"
     },
     "ASR": {
-        "coingecko": "as-roma-fan-token",
+        "coingecko": "as-roma",
         "name": "AS Roma Fan Token",
         "started": 1592784000,
         "symbol": "ASR",
@@ -8500,7 +8500,7 @@
         "type": "ethereum token"
     },
     "OG": {
-        "coingecko": "og-fan-token",
+        "coingecko": "og",
         "name": "OG Fan Token",
         "started": 1592784000,
         "symbol": "OG",
