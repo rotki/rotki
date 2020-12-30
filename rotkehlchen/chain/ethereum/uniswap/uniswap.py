@@ -156,13 +156,13 @@ class Uniswap(EthereumModule):
             pool_aggregated_amount[pool].events.append(event)
 
             if event.event_type == EventType.MINT:
-                pool_aggregated_amount[pool].profit_loss0 += event.amount0
-                pool_aggregated_amount[pool].profit_loss1 += event.amount1
-                pool_aggregated_amount[pool].usd_profit_loss += event.usd_price
-            else:  # event_type == EventType.BURN
                 pool_aggregated_amount[pool].profit_loss0 -= event.amount0
                 pool_aggregated_amount[pool].profit_loss1 -= event.amount1
                 pool_aggregated_amount[pool].usd_profit_loss -= event.usd_price
+            else:  # event_type == EventType.BURN
+                pool_aggregated_amount[pool].profit_loss0 += event.amount0
+                pool_aggregated_amount[pool].profit_loss1 += event.amount1
+                pool_aggregated_amount[pool].usd_profit_loss += event.usd_price
 
         # Instantiate `LiquidityPoolEventsBalance` per pool using
         # `pool_aggregated_amount`. If `pool_balance` exists (all events case),
@@ -176,9 +176,9 @@ class Uniswap(EthereumModule):
             if pool in pool_balance:
                 token0 = pool_balance[pool].assets[0].asset
                 token1 = pool_balance[pool].assets[1].asset
-                profit_loss0 -= pool_balance[pool].assets[0].user_balance.amount
-                profit_loss1 -= pool_balance[pool].assets[1].user_balance.amount
-                usd_profit_loss -= pool_balance[pool].user_balance.usd_value
+                profit_loss0 += pool_balance[pool].assets[0].user_balance.amount
+                profit_loss1 += pool_balance[pool].assets[1].user_balance.amount
+                usd_profit_loss += pool_balance[pool].user_balance.usd_value
             else:
                 # NB: get `token0` and `token1` from any pool event
                 token0 = aggregated_amount.events[0].token0
