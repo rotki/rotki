@@ -363,7 +363,7 @@ def deserialize_location(symbol: str) -> Location:
         return Location.BINANCE_US
     if symbol == 'bitfinex':
         return Location.BITFINEX
-    if symbol == 'bitcoin.de':
+    if symbol == 'bitcoinde':
         return Location.BITCOINDE
     if symbol == 'iconomi':
         return Location.ICONOMI

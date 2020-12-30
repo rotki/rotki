@@ -14,7 +14,7 @@ BITCOINDE_TRADES_RESPONSE = """{"trades":[{"trade_id":"X1","trading_pair":"btceu
 
 def test_name():
     exchange = Bitcoinde('a', b'a', object(), object())
-    assert exchange.name == 'bitcoin.de'
+    assert exchange.name == 'bitcoinde'
 
 
 def test_bitcoinde_query_balances_unknown_asset(function_scope_bitcoinde):
