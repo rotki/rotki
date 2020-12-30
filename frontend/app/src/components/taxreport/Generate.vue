@@ -3,7 +3,11 @@
     <v-card>
       <v-card-title v-text="$t('generate.title')" />
       <v-card-text>
-        <v-row>
+        <report-period-selector
+          @custom="custom = $event"
+          @changed="onPeriodChange"
+        />
+        <v-row v-if="custom">
           <v-col cols="12">
             <date-time-picker
               v-model="start"
@@ -12,8 +16,6 @@
               :rules="startRules"
             />
           </v-col>
-        </v-row>
-        <v-row>
           <v-col cols="12">
             <date-time-picker
               v-model="end"
@@ -44,9 +46,11 @@
 import moment from 'moment';
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
+import ReportPeriodSelector from '@/components/taxreport/ReportPeriodSelector.vue';
 
 @Component({
   components: {
+    ReportPeriodSelector,
     DateTimePicker
   }
 })
@@ -56,6 +60,7 @@ export default class Generate extends Vue {
   valid: boolean = false;
   invalidRange: boolean = false;
   message: string = '';
+  custom: boolean = false;
 
   startRules: ((v: string) => boolean | string)[] = [
     (v: string) =>
@@ -68,8 +73,24 @@ export default class Generate extends Vue {
   ];
 
   private convertToTimestamp(date: string): number {
-    const format = date.indexOf(' ') > -1 ? 'DD/MM/YYYY HH:mm' : 'DD/MM/YYYY';
+    let format: string = 'DD/MM/YYYY';
+    if (date.indexOf(' ') > -1) {
+      format += ' HH:mm';
+      if (date.charAt(date.length - 6) === ':') {
+        format += ':ss';
+      }
+    }
+
     return moment(date, format).unix();
+  }
+
+  onPeriodChange(period: { start: string; end: string }) {
+    this.start = period.start;
+    if (this.convertToTimestamp(period.end) > moment().unix()) {
+      this.end = moment().format('DD/MM/YYYY HH:mm:ss');
+    } else {
+      this.end = period.end;
+    }
   }
 
   @Watch('start')
