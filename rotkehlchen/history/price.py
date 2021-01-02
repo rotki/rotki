@@ -5,16 +5,17 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import NoPriceForGivenTimestamp, RemoteError
+from rotkehlchen.errors import NoPriceForGivenTimestamp, RemoteError, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp
-
+from rotkehlchen.utils.misc import timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.externalapis.coingecko import Coingecko
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -68,18 +69,21 @@ class PriceHistorian():
     __instance: Optional['PriceHistorian'] = None
     _historical_data_start: Timestamp
     _cryptocompare: 'Cryptocompare'
+    _coingecko: 'Coingecko'
 
     def __new__(
             cls,
             data_directory: Path = None,
             history_date_start: str = None,
             cryptocompare: 'Cryptocompare' = None,
+            coingecko: 'Coingecko' = None,
     ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
         assert data_directory, 'arguments should be given at the first instantiation'
         assert history_date_start, 'arguments should be given at the first instantiation'
         assert cryptocompare, 'arguments should be given at the first instantiation'
+        assert coingecko, 'arguments should be given at the first instantiation'
 
         PriceHistorian.__instance = object.__new__(cls)
 
@@ -89,6 +93,7 @@ class PriceHistorian():
             formatstr="%d/%m/%Y",
         )
         PriceHistorian._cryptocompare = cryptocompare
+        PriceHistorian._coingecko = coingecko
 
         return PriceHistorian.__instance
 
@@ -134,9 +139,35 @@ class PriceHistorian():
             # else cryptocompare also has historical fiat to fiat data
 
         instance = PriceHistorian()
-        return instance._cryptocompare.query_historical_price(
+        price = None
+        try:
+            price = instance._cryptocompare.query_historical_price(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+                historical_data_start=instance._historical_data_start,
+            )
+        except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
+            # then use coingecko
+            pass
+
+        if price and price != Price(ZERO):
+            return price
+
+        try:
+            price = instance._coingecko.historical_price(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            )
+            if price != Price(ZERO):
+                return price
+        except RemoteError:
+            pass
+
+        # nothing found in any price oracle
+        raise NoPriceForGivenTimestamp(
             from_asset=from_asset,
             to_asset=to_asset,
-            timestamp=timestamp,
-            historical_data_start=instance._historical_data_start,
+            date=timestamp_to_date(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
         )

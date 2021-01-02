@@ -230,6 +230,7 @@ class Rotkehlchen():
             data_directory=self.data_dir,
             history_date_start=historical_data_start,
             cryptocompare=self.cryptocompare,
+            coingecko=self.coingecko,
         )
         self.accountant = Accountant(
             db=self.data.db,

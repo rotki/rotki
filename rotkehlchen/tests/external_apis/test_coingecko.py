@@ -1,16 +1,9 @@
-import pytest
-
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.externalapis.coingecko import Coingecko, CoingeckoAssetData, CoingeckoImageURLs
+from rotkehlchen.externalapis.coingecko import CoingeckoAssetData, CoingeckoImageURLs
 from rotkehlchen.typing import Price
 from rotkehlchen.fval import FVal
 from rotkehlchen.constants.assets import A_ETH, A_EUR
-
-
-@pytest.fixture(scope='session', name='session_coingecko')
-def fixture_session_coingecko():
-    return Coingecko()
 
 
 def assert_coin_data_same(given, expected, compare_description=False):

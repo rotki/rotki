@@ -5,6 +5,7 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
+from rotkehlchen.externalapis.coingecko import Coingecko
 
 TEST_HISTORY_DATA_START = "01/01/2015"
 
@@ -19,6 +20,11 @@ def fixture_session_cryptocompare(session_data_dir, session_database):
     return Cryptocompare(data_directory=session_data_dir, database=session_database)
 
 
+@pytest.fixture(scope='session', name='session_coingecko')
+def fixture_session_coingecko():
+    return Coingecko()
+
+
 @pytest.fixture
 def price_historian(
         data_dir,
@@ -26,6 +32,7 @@ def price_historian(
         should_mock_price_queries,
         mocked_price_queries,
         cryptocompare,
+        session_coingecko,
         default_mock_price_value,
 ):
     # Since this is a singleton and we want it initialized everytime the fixture
@@ -35,6 +42,7 @@ def price_historian(
         data_directory=data_dir,
         history_date_start=TEST_HISTORY_DATA_START,
         cryptocompare=cryptocompare,
+        coingecko=session_coingecko,
     )
     maybe_mock_historical_price_queries(
         historian=historian,
