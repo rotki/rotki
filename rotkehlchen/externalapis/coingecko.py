@@ -11,8 +11,9 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Price
+from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads
+from rotkehlchen.utils.misc import timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -202,6 +203,18 @@ class Coingecko():
     def all_coins(self) -> List[Dict[str, Any]]:
         return self._query(module='coins/list')
 
+    @staticmethod
+    def check_vs_currencies(from_asset: Asset, to_asset: Asset, location: str) -> Optional[str]:
+        vs_currency = to_asset.identifier.lower()
+        if vs_currency not in COINGECKO_SIMPLE_VS_CURRENCIES:
+            log.warning(
+                f'Tried to query coingecko {location} from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But to_asset is not supported',
+            )
+            return None
+
+        return vs_currency
+
     def simple_price(self, from_asset: Asset, to_asset: Asset) -> Price:
         """Returns a simple price for from_asset to to_asset in coingecko
 
@@ -212,12 +225,12 @@ class Coingecko():
         May raise:
         - RemoteError if there is a problem querying coingecko
         """
-        vs_currency = to_asset.identifier.lower()
-        if vs_currency not in COINGECKO_SIMPLE_VS_CURRENCIES:
-            log.warning(
-                f'Tried to query coingecko simple price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But to_asset is not supported in simple price query',
-            )
+        vs_currency = Coingecko.check_vs_currencies(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            location='simple price',
+        )
+        if not vs_currency:
             return Price(ZERO)
 
         if from_asset.coingecko is None:
@@ -239,6 +252,41 @@ class Coingecko():
         except KeyError as e:
             log.warning(
                 f'Queried coingecko simple price from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But got key error for {str(e)} when '
+                f'processing the result.',
+            )
+            return Price(ZERO)
+
+    def historical_price(self, from_asset: Asset, to_asset: Asset, time: Timestamp) -> Price:
+        vs_currency = Coingecko.check_vs_currencies(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            location='historical price',
+        )
+        if not vs_currency:
+            return Price(ZERO)
+
+        if from_asset.coingecko is None:
+            log.warning(
+                f'Tried to query coingecko historical price from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
+            )
+            return Price(ZERO)
+
+        result = self._query(
+            module='coins',
+            subpath=f'{from_asset.coingecko}/history',
+            options={
+                'date': timestamp_to_date(time, formatstr='%d-%m-%Y'),
+                'localization': False,
+            },
+        )
+
+        try:
+            return Price(FVal(result['market_data']['current_price'][vs_currency]))
+        except KeyError as e:
+            log.warning(
+                f'Queried coingecko historical price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But got key error for {str(e)} when '
                 f'processing the result.',
             )
