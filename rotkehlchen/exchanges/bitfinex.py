@@ -577,6 +577,10 @@ class Bitfinex(ExchangeInterface):
                 bitfinex_name=bfx_quote_asset_symbol,
                 currency_map=currency_map,
             )
+            fee_asset = asset_from_bitfinex(
+                bitfinex_name=bfx_fee_currency_symbol,
+                currency_map=currency_map,
+            )
         except (UnknownAsset, UnsupportedAsset) as e:
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
             raise DeserializationError(
@@ -591,7 +595,7 @@ class Bitfinex(ExchangeInterface):
             amount=AssetAmount(abs(amount)),
             rate=deserialize_price(raw_result[5]),
             fee=Fee(abs(deserialize_fee(raw_result[9]))),
-            fee_currency=quote_asset if trade_type == TradeType.BUY else base_asset,
+            fee_currency=fee_asset,
             link=str(raw_result[0]),
             notes='',
         )
