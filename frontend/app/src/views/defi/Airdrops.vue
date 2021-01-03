@@ -158,7 +158,7 @@ export default class Airdrops extends Mixins(StatusMixin) {
     },
     [AIRDROP_TORNADO]: {
       icon: require(`@/assets/images/tornado.svg`),
-      name: 'Tornado Cach'
+      name: 'Tornado Cash'
     },
     [AIRDROP_CORNICHON]: {
       icon: require(`@/assets/images/cornichon.svg`),
