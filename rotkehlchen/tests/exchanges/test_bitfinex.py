@@ -364,7 +364,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
         amount=AssetAmount(FVal('0.26334268')),
         rate=Price(FVal('187.37')),
         fee=Fee(FVal('0.09868591')),
-        fee_currency=Asset('ETH'),
+        fee_currency=Asset('USDT'),
         link='399251013',
         notes='',
     )

@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2013` Show correct fee currency for Bitfinex trades.
+
 * :release:`1.11.0 <2020-12-30>`
 * :bug:`1929` Premium users will be able to see the proper balances after a force pull.
 * :feature:`438` Rotki now supports Bitfinex. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
