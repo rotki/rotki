@@ -4,7 +4,7 @@ import os
 import re
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
+from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional, Tuple
 
 import gevent
 import requests
@@ -12,7 +12,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_COMP, A_DAI, A_USD, A_USDT, A_WETH
+from rotkehlchen.constants.assets import A_COMP, A_DAI, A_USD, A_USDT, A_WETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
@@ -526,17 +526,73 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         return False
 
+    @staticmethod
+    def _retrieve_price_from_data(
+            data: Optional[List[PriceHistoryEntry]],
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
+        """Reads historical price data list returned from cryptocompare histohour
+        or cache and returns a price.
+
+        If nothing is found it returns Price(0). This can also happen if cryptocompare
+        returns a list of 0s for the timerange.
+        """
+        price = Price(ZERO)
+        if data is None:
+            return price
+
+        # all data are sorted and timestamps are always increasing by 1 hour
+        # find the closest entry to the provided timestamp
+        if timestamp >= data[0].time:
+            index_in_bounds = True
+            # convert_to_int can't raise here due to its input
+            index = convert_to_int((timestamp - data[0].time) / 3600, accept_only_exact=False)
+            if index > len(data) - 1:  # index out of bounds
+                # Try to see if index - 1 is there and if yes take it
+                if index > len(data):
+                    index = index - 1
+                else:  # give up. This happened: https://github.com/rotki/rotki/issues/1534
+                    log.error(
+                        f'Expected data index in cryptocompare historical hour price '
+                        f'not found. Queried price of: {from_asset.identifier} in '
+                        f'{to_asset.identifier} at {timestamp}. Data '
+                        f'index: {index}. Length of returned data: {len(data)}. '
+                        f'https://github.com/rotki/rotki/issues/1534. Attempting other methods...',
+                    )
+                    index_in_bounds = False
+
+            if index_in_bounds:
+                diff = abs(data[index].time - timestamp)
+                if index + 1 <= len(data) - 1:
+                    diff_p1 = abs(data[index + 1].time - timestamp)
+                    if diff_p1 < diff:
+                        index = index + 1
+
+                if data[index].high is not None and data[index].low is not None:
+                    price = Price((data[index].high + data[index].low) / 2)
+
+        else:
+            # no price found in the historical data from/to asset, try alternatives
+            price = Price(ZERO)
+
+        return price
+
     def get_historical_data(
             self,
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
             historical_data_start: Timestamp,
-    ) -> List[PriceHistoryEntry]:
+            only_check_cache: bool,
+    ) -> Optional[List[PriceHistoryEntry]]:
         """
-        Get historical price data from cryptocompare
+        Get historical hour price data from cryptocompare
 
         Returns a sorted list of price entries.
+
+        If only_check_cache is True then if the data is not cached locally this will return None
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
@@ -553,6 +609,9 @@ class Cryptocompare(ExternalServiceWithApiKey):
         got_cached_value = self._got_cached_price(cache_key, timestamp)
         if got_cached_value:
             return self.price_history[cache_key].data
+
+        if only_check_cache:
+            return None
 
         now_ts = ts_now()
         cryptocompare_hourquerylimit = 2000
@@ -701,6 +760,11 @@ class Cryptocompare(ExternalServiceWithApiKey):
         Query the historical price on `timestamp` for `from_asset` in `to_asset`.
         So how much `to_asset` does 1 unit of `from_asset` cost.
 
+        This tries to:
+        1. Find cached cryptocompare values and return them
+        2. If none exist at the moment try the normal historical price endpoint
+        3. Else fail
+
         May raise:
         - PriceQueryUnsupportedAsset if from/to asset is known to miss from cryptocompare
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
@@ -724,70 +788,24 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 to_asset=to_asset,
                 timestamp=timestamp,
                 historical_data_start=historical_data_start,
+                only_check_cache=True,
             )
         except UnsupportedAsset as e:
             raise PriceQueryUnsupportedAsset(e.asset_name) from e
 
-        price = Price(ZERO)
-        # all data are sorted and timestamps are always increasing by 1 hour
-        # find the closest entry to the provided timestamp
-        if timestamp >= data[0].time:
-            index_in_bounds = True
-            # convert_to_int can't raise here due to its input
-            index = convert_to_int((timestamp - data[0].time) / 3600, accept_only_exact=False)
-            if index > len(data) - 1:  # index out of bounds
-                # Try to see if index - 1 is there and if yes take it
-                if index > len(data):
-                    index = index - 1
-                else:  # give up. This happened: https://github.com/rotki/rotki/issues/1534
-                    log.error(
-                        f'Expected data index in cryptocompare historical hour price '
-                        f'not found. Queried price of: {from_asset.identifier} in '
-                        f'{to_asset.identifier} at {timestamp}. Data '
-                        f'index: {index}. Length of returned data: {len(data)}. '
-                        f'https://github.com/rotki/rotki/issues/1534. Attempting other methods...',
-                    )
-                    index_in_bounds = False
-
-            if index_in_bounds:
-                diff = abs(data[index].time - timestamp)
-                if index + 1 <= len(data) - 1:
-                    diff_p1 = abs(data[index + 1].time - timestamp)
-                    if diff_p1 < diff:
-                        index = index + 1
-
-                if data[index].high is not None and data[index].low is not None:
-                    price = Price((data[index].high + data[index].low) / 2)
-
-        else:
-            # no price found in the historical data from/to asset, try alternatives
-            price = Price(ZERO)
-
-        if price == 0:
-            if from_asset != 'BTC' and to_asset != 'BTC':
-                log.debug(
-                    f"Couldn't find historical price from {from_asset} to "
-                    f"{to_asset} at timestamp {timestamp}. Comparing with BTC...",
-                )
-                # Just get the BTC price
-                asset_btc_price = PriceHistorian().query_historical_price(
-                    from_asset=from_asset,
-                    to_asset=A_BTC,
-                    timestamp=timestamp,
-                )
-                btc_to_asset_price = PriceHistorian().query_historical_price(
-                    from_asset=A_BTC,
-                    to_asset=to_asset,
-                    timestamp=timestamp,
-                )
-                price = Price(asset_btc_price * btc_to_asset_price)
-            else:
-                log.debug(
-                    f"Couldn't find historical price from {from_asset} to "
-                    f"{to_asset} at timestamp {timestamp} through cryptocompare."
-                    f" Attempting to get daily price...",
-                )
-                price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
+        price = self._retrieve_price_from_data(
+            data=data,
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+        if price == Price(ZERO):
+            log.debug(
+                f"Couldn't find historical price from {from_asset} to "
+                f"{to_asset} at timestamp {timestamp} through cryptocompare."
+                f" Attempting to get daily price...",
+            )
+            price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
 
         comparison_to_nonusd_fiat = (
             (to_asset.is_fiat() and to_asset != A_USD) or
@@ -801,7 +819,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 timestamp=timestamp,
             )
 
-        if price == 0:
+        if price == Price(ZERO):
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
@@ -809,7 +827,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             )
 
         log.debug(
-            'Got historical price',
+            'Got historical price from cryptocompare',
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,

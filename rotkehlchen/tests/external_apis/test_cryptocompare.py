@@ -47,6 +47,7 @@ def test_cryptocompare_historical_data_use_cached_price(data_dir, database):
             to_asset=A_BTC,
             timestamp=1438390801,
             historical_data_start=0,
+            only_check_cache=False,
         )
         # make sure that histohour was not called, in essence that the cache was used
         assert histohour_mock.call_count == 0
@@ -117,31 +118,31 @@ def test_cryptocompare_dao_query(cryptocompare):
 @pytest.mark.parametrize('run', (
     [{
         'asset': Asset('cDAI'),
-        'expected_price1': FVal('0.02012010'),
+        'expected_price1': FVal('0.02008006'),
         'expected_price2': FVal('0.02033108'),
     }, {
         'asset': Asset('cBAT'),
-        'expected_price1': FVal('0.003522603'),
+        'expected_price1': FVal('0.003809585'),
         'expected_price2': FVal('0.002713524'),
     }, {
         'asset': Asset('cETH'),
-        'expected_price1': FVal('2.903'),
+        'expected_price1': FVal('2.901'),
         'expected_price2': FVal('2.669'),
     }, {
         'asset': Asset('cREP'),
-        'expected_price1': FVal('0.20105130'),
+        'expected_price1': FVal('0.2046084'),
         'expected_price2': FVal('0.16380696'),
     }, {
         'asset': Asset('cUSDC'),
-        'expected_price1': FVal('0.02085273'),
+        'expected_price1': FVal('0.02082156'),
         'expected_price2': FVal('0.020944869'),
     }, {
         'asset': Asset('cWBTC'),
-        'expected_price1': FVal('136.971575'),
+        'expected_price1': FVal('145.404910'),
         'expected_price2': FVal('99.411774'),
     }, {
         'asset': Asset('cZRX'),
-        'expected_price1': FVal('0.004324785'),
+        'expected_price1': FVal('0.004415010'),
         'expected_price2': FVal('0.003037084'),
     }]),
 )
