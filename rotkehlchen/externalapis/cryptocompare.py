@@ -507,26 +507,33 @@ class Cryptocompare(ExternalServiceWithApiKey):
         result = self._api_query(query_path)
         return Price(FVal(result[cc_from_asset_symbol][cc_to_asset_symbol]))
 
-    def _got_cached_price(self, cache_key: PairCacheKey, timestamp: Timestamp) -> bool:
+    def get_cached_data(self, from_asset: Asset, to_asset: Asset) -> Optional[PriceHistoryData]:
+        cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
+        if cache_key not in self.price_history_file:
+            return None
+
+        if cache_key not in self.price_history:
+            try:
+                with open(self.price_history_file[cache_key], 'r') as f:
+                    data = rlk_jsonloads_dict(f.read())
+                    self.price_history[cache_key] = _dict_history_to_data(data)
+            except (OSError, JSONDecodeError):
+                return None
+
+        return self.price_history[cache_key]
+
+    def _got_cached_data_at_timestamp(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Optional[PriceHistoryData]:
         """Check if we got a price history for the timestamp cached"""
-        if cache_key in self.price_history_file:
-            if cache_key not in self.price_history:
-                try:
-                    with open(self.price_history_file[cache_key], 'r') as f:
-                        data = rlk_jsonloads_dict(f.read())
-                        self.price_history[cache_key] = _dict_history_to_data(data)
-                except (OSError, JSONDecodeError):
-                    return False
+        data = self.get_cached_data(from_asset, to_asset)
+        if data is not None and data.start_time <= timestamp < data.end_time:
+            return data
 
-            in_range = (
-                self.price_history[cache_key].start_time <= timestamp <
-                self.price_history[cache_key].end_time
-            )
-            if in_range:
-                log.debug('Found cached price', cache_key=cache_key, timestamp=timestamp)
-                return True
-
-        return False
+        return None
 
     @staticmethod
     def _retrieve_price_from_data(
@@ -686,9 +693,13 @@ class Cryptocompare(ExternalServiceWithApiKey):
             timestamp=timestamp,
         )
         cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
-        got_cached_value = self._got_cached_price(cache_key, timestamp)
-        if got_cached_value:
-            return self.price_history[cache_key].data
+        cached_data = self._got_cached_data_at_timestamp(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+        if cached_data is not None:
+            return cached_data.data
 
         if only_check_cache:
             return None
