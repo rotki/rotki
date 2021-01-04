@@ -24,4 +24,5 @@
 2020-07-29 09:16:57,MCO Stake,MCO,-50.0,,,EUR,-174.36,-206.468394,lockup_lock
 2020-07-29 09:16:54,Buy MCO,MCO,50.0,,,EUR,176.05,208.4696075,crypto_purchase
 2020-07-29 09:12:07,Crypto Earn Deposit,ETH,-1.0,,,EUR,-275.55,-326.2925325,crypto_earn_program_created
+2020-07-28 09:12:07,Crypto Earn Withdrawal,ETH,-1.0,,,EUR,-275.55,-326.2925325,crypto_earn_program_withdrawn
 2020-07-27 06:59:55,Buy ETH,ETH,1.0,,,EUR,281.14,332.911931,crypto_purchase
