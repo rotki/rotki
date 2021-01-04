@@ -7,8 +7,6 @@ from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.externalapis.coingecko import Coingecko
 
-TEST_HISTORY_DATA_START = "01/01/2015"
-
 
 @pytest.fixture(name='cryptocompare')
 def fixture_cryptocompare(data_dir, database):
@@ -40,7 +38,6 @@ def price_historian(
     PriceHistorian._PriceHistorian__instance = None
     historian = PriceHistorian(
         data_directory=data_dir,
-        history_date_start=TEST_HISTORY_DATA_START,
         cryptocompare=cryptocompare,
         coingecko=session_coingecko,
     )

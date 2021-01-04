@@ -1,5 +1,6 @@
 import os
 import warnings as test_warnings
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
@@ -10,8 +11,10 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import NoPriceForGivenTimestamp
 from rotkehlchen.externalapis.cryptocompare import (
     A_COMP,
+    CRYPTOCOMPARE_HOURQUERYLIMIT,
     CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES,
     Cryptocompare,
+    PairCacheKey,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_SNGLS
@@ -46,7 +49,6 @@ def test_cryptocompare_historical_data_use_cached_price(data_dir, database):
             from_asset=A_SNGLS,
             to_asset=A_BTC,
             timestamp=1438390801,
-            historical_data_start=0,
             only_check_cache=False,
         )
         # make sure that histohour was not called, in essence that the cache was used
@@ -61,6 +63,61 @@ def test_cryptocompare_historical_data_use_cached_price(data_dir, database):
     assert result[1].low == FVal(20)
     assert isinstance(result[1].high, FVal)
     assert result[1].high == FVal(20)
+
+
+@pytest.mark.freeze_time
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_cryptocompare_histohour_data(data_dir, database, freezer):
+    """Test that the cryptocompare histohour data retrieval works properly"""
+    # first timestamp cryptocompare has histohour BTC/USD is: 1279940400
+    btc_start_ts = 1279940400
+    now_ts = btc_start_ts + 3600 * 2000 + 122
+    freezer.move_to(datetime.fromtimestamp(now_ts))
+    cc = Cryptocompare(data_directory=data_dir, database=database)
+    result = cc.get_historical_data(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        timestamp=now_ts - 3600 * 2 - 55,
+        only_check_cache=False,
+    )
+    cache_key = PairCacheKey('BTC_USD')
+    assert len(result) == CRYPTOCOMPARE_HOURQUERYLIMIT + 1
+    assert all(x.low == x.high == FVal('0.05454') for x in result)
+    assert cache_key in cc.price_history
+    assert cc.price_history[cache_key].start_time == btc_start_ts
+    assert cc.price_history[cache_key].end_time == now_ts
+    assert all(x.low == x.high == FVal('0.05454') for x in cc.price_history[cache_key].data)
+
+    # now let's move a bit to the future and query again to see the cache is appended to
+    now_ts = now_ts + 3600 * 2000 * 2 + 4700
+    freezer.move_to(datetime.fromtimestamp(now_ts))
+    result = cc.get_historical_data(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        timestamp=now_ts - 3600 * 4 - 55,
+        only_check_cache=False,
+    )
+    assert len(result) == CRYPTOCOMPARE_HOURQUERYLIMIT * 3 + 2
+
+    def check_result(query_result):
+        for idx, entry in enumerate(query_result):
+            if idx != 0:
+                assert entry.time == query_result[idx - 1].time + 3600
+
+            if entry.time <= 1287140400:
+                assert entry.low == entry.high == FVal('0.05454')
+            elif entry.time <= 1294340400:
+                assert entry.low == entry.high == FVal('0.105')
+            elif entry.time <= 1301544000:
+                assert entry.low == entry.high == FVal('0.298')
+            else:
+                raise AssertionError(f'Unexpected time entry {entry.time}')
+
+    check_result(result)
+    assert cache_key in cc.price_history
+    assert cc.price_history[cache_key].start_time == btc_start_ts
+    assert cc.price_history[cache_key].end_time == now_ts
+    check_result(cc.price_history[cache_key].data)
 
 
 @pytest.mark.skip(
@@ -90,7 +147,6 @@ def test_cryptocompare_histohour_query_old_ts_xcp(
             from_asset=Asset('XCP'),
             to_asset=A_USD,
             timestamp=1392685761,
-            historical_data_start=1438387200,
         )
 
 
@@ -106,7 +162,6 @@ def test_cryptocompare_dao_query(cryptocompare):
         from_asset=Asset('DAO'),
         to_asset=A_USD,
         timestamp=1468886400,
-        historical_data_start=1438387200,
     )
     assert price is not None
 
@@ -169,9 +224,6 @@ def test_cryptocompare_query_compound_tokens(
         from_asset=asset,
         to_asset=A_USD,
         timestamp=1576195200,
-        # Use historical data start that requires 2 (but not more) histohour queries
-        # 1576195200 - 2002*3600
-        historical_data_start=1568988000,
     )
     assert price == expected_price1
     price = cryptocompare.query_endpoint_pricehistorical(

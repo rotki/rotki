@@ -223,12 +223,10 @@ class Rotkehlchen():
         )
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
         self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)
-        historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         # Initialize the price historian singleton
         PriceHistorian(
             data_directory=self.data_dir,
-            history_date_start=historical_data_start,
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
         )

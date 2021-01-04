@@ -11,7 +11,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import create_timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -67,31 +66,22 @@ def query_usd_price_zero_if_error(
 
 class PriceHistorian():
     __instance: Optional['PriceHistorian'] = None
-    _historical_data_start: Timestamp
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
 
     def __new__(
             cls,
             data_directory: Path = None,
-            history_date_start: str = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
     ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
         assert data_directory, 'arguments should be given at the first instantiation'
-        assert history_date_start, 'arguments should be given at the first instantiation'
         assert cryptocompare, 'arguments should be given at the first instantiation'
         assert coingecko, 'arguments should be given at the first instantiation'
 
         PriceHistorian.__instance = object.__new__(cls)
-
-        # get the start date for historical data
-        PriceHistorian._historical_data_start = create_timestamp(
-            datestr=history_date_start,
-            formatstr="%d/%m/%Y",
-        )
         PriceHistorian._cryptocompare = cryptocompare
         PriceHistorian._coingecko = coingecko
 
@@ -145,7 +135,6 @@ class PriceHistorian():
                 from_asset=from_asset,
                 to_asset=to_asset,
                 timestamp=timestamp,
-                historical_data_start=instance._historical_data_start,
             )
         except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
             # then use coingecko
