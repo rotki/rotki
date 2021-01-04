@@ -19,6 +19,7 @@ from rotkehlchen.externalapis.cryptocompare import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_SNGLS
 from rotkehlchen.typing import Price, Timestamp
+from typing import List
 
 
 def test_cryptocompare_query_pricehistorical(cryptocompare):
@@ -65,11 +66,36 @@ def test_cryptocompare_historical_data_use_cached_price(data_dir, database):
     assert result[1].high == FVal(20)
 
 
+def check_cc_result(query_result: List, forward: bool):
+    for idx, entry in enumerate(query_result):
+        if idx != 0:
+            assert entry.time == query_result[idx - 1].time + 3600
+
+        # For some reason there seems to be a discrepancy in the way results
+        # are returned between the different queries. It's only minor but seems
+        # like a cryptocompare issue
+        change_ts_1 = 1287140400 if forward else 1287133200
+        change_ts_2 = 1294340400 if forward else 1294333200
+
+        if entry.time <= change_ts_1:
+            assert entry.low == entry.high == FVal('0.05454')
+        elif entry.time <= change_ts_2:
+            assert entry.low == entry.high == FVal('0.105')
+        elif entry.time <= 1301544000:
+            assert entry.low == entry.high == FVal('0.298')
+        else:
+            raise AssertionError(f'Unexpected time entry {entry.time}')
+
+
 @pytest.mark.freeze_time
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_cryptocompare_histohour_data(data_dir, database, freezer):
-    """Test that the cryptocompare histohour data retrieval works properly"""
-    # first timestamp cryptocompare has histohour BTC/USD is: 1279940400
+def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer):
+    """Test that the cryptocompare histohour data retrieval works properly
+
+    This test checks that doing an additional query in the future works properly
+    and appends the cached data with the newly returned data
+    """
+    # first timestamp cryptocompare has histohour BTC/USD when queried from this test is
     btc_start_ts = 1279940400
     now_ts = btc_start_ts + 3600 * 2000 + 122
     freezer.move_to(datetime.fromtimestamp(now_ts))
@@ -98,26 +124,49 @@ def test_cryptocompare_histohour_data(data_dir, database, freezer):
         only_check_cache=False,
     )
     assert len(result) == CRYPTOCOMPARE_HOURQUERYLIMIT * 3 + 2
-
-    def check_result(query_result):
-        for idx, entry in enumerate(query_result):
-            if idx != 0:
-                assert entry.time == query_result[idx - 1].time + 3600
-
-            if entry.time <= 1287140400:
-                assert entry.low == entry.high == FVal('0.05454')
-            elif entry.time <= 1294340400:
-                assert entry.low == entry.high == FVal('0.105')
-            elif entry.time <= 1301544000:
-                assert entry.low == entry.high == FVal('0.298')
-            else:
-                raise AssertionError(f'Unexpected time entry {entry.time}')
-
-    check_result(result)
+    check_cc_result(result, forward=True)
     assert cache_key in cc.price_history
     assert cc.price_history[cache_key].start_time == btc_start_ts
     assert cc.price_history[cache_key].end_time == now_ts
-    check_result(cc.price_history[cache_key].data)
+    check_cc_result(cc.price_history[cache_key].data, forward=True)
+
+
+@pytest.mark.freeze_time
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer):
+    """Test that the cryptocompare histohour data retrieval works properly
+
+    This test checks that doing an additional query in the past workd properly
+    and that the cached data are properly appended to the cached result. In production
+    this scenario should not happen often. Only way to happen if cryptocompare somehow adds
+    older data than what was previously queried.
+    """
+    # first timestamp cryptocompare has histohour BTC/USD when queried from this test is
+    btc_start_ts = 1279936800
+    # first timestamp cryptocompare has histohour BTC/USD is: 1279940400
+    now_ts = btc_start_ts + 3600 * 2000 + 122
+    # create a cache file for BTC_USD
+    contents = """{"start_time": 1301536800, "end_time": 1301540400,
+    "data": [{"time": 1301536800, "close": 0.298, "high": 0.298, "low": 0.298, "open": 0.298,
+    "volumefrom": 0.298, "volumeto": 0.298}, {"time": 1301540400, "close": 0.298, "high": 0.298,
+    "low": 0.298, "open": 0.298, "volumefrom": 0.298, "volumeto": 0.298}]}"""
+    with open(os.path.join(data_dir, 'price_history_BTC_USD.json'), 'w') as f:
+        f.write(contents)
+    freezer.move_to(datetime.fromtimestamp(now_ts))
+    cc = Cryptocompare(data_directory=data_dir, database=database)
+    result = cc.get_historical_data(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        timestamp=now_ts - 3600 * 2 - 55,
+        only_check_cache=False,
+    )
+    cache_key = PairCacheKey('BTC_USD')
+    assert len(result) == CRYPTOCOMPARE_HOURQUERYLIMIT * 3 + 2
+    check_cc_result(result, forward=False)
+    assert cache_key in cc.price_history
+    assert cc.price_history[cache_key].start_time == btc_start_ts
+    assert cc.price_history[cache_key].end_time == now_ts
+    check_cc_result(cc.price_history[cache_key].data, forward=False)
 
 
 @pytest.mark.skip(

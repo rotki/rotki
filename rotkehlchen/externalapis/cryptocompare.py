@@ -621,7 +621,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 # all prices zero Means we have reached the end of available prices
                 break
 
-            # __import__("pdb").set_trace()
             end_date = Timestamp(end_date - (CRYPTOCOMPARE_HOURQUERYLIMIT * 3600))
             if end_date != resp['TimeFrom']:
                 # If we get more than we needed, since we are close to the now_ts
@@ -686,7 +685,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
             to_asset=to_asset,
             timestamp=timestamp,
         )
-
         cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
         got_cached_value = self._got_cached_price(cache_key, timestamp)
         if got_cached_value:
@@ -696,12 +694,10 @@ class Cryptocompare(ExternalServiceWithApiKey):
             return None
 
         now_ts = ts_now()
-        # calculated_history: List[Dict[str, Any]] = []
         if cache_key in self.price_history:
             old_data = self.price_history[cache_key].data
             if timestamp > self.price_history[cache_key].end_time:
                 # We have a cache but the requested timestamp does not hit it
-                # __import__("pdb").set_trace()
                 new_data = self._get_histohour_data_for_range(
                     from_asset=from_asset,
                     to_asset=to_asset,
@@ -711,14 +707,15 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 if old_data[-1].time == new_data[0]['time']:
                     old_data = old_data[:-1]
                 new_history = deque([x._asdict() for x in old_data]) + new_data
-            else:  # only other possibility, timestamp < cached start_time
+            else:
+                # only other possibility, timestamp < cached start_time
+                # Get all available data, even before to_timestamp
                 new_data = self._get_histohour_data_for_range(
                     from_asset=from_asset,
                     to_asset=to_asset,
                     from_timestamp=self.price_history[cache_key].start_time,
-                    to_timestamp=timestamp,
+                    to_timestamp=Timestamp(0),
                 )
-                # new_data.reverse()
                 if new_data[-1]['time'] == old_data[0].time:
                     new_data.pop()
                 new_history = new_data + deque([x._asdict() for x in old_data])
@@ -732,7 +729,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 from_timestamp=now_ts,
                 to_timestamp=Timestamp(0),
             ))
-            # calculated_history = calculated_history[::-1]
 
         # Let's always check for data sanity for the hourly prices.
         _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
