@@ -5933,6 +5933,109 @@ Dealing with ignored assets
    :statuscode 409: User is not logged in. One of the assets provided is not on the list.
    :statuscode 500: Internal Rotki error
 
+
+Dealing with ignored actions
+===========================
+
+.. http:get:: /api/(version)/actions/ignored
+
+   Doing a GET on the ignored actions endpoint will return a list of all action identifiers that the user has set to have ignored during accounting.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/actions/ignored HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["X124-JYI", "2325"],
+          "message": ""
+      }
+
+   :resjson list result: A list of action identifiers that will be ignored during accounting
+   :statuscode 200: Actions succesfully queried
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+
+.. http:put:: /api/(version)/actions/ignored
+
+   Doing a PUT on the ignored actions endpoint will add action identifiers for ignoring during accounting. Returns the list of all ignored action identifiers after the addition.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/actions/ignored HTTP/1.1
+      Host: localhost:5042
+
+      {"action_ids": ["Z231-XH23K"]}
+
+   :reqjson list action_ids: A list of action identifiers to add to the ignored actions for accounting
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["Z231-XH23K", "X124-JYI", "2325"],
+          "message": ""
+      }
+
+   :resjson list result: A list of action identifiers that are ignored during accounting.
+   :statuscode 200: Action ids succesfully added
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in. One of the action ids provided is already on the list.
+   :statuscode 500: Internal Rotki error
+
+.. http:delete:: /api/(version)/actions/ignored/
+
+   Doing a DELETE on the ignored actions endpoint removes action ids from the list of actions to be ignored during accounting.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/actions/ignored HTTP/1.1
+      Host: localhost:5042
+
+      {"action_ids": ["2325"]}
+
+   :reqjson list action_ids: A list of action identifiers to remove from the ignored action ids list.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["Z231-XH23K", "X124-JYI"],
+          "message": ""
+      }
+
+   :resjson list result: A list of action identifiers that are currently ignored during accounting.
+   :statuscode 200: Action ids succesfully removed
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in. One of the action ids provided is not on the list.
+   :statuscode 500: Internal Rotki error
+
+
 Querying the version
 ====================
 
