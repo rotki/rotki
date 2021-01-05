@@ -312,12 +312,19 @@ class Accountant():
 
         prev_time = Timestamp(0)
         count = 0
+        ignored_action_ids = self.db.get_ignored_action_ids()
         for action in actions:
             try:
                 (
                     should_continue,
                     prev_time,
-                ) = self.process_action(action, end_ts, prev_time, db_settings)
+                ) = self.process_action(
+                    action=action,
+                    end_ts=end_ts,
+                    prev_time=prev_time,
+                    db_settings=db_settings,
+                    ignored_action_ids=ignored_action_ids,
+                )
             except PriceQueryUnsupportedAsset as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
@@ -405,6 +412,7 @@ class Accountant():
             end_ts: Timestamp,
             prev_time: Timestamp,
             db_settings: DBSettings,
+            ignored_action_ids: List[str],
     ) -> Tuple[bool, Timestamp]:
         """Processes each individual action and returns whether we should continue
         looping through the rest of the actions or not
@@ -503,6 +511,14 @@ class Accountant():
 
         # else if we get here it's a trade
         trade = cast(Trade, action)
+        # This should eventually be the trade id as given by rotki and not "link"
+        # so that user can input it from the ui by selecting the trade in there
+        if trade.link in ignored_action_ids:
+            log.info(
+                f'Ignoring {trade.location} trade at {trade.timestamp} due to matching ignored id',
+            )
+            return True, prev_time
+
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
         # costs in cost_currency

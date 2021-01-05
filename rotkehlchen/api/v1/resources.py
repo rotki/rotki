@@ -15,6 +15,7 @@ from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
+    IgnoredActionsSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -822,6 +823,22 @@ class IgnoredAssetsResource(BaseResource):
     @use_kwargs(modify_schema, location='json')  # type: ignore
     def delete(self, assets: List[Asset]) -> Response:
         return self.rest_api.remove_ignored_assets(assets=assets)
+
+
+class IgnoredActionsResource(BaseResource):
+
+    modify_schema = IgnoredActionsSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_ignored_action_ids()
+
+    @use_kwargs(modify_schema, location='json')  # type: ignore
+    def put(self, action_ids: List[str]) -> Response:
+        return self.rest_api.add_ignored_action_ids(action_ids=action_ids)
+
+    @use_kwargs(modify_schema, location='json')  # type: ignore
+    def delete(self, action_ids: List[str]) -> Response:
+        return self.rest_api.remove_ignored_action_ids(action_ids=action_ids)
 
 
 class QueriedAddressesResource(BaseResource):

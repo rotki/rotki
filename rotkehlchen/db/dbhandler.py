@@ -648,6 +648,7 @@ class DBHandler:
             (asset.identifier,),
         )
         self.conn.commit()
+        self.update_last_write()
 
     def get_ignored_assets(self) -> List[Asset]:
         cursor = self.conn.cursor()
@@ -655,6 +656,33 @@ class DBHandler:
             'SELECT value FROM multisettings WHERE name="ignored_asset";',
         )
         return [Asset(q[0]) for q in cursor]
+
+    def add_to_ignored_action_ids(self, identifiers: List[str]) -> None:
+        cursor = self.conn.cursor()
+        tuples = [('ignored_action', x) for x in identifiers]
+        cursor.executemany(
+            'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+            tuples,
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def remove_from_ignored_action_ids(self, identifiers: List[str]) -> None:
+        cursor = self.conn.cursor()
+        tuples = [(x,) for x in identifiers]
+        cursor.executemany(
+            'DELETE FROM multisettings WHERE name="ignored_action" AND value=?;',
+            tuples,
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_ignored_action_ids(self) -> List[str]:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'SELECT value FROM multisettings WHERE name="ignored_action";',
+        )
+        return [q[0] for q in cursor]
 
     def add_multiple_balances(self, balances: List[AssetBalance]) -> None:
         """Execute addition of multiple balances in the DB"""

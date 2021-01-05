@@ -1488,6 +1488,34 @@ class RestAPI():
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
+    def get_ignored_action_ids(self) -> Response:
+        result = self.rotkehlchen.data.db.get_ignored_action_ids()
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def add_ignored_action_ids(self, action_ids: List[str]) -> Response:
+        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
+        if any(x in ignored_action_ids for x in action_ids):
+            msg = 'One of the given action ids already exists in the database'
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+        self.rotkehlchen.data.db.add_to_ignored_action_ids(identifiers=action_ids)
+        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
+        result_dict = _wrap_in_ok_result(process_result_list(ignored_action_ids))
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def remove_ignored_action_ids(self, action_ids: List[str]) -> Response:
+        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
+        if not all(x in ignored_action_ids for x in action_ids):
+            msg = 'One of the given action ids does not exist in the database'
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        self.rotkehlchen.data.db.remove_from_ignored_action_ids(identifiers=action_ids)
+        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
+        result_dict = _wrap_in_ok_result(process_result_list(ignored_action_ids))
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
     def get_queried_addresses_per_module(self) -> Response:
         result = QueriedAddresses(self.rotkehlchen.data.db).get_queried_addresses_per_module()
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)

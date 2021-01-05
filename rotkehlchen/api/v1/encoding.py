@@ -1088,6 +1088,10 @@ class IgnoredAssetsSchema(Schema):
     assets = fields.List(AssetField(), required=True)
 
 
+class IgnoredActionsSchema(Schema):
+    action_ids = fields.List(fields.String(required=True), required=True)
+
+
 class QueriedAddressesSchema(Schema):
     module = fields.String(
         required=True,
