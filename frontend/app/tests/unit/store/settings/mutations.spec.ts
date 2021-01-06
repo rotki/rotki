@@ -4,7 +4,9 @@ import {
   TIMEFRAME_YEAR,
   LAST_KNOWN_TIMEFRAME,
   TIMEFRAME_TWO_WEEKS,
-  QUERY_PERIOD
+  QUERY_PERIOD,
+  TAX_REPORT_PERIOD,
+  Q3
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 import store from '@/store/store';
@@ -15,7 +17,11 @@ describe('settings:mutations', () => {
       [DEFI_SETUP_DONE]: true,
       [TIMEFRAME_SETTING]: TIMEFRAME_YEAR,
       [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_TWO_WEEKS,
-      [QUERY_PERIOD]: 5
+      [QUERY_PERIOD]: 5,
+      [TAX_REPORT_PERIOD]: {
+        year: '2018',
+        quarter: Q3
+      }
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -23,5 +29,9 @@ describe('settings:mutations', () => {
     expect(settings[TIMEFRAME_SETTING]).toBe(TIMEFRAME_YEAR);
     expect(settings[LAST_KNOWN_TIMEFRAME]).toBe(TIMEFRAME_TWO_WEEKS);
     expect(settings[QUERY_PERIOD]).toBe(5);
+    expect(settings[TAX_REPORT_PERIOD]).toMatchObject({
+      year: '2018',
+      quarter: Q3
+    });
   });
 });

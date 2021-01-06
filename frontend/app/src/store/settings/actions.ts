@@ -1,4 +1,5 @@
 import { ActionContext, ActionTree } from 'vuex';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { FrontendSettingsPayload, SettingsState } from '@/store/settings/types';
 import { ActionStatus, RotkehlchenState } from '@/store/types';
@@ -27,7 +28,7 @@ export const actions: ActionTree<SettingsState, RotkehlchenState> & Actions = {
 
     try {
       await api.setSettings({
-        frontend_settings: JSON.stringify(state)
+        frontend_settings: JSON.stringify(axiosSnakeCaseTransformer(state))
       });
       success = true;
     } catch (e) {

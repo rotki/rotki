@@ -252,7 +252,13 @@
     "only_csv": "Only csv files are allowed"
   },
   "generate": {
+    "custom_selection": "Custom",
     "generate": "Generate",
+    "period": "Period",
+    "sub_period_label": "Period Details",
+    "sub_period": {
+      "all": "All"
+    },
     "title": "Generate",
     "validation": {
       "empty_end_date": "End date cannot be empty",

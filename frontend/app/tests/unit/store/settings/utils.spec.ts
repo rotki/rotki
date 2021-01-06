@@ -4,7 +4,9 @@ import {
   TIMEFRAME_ALL,
   TIMEFRAME_REMEMBER,
   LAST_KNOWN_TIMEFRAME,
-  QUERY_PERIOD
+  QUERY_PERIOD,
+  TAX_REPORT_PERIOD,
+  ALL
 } from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
 
@@ -37,14 +39,21 @@ describe('settings:utils', () => {
   test('restore valid properties', async () => {
     expect.assertions(1);
     const commit = jest.fn();
-    loadFrontendSettings(commit, JSON.stringify({ [DEFI_SETUP_DONE]: true }));
+    loadFrontendSettings(
+      commit,
+      JSON.stringify({ [DEFI_SETUP_DONE]: true, invalid: 2 })
+    );
     expect(commit).toHaveBeenCalledWith(
       'settings/restore',
       {
         [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
         [DEFI_SETUP_DONE]: true,
         [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL,
-        [QUERY_PERIOD]: 5
+        [QUERY_PERIOD]: 5,
+        [TAX_REPORT_PERIOD]: {
+          year: new Date().getFullYear().toString(),
+          quarter: ALL
+        }
       },
       { root: true }
     );

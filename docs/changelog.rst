@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1950` Users can now use a predefined yearly or quarterly range when generating a tax report.
 * :bug:`2013` Show correct fee currency for Bitfinex trades.
 
 * :release:`1.11.0 <2020-12-30>`
