@@ -59,9 +59,8 @@ type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
     AmountCurrency
   },
   computed: {
-    ...mapGetters('session', [
-      'floatingPrecision',
-      'currency',
+    ...mapGetters('session', ['floatingPrecision', 'currency']),
+    ...mapGetters('settings', [
       'thousandSeparator',
       'decimalSeparator',
       'currencyLocation'

@@ -483,12 +483,12 @@
         "success": "Decimal separator set to {decimalSeparator}"
       },
       "periodic_query": {
-        "error": "Error setting query period: {message}",
+        "error": "Error setting query period",
         "success": "Query period set to {period} seconds",
         "invalid_period": "Period must be between {start} and {end}"
       },
       "timeframe": {
-        "error": "Failed to set the default timeframe for the user: {message}",
+        "error": "Failed to set the default timeframe for the user",
         "success": "Default timeframe set to {timeframe}"
       }
     }

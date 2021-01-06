@@ -1,3 +1,4 @@
+import { Defaults } from '@/data/defaults';
 import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
@@ -6,7 +7,10 @@ import {
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
   TAX_REPORT_PERIOD,
-  ALL
+  ALL,
+  THOUSAND_SEPARATOR,
+  DECIMAL_SEPARATOR,
+  CURRENCY_LOCATION
 } from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
 
@@ -53,7 +57,10 @@ describe('settings:utils', () => {
         [TAX_REPORT_PERIOD]: {
           year: new Date().getFullYear().toString(),
           quarter: ALL
-        }
+        },
+        [THOUSAND_SEPARATOR]: Defaults.DEFAULT_THOUSAND_SEPARATOR,
+        [DECIMAL_SEPARATOR]: Defaults.DEFAULT_DECIMAL_SEPARATOR,
+        [CURRENCY_LOCATION]: Defaults.DEFAULT_CURRENCY_LOCATION
       },
       { root: true }
     );

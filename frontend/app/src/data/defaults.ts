@@ -1,8 +1,10 @@
+import { CURRENCY_AFTER, CurrencyLocation } from '@/typing/types';
+
 export class Defaults {
   static DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z';
   static DEFAULT_THOUSAND_SEPARATOR = ',';
   static DEFAULT_DECIMAL_SEPARATOR = '.';
-  static DEFAULT_CURRENCY_LOCATION: 'after' | 'before' = 'after';
+  static DEFAULT_CURRENCY_LOCATION: CurrencyLocation = CURRENCY_AFTER;
   static FLOATING_PRECISION = 2;
   static RPC_ENDPOINT = 'http://localhost:8545';
   static BALANCE_SAVE_FREQUENCY = 24;
