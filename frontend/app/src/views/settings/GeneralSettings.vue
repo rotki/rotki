@@ -253,9 +253,12 @@ import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { monitor } from '@/services/monitoring';
 import {
-  TIMEFRAME_SETTING,
+  CURRENCY_LOCATION,
+  DECIMAL_SEPARATOR,
+  QUERY_PERIOD,
+  THOUSAND_SEPARATOR,
   TIMEFRAME_ALL,
-  QUERY_PERIOD
+  TIMEFRAME_SETTING
 } from '@/store/settings/consts';
 import {
   FrontendSettingsPayload,
@@ -405,19 +408,21 @@ export default class General extends Settings {
   }
 
   async onTimeframeChange(timeframe: TimeFrameSetting) {
-    const { success, message } = await this.updateSetting({
+    const payload: FrontendSettingsPayload = {
       [TIMEFRAME_SETTING]: timeframe
-    });
-    this.validateSettingChange(
+    };
+
+    const messages: BaseMessage = {
+      success: this.$t('general_settings.validation.timeframe.success', {
+        timeframe: timeframe
+      }).toString(),
+      error: this.$t('general_settings.validation.timeframe.error').toString()
+    };
+
+    const { success } = await this.modifyFrontendSetting(
+      payload,
       SETTING_TIMEFRAME,
-      success ? 'success' : 'error',
-      success
-        ? `${this.$t('general_settings.validation.timeframe.success', {
-            timeframe: timeframe
-          })}`
-        : `${this.$t('general_settings.validation.timeframe.error', {
-            message
-          })}`
+      messages
     );
 
     if (success) {
@@ -486,19 +491,22 @@ export default class General extends Settings {
       this.queryPeriod = this.$store.state.settings![QUERY_PERIOD].toString();
       return;
     }
-    const { success, message } = await this.updateSetting({
-      [QUERY_PERIOD]: period
-    });
-    this.validateSettingChange(
+
+    const messages: BaseMessage = {
+      success: this.$t('general_settings.validation.periodic_query.success', {
+        period
+      }).toString(),
+      error: this.$t(
+        'general_settings.validation.periodic_query.error'
+      ).toString()
+    };
+
+    const { success } = await this.modifyFrontendSetting(
+      {
+        [QUERY_PERIOD]: period
+      },
       SETTING_QUERY_PERIOD,
-      success ? 'success' : 'error',
-      success
-        ? `${this.$t('general_settings.validation.periodic_query.success', {
-            period
-          })}`
-        : `${this.$t('general_settings.validation.periodic_query.error', {
-            message
-          })}`
+      messages
     );
 
     if (success) {
@@ -522,37 +530,51 @@ export default class General extends Settings {
     );
   }
 
+  async modifyFrontendSetting(
+    payload: FrontendSettingsPayload,
+    setting: SettingsEntries,
+    messages: BaseMessage
+  ): Promise<ActionStatus> {
+    const result = await this.updateSetting(payload);
+    const { success } = result;
+
+    this.validateSettingChange(
+      setting,
+      success ? 'success' : 'error',
+      success ? messages.success : messages.error
+    );
+    return result;
+  }
+
   async onThousandSeparatorChange(thousandSeparator: string) {
-    const message: BaseMessage = {
-      success: `${this.$t(
+    const messages: BaseMessage = {
+      success: this.$t(
         'general_settings.validation.thousand_separator.success',
         { thousandSeparator }
-      )}`,
-      error: `${this.$t(
+      ).toString(),
+      error: this.$t(
         'general_settings.validation.thousand_separator.error'
-      )}`
+      ).toString()
     };
 
-    await this.update(
-      { thousand_separator: thousandSeparator },
+    await this.modifyFrontendSetting(
+      { [THOUSAND_SEPARATOR]: this.thousandSeparator },
       SETTING_THOUSAND_SEPARATOR,
-      message
+      messages
     );
   }
 
   async onDecimalSeparatorChange(decimalSeparator: string) {
     const message: BaseMessage = {
-      success: `${this.$t(
+      success: this.$t(
         'general_settings.validation.decimal_separator.success',
-        {
-          decimalSeparator
-        }
-      )}`,
+        { decimalSeparator }
+      ).toString(),
       error: `${this.$t('general_settings.validation.decimal_separator.error')}`
     };
 
-    await this.update(
-      { decimal_separator: decimalSeparator },
+    await this.modifyFrontendSetting(
+      { [DECIMAL_SEPARATOR]: this.decimalSeparator },
       SETTING_DECIMAL_SEPARATOR,
       message
     );
@@ -560,17 +582,15 @@ export default class General extends Settings {
 
   async onCurrencyLocationChange(currencyLocation: CurrencyLocation) {
     const message: BaseMessage = {
-      success: `${this.$t(
+      success: this.$t(
         'general_settings.validation.currency_location.success',
-        {
-          currencyLocation
-        }
-      )}`,
+        { currencyLocation }
+      ).toString(),
       error: `${this.$t('general_settings.validation.currency_location.error')}`
     };
 
-    await this.update(
-      { currency_location: currencyLocation },
+    await this.modifyFrontendSetting(
+      { [CURRENCY_LOCATION]: this.currencyLocation },
       SETTING_CURRENCY_LOCATION,
       message
     );
@@ -775,15 +795,15 @@ export default class General extends Settings {
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
-    this.thousandSeparator = settings.thousandSeparator;
-    this.decimalSeparator = settings.decimalSeparator;
-    this.currencyLocation = settings.currencyLocation;
     this.date = this.parseDate(settings.historicDataStart) || '';
     this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();
     const state = this.$store.state;
     this.scrambleData = state.session.scrambleData;
     this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
     this.queryPeriod = state.settings![QUERY_PERIOD].toString();
+    this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
+    this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];
+    this.currencyLocation = state.settings![CURRENCY_LOCATION];
   }
 
   notTheSame<T>(value: T, oldValue: T): T | undefined {

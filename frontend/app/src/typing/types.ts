@@ -115,9 +115,6 @@ interface SettingsPayload {
   eth_rpc_endpoint: string;
   ui_floating_precision: number;
   date_display_format: string;
-  thousand_separator: string;
-  decimal_separator: string;
-  currency_location: CurrencyLocation;
   include_gas_costs: boolean;
   include_crypto2crypto: boolean;
   taxfree_after_period: number;
