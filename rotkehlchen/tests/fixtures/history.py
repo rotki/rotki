@@ -19,8 +19,8 @@ def fixture_session_cryptocompare(session_data_dir, session_database):
 
 
 @pytest.fixture(scope='session', name='session_coingecko')
-def fixture_session_coingecko():
-    return Coingecko()
+def fixture_session_coingecko(session_data_dir):
+    return Coingecko(data_directory=session_data_dir)
 
 
 @pytest.fixture

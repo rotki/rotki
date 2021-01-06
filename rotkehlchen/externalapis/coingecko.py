@@ -5,6 +5,8 @@ from urllib.parse import urlencode
 
 import requests
 from typing_extensions import Literal
+from json.decoder import JSONDecodeError
+from pathlib import Path
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
@@ -12,11 +14,14 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
-from rotkehlchen.utils.serialization import rlk_jsonloads
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsondumps, rlk_jsonloads
 from rotkehlchen.utils.misc import timestamp_to_date
+from rotkehlchen.utils.misc import get_or_make_price_history_dir
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+PRICE_HISTORY_FILE_PREFIX = 'gecko_price_history_'
 
 
 class CoingeckoImageURLs(NamedTuple):
@@ -97,9 +102,10 @@ COINGECKO_SIMPLE_VS_CURRENCIES = [
 
 class Coingecko():
 
-    def __init__(self) -> None:
+    def __init__(self, data_directory: Path) -> None:
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        self.data_directory = data_directory
 
     @overload  # noqa: F811
     def _query(
@@ -257,6 +263,53 @@ class Coingecko():
             )
             return Price(ZERO)
 
+    def _get_cached_price(self, from_asset: Asset, to_asset: Asset, date: str) -> Optional[Price]:
+        price_history_dir = get_or_make_price_history_dir(self.data_directory)
+        filename = (
+            price_history_dir /
+            f'{PRICE_HISTORY_FILE_PREFIX }{from_asset.identifier}_{to_asset.identifier}.json'
+        )
+        if not filename.is_file():
+            return None
+
+        with open(filename, 'r') as f:
+            try:
+                data: Dict[str, Price] = rlk_jsonloads_dict(f.read())
+            except JSONDecodeError:
+                return None
+
+        if not isinstance(data, dict):
+            return None
+
+        return data.get(date, None)
+
+    def _save_cached_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            date: str,
+            price: Price,
+    ) -> None:
+        price_history_dir = get_or_make_price_history_dir(self.data_directory)
+        filename = (
+            price_history_dir /
+            f'{PRICE_HISTORY_FILE_PREFIX }{from_asset.identifier}_{to_asset.identifier}.json'
+        )
+        data: Dict[str, Price] = {}
+        if filename.is_file():
+            with open(filename, 'r') as f:
+                try:
+                    data = rlk_jsonloads_dict(f.read())
+                except JSONDecodeError:
+                    data = {}
+
+        if not isinstance(data, dict):
+            data = {}
+
+        data[date] = price
+        with open(filename, 'w') as outfile:
+            outfile.write(rlk_jsondumps(data))
+
     def historical_price(self, from_asset: Asset, to_asset: Asset, time: Timestamp) -> Price:
         vs_currency = Coingecko.check_vs_currencies(
             from_asset=from_asset,
@@ -273,17 +326,22 @@ class Coingecko():
             )
             return Price(ZERO)
 
+        date = timestamp_to_date(time, formatstr='%d-%m-%Y')
+        cached_price = self._get_cached_price(from_asset=from_asset, to_asset=to_asset, date=date)
+        if cached_price is not None:
+            return cached_price
+
         result = self._query(
             module='coins',
             subpath=f'{from_asset.coingecko}/history',
             options={
-                'date': timestamp_to_date(time, formatstr='%d-%m-%Y'),
+                'date': date,
                 'localization': False,
             },
         )
 
         try:
-            return Price(FVal(result['market_data']['current_price'][vs_currency]))
+            price = Price(FVal(result['market_data']['current_price'][vs_currency]))
         except KeyError as e:
             log.warning(
                 f'Queried coingecko historical price from {from_asset.identifier} '
@@ -291,3 +349,6 @@ class Coingecko():
                 f'processing the result.',
             )
             return Price(ZERO)
+
+        self._save_cached_price(from_asset, to_asset, date, price)
+        return price

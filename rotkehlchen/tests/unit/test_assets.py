@@ -88,7 +88,7 @@ def test_asset_identifiers_are_unique_all_lowercased():
         identifier_set.add(asset_id)
 
 
-def test_coingecko_identifiers_are_reachable():
+def test_coingecko_identifiers_are_reachable(data_dir):
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
@@ -170,7 +170,7 @@ def test_coingecko_identifiers_are_reachable():
         'aLEND',
         'aREP',
     ]
-    coingecko = Coingecko()
+    coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
     for identifier, asset_data in AssetResolver().assets.items():
         if identifier in coins_delisted_from_coingecko:

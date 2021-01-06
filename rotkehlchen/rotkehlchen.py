@@ -125,7 +125,7 @@ class Rotkehlchen():
         AssetResolver(data_directory=self.data_dir)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
-        self.coingecko = Coingecko()
+        self.coingecko = Coingecko(data_directory=self.data_dir)
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
