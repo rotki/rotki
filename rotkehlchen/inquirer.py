@@ -23,6 +23,7 @@ from rotkehlchen.constants.assets import (
     A_YFI,
     FIAT_CURRENCIES,
 )
+from rotkehlchen.constants import PRICE_HISTORY_DIR
 from rotkehlchen.errors import PriceQueryUnsupportedAsset, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -164,7 +165,10 @@ class Inquirer():
         Inquirer.__instance._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
-        filename = data_dir / 'price_history_forex.json'
+        # Make price history directory if it does not exist
+        price_history_dir = data_dir / PRICE_HISTORY_DIR
+        price_history_dir.mkdir(parents=True, exist_ok=True)
+        filename = price_history_dir / 'price_history_forex.json'
         try:
             with open(filename, 'r') as f:
                 # we know price_history_forex contains a dict
@@ -357,7 +361,10 @@ class Inquirer():
     @staticmethod
     def save_historical_forex_data() -> None:
         instance = Inquirer()
-        filename = instance._data_directory / 'price_history_forex.json'
+        # Make price history directory if it does not exist
+        price_history_dir = instance._data_directory / PRICE_HISTORY_DIR
+        price_history_dir.mkdir(parents=True, exist_ok=True)
+        filename = price_history_dir / 'price_history_forex.json'
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(instance._cached_forex_data))
 

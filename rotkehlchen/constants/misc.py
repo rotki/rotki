@@ -16,6 +16,7 @@ EV_DEFI = EventType('defi_event')
 ZERO = FVal(0)
 ONE = FVal(1)
 
+PRICE_HISTORY_DIR = 'price_history'
 
 # API URLS
 KRAKEN_BASE_URL = 'https://api.kraken.com'
