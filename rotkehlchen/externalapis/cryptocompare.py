@@ -12,7 +12,7 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import ZERO, PRICE_HISTORY_DIR
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_USD, A_USDT, A_WETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
@@ -31,6 +31,7 @@ from rotkehlchen.utils.misc import (
     timestamp_to_date,
     ts_now,
     write_history_data_in_file,
+    get_or_make_price_history_dir,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
@@ -230,9 +231,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
-        # Make price history directory if it does not exist
-        price_history_dir = self.data_directory / PRICE_HISTORY_DIR
-        price_history_dir.mkdir(parents=True, exist_ok=True)
+        price_history_dir = get_or_make_price_history_dir(data_directory)
         # Check the data folder and remember the filenames of any cached history
         prefix = os.path.join(str(price_history_dir), PRICE_HISTORY_FILE_PREFIX)
         prefix = prefix.replace('\\', '\\\\')
@@ -750,8 +749,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
         # and now since we actually queried the data let's also cache them
         filename = (
-            self.data_directory /
-            PRICE_HISTORY_DIR /
+            get_or_make_price_history_dir(self.data_directory) /
             (PRICE_HISTORY_FILE_PREFIX + cache_key + '.json')
         )
         log.info(
