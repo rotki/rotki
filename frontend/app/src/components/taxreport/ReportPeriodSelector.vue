@@ -25,6 +25,7 @@
           v-for="subPeriod in subPeriod"
           :key="subPeriod.id"
           :value="subPeriod.id"
+          :disabled="isStartAfterNow(subPeriod.id)"
           label
           class="ma-2"
           small
@@ -37,41 +38,58 @@
 </template>
 
 <script lang="ts">
+import moment from 'moment';
 import { Component, Emit, Vue, Watch } from 'vue-property-decorator';
 
 type ChangedParams = { start: string; end: string };
 
+const Q1 = 'Q1';
+const Q2 = 'Q2';
+const Q3 = 'Q3';
+const Q4 = 'Q4';
+const ALL = 'ALL';
+
+const QUARTERS = [Q1, Q2, Q3, Q4, ALL] as const;
+type Quarter = typeof QUARTERS[number];
+
+const QUARTER_STARTS: { [quarter in Quarter]: string } = {
+  [ALL]: '01/01',
+  [Q1]: '01/01',
+  [Q2]: '01/04',
+  [Q3]: '01/07',
+  [Q4]: '01/10'
+};
+
+const QUARTER_ENDS: { [quarter in Quarter]: string } = {
+  [Q1]: '31/03',
+  [Q2]: '30/06',
+  [Q3]: '30/09',
+  [Q4]: '31/12',
+  [ALL]: '31/12'
+};
+
 @Component({})
 export default class ReportPeriodSelector extends Vue {
   yearSelection: string = new Date().getFullYear().toString();
-  detailsSelection: string = 'ALL';
+  detailsSelection: Quarter = ALL;
 
-  get start(): string {
-    let startDate: string;
-    if (this.detailsSelection === 'Q2') {
-      startDate = '01/04';
-    } else if (this.detailsSelection === 'Q3') {
-      startDate = '01/07';
-    } else if (this.detailsSelection === 'Q4') {
-      startDate = '01/10';
-    } else {
-      startDate = '01/01';
-    }
+  isStartAfterNow(selection: Quarter) {
+    const start = this.startDateTime(selection);
+    const startEpoch = moment(start, 'DD/MM/YYYY HH:mm:ss').unix();
+    return startEpoch >= moment().unix();
+  }
 
+  startDateTime(selection: Quarter): string {
+    const startDate = QUARTER_STARTS[selection];
     return `${startDate}/${this.yearSelection} 00:00`;
   }
 
+  get start(): string {
+    return this.startDateTime(this.detailsSelection);
+  }
+
   get end(): string {
-    let endDate: string;
-    if (this.detailsSelection === 'Q1') {
-      endDate = '31/03';
-    } else if (this.detailsSelection === 'Q2') {
-      endDate = '30/06';
-    } else if (this.detailsSelection === 'Q3') {
-      endDate = '30/09';
-    } else {
-      endDate = '31/12';
-    }
+    const endDate = QUARTER_ENDS[this.detailsSelection];
     return `${endDate}/${this.yearSelection} 23:59:59`;
   }
 
@@ -116,23 +134,23 @@ export default class ReportPeriodSelector extends Vue {
   get subPeriod() {
     return [
       {
-        id: 'ALL',
+        id: ALL,
         name: this.$t('generate.sub_period.all').toString()
       },
       {
-        id: 'Q1',
+        id: Q1,
         name: 'Q1'
       },
       {
-        id: 'Q2',
+        id: Q2,
         name: 'Q2'
       },
       {
-        id: 'Q3',
+        id: Q3,
         name: 'Q3'
       },
       {
-        id: 'Q4',
+        id: Q4,
         name: 'Q4'
       }
     ];
