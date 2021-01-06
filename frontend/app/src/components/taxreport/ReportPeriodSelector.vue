@@ -2,10 +2,15 @@
   <v-row>
     <v-col cols="12">
       <span class="title">{{ $t('generate.period') }}</span>
-      <v-chip-group v-model="yearSelection" mandatory>
+      <v-chip-group
+        :value="year"
+        mandatory
+        @change="onChange({ year: $event })"
+      >
         <v-chip
           v-for="period in periods"
           :key="period"
+          :color="year === period ? 'primary' : null"
           class="ma-2"
           :value="period"
           label
@@ -13,17 +18,28 @@
         >
           {{ period }}
         </v-chip>
-        <v-chip value="custom" class="ma-2" small label>
+        <v-chip
+          value="custom"
+          class="ma-2"
+          small
+          label
+          :color="isCustom ? 'primary' : null"
+        >
           {{ $t('generate.custom_selection') }}
         </v-chip>
       </v-chip-group>
     </v-col>
-    <v-col v-if="yearSelection !== 'custom'" cols="12">
+    <v-col v-if="year !== 'custom'" cols="12">
       <span class="title">{{ $t('generate.sub_period_label') }}</span>
-      <v-chip-group v-model="detailsSelection" mandatory>
+      <v-chip-group
+        :value="quarter"
+        mandatory
+        @change="onChange({ quarter: $event })"
+      >
         <v-chip
           v-for="subPeriod in subPeriod"
           :key="subPeriod.id"
+          :color="quarter === subPeriod.id ? 'primary' : null"
           :value="subPeriod.id"
           :disabled="isStartAfterNow(subPeriod.id)"
           label
@@ -39,18 +55,19 @@
 
 <script lang="ts">
 import moment from 'moment';
-import { Component, Emit, Vue, Watch } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { ALL, Q1, Q2, Q3, Q4, QUARTERS } from '@/store/settings/consts';
+import { Quarter } from '@/store/settings/types';
 
-type ChangedParams = { start: string; end: string };
+export type PeriodChangedEvent = {
+  start: string;
+  end: string;
+};
 
-const Q1 = 'Q1';
-const Q2 = 'Q2';
-const Q3 = 'Q3';
-const Q4 = 'Q4';
-const ALL = 'ALL';
-
-const QUARTERS = [Q1, Q2, Q3, Q4, ALL] as const;
-type Quarter = typeof QUARTERS[number];
+export type SelectionChangedEvent = {
+  readonly year: string | 'custom';
+  readonly quarter: Quarter;
+};
 
 const QUARTER_STARTS: { [quarter in Quarter]: string } = {
   [ALL]: '01/01',
@@ -70,8 +87,19 @@ const QUARTER_ENDS: { [quarter in Quarter]: string } = {
 
 @Component({})
 export default class ReportPeriodSelector extends Vue {
-  yearSelection: string = new Date().getFullYear().toString();
-  detailsSelection: Quarter = ALL;
+  @Prop({
+    required: true,
+    type: String,
+    default: () => new Date().getFullYear().toString()
+  })
+  year!: string | 'custom';
+  @Prop({
+    required: true,
+    type: String,
+    default: ALL,
+    validator: value => QUARTERS.includes(value)
+  })
+  quarter!: Quarter;
 
   isStartAfterNow(selection: Quarter) {
     const start = this.startDateTime(selection);
@@ -81,46 +109,52 @@ export default class ReportPeriodSelector extends Vue {
 
   startDateTime(selection: Quarter): string {
     const startDate = QUARTER_STARTS[selection];
-    return `${startDate}/${this.yearSelection} 00:00`;
+    return `${startDate}/${this.year} 00:00`;
+  }
+
+  onChange(change: { year?: string; quarter?: Quarter }) {
+    const year = change?.year ?? this.year;
+    const quarter = change?.quarter ?? this.quarter;
+
+    this.changed({ year, quarter });
+    this.periodUpdate(year !== 'custom' ? this.periodEventPayload : null);
   }
 
   get start(): string {
-    return this.startDateTime(this.detailsSelection);
+    return this.startDateTime(this.quarter);
   }
 
   get end(): string {
-    const endDate = QUARTER_ENDS[this.detailsSelection];
-    return `${endDate}/${this.yearSelection} 23:59:59`;
+    const endDate = QUARTER_ENDS[this.quarter];
+    return `${endDate}/${this.year} 23:59:59`;
+  }
+
+  get periodEventPayload(): PeriodChangedEvent {
+    return {
+      start: this.start,
+      end: this.end
+    };
   }
 
   private get isCustom(): boolean {
-    return this.yearSelection === 'custom';
+    return this.year === 'custom';
   }
 
-  @Watch('yearSelection')
-  onSelectionChange() {
-    this.custom(this.isCustom);
-    if (!this.isCustom) {
-      this.changed({ start: this.start, end: this.end });
-    }
+  @Watch('quarter')
+  onQuarterChange() {
+    this.periodUpdate(this.isCustom ? null : this.periodEventPayload);
   }
 
-  @Watch('detailsSelection')
-  onDetailSelectionChange() {
-    if (!this.isCustom) {
-      this.changed({ start: this.start, end: this.end });
-    }
-  }
-
-  created() {
-    this.changed({ start: this.start, end: this.end });
+  @Watch('year')
+  onYearChange() {
+    this.periodUpdate(this.isCustom ? null : this.periodEventPayload);
   }
 
   @Emit()
-  changed(_event: ChangedParams) {}
+  periodUpdate(_event: PeriodChangedEvent | null) {}
 
   @Emit()
-  custom(_value: boolean) {}
+  changed(_value: SelectionChangedEvent) {}
 
   get periods(): string[] {
     const periods: string[] = [];

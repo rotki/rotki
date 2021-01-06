@@ -2,11 +2,13 @@ import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
   LAST_KNOWN_TIMEFRAME,
-  QUERY_PERIOD
+  QUERY_PERIOD,
+  TAX_REPORT_PERIOD
 } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
 import {
   SettingsState,
+  TaxReportPeriod,
   TimeFramePeriod,
   TimeFrameSetting
 } from '@/store/settings/types';
@@ -17,6 +19,7 @@ type Mutations<S = SettingsState> = {
   [TIMEFRAME_SETTING](state: S, timeframe: TimeFrameSetting): void;
   [LAST_KNOWN_TIMEFRAME](state: S, timeframe: TimeFramePeriod): void;
   [QUERY_PERIOD](state: S, period: number): void;
+  [TAX_REPORT_PERIOD](state: S, period: TaxReportPeriod): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -39,6 +42,12 @@ export const mutations: Mutations = {
   },
   [QUERY_PERIOD](state: Writeable<SettingsState>, period: number) {
     state[QUERY_PERIOD] = period;
+  },
+  [TAX_REPORT_PERIOD](
+    state: Writeable<SettingsState>,
+    period: TaxReportPeriod
+  ) {
+    state[TAX_REPORT_PERIOD] = period;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);
