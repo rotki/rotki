@@ -294,6 +294,7 @@ class DataImporter():
 
         elif row_type in (
             'crypto_earn_program_created',
+            'crypto_earn_program_withdrawn',
             'lockup_lock',
             'lockup_unlock',
             'dynamic_coin_swap_bonus_exchange_deposit',
