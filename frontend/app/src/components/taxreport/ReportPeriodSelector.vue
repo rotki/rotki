@@ -124,6 +124,10 @@ export default class ReportPeriodSelector extends Vue {
     return this.startDateTime(this.quarter);
   }
 
+  mounted() {
+    this.periodUpdate(this.year !== 'custom' ? this.periodEventPayload : null);
+  }
+
   get end(): string {
     const endDate = QUARTER_ENDS[this.quarter];
     return `${endDate}/${this.year} 23:59:59`;
