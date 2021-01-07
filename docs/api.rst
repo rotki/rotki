@@ -5935,7 +5935,7 @@ Dealing with ignored assets
 
 
 Dealing with ignored actions
-===========================
+==============================
 
 .. http:get:: /api/(version)/actions/ignored
 
