@@ -2,9 +2,10 @@ import glob
 import logging
 import os
 import re
+from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
+from typing import Any, Deque, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
 
 import gevent
 import requests
@@ -12,7 +13,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_COMP, A_DAI, A_USD, A_USDT, A_WETH
+from rotkehlchen.constants.assets import A_COMP, A_DAI, A_USD, A_USDT, A_WETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
@@ -30,11 +31,14 @@ from rotkehlchen.utils.misc import (
     timestamp_to_date,
     ts_now,
     write_history_data_in_file,
+    get_or_make_price_history_dir,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+PRICE_HISTORY_FILE_PREFIX = 'cc_price_history_'
 
 
 T_PairCacheKey = str
@@ -134,6 +138,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('MIR'): Asset('USDC'),
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
+CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
 
 
 class PriceHistoryEntry(NamedTuple):
@@ -184,7 +189,7 @@ def _dict_history_to_data(data: Dict[str, Any]) -> PriceHistoryData:
 
 
 def _multiply_str_nums(a: str, b: str) -> str:
-    """Multiples two string numbers and returns the result as a string"""
+    """Multiplies two string numbers and returns the result as a string"""
     return str(FVal(a) * FVal(b))
 
 
@@ -209,9 +214,9 @@ def _check_hourly_data_sanity(
         diff = n2['time'] - n1['time']
         if diff != 3600:
             raise RemoteError(
-                'Unexpected fata format in cryptocompare query_endpoint_histohour. '
+                'Unexpected data format in cryptocompare query_endpoint_histohour. '
                 "Problem at indices {} and {} of {}_to_{} prices. Time difference is: {}".format(
-                    index, index + 1, from_asset, to_asset, diff),
+                    index, index + 1, from_asset.symbol, to_asset.symbol, diff),
             )
 
         index += 2
@@ -226,8 +231,9 @@ class Cryptocompare(ExternalServiceWithApiKey):
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
+        price_history_dir = get_or_make_price_history_dir(data_directory)
         # Check the data folder and remember the filenames of any cached history
-        prefix = os.path.join(str(self.data_directory), 'price_history_')
+        prefix = os.path.join(str(price_history_dir), PRICE_HISTORY_FILE_PREFIX)
         prefix = prefix.replace('\\', '\\\\')
         regex = re.compile(prefix + r'(.*)\.json')
         files_list = glob.glob(prefix + '*.json')
@@ -505,38 +511,180 @@ class Cryptocompare(ExternalServiceWithApiKey):
         result = self._api_query(query_path)
         return Price(FVal(result[cc_from_asset_symbol][cc_to_asset_symbol]))
 
-    def _got_cached_price(self, cache_key: PairCacheKey, timestamp: Timestamp) -> bool:
+    def get_cached_data(self, from_asset: Asset, to_asset: Asset) -> Optional[PriceHistoryData]:
+        cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
+        if cache_key not in self.price_history_file:
+            return None
+
+        if cache_key not in self.price_history:
+            try:
+                with open(self.price_history_file[cache_key], 'r') as f:
+                    data = rlk_jsonloads_dict(f.read())
+                    self.price_history[cache_key] = _dict_history_to_data(data)
+            except (OSError, JSONDecodeError):
+                return None
+
+        return self.price_history[cache_key]
+
+    def _got_cached_data_at_timestamp(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Optional[PriceHistoryData]:
         """Check if we got a price history for the timestamp cached"""
-        if cache_key in self.price_history_file:
-            if cache_key not in self.price_history:
-                try:
-                    with open(self.price_history_file[cache_key], 'r') as f:
-                        data = rlk_jsonloads_dict(f.read())
-                        self.price_history[cache_key] = _dict_history_to_data(data)
-                except (OSError, JSONDecodeError):
-                    return False
+        data = self.get_cached_data(from_asset, to_asset)
+        if data is not None and data.start_time <= timestamp < data.end_time:
+            return data
 
-            in_range = (
-                self.price_history[cache_key].start_time <= timestamp <
-                self.price_history[cache_key].end_time
+        return None
+
+    @staticmethod
+    def _retrieve_price_from_data(
+            data: Optional[List[PriceHistoryEntry]],
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
+        """Reads historical price data list returned from cryptocompare histohour
+        or cache and returns a price.
+
+        If nothing is found it returns Price(0). This can also happen if cryptocompare
+        returns a list of 0s for the timerange.
+        """
+        price = Price(ZERO)
+        if data is None or len(data) == 0:
+            return price
+
+        # all data are sorted and timestamps are always increasing by 1 hour
+        # find the closest entry to the provided timestamp
+        if timestamp >= data[0].time:
+            index_in_bounds = True
+            # convert_to_int can't raise here due to its input
+            index = convert_to_int((timestamp - data[0].time) / 3600, accept_only_exact=False)
+            if index > len(data) - 1:  # index out of bounds
+                # Try to see if index - 1 is there and if yes take it
+                if index > len(data):
+                    index = index - 1
+                else:  # give up. This happened: https://github.com/rotki/rotki/issues/1534
+                    log.error(
+                        f'Expected data index in cryptocompare historical hour price '
+                        f'not found. Queried price of: {from_asset.identifier} in '
+                        f'{to_asset.identifier} at {timestamp}. Data '
+                        f'index: {index}. Length of returned data: {len(data)}. '
+                        f'https://github.com/rotki/rotki/issues/1534. Attempting other methods...',
+                    )
+                    index_in_bounds = False
+
+            if index_in_bounds:
+                diff = abs(data[index].time - timestamp)
+                if index + 1 <= len(data) - 1:
+                    diff_p1 = abs(data[index + 1].time - timestamp)
+                    if diff_p1 < diff:
+                        index = index + 1
+
+                if data[index].high is not None and data[index].low is not None:
+                    price = Price((data[index].high + data[index].low) / 2)
+
+        else:
+            # no price found in the historical data from/to asset, try alternatives
+            price = Price(ZERO)
+
+        return price
+
+    def _get_histohour_data_for_range(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Deque[Dict[str, Any]]:
+        """Query histohour data from cryptocompare for a time range going backwards in time
+
+        Will stop when to_timestamp is reached OR when no more prices are returned
+
+        Returns a list of histohour entries with increasing timestamp. Starting from
+        to_timestamp (or higher) if no data and ending in from_timestamp or lower, if no data
+
+        May raise:
+        - RemoteError if there is problems with the query
+        """
+        msg = '_get_histohour_data_for_range from_timestamp should be bigger than to_timestamp'
+        assert from_timestamp >= to_timestamp, msg
+
+        calculated_history: Deque[Dict[str, Any]] = deque()
+        end_date = from_timestamp
+        while True:
+            log.debug(
+                'Querying cryptocompare for hourly historical price',
+                from_asset=from_asset,
+                to_asset=to_asset,
+                cryptocompare_hourquerylimit=CRYPTOCOMPARE_HOURQUERYLIMIT,
+                end_date=end_date,
             )
-            if in_range:
-                log.debug('Found cached price', cache_key=cache_key, timestamp=timestamp)
-                return True
+            resp = self.query_endpoint_histohour(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                limit=2000,
+                to_timestamp=end_date,
+            )
+            if all(x['close'] == 0 for x in resp['Data']):
+                # all prices zero Means we have reached the end of available prices
+                break
 
-        return False
+            end_date = Timestamp(end_date - (CRYPTOCOMPARE_HOURQUERYLIMIT * 3600))
+            if end_date != resp['TimeFrom']:
+                # If we get more than we needed, since we are close to the now_ts
+                # then skip all the already included entries
+                diff = abs(end_date - resp['TimeFrom'])
+                # If the start date has less than 3600 secs difference from previous
+                # end date then do nothing. If it has more skip all already included entries
+                if diff >= 3600:
+                    if resp['Data'][diff // 3600]['time'] != end_date:
+                        raise RemoteError(
+                            'Unexpected data format in cryptocompare query_endpoint_histohour. '
+                            'Expected to find the previous date timestamp during '
+                            'cryptocompare historical data fetching',
+                        )
+                    # just add only the part from the previous timestamp and on
+                    resp['Data'] = resp['Data'][diff // 3600:]
+
+            # If last time slot and first new are the same, skip the first new slot
+            last_entry_equal_to_first = (
+                len(calculated_history) != 0 and
+                calculated_history[0]['time'] == resp['Data'][-1]['time']
+            )
+            if last_entry_equal_to_first:
+                resp['Data'] = resp['Data'][:-1]
+            if len(calculated_history) != 0:
+                calculated_history.extendleft(reversed(resp['Data']))
+            else:
+                calculated_history = deque(resp['Data'])
+
+            if end_date - to_timestamp <= 3600:
+                # Ending the loop query. Also pop any extra timestamps
+                while (
+                        len(calculated_history) != 0 and
+                        calculated_history[0]['time'] <= to_timestamp
+                ):
+                    calculated_history.popleft()
+                break
+
+        return calculated_history
 
     def get_historical_data(
             self,
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-            historical_data_start: Timestamp,
-    ) -> List[PriceHistoryEntry]:
+            only_check_cache: bool,
+    ) -> Optional[List[PriceHistoryEntry]]:
         """
-        Get historical price data from cryptocompare
+        Get historical hour price data from cryptocompare
 
         Returns a sorted list of price entries.
+
+        If only_check_cache is True then if the data is not cached locally this will return None
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
@@ -548,88 +696,65 @@ class Cryptocompare(ExternalServiceWithApiKey):
             to_asset=to_asset,
             timestamp=timestamp,
         )
-
         cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
-        got_cached_value = self._got_cached_price(cache_key, timestamp)
-        if got_cached_value:
-            return self.price_history[cache_key].data
+        cached_data = self._got_cached_data_at_timestamp(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+        if cached_data is not None:
+            return cached_data.data
+
+        if only_check_cache:
+            return None
 
         now_ts = ts_now()
-        cryptocompare_hourquerylimit = 2000
-        calculated_history: List[Dict[str, Any]] = []
+        if cache_key in self.price_history:
+            old_data = self.price_history[cache_key].data
+            if timestamp > self.price_history[cache_key].end_time:
+                # We have a cache but the requested timestamp does not hit it
+                new_data = self._get_histohour_data_for_range(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    from_timestamp=now_ts,
+                    to_timestamp=self.price_history[cache_key].end_time,
+                )
+                if old_data[-1].time == new_data[0]['time']:
+                    old_data = old_data[:-1]
+                new_history = deque([x._asdict() for x in old_data]) + new_data
+            else:
+                # only other possibility, timestamp < cached start_time
+                # Get all available data, even before to_timestamp
+                new_data = self._get_histohour_data_for_range(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    from_timestamp=self.price_history[cache_key].start_time,
+                    to_timestamp=Timestamp(0),
+                )
+                if new_data[-1]['time'] == old_data[0].time:
+                    new_data.pop()
+                new_history = new_data + deque([x._asdict() for x in old_data])
 
-        if historical_data_start <= timestamp:
-            end_date = historical_data_start
+            calculated_history = list(new_history)
+
         else:
-            end_date = timestamp
-        while True:
-            pr_end_date = end_date
-            end_date = Timestamp(end_date + (cryptocompare_hourquerylimit) * 3600)
-
-            log.debug(
-                'Querying cryptocompare for hourly historical price',
+            calculated_history = list(self._get_histohour_data_for_range(
                 from_asset=from_asset,
                 to_asset=to_asset,
-                cryptocompare_hourquerylimit=cryptocompare_hourquerylimit,
-                end_date=end_date,
-            )
+                from_timestamp=now_ts,
+                to_timestamp=Timestamp(0),
+            ))
 
-            resp = self.query_endpoint_histohour(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                limit=2000,
-                to_timestamp=end_date,
-            )
-
-            if pr_end_date != resp['TimeFrom']:
-                # If we get more than we needed, since we are close to the now_ts
-                # then skip all the already included entries
-                diff = pr_end_date - resp['TimeFrom']
-                # If the start date has less than 3600 secs difference from previous
-                # end date then do nothing. If it has more skip all already included entries
-                if diff >= 3600:
-                    if resp['Data'][diff // 3600]['time'] != pr_end_date:
-                        raise RemoteError(
-                            'Unexpected fata format in cryptocompare query_endpoint_histohour. '
-                            'Expected to find the previous date timestamp during '
-                            'cryptocompare historical data fetching',
-                        )
-                    # just add only the part from the previous timestamp and on
-                    resp['Data'] = resp['Data'][diff // 3600:]
-
-            # The end dates of a cryptocompare query do not match. The end date
-            # can have up to 3600 secs different to the requested one since this is
-            # hourly historical data but no more.
-            end_dates_dont_match = (
-                end_date < now_ts and
-                resp['TimeTo'] != end_date
-            )
-            if end_dates_dont_match:
-                if resp['TimeTo'] - end_date >= 3600:
-                    raise RemoteError(
-                        'Unexpected fata format in cryptocompare query_endpoint_histohour. '
-                        'End dates do not match.',
-                    )
-
-                # else if it's just a drift within an hour just update the end_date so that
-                # it can be picked up by the next iterations in the loop
-                end_date = resp['TimeTo']
-
-            # If last time slot and first new are the same, skip the first new slot
-            last_entry_equal_to_first = (
-                len(calculated_history) != 0 and
-                calculated_history[-1]['time'] == resp['Data'][0]['time']
-            )
-            if last_entry_equal_to_first:
-                resp['Data'] = resp['Data'][1:]
-            calculated_history += resp['Data']
-            if end_date >= now_ts:
-                break
+        if len(calculated_history) == 0:
+            return []  # empty list means we found nothing
 
         # Let's always check for data sanity for the hourly prices.
         _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
         # and now since we actually queried the data let's also cache them
-        filename = self.data_directory / ('price_history_' + cache_key + '.json')
+        filename = (
+            get_or_make_price_history_dir(self.data_directory) /
+            (PRICE_HISTORY_FILE_PREFIX + cache_key + '.json')
+        )
         log.info(
             'Updating price history cache',
             filename=filename,
@@ -639,15 +764,15 @@ class Cryptocompare(ExternalServiceWithApiKey):
         write_history_data_in_file(
             data=calculated_history,
             filepath=filename,
-            start_ts=historical_data_start,
+            start_ts=calculated_history[0]['time'],
             end_ts=now_ts,
         )
 
         # Finally save the objects in memory and return them
         data_including_time = {
             'data': calculated_history,
-            'start_time': historical_data_start,
-            'end_time': end_date,
+            'start_time': calculated_history[0]['time'],
+            'end_time': now_ts,
         }
         self.price_history_file[cache_key] = filename
         self.price_history[cache_key] = _dict_history_to_data(data_including_time)
@@ -695,11 +820,15 @@ class Cryptocompare(ExternalServiceWithApiKey):
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-            historical_data_start: Timestamp,
     ) -> Price:
         """
         Query the historical price on `timestamp` for `from_asset` in `to_asset`.
         So how much `to_asset` does 1 unit of `from_asset` cost.
+
+        This tries to:
+        1. Find cached cryptocompare values and return them
+        2. If none exist at the moment try the normal historical price endpoint
+        3. Else fail
 
         May raise:
         - PriceQueryUnsupportedAsset if from/to asset is known to miss from cryptocompare
@@ -723,71 +852,24 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 from_asset=from_asset,
                 to_asset=to_asset,
                 timestamp=timestamp,
-                historical_data_start=historical_data_start,
+                only_check_cache=True,
             )
         except UnsupportedAsset as e:
             raise PriceQueryUnsupportedAsset(e.asset_name) from e
 
-        price = Price(ZERO)
-        # all data are sorted and timestamps are always increasing by 1 hour
-        # find the closest entry to the provided timestamp
-        if timestamp >= data[0].time:
-            index_in_bounds = True
-            # convert_to_int can't raise here due to its input
-            index = convert_to_int((timestamp - data[0].time) / 3600, accept_only_exact=False)
-            if index > len(data) - 1:  # index out of bounds
-                # Try to see if index - 1 is there and if yes take it
-                if index > len(data):
-                    index = index - 1
-                else:  # give up. This happened: https://github.com/rotki/rotki/issues/1534
-                    log.error(
-                        f'Expected data index in cryptocompare historical hour price '
-                        f'not found. Queried price of: {from_asset.identifier} in '
-                        f'{to_asset.identifier} at {timestamp}. Data '
-                        f'index: {index}. Length of returned data: {len(data)}. '
-                        f'https://github.com/rotki/rotki/issues/1534. Attempting other methods...',
-                    )
-                    index_in_bounds = False
-
-            if index_in_bounds:
-                diff = abs(data[index].time - timestamp)
-                if index + 1 <= len(data) - 1:
-                    diff_p1 = abs(data[index + 1].time - timestamp)
-                    if diff_p1 < diff:
-                        index = index + 1
-
-                if data[index].high is not None and data[index].low is not None:
-                    price = Price((data[index].high + data[index].low) / 2)
-
-        else:
-            # no price found in the historical data from/to asset, try alternatives
-            price = Price(ZERO)
-
-        if price == 0:
-            if from_asset != 'BTC' and to_asset != 'BTC':
-                log.debug(
-                    f"Couldn't find historical price from {from_asset} to "
-                    f"{to_asset} at timestamp {timestamp}. Comparing with BTC...",
-                )
-                # Just get the BTC price
-                asset_btc_price = PriceHistorian().query_historical_price(
-                    from_asset=from_asset,
-                    to_asset=A_BTC,
-                    timestamp=timestamp,
-                )
-                btc_to_asset_price = PriceHistorian().query_historical_price(
-                    from_asset=A_BTC,
-                    to_asset=to_asset,
-                    timestamp=timestamp,
-                )
-                price = Price(asset_btc_price * btc_to_asset_price)
-            else:
-                log.debug(
-                    f"Couldn't find historical price from {from_asset} to "
-                    f"{to_asset} at timestamp {timestamp} through cryptocompare."
-                    f" Attempting to get daily price...",
-                )
-                price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
+        price = self._retrieve_price_from_data(
+            data=data,
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+        if price == Price(ZERO):
+            log.debug(
+                f"Couldn't find historical price from {from_asset} to "
+                f"{to_asset} at timestamp {timestamp} through cryptocompare."
+                f" Attempting to get daily price...",
+            )
+            price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
 
         comparison_to_nonusd_fiat = (
             (to_asset.is_fiat() and to_asset != A_USD) or
@@ -801,7 +883,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 timestamp=timestamp,
             )
 
-        if price == 0:
+        if price == Price(ZERO):
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
@@ -809,7 +891,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             )
 
         log.debug(
-            'Got historical price',
+            'Got historical price from cryptocompare',
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,

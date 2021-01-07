@@ -2374,6 +2374,15 @@
         "symbol": "CEEK",
         "type": "ethereum token"
     },
+    "CEL": {
+        "coingecko": "celsius-degree-token",
+        "ethereum_address": "0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d",
+        "ethereum_token_decimals": 4,
+        "name": "Celsius",
+        "started": 1554810016,
+        "symbol": "CEL",
+        "type": "ethereum token"
+    },
     "CELO": {
         "coingecko": "celo-gold",
         "name": "Celo",
@@ -3545,8 +3554,8 @@
     "DHT": {
         "coingecko": "dhedge-dao",
         "ethereum_address": "0xca1207647Ff814039530D7d35df0e1Dd2e91Fa84",
-        "ethereum_token_decimals": 17,
-        "name": "dHedge DAO Token ",
+        "ethereum_token_decimals": 18,
+        "name": "dHedge DAO Token",
         "started": 1599730531,
         "symbol": "DHT",
         "type": "ethereum token"

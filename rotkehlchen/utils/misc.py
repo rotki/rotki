@@ -18,7 +18,7 @@ import requests
 from eth_utils.address import to_checksum_address
 from rlp.sedes import big_endian_int
 
-from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT, ZERO
+from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT, ZERO, PRICE_HISTORY_DIR
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     ConversionError,
@@ -465,3 +465,9 @@ def rgetattr(obj: Any, attr: str, *args: Any) -> Any:
     def _getattr(obj: Any, attr: str) -> Any:
         return getattr(obj, attr, *args)
     return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+
+def get_or_make_price_history_dir(data_directory: Path) -> Path:
+    price_history_dir = data_directory / PRICE_HISTORY_DIR
+    price_history_dir.mkdir(parents=True, exist_ok=True)
+    return price_history_dir

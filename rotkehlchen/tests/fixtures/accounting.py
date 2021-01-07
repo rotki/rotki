@@ -145,7 +145,7 @@ def create_inquirer(data_directory, should_mock_current_price_queries, mocked_pr
     # Get a cryptocompare without a DB since invoking DB fixture here causes problems
     # of existing user for some tests
     cryptocompare = Cryptocompare(data_directory=data_directory, database=None)
-    gecko = Coingecko()
+    gecko = Coingecko(data_directory=data_directory)
     inquirer = Inquirer(data_dir=data_directory, cryptocompare=cryptocompare, coingecko=gecko)
     if not should_mock_current_price_queries:
         return inquirer

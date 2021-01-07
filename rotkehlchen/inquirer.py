@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Optional
 
 import requests
 
+from rotkehlchen.utils.misc import get_or_make_price_history_dir
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.constants import ZERO
@@ -164,7 +165,9 @@ class Inquirer():
         Inquirer.__instance._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
-        filename = data_dir / 'price_history_forex.json'
+        # Make price history directory if it does not exist
+        price_history_dir = get_or_make_price_history_dir(data_dir)
+        filename = price_history_dir / 'price_history_forex.json'
         try:
             with open(filename, 'r') as f:
                 # we know price_history_forex contains a dict
@@ -357,7 +360,9 @@ class Inquirer():
     @staticmethod
     def save_historical_forex_data() -> None:
         instance = Inquirer()
-        filename = instance._data_directory / 'price_history_forex.json'
+        # Make price history directory if it does not exist
+        price_history_dir = get_or_make_price_history_dir(instance._data_directory)
+        filename = price_history_dir / 'price_history_forex.json'
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(instance._cached_forex_data))
 

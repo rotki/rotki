@@ -21,8 +21,9 @@ ASSETS_FILE = Path(f'{root_dir}/rotkehlchen/data/all_assets.json')
 with open(ASSETS_FILE, 'r') as f:
     assets = json.loads(f.read())
 
-coingecko = Coingecko()
-COINGECKO_COINS_FILE = default_data_directory() / 'coingecko.json'
+data_dir = default_data_directory()
+coingecko = Coingecko(data_directory=data_dir)
+COINGECKO_COINS_FILE = data_dir / 'coingecko.json'
 
 if COINGECKO_COINS_FILE.exists():
     with open(COINGECKO_COINS_FILE, 'r') as f:

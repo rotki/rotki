@@ -1,5 +1,10 @@
 import json
 from typing import TYPE_CHECKING
+from rotkehlchen.utils.misc import get_or_make_price_history_dir
+import os
+from pathlib import Path
+import glob
+import shutil
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -12,6 +17,7 @@ def upgrade_v22_to_v23(db: 'DBHandler') -> None:
     and 'currency_location' into the 'frontend_settings' entry.
     - Deletes Bitfinex trades and their used query range, so trades can be
     populated again with the right `fee_asset`.
+    - Delete all cryptocompare price cache files. Move forex price cache to price_history directory
     """
     settings = ('"thousand_separator"', '"decimal_separator"', '"currency_location"')
     cursor = db.conn.cursor()
@@ -41,3 +47,23 @@ def upgrade_v22_to_v23(db: 'DBHandler') -> None:
     # Delete Bitfinex trades
     cursor.execute('DELETE FROM trades WHERE location = "T";')
     db.conn.commit()
+
+    # -- Now move forex history to the new directory and remove all old cache files
+    data_directory = db.user_data_dir.parent
+    price_history_dir = get_or_make_price_history_dir(data_directory)
+    forex_history_file = data_directory / 'price_history_forex.json'
+    if forex_history_file.is_file():
+        shutil.move(
+            forex_history_file,  # type: ignore
+            price_history_dir / 'forex_history_file.json',
+        )
+
+    prefix = os.path.join(str(data_directory), 'price_history_')
+    prefix = prefix.replace('\\', '\\\\')
+    files_list = glob.glob(prefix + '*.json')
+    for file_ in files_list:
+        file_ = file_.replace('\\\\', '\\')
+        try:
+            Path(file_).unlink()
+        except OSError:
+            pass

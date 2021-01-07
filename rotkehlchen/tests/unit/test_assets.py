@@ -88,7 +88,7 @@ def test_asset_identifiers_are_unique_all_lowercased():
         identifier_set.add(asset_id)
 
 
-def test_coingecko_identifiers_are_reachable():
+def test_coingecko_identifiers_are_reachable(data_dir):
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
@@ -169,8 +169,11 @@ def test_coingecko_identifiers_are_reachable():
         '1ST',
         'aLEND',
         'aREP',
+        'CRBT',
+        'EXC-2',
+        'DT',
     ]
-    coingecko = Coingecko()
+    coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
     for identifier, asset_data in AssetResolver().assets.items():
         if identifier in coins_delisted_from_coingecko:
@@ -217,7 +220,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '3a8d1194601b67d36fdd6813a55efc73', 'version': 38}
+    last_meta = {'md5': '353a2ab0cfcb2b85c92b65ec5e56308d', 'version': 39}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

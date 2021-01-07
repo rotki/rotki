@@ -1,13 +1,9 @@
-import pytest
-
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.externalapis.coingecko import Coingecko, CoingeckoAssetData, CoingeckoImageURLs
-
-
-@pytest.fixture(scope='session', name='session_coingecko')
-def fixture_session_coingecko():
-    return Coingecko()
+from rotkehlchen.externalapis.coingecko import CoingeckoAssetData, CoingeckoImageURLs
+from rotkehlchen.typing import Price
+from rotkehlchen.fval import FVal
+from rotkehlchen.constants.assets import A_ETH, A_EUR
 
 
 def assert_coin_data_same(given, expected, compare_description=False):
@@ -51,3 +47,8 @@ def test_asset_data(session_coingecko):
     )
     data = session_coingecko.asset_data(Asset('YFI'))
     assert_coin_data_same(data, expected_data, compare_description=True)
+
+
+def test_coingecko_historical_price(session_coingecko):
+    price = session_coingecko.historical_price(from_asset=A_ETH, to_asset=A_EUR, time=1483056100)
+    assert price == Price(FVal('7.7478028375650725'))

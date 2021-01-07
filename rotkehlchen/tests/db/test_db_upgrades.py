@@ -1232,13 +1232,11 @@ def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
     assert db.get_version() == 23
 
 
-def test_upgrade_db_22_to_23_without_frontend_settings(user_data_dir):
+def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
     """Test upgrading the DB from version 22 to version 23.
 
-    - Migrates the settings entries 'thousand_separator', 'decimal_separator'
-    and 'currency_location' into the 'frontend_settings' entry.
-    - Deletes Bitfinex trades and their used query range, so trades can be
-    populated again with the right `fee_asset` (not tested here).
+    Tests the case where frontend settings were not populated and also the cache
+    file movement and deletion.
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v22_rotkehlchen_wo_frontend_settings.db')
@@ -1249,6 +1247,14 @@ def test_upgrade_db_22_to_23_without_frontend_settings(user_data_dir):
     )
     cursor = db_v22.conn.cursor()
 
+    # Create cache files under the data directory
+    (data_dir / 'forex_history_file.json').touch()
+    (data_dir / 'price_history_BTC_EUR.json').touch()
+    (data_dir / 'price_history_aDAI_USD.json').touch()
+    (data_dir / 'price_history_YFI_USD.json').touch()
+    # Also create an innocent json file and a random file
+    (data_dir / 'random.json').touch()
+    (data_dir / 'random.txt').touch()
     # Check all settings except 'frontend_settings' exist
     assert cursor.execute(
         'SELECT COUNT(*) FROM settings WHERE name = "frontend_settings";',
@@ -1280,6 +1286,16 @@ def test_upgrade_db_22_to_23_without_frontend_settings(user_data_dir):
     assert frontend_settings_map['thousand_separator'] == ','
     assert frontend_settings_map['decimal_separator'] == '.'
     assert frontend_settings_map['currency_location'] == 'after'
+
+    # Assure the cache files were deleted
+    assert not (data_dir / 'price_history_BTC_EUR.json').is_file()
+    assert not (data_dir / 'price_history_aDAI_USD.json').is_file()
+    assert not (data_dir / 'price_history_YFI_USD.json').is_file()
+    # and that the forex history cache file moved
+    assert (data_dir / 'price_history' / 'forex_history_file.json').is_file()
+    # and that the other files were not touched
+    assert (data_dir / 'random.json').is_file()
+    assert (data_dir / 'random.txt').is_file()
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 23
