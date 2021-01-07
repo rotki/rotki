@@ -31,7 +31,11 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import BITFINEX_TO_WORLD, asset_from_bitfinex
+from rotkehlchen.assets.converters import (
+    BITFINEX_EXCHANGE_TEST_ASSETS,
+    BITFINEX_TO_WORLD,
+    asset_from_bitfinex,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
@@ -217,7 +221,6 @@ class Bitfinex(ExchangeInterface):
             self,
             options: Dict[str, Any],
             case: Literal['trades'],
-            currency_map: Dict[str, str],
     ) -> List[Trade]:
         ...
 
@@ -226,7 +229,6 @@ class Bitfinex(ExchangeInterface):
             self,
             options: Dict[str, Any],
             case: Literal['asset_movements'],
-            currency_map: Dict[str, str],
     ) -> List[AssetMovement]:
         ...
 
@@ -234,7 +236,6 @@ class Bitfinex(ExchangeInterface):
             self,
             options: Dict[str, Any],
             case: Literal['trades', 'asset_movements'],
-            currency_map: Dict[str, str],
     ) -> Union[List[Trade], List[AssetMovement]]:
         """Request a Bitfinex API v2 endpoint paginating via an options
         attribute.
@@ -330,7 +331,6 @@ class Bitfinex(ExchangeInterface):
             results_ = self._deserialize_api_query_paginated_results(
                 case=case_,
                 options=call_options,
-                currency_map=currency_map,
                 raw_results=response_list,
                 processed_result_ids=processed_result_ids,
             )
@@ -365,7 +365,6 @@ class Bitfinex(ExchangeInterface):
             self,
             case: Literal['trades'],
             options: Dict[str, Any],
-            currency_map: Dict[str, str],
             raw_results: List[List[Any]],
             processed_result_ids: Set[int],
     ) -> List[Trade]:
@@ -376,7 +375,6 @@ class Bitfinex(ExchangeInterface):
             self,
             case: Literal['asset_movements'],
             options: Dict[str, Any],
-            currency_map: Dict[str, str],
             raw_results: List[List[Any]],
             processed_result_ids: Set[int],
     ) -> List[AssetMovement]:
@@ -386,7 +384,6 @@ class Bitfinex(ExchangeInterface):
             self,
             case: Literal['trades', 'asset_movements'],
             options: Dict[str, Any],
-            currency_map: Dict[str, str],
             raw_results: List[List[Any]],
             processed_result_ids: Set[int],
     ) -> Union[List[Trade], List[AssetMovement]]:
@@ -448,10 +445,7 @@ class Bitfinex(ExchangeInterface):
                 continue
 
             try:
-                result = deserialization_method(
-                    raw_result=raw_result,
-                    currency_map=currency_map,
-                )
+                result = deserialization_method(raw_result=raw_result)
             except DeserializationError as e:
                 msg = str(e)
                 log.error(
@@ -469,11 +463,7 @@ class Bitfinex(ExchangeInterface):
 
         return results
 
-    @staticmethod
-    def _deserialize_asset_movement(
-            raw_result: List[Any],
-            currency_map: Dict[str, str],
-    ) -> AssetMovement:
+    def _deserialize_asset_movement(self, raw_result: List[Any]) -> AssetMovement:
         """Process an asset movement (i.e. deposit or withdrawal) from Bitfinex
         and deserialize it.
 
@@ -498,7 +488,7 @@ class Bitfinex(ExchangeInterface):
         try:
             fee_asset = asset_from_bitfinex(
                 bitfinex_name=raw_result[1],
-                currency_map=currency_map,
+                currency_map=self.currency_map,
             )
         except (UnknownAsset, UnsupportedAsset) as e:
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
@@ -533,11 +523,7 @@ class Bitfinex(ExchangeInterface):
         )
         return asset_movement
 
-    @staticmethod
-    def _deserialize_trade(
-            raw_result: List[Any],
-            currency_map: Dict[str, str],
-    ) -> Trade:
+    def _deserialize_trade(self, raw_result: List[Any]) -> Trade:
         """Process a trade result from Bitfinex and deserialize it.
 
         The base and quote assets are instantiated using the `fee_currency_symbol`
@@ -552,34 +538,26 @@ class Bitfinex(ExchangeInterface):
         """
         amount = deserialize_asset_amount(raw_result[4])
         trade_type = TradeType.BUY if amount >= ZERO else TradeType.SELL
-        bfx_pair = raw_result[1].replace(':', '')
-        if bfx_pair.startswith('t'):
-            bfx_pair = bfx_pair[1:]
-        bfx_fee_currency_symbol = raw_result[10]
-        if bfx_pair.startswith(bfx_fee_currency_symbol):
-            bfx_base_asset_symbol = bfx_fee_currency_symbol
-            bfx_quote_asset_symbol = bfx_pair[len(bfx_fee_currency_symbol):]
-        elif bfx_pair.endswith(bfx_fee_currency_symbol):
-            bfx_base_asset_symbol = bfx_pair[:-len(bfx_fee_currency_symbol)]
-            bfx_quote_asset_symbol = bfx_fee_currency_symbol
-        else:
+        bfx_pair = self._process_bfx_pair(raw_result[1])
+        if bfx_pair not in self.pair_bfx_symbols_map:
             raise DeserializationError(
-                f'Could not deserialize bitfinex trade pair {raw_result[1]} '
-                f'using fee_currency symbol {bfx_fee_currency_symbol}. '
+                f'Could not deserialize bitfinex trade pair {raw_result[1]}. '
                 f'Raw trade: {raw_result}',
             )
+
+        bfx_base_asset_symbol, bfx_quote_asset_symbol = self.pair_bfx_symbols_map[bfx_pair]
         try:
             base_asset = asset_from_bitfinex(
                 bitfinex_name=bfx_base_asset_symbol,
-                currency_map=currency_map,
+                currency_map=self.currency_map,
             )
             quote_asset = asset_from_bitfinex(
                 bitfinex_name=bfx_quote_asset_symbol,
-                currency_map=currency_map,
+                currency_map=self.currency_map,
             )
             fee_asset = asset_from_bitfinex(
-                bitfinex_name=bfx_fee_currency_symbol,
-                currency_map=currency_map,
+                bitfinex_name=raw_result[10],
+                currency_map=self.currency_map,
             )
         except (UnknownAsset, UnsupportedAsset) as e:
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
@@ -617,6 +595,14 @@ class Bitfinex(ExchangeInterface):
             reason=reason,
         )
 
+    @staticmethod
+    def _process_bfx_pair(raw_pair: str) -> str:
+        bfx_pair = raw_pair.replace(':', '')
+        if bfx_pair.startswith('t'):
+            bfx_pair = bfx_pair[1:]
+
+        return bfx_pair
+
     def _query_currencies(self) -> CurrenciesResponse:
         """Query and return the list of all the currencies supported in
         `<CurrenciesResponse>.currencies`.
@@ -640,7 +626,10 @@ class Bitfinex(ExchangeInterface):
                     f'Check further logs',
                 )
             else:
-                currencies = response_list[0]
+                currencies = [
+                    currency for currency in response_list[0]
+                    if currency not in set(BITFINEX_EXCHANGE_TEST_ASSETS)
+                ]
 
         return CurrenciesResponse(
             success=was_successful,
@@ -707,7 +696,11 @@ class Bitfinex(ExchangeInterface):
                     f'Check further logs',
                 )
             else:
-                pairs = response_list[0]
+                pairs = [
+                    pair for pair in response_list[0]
+                    if not pair.startswith(BITFINEX_EXCHANGE_TEST_ASSETS) and
+                    not pair.endswith(BITFINEX_EXCHANGE_TEST_ASSETS)
+                ]
 
         return ExchangePairsResponse(
             success=was_successful,
@@ -802,6 +795,60 @@ class Bitfinex(ExchangeInterface):
         raise AssertionError(f'Unexpected {self.name} response_case: {case}')
 
     def first_connection(self) -> None:
+        """Request:
+        - currencies list: tickers of the supported assets.
+        - pairs list: pairs available for trading.
+        - currency map: a map between the ticker used by Bitfinex and the
+        standard one (outside Bitfinex).
+
+        These data are stored in properties along with `pair_bfx_symbols_map`,
+        a dict that maps a pair between the tickers of the base and quote assets.
+        """
+        if self.first_connection_made:
+            return
+
+        currencies_response = self._query_currencies()
+        if currencies_response.success is False:
+            raise RemoteError(
+                f'{self.name} failed to request currencies list. '
+                f'Response status code: {currencies_response.response.status_code}. '
+                f'Response text: {currencies_response.response.text}.',
+            )
+
+        exchange_pairs_response = self._query_exchange_pairs()
+        if exchange_pairs_response.success is False:
+            raise RemoteError(
+                f'{self.name} failed to request exchange pairs list. '
+                f'Response status code: {exchange_pairs_response.response.status_code}. '
+                f'Response text: {exchange_pairs_response.response.text}.',
+            )
+
+        currency_map_response = self._query_currency_map()
+        if currency_map_response.success is False:
+            raise RemoteError(
+                f'{self.name} failed to request exchange currency map. '
+                f'Response status code: {currency_map_response.response.status_code}. '
+                f'Response text: {currency_map_response.response.text}.',
+            )
+        # Generate a pair - tickers map. Currencies and pairs lists are already
+        # curated of test assets
+        pair_bfx_symbols_map: Dict[str, Tuple[str, str]] = {}
+        for pair in exchange_pairs_response.pairs:
+            bfx_pair = self._process_bfx_pair(pair)
+            for bfx_symbol in currencies_response.currencies:
+                if bfx_pair.startswith(bfx_symbol):
+                    bfx_base_asset_symbol = bfx_symbol
+                    bfx_quote_asset_symbol = bfx_pair[len(bfx_symbol):]
+                elif bfx_pair.endswith(bfx_symbol):
+                    bfx_base_asset_symbol = bfx_pair[:-len(bfx_symbol)]
+                    bfx_quote_asset_symbol = bfx_symbol
+                else:
+                    continue
+
+                pair_bfx_symbols_map[bfx_pair] = (bfx_base_asset_symbol, bfx_quote_asset_symbol)
+
+        self.currency_map = currency_map_response.currency_map
+        self.pair_bfx_symbols_map = pair_bfx_symbols_map
         self.first_connection_made = True
 
     @protect_with_lock()
@@ -817,19 +864,7 @@ class Bitfinex(ExchangeInterface):
         Endpoint documentation:
         https://docs.bitfinex.com/reference#rest-auth-wallets
         """
-        try:
-            currency_map_response = self._query_currency_map()
-        except IndexError:
-            msg = f'Error processing {self.name} currency map. Response is empty'
-            log.error(msg)
-            return None, msg
-
-        if currency_map_response.success is False:
-            result, msg = self._process_unsuccessful_response(
-                response=currency_map_response.response,
-                case='balances',
-            )
-            return result, msg
+        self.first_connection()
 
         response = self._api_query('wallets')
         if response.status_code != HTTPStatus.OK:
@@ -865,7 +900,7 @@ class Bitfinex(ExchangeInterface):
             try:
                 asset = asset_from_bitfinex(
                     bitfinex_name=wallet[currency_index],
-                    currency_map=currency_map_response.currency_map,
+                    currency_map=self.currency_map,
                 )
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
@@ -902,19 +937,7 @@ class Bitfinex(ExchangeInterface):
         Endpoint documentation:
         https://docs.bitfinex.com/reference#rest-auth-movements
         """
-        try:
-            currency_map_response = self._query_currency_map()
-        except IndexError:
-            self.msg_aggregator.add_error(
-                f'Error processing {self.name} currency map. Response is empty',
-            )
-            return []
-
-        if currency_map_response.success is False:
-            return self._process_unsuccessful_response(
-                response=currency_map_response.response,
-                case='asset_movements',
-            )
+        self.first_connection()
 
         options = {
             'start': start_ts * 1000,
@@ -924,7 +947,6 @@ class Bitfinex(ExchangeInterface):
         asset_movements: List[AssetMovement] = self._api_query_paginated(
             options=options,
             case='asset_movements',
-            currency_map=currency_map_response.currency_map,
         )
         return asset_movements
 
@@ -938,19 +960,7 @@ class Bitfinex(ExchangeInterface):
         Endpoint documentation:
         https://docs.bitfinex.com/reference#rest-auth-trades
         """
-        try:
-            currency_map_response = self._query_currency_map()
-        except IndexError:
-            self.msg_aggregator.add_error(
-                f'Error processing {self.name} currency map. Response is empty',
-            )
-            return []
-
-        if currency_map_response.success is False:
-            return self._process_unsuccessful_response(
-                response=currency_map_response.response,
-                case='trades',
-            )
+        self.first_connection()
 
         options = {
             'start': start_ts * 1000,
@@ -961,7 +971,6 @@ class Bitfinex(ExchangeInterface):
         trades: List[Trade] = self._api_query_paginated(
             options=options,
             case='trades',
-            currency_map=currency_map_response.currency_map,
         )
         return trades
 

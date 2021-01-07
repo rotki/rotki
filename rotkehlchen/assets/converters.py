@@ -464,8 +464,10 @@ BITFINEX_EXCHANGE_TEST_ASSETS = (
     'AAA',
     'BBB',
     'TESTBTC',
+    'TESTBTCF0',
     'TESTUSD',
     'TESTUSDT',
+    'TESTUSDTF0',
 )
 
 
