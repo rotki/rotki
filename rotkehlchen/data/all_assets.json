@@ -3554,8 +3554,8 @@
     "DHT": {
         "coingecko": "dhedge-dao",
         "ethereum_address": "0xca1207647Ff814039530D7d35df0e1Dd2e91Fa84",
-        "ethereum_token_decimals": 17,
-        "name": "dHedge DAO Token ",
+        "ethereum_token_decimals": 18,
+        "name": "dHedge DAO Token",
         "started": 1599730531,
         "symbol": "DHT",
         "type": "ethereum token"
