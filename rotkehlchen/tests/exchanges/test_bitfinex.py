@@ -198,27 +198,27 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
             Asset('EUR'): Balance(
                 amount=FVal('99.9999999'),
                 usd_value=FVal('149.99999985'),
-            ),
+            ).to_dict(),
             Asset('GLM'): Balance(
                 amount=FVal('0.0000001'),
                 usd_value=FVal('0.00000015'),
-            ),
+            ).to_dict(),
             Asset('LINK'): Balance(
                 amount=FVal('777.777777'),
                 usd_value=FVal('1166.6666655'),
-            ),
+            ).to_dict(),
             Asset('NEO'): Balance(
                 amount=FVal('1'),
                 usd_value=FVal('1.5'),
-            ),
+            ).to_dict(),
             Asset('USDT'): Balance(
                 amount=FVal('19790.1529257'),
                 usd_value=FVal('29685.22938855'),
-            ),
+            ).to_dict(),
             Asset('WBTC'): Balance(
                 amount=FVal('1'),
                 usd_value=FVal('1.5'),
-            ),
+            ).to_dict(),
         }
         assert msg == ''
 
