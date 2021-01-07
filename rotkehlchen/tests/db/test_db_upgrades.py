@@ -1238,7 +1238,7 @@ def test_upgrade_db_22_to_23_without_frontend_settings(user_data_dir):
     - Migrates the settings entries 'thousand_separator', 'decimal_separator'
     and 'currency_location' into the 'frontend_settings' entry.
     - Deletes Bitfinex trades and their used query range, so trades can be
-    populated again with the right `fee_asset`.
+    populated again with the right `fee_asset` (not tested here).
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v22_rotkehlchen_wo_frontend_settings.db')
@@ -1257,14 +1257,6 @@ def test_upgrade_db_22_to_23_without_frontend_settings(user_data_dir):
         'SELECT COUNT(*) FROM settings WHERE name IN '
         '("thousand_separator", "decimal_separator", "currency_location");',
     ).fetchone()[0] == 3
-
-    # Check Bitfinex trades and their used query range exist
-    assert cursor.execute(
-        'SELECT COUNT(*) from used_query_ranges WHERE name = "bitfinex_trades";',
-    ).fetchone()[0] == 1
-    assert cursor.execute(
-        'SELECT COUNT(*) from trades WHERE location = "T";',
-    ).fetchone()[0] == 2
 
     # Migrate to v23
     db = _init_db_with_target_version(
@@ -1288,16 +1280,6 @@ def test_upgrade_db_22_to_23_without_frontend_settings(user_data_dir):
     assert frontend_settings_map['thousand_separator'] == ','
     assert frontend_settings_map['decimal_separator'] == '.'
     assert frontend_settings_map['currency_location'] == 'after'
-
-    # Make sure Bitfinex trades used query range has been deleted
-    assert cursor.execute(
-        'SELECT COUNT(*) from used_query_ranges WHERE name = "bitfinex_trades";',
-    ).fetchone()[0] == 0
-
-    # Make sure Bitfinex trades have been deleted
-    assert cursor.execute(
-        'SELECT COUNT(*) from trades WHERE location = "T";',
-    ).fetchone()[0] == 0
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 23
