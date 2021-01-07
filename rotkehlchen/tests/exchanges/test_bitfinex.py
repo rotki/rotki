@@ -100,6 +100,22 @@ def test_bitfinex_exchange_assets_are_known(mock_bitfinex):
             ))
 
 
+def test_first_connection(mock_bitfinex):
+    """Test 'currency_map' and 'pair_bfx_symbols_map' contain the expected data.
+    """
+    assert mock_bitfinex.first_connection_made is False
+    assert hasattr(mock_bitfinex, 'currency_map') is False
+    assert hasattr(mock_bitfinex, 'pair_bfx_symbols_map') is False
+
+    mock_bitfinex.first_connection()
+
+    assert mock_bitfinex.currency_map['UST'] == 'USDt'
+    assert mock_bitfinex.currency_map['WBT'] == 'WBTC'
+    assert mock_bitfinex.pair_bfx_symbols_map['BTCUST'] == ('BTC', 'UST')
+    assert mock_bitfinex.pair_bfx_symbols_map['UDCUSD'] == ('UDC', 'USD')
+    assert mock_bitfinex.first_connection_made is True
+
+
 def test_validate_api_key_system_clock_not_synced_error_code(mock_bitfinex):
     """Test the error code related with the local system clock not being synced
     raises SystemClockNotSyncedError.

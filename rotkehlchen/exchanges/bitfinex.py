@@ -664,7 +664,10 @@ class Bitfinex(ExchangeInterface):
                     f'{self.name} currency map returned invalid JSON response. Check further logs',
                 )
             else:
-                currency_map = dict(response_list[0])
+                currency_map = {
+                    bfx_symbol: symbol for bfx_symbol, symbol in response_list[0]
+                    if bfx_symbol not in set(BITFINEX_EXCHANGE_TEST_ASSETS)
+                }
                 currency_map.update(BITFINEX_TO_WORLD)
 
         return CurrencyMapResponse(
@@ -810,7 +813,7 @@ class Bitfinex(ExchangeInterface):
         currencies_response = self._query_currencies()
         if currencies_response.success is False:
             raise RemoteError(
-                f'{self.name} failed to request currencies list. '
+                f'bitfinex failed to request currencies list. '
                 f'Response status code: {currencies_response.response.status_code}. '
                 f'Response text: {currencies_response.response.text}.',
             )
@@ -818,7 +821,7 @@ class Bitfinex(ExchangeInterface):
         exchange_pairs_response = self._query_exchange_pairs()
         if exchange_pairs_response.success is False:
             raise RemoteError(
-                f'{self.name} failed to request exchange pairs list. '
+                f'bitfinex failed to request exchange pairs list. '
                 f'Response status code: {exchange_pairs_response.response.status_code}. '
                 f'Response text: {exchange_pairs_response.response.text}.',
             )
@@ -826,12 +829,12 @@ class Bitfinex(ExchangeInterface):
         currency_map_response = self._query_currency_map()
         if currency_map_response.success is False:
             raise RemoteError(
-                f'{self.name} failed to request exchange currency map. '
+                f'bitfinex failed to request exchange currency map. '
                 f'Response status code: {currency_map_response.response.status_code}. '
                 f'Response text: {currency_map_response.response.text}.',
             )
-        # Generate a pair - tickers map. Currencies and pairs lists are already
-        # curated of test assets
+        # Generate a pair - tickers map. Bitfinex test assets have already been
+        # removed from both 'pairs' and 'currencies' lists.
         pair_bfx_symbols_map: Dict[str, Tuple[str, str]] = {}
         for pair in exchange_pairs_response.pairs:
             bfx_pair = self._process_bfx_pair(pair)
