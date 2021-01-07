@@ -127,7 +127,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { exchanges } from '@/data/defaults';
+import { EXCHANGE_CRYPTOCOM, exchanges } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 import { ExchangePayload } from '@/store/balances/types';
 import { trimOnPaste } from '@/utils/event';
@@ -165,7 +165,9 @@ export default class ExchangeSettings extends Vue {
 
   get exchanges(): SupportedExchange[] {
     return exchanges.filter(
-      exchange => !this.connectedExchanges.includes(exchange)
+      exchange =>
+        !this.connectedExchanges.includes(exchange) &&
+        exchange !== EXCHANGE_CRYPTOCOM
     );
   }
 
