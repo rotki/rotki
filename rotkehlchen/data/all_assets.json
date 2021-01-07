@@ -2374,6 +2374,15 @@
         "symbol": "CEEK",
         "type": "ethereum token"
     },
+    "CEL": {
+        "coingecko": "celsius-degree-token",
+        "ethereum_address": "0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d",
+        "ethereum_token_decimals": 4,
+        "name": "Celsius",
+        "started": 1554810016,
+        "symbol": "CEL",
+        "type": "ethereum token"
+    },
     "CELO": {
         "coingecko": "celo-gold",
         "name": "Celo",

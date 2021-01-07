@@ -10,6 +10,7 @@ Changelog
   - `Energi (NRG) <https://www.coingecko.com/en/coins/energi>`__
   - `Exeedme (XED) <https://www.coingecko.com/en/coins/exeedme>`__
   - `Terra Virtua Kolect (TVK) <https://www.coingecko.com/en/coins/terra-virtua-kolect>`__
+  - `Celsius network token (CEL) <https://www.coingecko.com/en/coins/celsius-network-token>`__
 
 * :release:`1.11.0 <2020-12-30>`
 * :bug:`1929` Premium users will be able to see the proper balances after a force pull.
