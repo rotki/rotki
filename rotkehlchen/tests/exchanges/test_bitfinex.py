@@ -2,10 +2,9 @@ import warnings as test_warnings
 from contextlib import ExitStack
 from datetime import datetime
 from http import HTTPStatus
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
-from requests import Response
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
@@ -21,7 +20,6 @@ from rotkehlchen.exchanges.bitfinex import (
     API_RATE_LIMITS_ERROR_MESSAGE,
     API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE,
     Bitfinex,
-    CurrencyMapResponse,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
@@ -102,6 +100,22 @@ def test_bitfinex_exchange_assets_are_known(mock_bitfinex):
             ))
 
 
+def test_first_connection(mock_bitfinex):
+    """Test 'currency_map' and 'pair_bfx_symbols_map' contain the expected data.
+    """
+    assert mock_bitfinex.first_connection_made is False
+    assert hasattr(mock_bitfinex, 'currency_map') is False
+    assert hasattr(mock_bitfinex, 'pair_bfx_symbols_map') is False
+
+    mock_bitfinex.first_connection()
+
+    assert mock_bitfinex.currency_map['UST'] == 'USDt'
+    assert mock_bitfinex.currency_map['WBT'] == 'WBTC'
+    assert mock_bitfinex.pair_bfx_symbols_map['BTCUST'] == ('BTC', 'UST')
+    assert mock_bitfinex.pair_bfx_symbols_map['UDCUSD'] == ('UDC', 'USD')
+    assert mock_bitfinex.first_connection_made is True
+
+
 def test_validate_api_key_system_clock_not_synced_error_code(mock_bitfinex):
     """Test the error code related with the local system clock not being synced
     raises SystemClockNotSyncedError.
@@ -144,17 +158,12 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
       - The balance of an asset in UNSUPPORTED_BITFINEX_ASSETS is skipped.
       - The asset ticker is standardized (e.g. WBT to WBTC, UST to USDT).
     """
-    response = Response()
-    response.status_code = HTTPStatus.OK
-    currency_map_response = CurrencyMapResponse(
-        success=True,
-        response=response,
-        currency_map={
-            'UST': 'USDt',
-            'GNT': 'GLM',
-            'WBT': 'WBTC',
-        },
-    )
+    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.currency_map = {
+        'UST': 'USDt',
+        'GNT': 'GLM',
+        'WBT': 'WBTC',
+    }
     balances_data = (
         """
         [
@@ -179,19 +188,11 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, balances_data)
 
-    currency_map_patch = patch.object(
-        target=mock_bitfinex,
-        attribute='_query_currency_map',
-        return_value=currency_map_response,
-    )
-    balances_query_patch = patch.object(
+    with patch.object(
         target=mock_bitfinex,
         attribute='_api_query',
         side_effect=mock_api_query_response,
-    )
-    with ExitStack() as stack:
-        stack.enter_context(currency_map_patch)
-        stack.enter_context(balances_query_patch)
+    ):
         asset_balance, msg = mock_bitfinex.query_balances()
 
         assert asset_balance == {
@@ -226,6 +227,7 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
 def test_api_query_paginated_stops_requesting(mock_bitfinex):
     """Test requests are stopped after retry limit is reached.
     """
+    mock_bitfinex.currency_map = {}
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         return MockResponse(
@@ -254,7 +256,6 @@ def test_api_query_paginated_stops_requesting(mock_bitfinex):
         result = mock_bitfinex._api_query_paginated(
             options={'limit': 2},
             case='trades',
-            currency_map={},
         )
         assert result == []
 
@@ -266,6 +267,7 @@ def test_api_query_paginated_retries_request(mock_bitfinex):
     JSON as a dict and later as a list (via `_process_unsuccessful_response()`)
     works as expected.
     """
+    mock_bitfinex.currency_map = {}
 
     def get_paginated_response():
         results = [
@@ -299,16 +301,16 @@ def test_api_query_paginated_retries_request(mock_bitfinex):
         result = mock_bitfinex._api_query_paginated(
             options={'limit': 2},
             case='trades',
-            currency_map={},
         )
         assert result == []
 
 
 def test_deserialize_trade_buy(mock_bitfinex):
-    currency_map = {
+    mock_bitfinex.currency_map = {
         'WBT': 'WBTC',
         'UST': 'USDt',
     }
+    mock_bitfinex.pair_bfx_symbols_map = {'WBTUST': ('WBT', 'UST')}
     raw_result = [
         399251013,
         'tWBT:UST',
@@ -320,7 +322,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
         None,
         -1,
         -0.09868591,
-        'UST',
+        'USD',
     ]
     expected_trade = Trade(
         timestamp=Timestamp(1573485493),
@@ -330,19 +332,17 @@ def test_deserialize_trade_buy(mock_bitfinex):
         amount=AssetAmount(FVal('0.26334268')),
         rate=Price(FVal('187.37')),
         fee=Fee(FVal('0.09868591')),
-        fee_currency=Asset('USDT'),
+        fee_currency=Asset('USD'),
         link='399251013',
         notes='',
     )
-    trade = mock_bitfinex._deserialize_trade(
-        raw_result=raw_result,
-        currency_map=currency_map,
-    )
+    trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
     assert trade == expected_trade
 
 
 def test_deserialize_trade_sell(mock_bitfinex):
-    currency_map = {'UST': 'USDt'}
+    mock_bitfinex.currency_map = {'UST': 'USDt'}
+    mock_bitfinex.pair_bfx_symbols_map = {'ETHUST': ('ETH', 'UST')}
     raw_result = [
         399251013,
         'tETHUST',
@@ -354,7 +354,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
         None,
         -1,
         -0.09868591,
-        'UST',
+        'USD',
     ]
     expected_trade = Trade(
         timestamp=Timestamp(1573485493),
@@ -364,14 +364,11 @@ def test_deserialize_trade_sell(mock_bitfinex):
         amount=AssetAmount(FVal('0.26334268')),
         rate=Price(FVal('187.37')),
         fee=Fee(FVal('0.09868591')),
-        fee_currency=Asset('USDT'),
+        fee_currency=Asset('USD'),
         link='399251013',
         notes='',
     )
-    trade = mock_bitfinex._deserialize_trade(
-        raw_result=raw_result,
-        currency_map=currency_map,
-    )
+    trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
     assert trade == expected_trade
 
 
@@ -392,16 +389,16 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     Trades with id 1 to 4 are expected to be returned.
     """
     api_limit = 2
-    response = Response()
-    response.status_code = HTTPStatus.OK
-    currency_map_response = CurrencyMapResponse(
-        success=True,
-        response=response,
-        currency_map={
-            'UST': 'USDt',
-            'WBT': 'WBTC',
-        },
-    )
+    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.currency_map = {
+        'UST': 'USDt',
+        'WBT': 'WBTC',
+    }
+    mock_bitfinex.pair_bfx_symbols_map = {
+        'ETHUST': ('ETH', 'UST'),
+        'WBTUSD': ('WBT', 'USD'),
+        'ETHEUR': ('ETH', 'EUR'),
+    }
     # Buy ETH with USDT
     trade_1 = """
     [
@@ -415,7 +412,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
         null,
         -1,
         -0.09868591,
-        "UST"
+        "USD"
     ]
     """
     # Sell ETH for USDT
@@ -463,7 +460,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
         null,
         -1,
         -20.00000000,
-        "WBT"
+        "BTC"
     ]
     """
     # Sell ETH for EUR, outside time range (gt 'end_ts')
@@ -525,11 +522,6 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_paginated_response()
-    currency_map_patch = patch.object(
-        target=mock_bitfinex,
-        attribute='_query_currency_map',
-        return_value=currency_map_response,
-    )
     api_limit_patch = patch(
         target='rotkehlchen.exchanges.bitfinex.API_TRADES_MAX_LIMIT',
         new=api_limit,
@@ -541,7 +533,6 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     )
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
-        stack.enter_context(currency_map_patch)
         api_query_mock = stack.enter_context(api_query_patch)
         trades = mock_bitfinex.query_online_trade_history(
             start_ts=Timestamp(0),
@@ -557,7 +548,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
                 amount=AssetAmount(FVal('0.26334268')),
                 rate=Price(FVal('187.37')),
                 fee=Fee(FVal('0.09868591')),
-                fee_currency=Asset('USDT'),
+                fee_currency=Asset('USD'),
                 link='1',
                 notes='',
             ),
@@ -593,7 +584,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
                 amount=AssetAmount(FVal('10000.0')),
                 rate=Price(FVal('0.00005')),
                 fee=Fee(FVal('20.0')),
-                fee_currency=Asset('WBTC'),
+                fee_currency=Asset('BTC'),
                 link='4',
                 notes='',
             ),
@@ -617,16 +608,16 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     Trades with id 1 to 4 are expected to be returned.
     """
     api_limit = 2
-    response = Response()
-    response.status_code = HTTPStatus.OK
-    currency_map_response = CurrencyMapResponse(
-        success=True,
-        response=response,
-        currency_map={
-            'UST': 'USDt',
-            'WBT': 'WBTC',
-        },
-    )
+    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.currency_map = {
+        'UST': 'USDt',
+        'WBT': 'WBTC',
+    }
+    mock_bitfinex.pair_bfx_symbols_map = {
+        'ETHUST': ('ETH', 'UST'),
+        'WBTUSD': ('WBT', 'USD'),
+        'ETHEUR': ('ETH', 'EUR'),
+    }
     # Buy ETH with USDT
     trade_1 = """
     [
@@ -706,11 +697,6 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_paginated_response()
-    currency_map_patch = patch.object(
-        target=mock_bitfinex,
-        attribute='_query_currency_map',
-        return_value=currency_map_response,
-    )
     api_limit_patch = patch(
         target='rotkehlchen.exchanges.bitfinex.API_TRADES_MAX_LIMIT',
         new=api_limit,
@@ -722,7 +708,6 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     )
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
-        stack.enter_context(currency_map_patch)
         stack.enter_context(api_query_patch)
         trades = mock_bitfinex.query_online_trade_history(
             start_ts=Timestamp(0),
@@ -782,7 +767,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
 
 
 def test_deserialize_asset_movement_deposit(mock_bitfinex):
-    currency_map = {'WBT': 'WBTC'}
+    mock_bitfinex.currency_map = {'WBT': 'WBTC'}
     raw_result = [
         13105603,
         'WBT',
@@ -820,10 +805,7 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex):
         fee=Fee(FVal('0.00135')),
         link=str(13105603),
     )
-    asset_movement = mock_bitfinex._deserialize_asset_movement(
-        raw_result=raw_result,
-        currency_map=currency_map,
-    )
+    asset_movement = mock_bitfinex._deserialize_asset_movement(raw_result=raw_result)
     assert asset_movement == expected_asset_movement
 
 
@@ -831,7 +813,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
     """Test also both 'address' and 'transaction_id' are None for fiat
     movements.
     """
-    currency_map = {}
+    mock_bitfinex.currency_map = {}
     raw_result = [
         13105603,
         'EUR',
@@ -869,10 +851,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
         fee=Fee(FVal('0.00135')),
         link=str(13105603),
     )
-    asset_movement = mock_bitfinex._deserialize_asset_movement(
-        raw_result=raw_result,
-        currency_map=currency_map,
-    )
+    asset_movement = mock_bitfinex._deserialize_asset_movement(raw_result=raw_result)
     assert asset_movement == expected_asset_movement
 
 
@@ -895,13 +874,8 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     Movements with id 1, 2 and 4 are expected to be returned.
     """
     api_limit = 2
-    response = Response()
-    response.status_code = HTTPStatus.OK
-    currency_map_response = CurrencyMapResponse(
-        success=True,
-        response=response,
-        currency_map={'WBT': 'WBTC'},
-    )
+    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.currency_map = {'WBT': 'WBTC'}
     # Deposit WBTC
     movement_1 = """
     [
@@ -1077,11 +1051,6 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_paginated_response()
-    currency_map_patch = patch.object(
-        target=mock_bitfinex,
-        attribute='_query_currency_map',
-        return_value=currency_map_response,
-    )
     api_limit_patch = patch(
         target='rotkehlchen.exchanges.bitfinex.API_MOVEMENTS_MAX_LIMIT',
         new=api_limit,
@@ -1093,7 +1062,6 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     )
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
-        stack.enter_context(currency_map_patch)
         api_query_mock = stack.enter_context(api_query_patch)
         asset_movements = mock_bitfinex.query_online_deposits_withdrawals(
             start_ts=Timestamp(0),
@@ -1160,13 +1128,8 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     Trades with id 1 to 4 are expected to be returned.
     """
     api_limit = 2
-    response = Response()
-    response.status_code = HTTPStatus.OK
-    currency_map_response = CurrencyMapResponse(
-        success=True,
-        response=response,
-        currency_map={'WBT': 'WBTC'},
-    )
+    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.currency_map = {'WBT': 'WBTC'}
     # Deposit WBTC
     movement_1 = """
     [
@@ -1290,11 +1253,6 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_paginated_response()
-    currency_map_patch = patch.object(
-        target=mock_bitfinex,
-        attribute='_query_currency_map',
-        return_value=currency_map_response,
-    )
     api_limit_patch = patch(
         target='rotkehlchen.exchanges.bitfinex.API_MOVEMENTS_MAX_LIMIT',
         new=api_limit,
@@ -1306,7 +1264,6 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     )
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
-        stack.enter_context(currency_map_patch)
         stack.enter_context(api_query_patch)
         asset_movements = mock_bitfinex.query_online_deposits_withdrawals(
             start_ts=Timestamp(0),
