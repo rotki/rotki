@@ -5,6 +5,12 @@ Changelog
 * :feature:`1950` Users can now use a predefined yearly or quarterly range when generating a tax report.
 * :bug:`2013` Show correct fee currency for Bitfinex trades.
 
+* :feature:`-` Added support for the following tokens:
+
+  - `Energi (NRG) <https://www.coingecko.com/en/coins/energi>`__
+  - `Exeedme (XED) <https://www.coingecko.com/en/coins/exeedme>`__
+  - `Terra Virtua Kolect (TVK) <https://www.coingecko.com/en/coins/terra-virtua-kolect>`__
+
 * :release:`1.11.0 <2020-12-30>`
 * :bug:`1929` Premium users will be able to see the proper balances after a force pull.
 * :feature:`438` Rotki now supports Bitfinex. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.

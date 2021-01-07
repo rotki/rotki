@@ -6769,9 +6769,10 @@
         "type": "ethereum token"
     },
     "KORE": {
-        "coingecko": "korecoin",
+        "coingecko": "kore",
         "name": "Kore",
         "started": 1402790400,
+        "ended": 1610016978,
         "symbol": "KORE",
         "type": "own chain"
     },
@@ -14518,6 +14519,34 @@
         "name": "SynLev",
         "started": 1597091217,
         "symbol": "SYN",
+        "type": "ethereum token"
+    },
+    "NRG": {
+        "coingecko": "energi",
+        "ethereum_address": "0x1416946162B1C2c871A73B07E932D2fB6C932069",
+        "ethereum_token_decimals": 18,
+        "name": "Energi",
+        "started": 1603272305,
+        "symbol": "NRG",
+        "type": "ethereum token and more"
+    },
+    "XED": {
+        "coingecko": "exeedme",
+        "ethereum_address": "0xee573a945B01B788B9287CE062A0CFC15bE9fd86",
+        "ethereum_token_decimals": 18,
+        "name": "Exeedme",
+        "started": 1609266395,
+        "symbol": "XED",
+        "type": "ethereum token"
+    },
+    "TVK": {
+        "coingecko": "terra-virtua-kolect",
+        "cryptocompare": "",
+        "ethereum_address": "0xd084B83C305daFD76AE3E1b4E1F1fe2eCcCb3988",
+        "ethereum_token_decimals": 18,
+        "name": "Terra Virtua Kolect",
+        "started": 1607372826,
+        "symbol": "TVK",
         "type": "ethereum token"
     }
 }
