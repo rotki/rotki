@@ -1,6 +1,6 @@
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.db.dbhandler import DBHandler
-from typing import NamedTuple
+from typing import NamedTuple, Set
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.utils.misc import ts_now
@@ -30,8 +30,9 @@ class TaskManager():
     ) -> None:
         self.greenlet_manager = greenlet_manager
         self.database = database
+        self.cryptocompare = cryptocompare
         self.premium_sync_manager = premium_sync_manager
-        self.cryptocompare_queries = set()
+        self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chain_manager = chain_manager
         self.xpub_derivation_scheduled = False
 

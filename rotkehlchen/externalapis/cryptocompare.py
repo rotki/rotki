@@ -553,7 +553,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         returns a list of 0s for the timerange.
         """
         price = Price(ZERO)
-        if data is None:
+        if data is None or len(data) == 0:
             return price
 
         # all data are sorted and timestamps are always increasing by 1 hour
@@ -744,6 +744,9 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 from_timestamp=now_ts,
                 to_timestamp=Timestamp(0),
             ))
+
+        if len(calculated_history) == 0:
+            return []  # empty list means we found nothing
 
         # Let's always check for data sanity for the hourly prices.
         _check_hourly_data_sanity(calculated_history, from_asset, to_asset)

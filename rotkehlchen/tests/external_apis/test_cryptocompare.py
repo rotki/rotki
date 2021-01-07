@@ -15,11 +15,13 @@ from rotkehlchen.externalapis.cryptocompare import (
     CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES,
     Cryptocompare,
     PairCacheKey,
+    PRICE_HISTORY_FILE_PREFIX,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_SNGLS
 from rotkehlchen.typing import Price, Timestamp
 from typing import List
+from rotkehlchen.utils.misc import get_or_make_price_history_dir
 
 
 def test_cryptocompare_query_pricehistorical(cryptocompare):
@@ -41,7 +43,8 @@ def test_cryptocompare_historical_data_use_cached_price(data_dir, database):
     "data": [{"time": 1438387200, "close": 10, "high": 10, "low": 10, "open": 10,
     "volumefrom": 10, "volumeto": 10}, {"time": 1438390800, "close": 20, "high": 20,
     "low": 20, "open": 20, "volumefrom": 20, "volumeto": 20}]}"""
-    with open(os.path.join(data_dir, 'price_history_SNGLS_BTC.json'), 'w') as f:
+    price_history_dir = get_or_make_price_history_dir(data_dir)
+    with open(price_history_dir / f'{PRICE_HISTORY_FILE_PREFIX}SNGLS_BTC.json', 'w') as f:
         f.write(contents)
 
     cc = Cryptocompare(data_directory=data_dir, database=database)
@@ -150,7 +153,8 @@ def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer
     "data": [{"time": 1301536800, "close": 0.298, "high": 0.298, "low": 0.298, "open": 0.298,
     "volumefrom": 0.298, "volumeto": 0.298}, {"time": 1301540400, "close": 0.298, "high": 0.298,
     "low": 0.298, "open": 0.298, "volumefrom": 0.298, "volumeto": 0.298}]}"""
-    with open(os.path.join(data_dir, 'price_history_BTC_USD.json'), 'w') as f:
+    price_history_dir = get_or_make_price_history_dir(data_dir)
+    with open(price_history_dir / f'{PRICE_HISTORY_FILE_PREFIX}BTC_USD.json', 'w') as f:
         f.write(contents)
     freezer.move_to(datetime.fromtimestamp(now_ts))
     cc = Cryptocompare(data_directory=data_dir, database=database)
@@ -169,10 +173,6 @@ def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer
     check_cc_result(cc.price_history[cache_key].data, forward=False)
 
 
-@pytest.mark.skip(
-    'Same test as test_end_to_end_tax_report::'
-    'test_cryptocompare_asset_and_price_not_found_in_history_processing',
-)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_cryptocompare_histohour_query_old_ts_xcp(
