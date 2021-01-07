@@ -728,7 +728,7 @@ class Bitfinex(ExchangeInterface):
             self,
             response: Response,
             case: Literal['balances'],
-    ) -> Tuple[Optional[Dict[Asset, Balance]], str]:
+    ) -> Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str]:
         ...
 
     @overload  # noqa: F811
@@ -754,7 +754,7 @@ class Bitfinex(ExchangeInterface):
     ) -> Union[
         List,
         Tuple[bool, str],
-        Tuple[Optional[Dict[Asset, Balance]], str],
+        Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str],
     ]:
         """This function processes not successful responses for the cases listed
         in `case`.
@@ -806,7 +806,7 @@ class Bitfinex(ExchangeInterface):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Balance]], str]:
+    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str]:
         """Return the account exchange balances on Bitfinex
 
         The wallets endpoint returns a list where each item is a currency wallet.
@@ -890,7 +890,7 @@ class Bitfinex(ExchangeInterface):
                 usd_value=amount * usd_price,
             )
 
-        return dict(asset_balance), ''
+        return {a: b.to_dict() for a, b in asset_balance.items()}, ''
 
     def query_online_deposits_withdrawals(
             self,
