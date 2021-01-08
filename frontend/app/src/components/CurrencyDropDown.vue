@@ -74,7 +74,7 @@ export default class CurrencyDropDown extends Vue {
   updateSettings!: (update: SettingsUpdate) => Promise<void>;
   filter: string = '';
   visible: boolean = false;
-  pendingTimeout: number = 0;
+  pendingTimeout: any = 0;
 
   get currencies(): Currency[] {
     const filter = this.filter.toLocaleLowerCase();
