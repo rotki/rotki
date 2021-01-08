@@ -22,6 +22,7 @@
     "total": "Total"
   },
   "blockchain_account_selector": {
+    "all": "all",
     "default_label": "Filter account(s)",
     "hint": "Showing results across {hintText} accounts."
   },

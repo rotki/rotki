@@ -106,16 +106,15 @@ export default class BlockchainAccountSelector extends Vue {
     if (this.chains.length === 0) {
       return this.accounts;
     }
-    return this.accounts.filter(account => this.chains.includes(account.chain));
+    return this.accounts.filter(({ chain }) => this.chains.includes(chain));
   }
 
   get hintText(): string {
+    const all = this.$t('blockchain_account_selector.all').toString();
     if (Array.isArray(this.value)) {
-      return `${this.value.length}`;
-    } else if (this.value) {
-      return '1';
+      return this.value.length > 0 ? this.value.length.toString() : all;
     }
-    return 'all';
+    return this.value ? '1' : all;
   }
 
   @Emit()
