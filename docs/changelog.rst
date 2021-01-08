@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2008` Users can now search for a currency in the currency selection UI.
 * :bug:`2006` Users will now properly see all accounts selected as a hint when no account is selected in airdrops.
 * :bug:`2023` Crypto.com is now properly not displayed as a connectable exchange.
 * :feature:`1950` Users can now use a predefined yearly or quarterly range when generating a tax report.
