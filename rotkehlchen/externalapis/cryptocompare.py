@@ -45,7 +45,7 @@ T_PairCacheKey = str
 PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
-CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
+CRYPTOCOMPARE_QUERY_RETRY_TIMES = 3
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('TLN'): A_WETH,
     Asset('BLY'): A_USDT,
@@ -286,9 +286,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 ) from e
 
             try:
+                # backoff and retry 3 times =  1 + 1.5 + 3 = at most 5.5 secs
+                # Failing is also fine, since all calls have secondary data sources
+                # for example coingecko
                 if json_ret.get('Message', None) == RATE_LIMIT_MSG:
                     if tries >= 1:
-                        backoff_seconds = 20 / tries
+                        backoff_seconds = 3 / tries
                         log.debug(
                             f'Got rate limited by cryptocompare. '
                             f'Backing off for {backoff_seconds}',
@@ -309,7 +312,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     if 'Message' in json_ret:
                         error_message += f'. Error: {json_ret["Message"]}'
 
-                    log.error(
+                    log.warning(
                         'Cryptocompare query failure',
                         url=querystr,
                         error=error_message,
