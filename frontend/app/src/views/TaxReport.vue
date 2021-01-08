@@ -1,6 +1,22 @@
 <template>
   <v-container>
-    <base-page-header :text="$t('tax_report.title')" />
+    <base-page-header :text="$t('tax_report.title')">
+      <v-tooltip top>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            text
+            fab
+            depressed
+            v-bind="attrs"
+            to="/settings/accounting"
+            v-on="on"
+          >
+            <v-icon color="primary">mdi-cog</v-icon>
+          </v-btn>
+        </template>
+        <span>{{ $t('tax_report.settings_tooltip') }}</span>
+      </v-tooltip>
+    </base-page-header>
     <generate v-show="!isRunning" @generate="generate($event)" />
     <div v-if="loaded && !isRunning">
       <v-btn

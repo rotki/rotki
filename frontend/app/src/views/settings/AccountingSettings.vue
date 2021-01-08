@@ -58,6 +58,19 @@
               color="primary"
               @change="onAccountForAssetsMovements($event)"
             />
+            <v-switch
+              v-model="calculatePastCostBasis"
+              class="accounting-settings__past-cost-basis"
+              :success-messages="
+                settingsMessages['calculatePastCostBasis'].success
+              "
+              :error-messages="settingsMessages['calculatePastCostBasis'].error"
+              :label="
+                $t('accounting_settings.labels.calculate_past_cost_basis')
+              "
+              color="primary"
+              @change="onCalculatePastCostBasisChange($event)"
+            />
           </v-card-text>
         </v-card>
       </v-col>
@@ -140,7 +153,7 @@ import { Component } from 'vue-property-decorator';
 import { mapActions, mapState } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { ActionStatus } from '@/store/types';
-import { AccountingSettings } from '@/typing/types';
+import { AccountingSettings, SettingsUpdate } from '@/typing/types';
 import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 
 @Component({
@@ -151,7 +164,7 @@ import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
     ...mapState('session', ['accountingSettings', 'ignoredAssets'])
   },
   methods: {
-    ...mapActions('session', ['ignoreAsset', 'unignoreAsset'])
+    ...mapActions('session', ['ignoreAsset', 'unignoreAsset', 'settingsUpdate'])
   }
 })
 export default class Accounting extends Settings {
@@ -159,12 +172,14 @@ export default class Accounting extends Settings {
   ignoredAssets!: string[];
   ignoreAsset!: (asset: string) => Promise<ActionStatus>;
   unignoreAsset!: (asset: string) => Promise<ActionStatus>;
+  settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
 
   crypto2CryptoTrades: boolean = false;
   gasCosts: boolean = false;
   taxFreeAfterPeriod: number | null = null;
   taxFreePeriod: boolean = false;
   accountForAssetsMovements: boolean = false;
+  calculatePastCostBasis: boolean = false;
 
   assetToIgnore: string = '';
   assetToRemove: string = '';
@@ -178,7 +193,8 @@ export default class Accounting extends Settings {
     taxFreePeriodAfter: { success: '', error: '' },
     addIgnoreAsset: { success: '', error: '' },
     remIgnoreAsset: { success: '', error: '' },
-    accountForAssetsMovements: { success: '', error: '' }
+    accountForAssetsMovements: { success: '', error: '' },
+    calculatePastCostBasis: { success: '', error: '' }
   };
 
   taxFreeRules = [
@@ -200,6 +216,7 @@ export default class Accounting extends Settings {
       this.taxFreeAfterPeriod = null;
     }
     this.accountForAssetsMovements = this.accountingSettings.accountForAssetsMovements;
+    this.calculatePastCostBasis = this.accountingSettings.calculatePastCostBasis;
   }
 
   onTaxFreeChange(enabled: boolean) {
@@ -355,6 +372,23 @@ export default class Accounting extends Settings {
           )
         );
       });
+  }
+
+  async onCalculatePastCostBasisChange(enabled: boolean) {
+    const { success, message } = await this.settingsUpdate({
+      calculate_past_cost_basis: enabled
+    });
+    this.validateSettingChange(
+      'calculatePastCostBasis',
+      success ? 'success' : 'error',
+      success
+        ? enabled
+          ? this.$t('account_settings.messages.cost_basics.enabled').toString()
+          : this.$t('account_settings.messages.cost_basics.disabled').toString()
+        : this.$t('account_settings.messages.cost_basics.error', {
+            message
+          }).toString()
+    );
   }
 
   async addAsset() {

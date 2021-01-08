@@ -23,5 +23,6 @@ export const defaultAccountingSettings = (): AccountingSettings => ({
   includeCrypto2Crypto: true,
   includeGasCosts: true,
   taxFreeAfterPeriod: null,
-  accountForAssetsMovements: true
+  accountForAssetsMovements: true,
+  calculatePastCostBasis: true
 });

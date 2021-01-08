@@ -1510,6 +1510,7 @@
   "accounting_settings": {
     "title": "Trade Settings",
     "labels": {
+      "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
       "crypto_to_crypto": "Take into account crypto to crypto trades",
       "gas_costs": "Take into account Ethereum gas costs",
       "tax_free": "Is there a tax free period?",
@@ -1536,6 +1537,11 @@
       "tax_free_days_gt_zero": "The number of days cannot be negative or zero"
     },
     "messages": {
+      "cost_basics": {
+        "disabled": "Successfully disabled past cost basis calculation",
+        "enabled": "Successfully enabled past cost basis calculation",
+        "error": "Failed to change cost basis calculation: {message}"
+      },
       "tax_free_period": "Tax free period set to {period} days",
       "tax_free": "Tax free period {enabled}",
       "crypto_to_crypto": "Error setting crypto to crypto: {message}",
@@ -1558,6 +1564,7 @@
   "tax_report": {
     "download_csv": "Download CSV",
     "download_failed": "Download of report is not possible",
+    "settings_tooltip": "Open the accounting settings",
     "title": "Tax Report",
     "export_csv": "Export CSV",
     "loading_message": "Please wait while your report is generated...",

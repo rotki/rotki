@@ -28,6 +28,7 @@ export interface GeneralSettings {
 }
 
 export interface AccountingSettings {
+  readonly calculatePastCostBasis: boolean;
   readonly includeCrypto2Crypto: boolean;
   readonly includeGasCosts: boolean;
   readonly taxFreeAfterPeriod: number | null;
@@ -124,6 +125,7 @@ interface SettingsPayload {
   frontend_settings: string;
   account_for_assets_movements: boolean;
   btc_derivation_gap_limit: number;
+  calculate_past_cost_basis: boolean;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';

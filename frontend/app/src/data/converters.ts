@@ -38,5 +38,6 @@ export const convertToAccountingSettings = (
   taxFreeAfterPeriod: settings.taxfree_after_period,
   includeGasCosts: settings.include_gas_costs,
   includeCrypto2Crypto: settings.include_crypto2crypto,
-  accountForAssetsMovements: settings.account_for_assets_movements
+  accountForAssetsMovements: settings.account_for_assets_movements,
+  calculatePastCostBasis: settings.calculate_past_cost_basis
 });
