@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2056` Users can now control whether a profit loss report in a certain time range is allowed to go further in the past to calculate the real cost basis of assets or not. By default this setting is on.
 * :feature:`2008` Users can now search for a currency in the currency selection UI.
 * :bug:`2006` Users will now properly see all accounts selected as a hint when no account is selected in airdrops.
 * :bug:`2023` Crypto.com is now properly not displayed as a connectable exchange.
