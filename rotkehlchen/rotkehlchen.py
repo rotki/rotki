@@ -20,7 +20,7 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
-from rotkehlchen.tasks.manager import TaskManager
+from rotkehlchen.tasks.manager import TaskManager, DEFAULT_MAX_TASKS_NUM
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.config import default_data_directory
@@ -276,6 +276,7 @@ class Rotkehlchen():
             chain_manager=self.chain_manager,
         )
         self.task_manager = TaskManager(
+            max_tasks_num=DEFAULT_MAX_TASKS_NUM,
             greenlet_manager=self.greenlet_manager,
             database=self.data.db,
             cryptocompare=self.cryptocompare,

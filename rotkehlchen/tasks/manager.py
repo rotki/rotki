@@ -10,7 +10,7 @@ from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 
 CRYPTOCOMPARE_QUERY_AFTER_SECS = 86400  # a day
-MAX_TASKS_NUM = 2
+DEFAULT_MAX_TASKS_NUM = 2
 
 
 class CCHistoQuery(NamedTuple):
@@ -22,12 +22,14 @@ class TaskManager():
 
     def __init__(
             self,
+            max_tasks_num: int,
             greenlet_manager: GreenletManager,
             database: DBHandler,
             cryptocompare: Cryptocompare,
             premium_sync_manager: PremiumSyncManager,
             chain_manager: ChainManager,
     ) -> None:
+        self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
         self.database = database
         self.cryptocompare = cryptocompare
@@ -70,7 +72,7 @@ class TaskManager():
 
     def schedule(self) -> None:
         """Schedules background tasks"""
-        if len(self.greenlet_manager.greenlets) > MAX_TASKS_NUM:
+        if len(self.greenlet_manager.greenlets) > self.max_tasks_num:
             return  # too busy
 
         self._maybe_schedule_cryptocompare_query()
