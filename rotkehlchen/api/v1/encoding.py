@@ -703,6 +703,7 @@ class ModifiableSettingsSchema(Schema):
         ),
         missing=None,
     )
+    calculate_past_cost_basis = fields.Bool(missing=None)
 
     @validates_schema  # type: ignore
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -742,6 +743,7 @@ class ModifiableSettingsSchema(Schema):
             frontend_settings=data['frontend_settings'],
             account_for_assets_movements=data['account_for_assets_movements'],
             btc_derivation_gap_limit=data['btc_derivation_gap_limit'],
+            calculate_past_cost_basis=data['calculate_past_cost_basis'],
         )
 
 

@@ -27,6 +27,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_START_DATE,
     DEFAULT_UI_FLOATING_PRECISION,
+    DEFAULT_CALCULATE_PAST_COST_BASIS,
     ROTKEHLCHEN_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
@@ -279,6 +280,7 @@ def test_writing_fetching_data(data_dir, username):
         'frontend_settings': '',
         'account_for_assets_movements': DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
         'btc_derivation_gap_limit': DEFAULT_BTC_DERIVATION_GAP_LIMIT,
+        'calculate_past_cost_basis': DEFAULT_CALCULATE_PAST_COST_BASIS,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
