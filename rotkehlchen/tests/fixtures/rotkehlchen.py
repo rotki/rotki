@@ -23,6 +23,15 @@ from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 
 
+@pytest.fixture(name='max_tasks_num')
+def fixture_max_tasks_num() -> int:
+    """The max number of tasks below which the manager can schedule tasks
+
+    By default -1 which disables the task manager
+    """
+    return -1
+
+
 @pytest.fixture(name='start_with_logged_in_user')
 def fixture_start_with_logged_in_user():
     return True
@@ -87,6 +96,7 @@ def initialize_mock_rotkehlchen_instance(
         ethereum_manager_connect_at_start,
         eth_rpc_endpoint,
         aave_use_graph,
+        max_tasks_num,
 ):
     if not start_with_logged_in_user:
         return
@@ -112,6 +122,8 @@ def initialize_mock_rotkehlchen_instance(
             sync_approval='no',
             premium_credentials=None,
         )
+    # configure when task manager should run for tests
+    rotki.task_manager.max_tasks_num = max_tasks_num
 
     if start_with_valid_premium:
         rotki.premium = Premium(rotki_premium_credentials)
@@ -186,6 +198,7 @@ def fixture_rotkehlchen_api_server(
         ethereum_manager_connect_at_start,
         ethrpc_endpoint,
         aave_use_graph,
+        max_tasks_num,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -212,6 +225,7 @@ def fixture_rotkehlchen_api_server(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
         aave_use_graph=aave_use_graph,
+        max_tasks_num=max_tasks_num,
     )
     yield api_server
     api_server.stop()
@@ -239,6 +253,7 @@ def rotkehlchen_instance(
         ethereum_manager_connect_at_start,
         ethrpc_endpoint,
         aave_use_graph,
+        max_tasks_num,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -263,6 +278,7 @@ def rotkehlchen_instance(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
         aave_use_graph=aave_use_graph,
+        max_tasks_num=max_tasks_num,
     )
     return uninitialized_rotkehlchen
 
