@@ -26,6 +26,7 @@ DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 DEFAULT_ACTIVE_MODULES = AVAILABLE_MODULES
 DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
+DEFAULT_CALCULATE_PAST_COST_BASIS = True
 
 
 class DBSettings(NamedTuple):
@@ -51,6 +52,7 @@ class DBSettings(NamedTuple):
     frontend_settings: str = ''
     account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
     btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
+    calculate_past_cost_basis: bool = DEFAULT_CALCULATE_PAST_COST_BASIS
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -71,6 +73,7 @@ class ModifiableDBSettings(NamedTuple):
     frontend_settings: Optional[str] = None
     account_for_assets_movements: Optional[bool] = None
     btc_derivation_gap_limit: Optional[int] = None
+    calculate_past_cost_basis: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -115,6 +118,7 @@ BOOLEAN_KEYS = (
     'premium_should_sync',
     'submit_usage_analytics',
     'account_for_assets_movements',
+    'calculate_past_cost_basis',
 )
 INTEGER_KEYS = (
     'version',

@@ -548,3 +548,62 @@ def test_assets_movements_not_accounted_for(accountant, expected):
     assert FVal(result['overview']['asset_movement_fees']).is_close(expected)
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close(-expected)
     assert FVal(result['overview']['total_profit_loss']).is_close(-expected)
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings', [
+    {'calculate_past_cost_basis': False, 'taxfree_after_period': -1},
+    {'calculate_past_cost_basis': True, 'taxfree_after_period': -1},
+])
+def test_not_calculate_past_cost_basis(accountant, db_settings):
+    # trades copied from
+    # rotkehlchen/tests/integration/test_end_to_end_tax_report.py
+
+    history = [{
+        'timestamp': 1446979735,  # 08/11/2015
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 268.678317859,
+        'fee': 0,
+        'fee_currency': 'BTC',
+        'amount': 5,
+        'location': 'external',
+    }, {
+        'timestamp': 1446979735,  # 08/11/2015
+        'pair': 'ETH_EUR',
+        'trade_type': 'buy',
+        'rate': 0.2315893,
+        'fee': 0,
+        'fee_currency': 'ETH',
+        'amount': 1450,
+        'location': 'external',
+    }, {
+        'timestamp': 1488373504,  # 29/02/2017
+        'pair': 'BTC_EUR',
+        'trade_type': 'sell',
+        'rate': 1146.22,
+        'fee': 0.01,
+        'fee_currency': 'EUR',
+        'amount': 2,
+        'location': 'kraken',
+    }]
+    result = accounting_history_process(
+        accountant=accountant,
+        start_ts=1466979735,
+        end_ts=1519693374,
+        history_list=history,
+    )
+
+    sell_gain = (
+        FVal(history[-1]['rate']) * FVal(history[-1]['amount']) -
+        FVal(history[-1]['fee'])
+    )
+    if db_settings['calculate_past_cost_basis'] is True:
+        buy_cost = FVal(history[0]['rate']) * FVal(history[-1]['amount'])
+        expected = sell_gain - buy_cost
+    else:
+        expected = sell_gain
+
+    assert FVal(result['overview']['taxable_trade_profit_loss']).is_close(expected)
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close(expected)
+    assert FVal(result['overview']['total_profit_loss']).is_close(expected)
