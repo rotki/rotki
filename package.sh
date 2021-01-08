@@ -140,6 +140,7 @@ cd frontend/app/dist || exit 1
 if [[ "$PLATFORM" == "linux" ]]; then
   generate_checksum "$PLATFORM" "*AppImage" APPIMAGE_CHECKSUM
   generate_checksum "$PLATFORM" "*.tar.xz" TAR_CHECKSUM
+  generate_checksum "$PLATFORM" "*.deb" DEB_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$GENERATED_APPIMAGE"
@@ -148,6 +149,8 @@ if [[ "$PLATFORM" == "linux" ]]; then
     echo "::set-output name=binary_checksum_name::${APPIMAGE_CHECKSUM##*/}"
     echo "::set-output name=archive_checksum::$TAR_CHECKSUM"
     echo "::set-output name=archive_checksum_name::${TAR_CHECKSUM##*/}"
+    echo "::set-output name=deb_checksum::$DEB_CHECKSUM"
+    echo "::set-output name=deb_checksum_name::${DEB_CHECKSUM##*/}"
   fi
 
   export APPIMAGE_CHECKSUM

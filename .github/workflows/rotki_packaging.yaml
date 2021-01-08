@@ -127,6 +127,15 @@ jobs:
           asset_path: ${{ steps.packaging.outputs.archive_checksum }}
           asset_name: ${{ steps.packaging.outputs.archive_checksum_name }}
           asset_content_type: text/plain
+      - name: Upload deb sha512 checksum file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.deb_checksum }}
+          asset_name: ${{ steps.packaging.outputs.deb_checksum_name }}
+          asset_content_type: text/plain
 
   osx:
     env:
