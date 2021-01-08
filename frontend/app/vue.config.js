@@ -75,7 +75,7 @@ module.exports = {
           icon: 'src/assets/images/rotki.ico'
         },
         linux: {
-          target: ['AppImage', 'tar.xz'],
+          target: ['AppImage', 'tar.xz', 'deb'],
           icon: 'srs/assets/images/rotki_1024x1024.png',
           category: 'Finance'
         },

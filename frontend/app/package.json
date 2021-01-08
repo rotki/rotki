@@ -2,7 +2,7 @@
   "name": "rotki",
   "version": "1.11.0",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
-  "author": "Rotki Solutions GmbH",
+  "author": "Rotki Solutions GmbH <info@rotki.com>",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
