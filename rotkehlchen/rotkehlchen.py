@@ -130,6 +130,7 @@ class Rotkehlchen():
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='periodically_query_icons_until_all_cached',
+            exception_is_error=False,
             method=self.icon_manager.periodically_query_icons_until_all_cached,
             batch_size=ICONS_BATCH_SIZE,
             sleep_time_secs=ICONS_QUERY_SLEEP,
@@ -219,6 +220,7 @@ class Rotkehlchen():
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='submit_usage_analytics',
+            exception_is_error=False,
             method=maybe_submit_usage_analytics,
             should_submit=settings.submit_usage_analytics,
         )

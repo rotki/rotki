@@ -236,14 +236,13 @@ class Cryptocompare(ExternalServiceWithApiKey):
         prefix = os.path.join(str(price_history_dir), PRICE_HISTORY_FILE_PREFIX)
         prefix = prefix.replace('\\', '\\\\')
         regex = re.compile(prefix + r'(.*)\.json')
-        files_list = glob.glob(prefix + '*.json')
 
-        for file_ in files_list:
-            file_ = file_.replace('\\\\', '\\')
-            match = regex.match(file_)
+        for file_ in price_history_dir.rglob(PRICE_HISTORY_FILE_PREFIX + '*.json'):
+            file_str = str(file_).replace('\\\\', '\\')
+            match = regex.match(file_str)
             assert match
             cache_key = PairCacheKey(match.group(1))
-            self.price_history_file[cache_key] = Path(file_)
+            self.price_history_file[cache_key] = file_
 
     def set_database(self, database: DBHandler) -> None:
         """If the cryptocompare instance was initialized without a DB this sets its DB"""

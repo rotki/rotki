@@ -251,6 +251,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     greenlet_manager.spawn_and_track(
                         after_seconds=None,
                         task_name='Initialize Compound object',
+                        exception_is_error=True,
                         method=self._initialize_compound,
                         premium=premium,
                     )
@@ -290,6 +291,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=f'startup of {name}',
+                exception_is_error=True,
                 method=module.on_startup,
             )
 

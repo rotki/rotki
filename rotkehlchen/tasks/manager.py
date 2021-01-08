@@ -1,3 +1,4 @@
+import logging
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.db.dbhandler import DBHandler
 from typing import NamedTuple, Set
@@ -8,6 +9,9 @@ from rotkehlchen.typing import Timestamp
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+
+logger = logging.getLogger(__name__)
+
 
 CRYPTOCOMPARE_QUERY_AFTER_SECS = 86400  # a day
 DEFAULT_MAX_TASKS_NUM = 2
@@ -41,9 +45,17 @@ class TaskManager():
     def _prepare_cryptocompare_queries(self, now_ts: Timestamp) -> None:
         if len(self.cryptocompare_queries) != 0:
             return
+
         assets = self.database.query_owned_assets()
         main_currency = self.database.get_main_currency()
         for asset in assets:
+
+            if asset.is_fiat() and main_currency.is_fiat():
+                continue  # ignore fiat to fiat
+
+            if asset.cryptocompare == '' or main_currency.cryptocompare == '':
+                continue  # not supported in cryptocompare
+
             data = self.cryptocompare.get_cached_data(from_asset=asset, to_asset=main_currency)
             if data is not None and now_ts - data.end_time < CRYPTOCOMPARE_QUERY_AFTER_SECS:
                 continue
@@ -57,11 +69,17 @@ class TaskManager():
         if len(self.cryptocompare_queries) == 0:
             return False
 
+        # If there is already a cryptocompary query running don't schedule another
+        if any('Cryptocompare historical prices' in x for x in self.greenlet_manager.greenlets):
+            return False
+
         query = self.cryptocompare_queries.pop()
         task_name = f'Cryptocompare historical prices {query.from_asset} / {query.to_asset} query'
+        logger.debug(f'Scheduling task for {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
+            exception_is_error=False,
             method=self.cryptocompare.get_historical_data,
             from_asset=query.from_asset,
             to_asset=query.to_asset,
@@ -72,6 +90,7 @@ class TaskManager():
 
     def schedule(self) -> None:
         """Schedules background tasks"""
+        self.greenlet_manager.clear_finished()
         if len(self.greenlet_manager.greenlets) > self.max_tasks_num:
             return  # too busy
 
@@ -83,6 +102,7 @@ class TaskManager():
             self.greenlet_manager.spawn_and_track(
                 after_seconds=60.0,
                 task_name='Derive new xpub addresses',
+                exception_is_error=True,
                 method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
             )
             self.xpub_derivation_scheduled = True
