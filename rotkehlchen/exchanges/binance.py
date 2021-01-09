@@ -655,9 +655,9 @@ class Binance(ExchangeInterface):
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict], str]:
-        self.first_connection()
-        returned_balances: Dict = {}
         try:
+            self.first_connection()
+            returned_balances: Dict = {}
             returned_balances = self._query_spot_balances(returned_balances)
             returned_balances = self._query_lending_balances(returned_balances)
             returned_balances = self._query_cross_collateral_futures_balances(returned_balances)
