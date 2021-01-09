@@ -1,3 +1,4 @@
+import gevent
 import logging
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.db.dbhandler import DBHandler
@@ -41,11 +42,32 @@ class TaskManager():
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chain_manager = chain_manager
         self.xpub_derivation_scheduled = False
+        self.prepared_cryptocompare_query = False
+        self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
+            after_seconds=None,
+            task_name='Prepare cryptocompare queries',
+            exception_is_error=True,
+            method=self._prepare_cryptocompare_queries,
+        )
 
-    def _prepare_cryptocompare_queries(self, now_ts: Timestamp) -> None:
+    def _prepare_cryptocompare_queries(self) -> None:
+        """Prepare the queries to do to cryptocompare
+
+        This is actually rather slow for many files, due to the json files ending
+        up being rather big and causing a lot of I/O. We also need to yield to
+        other greenlets in the loop, or else we end up starving everything else.
+
+        Runs only once in the beginning and then has a number of queries prepared
+        for the task manager to schedule
+        """
+        now_ts = ts_now()
+        if self.prepared_cryptocompare_query is True:
+            return
+
         if len(self.cryptocompare_queries) != 0:
             return
 
+        self.preparing_cryptocompare_query = True
         assets = self.database.query_owned_assets()
         main_currency = self.database.get_main_currency()
         for asset in assets:
@@ -56,21 +78,32 @@ class TaskManager():
             if asset.cryptocompare == '' or main_currency.cryptocompare == '':
                 continue  # not supported in cryptocompare
 
-            data = self.cryptocompare.get_cached_data(from_asset=asset, to_asset=main_currency)
-            if data is not None and now_ts - data.end_time < CRYPTOCOMPARE_QUERY_AFTER_SECS:
+            gevent.sleep(1)  # yield to other greenlets to not starve their timeouts
+            data = self.cryptocompare.get_cached_data_metadata(
+                from_asset=asset,
+                to_asset=main_currency,
+            )
+            if data is not None and now_ts - data[1] < CRYPTOCOMPARE_QUERY_AFTER_SECS:
                 continue
 
             self.cryptocompare_queries.add(CCHistoQuery(from_asset=asset, to_asset=main_currency))
 
+        self.prepared_cryptocompare_query = True
+
     def _maybe_schedule_cryptocompare_query(self) -> bool:
         """Schedules a cryptocompare query for a single asset history"""
         now_ts = ts_now()
-        self._prepare_cryptocompare_queries(now_ts)
+        if self.prepared_cryptocompare_query is False:
+            return False
+
         if len(self.cryptocompare_queries) == 0:
             return False
 
         # If there is already a cryptocompary query running don't schedule another
-        if any('Cryptocompare historical prices' in x for x in self.greenlet_manager.greenlets):
+        if any(
+                'Cryptocompare historical prices' in x.task_name
+                for x in self.greenlet_manager.greenlets
+        ):
             return False
 
         query = self.cryptocompare_queries.pop()
@@ -91,7 +124,14 @@ class TaskManager():
     def schedule(self) -> None:
         """Schedules background tasks"""
         self.greenlet_manager.clear_finished()
-        if len(self.greenlet_manager.greenlets) > self.max_tasks_num:
+        current_greenlets = len(self.greenlet_manager.greenlets)
+        not_proceed = current_greenlets >= self.max_tasks_num
+        logger.debug(
+            f'At task scheduling. Current greenlets: {current_greenlets} '
+            f'Max greenlets: {self.max_tasks_num}. '
+            f'{"Will not schedule" if not_proceed else "Will schedule"}.'
+        )
+        if not_proceed:
             return  # too busy
 
         self._maybe_schedule_cryptocompare_query()

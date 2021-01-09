@@ -117,6 +117,7 @@ class Rotkehlchen():
             raise SystemPermissionError(
                 f'The given data directory {self.data_dir} is not readable or writable',
             )
+        self.main_loop_spawned = False
         self.args = args
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
@@ -356,11 +357,15 @@ class Rotkehlchen():
         self.chain_manager.deactivate_premium_status()
 
     def start(self) -> gevent.Greenlet:
-        return gevent.spawn(self.main_loop)
+        assert not self.main_loop_spawned, 'Tried to spawn the main loop twice'
+        greenlet = gevent.spawn(self.main_loop)
+        self.main_loop_spawned = True
+        return greenlet
+
 
     def main_loop(self) -> None:
         """Rotki main loop that fires often and runs the task manager's scheduler"""
-        while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
+        while self.shutdown_event.wait(timeout=MAIN_LOOP_SECS_DELAY) is not True:
             if self.task_manager is not None:
                 self.task_manager.schedule()
 

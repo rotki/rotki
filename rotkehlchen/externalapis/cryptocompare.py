@@ -4,7 +4,7 @@ import re
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Deque, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
+from typing import Any, Deque, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional, Tuple
 
 import gevent
 import requests
@@ -513,6 +513,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
         return Price(FVal(result[cc_from_asset_symbol][cc_to_asset_symbol]))
 
     def get_cached_data(self, from_asset: Asset, to_asset: Asset) -> Optional[PriceHistoryData]:
+        """Get the cached data for a pair if they exist. This reads the entire file,
+        gets the metadata, and the data itself, and loops through it to convert it
+        to our own data structure.
+
+        It can be rather slow for big files.
+        """
         cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
         if cache_key not in self.price_history_file:
             return None
@@ -526,6 +532,36 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 return None
 
         return self.price_history[cache_key]
+
+    def get_cached_data_metadata(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+    ) -> Optional[Tuple[Timestamp, Timestamp]]:
+        """Get the cached data metadata for a pair if they exist.
+        This reads the entire file but returns only metadata.
+
+        Should be a faster way that get_cached_data to check if a cache exists and
+        get only its metadata. start and end time.
+        """
+        cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
+        if cache_key not in self.price_history_file:
+            return None
+
+        memcache = self.price_history.get(cache_key, None)
+        if memcache is not None:
+            return memcache.start_time, memcache.end_time
+
+        try:
+            with open(self.price_history_file[cache_key], 'r') as f:
+                data = rlk_jsonloads_dict(f.read())
+        except (OSError, JSONDecodeError):
+            return None
+
+        try:
+            return data['start_time'], data['end_time']
+        except KeyError:
+            return None
 
     def _got_cached_data_at_timestamp(
             self,
