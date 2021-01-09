@@ -16,10 +16,10 @@ class GreenletManager():
         self.msg_aggregator = msg_aggregator
         self.greenlets: List[gevent.Greenlet] = []
 
-    def add(self, task_name: str, greenlet: gevent.Greenlet, exception_is_error) -> None:
+    def add(self, task_name: str, greenlet: gevent.Greenlet, exception_is_error: bool) -> None:
         greenlet.link_exception(self._handle_killed_greenlets)
         greenlet.task_name = task_name
-        greenlet.exception_is_error = task_name
+        greenlet.exception_is_error = exception_is_error
         self.greenlets.append(greenlet)
 
     def clear(self) -> None:

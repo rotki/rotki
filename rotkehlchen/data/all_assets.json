@@ -20,7 +20,6 @@
     },
     "1INCH": {
         "coingecko": "1inch",
-        "cryptocompare": "",
         "ethereum_address": "0x111111111117dC0aa78b770fA6A738034120C302",
         "ethereum_token_decimals": 18,
         "name": "1INCH Token",
@@ -30,7 +29,6 @@
     },
     "1SG": {
         "coingecko": "1sg",
-        "cryptocompare": "",
         "ethereum_address": "0x0F72714B35a366285Df85886A2eE174601292A17",
         "ethereum_token_decimals": 18,
         "name": "1SG",
@@ -351,8 +349,8 @@
         "type": "ethereum token"
     },
     "AID-2": {
-        "coingecko": "aidcoin",
-        "cryptocompare": "",
+        "coingecko": "aidus",
+        "cryptocompare": "AIDUS",
         "ethereum_address": "0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
         "ethereum_token_decimals": 18,
         "name": "AIDUS TOKEN",
@@ -399,7 +397,6 @@
     },
     "AKRO": {
         "coingecko": "akropolis",
-        "cryptocompare": "",
         "ethereum_address": "0x8Ab7404063Ec4DBcfd4598215992DC3F8EC853d7",
         "ethereum_token_decimals": 18,
         "name": "Akropolis",
@@ -416,7 +413,6 @@
     },
     "ALI": {
         "coingecko": "ailink-token",
-        "cryptocompare": "",
         "ethereum_address": "0x4289c043A12392F1027307fB58272D8EBd853912",
         "ethereum_token_decimals": 18,
         "name": "AiLink Token",
@@ -833,7 +829,6 @@
     },
     "AUDIO": {
         "coingecko": "audius",
-        "cryptocompare": "",
         "ethereum_address": "0x18aAA7115705e8be94bfFEBDE57Af9BFc265B998",
         "ethereum_token_decimals": 18,
         "name": "Audius",
@@ -1189,7 +1184,6 @@
     },
     "BCV": {
         "coingecko": "bcv",
-        "cryptocompare": "",
         "ethereum_address": "0x1014613E2B3CBc4d575054D4982E580d9b99d7B1",
         "ethereum_token_decimals": 8,
         "name": "BitCapitalVendor",
@@ -1467,7 +1461,7 @@
     },
     "BLOC-2": {
         "coingecko": "bloc-money",
-        "cryptocompare": "",
+        "cryptocompare": "BLOCM",
         "name": "BLOC.MONEY",
         "started": 1539736469,
         "symbol": "BLOC",
@@ -1601,7 +1595,7 @@
         "type": "own chain"
     },
     "BNC": {
-        "coingecko": "bnoincoin",
+        "coingecko": "",
         "cryptocompare": "",
         "ethereum_address": "0xEf51c9377FeB29856E61625cAf9390bD0B67eA18",
         "ethereum_token_decimals": 8,
@@ -1657,7 +1651,6 @@
     },
     "BORA": {
         "coingecko": "bora",
-        "cryptocompare": "",
         "ethereum_address": "0x26fb86579e371c7AEdc461b2DdEF0A8628c93d3B",
         "ethereum_token_decimals": 18,
         "name": "BORA",
@@ -1701,7 +1694,7 @@
     },
     "BOX": {
         "coingecko": "box-token",
-        "cryptocompare": "",
+        "cryptocompare": "BOXT",
         "ethereum_address": "0xe1A178B681BD05964d3e3Ed33AE731577d9d96dD",
         "ethereum_token_decimals": 18,
         "name": "BOX Token",
@@ -1721,7 +1714,6 @@
     },
     "BOXX": {
         "coingecko": "boxx",
-        "cryptocompare": "",
         "ethereum_address": "0x780116D91E5592E58a3b3c76A351571b39abCEc6",
         "ethereum_token_decimals": 15,
         "name": "Blockparty (BOXX Token)",
@@ -2084,7 +2076,6 @@
     },
     "BWX": {
         "coingecko": "blue-whale",
-        "cryptocompare": "",
         "ethereum_address": "0xbD168CbF9d3a375B38dC51A202B5E8a4E52069Ed",
         "ethereum_token_decimals": 18,
         "name": "Blue Whale Token",
@@ -2600,7 +2591,6 @@
     },
     "CLB": {
         "coingecko": "cloudbric",
-        "cryptocompare": "",
         "ethereum_address": "0xb1c1Cb8C7c1992dba24e628bF7d38E71daD46aeB",
         "ethereum_token_decimals": 18,
         "name": "Cloudbric",
@@ -2735,7 +2725,6 @@
     },
     "COCOS": {
         "coingecko": "cocos-bcx",
-        "cryptocompare": "",
         "ethereum_address": "0x0C6f5F7D555E7518f6841a79436BD2b1Eef03381",
         "ethereum_token_decimals": 18,
         "name": "Cocos-BCX",
@@ -3207,7 +3196,6 @@
     },
     "CZR": {
         "coingecko": "canonchain",
-        "cryptocompare": "",
         "ethereum_address": "0x0223fc70574214F65813fE336D870Ac47E147fAe",
         "ethereum_token_decimals": 18,
         "name": "CanonChain",
@@ -3217,7 +3205,6 @@
     },
     "DACS": {
         "coingecko": "dacsee",
-        "cryptocompare": "",
         "ethereum_address": "0xA31108E5BAB5494560Db34c95492658AF239357C",
         "ethereum_token_decimals": 18,
         "name": "DACSEE",
@@ -3426,7 +3413,6 @@
     },
     "DELTA": {
         "coingecko": "deltachain",
-        "cryptocompare": "",
         "ethereum_address": "0xDE1E0AE6101b46520cF66fDC0B1059c5cC3d106c",
         "ethereum_token_decimals": 8,
         "name": "DeltaChain",
@@ -3463,7 +3449,6 @@
     },
     "DEX": {
         "coingecko": "dex",
-        "cryptocompare": "",
         "ethereum_address": "0x497bAEF294c11a5f0f5Bea3f2AdB3073DB448B56",
         "ethereum_token_decimals": 18,
         "name": "DEX",
@@ -3750,7 +3735,6 @@
     },
     "DOUGH": {
         "coingecko": "piedao-dough-v2",
-        "cryptocompare": "",
         "ethereum_address": "0xad32A8e6220741182940c5aBF610bDE99E737b2D",
         "ethereum_token_decimals": 18,
         "name": "PieDAO DOUGH v2",
@@ -3960,7 +3944,6 @@
     },
     "DUCATO": {
         "coingecko": "ducato-protocol-token",
-        "cryptocompare": "",
         "ethereum_address": "0xa117ea1c0c85CEf648df2b6f40e50bb5475C228d",
         "ethereum_token_decimals": 18,
         "name": "DUCATO Protocol Token",
@@ -4432,7 +4415,6 @@
         "type": "ethereum token"
     },
     "ESD": {
-        "cryptocompare": "",
         "coingecko": "empty-set-dollar",
         "ethereum_address": "0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723",
         "ethereum_token_decimals": 18,
@@ -4723,7 +4705,6 @@
     },
     "FARM": {
         "coingecko": "harvest-finance",
-        "cryptocompare": "",
         "ethereum_address": "0xa0246c9032bC3A600820415aE600c6388619A14D",
         "ethereum_token_decimals": 18,
         "name": "Harvest Finance",
@@ -5264,7 +5245,7 @@
     },
     "FX": {
         "coingecko": "fx-coin",
-        "cryptocompare": "",
+        "cryptocompare": "FUNX",
         "ethereum_address": "0x8c15Ef5b4B21951d50E53E4fbdA8298FFAD25057",
         "ethereum_token_decimals": 18,
         "name": "Function X",
@@ -5274,7 +5255,6 @@
     },
     "FXC": {
         "coingecko": "amp-token",
-        "cryptocompare": "",
         "ethereum_address": "0x4a57E687b9126435a9B19E4A802113e266AdeBde",
         "ethereum_token_decimals": 18,
         "name": "Flexacoin",
@@ -5463,7 +5443,7 @@
     },
     "GET-2": {
         "coingecko": "themis",
-        "cryptocompare": "",
+        "cryptocompare": "THEMIS",
         "ethereum_address": "0x60c68a87bE1E8a84144b543AAcfA77199cd3d024",
         "ethereum_token_decimals": 18,
         "name": "Themis",
@@ -5607,7 +5587,6 @@
     },
     "GOT-2": {
         "coingecko": "parkingo",
-        "cryptocompare": "",
         "ethereum_address": "0x613Fa2A6e6DAA70c659060E86bA1443D2679c9D7",
         "ethereum_token_decimals": 18,
         "name": "ParkinGo",
@@ -5677,7 +5656,6 @@
     },
     "GRT": {
         "coingecko": "the-graph",
-	"cryptocompare": "",
         "ethereum_address": "0xc944E90C64B2c07662A292be6244BDf05Cda44a7",
         "ethereum_token_decimals": 18,
         "name": "Graph Token",
@@ -5696,7 +5674,6 @@
     },
     "GSE": {
         "coingecko": "gsenetwork",
-        "cryptocompare": "",
         "ethereum_address": "0xe530441f4f73bDB6DC2fA5aF7c3fC5fD551Ec838",
         "ethereum_token_decimals": 4,
         "name": "GSENetwork",
@@ -6106,7 +6083,6 @@
     },
     "HXRO": {
         "coingecko": "hxro",
-        "cryptocompare": "",
         "ethereum_address": "0x4bD70556ae3F8a6eC6C4080A0C327B24325438f3",
         "ethereum_token_decimals": 18,
         "name": "Hxro",
@@ -6614,7 +6590,6 @@
     },
     "KAVA": {
         "coingecko": "kava",
-        "cryptocompare": "",
         "name": "Kava",
         "started": 1571980454,
         "symbol": "KAVA",
@@ -6769,7 +6744,7 @@
     },
     "KNT-2": {
         "coingecko": "knekted",
-        "cryptocompare": "",
+        "cryptocompare": "KNT",
         "ethereum_address": "0x7CC62d8E80Be9bEa3947F3443aD136f50f75b505",
         "ethereum_token_decimals": 18,
         "name": "Knekted",
@@ -6824,7 +6799,6 @@
     },
     "KWATT": {
         "coingecko": "4new",
-        "cryptocompare": "",
         "ethereum_address": "0x241bA672574A78a3A604CDd0a94429A73a84a324",
         "ethereum_token_decimals": 18,
         "name": "4NEW",
@@ -6933,7 +6907,6 @@
     },
     "LEMO": {
         "coingecko": "lemochain",
-        "cryptocompare": "",
         "ethereum_address": "0x60C24407d01782C2175D32fe7C8921ed732371D1",
         "ethereum_token_decimals": 18,
         "name": "LemoChain",
@@ -7126,7 +7099,6 @@
     },
     "LOCUS": {
         "coingecko": "locus-chain",
-        "cryptocompare": "",
         "ethereum_address": "0xC64500DD7B0f1794807e67802F8Abbf5F8Ffb054",
         "ethereum_token_decimals": 18,
         "name": "Locus Chain",
@@ -7320,7 +7292,6 @@
     },
     "MAS": {
         "coingecko": "midas-protocol",
-        "cryptocompare": "",
         "ethereum_address": "0x23Ccc43365D9dD3882eab88F43d515208f832430",
         "ethereum_token_decimals": 18,
         "name": "MidasProtocol",
@@ -7330,7 +7301,6 @@
     },
     "MATIC": {
         "coingecko": "matic-network",
-        "cryptocompare": "",
         "ethereum_address": "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0",
         "ethereum_token_decimals": 18,
         "name": "Matic Network",
@@ -7499,7 +7469,6 @@
     },
     "MESH": {
         "coingecko": "meshbox",
-        "cryptocompare": "",
         "ethereum_address": "0x01F2AcF2914860331C1Cb1a9AcecDa7475e06Af8",
         "ethereum_token_decimals": 18,
         "name": "MeshBox",
@@ -7724,7 +7693,6 @@
     },
     "MOC": {
         "coingecko": "mossland",
-        "cryptocompare": "",
         "ethereum_address": "0x865ec58b06bF6305B886793AA20A2da31D034E68",
         "ethereum_token_decimals": 18,
         "name": "Moss Coin",
@@ -9089,8 +9057,7 @@
         "type": "ethereum token"
     },
     "PLG": {
-        "coingecko": "plug",
-        "cryptocompare": "",
+        "coingecko": "pledgecamp",
         "ethereum_address": "0x85ca6710D0F1D511d130f6935eDDA88ACBD921bD",
         "ethereum_token_decimals": 18,
         "name": "Pledge Coin",
@@ -9397,7 +9364,6 @@
     },
     "PTON": {
         "coingecko": "foresting",
-        "cryptocompare": "",
         "ethereum_address": "0x4946583c5b86E01cCD30c71a05617D06E3E73060",
         "ethereum_token_decimals": 18,
         "name": "Foresting",
@@ -9435,7 +9401,7 @@
     },
     "PXL": {
         "coingecko": "piction-network",
-        "cryptocompare": "",
+        "cryptocompare": "PIXEL",
         "ethereum_address": "0xF88951D7B676798705fd3a362ba5B1DBca2B233b",
         "ethereum_token_decimals": 18,
         "name": "PIXEL",
@@ -9728,7 +9694,6 @@
     },
     "RED": {
         "coingecko": "red",
-        "cryptocompare": "",
         "ethereum_address": "0x76960Dccd5a1fe799F7c29bE9F19ceB4627aEb2f",
         "ethereum_token_decimals": 18,
         "name": "RED",
@@ -9955,7 +9920,7 @@
     },
     "RMC": {
         "active": false,
-        "coingecko": "russian-miner-coin",
+        "coingecko": "",
         "cryptocompare": "",
         "ended": 1524009600,
         "ethereum_address": "0x7Dc4f41294697a7903C4027f6Ac528C5d14cd7eB",
@@ -10050,8 +10015,7 @@
         "type": "ethereum token"
     },
     "RTH": {
-        "coingecko": "rutheneum",
-        "cryptocompare": "",
+        "coingecko": "rotharium",
         "ethereum_address": "0x3FD8f39A962eFDA04956981C31AB89FAB5FB8bC8",
         "ethereum_token_decimals": 18,
         "name": "Rotharium",
@@ -10686,7 +10650,6 @@
     },
     "SOLVE": {
         "coingecko": "solve-care",
-        "cryptocompare": "",
         "ethereum_address": "0x446C9033E7516D820cc9a2ce2d0B7328b579406F",
         "ethereum_token_decimals": 8,
         "name": "Solve.care",
@@ -10706,7 +10669,6 @@
     },
     "SOUL": {
         "coingecko": "phantasma",
-        "cryptocompare": "GOST",
         "name": "Phantasma",
         "started": 1527536682,
         "symbol": "SOUL",
@@ -10809,8 +10771,7 @@
     },
     "SPIN": {
         "active": true,
-        "coingecko": "spin-token",
-        "cryptocompare": "",
+        "coingecko": "spin-protocol",
         "ethereum_address": "0x4F22310C27eF39FEAA4A756027896DC382F0b5E2",
         "ethereum_token_decimals": 18,
         "name": "SPIN Protocol",
@@ -11348,7 +11309,6 @@
     },
     "TCNX": {
         "coingecko": "tercet-network",
-        "cryptocompare": "",
         "ethereum_address": "0x28d7F432d24ba6020d1cbD4f28BEDc5a82F24320",
         "ethereum_token_decimals": 18,
         "name": "Tercet Network",
@@ -11386,7 +11346,6 @@
     },
     "TEMCO": {
         "coingecko": "temco",
-        "cryptocompare": "",
         "ethereum_address": "0x2Fc246aA66F0da5bB1368F688548ecBBE9bdee5d",
         "ethereum_token_decimals": 18,
         "name": "TEMCO",
@@ -11491,7 +11450,7 @@
         "type": "ethereum token"
     },
     "TIC": {
-        "coingecko": "tictalk",
+        "coingecko": "thingschain",
         "cryptocompare": "",
         "ethereum_address": "0x72430A612Adc007c50e3b6946dBb1Bb0fd3101D1",
         "ethereum_token_decimals": 8,
@@ -11870,7 +11829,6 @@
     },
     "TTC": {
         "coingecko": "ttc-protocol",
-        "cryptocompare": "",
         "ethereum_address": "0x9389434852b94bbaD4c8AfEd5B7BDBc5Ff0c2275",
         "ethereum_token_decimals": 18,
         "name": "TTC Protocol",
@@ -11948,7 +11906,7 @@
     },
     "UCN": {
         "coingecko": "uchain",
-        "cryptocompare": "",
+        "cryptocompare": "UCH",
         "ethereum_address": "0xAAf37055188Feee4869dE63464937e683d61b2a1",
         "ethereum_token_decimals": 18,
         "name": "UChain",
@@ -12211,14 +12169,13 @@
     },
     "VBK": {
         "coingecko": "veriblock",
-        "cryptocompare": "",
         "name": "VeriBlock",
         "started": 1554490449,
         "symbol": "VBK",
         "type": "own chain"
     },
     "VD": {
-        "coingecko": "vindax-coin",
+        "coingecko": "",
         "cryptocompare": "",
         "ethereum_address": "0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D",
         "ethereum_token_decimals": 8,
@@ -12229,7 +12186,6 @@
     },
     "VDG": {
         "coingecko": "veridocglobal",
-        "cryptocompare": "",
         "ethereum_address": "0x57C75ECCc8557136D32619a191fBCDc88560d711",
         "ethereum_token_decimals": 0,
         "name": "VeriDocGlobal",
@@ -12623,7 +12579,6 @@
     },
     "WIKI": {
         "coingecko": "wiki-token",
-        "cryptocompare": "",
         "ethereum_address": "0x66BaD545596fb17a0B4ebDC003a85dEF10E8F6Ae",
         "ethereum_token_decimals": 18,
         "name": "Wiki Token",
@@ -13251,7 +13206,6 @@
     },
     "YEED": {
         "coingecko": "yggdrash",
-        "cryptocompare": "",
         "ethereum_address": "0xcA2796F9F61dc7b238Aab043971e49c6164DF375",
         "ethereum_token_decimals": 18,
         "name": "YGGDRASH",
@@ -14267,7 +14221,6 @@
     },
     "ZLOT": {
         "coingecko": "zlot",
-        "cryptocompare": "",
         "ethereum_address": "0xA8e7AD77C60eE6f30BaC54E2E7c0617Bd7B5A03E",
         "ethereum_token_decimals": 18,
         "name": "zLOT",
@@ -14550,7 +14503,6 @@
     },
     "TVK": {
         "coingecko": "terra-virtua-kolect",
-        "cryptocompare": "",
         "ethereum_address": "0xd084B83C305daFD76AE3E1b4E1F1fe2eCcCb3988",
         "ethereum_token_decimals": 18,
         "name": "Terra Virtua Kolect",
