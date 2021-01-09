@@ -215,6 +215,28 @@ def test_cryptocompare_dao_query(cryptocompare):
     assert price is not None
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_get_cached_data_metadata(data_dir, database):
+    """Test that the get_cached_data_metadata function works correctly
+    and returns just the metadata by reading part ofthe file
+    """
+    contents = """{"start_time": 1301536800, "end_time": 1301540400,
+    "data": [{"time": 1301536800, "close": 0.298, "high": 0.298, "low": 0.298, "open": 0.298,
+    "volumefrom": 0.298, "volumeto": 0.298}, {"time": 1301540400, "close": 0.298, "high": 0.298,
+    "low": 0.298, "open": 0.298, "volumefrom": 0.298, "volumeto": 0.298}]}"""
+    price_history_dir = get_or_make_price_history_dir(data_dir)
+    with open(price_history_dir / f'{PRICE_HISTORY_FILE_PREFIX}BTC_USD.json', 'w') as f:
+        f.write(contents)
+    cc = Cryptocompare(data_directory=data_dir, database=database)
+    result = cc.get_cached_data_metadata(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+    )
+    assert result is not None
+    assert result[0] == 1301536800
+    assert result[1] == 1301540400
+
+
 @pytest.mark.skipif(
     'CI' in os.environ,
     reason='This test would contribute in cryptocompare rate limiting. No need to run often',

@@ -376,9 +376,11 @@ def write_history_data_in_file(
     )
     with open(filepath, 'w') as outfile:
         history_dict: Dict[str, Any] = {}
-        history_dict['data'] = data
+        # From python 3.5 dict order should be preserved so we can expect
+        # start and end time to come before the data in the file
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts
+        history_dict['data'] = data
         outfile.write(rlk_jsondumps(history_dict))
 
 

@@ -539,7 +539,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             to_asset: Asset,
     ) -> Optional[Tuple[Timestamp, Timestamp]]:
         """Get the cached data metadata for a pair if they exist.
-        This reads the entire file but returns only metadata.
+        This reads only the start of the json file to get the metadata.
 
         Should be a faster way that get_cached_data to check if a cache exists and
         get only its metadata. start and end time.
@@ -552,16 +552,29 @@ class Cryptocompare(ExternalServiceWithApiKey):
         if memcache is not None:
             return memcache.start_time, memcache.end_time
 
+        # Now read only the start of the json file and get start/end time
+        # It is MUCH faster than reading the entire file, since these files can
+        # become hundreds of MBs
         try:
             with open(self.price_history_file[cache_key], 'r') as f:
-                data = rlk_jsonloads_dict(f.read())
-        except (OSError, JSONDecodeError):
+                f.seek(0)
+                data = f.read(100)  # first 100 bytes, should contain the data
+        except OSError:
             return None
 
-        try:
-            return data['start_time'], data['end_time']
-        except KeyError:
+        match = METADATA_RE.match(data)
+        if not match:
             return None
+        result = match.group(1, 2)
+        if any(x is None for x in result):
+            return None
+        try:
+            start_ts = Timestamp(int(result[0]))
+            end_ts = Timestamp(int(result[1]))
+        except ValueError:
+            return None
+
+        return start_ts, end_ts
 
     def _got_cached_data_at_timestamp(
             self,

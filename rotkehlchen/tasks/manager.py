@@ -53,9 +53,9 @@ class TaskManager():
     def _prepare_cryptocompare_queries(self) -> None:
         """Prepare the queries to do to cryptocompare
 
-        This is actually rather slow for many files, due to the json files ending
-        up being rather big and causing a lot of I/O. We also need to yield to
-        other greenlets in the loop, or else we end up starving everything else.
+        This would be really slow if the entire json cache files were read but we
+        have implemented get_cached_data_metadata to only read the relevant part of the file.
+        Before doing that we had to yield with gevent.sleep() at each loop iteration.
 
         Runs only once in the beginning and then has a number of queries prepared
         for the task manager to schedule
@@ -78,7 +78,6 @@ class TaskManager():
             if asset.cryptocompare == '' or main_currency.cryptocompare == '':
                 continue  # not supported in cryptocompare
 
-            gevent.sleep(1)  # yield to other greenlets to not starve their timeouts
             data = self.cryptocompare.get_cached_data_metadata(
                 from_asset=asset,
                 to_asset=main_currency,
