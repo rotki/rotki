@@ -213,6 +213,9 @@ class EthereumManager():
                 ethrpc_endpoint=node.endpoint(self.own_rpc_endpoint),
                 mainnet_check=True,
             )
+        self.blocks_subgraph = Graph(
+            'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
+        )
 
     def connected_to_any_web3(self) -> bool:
         return (
@@ -849,11 +852,8 @@ class EthereumManager():
         return Timestamp(block_data['timestamp'])
 
     def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
-        """Queries Ethereum Blocks Subgraph for closest block with at or before given timestamp"""
-        blocks_subgraph = Graph(
-            "https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks",
-        )
-        response = blocks_subgraph.query(
+        """Queries Ethereum Blocks Subgraph for closest block at or before given timestamp"""
+        response = self.blocks_subgraph.query(
             f"""
             {{
                 blocks(
@@ -869,10 +869,10 @@ class EthereumManager():
         )
         try:
             result = int(response['blocks'][0]['number'])
-        except (IndexError, KeyError):
+        except (IndexError, KeyError) as e:
             raise RemoteError(
                 f'Got unexpected ethereum blocks subgraph response: {response}',
-            )
+            ) from e
         else:
             return result
 
