@@ -45,6 +45,7 @@ PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 3
+CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME = 60
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('TLN'): A_WETH,
     Asset('BLY'): A_USDT,
@@ -139,6 +140,8 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
 
+METADATA_RE = re.compile('.*"start_time": *(.*), *"end_time": *(.*),.*')
+
 
 class PriceHistoryEntry(NamedTuple):
     time: Timestamp
@@ -229,6 +232,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
         self.price_history_file: Dict[PairCacheKey, Path] = {}
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        self.last_histohour_query_ts = 0
+        self.last_rate_limit = 0
 
         price_history_dir = get_or_make_price_history_dir(data_directory)
         # Check the data folder and remember the filenames of any cached history
@@ -242,6 +247,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
             assert match
             cache_key = PairCacheKey(match.group(1))
             self.price_history_file[cache_key] = file_
+
+    def rate_limited_in_last(self, seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME) -> bool:
+        """
+        Checks when we were last rate limited by CC and if it was within the given seconds
+        """
+        return ts_now() - self.last_rate_limit <= seconds
 
     def set_database(self, database: DBHandler) -> None:
         """If the cryptocompare instance was initialized without a DB this sets its DB"""
@@ -288,6 +299,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 # Failing is also fine, since all calls have secondary data sources
                 # for example coingecko
                 if json_ret.get('Message', None) == RATE_LIMIT_MSG:
+                    self.last_rate_limit = ts_now()
                     if tries >= 1:
                         backoff_seconds = 3 / tries
                         log.debug(
@@ -317,6 +329,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                         status_code=response.status_code,
                     )
                     raise RemoteError(error_message)
+
                 return json_ret['Data'] if 'Data' in json_ret else json_ret
             except KeyError as e:
                 raise RemoteError(
@@ -759,6 +772,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
             return None
 
         now_ts = ts_now()
+        # save time at start of the query, in case the query does not complete due to rate ilmit
+        self.last_histohour_query_ts = now_ts
         if cache_key in self.price_history:
             old_data = self.price_history[cache_key].data
             if timestamp > self.price_history[cache_key].end_time:
@@ -826,7 +841,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         }
         self.price_history_file[cache_key] = filename
         self.price_history[cache_key] = _dict_history_to_data(data_including_time)
-
+        self.last_histohour_query_ts = ts_now()  # also save when last query finished
         return self.price_history[cache_key].data
 
     @staticmethod

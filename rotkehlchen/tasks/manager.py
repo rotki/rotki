@@ -1,4 +1,3 @@
-import gevent
 import logging
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.db.dbhandler import DBHandler
@@ -6,7 +5,6 @@ from typing import NamedTuple, Set
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.typing import Timestamp
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
@@ -16,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 CRYPTOCOMPARE_QUERY_AFTER_SECS = 86400  # a day
 DEFAULT_MAX_TASKS_NUM = 2
+CRYPTOCOMPARE_HISTOHOUR_FREQUENCY = 240  # at least 4 mins apart
 
 
 class CCHistoQuery(NamedTuple):
@@ -91,7 +90,6 @@ class TaskManager():
 
     def _maybe_schedule_cryptocompare_query(self) -> bool:
         """Schedules a cryptocompare query for a single asset history"""
-        now_ts = ts_now()
         if self.prepared_cryptocompare_query is False:
             return False
 
@@ -103,6 +101,12 @@ class TaskManager():
                 'Cryptocompare historical prices' in x.task_name
                 for x in self.greenlet_manager.greenlets
         ):
+            return False
+
+        now_ts = ts_now()
+        # Make sure there is a long enough period  between an asset's histohour query
+        # to avoid getting rate limited by cryptocompare
+        if now_ts - self.cryptocompare.last_histohour_query_ts <= CRYPTOCOMPARE_HISTOHOUR_FREQUENCY:  # noqa: E501
             return False
 
         query = self.cryptocompare_queries.pop()
@@ -128,7 +132,7 @@ class TaskManager():
         logger.debug(
             f'At task scheduling. Current greenlets: {current_greenlets} '
             f'Max greenlets: {self.max_tasks_num}. '
-            f'{"Will not schedule" if not_proceed else "Will schedule"}.'
+            f'{"Will not schedule" if not_proceed else "Will schedule"}.',
         )
         if not_proceed:
             return  # too busy

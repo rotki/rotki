@@ -130,15 +130,16 @@ class PriceHistorian():
 
         instance = PriceHistorian()
         price = None
-        try:
-            price = instance._cryptocompare.query_historical_price(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
-        except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
-            # then use coingecko
-            pass
+        if Inquirer()._cryptocompare.rate_limited_in_last() is False:
+            try:
+                price = instance._cryptocompare.query_historical_price(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                )
+            except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
+                # then use coingecko
+                pass
 
         if price and price != Price(ZERO):
             return price

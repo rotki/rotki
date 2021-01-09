@@ -230,12 +230,14 @@ class Inquirer():
 
             return Price(usd_price)
 
-        try:
-            price = Inquirer()._cryptocompare_find_usd_price(asset)
-        except RemoteError:
-            price = Price(ZERO)
+        price = None
+        if Inquirer()._cryptocompare.rate_limited_in_last() is False:
+            try:
+                price = Inquirer()._cryptocompare_find_usd_price(asset)
+            except RemoteError:
+                pass
 
-        if price == Price(ZERO):
+        if price is None or price == Price(ZERO):
             try:
                 price = Inquirer()._coingecko.simple_price(from_asset=asset, to_asset=A_USD)
             except RemoteError as e:
@@ -243,6 +245,7 @@ class Inquirer():
                     f'Coingecko usd price query for {asset.identifier} failed due to {str(e)}',
                 )
                 price = Price(ZERO)
+
         return price
 
     @staticmethod

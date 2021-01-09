@@ -362,7 +362,6 @@ class Rotkehlchen():
         self.main_loop_spawned = True
         return greenlet
 
-
     def main_loop(self) -> None:
         """Rotki main loop that fires often and runs the task manager's scheduler"""
         while self.shutdown_event.wait(timeout=MAIN_LOOP_SECS_DELAY) is not True:
