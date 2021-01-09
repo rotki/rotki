@@ -4468,6 +4468,7 @@
     },
     "ETH2": {
         "coingecko": "ethereum",
+        "cryptocompare": "ETH",
         "name": "Staked ETH in Phase 0",
         "started": 1602667372,
         "symbol": "ETH",
