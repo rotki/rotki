@@ -47,7 +47,11 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',
         new=800,
     )
-    beaconchain_patch = mock_beaconchain(blockchain.beaconchain)
+    beaconchain_patch = mock_beaconchain(
+        blockchain.beaconchain,
+        original_queries=None,
+        original_requests_get=requests.get,
+    )
 
     def mock_query_defi_balances():
         blockchain.defi_balances = {

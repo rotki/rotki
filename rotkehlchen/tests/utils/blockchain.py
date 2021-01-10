@@ -157,9 +157,16 @@ def _get_token(value: Any) -> Optional[EthereumToken]:
     return None
 
 
-def mock_beaconchain(beaconchain: BeaconChain):
+def mock_beaconchain(
+        beaconchain: BeaconChain,
+        original_queries: Optional[List[str]],
+        original_requests_get,
+):
 
     def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
+        if original_queries is not None and 'beaconchain' in original_queries:
+            return original_requests_get(url, *args, **kwargs)
+
         if 'validator' in url:  # all validators that belong to an eth1 address
             response = '{"status":"OK","data":[]}'
         else:

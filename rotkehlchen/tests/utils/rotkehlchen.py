@@ -136,7 +136,11 @@ def setup_balances(
         original_queries=original_queries,
         original_requests_get=requests.get,
     )
-    beaconchain_patch = mock_beaconchain(rotki.chain_manager.beaconchain)
+    beaconchain_patch = mock_beaconchain(
+        beaconchain=rotki.chain_manager.beaconchain,
+        original_queries=original_queries,
+        original_requests_get=requests.get,
+    )
     # For ethtoken detection we can have bigger chunk length during tests since it's mocked anyway
     ethtokens_max_chunks_patch = patch(
         'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',
