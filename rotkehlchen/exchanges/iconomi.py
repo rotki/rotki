@@ -208,6 +208,13 @@ class Iconomi(ExchangeInterface):
                     f' Ignoring its balance query.',
                 )
 
+        for balance_info in resp_info['daaList']:
+            ticker = balance_info['ticker']
+            self.msg_aggregator.add_warning(
+                f'Found unsupported ICONOMI strategy {ticker}. '
+                f' Ignoring its balance query.',
+            )
+
         return (balances, "")
 
     def query_online_trade_history(
