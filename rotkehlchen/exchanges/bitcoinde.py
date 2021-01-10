@@ -6,6 +6,8 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 from urllib.parse import urlencode
 
+import requests
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import Location, Price, Trade, TradePair
@@ -147,7 +149,10 @@ class Bitcoinde(ExchangeInterface):
 
         log.debug('Bitcoin.de API Query', verb=verb, request_url=request_url)
 
-        response = getattr(self.session, verb)(request_url, data=data, headers=headers)
+        try:
+            response = getattr(self.session, verb)(request_url, data=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Bitcoin.de API request failed due to {str(e)}') from e
 
         try:
             json_ret = rlk_jsonloads(response.text)
@@ -194,7 +199,7 @@ class Bitcoinde(ExchangeInterface):
         try:
             resp_info = self._api_query('get', 'account')
         except RemoteError as e:
-            msg = ( 
+            msg = (
                 'Bitcoin.de request failed. Could not reach bitcoin.de due '
                 'to {}'.format(e)
             )

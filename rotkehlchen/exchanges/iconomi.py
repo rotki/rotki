@@ -4,10 +4,10 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 from urllib.parse import urlencode
 
-from requests.exceptions import ReadTimeout
+import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError, UnknownAsset
@@ -126,11 +126,11 @@ class Iconomi(ExchangeInterface):
             timestamp=timestamp,
         )
 
-        self.session.headers.update({
+        headers = {
             'ICN-TIMESTAMP': timestamp,
-        })
+        }
         if data != '':
-            self.session.headers.update({
+            headers.update({
                 'Content-Type': 'application/json',
                 'Content-Length': str(len(data)),
             })
@@ -138,9 +138,14 @@ class Iconomi(ExchangeInterface):
         log.debug('ICONOMI API Query', verb=verb, request_url=request_url)
 
         try:
-            response = getattr(self.session, verb)(request_url, data=data, timeout=30)
-        except ReadTimeout as exc:
-            raise RemoteError('Read timeout') from exc
+            response = getattr(self.session, verb)(
+                request_url,
+                data=data,
+                timeout=30,
+                headers=headers
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'ICONOMI API request failed due to {str(e)}') from e
 
         try:
             json_ret = rlk_jsonloads(response.text)
@@ -164,7 +169,9 @@ class Iconomi(ExchangeInterface):
         return json_ret
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        "Validates that the ICONOMI API key is good for usage in Rotki"
+        """
+        Validates that the ICONOMI API key is good for usage in Rotki
+        """
 
         try:
             self._api_query('get', 'user/balance')
@@ -175,7 +182,15 @@ class Iconomi(ExchangeInterface):
 
     def query_balances(self, **kwargs: Any) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         balances = {}
-        resp_info = self._api_query('get', 'user/balance')
+        try:
+            resp_info = self._api_query('get', 'user/balance')
+        except RemoteError as e:
+            msg = (
+                'ICONOMI API request failed. Could not reach ICONOMI due '
+                'to {}'.format(e)
+            )
+            log.error(msg)
+            return None, msg
 
         if resp_info['currency'] != 'USD':
             raise NotImplementedError("API did not return values in USD")
@@ -215,7 +230,7 @@ class Iconomi(ExchangeInterface):
                 f' Ignoring its balance query.',
             )
 
-        return (balances, "")
+        return balances, ''
 
     def query_online_trade_history(
             self,
