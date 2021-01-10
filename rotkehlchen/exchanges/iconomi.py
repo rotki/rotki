@@ -22,6 +22,8 @@ from rotkehlchen.utils.serialization import rlk_jsonloads
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
+UNSUPPORTED_ICONOMI_ASSETS = ('ICNGS',)
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -82,25 +84,23 @@ class Iconomi(ExchangeInterface):
     ):
         super().__init__('iconomi', api_key, secret, database)
         self.uri = 'https://api.iconomi.com'
-        self.session.headers.update({'ICN-API-KEY': api_key})
         self.msg_aggregator = msg_aggregator
 
-    def _generate_signature(self, request_type: str, request_path: str, timestamp: str) -> None:
+    def _generate_signature(self, request_type: str, request_path: str, timestamp: str) -> str:
         signed_data = ''.join([timestamp, request_type.upper(), request_path, '']).encode()
         signature = hmac.new(
             self.secret,
             signed_data,
             hashlib.sha512,
         )
-        self.session.headers.update({
-            'ICN-SIGN': base64.b64encode(signature.digest()).decode(),
-        })
+        return base64.b64encode(signature.digest()).decode()
 
     def _api_query(
             self,
             verb: Literal['get', 'post'],
             path: str,
             options: Optional[Dict] = None,
+            authenticated: bool = True
     ) -> Dict:
         """
         Queries ICONOMI with the given verb for the given path and options
@@ -120,15 +120,19 @@ class Iconomi(ExchangeInterface):
         timestamp = str(int(time.time() * 1000))
         request_url = self.uri + request_path
 
-        self._generate_signature(
-            request_type=verb.upper(),
-            request_path=request_path_no_args,
-            timestamp=timestamp,
-        )
+        headers = {}
+        if authenticated:
+            signature = self._generate_signature(
+                request_type=verb.upper(),
+                request_path=request_path_no_args,
+                timestamp=timestamp,
+            )
+            headers.update({
+                'ICN-SIGN': signature,
+                'ICN-TIMESTAMP': timestamp,
+                'ICN-API-KEY': self.api_key
+            })
 
-        headers = {
-            'ICN-TIMESTAMP': timestamp,
-        }
         if data != '':
             headers.update({
                 'Content-Type': 'application/json',
@@ -162,9 +166,6 @@ class Iconomi(ExchangeInterface):
                     response.status_code,
                 ),
             )
-
-        if not isinstance(json_ret, dict):
-            raise RemoteError('ICONOMI returned invalid non-dict response')
 
         return json_ret
 
@@ -267,3 +268,19 @@ class Iconomi(ExchangeInterface):
                     log.warning(f'Ignoring transaction {tx} because of unsupported asset')
 
         return trades
+
+    def query_supported_tickers(
+            self,
+    ) -> List[str]:
+
+        tickers = []
+        resp = self._api_query('get', 'assets', authenticated=False)
+
+        for asset_info in resp:
+            if not asset_info['supported']:
+                continue
+            if asset_info['ticker'] in UNSUPPORTED_ICONOMI_ASSETS:
+                continue
+            tickers.append(asset_info['ticker'])
+
+        return tickers

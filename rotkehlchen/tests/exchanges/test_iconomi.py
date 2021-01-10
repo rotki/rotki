@@ -1,11 +1,15 @@
+import warnings as test_warnings
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH, A_EUR
-from rotkehlchen.exchanges.iconomi import Iconomi
+from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.exchanges.iconomi import Iconomi, iconomi_asset
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.user_messages import MessagesAggregator
 
 ICONOMI_BALANCES_RESPONSE = """{"currency":"USD","daaList":[{"name":"CARUS-AR","ticker":"CAR","balance":"100.0","value":"1000.0"},{"name":"Strategy 2","ticker":"SCND","balance":"80.00000000","value":"0"}],"assetList":[{"name":"Aragon","ticker":"ANT","balance":"1000","value":"200.0"},{"name":"Ethereum","ticker":"ETH","balance":"32","value":"10000.031241234"},{"name":"Augur","ticker":"REP","balance":"0.5314532451","value":"0.8349030710000"}]}"""  # noqa: E501
 
@@ -79,3 +83,25 @@ def test_query_trade_history(function_scope_iconomi):
     assert trades[1].fee.is_close(FVal('0.0'))
     assert isinstance(trades[1].fee_currency, Asset)
     assert trades[1].fee_currency == A_EUR
+
+def test_iconomi_assets_are_known(
+        database,
+        inquirer,  # pylint: disable=unused-argument
+):
+    # use a real Iconomi instance so that we always get the latest data
+    iconomi = Iconomi(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=MessagesAggregator(),
+    )
+
+    supported_tickers = iconomi.query_supported_tickers()
+    for ticker in supported_tickers:
+        try:
+            _ = iconomi_asset(ticker)
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.asset_name} in ICONOMI. '
+                f'Support for it has to be added',
+            ))
