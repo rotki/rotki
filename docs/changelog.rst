@@ -8,6 +8,8 @@ Changelog
 * :bug:`2023` Crypto.com is now properly not displayed as a connectable exchange.
 * :feature:`1950` Users can now use a predefined yearly or quarterly range when generating a tax report.
 * :bug:`2013` Show correct fee currency for Bitfinex trades.
+* :feature:`991` Add Bitcoin.de exchange.
+* :feature:`629` Add ICONOMI exchange. Balances and trades of single assets can be imported.
 
 * :feature:`-` Added support for the following tokens:
 
