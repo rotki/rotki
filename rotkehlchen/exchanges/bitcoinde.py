@@ -3,7 +3,7 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
@@ -27,6 +27,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# This corresponds to md5('') and is used in signature generation
+MD5_EMPTY_STR = 'd41d8cd98f00b204e9800998ecf8427e'
 
 
 def bitcoinde_asset(asset: str) -> Asset:
@@ -92,8 +95,7 @@ class Bitcoinde(ExchangeInterface):
         self.msg_aggregator = msg_aggregator
 
     def _generate_signature(self, request_type: str, url: str, nonce: str) -> str:
-        md5_empty = 'd41d8cd98f00b204e9800998ecf8427e'  # this is md5('')
-        signed_data = '#'.join([request_type, url, self.api_key, nonce, md5_empty]).encode()
+        signed_data = '#'.join([request_type, url, self.api_key, nonce, MD5_EMPTY_STR]).encode()
         signature = hmac.new(
             self.secret,
             signed_data,
@@ -106,14 +108,14 @@ class Bitcoinde(ExchangeInterface):
 
     def _api_query(
             self,
-            verb: str,
+            verb: Literal['get', 'post'],
             path: str,
             options: Optional[Dict] = None,
     ) -> Dict:
         """
         Queries Bitcoin.de with the given verb for the given path and options
         """
-        assert verb in ('get', 'post', 'push'), (
+        assert verb in ('get', 'post'), (
             'Given verb {} is not a valid HTTP verb'.format(verb)
         )
 
@@ -134,18 +136,18 @@ class Bitcoinde(ExchangeInterface):
             nonce=nonce,
         )
 
-        self.session.headers.update({
+        headers = {
             'x-api-nonce': nonce,
-        })
+        }
         if data != '':
-            self.session.headers.update({
+            headers.update({
                 'Content-Type': 'application/json',
                 'Content-Length': str(len(data)),
             })
 
         log.debug('Bitcoin.de API Query', verb=verb, request_url=request_url)
 
-        response = getattr(self.session, verb)(request_url, data=data)
+        response = getattr(self.session, verb)(request_url, data=data, headers=headers)
 
         try:
             json_ret = rlk_jsonloads(response.text)
@@ -176,7 +178,9 @@ class Bitcoinde(ExchangeInterface):
         return json_ret
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        "Validates that the Bitcoin.de API key is good for usage in Rotki"
+        """
+        Validates that the Bitcoin.de API key is good for usage in Rotki
+        """
 
         try:
             self._api_query('get', 'account')
@@ -211,7 +215,7 @@ class Bitcoinde(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List:
+    ) -> List[Trade]:
 
         page = 1
         resp_trades = []
@@ -240,9 +244,7 @@ class Bitcoinde(ExchangeInterface):
 
             if tx['state'] != 1:
                 continue
-            if timestamp and timestamp < start_ts:
-                continue
-            if timestamp and timestamp > end_ts:
+            if timestamp < start_ts or timestamp > end_ts:
                 continue
             trades.append(trade_from_bitcoinde(tx))
 
