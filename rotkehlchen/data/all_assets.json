@@ -431,10 +431,12 @@
     },
     "ALPHA": {
         "coingecko": "alpha-finance",
+        "ethereum_address": "0xa1faa113cbE53436Df28FF0aEe54275c13B40975",
+        "ethereum_token_decimals": 18,
         "name": "Alpha Finance",
         "started": 1602288000,
         "symbol": "ALPHA",
-        "type": "binance token"
+        "type": "ethereum token and more"
     },
     "ALQO": {
         "coingecko": "alqo",
