@@ -191,7 +191,15 @@ class Bitcoinde(ExchangeInterface):
 
     def query_balances(self, **kwargs: Any) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         balances = {}
-        resp_info = self._api_query('get', 'account')
+        try:
+            resp_info = self._api_query('get', 'account')
+        except RemoteError as e:
+            msg = ( 
+                'Bitcoin.de request failed. Could not reach bitcoin.de due '
+                'to {}'.format(e)
+            )
+            log.error(msg)
+            return None, msg
 
         for currency, balance in resp_info['data']['balances'].items():
             asset = bitcoinde_asset(currency)
@@ -209,7 +217,7 @@ class Bitcoinde(ExchangeInterface):
                 'usd_value': balance['total_amount'] * usd_price,
             }
 
-        return balances, ""
+        return balances, ''
 
     def query_online_trade_history(
             self,

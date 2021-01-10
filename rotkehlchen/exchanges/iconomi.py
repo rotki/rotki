@@ -196,7 +196,7 @@ class Iconomi(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List:
+    ) -> List[Trade]:
 
         page = 0
         all_transactions = []
@@ -215,15 +215,15 @@ class Iconomi(ExchangeInterface):
         trades = []
         for tx in all_transactions:
             timestamp = tx['timestamp']
-            if timestamp and timestamp < start_ts:
+            if timestamp < start_ts:
                 continue
-            if timestamp and timestamp > end_ts:
+            if timestamp > end_ts:
                 continue
 
             if tx['type'] in ('buy_asset', 'sell_asset'):
                 try:
                     trades.append(trade_from_iconomi(tx))
                 except UnknownAsset:
-                    log.warning('Ignoring transaction %s because of unsupported asset', str(tx))
+                    log.warning(f'Ignoring transaction {tx} because of unsupported asset')
 
         return trades
