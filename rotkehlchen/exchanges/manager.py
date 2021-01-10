@@ -26,6 +26,8 @@ SUPPORTED_EXCHANGES = [
     'bitstamp',
     'binance_us',
     'bitfinex',
+    'bitcoinde',
+    'iconomi',
 ]
 
 

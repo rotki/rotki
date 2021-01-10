@@ -7,6 +7,7 @@ from rotkehlchen.tests.fixtures.assets import *
 from rotkehlchen.tests.fixtures.blockchain import *
 from rotkehlchen.tests.fixtures.db import *
 from rotkehlchen.tests.fixtures.exchanges.binance import *
+from rotkehlchen.tests.fixtures.exchanges.bitcoinde import *
 from rotkehlchen.tests.fixtures.exchanges.bitfinex import *
 from rotkehlchen.tests.fixtures.exchanges.bitmex import *
 from rotkehlchen.tests.fixtures.exchanges.bitstamp import *
@@ -14,6 +15,7 @@ from rotkehlchen.tests.fixtures.exchanges.bittrex import *
 from rotkehlchen.tests.fixtures.exchanges.coinbase import *
 from rotkehlchen.tests.fixtures.exchanges.coinbasepro import *
 from rotkehlchen.tests.fixtures.exchanges.gemini import *
+from rotkehlchen.tests.fixtures.exchanges.iconomi import *
 from rotkehlchen.tests.fixtures.exchanges.kraken import *
 from rotkehlchen.tests.fixtures.exchanges.poloniex import *
 from rotkehlchen.tests.fixtures.greenlets import *

@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.binance import Binance, create_binance_symbols_to_pair
+from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.bitstamp import Bitstamp
@@ -13,6 +14,7 @@ from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
 from rotkehlchen.exchanges.gemini import Gemini
+from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.kraken import MockKraken
@@ -425,6 +427,30 @@ def create_test_kraken(
         msg_aggregator: MessagesAggregator,
 ) -> MockKraken:
     return MockKraken(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_iconomi(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Iconomi:
+    return Iconomi(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_bitcoinde(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Bitcoinde:
+    return Bitcoinde(
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
