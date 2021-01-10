@@ -98,14 +98,14 @@ class Iconomi(ExchangeInterface):
 
     def _api_query(
             self,
-            verb: str,
+            verb: Literal['get', 'post'],
             path: str,
             options: Optional[Dict] = None,
     ) -> Dict:
         """
         Queries ICONOMI with the given verb for the given path and options
         """
-        assert verb in ('get', 'post', 'push'), (
+        assert verb in ('get', 'post'), (
             'Given verb {} is not a valid HTTP verb'.format(verb)
         )
 
