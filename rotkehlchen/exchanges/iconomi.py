@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import Location, Price, Trade, TradePair, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -176,13 +177,30 @@ class Iconomi(ExchangeInterface):
         balances = {}
         resp_info = self._api_query('get', 'user/balance')
 
+        if resp_info['currency'] != 'USD':
+            raise NotImplementedError("API did not return values in USD")
+
         for balance_info in resp_info['assetList']:
             ticker = balance_info['ticker']
             try:
                 asset = iconomi_asset(ticker)
+
+                # There seems to be a bug in the ICONOMI API regarding balance_info['value'].
+                # The value is supposed to be in USD, but is actually returned
+                # in EUR. So let's use the Inquirer for now.
+                try:
+                    usd_price = Inquirer().find_usd_price(asset=asset)
+                    usd_value = balance_info['balance'] * usd_price
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing ICONOMI balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+
                 balances[asset] = {
                     'amount': balance_info['balance'],
-                    'usd_value': balance_info['value'],
+                    'usd_value': usd_value
                 }
             except UnknownAsset:
                 self.msg_aggregator.add_warning(

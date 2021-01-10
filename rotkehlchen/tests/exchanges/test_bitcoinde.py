@@ -43,7 +43,6 @@ def test_query_trade_history(function_scope_bitcoinde):
     bitcoinde = function_scope_bitcoinde
 
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
-        print(url, kwargs)
         return MockResponse(200, BITCOINDE_TRADES_RESPONSE)
 
     with patch.object(bitcoinde.session, 'get', side_effect=mock_api_return):
