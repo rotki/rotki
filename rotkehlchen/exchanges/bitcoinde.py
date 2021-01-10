@@ -33,6 +33,16 @@ log = RotkehlchenLogsAdapter(logger)
 # This corresponds to md5('') and is used in signature generation
 MD5_EMPTY_STR = 'd41d8cd98f00b204e9800998ecf8427e'
 
+# Pairs can be found in Basic API doc: https://www.bitcoin.de/de/api/marketplace
+BITCOINDE_TRADING_PAIRS = (
+    'btceur',
+    'bcheur',
+    'btgeur',
+    'etheur',
+    'bsveur',
+    'ltceur'
+)
+
 
 def bitcoinde_asset(asset: str) -> Asset:
     return Asset(asset.upper())

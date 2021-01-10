@@ -2,7 +2,11 @@ from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.exchanges.bitcoinde import Bitcoinde
+from rotkehlchen.exchanges.bitcoinde import (
+    BITCOINDE_TRADING_PAIRS,
+    Bitcoinde,
+    bitcoinde_pair_to_world,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Location, TradeType
@@ -71,3 +75,8 @@ def test_query_trade_history(function_scope_bitcoinde):
     assert trades[1].fee.is_close(FVal('0.93452135'))
     assert isinstance(trades[1].fee_currency, Asset)
     assert trades[1].fee_currency == A_EUR
+
+
+def test_bitcoinde_trading_pairs():
+    for pair in BITCOINDE_TRADING_PAIRS:
+        tx_asset, native_asset = bitcoinde_pair_to_world(pair)
