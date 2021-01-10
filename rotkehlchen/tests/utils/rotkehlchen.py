@@ -10,7 +10,11 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.blockchain import mock_bitcoin_balances_query, mock_etherscan_query
+from rotkehlchen.tests.utils.blockchain import (
+    mock_beaconchain,
+    mock_bitcoin_balances_query,
+    mock_etherscan_query,
+)
 from rotkehlchen.tests.utils.constants import A_RDN, A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     patch_binance_balances_query,
@@ -29,6 +33,7 @@ class BalancesTestSetup(NamedTuple):
     poloniex_patch: _patch
     binance_patch: _patch
     etherscan_patch: _patch
+    beaconchain_patch: _patch
     ethtokens_max_chunks_patch: _patch
     bitcoin_patch: _patch
 
@@ -46,6 +51,7 @@ class BalancesTestSetup(NamedTuple):
     def enter_ethereum_patches(self, stack: ExitStack):
         stack.enter_context(self.etherscan_patch)
         stack.enter_context(self.ethtokens_max_chunks_patch)
+        stack.enter_context(self.beaconchain_patch)
         return stack
 
 
@@ -130,6 +136,11 @@ def setup_balances(
         original_queries=original_queries,
         original_requests_get=requests.get,
     )
+    beaconchain_patch = mock_beaconchain(
+        beaconchain=rotki.chain_manager.beaconchain,
+        original_queries=original_queries,
+        original_requests_get=requests.get,
+    )
     # For ethtoken detection we can have bigger chunk length during tests since it's mocked anyway
     ethtokens_max_chunks_patch = patch(
         'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',
@@ -161,6 +172,7 @@ def setup_balances(
         etherscan_patch=etherscan_patch,
         ethtokens_max_chunks_patch=ethtokens_max_chunks_patch,
         bitcoin_patch=bitcoin_patch,
+        beaconchain_patch=beaconchain_patch,
     )
 
 

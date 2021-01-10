@@ -10,9 +10,10 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.constants.ethereum import ETH_SCAN, ZERION_ABI
+from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, VOTE_ESCROWED_CRV, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -156,6 +157,26 @@ def _get_token(value: Any) -> Optional[EthereumToken]:
     return None
 
 
+def mock_beaconchain(
+        beaconchain: BeaconChain,
+        original_queries: Optional[List[str]],
+        original_requests_get,
+):
+
+    def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
+        if original_queries is not None and 'beaconchain' in original_queries:
+            return original_requests_get(url, *args, **kwargs)
+
+        if 'validator' in url:  # all validators that belong to an eth1 address
+            response = '{"status":"OK","data":[]}'
+        else:
+            raise AssertionError(f'Unrecognized argument url for beaconchain mock in tests: {url}')
+
+        return MockResponse(200, response)
+
+    return patch.object(beaconchain.session, 'get', wraps=mock_requests_get)
+
+
 def mock_etherscan_query(
         eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
         etherscan: Etherscan,
@@ -276,6 +297,31 @@ def mock_etherscan_query(
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={VOTE_ESCROWED_CRV.address}' in url:  # noqa: E501
+            # always
+            pass
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_MULTICALL.address}' in url:  # noqa: E501
+            web3 = Web3()
+            contract = web3.eth.contract(address=ETH_MULTICALL.address, abi=ETH_MULTICALL.abi)
+            if 'data=0x252dba42' in url:  # aggregate
+                data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
+
+                fn_abi = contract.functions.abi[1]
+                assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
+                input_types = get_abi_input_types(fn_abi)
+                output_types = get_abi_output_types(fn_abi)
+                decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
+                # For now the only mocked multicall is 32 bytes for the locked CRV in escrow
+                # When there is more we have to figure out a way to differentiate
+                # between them in mocking. Just return empty response here
+                args = [1, [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' for x in decoded_input[0]]]  # noqa: E501
+                result = '0x' + web3.codec.encode_abi(output_types, args).hex()
+                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+            else:
+                raise AssertionError('Unexpected etherscan multicall during tests: {url}')
+
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN.address}' in url:
             if 'ethscan' in original_queries:
                 return original_requests_get(url, *args, **kwargs)

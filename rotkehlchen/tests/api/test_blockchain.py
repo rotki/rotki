@@ -425,7 +425,8 @@ def test_add_blockchain_accounts(
         btc_balances=['3000000', '5000000', '600000000'],
     )
     # add the new BTC account
-    with setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -478,16 +479,18 @@ def test_add_blockchain_accounts(
     )
 
     # now try to add an already existing account and see an error is returned
-    response = requests.put(api_url_for(
-        rotkehlchen_api_server,
-        "blockchainsaccountsresource",
-        blockchain='ETH',
-    ), json={'accounts': [{'address': ethereum_accounts[0]}]})
-    assert_error_response(
-        response=response,
-        status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg=f"Blockchain account/s ['{ethereum_accounts[0]}'] already exist",
-    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json={'accounts': [{'address': ethereum_accounts[0]}]})
+        assert_error_response(
+            response=response,
+            status_code=HTTPStatus.BAD_REQUEST,
+            contained_in_msg=f"Blockchain account/s ['{ethereum_accounts[0]}'] already exist",
+        )
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
@@ -1402,7 +1405,8 @@ def test_remove_blockchain_accounts(
         btc_balances=['3000000', '5000000'],
     )
     # remove the new BTC account
-    with setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",

@@ -29,7 +29,7 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
         rotki,
         ethereum_accounts=ethereum_accounts,
         btc_accounts=[],
-        original_queries=['logs', 'transactions', 'blocknobytime'],
+        original_queries=['logs', 'transactions', 'blocknobytime', 'beaconchain'],
     )
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
