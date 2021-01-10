@@ -539,8 +539,8 @@ class YearnVaults(EthereumModule):
             else:
                 defi_balances = given_defi_balances()
 
-            from_block = self.ethereum.etherscan.get_blocknumber_by_time(from_timestamp)
-            to_block = self.ethereum.etherscan.get_blocknumber_by_time(to_timestamp)
+            from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
+            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
             history: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
 
             for address in addresses:

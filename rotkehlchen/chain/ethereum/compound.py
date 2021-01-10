@@ -486,10 +486,10 @@ class Compound(EthereumModule):
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
-        self.ethereum.etherscan.get_blocknumber_by_time(from_ts)
+        self.ethereum.get_blocknumber_by_time(from_ts)
         from_block = max(
             COMP_DEPLOYED_BLOCK,
-            self.ethereum.etherscan.get_blocknumber_by_time(from_ts),
+            self.ethereum.get_blocknumber_by_time(from_ts),
         )
         argument_filters = {
             'from': COMPTROLLER_PROXY.address,
@@ -501,7 +501,7 @@ class Compound(EthereumModule):
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,
-            to_block=self.ethereum.etherscan.get_blocknumber_by_time(to_ts),
+            to_block=self.ethereum.get_blocknumber_by_time(to_ts),
         )
 
         events = []

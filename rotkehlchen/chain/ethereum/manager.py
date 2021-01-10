@@ -21,6 +21,7 @@ from web3.middleware.exception_retry_request import http_retry_request_middlewar
 from web3.types import FilterParams
 
 from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSIT
+from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
@@ -212,6 +213,9 @@ class EthereumManager():
                 ethrpc_endpoint=node.endpoint(self.own_rpc_endpoint),
                 mainnet_check=True,
             )
+        self.blocks_subgraph = Graph(
+            'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
+        )
 
     def connected_to_any_web3(self) -> bool:
         return (
@@ -846,3 +850,41 @@ class EthereumManager():
         block_number = event['blockNumber']
         block_data = self.get_block_by_number(block_number)
         return Timestamp(block_data['timestamp'])
+
+    def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
+        """Queries Ethereum Blocks Subgraph for closest block at or before given timestamp"""
+        response = self.blocks_subgraph.query(
+            f"""
+            {{
+                blocks(
+                    first: 1, orderBy: timestamp, orderDirection: desc,
+                    where: {{timestamp_lte: "{ts}"}}
+                ) {{
+                    id
+                    number
+                    timestamp
+                }}
+            }}
+            """,
+        )
+        try:
+            result = int(response['blocks'][0]['number'])
+        except (IndexError, KeyError) as e:
+            raise RemoteError(
+                f'Got unexpected ethereum blocks subgraph response: {response}',
+            ) from e
+        else:
+            return result
+
+    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
+        """Searches for the blocknumber of a specific timestamp
+        - Performs the etherscan api call by default first
+        - If RemoteError raised or etherscan flag set to false
+            -> queries blocks subgraph
+        """
+        if etherscan:
+            try:
+                return self.etherscan.get_blocknumber_by_time(ts)
+            except RemoteError:
+                pass
+        return self._get_blocknumber_by_time_from_subgraph(ts)

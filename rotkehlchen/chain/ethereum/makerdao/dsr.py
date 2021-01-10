@@ -490,7 +490,7 @@ class MakerDAODSR(MakerDAOCommon):
             # https://twitter.com/MakerDAO/status/1239270910810411008
             return FVal('1018008449363110619399951035')
 
-        block_number = self.ethereum.etherscan.get_blocknumber_by_time(time)
+        block_number = self.ethereum.get_blocknumber_by_time(time)
         latest_block = self.ethereum.get_latest_block_number()
         blocks_queried = 0
         counter = 1
