@@ -24,8 +24,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-SUPPORTED_FUND_TICKERS = ('BLX',)
-
 
 def iconomi_asset(asset: str) -> Asset:
     return Asset(asset.upper())
@@ -41,25 +39,13 @@ def trade_from_iconomi(raw_trade: Dict) -> Trade:
 
     timestamp = raw_trade['timestamp']
 
-    if (
-        raw_trade['type'] == 'buy_fund' and
-        raw_trade['target_ticker'] not in SUPPORTED_FUND_TICKERS
-    ):
-        raise UnknownAsset(raw_trade['target_ticker'])
-
-    if (
-        raw_trade['type'] == 'sell_fund' and
-        raw_trade['source_ticker'] not in SUPPORTED_FUND_TICKERS
-    ):
-        raise UnknownAsset(raw_trade['target_ticker'])
-
-    if raw_trade['type'] in ('buy_asset', 'buy_fund'):
+    if raw_trade['type'] == 'buy_asset':
         trade_type = TradeType.BUY
         tx_asset = Asset(raw_trade['target_ticker'])
         tx_amount = raw_trade['target_amount']
         native_asset = Asset(raw_trade['source_ticker'])
         native_amount = raw_trade['source_amount']
-    else:
+    elif raw_trade['type'] == 'sell_asset':
         trade_type = TradeType.SELL
         tx_asset = Asset(raw_trade['source_ticker'])
         tx_amount = raw_trade['source_amount']
@@ -204,23 +190,6 @@ class Iconomi(ExchangeInterface):
                     f' Ignoring its balance query.',
                 )
 
-        for balance_info in resp_info['daaList']:
-            ticker = balance_info['ticker']
-            try:
-                if ticker not in SUPPORTED_FUND_TICKERS:
-                    raise UnknownAsset(ticker)
-
-                asset = iconomi_asset(ticker)
-                balances[asset] = {
-                    'amount': balance_info['balance'],
-                    'usd_value': balance_info['value'],
-                }
-            except UnknownAsset:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported ICONOMI strategy {ticker}. '
-                    f' Ignoring its balance query.',
-                )
-
         return (balances, "")
 
     def query_online_trade_history(
@@ -251,7 +220,7 @@ class Iconomi(ExchangeInterface):
             if timestamp and timestamp > end_ts:
                 continue
 
-            if tx['type'] in ('buy_asset', 'sell_asset', 'buy_fund', 'sell_fund'):
+            if tx['type'] in ('buy_asset', 'sell_asset'):
                 try:
                     trades.append(trade_from_iconomi(tx))
                 except UnknownAsset:
