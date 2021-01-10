@@ -4,10 +4,11 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
+from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError, UnknownAsset
@@ -100,8 +101,8 @@ class Iconomi(ExchangeInterface):
             verb: Literal['get', 'post'],
             path: str,
             options: Optional[Dict] = None,
-            authenticated: bool = True
-    ) -> Dict:
+            authenticated: bool = True,
+    ) -> Any:
         """
         Queries ICONOMI with the given verb for the given path and options
         """
@@ -130,7 +131,7 @@ class Iconomi(ExchangeInterface):
             headers.update({
                 'ICN-SIGN': signature,
                 'ICN-TIMESTAMP': timestamp,
-                'ICN-API-KEY': self.api_key
+                'ICN-API-KEY': self.api_key,
             })
 
         if data != '':
@@ -146,7 +147,7 @@ class Iconomi(ExchangeInterface):
                 request_url,
                 data=data,
                 timeout=30,
-                headers=headers
+                headers=headers,
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'ICONOMI API request failed due to {str(e)}') from e
@@ -216,7 +217,7 @@ class Iconomi(ExchangeInterface):
 
                 balances[asset] = {
                     'amount': balance_info['balance'],
-                    'usd_value': usd_value
+                    'usd_value': usd_value,
                 }
             except UnknownAsset:
                 self.msg_aggregator.add_warning(

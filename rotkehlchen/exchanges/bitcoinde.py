@@ -3,10 +3,11 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
+from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError
@@ -40,7 +41,7 @@ BITCOINDE_TRADING_PAIRS = (
     'btgeur',
     'etheur',
     'bsveur',
-    'ltceur'
+    'ltceur',
 )
 
 

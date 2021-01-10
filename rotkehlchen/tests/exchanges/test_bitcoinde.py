@@ -79,4 +79,4 @@ def test_query_trade_history(function_scope_bitcoinde):
 
 def test_bitcoinde_trading_pairs():
     for pair in BITCOINDE_TRADING_PAIRS:
-        tx_asset, native_asset = bitcoinde_pair_to_world(pair)
+        _ = bitcoinde_pair_to_world(pair)

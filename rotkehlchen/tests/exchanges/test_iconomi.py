@@ -84,6 +84,7 @@ def test_query_trade_history(function_scope_iconomi):
     assert isinstance(trades[1].fee_currency, Asset)
     assert trades[1].fee_currency == A_EUR
 
+
 def test_iconomi_assets_are_known(
         database,
         inquirer,  # pylint: disable=unused-argument
