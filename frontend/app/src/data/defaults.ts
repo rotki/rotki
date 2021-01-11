@@ -28,6 +28,8 @@ export const EXCHANGE_GEMINI = 'gemini';
 export const EXCHANGE_CRYPTOCOM = 'crypto.com';
 export const EXCHANGE_BITSTAMP = 'bitstamp';
 export const EXCHANGE_BINANCE_US = 'binance_us';
+export const EXCHANGE_BITCOIN_DE = 'bitcoinde';
+export const EXCHANGE_ICONOMI = 'iconomi';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
 
@@ -46,9 +48,11 @@ export const exchanges = [
   EXCHANGE_BITFINEX,
   EXCHANGE_BINANCE,
   EXCHANGE_BINANCE_US,
+  EXCHANGE_BITCOIN_DE,
   EXCHANGE_COINBASE,
   EXCHANGE_COINBASEPRO,
   EXCHANGE_GEMINI,
+  EXCHANGE_ICONOMI,
   EXCHANGE_CRYPTOCOM,
   EXCHANGE_BITSTAMP
 ] as const;

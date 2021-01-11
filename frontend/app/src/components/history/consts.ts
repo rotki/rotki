@@ -2,6 +2,7 @@ import { TradeLocationData } from '@/components/history/type';
 import {
   EXCHANGE_BINANCE,
   EXCHANGE_BINANCE_US,
+  EXCHANGE_BITCOIN_DE,
   EXCHANGE_BITFINEX,
   EXCHANGE_BITMEX,
   EXCHANGE_BITSTAMP,
@@ -10,6 +11,7 @@ import {
   EXCHANGE_COINBASEPRO,
   EXCHANGE_CRYPTOCOM,
   EXCHANGE_GEMINI,
+  EXCHANGE_ICONOMI,
   EXCHANGE_KRAKEN,
   EXCHANGE_POLONIEX,
   EXCHANGE_UNISWAP
@@ -52,6 +54,16 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_BITFINEX,
     name: 'Bitfinex',
     icon: require('@/assets/images/bitfinex.svg')
+  },
+  {
+    identifier: EXCHANGE_BITCOIN_DE,
+    name: 'bitcoin.de',
+    icon: require('@/assets/images/btcde.svg')
+  },
+  {
+    identifier: EXCHANGE_ICONOMI,
+    name: 'Iconomi',
+    icon: require('@/assets/images/iconomi.svg')
   },
   {
     identifier: EXCHANGE_GEMINI,
