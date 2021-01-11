@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`522` Users can connect to different backends from the frontend.
 * :bug:`2040` Balance snapshotting should now work again for Bitfinex and Bitstamp users.
 * :feature:`2056` Users can now control whether a profit loss report in a certain time range is allowed to go further in the past to calculate the real cost basis of assets or not. By default this setting is on.
 * :feature:`2008` Users can now search for a currency in the currency selection UI.
