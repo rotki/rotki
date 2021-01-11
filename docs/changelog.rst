@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1946` There should no longer be a non 0-100 percentage in the tax report during the progress report.
 * :feature:`522` Users can connect to different backends from the frontend.
 * :bug:`2040` Balance snapshotting should now work again for Bitfinex and Bitstamp users.
 * :feature:`2056` Users can now control whether a profit loss report in a certain time range is allowed to go further in the past to calculate the real cost basis of assets or not. By default this setting is on.
