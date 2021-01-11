@@ -691,7 +691,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 limit=2000,
                 to_timestamp=end_date,
             )
-            if all(x['close'] == 0 for x in resp['Data']):
+            if all(FVal(x['close']) == ZERO for x in resp['Data']):
                 # all prices zero Means we have reached the end of available prices
                 break
 

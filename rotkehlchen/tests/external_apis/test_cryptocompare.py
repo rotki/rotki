@@ -174,6 +174,27 @@ def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_empty_histohour(data_dir, database, freezer):
+    """Histohour can be empty and can have also floating point zeros like in CHI/EUR
+
+    This test makes sure that an empty list is returned at the very first all zeros
+    result that also has floating point and querying stops.
+
+    If cryptocompare actually fixes their zero historical price problem this test can go away
+    """
+    now_ts = 1610365553
+    freezer.move_to(datetime.fromtimestamp(now_ts))
+    cc = Cryptocompare(data_directory=data_dir, database=database)
+    result = cc.get_historical_data(
+        from_asset=Asset('CHI'),
+        to_asset=Asset('EUR'),
+        timestamp=now_ts,
+        only_check_cache=False,
+    )
+    assert len(result) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_cryptocompare_histohour_query_old_ts_xcp(
         cryptocompare,
