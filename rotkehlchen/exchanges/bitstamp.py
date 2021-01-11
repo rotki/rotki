@@ -23,7 +23,6 @@ import requests
 from requests.adapters import Response
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants.misc import ZERO
@@ -128,7 +127,7 @@ class Bitstamp(ExchangeInterface):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Balance]], str]:
+    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str]:
         """Return the account balances on Bistamp
 
         The balance endpoint returns a dict where the keys (str) are related to
@@ -151,7 +150,7 @@ class Bitstamp(ExchangeInterface):
             log.error(msg)
             raise RemoteError(msg) from e
 
-        asset_balance: Dict[Asset, Balance] = {}
+        asset_balance: Dict[Asset, Dict[str, FVal]] = {}
         for entry, amount in response_dict.items():
             amount = FVal(amount)
             if not entry.endswith('_balance') or amount == ZERO:
@@ -188,10 +187,10 @@ class Bitstamp(ExchangeInterface):
                 )
                 continue
 
-            asset_balance[asset] = Balance(
-                amount=amount,
-                usd_value=amount * usd_price,
-            )
+            asset_balance[asset] = {
+                'amount': amount,
+                'usd_value': amount * usd_price,
+            }
 
         return asset_balance, ''
 
@@ -657,7 +656,7 @@ class Bitstamp(ExchangeInterface):
             self,
             response: Response,
             case: Literal['balances'],
-    ) -> Tuple[Optional[Dict[Asset, Balance]], str]:
+    ) -> Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str]:
         ...
 
     @overload  # noqa: F811
@@ -683,7 +682,7 @@ class Bitstamp(ExchangeInterface):
     ) -> Union[
         List,
         Tuple[bool, str],
-        Tuple[Optional[Dict[Asset, Balance]], str],
+        Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str],
     ]:
         """This function processes not successful responses for the following
         cases listed in `case`.

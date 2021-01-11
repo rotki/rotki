@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.errors import RemoteError, SystemClockNotSyncedError, UnknownAsset
@@ -274,14 +273,14 @@ def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disab
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
         asset_balance, msg = mock_bitstamp.query_balances()
         assert asset_balance == {
-            Asset('ETH'): Balance(
-                amount=FVal('32'),
-                usd_value=FVal('48'),
-            ),
-            Asset('LINK'): Balance(
-                amount=FVal('1000'),
-                usd_value=FVal('1500'),
-            ),
+            Asset('ETH'): {
+                'amount': FVal('32'),
+                'usd_value': FVal('48'),
+            },
+            Asset('LINK'): {
+                'amount': FVal('1000'),
+                'usd_value': FVal('1500'),
+            },
         }
         assert msg == ''
 
