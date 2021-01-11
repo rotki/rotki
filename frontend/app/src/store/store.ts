@@ -15,6 +15,7 @@ import { staking } from '@/store/staking';
 import { statistics } from '@/store/statistics';
 import { tasks } from '@/store/tasks';
 import {
+  ActionStatus,
   Message,
   RotkehlchenState,
   StatusPayload,
@@ -74,34 +75,46 @@ const store: StoreOptions<RotkehlchenState> = {
   },
   actions: {
     async version({ commit }): Promise<void> {
-      const timerId = setInterval(async function () {
-        try {
-          const version = await api.checkVersion();
-          if (version) {
-            commit('versions', version);
-            clearInterval(timerId);
-          }
-          // eslint-disable-next-line no-empty
-        } catch (e) {}
-      }, 1000);
+      const version = await api.checkVersion();
+      if (version) {
+        commit('versions', version);
+      }
     },
-    async connect({ commit }): Promise<void> {
-      const timerId = setInterval(async function () {
-        try {
+    async connect({ commit }, payload: string | null): Promise<ActionStatus> {
+      return new Promise<ActionStatus>(resolve => {
+        let count = 0;
+
+        function connectToDefault() {
           const serverUrl = window.interop?.serverUrl();
           const defaultServerUrl = process.env.VUE_APP_BACKEND_URL;
           if (serverUrl && serverUrl !== defaultServerUrl) {
             api.setup(serverUrl);
           }
+        }
 
-          const connected = await api.ping();
-          if (connected) {
-            commit('setConnected', connected);
+        const timerId = setInterval(async function () {
+          try {
+            if (!payload) {
+              connectToDefault();
+            } else {
+              api.setup(payload);
+            }
+
+            const connected = await api.ping();
+            if (connected) {
+              commit('setConnected', connected);
+              clearInterval(timerId);
+              resolve({ success: true });
+            }
+            // eslint-disable-next-line no-empty
+          } catch (e) {}
+          count++;
+          if (count > 5) {
             clearInterval(timerId);
+            resolve({ success: false });
           }
-          // eslint-disable-next-line no-empty
-        } catch (e) {}
-      }, 1000);
+        }, 1000);
+      });
     },
     async resetDefiStatus({ commit }): Promise<void> {
       const status = Status.NONE;
