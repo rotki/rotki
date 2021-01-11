@@ -17,7 +17,6 @@ describe('Settings', () => {
     floatingPrecision: '4',
     anonymizedLogs: true,
     anonymousUsageStatistics: false,
-    historicDataStart: '03/10/2018',
     currency: 'JPY',
     balanceSaveFrequency: '48',
     dateDisplayFormat: '%d-%m-%Y %H:%M:%S %z',
@@ -62,14 +61,6 @@ describe('Settings', () => {
 
     it('change anonymous statistics switch & validate UI message', () => {
       pageGeneral.changeAnonymousUsageStatistics();
-    });
-
-    it('change historical data start & validate UI message', () => {
-      pageGeneral.setHistoryDataStart();
-      pageGeneral.confirmInlineSuccess(
-        '.general-settings__fields__historic-data-start',
-        settings.historicDataStart
-      );
     });
 
     it('change main currency and validate UI message', () => {

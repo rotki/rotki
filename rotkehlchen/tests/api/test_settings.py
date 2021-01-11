@@ -70,9 +70,7 @@ def test_set_settings(rotkehlchen_api_server):
         if setting in unmodifiable_settings:
             continue
 
-        if setting == 'historical_data_start':
-            value = '10/10/2016'
-        elif setting == 'date_display_format':
+        if setting == 'date_display_format':
             value = '%d/%m/%Y-%H:%M:%S'
         elif setting == 'eth_rpc_endpoint':
             value = 'http://working.nodes.com:8545'
@@ -393,17 +391,6 @@ def test_set_settings_errors(rotkehlchen_api_server):
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid boolean',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # Invalid type for historical_data_start
-    data = {
-        'settings': {'historical_data_start': 12},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

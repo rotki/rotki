@@ -46,6 +46,8 @@ def upgrade_v22_to_v23(db: 'DBHandler') -> None:
     cursor.execute('DELETE FROM used_query_ranges WHERE name = "bitfinex_trades";')
     # Delete Bitfinex trades
     cursor.execute('DELETE FROM trades WHERE location = "T";')
+    # Delete deprecated historical data start setting
+    cursor.execute('DELETE from settings WHERE name="historical_data_start";')
     db.conn.commit()
 
     # -- Now move forex history to the new directory and remove all old cache files

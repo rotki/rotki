@@ -149,7 +149,6 @@ export class GeneralSettingsPage {
     currencyLocation: 'after' | 'before';
     currency: string;
     balanceSaveFrequency: string;
-    historicDataStart: string;
     rpcEndpoint: string;
   }) {
     cy.get('.general-settings__fields__floating-precision input').should(
@@ -162,10 +161,6 @@ export class GeneralSettingsPage {
     cy.get('.general-settings__fields__anonymous-usage-statistics input')
       .should('have.attr', 'aria-checked')
       .and('include', `${settings.anonymousUsageStatistics}`);
-    cy.get('.general-settings__fields__historic-data-start input').should(
-      'have.value',
-      settings.historicDataStart
-    );
     cy.get(
       '.general-settings__fields__currency-selector .v-select__selection'
     ).should('have.text', settings.currency);

@@ -14,7 +14,6 @@ export interface GeneralSettings {
   readonly floatingPrecision: number;
   readonly anonymizedLogs: boolean;
   readonly anonymousUsageAnalytics: boolean;
-  readonly historicDataStart: string;
   readonly ethRpcEndpoint: string;
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
@@ -112,7 +111,6 @@ interface SettingsPayload {
   main_currency: string;
   anonymized_logs: boolean;
   submit_usage_analytics: boolean;
-  historical_data_start: string;
   eth_rpc_endpoint: string;
   ui_floating_precision: number;
   date_display_format: string;

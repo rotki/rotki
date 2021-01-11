@@ -17,7 +17,6 @@ export const convertToGeneralSettings = (
   settings: DBSettings
 ): GeneralSettings => ({
   floatingPrecision: settings.ui_floating_precision,
-  historicDataStart: settings.historical_data_start,
   selectedCurrency: findCurrency(settings.main_currency),
   dateDisplayFormat: settings.date_display_format,
   thousandSeparator: settings.thousand_separator,

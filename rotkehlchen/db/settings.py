@@ -16,7 +16,6 @@ DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
 DEFAULT_ANONYMIZED_LOGS = False
 DEFAULT_PREMIUM_SHOULD_SYNC = False
-DEFAULT_START_DATE = '01/08/2015'
 DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = A_USD
@@ -41,7 +40,6 @@ class DBSettings(NamedTuple):
     taxfree_after_period: Optional[int] = DEFAULT_TAXFREE_AFTER_PERIOD
     balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
-    historical_data_start: str = DEFAULT_START_DATE
     eth_rpc_endpoint: str = 'http://localhost:8545'
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
@@ -63,7 +61,6 @@ class ModifiableDBSettings(NamedTuple):
     taxfree_after_period: Optional[int] = None
     balance_save_frequency: Optional[int] = None
     include_gas_costs: Optional[bool] = None
-    historical_data_start: Optional[str] = None
     eth_rpc_endpoint: Optional[str] = None
     main_currency: Optional[Asset] = None
     date_display_format: Optional[str] = None
@@ -127,7 +124,6 @@ INTEGER_KEYS = (
     'btc_derivation_gap_limit',
 )
 STRING_KEYS = (
-    'historical_data_start',
     'eth_rpc_endpoint',
     'date_display_format',
     'frontend_settings',
