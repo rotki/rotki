@@ -1,11 +1,10 @@
-import glob
 import logging
 import os
 import re
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Deque, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
+from typing import Any, Deque, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional, Tuple
 
 import gevent
 import requests
@@ -45,7 +44,8 @@ T_PairCacheKey = str
 PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
-CRYPTOCOMPARE_QUERY_RETRY_TIMES = 10
+CRYPTOCOMPARE_QUERY_RETRY_TIMES = 3
+CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME = 60
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('TLN'): A_WETH,
     Asset('BLY'): A_USDT,
@@ -140,6 +140,8 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
 
+METADATA_RE = re.compile('.*"start_time": *(.*), *"end_time": *(.*),.*')
+
 
 class PriceHistoryEntry(NamedTuple):
     time: Timestamp
@@ -230,20 +232,27 @@ class Cryptocompare(ExternalServiceWithApiKey):
         self.price_history_file: Dict[PairCacheKey, Path] = {}
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        self.last_histohour_query_ts = 0
+        self.last_rate_limit = 0
 
         price_history_dir = get_or_make_price_history_dir(data_directory)
         # Check the data folder and remember the filenames of any cached history
         prefix = os.path.join(str(price_history_dir), PRICE_HISTORY_FILE_PREFIX)
         prefix = prefix.replace('\\', '\\\\')
         regex = re.compile(prefix + r'(.*)\.json')
-        files_list = glob.glob(prefix + '*.json')
 
-        for file_ in files_list:
-            file_ = file_.replace('\\\\', '\\')
-            match = regex.match(file_)
+        for file_ in price_history_dir.rglob(PRICE_HISTORY_FILE_PREFIX + '*.json'):
+            file_str = str(file_).replace('\\\\', '\\')
+            match = regex.match(file_str)
             assert match
             cache_key = PairCacheKey(match.group(1))
-            self.price_history_file[cache_key] = Path(file_)
+            self.price_history_file[cache_key] = file_
+
+    def rate_limited_in_last(self, seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME) -> bool:
+        """
+        Checks when we were last rate limited by CC and if it was within the given seconds
+        """
+        return ts_now() - self.last_rate_limit <= seconds
 
     def set_database(self, database: DBHandler) -> None:
         """If the cryptocompare instance was initialized without a DB this sets its DB"""
@@ -286,9 +295,13 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 ) from e
 
             try:
+                # backoff and retry 3 times =  1 + 1.5 + 3 = at most 5.5 secs
+                # Failing is also fine, since all calls have secondary data sources
+                # for example coingecko
                 if json_ret.get('Message', None) == RATE_LIMIT_MSG:
+                    self.last_rate_limit = ts_now()
                     if tries >= 1:
-                        backoff_seconds = 20 / tries
+                        backoff_seconds = 3 / tries
                         log.debug(
                             f'Got rate limited by cryptocompare. '
                             f'Backing off for {backoff_seconds}',
@@ -309,13 +322,14 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     if 'Message' in json_ret:
                         error_message += f'. Error: {json_ret["Message"]}'
 
-                    log.error(
+                    log.warning(
                         'Cryptocompare query failure',
                         url=querystr,
                         error=error_message,
                         status_code=response.status_code,
                     )
                     raise RemoteError(error_message)
+
                 return json_ret['Data'] if 'Data' in json_ret else json_ret
             except KeyError as e:
                 raise RemoteError(
@@ -512,6 +526,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
         return Price(FVal(result[cc_from_asset_symbol][cc_to_asset_symbol]))
 
     def get_cached_data(self, from_asset: Asset, to_asset: Asset) -> Optional[PriceHistoryData]:
+        """Get the cached data for a pair if they exist. This reads the entire file,
+        gets the metadata, and the data itself, and loops through it to convert it
+        to our own data structure.
+
+        It can be rather slow for big files.
+        """
         cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
         if cache_key not in self.price_history_file:
             return None
@@ -525,6 +545,49 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 return None
 
         return self.price_history[cache_key]
+
+    def get_cached_data_metadata(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+    ) -> Optional[Tuple[Timestamp, Timestamp]]:
+        """Get the cached data metadata for a pair if they exist.
+        This reads only the start of the json file to get the metadata.
+
+        Should be a faster way that get_cached_data to check if a cache exists and
+        get only its metadata. start and end time.
+        """
+        cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
+        if cache_key not in self.price_history_file:
+            return None
+
+        memcache = self.price_history.get(cache_key, None)
+        if memcache is not None:
+            return memcache.start_time, memcache.end_time
+
+        # Now read only the start of the json file and get start/end time
+        # It is MUCH faster than reading the entire file, since these files can
+        # become hundreds of MBs
+        try:
+            with open(self.price_history_file[cache_key], 'r') as f:
+                f.seek(0)
+                data = f.read(100)  # first 100 bytes, should contain the data
+        except OSError:
+            return None
+
+        match = METADATA_RE.match(data)
+        if not match:
+            return None
+        result = match.group(1, 2)
+        if any(x is None for x in result):
+            return None
+        try:
+            start_ts = Timestamp(int(result[0]))
+            end_ts = Timestamp(int(result[1]))
+        except ValueError:
+            return None
+
+        return start_ts, end_ts
 
     def _got_cached_data_at_timestamp(
             self,
@@ -709,6 +772,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
             return None
 
         now_ts = ts_now()
+        # save time at start of the query, in case the query does not complete due to rate ilmit
+        self.last_histohour_query_ts = now_ts
         if cache_key in self.price_history:
             old_data = self.price_history[cache_key].data
             if timestamp > self.price_history[cache_key].end_time:
@@ -776,7 +841,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         }
         self.price_history_file[cache_key] = filename
         self.price_history[cache_key] = _dict_history_to_data(data_including_time)
-
+        self.last_histohour_query_ts = ts_now()  # also save when last query finished
         return self.price_history[cache_key].data
 
     @staticmethod

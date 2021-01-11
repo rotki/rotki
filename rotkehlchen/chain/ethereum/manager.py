@@ -208,6 +208,7 @@ class EthereumManager():
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=f'Attempt connection to {str(node)} ethereum node',
+                exception_is_error=True,
                 method=self.attempt_connect,
                 name=node,
                 ethrpc_endpoint=node.endpoint(self.own_rpc_endpoint),

@@ -826,6 +826,7 @@ Query the current exchange rate for select assets
    :statuscode 200: The exchange rates have been sucesfully returned
    :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
    :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
 
 Get a list of setup exchanges

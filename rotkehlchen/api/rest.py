@@ -16,6 +16,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
@@ -351,7 +352,14 @@ class RestAPI():
                 fiat_currencies.append(asset)
                 continue
 
-            asset_rates[asset] = Price(FVal(1) / Inquirer().find_usd_price(asset))
+            usd_price = Inquirer().find_usd_price(asset)
+            if usd_price == Price(ZERO):
+                return api_response(
+                    wrap_in_fail_result(f'Failed to query usd price of {asset.identifier}'),
+                    status_code=HTTPStatus.BAD_GATEWAY,
+                )
+
+            asset_rates[asset] = Price(FVal(1) / usd_price)
 
         fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         asset_rates.update(fiat_rates)

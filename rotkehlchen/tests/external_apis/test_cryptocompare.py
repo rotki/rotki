@@ -18,7 +18,7 @@ from rotkehlchen.externalapis.cryptocompare import (
     PRICE_HISTORY_FILE_PREFIX,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_SNGLS
+from rotkehlchen.tests.utils.constants import A_SNGLS, A_XMR
 from rotkehlchen.typing import Price, Timestamp
 from typing import List
 from rotkehlchen.utils.misc import get_or_make_price_history_dir
@@ -213,6 +213,66 @@ def test_cryptocompare_dao_query(cryptocompare):
         timestamp=1468886400,
     )
     assert price is not None
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_get_cached_data_metadata(data_dir, database):
+    """Test that the get_cached_data_metadata function works correctly
+    and returns just the metadata by reading part ofthe file
+    """
+    contents = """{"start_time": 1301536800, "end_time": 1301540400,
+    "data": [{"time": 1301536800, "close": 0.298, "high": 0.298, "low": 0.298, "open": 0.298,
+    "volumefrom": 0.298, "volumeto": 0.298}, {"time": 1301540400, "close": 0.298, "high": 0.298,
+    "low": 0.298, "open": 0.298, "volumefrom": 0.298, "volumeto": 0.298}]}"""
+    price_history_dir = get_or_make_price_history_dir(data_dir)
+    with open(price_history_dir / f'{PRICE_HISTORY_FILE_PREFIX}BTC_USD.json', 'w') as f:
+        f.write(contents)
+    cc = Cryptocompare(data_directory=data_dir, database=database)
+    result = cc.get_cached_data_metadata(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+    )
+    assert result is not None
+    assert result[0] == 1301536800
+    assert result[1] == 1301540400
+
+
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='This test would contribute in cryptocompare rate limiting. No need to run often',
+)
+@pytest.mark.parametrize('from_asset,to_asset,timestamp,price', [
+    (A_ETH, A_USD, 1505527200, FVal('262.155')),
+    (A_XMR, A_BTC, 1438992000, FVal('0.0026285')),
+])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_cryptocompare_historical_data_price(
+        data_dir,
+        database,
+        from_asset,
+        to_asset,
+        timestamp,
+        price,
+):
+    """Test that the cryptocompare histohour data retrieval works and price is returned
+
+    """
+    cc = Cryptocompare(data_directory=data_dir, database=database)
+    # Get lots of historical prices from at least 1 query after the ts we need
+    result = cc.get_historical_data(
+        from_asset=from_asset,
+        to_asset=to_asset,
+        timestamp=timestamp + 2020 * 3600,
+        only_check_cache=False,
+    )
+    # Query the ts we need from the cached data
+    result_price = cc._retrieve_price_from_data(
+        data=result,
+        from_asset=from_asset,
+        to_asset=to_asset,
+        timestamp=timestamp,
+    )
+    assert result_price == price
 
 
 @pytest.mark.skipif(

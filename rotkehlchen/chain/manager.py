@@ -38,6 +38,7 @@ from rotkehlchen.chain.ethereum.eth2 import (
     get_eth2_details,
     get_eth2_staking_deposits,
 )
+from rotkehlchen.errors import RemoteError
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
@@ -251,6 +252,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     greenlet_manager.spawn_and_track(
                         after_seconds=None,
                         task_name='Initialize Compound object',
+                        exception_is_error=True,
                         method=self._initialize_compound,
                         premium=premium,
                     )
@@ -290,6 +292,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=f'startup of {name}',
+                exception_is_error=True,
                 method=module.on_startup,
             )
 
@@ -1015,7 +1018,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 if A_ETH2 in entry.assets:
                     del entry.assets[A_ETH2]
 
-        mapping = get_eth2_balances(self.beaconchain, addresses)
+        try:
+            mapping = get_eth2_balances(self.beaconchain, addresses)
+        except RemoteError as e:
+            self.msg_aggregator.add_error(
+                f'Did not manage to query beaconcha.in api for addresses due to {str(e)}.'
+                f' If you have Eth2 staked balances the final balance results may not be accurate',
+            )
+            mapping = {}
         for address, balance in mapping.items():
             self.balances.eth[address].assets[A_ETH2] = balance
             self.totals.assets[A_ETH2] += balance
