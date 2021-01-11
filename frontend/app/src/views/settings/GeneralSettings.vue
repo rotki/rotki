@@ -27,39 +27,6 @@
               "
               @change="onAnonymousUsageAnalyticsChange($event)"
             />
-            <v-menu
-              ref="historicDateMenu"
-              v-model="historicDateMenu"
-              :close-on-content-click="false"
-              :nudge-right="40"
-              transition="scale-transition"
-              offset-y
-              max-width="290px"
-              min-width="290px"
-            >
-              <template #activator="{ on }">
-                <v-text-field
-                  v-model="historicDataStart"
-                  class="general-settings__fields__historic-data-start"
-                  :label="$t('general_settings.labels.historical_data_start')"
-                  :hint="$t('general_settings.historic_start_hint')"
-                  prepend-icon="mdi-calendar"
-                  :success-messages="
-                    settingsMessages[HISTORIC_DATA_START].success
-                  "
-                  :error-messages="settingsMessages[HISTORIC_DATA_START].error"
-                  readonly
-                  v-on="on"
-                  @change="onHistoricDataStartChange($event)"
-                />
-              </template>
-              <v-date-picker
-                v-model="date"
-                no-title
-                @input="historicDateMenu = false"
-              />
-            </v-menu>
-
             <v-text-field
               v-model="rpcEndpoint"
               class="general-settings__fields__rpc-endpoint"
@@ -245,7 +212,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Watch } from 'vue-property-decorator';
+import { Component } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
@@ -281,7 +248,6 @@ const message: () => BaseMessage = () => ({ success: '', error: '' });
 const SETTING_FLOATING_PRECISION = 'floatingPrecision';
 const SETTING_ANONYMIZED_LOGS = 'anonymizedLogs';
 const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
-const SETTING_HISTORIC_DATA_START = 'historicDataStart';
 const SETTING_RPC_ENDPOINT = 'rpcEndpoint';
 const SETTING_BALANCE_SAVE_FREQUENCY = 'balanceSaveFrequency';
 const SETTING_DATE_DISPLAY_FORMAT = 'dateDisplayFormat';
@@ -298,7 +264,6 @@ const SETTINGS = [
   SETTING_FLOATING_PRECISION,
   SETTING_ANONYMIZED_LOGS,
   SETTING_ANONYMOUS_USAGE_ANALYTICS,
-  SETTING_HISTORIC_DATA_START,
   SETTING_RPC_ENDPOINT,
   SETTING_BALANCE_SAVE_FREQUENCY,
   SETTING_DATE_DISPLAY_FORMAT,
@@ -344,7 +309,6 @@ export default class General extends Settings {
   floatingPrecision: string = '0';
   anonymizedLogs: boolean = false;
   anonymousUsageAnalytics: boolean = false;
-  historicDataStart: string = '';
   rpcEndpoint: string = 'http://localhost:8545';
   balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
@@ -363,7 +327,6 @@ export default class General extends Settings {
   readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
   readonly ANONYMIZED_LOGS = SETTING_ANONYMIZED_LOGS;
   readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
-  readonly HISTORIC_DATA_START = SETTING_HISTORIC_DATA_START;
   readonly RPC_ENDPOINT = SETTING_RPC_ENDPOINT;
   readonly BALANCE_SAVE_FREQUENCY = SETTING_BALANCE_SAVE_FREQUENCY;
   readonly DATE_DISPLAY_FORMAT = SETTING_DATE_DISPLAY_FORMAT;
@@ -379,15 +342,6 @@ export default class General extends Settings {
   historicDateMenu: boolean = false;
   date: string = '';
   amountExample = bigNumberify(123456.789);
-
-  @Watch('date')
-  dateWatch() {
-    const date = this.formatDate(this.date);
-    if (this.historicDataStart !== date) {
-      this.historicDataStart = date;
-      this.onHistoricDataStartChange(this.historicDataStart);
-    }
-  }
 
   async onBtcDerivationGapLimitChanged(limit: string) {
     const message: BaseMessage = {
@@ -650,40 +604,6 @@ export default class General extends Settings {
     );
   }
 
-  async onHistoricDataStartChange(date: string) {
-    const previousValue = this.parseDate(
-      this.generalSettings.historicDataStart
-    );
-
-    if (!this.notTheSame(date, previousValue)) {
-      return;
-    }
-
-    const params = {
-      date
-    };
-    const message: BaseMessage = {
-      success: `${this.$t(
-        'general_settings.validation.historic_data.success',
-        params
-      )}`,
-      error: `${this.$t(
-        'general_settings.validation.historic_data.error',
-        params
-      )}`
-    };
-
-    const success = await this.update(
-      { historical_data_start: date },
-      SETTING_HISTORIC_DATA_START,
-      message
-    );
-
-    if (!success) {
-      this.historicDataStart = previousValue || '';
-    }
-  }
-
   async onBalanceSaveFrequencyChange(frequency: string) {
     const previousValue = this.generalSettings.balanceSaveFrequency;
 
@@ -791,11 +711,9 @@ export default class General extends Settings {
     this.floatingPrecision = settings.floatingPrecision.toString();
     this.anonymizedLogs = settings.anonymizedLogs;
     this.anonymousUsageAnalytics = settings.anonymousUsageAnalytics;
-    this.historicDataStart = settings.historicDataStart;
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
-    this.date = this.parseDate(settings.historicDataStart) || '';
     this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();
     const state = this.$store.state;
     this.scrambleData = state.session.scrambleData;

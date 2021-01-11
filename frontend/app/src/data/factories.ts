@@ -11,7 +11,6 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
   decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
   currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
-  historicDataStart: Defaults.HISTORICAL_DATA_START,
   anonymousUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
   selectedCurrency: currencies[0],
   krakenAccountType: Defaults.KRAKEN_DEFAULT_ACCOUNT_TYPE,

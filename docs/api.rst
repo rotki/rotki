@@ -137,7 +137,6 @@ Handling user creation, sign-in, log-out and querying
                   "taxfree_after_period": 31536000,
                   "balance_save_frequency": 24,
                   "include_gas_costs": true,
-                  "historical_data_start": "01/08/2015",
                   "eth_rpc_endpoint": "http://localhost:8545",
                   "main_currency": "USD",
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
@@ -199,7 +198,6 @@ Handling user creation, sign-in, log-out and querying
                   "taxfree_after_period": 31536000,
                   "balance_save_frequency": 24,
                   "include_gas_costs": true,
-                  "historical_data_start": "01/08/2015",
                   "eth_rpc_endpoint": "http://localhost:8545",
                   "main_currency": "USD",
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
@@ -564,7 +562,6 @@ Getting or modifying settings
               "taxfree_after_period": 31536000,
               "balance_save_frequency": 24,
               "include_gas_costs": true,
-              "historical_data_start": "01/08/2015",
               "eth_rpc_endpoint": "http://localhost:8545",
               "main_currency": "USD",
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
@@ -588,7 +585,6 @@ Getting or modifying settings
    :resjson int taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. Must be either a positive number, or -1. 0 is not a valid value. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
    :resjson int balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours. Can't be less than 1 hour.
    :resjson bool include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
-   :resjson string historical_data_start: A date in the DAY/MONTH/YEAR format at which we consider historical data to have started.
    :resjson string eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
    :resjson string main_currency: The asset to use for all profit/loss calculation. USD by default.
    :resjson string date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
@@ -627,7 +623,6 @@ Getting or modifying settings
    :resjson int[optional] taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. Must be either a positive number, or -1. 0 is not a valid value. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
    :reqjson int[optional] balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours. Can't be less than 1 hour.
    :reqjson bool[optional] include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
-   :reqjson string[optional] historical_data_start: A date in the DAY/MONTH/YEAR format at which we consider historical data to have started.
    :reqjson string[optional] eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
@@ -654,7 +649,6 @@ Getting or modifying settings
               "taxfree_after_period": 31536000,
               "balance_save_frequency": 24,
               "include_gas_costs": false,
-              "historical_data_start": "01/08/2015",
               "eth_rpc_endpoint": "http://localhost:8545",
               "main_currency": "USD",
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",

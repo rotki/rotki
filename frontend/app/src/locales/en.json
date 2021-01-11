@@ -421,14 +421,12 @@
       },
       "title": "Frontend-only Settings"
     },
-    "historic_start_hint": "DD/MM/YYYY format",
     "labels": {
       "anonymized_logs": "Should logs be anonymized?",
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
-      "historical_data_start": "Date from when to count historical data",
       "rpc_endpoint": "Eth RPC Endpoint"
     },
     "title": "General Settings",
@@ -462,10 +460,6 @@
       "floating_precision": {
         "error": "Floating precision set to {precision}",
         "success":"Error setting floating precision to {precision}"
-      },
-      "historic_data": {
-        "error": "Error setting historical data start to {date}",
-        "success": "Historical data start set to {date}"
       },
       "rpc": {
         "success_set": "RPC endpoint set to {endpoint}",

@@ -21,8 +21,6 @@ from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-DEFAULT_START_DATE = "01/08/2015"
-
 
 class DataHandler():
 

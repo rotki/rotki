@@ -684,8 +684,6 @@ class ModifiableSettingsSchema(Schema):
     )
     include_gas_costs = fields.Bool(missing=None)
     # TODO: Add some validation to this field
-    historical_data_start = fields.String(missing=None)
-    # TODO: Add some validation to this field
     # even though it gets validated since we try to connect to it
     eth_rpc_endpoint = fields.String(missing=None)
     main_currency = AssetField(missing=None)
@@ -733,7 +731,6 @@ class ModifiableSettingsSchema(Schema):
             taxfree_after_period=data['taxfree_after_period'],
             balance_save_frequency=data['balance_save_frequency'],
             include_gas_costs=data['include_gas_costs'],
-            historical_data_start=data['historical_data_start'],
             eth_rpc_endpoint=data['eth_rpc_endpoint'],
             main_currency=data['main_currency'],
             date_display_format=data['date_display_format'],

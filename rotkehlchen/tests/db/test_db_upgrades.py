@@ -1168,6 +1168,7 @@ def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
     and 'currency_location' into the 'frontend_settings' entry.
     - Deletes Bitfinex trades and their used query range, so trades can be
     populated again with the right `fee_asset`.
+    - Deletes deprecated historical_data_start (this DB should not have it)
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v22_rotkehlchen_w_frontend_settings.db')
@@ -1182,6 +1183,9 @@ def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
     assert cursor.execute(
         'SELECT COUNT(*) FROM settings WHERE name = "frontend_settings";',
     ).fetchone()[0] == 1
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM settings WHERE name = "historical_data_start";',
+    ).fetchone()[0] == 0
     assert cursor.execute(
         'SELECT COUNT(*) FROM settings WHERE name IN '
         '("thousand_separator", "decimal_separator", "currency_location");',
@@ -1218,6 +1222,11 @@ def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
     assert frontend_settings_map['decimal_separator'] == '.'
     assert frontend_settings_map['currency_location'] == 'after'
 
+    # Make sure deprecated historical_data_start is removed
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM settings WHERE name = "historical_data_start";',
+    ).fetchone()[0] == 0
+
     # Make sure Bitfinex trades used query range has been deleted
     assert cursor.execute(
         'SELECT COUNT(*) from used_query_ranges WHERE name = "bitfinex_trades";',
@@ -1236,7 +1245,7 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
     """Test upgrading the DB from version 22 to version 23.
 
     Tests the case where frontend settings were not populated and also the cache
-    file movement and deletion.
+    file movement and deletion. Also test deleletion of deprecated historical_data_start
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v22_rotkehlchen_wo_frontend_settings.db')
@@ -1263,6 +1272,10 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
         'SELECT COUNT(*) FROM settings WHERE name IN '
         '("thousand_separator", "decimal_separator", "currency_location");',
     ).fetchone()[0] == 3
+    # Check we got a historical data start entry to remove
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM settings WHERE name = "historical_data_start";',
+    ).fetchone()[0] == 1
 
     # Migrate to v23
     db = _init_db_with_target_version(
@@ -1276,6 +1289,9 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
     assert cursor.execute(
         'SELECT COUNT(*) FROM settings WHERE name IN '
         '("thousand_separator", "decimal_separator", "currency_location");',
+    ).fetchone()[0] == 0
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM settings WHERE name = "historical_data_start";',
     ).fetchone()[0] == 0
 
     # Make sure the settings have been migrated into 'frontend_settings'
