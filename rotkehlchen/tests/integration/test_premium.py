@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.assets import A_EUR, A_GBP
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
@@ -42,7 +41,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     def mock_succesfull_upload_data_to_server(
             url,  # pylint: disable=unused-argument
             data,
-            timeout,
+            timeout,  # pylint: disable=unused-argument
     ):
         # Can't compare data blobs as they are encrypted and as such can be
         # different each time
@@ -54,7 +53,6 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
         assert 'nonce' in data
         assert data['compression'] == 'zlib'
 
-        assert timeout == ROTKEHLCHEN_SERVER_TIMEOUT
         return MockResponse(200, '{"success": true}')
 
     patched_put = patch.object(

@@ -8395,7 +8395,7 @@
         "type": "ethereum token"
     },
     "NXM": {
-        "cryptocompare": "WNXM",
+        "cryptocompare": "NXM",
         "coingecko": "nxm",
         "ethereum_address": "0xd7c49CEE7E9188cCa6AD8FF264C1DA2e69D4Cf3B",
         "ethereum_token_decimals": 18,

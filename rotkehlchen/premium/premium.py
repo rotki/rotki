@@ -220,7 +220,7 @@ class Premium():
             response = self.session.put(
                 self.uri + 'save_data',
                 data=data,
-                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 10,
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
