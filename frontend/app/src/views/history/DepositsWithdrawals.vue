@@ -36,6 +36,22 @@
               :footer-props="footerProps"
               :loading="refreshing"
             >
+              <template #header.selection>
+                <v-simple-checkbox
+                  :ripple="false"
+                  :value="allSelected"
+                  color="primary"
+                  @input="setSelected($event)"
+                />
+              </template>
+              <template #item.selection="{ item }">
+                <v-simple-checkbox
+                  :ripple="false"
+                  color="primary"
+                  :value="selected.includes(item.identifier)"
+                  @input="selectionChanged(item.identifier, $event)"
+                />
+              </template>
               <template #item.location="{ item }">
                 <location-display :identifier="item.location" />
               </template>
@@ -102,6 +118,8 @@
 </template>
 
 <script lang="ts">
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
@@ -143,6 +161,7 @@ import { Section } from '@/store/const';
 })
 export default class DepositsWithdrawals extends Mixins(StatusMixin) {
   readonly headers: DataTableHeader[] = [
+    { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$tc('deposits_withdrawals.headers.location'),
       value: 'location'
@@ -179,6 +198,43 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
   page: number = 1;
 
   location: SupportedExchange | null = null;
+  selected: string[] = [];
+
+  setSelected(selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const total = selection.length;
+      for (let i = 0; i < total; i++) {
+        selection.pop();
+      }
+    } else {
+      for (const { identifier } of this.movements) {
+        if (!identifier || selection.includes(identifier)) {
+          continue;
+        }
+        selection.push(identifier);
+      }
+    }
+  }
+
+  selectionChanged(identifier: string, selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const index = selection.indexOf(identifier);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+    } else if (identifier && !selection.includes(identifier)) {
+      selection.push(identifier);
+    }
+  }
+
+  get allSelected(): boolean {
+    const strings = this.movements.map(({ identifier }) => identifier);
+    return (
+      strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
+    );
+  }
 
   @Watch('location')
   onLocationChange() {

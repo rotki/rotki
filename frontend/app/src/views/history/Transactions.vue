@@ -33,6 +33,22 @@
               :footer-props="footerProps"
               :loading="refreshing"
             >
+              <template #header.selection>
+                <v-simple-checkbox
+                  :ripple="false"
+                  :value="allSelected"
+                  color="primary"
+                  @input="setSelected($event)"
+                />
+              </template>
+              <template #item.selection="{ item }">
+                <v-simple-checkbox
+                  :ripple="false"
+                  color="primary"
+                  :value="selected.includes(item.identifier)"
+                  @input="selectionChanged(item.identifier, $event)"
+                />
+              </template>
               <template #item.txHash="{ item }">
                 <hash-link
                   :text="item.txHash"
@@ -93,6 +109,8 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
@@ -142,6 +160,44 @@ export default class Transactions extends Mixins(StatusMixin) {
   page: number = 1;
 
   account: GeneralAccount | null = null;
+
+  selected: string[] = [];
+
+  setSelected(selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const total = selection.length;
+      for (let i = 0; i < total; i++) {
+        selection.pop();
+      }
+    } else {
+      for (const { identifier } of this.visibleTransactions) {
+        if (!identifier || selection.includes(identifier)) {
+          continue;
+        }
+        selection.push(identifier);
+      }
+    }
+  }
+
+  selectionChanged(identifier: string, selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const index = selection.indexOf(identifier);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+    } else if (identifier && !selection.includes(identifier)) {
+      selection.push(identifier);
+    }
+  }
+
+  get allSelected(): boolean {
+    const strings = this.movements.map(({ identifier }) => identifier);
+    return (
+      strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
+    );
+  }
 
   @Watch('account')
   onSelectionChange(account: GeneralAccount | null) {

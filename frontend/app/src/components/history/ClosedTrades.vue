@@ -38,6 +38,22 @@
             :page.sync="page"
             :loading="refreshing"
           >
+            <template #header.selection>
+              <v-simple-checkbox
+                :ripple="false"
+                :value="allSelected"
+                color="primary"
+                @input="setSelected($event)"
+              />
+            </template>
+            <template #item.selection="{ item }">
+              <v-simple-checkbox
+                :ripple="false"
+                color="primary"
+                :value="selected.includes(item.tradeId)"
+                @input="selectionChanged(item.tradeId, $event)"
+              />
+            </template>
             <template #item.location="{ item }">
               <location-display :identifier="item.location" />
             </template>
@@ -166,6 +182,8 @@
 </template>
 
 <script lang="ts">
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
 import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
@@ -200,6 +218,7 @@ import { Section } from '@/store/const';
 })
 export default class ClosedTrades extends Mixins(StatusMixin) {
   readonly headersClosed: DataTableHeader[] = [
+    { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$tc('closed_trades.headers.location'),
       value: 'location'
@@ -246,6 +265,44 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
 
   deleteExternalTrade!: (tradeId: string) => Promise<boolean>;
   section = Section.TRADES;
+
+  selected: string[] = [];
+
+  setSelected(selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const total = selection.length;
+      for (let i = 0; i < total; i++) {
+        selection.pop();
+      }
+    } else {
+      for (const { tradeId } of this.data) {
+        if (!tradeId || selection.includes(tradeId)) {
+          continue;
+        }
+        selection.push(tradeId);
+      }
+    }
+  }
+
+  selectionChanged(tradeId: string, selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const index = selection.indexOf(tradeId);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+    } else if (tradeId && !selection.includes(tradeId)) {
+      selection.push(tradeId);
+    }
+  }
+
+  get allSelected(): boolean {
+    const strings = this.data.map(({ tradeId }) => tradeId);
+    return (
+      strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
+    );
+  }
 
   @Emit()
   refresh() {}
