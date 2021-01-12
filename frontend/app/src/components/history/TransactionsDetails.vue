@@ -3,7 +3,7 @@
     <div class="mt-2 mb-4 text-h4">
       {{ $t('transaction_details.title') }}
     </div>
-    <v-row>
+    <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
         {{ $t('transaction_details.gas') }}
       </v-col>
@@ -11,8 +11,8 @@
         <amount-display :value="transaction.gas" integer />
       </v-col>
     </v-row>
-    <v-divider />
-    <v-row>
+    <v-divider class="pb-2" />
+    <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
         {{ $t('transaction_details.gas_used') }}
       </v-col>
@@ -20,8 +20,8 @@
         <amount-display :value="transaction.gasUsed" integer />
       </v-col>
     </v-row>
-    <v-divider />
-    <v-row>
+    <v-divider class="pb-2" />
+    <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
         {{ $t('transaction_details.gas_price') }}
       </v-col>
@@ -29,15 +29,15 @@
         <amount-display :value="toGwei(transaction.gasPrice)" asset="Gwei" />
       </v-col>
     </v-row>
-    <v-divider />
-    <v-row>
+    <v-divider class="pb-2" />
+    <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
         {{ $t('transaction_details.nonce') }}
       </v-col>
       <v-col cols="10">{{ transaction.nonce }}</v-col>
     </v-row>
-    <v-divider />
-    <v-row>
+    <v-divider class="pb-2" />
+    <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
         {{ $t('transaction_details.input_data') }}
       </v-col>

@@ -2,3 +2,13 @@ html {
   overflow-y: hidden !important;
   max-height: 100vh;
 }
+
+.theme {
+  &--light {
+    /* stylelint-disable */
+    .v-btn:not(.v-btn--flat):not(.v-btn--text):not(.v-btn--outlined):not(.primary) {
+      /* stylelint-enable */
+      background-color: transparent;
+    }
+  }
+}
