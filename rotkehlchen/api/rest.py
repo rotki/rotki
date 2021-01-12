@@ -16,8 +16,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.accounting.structures import BalanceType, LedgerAction, LedgerActionType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -33,6 +32,8 @@ from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
@@ -56,7 +57,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
+from rotkehlchen.rotkehlchen import (
+    FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_LEDGER_ACTIONS_LIMIT,
+    FREE_TRADES_LIMIT,
+    Rotkehlchen,
+)
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
     ApiKey,
@@ -763,6 +769,106 @@ class RestAPI():
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=response['status_code'])
+
+    def _get_ledger_actions(
+            self,
+            from_ts: Optional[Timestamp],
+            to_ts: Optional[Timestamp],
+            location: Optional[Location],
+    ) -> Dict[str, Any]:
+        actions, original_length = self.rotkehlchen.query_ledger_actions(
+            from_ts=from_ts,
+            to_ts=to_ts,
+            location=location,
+        )
+
+        result = {
+            'entries': [x.serialize() for x in actions],
+            'entries_found': original_length,
+            'entries_limit': FREE_LEDGER_ACTIONS_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
+
+        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+
+    @require_loggedin_user()
+    def get_ledger_actions(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            location: Optional[Location],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_ledger_actions',
+                from_ts=from_ts,
+                to_ts=to_ts,
+                location=location,
+            )
+
+        response = self._get_ledger_actions(
+            from_ts=from_ts,
+            to_ts=to_ts,
+            location=location,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
+
+    @require_loggedin_user()
+    def add_ledger_action(
+            self,
+            timestamp: Timestamp,
+            action_type: LedgerActionType,
+            location: Location,
+            amount: AssetAmount,
+            asset: Asset,
+            link: str,
+            notes: str,
+    ) -> Response:
+        db = DBLedgerActions(self.rotkehlchen.data.db)
+        identifier = db.add_ledger_action(
+            timestamp=timestamp,
+            action_type=action_type,
+            location=location,
+            amount=amount,
+            asset=asset,
+            link=link,
+            notes=notes,
+        )
+        result_dict = _wrap_in_ok_result({'identifier': identifier})
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def edit_ledger_action(self, action: LedgerAction) -> Response:
+        db = DBLedgerActions(self.rotkehlchen.data.db)
+        error_msg = db.edit_ledger_action(action)
+        if error_msg is not None:
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        # Success - return all ledger actions after the edit
+        response = self._get_ledger_actions(
+            from_ts=None,
+            to_ts=None,
+            location=None,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def delete_ledger_action(self, identifier: str) -> Response:
+        db = DBLedgerActions(self.rotkehlchen.data.db)
+        error_msg = db.remove_ledger_action(identifier=identifier)
+        if error_msg is not None:
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        # Success - return all ledger actions after the removal
+        response = self._get_ledger_actions(
+            from_ts=None,
+            to_ts=None,
+            location=None,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_tags(self) -> Response:

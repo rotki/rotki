@@ -2,13 +2,13 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, DefaultDict, Dict
+from typing import Any, DefaultDict, Dict, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 
 
@@ -208,3 +208,60 @@ def _evaluate_balance_sheet_input(other: Any, operation: str) -> BalanceSheet:
         raise InputError(f'Found a {type(other)} object during BalanceSheet {operation}')
 
     return transformed_input
+
+
+class LedgerActionType(Enum):
+    INCOME = 0
+    EXPENSE = 1
+    LOSS = 2
+    DIVIDENDS_INCOME = 3
+
+    def __str__(self) -> str:
+        if self == LedgerActionType.INCOME:
+            return 'income'
+        if self == LedgerActionType.EXPENSE:
+            return 'expense'
+        if self == LedgerActionType.LOSS:
+            return 'loss'
+        if self == LedgerActionType.DIVIDENDS_INCOME:
+            return 'dividends income'
+
+        # else
+        raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
+
+    def serialize_for_db(self) -> str:
+        if self == LedgerActionType.INCOME:
+            return 'A'
+        if self == LedgerActionType.EXPENSE:
+            return 'B'
+        if self == LedgerActionType.LOSS:
+            return 'C'
+        if self == LedgerActionType.DIVIDENDS_INCOME:
+            return 'D'
+        # else
+        raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class LedgerAction:
+    """Represents an income/loss/expense for accounting purposes"""
+    identifier: int  # the unique id of the action and DB primary key
+    timestamp: Timestamp
+    action_type: LedgerActionType
+    location: Location
+    amount: FVal
+    asset: Asset
+    link: str
+    notes: str
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'identifier': self.identifier,
+            'timestamp': self.timestamp,
+            'type': str(self.action_type),
+            'location': str(self.location),
+            'amount': str(self.amount),
+            'asset': self.asset.identifier,
+            'link': self.link,
+            'notes': self.notes,
+        }

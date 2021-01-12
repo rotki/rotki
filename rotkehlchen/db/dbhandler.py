@@ -2067,6 +2067,7 @@ class DBHandler:
                 'trades',
                 'ethereum_transactions',
                 'amm_swaps',
+                'ledger_actions',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             **kwargs: Any,

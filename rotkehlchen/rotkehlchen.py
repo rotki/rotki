@@ -13,6 +13,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.accounting.structures import LedgerAction
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
 from rotkehlchen.chain.ethereum.manager import (
@@ -28,6 +29,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors import (
     EthSyncError,
@@ -80,9 +82,11 @@ log = RotkehlchenLogsAdapter(logger)
 MAIN_LOOP_SECS_DELAY = 10
 FREE_TRADES_LIMIT = 250
 FREE_ASSET_MOVEMENTS_LIMIT = 100
+FREE_LEDGER_ACTIONS_LIMIT = 50
 LIMITS_MAPPING = {
     'trade': FREE_TRADES_LIMIT,
     'asset_movement': FREE_ASSET_MOVEMENTS_LIMIT,
+    'ledger_action': FREE_LEDGER_ACTIONS_LIMIT,
 }
 
 ICONS_BATCH_SIZE = 5
@@ -683,6 +687,27 @@ class Rotkehlchen():
             trades = location_trades
 
         return trades
+
+    def query_ledger_actions(
+            self,
+            from_ts: Optional[Timestamp],
+            to_ts: Optional[Timestamp],
+            location: Optional[Location],
+    ) -> Tuple[List[LedgerAction], int]:
+        """Queries the ledger actions from the DB and applies the free version limit
+
+        TODO: Since we always query all in one call, the limiting will work, but if we start
+        batch querying by time then we need to amend the logic of limiting here.
+        Would need to use the same logic we do with trades. Using db entries count
+        and count what all calls return and what is sums up to
+        """
+        db = DBLedgerActions(self.data.db)
+        actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
+        original_length = len(actions)
+        if self.premium is None:
+            actions = actions[:FREE_LEDGER_ACTIONS_LIMIT]
+
+        return actions, original_length
 
     def query_balances(
             self,

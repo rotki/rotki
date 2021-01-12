@@ -2295,6 +2295,222 @@ Querying asset movements
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error querying the remote for the asset movements
 
+
+Dealing with ledger actions
+=============================
+
+.. http:get:: /api/(version)/ledgeractions
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on this endpoint will return all ledger actions of the current user. That means income, loss, expense and other actions. They can be further filtered by time range and/or location. If the user is not premium and has more than 50 actions then the returned results will be limited to that number. Any filtering will also be limited to those first 50 actions. Actions are returned most recent first.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/ledgeractions HTTP/1.1
+      Host: localhost:5042
+
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "blockchain"}
+
+   :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
+   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :reqjson string location: Optionally filter actions by location. A valid location name has to be provided. If missing location filtering does not happen.
+   :param int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
+   :param int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :param string location: Optionally filter actions by location. A valid location name has to be provided. If missing location filtering does not happen.
+
+   .. _ledger_actions_schema_section:
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "entries": [{
+                  "identifier": 344,
+                  "timestamp": 1491606401,
+		  "type": "loss",
+                  "location": "blockchain",
+                  "amount": "1550",
+                  "asset": "DAI",
+                  "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
+                  "notes": "The DAI I lost in the pickle finance hack"
+              }],
+              "entries_found": 1,
+              "entries_limit": 50,
+          "message": ""
+      }
+
+   :resjson object entries: An array of action objects.
+   :resjsonarr int identifier: The uniquely identifying identifier for this action.
+   :resjsonarr int timestamp: The timestamp at which the action occured
+   :resjsonarr string type: The type of action. Valid types are: ``income``, ``loss``, ``expense`` and ``dividend income``.
+   :resjsonarr string location: A valid location at which the action happened.
+   :resjsonarr string amount: The amount of asset for the action
+   :resjsonarr string asset: The asset for the action
+   :resjsonarr string link: Optional unique identifier or link to the action. Can be an empty string
+   :resjsonarr string notes: Optional notes about the action. Can be an empty string
+   :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
+   :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
+   :statuscode 200: Actions are succesfully returned
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in.
+   :statuscode 500: Internal Rotki error
+
+.. http:put:: /api/(version)/ledgeractions
+
+   Doing a PUT on this endpoint adds a new ledgeraction to Rotki's currently logged in user. The identifier of the new created action is returned.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/ledgeraction HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "timestamp": 1491606401,
+	  "type": "income"
+          "location": "external",
+          "amount": "1",
+          "asset": "ETH",
+          "link": "Optional unique identifier"
+          "notes": "Eth I received for being pretty"
+      }
+
+   The request object is the same as above, a LedgerAction entry.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"identifier": 1},
+          "message": ""
+      }
+
+   :resjson object result: The identifier ofthe newly created trade
+   :statuscode 200: Ledger action was succesfully added.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal Rotki error
+
+.. http:patch:: /api/(version)/ledgeractions
+
+   Doing a PATCH on this endpoint edits an existing ledger action in Rotki's currently logged in user using the given ``identifier``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/ledgeractions HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "identifier": 55
+          "timestamp": 1491606401,
+	  "type": "income"
+          "location": "external",
+          "amount": "2",
+          "asset": "ETH",
+          "link": "Optional unique identifier",
+          "notes": "Eth I received for being pretty"
+      }
+
+   The request object is the same as above, a LedgerAction entry, with the addition of the identifier which signifies which ledger action entry will be edited.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "entries": [{
+                  "identifier": 55,
+                  "timestamp": 1491606401,
+        	  "type": "income"
+                  "location": "external",
+                  "amount": "2",
+                  "asset": "ETH",
+                  "link": "Optional unique identifier",
+                  "notes": "Eth I received for being pretty"
+              }],
+              "entries_found": 1,
+              "entries_limit": 50,
+          "message": ""
+      }
+
+   :resjson object entries: An array of action objects after editing. Same schema as above.
+   :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
+   :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
+   :statuscode 200: Actions was succesfully edited.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in.
+   :statuscode 500: Internal Rotki error
+
+.. http:delete:: /api/(version)/ledgeractions
+
+   Doing a DELETE on this endpoint deletes an existing ledger action in Rotki's currently logged in user using the ``identifier``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/ledgeractions HTTP/1.1
+      Host: localhost:5042
+
+      {"identifier" : 55}
+
+   :reqjson integer identifier: The ``identifier`` of the action to delete.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "entries": [{
+                  "identifier": 35,
+                  "timestamp": 1491606401,
+        	  "type": "income"
+                  "location": "external",
+                  "amount": "2",
+                  "asset": "ETH",
+                  "link": "Optional unique identifier",
+                  "notes": "Eth I received for being pretty"
+              }],
+              "entries_found": 1,
+              "entries_limit": 50,
+          "message": ""
+      }
+
+   :resjson object entries: An array of action objects after deletion. Same schema as above.
+   :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
+   :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
+   :statuscode 200: Action was succesfully removed.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in.
+   :statuscode 500: Internal Rotki error
+
 Querying messages to show to the user
 =====================================
 
