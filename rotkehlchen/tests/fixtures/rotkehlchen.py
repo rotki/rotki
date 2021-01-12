@@ -97,6 +97,7 @@ def initialize_mock_rotkehlchen_instance(
         ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start,
         eth_rpc_endpoint,
+        ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
 ):
@@ -105,7 +106,11 @@ def initialize_mock_rotkehlchen_instance(
 
     # Mock the initial get settings to include the specified ethereum modules
     def mock_get_settings() -> DBSettings:
-        settings = DBSettings(active_modules=ethereum_modules, eth_rpc_endpoint=eth_rpc_endpoint)
+        settings = DBSettings(
+            active_modules=ethereum_modules,
+            eth_rpc_endpoint=eth_rpc_endpoint,
+            ksm_rpc_endpoint=ksm_rpc_endpoint,
+        )
         return settings
     settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
 
@@ -208,6 +213,7 @@ def fixture_rotkehlchen_api_server(
         ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ethrpc_endpoint,
+        ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
 ):
@@ -236,6 +242,7 @@ def fixture_rotkehlchen_api_server(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
+        ksm_rpc_endpoint=ksm_rpc_endpoint,
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
     )
@@ -265,6 +272,7 @@ def rotkehlchen_instance(
         ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ethrpc_endpoint,
+        ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
 ):
@@ -291,6 +299,7 @@ def rotkehlchen_instance(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
+        ksm_rpc_endpoint=ksm_rpc_endpoint,
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
     )

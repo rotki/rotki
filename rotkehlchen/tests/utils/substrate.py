@@ -15,6 +15,8 @@ from rotkehlchen.chain.substrate.typing import (
     NodeNameAttributes,
     SubstrateChain,
 )
+from rotkehlchen.constants.assets import A_KSM
+from rotkehlchen.fval import FVal
 
 NODE_CONNECTION_TIMEOUT = 15
 
@@ -22,6 +24,9 @@ log = logging.getLogger(__name__)
 
 
 TEST_KUSAMA_NODES = (KusamaNodeName.PARITY, )
+KUSAMA_SS58_FORMAT = 2
+KUSAMA_TOKEN = A_KSM
+KUSAMA_TOKEN_DECIMALS = FVal(12)
 
 
 def attempt_connect_test_nodes(

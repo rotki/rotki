@@ -5,7 +5,7 @@ import pytest
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
-from rotkehlchen.chain.substrate.manager import SubstrateManager
+from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstrateChain
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -14,7 +14,12 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
+from rotkehlchen.tests.utils.substrate import (
+    KUSAMA_SS58_FORMAT,
+    KUSAMA_TOKEN,
+    KUSAMA_TOKEN_DECIMALS,
+    wait_until_all_substrate_nodes_connected,
+)
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
 
 
@@ -101,6 +106,11 @@ def fixture_ethereum_manager(
     return manager
 
 
+@pytest.fixture(name='ksm_rpc_endpoint')
+def fixture_ksm_rpc_endpoint() -> Optional[str]:
+    return None
+
+
 @pytest.fixture(name='kusama_manager_connect_at_start')
 def fixture_kusama_manager_connect_at_start() -> Sequence[NodeName]:
     return ()
@@ -115,21 +125,31 @@ def fixture_kusama_available_node_attributes_map():
 def fixture_kusama_manager(
         messages_aggregator,
         greenlet_manager,
+        ksm_rpc_endpoint,
         kusama_available_node_attributes_map,
         kusama_manager_connect_at_start,
 ):
+    own_rpc_endpoint = (
+        ksm_rpc_endpoint if ksm_rpc_endpoint is not None else 'http://localhost:9933'
+    )
     kusama_manager = SubstrateManager(
         chain=SubstrateChain.KUSAMA,
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=kusama_manager_connect_at_start,
+        own_rpc_endpoint=own_rpc_endpoint,
     )
     if len(kusama_available_node_attributes_map) != 0:
         # When connection is persisted <SubstrateManager.chain_properties> must
         # be set manually (either requesting the chain or hard coded)
         kusama_manager.available_node_attributes_map = kusama_available_node_attributes_map
-        any_node_attributes = list(kusama_manager.available_node_attributes_map.values())[0]
-        kusama_manager._set_chain_properties(any_node_attributes.node_interface)
+        # NB: for speeding up tests, instead of requesting the properties of
+        # the chain, we manually set them.
+        kusama_manager.chain_properties = SubstrateChainProperties(
+            ss58_format=KUSAMA_SS58_FORMAT,
+            token=KUSAMA_TOKEN,
+            token_decimals=KUSAMA_TOKEN_DECIMALS,
+        )
     else:
         wait_until_all_substrate_nodes_connected(
             substrate_manager_connect_at_start=kusama_manager_connect_at_start,

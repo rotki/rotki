@@ -23,7 +23,8 @@ from rotkehlchen.chain.ethereum.manager import (
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
-from rotkehlchen.chain.substrate.typing import KUSAMA_NODES_TO_CONNECT_AT_START, SubstrateChain
+from rotkehlchen.chain.substrate.typing import SubstrateChain
+from rotkehlchen.chain.substrate.utils import KUSAMA_NODES_TO_CONNECT_AT_START
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
@@ -268,6 +269,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
             connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
+            own_rpc_endpoint=settings.ksm_rpc_endpoint,
         )
 
         Inquirer().inject_ethereum(ethereum_manager)
@@ -905,6 +907,11 @@ class Rotkehlchen():
         with self.lock:
             if settings.eth_rpc_endpoint is not None:
                 result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
+                if not result:
+                    return False, msg
+
+            if settings.ksm_rpc_endpoint is not None:
+                result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
                 if not result:
                     return False, msg
 

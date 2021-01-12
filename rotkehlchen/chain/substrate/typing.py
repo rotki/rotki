@@ -10,6 +10,23 @@ SubstrateChainId = NewType('SubstrateChainId', str)
 BlockNumber = NewType('BlockNumber', int)
 
 
+class SubstrateOwnNodeName(Enum):
+    OWN = 0
+
+    def __str__(self) -> str:
+        if self == SubstrateOwnNodeName.OWN:
+            return 'own node'
+        raise AssertionError(f'Unexpected SubstrateOwnNodeName: {self}')
+
+    def endpoint(self) -> str:
+        if self == SubstrateOwnNodeName.OWN:
+            raise NotImplementedError(
+                'The endpoint url for a substrate own node must be got either '
+                'via "own_rpc_endpoint" or the specific db setting',
+            )
+        raise AssertionError(f'Unexpected SubstrateOwnNodeName: {self}')
+
+
 class KusamaNodeName(Enum):
     """Public nodes for Kusama.
     """
@@ -26,7 +43,7 @@ class KusamaNodeName(Enum):
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
 
-NodeName = Union[KusamaNodeName]
+NodeName = Union[SubstrateOwnNodeName, KusamaNodeName]
 
 
 class SubstrateInterfaceAttributes(NamedTuple):
@@ -84,6 +101,3 @@ class NodeNameAttributes(NamedTuple):
 
 DictNodeNameNodeAttributes = Dict[NodeName, NodeNameAttributes]
 NodesCallOrder = List[Tuple[NodeName, NodeNameAttributes]]
-
-
-KUSAMA_NODES_TO_CONNECT_AT_START = (KusamaNodeName.PARITY, )

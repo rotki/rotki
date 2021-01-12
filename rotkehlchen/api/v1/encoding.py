@@ -744,6 +744,7 @@ class ModifiableSettingsSchema(Schema):
     # TODO: Add some validation to this field
     # even though it gets validated since we try to connect to it
     eth_rpc_endpoint = fields.String(missing=None)
+    ksm_rpc_endpoint = fields.String(missing=None)
     main_currency = AssetField(missing=None)
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
@@ -790,6 +791,7 @@ class ModifiableSettingsSchema(Schema):
             balance_save_frequency=data['balance_save_frequency'],
             include_gas_costs=data['include_gas_costs'],
             eth_rpc_endpoint=data['eth_rpc_endpoint'],
+            ksm_rpc_endpoint=data['ksm_rpc_endpoint'],
             main_currency=data['main_currency'],
             date_display_format=data['date_display_format'],
             submit_usage_analytics=data['submit_usage_analytics'],

@@ -3,6 +3,7 @@ from functools import wraps
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Tuple, cast
+from urllib.parse import urlparse
 
 import requests
 from requests.adapters import Response
@@ -28,6 +29,7 @@ from .typing import (
     SubstrateAddress,
     SubstrateChain,
     SubstrateChainId,
+    SubstrateOwnNodeName,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,9 +86,10 @@ def request_available_nodes(func: Callable) -> Callable:
                 result = func(manager, *args_, **kwargs_)
             except RemoteError as e:
                 requested_nodes.append(str(node))
+                endpoint = node_attributes.node_interface.url
                 log.warning(
                     f'{manager.chain} {func.__name__!r} failed to request via '
-                    f'{node} node at endpoint {node.endpoint()} due to: {str(e)}.',
+                    f'{node} node at endpoint {endpoint} due to: {str(e)}.',
                     args=args[1:],
                     kwargs=kwargs_,
                 )
@@ -108,6 +111,7 @@ class SubstrateManager():
             greenlet_manager: GreenletManager,
             msg_aggregator: MessagesAggregator,
             connect_at_start: Sequence[NodeName],
+            own_rpc_endpoint: str,
     ) -> None:
         """An interface to any Substrate chain supported by Rotki.
 
@@ -142,7 +146,10 @@ class SubstrateManager():
         self.available_node_attributes_map: DictNodeNameNodeAttributes = {}
         self.chain_properties: SubstrateChainProperties
         if len(connect_at_start) != 0:
-            self._attempt_connections(connect_at_start)
+            self._attempt_connections(
+                node_names=connect_at_start,
+                own_rpc_endpoint=own_rpc_endpoint,
+            )
         else:
             log.warning(f"{self.chain} manager won't attempt to connect to nodes")
 
@@ -208,17 +215,31 @@ class SubstrateManager():
 
         return last_block
 
-    def _attempt_connections(self, node_names: Sequence[NodeName]) -> None:
+    def _attempt_connections(
+            self,
+            node_names: Sequence[NodeName],
+            own_rpc_endpoint: str,
+    ) -> None:
         for node in node_names:
+            if node == SubstrateOwnNodeName.OWN:
+                endpoint = self._format_own_rpc_endpoint(own_rpc_endpoint)
+            else:
+                endpoint = node.endpoint()
+
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=f'{self.chain} manager connection to {node} node',
                 exception_is_error=True,
                 method=self._connect_node,
                 node=node,
+                endpoint=endpoint,
             )
 
-    def _connect_node(self, node: NodeName) -> Tuple[bool, str]:
+    def _connect_node(
+            self,
+            node: NodeName,
+            endpoint: str,
+    ) -> Tuple[bool, str]:
         """Attempt to connect to a node, check its status and store its
         attributes (e.g. interface, weight) in the available nodes map.
 
@@ -226,23 +247,33 @@ class SubstrateManager():
         - RemoteError: connecting to a node fails at any of the steps executed.
         """
         if node in self.available_node_attributes_map:
-            msg = f'{self.chain} already connected to {node} node at endpoint: {node.endpoint()}.'
-            return True, msg
+            message = f'{self.chain} already connected to {node} node at endpoint: {endpoint}.'
+            return True, message
 
         try:
-            node_interface = self._get_node_interface(node)
+            node_interface = self._get_node_interface(endpoint)
             self._check_chain_id(node_interface)
             last_block = self._check_node_synchronization(node_interface)
             self._set_chain_properties(node_interface)
         except RemoteError as e:
-            return False, str(e)
+            message = (
+                f'{self.chain} failed to connect to {node} at endpoint {endpoint}, '
+                f'due to {str(e)}.'
+            )
+            return False, message
 
         log.info(f'{self.chain} connected to {node} node at endpoint: {node_interface.url}.')
         self.available_node_attributes_map[node] = NodeNameAttributes(
             node_interface=node_interface,
             weight_block=last_block,
         )
+        if node == SubstrateOwnNodeName.OWN:
+            self.own_rpc_endpoint = endpoint
         return True, ''
+
+    @staticmethod
+    def _format_own_rpc_endpoint(endpoint: str) -> str:
+        return f'http://{endpoint}' if not urlparse(endpoint).scheme else endpoint
 
     def _get_account_balance(
             self,
@@ -363,15 +394,27 @@ class SubstrateManager():
         """Return a list of maps between a node and its attributes sorted by
         preference.
 
-        NB: currently preference is based on how close they are to the chain
-        height requested via Subscan API, the higher 'weight_block' the better.
+        Own node always has preference, then are ordered depending on how close
+        they are to the chain height; the higher 'weight_block' the better.
         """
-        return sorted(
-            cast(Iterable, self.available_node_attributes_map.items()),
-            key=lambda item: -item[1].weight_block,
-        )
+        nodes_sorted: NodesCallOrder = []
+        node_attributes_map = self.available_node_attributes_map.copy()
+        if SubstrateOwnNodeName.OWN in node_attributes_map:
+            own_node_attrs = node_attributes_map.pop(SubstrateOwnNodeName.OWN)
+            nodes_sorted.append((SubstrateOwnNodeName.OWN, own_node_attrs))
 
-    def _get_node_interface(self, node: NodeName) -> SubstrateInterface:
+        nodes_sorted.extend(
+            sorted(
+                cast(Iterable, node_attributes_map.items()),
+                key=lambda item: -item[1].weight_block,
+            ),
+        )
+        return nodes_sorted
+
+    def _get_node_endpoint(self, node: NodeName) -> str:
+        return self.own_rpc_endpoint if node == SubstrateOwnNodeName.OWN else node.endpoint()
+
+    def _get_node_interface(self, endpoint: str) -> SubstrateInterface:
         """Get an instance of SubstrateInterface, a specialized class in
         interfacing with a Substrate node that deals with SCALE encoding/decoding,
         metadata parsing, type registry management and versioning of types.
@@ -385,13 +428,13 @@ class SubstrateManager():
         si_attributes = self.chain.substrate_interface_attributes()
         try:
             node_interface = SubstrateInterface(
-                url=node.endpoint(),
+                url=endpoint,
                 type_registry_preset=si_attributes.type_registry_preset,
             )
         except requests.exceptions.RequestException as e:
             message = (
-                f'{self.chain} could not connect to {node} node at '
-                f'endpoint: {node.endpoint()}. Connection error: {str(e)}.',
+                f'{self.chain} could not connect to node at endpoint: {endpoint}. '
+                f'Connection error: {str(e)}.',
             )
             log.error(message)
             raise RemoteError(message) from e
@@ -541,3 +584,20 @@ class SubstrateManager():
         trying with all the available nodes.
         """
         return self._get_last_block(node_interface)
+
+    def set_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
+        """Attempt to set the RPC endpoint for the user's own node.
+        If connection at endpoint is successful it will set `own_rpc_endpoint`.
+        """
+        if endpoint == '':
+            current_own_rpc_endpoint = getattr(self, 'own_rpc_endpoint', None)
+            log.debug(f'{self.chain} removing own node at endpoint: {current_own_rpc_endpoint}')
+            self.available_node_attributes_map.pop(SubstrateOwnNodeName.OWN, None)
+            self.own_rpc_endpoint = ''
+            return True, ''
+
+        log.debug(f'{self.chain} setting own node at endpoint: {endpoint}')
+        return self._connect_node(
+            node=SubstrateOwnNodeName.OWN,
+            endpoint=self._format_own_rpc_endpoint(endpoint),
+        )
