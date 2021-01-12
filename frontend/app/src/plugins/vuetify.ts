@@ -30,6 +30,8 @@ export default new Vuetify({
         'rotki-light-brown': '#664D3E',
         'rotki-brown': '#422919',
         'rotki-yellow': '#F5CB5C',
+        'rotki-gain': '#4caf50',
+        'rotki-loss': '#d32f2f',
         error: '#f03a47',
         success: '#06D6A0'
       }

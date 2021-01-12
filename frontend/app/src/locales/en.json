@@ -1,4 +1,14 @@
 {
+  "account_settings_display": {
+    "account_asset_movement": "Account asset movement fees were taken into account:",
+    "crypto2crypto": "Crypto to crypto trades were taken into account:",
+    "gas_costs": "Gas costs where taken into account:",
+    "past_cost_basis": "Past cost basis was calculated during the report creation:",
+    "tax_free_period": "There was a tax free period:",
+    "title": "Accounting Settings",
+    "subtitle": "These accounting setting were used during the report creation",
+    "days": "{days} days"
+  },
   "adex_page": {
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
@@ -1575,7 +1585,8 @@
     "loading_message": "Please wait while your report is generated...",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "select_directory": "Select a directory",
-    "csv_export_error": "There was an error with Export"
+    "csv_export_error": "There was an error with Export",
+    "report_period": "Report starting from {start} to {end}"
   },
   "import_data": {
     "cointracking": {

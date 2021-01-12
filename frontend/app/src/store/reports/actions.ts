@@ -10,7 +10,8 @@ import { Message, RotkehlchenState } from '@/store/types';
 import { TaxReportEvent } from '@/typing/types';
 
 export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
-  async generate({ commit }, payload: TaxReportEvent) {
+  async generate({ commit, rootState }, payload: TaxReportEvent) {
+    commit('accountingSettings', rootState.session!.accountingSettings);
     try {
       const { start, end } = payload;
       const result = await api.processTradeHistoryAsync(start, end);

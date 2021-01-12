@@ -19,6 +19,28 @@
     </base-page-header>
     <generate v-show="!isRunning" @generate="generate($event)" />
     <div v-if="loaded && !isRunning">
+      <v-row>
+        <v-col>
+          <i18n tag="div" path="tax_report.report_period" class="text-h5 mt-6">
+            <template #start>
+              <date-display
+                :timestamp="reportPeriod.start"
+                class="font-weight-medium"
+              />
+            </template>
+            <template #end>
+              <date-display
+                :timestamp="reportPeriod.end"
+                class="font-weight-medium"
+              />
+            </template>
+          </i18n>
+        </v-col>
+      </v-row>
+      <accounting-settings-display
+        :accounting-settings="accountingSettings"
+        class="mt-4"
+      />
       <v-btn
         class="tax-report__export-csv"
         depressed
@@ -46,16 +68,19 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import AccountingSettingsDisplay from '@/components/taxreport/AccountingSettingsDisplay.vue';
 import Generate from '@/components/taxreport/Generate.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
 import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
+import { ReportPeriod } from '@/store/reports/types';
 import { Message } from '@/store/types';
-import { TaxReportEvent } from '@/typing/types';
+import { AccountingSettings, TaxReportEvent } from '@/typing/types';
 
 @Component({
   components: {
+    AccountingSettingsDisplay,
     BasePageHeader,
     ProgressScreen,
     TaxReportEvents,
@@ -65,7 +90,7 @@ import { TaxReportEvent } from '@/typing/types';
   computed: {
     ...mapGetters('tasks', ['isTaskRunning']),
     ...mapGetters('reports', ['progress']),
-    ...mapState('reports', ['loaded']),
+    ...mapState('reports', ['loaded', 'accountingSettings', 'reportPeriod']),
     ...mapGetters('session', ['currency'])
   }
 })
@@ -74,6 +99,8 @@ export default class TaxReport extends Vue {
   loaded!: boolean;
   currency!: Currency;
   progress!: number;
+  accountingSettings!: AccountingSettings;
+  reportPeriod!: ReportPeriod;
 
   get isRunning(): boolean {
     return this.isTaskRunning(TaskType.TRADE_HISTORY);
