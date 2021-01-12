@@ -1,5 +1,5 @@
 <template>
-  <span class="asset-details">
+  <span class="asset-details pt-3 pb-3">
     <crypto-icon size="26px" class="asset-details__icon" :symbol="asset" />
     <span class="asset-details__details">
       <span class="asset-details__details__symbol">

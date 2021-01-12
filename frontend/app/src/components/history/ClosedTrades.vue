@@ -93,8 +93,8 @@
                 class="closed-trades__trade__details"
               >
                 <v-col cols="12">
-                  <v-row>
-                    <span class="text-subtitle-2">
+                  <v-row class="pt-3 pb-3">
+                    <span class="text-h6">
                       {{ $t('closed_trades.details.title') }}
                     </span>
                   </v-row>
@@ -114,7 +114,7 @@
                       </v-card>
                     </v-col>
                   </v-row>
-                  <v-row>
+                  <v-row class="mt-2">
                     <v-col cols="auto" class="font-weight-medium">
                       {{ $t('closed_trades.details.link') }}
                     </v-col>
@@ -316,7 +316,6 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
 .closed-trades {
   &__trade {
     &__details {
-      box-shadow: inset 1px 8px 10px -10px;
       background-color: var(--v-rotki-light-grey-base);
     }
   }

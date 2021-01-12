@@ -10,7 +10,7 @@
       v-model="location"
       :available-locations="availableLocations"
     />
-    <v-row>
+    <v-row class="mt-1">
       <v-col cols="12">
         <v-card>
           <v-card-title>
@@ -215,7 +215,6 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
   &__movement {
     &__details {
       height: 150px !important;
-      box-shadow: inset 1px 8px 10px -10px;
       background-color: var(--v-rotki-light-grey-base);
     }
   }

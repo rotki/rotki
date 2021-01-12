@@ -7,7 +7,7 @@
   </progress-screen>
   <v-container v-else>
     <blockchain-account-selector v-model="account" hint :chains="['ETH']" />
-    <v-row>
+    <v-row class="mt-2">
       <v-col cols="12">
         <v-card>
           <v-card-title>
@@ -223,8 +223,18 @@ export default class Transactions extends Mixins(StatusMixin) {
 <style scoped lang="scss">
 .transactions {
   &__details {
-    box-shadow: inset 1px 8px 10px -10px;
     background-color: var(--v-rotki-light-grey-base);
+  }
+}
+
+::v-deep {
+  tbody {
+    tr {
+      > td {
+        padding-top: 16px !important;
+        padding-bottom: 16px !important;
+      }
+    }
   }
 }
 </style>

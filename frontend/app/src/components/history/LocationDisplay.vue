@@ -1,5 +1,5 @@
 <template>
-  <location-icon class="location-display" :item="location" />
+  <location-icon class="location-display pb-3 pt-3" :item="location" />
 </template>
 
 <script lang="ts">
