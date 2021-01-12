@@ -1,5 +1,6 @@
 import json
 import logging
+import gevent
 from typing import Any, Dict, List, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 PRICE_HISTORY_FILE_PREFIX = 'gecko_price_history_'
+COINGECKO_QUERY_RETRY_TIMES = 4
 
 
 class CoingeckoImageURLs(NamedTuple):
@@ -141,21 +143,50 @@ class Coingecko():
         url = f'https://api.coingecko.com/api/v3/{module}/'
         if subpath:
             url += subpath
-        try:
-            response = self.session.get(f'{url}?{urlencode(options)}')
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
+
+        logger.debug(f'Querying coingecko: {url}?{urlencode(options)}')
+        tries = COINGECKO_QUERY_RETRY_TIMES
+        while tries >= 0:
+            try:
+                response = self.session.get(f'{url}?{urlencode(options)}')
+            except requests.exceptions.RequestException as e:
+                raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
+
+            if response.status_code == 429:
+                # Coingecko allows only 100 calls per minute. If you get 429 it means you
+                # exceeded this and are throttled until the next minute window
+                # backoff and retry 4 times =  2.5 + 3.33 + 5 + 10 = at most 20.8 secs
+                if tries >= 1:
+                    backoff_seconds = 10 / tries
+                    log.debug(
+                        f'Got rate limited by coingecko. '
+                        f'Backing off for {backoff_seconds}',
+                    )
+                    gevent.sleep(backoff_seconds)
+                    tries -= 1
+                    continue
+
+                # else
+                log.debug(
+                    f'Got rate limited by coingecko and did not manage to get a '
+                    f'request through even after {COINGECKO_QUERY_RETRY_TIMES} '
+                    f'incremental backoff retries',
+                )
+
+            break
 
         if response.status_code != 200:
-            raise RemoteError(
+            msg = (
                 f'Coingecko API request {response.url} failed with HTTP status '
-                f'code: {response.status_code}',
+                f'code: {response.status_code}'
             )
+            raise RemoteError(msg)
 
         try:
             decoded_json = rlk_jsonloads(response.text)
         except json.decoder.JSONDecodeError as e:
-            raise RemoteError(f'Invalid JSON in Kraken response. {e}') from e
+            msg = f'Invalid JSON in Coingecko response. {e}'
+            raise RemoteError(msg) from e
 
         return decoded_json
 

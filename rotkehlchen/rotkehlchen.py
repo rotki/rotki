@@ -500,6 +500,7 @@ class Rotkehlchen():
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Tuple[Dict[str, Any], str]:
+        self.accountant.reset_processing_timestamps()
         (
             error_or_empty,
             history,

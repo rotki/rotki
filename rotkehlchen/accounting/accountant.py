@@ -64,9 +64,7 @@ class Accountant():
 
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = 0
-
-        self.started_processing_timestamp = Timestamp(-1)
-        self.currently_processing_timestamp = Timestamp(-1)
+        self.reset_processing_timestamps()
 
     def __del__(self) -> None:
         del self.events
@@ -99,6 +97,10 @@ class Accountant():
 
         if settings.account_for_assets_movements is not None:
             self.events.account_for_assets_movements = settings.account_for_assets_movements
+
+    def reset_processing_timestamps(self) -> None:
+        self.started_processing_timestamp = Timestamp(-1)
+        self.currently_processing_timestamp = Timestamp(-1)
 
     def get_fee_in_profit_currency(self, trade: Trade) -> Fee:
         """Get the profit_currency rate of the fee of the given trade
@@ -422,7 +424,7 @@ class Accountant():
         May raise:
         - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
-        timestamp from cryptocompare
+        timestamp from the price oracle
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
