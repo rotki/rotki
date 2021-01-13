@@ -9,7 +9,9 @@
     <v-card-text>
       <v-row class="mt-2" align="center">
         <v-col cols="12" sm="6">
-          <span>{{ $t('account_settings_display.past_cost_basis') }}</span>
+          <span class="text--primary">
+            {{ $t('account_settings_display.past_cost_basis') }}
+          </span>
           <span class="ms-2">
             <v-icon :class="color(accountingSettings.calculatePastCostBasis)">
               {{ icon(accountingSettings.calculatePastCostBasis) }}
@@ -17,7 +19,9 @@
           </span>
         </v-col>
         <v-col cols="12" sm="6">
-          <span>{{ $t('account_settings_display.crypto2crypto') }}</span>
+          <span class="text--primary">
+            {{ $t('account_settings_display.crypto2crypto') }}
+          </span>
           <span class="ms-2">
             <v-icon :class="color(accountingSettings.calculatePastCostBasis)">
               {{ icon(accountingSettings.calculatePastCostBasis) }}
@@ -25,7 +29,9 @@
           </span>
         </v-col>
         <v-col cols="12" sm="6">
-          <span>{{ $t('account_settings_display.gas_costs') }}</span>
+          <span class="text--primary">
+            {{ $t('account_settings_display.gas_costs') }}
+          </span>
           <span class="ms-2">
             <v-icon :class="color(accountingSettings.includeGasCosts)">
               {{ icon(accountingSettings.includeGasCosts) }}
@@ -33,7 +39,9 @@
           </span>
         </v-col>
         <v-col cols="12" sm="6">
-          <span>{{ $t('account_settings_display.tax_free_period') }}</span>
+          <span class="text--primary">
+            {{ $t('account_settings_display.tax_free_period') }}
+          </span>
           <span class="font-weight-medium ms-2">
             <span
               v-if="accountingSettings.taxFreeAfterPeriod !== 0"
@@ -50,7 +58,7 @@
           </span>
         </v-col>
         <v-col cols="12" sm="6">
-          <span>
+          <span class="text--primary">
             {{ $t('account_settings_display.account_asset_movement') }}
           </span>
           <span class="ms-2">

@@ -24,12 +24,14 @@
           <i18n tag="div" path="tax_report.report_period" class="text-h5 mt-6">
             <template #start>
               <date-display
+                no-timezone
                 :timestamp="reportPeriod.start"
                 class="font-weight-medium"
               />
             </template>
             <template #end>
               <date-display
+                no-timezone
                 :timestamp="reportPeriod.end"
                 class="font-weight-medium"
               />

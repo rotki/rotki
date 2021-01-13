@@ -1,6 +1,6 @@
 <template>
   <span class="date-display" :class="privacyMode ? 'blur-content' : null">
-    {{ displayTimestamp | formatDate(dateDisplayFormat) }}
+    {{ displayTimestamp | formatDate(dateFormat) }}
   </span>
 </template>
 
@@ -17,10 +17,19 @@ import { mapGetters, mapState } from 'vuex';
 export default class DateDisplay extends Vue {
   @Prop({ required: true, type: Number })
   timestamp!: number;
+  @Prop({ required: false, type: Boolean, default: false })
+  noTimezone!: boolean;
 
   dateDisplayFormat!: string;
   privacyMode!: boolean;
   scrambleData!: boolean;
+
+  get dateFormat(): string {
+    if (this.noTimezone) {
+      return this.dateDisplayFormat.replace('%z', '').replace('%Z', '');
+    }
+    return this.dateDisplayFormat;
+  }
 
   get displayTimestamp(): number {
     if (!this.scrambleData) {
