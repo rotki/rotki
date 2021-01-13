@@ -330,7 +330,7 @@ def deserialize_ledger_action_type(symbol: str) -> LedgerActionType:
     if value is None:
         raise DeserializationError(
             f'Failed to deserialize ledger action symbol. Unknown symbol '
-            f'{symbol} for ledger action'
+            f'{symbol} for ledger action',
         )
 
     return value
@@ -357,7 +357,7 @@ def deserialize_ledger_action_type_from_db(symbol: str) -> LedgerActionType:
     # else
     raise DeserializationError(
         f'Failed to deserialize ledger action type symbol. Unknown DB '
-        f'symbol {symbol} for trade type'
+        f'symbol {symbol} for trade type',
     )
 
 

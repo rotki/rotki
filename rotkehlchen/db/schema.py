@@ -93,17 +93,17 @@ INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('B', 2);
 # Custom enum table for LedgerAction categories (income, expense, loss and more)
 DB_CREATE_LEDGER_ACTION_TYPE = """
 CREATE TABLE IF NOT EXISTS ledger_action_type (
-  category    CHAR(1)       PRIMARY KEY NOT NULL,
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
   seq     INTEGER UNIQUE
 );
 /* Income Action Type */
-INSERT OR IGNORE INTO ledger_action_type(category, seq) VALUES ('A', 1);
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('A', 1);
 /* Expense Action Type */
-INSERT OR IGNORE INTO ledger_action_type(category, seq) VALUES ('B', 2);
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('B', 2);
 /* Loss Action Type */
-INSERT OR IGNORE INTO ledger_action_type(category, seq) VALUES ('C', 3);
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('C', 3);
 /* Dividends Income Action Type */
-INSERT OR IGNORE INTO ledger_action_type(category, seq) VALUES ('D', 4);
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('D', 4);
 """
 
 DB_CREATE_TIMED_BALANCES = """
@@ -307,7 +307,7 @@ DB_CREATE_LEDGER_ACTIONS = """
 CREATE TABLE IF NOT EXISTS ledger_actions (
     identifier INTEGER PRIMARY KEY,
     timestamp INTEGER,
-    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES ledger_action_type(action_type),
+    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES ledger_action_type(type),
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     amount TEXT,
     asset VARCHAR[10],

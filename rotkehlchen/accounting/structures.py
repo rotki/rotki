@@ -2,13 +2,13 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, DefaultDict, Dict, Tuple
+from typing import Any, DefaultDict, Dict
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.typing import Location, Timestamp, AssetAmount
 from rotkehlchen.utils.misc import combine_dicts
 
 
@@ -249,7 +249,7 @@ class LedgerAction:
     timestamp: Timestamp
     action_type: LedgerActionType
     location: Location
-    amount: FVal
+    amount: AssetAmount
     asset: Asset
     link: str
     notes: str

@@ -95,6 +95,8 @@ TABLES_AT_INIT = [
     'uniswap_events',
     'eth2_deposits',
     'adex_events',
+    'ledger_actions',
+    'ledger_action_type',
 ]
 
 

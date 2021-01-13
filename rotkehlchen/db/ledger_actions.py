@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
-from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ledger_action_type_from_db,
@@ -12,19 +12,51 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.typing import AssetAmount, Location, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
+
+LedgerActionDBTuple = Tuple[
+    int,  # timestamp
+    str,  # action_type
+    str,  # location
+    str,  # amount
+    str,  # asset
+    str,  # link
+    str,  # notes
+]
+
+
+def _serialize_action_for_db(
+        timestamp: Timestamp,
+        action_type: LedgerActionType,
+        location: Location,
+        amount: AssetAmount,
+        asset: Asset,
+        link: str,
+        notes: str,
+) -> LedgerActionDBTuple:
+    return (
+        timestamp,
+        action_type.serialize_for_db(),
+        location.serialize_for_db(),
+        str(amount),
+        asset.identifier,
+        link,
+        notes,
+    )
 
 
 class DBLedgerActions():
 
-    def __init__(self, database: DBHandler):
+    def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator):
         self.db = database
+        self.msg_aggregator = msg_aggregator
 
     def get_ledger_actions(
             self,
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location],
-    ):
+    ) -> List[LedgerAction]:
         cursor = self.db.conn.cursor()
         query = (
             'SELECT identifier,'
@@ -38,7 +70,7 @@ class DBLedgerActions():
         )
         if location is not None:
             query += f'WHERE location="{location.serialize_for_db()}" '
-        query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
+        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
         results = cursor.execute(query, bindings)
         actions = []
         for result in results:
@@ -86,14 +118,14 @@ class DBLedgerActions():
         VALUES (?, ?, ?, ?, ?, ?, ?);"""
         cursor.execute(
             query,
-            (
-                timestamp,
-                action_type.serialize_for_db(),
-                location.serialize_for_db(),
-                amount,
-                asset.identifier,
-                link,
-                notes,
+            _serialize_action_for_db(
+                timestamp=timestamp,
+                action_type=action_type,
+                location=location,
+                amount=amount,
+                asset=asset,
+                link=link,
+                notes=notes,
             ),
         )
         identifier = cursor.lastrowid
@@ -112,7 +144,7 @@ class DBLedgerActions():
         if cursor.rowcount < 1:
             error_msg = (
                 f'Tried to delete ledger action with identifier {identifier} but '
-                f'it was not found in the DB',
+                f'it was not found in the DB'
             )
         return error_msg
 
@@ -124,12 +156,21 @@ class DBLedgerActions():
         error_msg = None
         cursor = self.db.conn.cursor()
         query = """
-        UPDATE ledger_actions SET timestamp=?, action_type=?, location=?, amount=?,
+        UPDATE ledger_actions SET timestamp=?, type=?, location=?, amount=?,
         asset=?, link=?, notes=? WHERE identifier=?"""
-        cursor.execute(query, (*action.serialize_for_db(), action.identifier))
+        db_action_tuple = _serialize_action_for_db(
+            timestamp=action.timestamp,
+            action_type=action.action_type,
+            location=action.location,
+            amount=action.amount,
+            asset=action.asset,
+            link=action.link,
+            notes=action.notes,
+        )
+        cursor.execute(query, (*db_action_tuple, action.identifier))
         if cursor.rowcount != 1:
             error_msg = (
                 f'Tried to edit ledger action with identifier {action.identifier} '
-                f'but it was not found in the DB',
+                f'but it was not found in the DB'
             )
         return error_msg

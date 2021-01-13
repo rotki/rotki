@@ -701,7 +701,7 @@ class Rotkehlchen():
         Would need to use the same logic we do with trades. Using db entries count
         and count what all calls return and what is sums up to
         """
-        db = DBLedgerActions(self.data.db)
+        db = DBLedgerActions(self.data.db, self.msg_aggregator)
         actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
         original_length = len(actions)
         if self.premium is None:

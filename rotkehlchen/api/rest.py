@@ -825,7 +825,7 @@ class RestAPI():
             link: str,
             notes: str,
     ) -> Response:
-        db = DBLedgerActions(self.rotkehlchen.data.db)
+        db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
         identifier = db.add_ledger_action(
             timestamp=timestamp,
             action_type=action_type,
@@ -840,7 +840,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def edit_ledger_action(self, action: LedgerAction) -> Response:
-        db = DBLedgerActions(self.rotkehlchen.data.db)
+        db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
         error_msg = db.edit_ledger_action(action)
         if error_msg is not None:
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
@@ -855,8 +855,8 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def delete_ledger_action(self, identifier: str) -> Response:
-        db = DBLedgerActions(self.rotkehlchen.data.db)
+    def delete_ledger_action(self, identifier: int) -> Response:
+        db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
         error_msg = db.remove_ledger_action(identifier=identifier)
         if error_msg is not None:
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)

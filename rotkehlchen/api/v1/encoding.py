@@ -408,7 +408,7 @@ class LedgerActionTypeField(fields.Field):
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> TradeType:
+    ) -> LedgerActionType:
         try:
             action_type = deserialize_ledger_action_type(value)
         except DeserializationError as e:
