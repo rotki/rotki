@@ -111,16 +111,16 @@ def initialize_mock_rotkehlchen_instance(
 
     # Do not connect to the usual nodes at start by default. Do not want to spam
     # them during our tests. It's configurable per test, with the default being nothing
-    rpcconnect_patch = patch(
+    eth_rpcconnect_patch = patch(
         'rotkehlchen.rotkehlchen.ETHEREUM_NODES_TO_CONNECT_AT_START',
         new=ethereum_manager_connect_at_start,
     )
-    rpcconnect_patch = patch(
+    ksm_rpcconnect_patch = patch(
         'rotkehlchen.rotkehlchen.KUSAMA_NODES_TO_CONNECT_AT_START',
         new=kusama_manager_connect_at_start,
     )
 
-    with settings_patch, rpcconnect_patch:
+    with settings_patch, eth_rpcconnect_patch, ksm_rpcconnect_patch:
         rotki.unlock_user(
             user=username,
             password=db_password,
