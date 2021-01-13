@@ -20,6 +20,10 @@
             />
           </v-card-title>
           <v-card-text>
+            <ignore-buttons
+              :disabled="selected.length === 0 || loading || refreshing"
+              @ignore="ignoreTransactions"
+            />
             <v-data-table
               :headers="headers"
               :items="visibleTransactions"
@@ -45,9 +49,12 @@
                 <v-simple-checkbox
                   :ripple="false"
                   color="primary"
-                  :value="selected.includes(item.identifier)"
-                  @input="selectionChanged(item.identifier, $event)"
+                  :value="selected.includes(item.txHash)"
+                  @input="selectionChanged(item.txHash, $event)"
                 />
+              </template>
+              <template #item.ignoredInAccounting="{ item }">
+                <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
               </template>
               <template #item.txHash="{ item }">
                 <hash-link
@@ -113,23 +120,30 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapMutations } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import TransactionDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
-import { EthTransactionWithFee } from '@/store/history/types';
+import { TRANSACTIONS } from '@/store/history/consts';
+import {
+  EthTransactionWithFee,
+  IgnoreActionPayload
+} from '@/store/history/types';
+import { ActionStatus, Message } from '@/store/types';
 import { GeneralAccount } from '@/typing/types';
 import { toUnit, Unit } from '@/utils/calculation';
 
 @Component({
   components: {
+    IgnoreButtons,
     BlockchainAccountSelector,
     TransactionDetails,
     UpgradeRow,
@@ -146,12 +160,20 @@ import { toUnit, Unit } from '@/utils/calculation';
     ])
   },
   methods: {
-    ...mapActions('history', ['fetchTransactions'])
+    ...mapActions('history', [
+      'fetchTransactions',
+      'ignoreActions',
+      'unignoreActions'
+    ]),
+    ...mapMutations(['setMessage'])
   }
 })
 export default class Transactions extends Mixins(StatusMixin) {
   fetchTransactions!: (refresh: boolean) => Promise<void>;
-  footerProps = footerProps;
+  ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  setMessage!: (message: Message) => void;
+  readonly footerProps = footerProps;
   expanded = [];
   section = Section.TX;
   transactions!: EthTransactionWithFee[];
@@ -171,32 +193,76 @@ export default class Transactions extends Mixins(StatusMixin) {
         selection.pop();
       }
     } else {
-      for (const { identifier } of this.visibleTransactions) {
-        if (!identifier || selection.includes(identifier)) {
+      for (const { txHash } of this.visibleTransactions) {
+        if (!txHash || selection.includes(txHash)) {
           continue;
         }
-        selection.push(identifier);
+        selection.push(txHash);
       }
     }
   }
 
-  selectionChanged(identifier: string, selected: boolean) {
+  selectionChanged(txHash: string, selected: boolean) {
     const selection = this.selected;
     if (!selected) {
-      const index = selection.indexOf(identifier);
+      const index = selection.indexOf(txHash);
       if (index >= 0) {
         selection.splice(index, 1);
       }
-    } else if (identifier && !selection.includes(identifier)) {
-      selection.push(identifier);
+    } else if (txHash && !selection.includes(txHash)) {
+      selection.push(txHash);
     }
   }
 
   get allSelected(): boolean {
-    const strings = this.movements.map(({ identifier }) => identifier);
+    const strings = this.visibleTransactions.map(({ txHash }) => txHash);
     return (
       strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
     );
+  }
+
+  async ignoreTransactions(ignore: boolean) {
+    let status: ActionStatus;
+
+    const actionIds = this.visibleTransactions
+      .filter(({ ignoredInAccounting, txHash }) => {
+        return (
+          (ignore ? !ignoredInAccounting : ignoredInAccounting) &&
+          this.selected.includes(txHash)
+        );
+      })
+      .map(({ txHash }) => txHash)
+      .filter((value, index, array) => array.indexOf(value) === index);
+
+    if (actionIds.length === 0) {
+      const choice = ignore ? 1 : 2;
+      this.setMessage({
+        success: false,
+        title: this.$tc('transactions.ignore.no_actions.title', choice),
+        description: this.$tc(
+          'transactions.ignore.no_actions.description',
+          choice
+        )
+      });
+      return;
+    }
+
+    const payload: IgnoreActionPayload = {
+      actionIds: actionIds,
+      type: TRANSACTIONS
+    };
+    if (ignore) {
+      status = await this.ignoreActions(payload);
+    } else {
+      status = await this.unignoreActions(payload);
+    }
+
+    if (status.success) {
+      const total = this.selected.length;
+      for (let i = 0; i < total; i++) {
+        this.selected.pop();
+      }
+    }
   }
 
   @Watch('account')
@@ -233,6 +299,11 @@ export default class Transactions extends Mixins(StatusMixin) {
 
   readonly headers: DataTableHeader[] = [
     {
+      text: '',
+      value: 'selection',
+      sortable: false
+    },
+    {
       text: this.$tc('transactions.headers.txhash'),
       value: 'txHash'
     },
@@ -262,6 +333,11 @@ export default class Transactions extends Mixins(StatusMixin) {
       text: this.$tc('transactions.headers.gas_fee'),
       value: 'gasFee',
       align: 'end'
+    },
+    {
+      text: this.$t('transactions.headers.ignored_in_accounting').toString(),
+      value: 'ignoredInAccounting',
+      width: '15px'
     },
     { text: '', value: 'data-table-expand' }
   ];

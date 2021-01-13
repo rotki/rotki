@@ -6,7 +6,10 @@ import {
   Trade,
   TradeLocation
 } from '@/services/history/types';
-import { LEDGER_ACTION_TYPES } from '@/store/history/consts';
+import {
+  IGNORE_ACTION_TYPE,
+  LEDGER_ACTION_TYPES
+} from '@/store/history/consts';
 
 export interface HistoricData<T> {
   readonly limit: number;
@@ -56,3 +59,9 @@ export interface LedgerAction {
 }
 
 export type UnsavedAction = Omit<LedgerAction, 'identifier'>;
+
+export type ActionType = typeof IGNORE_ACTION_TYPE[number];
+export type IgnoreActionPayload = {
+  readonly actionIds: string[];
+  readonly type: ActionType;
+};

@@ -13,6 +13,7 @@ import {
 } from '@/services/history/const';
 import {
   AssetMovement,
+  EthTransaction,
   NewTrade,
   Trade,
   TradeLocation,
@@ -26,19 +27,32 @@ import {
   ACTION_DELETE_LEDGER_ACTION,
   ACTION_EDIT_LEDGER_ACTION,
   ACTION_FETCH_LEDGER_ACTIONS,
+  MOVEMENTS,
   MUTATION_ADD_LEDGER_ACTION,
-  MUTATION_SET_LEDGER_ACTIONS
+  MUTATION_SET_LEDGER_ACTIONS,
+  TRADES,
+  TRANSACTIONS
 } from '@/store/history/consts';
 import {
   AccountRequestMeta,
+  AssetMovements,
+  EthTransactions,
   HistoryState,
+  IgnoreActionPayload,
+  Trades,
   LedgerAction,
   LocationRequestMeta
 } from '@/store/history/types';
 import { Severity } from '@/store/notifications/consts';
 import { NotificationPayload } from '@/store/notifications/types';
 import { notify } from '@/store/notifications/utils';
-import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
+import {
+  ActionStatus,
+  Message,
+  RotkehlchenState,
+  StatusPayload
+} from '@/store/types';
+import { Writeable } from '@/types';
 
 export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async fetchTrades(
@@ -485,5 +499,148 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e) {
       return { success: false, message: e.message };
     }
+  },
+
+  async ignoreActions(
+    { commit, state },
+    { actionIds, type }: IgnoreActionPayload
+  ): Promise<ActionStatus> {
+    let strings: string[] = [];
+    try {
+      strings = await api.ignoreActions(actionIds);
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          success: false,
+          title: i18n.t('actions.ignore.error.title').toString(),
+          description: i18n
+            .t('actions.ignore.error.description', { error: e.message })
+            .toString()
+        } as Message,
+        { root: true }
+      );
+      return { success: false };
+    }
+
+    if (type === TRADES) {
+      const data = [...state.trades.data];
+
+      for (let i = 0; i < data.length; i++) {
+        const trade: Writeable<Trade> = data[i];
+        if (strings.includes(trade.tradeId)) {
+          data[i] = { ...data[i], ignoredInAccounting: true };
+        }
+      }
+      commit('setTrades', {
+        data,
+        found: state.trades.found,
+        limit: state.trades.limit
+      } as Trades);
+    } else if (type === MOVEMENTS) {
+      const data = [...state.assetMovements.data];
+
+      for (let i = 0; i < data.length; i++) {
+        const movement: Writeable<AssetMovement> = data[i];
+        if (strings.includes(movement.identifier)) {
+          data[i] = { ...data[i], ignoredInAccounting: true };
+        }
+      }
+      commit('setMovements', {
+        data,
+        found: state.assetMovements.found,
+        limit: state.assetMovements.limit
+      } as AssetMovements);
+    } else if (type === TRANSACTIONS) {
+      const data = [...state.transactions.data];
+
+      for (let i = 0; i < data.length; i++) {
+        const transaction: Writeable<EthTransaction> = data[i];
+        if (strings.includes(transaction.txHash)) {
+          data[i] = { ...data[i], ignoredInAccounting: true };
+        }
+      }
+      commit('setTransactions', {
+        data,
+        found: state.transactions.found,
+        limit: state.transactions.limit
+      } as EthTransactions);
+    }
+    return { success: true };
+  },
+  async unignoreActions(
+    { commit, state },
+    { actionIds, type }: IgnoreActionPayload
+  ) {
+    let strings: string[] = [];
+    try {
+      strings = await api.unignoreActions(actionIds);
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          success: false,
+          title: i18n.t('actions.unignore.error.title').toString(),
+          description: i18n
+            .t('actions.unignore.error.description', { error: e.message })
+            .toString()
+        } as Message,
+        { root: true }
+      );
+      return { success: false };
+    }
+    if (type === TRADES) {
+      const data = [...state.trades.data];
+
+      for (let i = 0; i < data.length; i++) {
+        const trade: Writeable<Trade> = data[i];
+        if (!trade.ignoredInAccounting) {
+          continue;
+        }
+        if (!strings.includes(trade.tradeId)) {
+          data[i] = { ...data[i], ignoredInAccounting: false };
+        }
+      }
+      commit('setTrades', {
+        data,
+        found: state.trades.found,
+        limit: state.trades.limit
+      } as Trades);
+    } else if (type === MOVEMENTS) {
+      const data = [...state.assetMovements.data];
+
+      for (let i = 0; i < data.length; i++) {
+        const movement: Writeable<AssetMovement> = data[i];
+        if (!movement.ignoredInAccounting) {
+          continue;
+        }
+        if (!strings.includes(movement.identifier)) {
+          data[i] = { ...data[i], ignoredInAccounting: false };
+        }
+      }
+      commit('setMovements', {
+        data,
+        found: state.assetMovements.found,
+        limit: state.assetMovements.limit
+      } as AssetMovements);
+    } else if (type === TRANSACTIONS) {
+      const data = [...state.transactions.data];
+
+      for (let i = 0; i < data.length; i++) {
+        const transaction: Writeable<EthTransaction> = data[i];
+        if (!transaction.ignoredInAccounting) {
+          continue;
+        }
+        if (!strings.includes(transaction.txHash)) {
+          data[i] = { ...data[i], ignoredInAccounting: false };
+        }
+      }
+      commit('setTransactions', {
+        data,
+        found: state.transactions.found,
+        limit: state.transactions.limit
+      } as EthTransactions);
+    }
+    return { success: true };
   }
 };

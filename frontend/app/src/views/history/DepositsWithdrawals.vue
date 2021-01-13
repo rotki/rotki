@@ -23,6 +23,10 @@
             />
           </v-card-title>
           <v-card-text>
+            <ignore-buttons
+              :disabled="selected.length === 0 || loading || refreshing"
+              @ignore="ignoreMovements"
+            />
             <v-data-table
               :headers="headers"
               :items="movements"
@@ -51,6 +55,9 @@
                   :value="selected.includes(item.identifier)"
                   @input="selectionChanged(item.identifier, $event)"
                 />
+              </template>
+              <template #item.ignoredInAccounting="{ item }">
+                <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
               </template>
               <template #item.location="{ item }">
                 <location-display :identifier="item.location" />
@@ -122,11 +129,12 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapMutations } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import MovementLinks from '@/components/history/MovementLinks.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
@@ -136,9 +144,13 @@ import StatusMixin from '@/mixins/status-mixin';
 import { SupportedExchange } from '@/services/balances/types';
 import { AssetMovement, TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { MOVEMENTS } from '@/store/history/consts';
+import { IgnoreActionPayload } from '@/store/history/types';
+import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    IgnoreButtons,
     TradeLocationSelector,
     MovementLinks,
     RefreshButton,
@@ -156,7 +168,12 @@ import { Section } from '@/store/const';
     ])
   },
   methods: {
-    ...mapActions('history', ['fetchMovements'])
+    ...mapActions('history', [
+      'fetchMovements',
+      'ignoreActions',
+      'unignoreActions'
+    ]),
+    ...mapMutations(['setMessage'])
   }
 })
 export default class DepositsWithdrawals extends Mixins(StatusMixin) {
@@ -188,10 +205,17 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
       text: this.$tc('deposits_withdrawals.headers.timestamp'),
       value: 'timestamp'
     },
+    {
+      text: this.$t('deposits_withdrawals.headers.ignored').toString(),
+      value: 'ignoredInAccounting'
+    },
     { text: '', value: 'data-table-expand' }
   ];
 
   fetchMovements!: (refresh: boolean) => Promise<void>;
+  ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  setMessage!: (message: Message) => void;
   assetMovements!: AssetMovement[];
   assetMovementsTotal!: number;
   assetMovementsLimit!: number;
@@ -234,6 +258,49 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
     return (
       strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
     );
+  }
+
+  async ignoreMovements(ignore: boolean) {
+    let status: ActionStatus;
+
+    const actionIds = this.movements
+      .filter(({ identifier, ignoredInAccounting }) => {
+        return (
+          (ignore ? !ignoredInAccounting : ignoredInAccounting) &&
+          this.selected.includes(identifier)
+        );
+      })
+      .map(({ identifier }) => identifier)
+      .filter((value, index, array) => array.indexOf(value) === index);
+
+    if (actionIds.length === 0) {
+      const choice = ignore ? 1 : 2;
+      this.setMessage({
+        success: false,
+        title: this.$tc('deposits_withdrawals.ignore.no_actions.title', choice),
+        description: this.$tc(
+          'deposits_withdrawals.ignore.no_actions.description',
+          choice
+        )
+      });
+      return;
+    }
+    const payload: IgnoreActionPayload = {
+      actionIds: actionIds,
+      type: MOVEMENTS
+    };
+    if (ignore) {
+      status = await this.ignoreActions(payload);
+    } else {
+      status = await this.unignoreActions(payload);
+    }
+
+    if (status.success) {
+      const total = this.selected.length;
+      for (let i = 0; i < total; i++) {
+        this.selected.pop();
+      }
+    }
   }
 
   @Watch('location')

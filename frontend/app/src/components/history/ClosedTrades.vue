@@ -24,6 +24,10 @@
           />
         </v-card-title>
         <v-card-text>
+          <ignore-buttons
+            :disabled="selected.length === 0 || loading || refreshing"
+            @ignore="ignoreTrades"
+          />
           <v-data-table
             :items="data"
             :headers="headersClosed"
@@ -75,6 +79,9 @@
                 :asset="item.feeCurrency"
                 :value="item.fee"
               />
+            </template>
+            <template #item.ignoredInAccounting="{ item }">
+              <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
             </template>
             <template #item.timestamp="{ item }">
               <div class="d-flex flex-row align-center">
@@ -186,11 +193,12 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapMutations } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import OtcForm from '@/components/OtcForm.vue';
@@ -198,9 +206,13 @@ import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Trade } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { TRADES } from '@/store/history/consts';
+import { IgnoreActionPayload } from '@/store/history/types';
+import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    IgnoreButtons,
     RefreshButton,
     UpgradeRow,
     DateDisplay,
@@ -213,7 +225,12 @@ import { Section } from '@/store/const';
     ...mapGetters('history', ['tradesTotal', 'tradesLimit'])
   },
   methods: {
-    ...mapActions('history', ['deleteExternalTrade'])
+    ...mapActions('history', [
+      'deleteExternalTrade',
+      'ignoreActions',
+      'unignoreActions'
+    ]),
+    ...mapMutations(['setMessage'])
   }
 })
 export default class ClosedTrades extends Mixins(StatusMixin) {
@@ -248,6 +265,10 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
       text: this.$tc('closed_trades.headers.timestamp'),
       value: 'timestamp'
     },
+    {
+      text: this.$t('closed_trades.headers.ignored').toString(),
+      value: 'ignoredInAccounting'
+    },
     { text: '', value: 'data-table-expand' }
   ];
   footerProps = footerProps;
@@ -264,6 +285,9 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   page: number = 1;
 
   deleteExternalTrade!: (tradeId: string) => Promise<boolean>;
+  ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  setMessage!: (message: Message) => void;
   section = Section.TRADES;
 
   selected: string[] = [];
@@ -302,6 +326,49 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
     return (
       strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
     );
+  }
+
+  async ignoreTrades(ignore: boolean) {
+    let status: ActionStatus;
+
+    const actionIds = this.data
+      .filter(({ tradeId, ignoredInAccounting }) => {
+        return (
+          (ignore ? !ignoredInAccounting : ignoredInAccounting) &&
+          this.selected.includes(tradeId)
+        );
+      })
+      .map(({ tradeId }) => tradeId)
+      .filter((value, index, array) => array.indexOf(value) === index);
+
+    if (actionIds.length === 0) {
+      const choice = ignore ? 1 : 2;
+      this.setMessage({
+        success: false,
+        title: this.$tc('closed_trades.ignore.no_actions.title', choice),
+        description: this.$tc(
+          'closed_trades.ignore.no_actions.description',
+          choice
+        )
+      });
+      return;
+    }
+    const payload: IgnoreActionPayload = {
+      actionIds: actionIds,
+      type: TRADES
+    };
+    if (ignore) {
+      status = await this.ignoreActions(payload);
+    } else {
+      status = await this.unignoreActions(payload);
+    }
+
+    if (status.success) {
+      const total = this.selected.length;
+      for (let i = 0; i < total; i++) {
+        this.selected.pop();
+      }
+    }
   }
 
   @Emit()

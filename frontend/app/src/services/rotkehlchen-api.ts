@@ -941,6 +941,33 @@ export class RotkehlchenApi {
       })
       .then(handleResponse);
   }
+
+  async ignoreActions(actionIds: string[]): Promise<string[]> {
+    return this.axios
+      .put<ActionResult<string[]>>(
+        '/actions/ignored',
+        axiosSnakeCaseTransformer({
+          actionIds
+        }),
+        {
+          validateStatus: validStatus,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async unignoreActions(actionIds: string[]): Promise<string[]> {
+    return this.axios
+      .delete<ActionResult<string[]>>('/actions/ignored', {
+        data: axiosSnakeCaseTransformer({
+          actionIds
+        }),
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
 }
 
 export const api = new RotkehlchenApi();

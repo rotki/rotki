@@ -11,9 +11,18 @@ import {
   MUTATION_SET_LEDGER_ACTIONS
 } from '@/store/history/consts';
 import { defaultHistoricState, defaultState } from '@/store/history/state';
-import { HistoryState, LedgerAction } from '@/store/history/types';
+import {
+  AssetMovements,
+  EthTransactions,
+  LedgerAction,
+  HistoryState,
+  Trades
+} from '@/store/history/types';
 
 export const mutations: MutationTree<HistoryState> = {
+  setTrades(state: HistoryState, trades: Trades) {
+    state.trades = trades;
+  },
   appendTrades(state: HistoryState, trades: LimitedResponse<Trade[]>) {
     state.trades = {
       data: [...state.trades.data, ...trades.entries],
@@ -53,6 +62,10 @@ export const mutations: MutationTree<HistoryState> = {
     };
   },
 
+  setMovements(state: HistoryState, movements: AssetMovements) {
+    state.assetMovements = movements;
+  },
+
   updateMovements(
     state: HistoryState,
     movements: LimitedResponse<AssetMovement[]>
@@ -65,6 +78,10 @@ export const mutations: MutationTree<HistoryState> = {
   },
   resetMovements(state: HistoryState) {
     state.assetMovements = defaultHistoricState();
+  },
+
+  setTransactions(state: HistoryState, transactions: EthTransactions) {
+    state.transactions = transactions;
   },
 
   updateTransactions(

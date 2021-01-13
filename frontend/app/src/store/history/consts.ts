@@ -46,3 +46,9 @@ export const ledgerActionsData: ActionDataEntry[] = [
     label: i18n.t('ledger_actions.actions.dividends').toString()
   }
 ];
+
+export const TRANSACTIONS = 'txs';
+export const MOVEMENTS = 'movements';
+export const TRADES = 'trades';
+
+export const IGNORE_ACTION_TYPE = [TRANSACTIONS, MOVEMENTS, TRADES] as const;
