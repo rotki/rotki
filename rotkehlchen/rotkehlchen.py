@@ -724,6 +724,7 @@ class Rotkehlchen():
             balances['blockchain'] = serialized_chain_result['assets']
         except (RemoteError, EthSyncError) as e:
             problem_free = False
+            serialized_chain_result = {'liabilities': {}}
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
 
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)

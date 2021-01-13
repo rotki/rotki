@@ -38,7 +38,6 @@ from rotkehlchen.chain.ethereum.eth2 import (
     get_eth2_details,
     get_eth2_staking_deposits,
 )
-from rotkehlchen.errors import RemoteError
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
@@ -49,7 +48,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors import EthSyncError, InputError, UnknownAsset
+from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
@@ -84,6 +83,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
 ETH2_DETAILS_REQUERY_SECONDS = 600
+KUSAMA_NODE_CONNECTION_TIMEOUT = 5
 
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
@@ -466,7 +466,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_kusama_balances(self) -> None:
+    def query_kusama_balances(self, wait_until_node_available: bool = True) -> None:
         """Queries the KSM balances of the accounts via Kusama endpoints.
 
         May raise:
@@ -476,6 +476,18 @@ class ChainManager(CacheableObject, LockableQueryObject):
             return
 
         ksm_usd_price = Inquirer().find_usd_price(A_KSM)
+        if wait_until_node_available:
+            try:
+                with gevent.Timeout(KUSAMA_NODE_CONNECTION_TIMEOUT):
+                    while len(self.kusama.available_node_attributes_map) == 0:
+                        gevent.sleep(0.1)
+            except gevent.Timeout as e:
+                raise RemoteError(
+                    f"Kusama manager does not have nodes availables after waiting "
+                    f"{KUSAMA_NODE_CONNECTION_TIMEOUT} seconds. Kusama balances "
+                    f"won't be queried.",
+                ) from e
+
         account_amount = self.kusama.get_accounts_balance(self.accounts.ksm)
         total_balance = Balance()
         for account, amount in account_amount.items():

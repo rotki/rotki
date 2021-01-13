@@ -11,24 +11,18 @@ BlockNumber = NewType('BlockNumber', int)
 
 
 class KusamaNodeName(Enum):
-    """
-    TODO: this requires to be extended with OWN_NODE.
+    """Public nodes for Kusama.
     """
     PARITY = 0
-    WEB3_FOUNDATION = 1
 
     def __str__(self) -> str:
         if self == KusamaNodeName.PARITY:
             return 'parity'
-        if self == KusamaNodeName.WEB3_FOUNDATION:
-            return 'web3 foundation'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
     def endpoint(self) -> str:
         if self == KusamaNodeName.PARITY:
-            return 'wss://kusama-rpc.polkadot.io/'
-        if self == KusamaNodeName.WEB3_FOUNDATION:
-            return 'wss://cc3-5.kusama.network/'
+            return 'https://kusama-rpc.polkadot.io/'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
 
