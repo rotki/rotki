@@ -1,6 +1,8 @@
 import { MutationTree } from 'vuex';
 import { EventEntry, TradeHistoryOverview } from '@/model/trade-history-types';
 import { defaultState, TaxReportState } from '@/store/reports/state';
+import { ReportPeriod } from '@/store/reports/types';
+import { AccountingSettings } from '@/typing/types';
 
 export const mutations: MutationTree<TaxReportState> = {
   set(
@@ -29,10 +31,15 @@ export const mutations: MutationTree<TaxReportState> = {
     state.historyProcess = payload.current;
   },
 
-  reportPeriod(state: TaxReportState, payload: { start: number; end: number }) {
+  reportPeriod(state: TaxReportState, payload: ReportPeriod) {
     state.historyProcess = payload.start;
     state.historyStart = payload.start;
     state.historyEnd = payload.end;
+    state.reportPeriod = payload;
+  },
+
+  accountingSettings(state: TaxReportState, payload: AccountingSettings) {
+    state.accountingSettings = payload;
   },
 
   reset(state: TaxReportState) {
