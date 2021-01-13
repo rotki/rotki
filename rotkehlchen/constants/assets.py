@@ -33,6 +33,7 @@ FIAT_CURRENCIES = (
 
 S_BTC = 'BTC'
 S_ETH = 'ETH'
+S_KSM = 'KSM'
 
 A_BTC = Asset(S_BTC)
 A_BCH = Asset('BCH')
@@ -41,6 +42,7 @@ A_BSV = Asset('BSV')
 A_ETH = Asset(S_ETH)
 A_ETH2 = Asset('ETH2')
 A_ETC = Asset('ETC')
+A_KSM = Asset(S_KSM)
 A_BAT = EthereumToken('BAT')
 A_UNI = EthereumToken('UNI')
 A_1INCH = EthereumToken('1INCH')

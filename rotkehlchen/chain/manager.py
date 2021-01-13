@@ -43,7 +43,8 @@ from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
 from rotkehlchen.chain.ethereum.yearn import YearnVaults
-from rotkehlchen.constants.assets import A_ADX, A_BTC, A_DAI, A_ETH, A_ETH2
+from rotkehlchen.chain.substrate.typing import KusamaAddress
+from rotkehlchen.constants.assets import A_ADX, A_BTC, A_DAI, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -75,6 +76,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.externalapis.beaconchain import BeaconChain
 
 logger = logging.getLogger(__name__)
@@ -115,14 +117,17 @@ class BlockchainBalances:
     db: DBHandler  # Need this to serialize BTC accounts with xpub mappings
     eth: DefaultDict[ChecksumEthAddress, BalanceSheet] = field(init=False)
     btc: Dict[BTCAddress, Balance] = field(init=False)
+    ksm: Dict[KusamaAddress, BalanceSheet] = field(init=False)
 
     def __post_init__(self) -> None:
         self.eth = defaultdict(BalanceSheet)
         self.btc = defaultdict(Balance)
+        self.ksm = defaultdict(BalanceSheet)
 
     def serialize(self) -> Dict[str, Dict]:
         eth_balances = {k: v.serialize() for k, v in self.eth.items()}
         btc_balances: Dict[str, Any] = {}
+        ksm_balances = {k: v.serialize() for k, v in self.ksm.items()}
         xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.btc.keys()))
         for btc_account, balances in self.btc.items():
             xpub_result = xpub_mappings.get(btc_account, None)
@@ -161,6 +166,8 @@ class BlockchainBalances:
             blockchain_balances['ETH'] = eth_balances
         if btc_balances != {}:
             blockchain_balances['BTC'] = btc_balances
+        if ksm_balances != {}:
+            blockchain_balances['KSM'] = ksm_balances
         return blockchain_balances
 
     def is_queried(self, blockchain: SupportedBlockchain) -> bool:
@@ -168,6 +175,8 @@ class BlockchainBalances:
             return self.eth != {}
         if blockchain == SupportedBlockchain.BITCOIN:
             return self.btc != {}
+        if blockchain == SupportedBlockchain.KUSAMA:
+            return self.ksm != {}
         # else
         raise AssertionError('Invalid blockchain value')
 
@@ -190,6 +199,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self,
             blockchain_accounts: BlockchainAccounts,
             ethereum_manager: 'EthereumManager',
+            kusama_manager: 'SubstrateManager',
             msg_aggregator: MessagesAggregator,
             database: DBHandler,
             greenlet_manager: GreenletManager,
@@ -202,6 +212,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         log.debug('Initializing ChainManager')
         super().__init__()
         self.ethereum = ethereum_manager
+        self.kusama = kusama_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -419,11 +430,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
         """
         should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
         should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
+        should_query_ksm = not blockchain or blockchain == SupportedBlockchain.KUSAMA
 
         if should_query_eth:
             self.query_ethereum_balances(force_token_detection=force_token_detection)
         if should_query_btc:
             self.query_btc_balances()
+        if should_query_ksm:
+            self.query_kusama_balances()
 
         return self.get_balances_update()
 
@@ -449,6 +463,31 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 usd_value=balance * btc_usd_price,
             )
         self.totals.assets[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_kusama_balances(self) -> None:
+        """Queries the KSM balances of the accounts via Kusama endpoints.
+
+        May raise:
+        - RemotError if there is a problem querying any remote
+        """
+        if len(self.accounts.ksm) == 0:
+            return
+
+        ksm_usd_price = Inquirer().find_usd_price(A_KSM)
+        account_amount = self.kusama.get_accounts_balance(self.accounts.ksm)
+        total_balance = Balance()
+        for account, amount in account_amount.items():
+            balance = Balance(
+                amount=amount,
+                usd_value=amount * ksm_usd_price,
+            )
+            self.balances.ksm[account] = BalanceSheet(
+                assets=defaultdict(Balance, {A_KSM: balance}),
+            )
+            total_balance += balance
+        self.totals.assets[A_KSM] = total_balance
 
     def sync_btc_accounts_with_db(self) -> None:
         """Call this function after having deleted BTC accounts from the DB to
@@ -583,6 +622,44 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 given_accounts=[account],
             )
 
+    def modify_kusama_account(
+            self,
+            account: KusamaAddress,
+            append_or_remove: Literal['append', 'remove'],
+    ) -> None:
+        """Either appends or removes a kusama acccount.
+
+        Call with 'append' to add the account
+        Call with 'remove' remove the account
+
+        May raise:
+        - Input error if the given_account is not a valid kusama address
+        - RemoteError if there is a problem with a query to an external
+        service such as Kusama nodes or cryptocompare
+        """
+        if append_or_remove not in ('append', 'remove'):
+            raise AssertionError(f'Unexpected action: {append_or_remove}')
+        if append_or_remove == 'remove' and account not in self.accounts.ksm:
+            raise InputError('Tried to remove a non existing KSM account')
+
+        ksm_usd_price = Inquirer().find_usd_price(A_KSM)
+        if append_or_remove == 'append':
+            amount = self.kusama.get_account_balance(account)
+            balance = Balance(amount=amount, usd_value=amount * ksm_usd_price)
+            self.accounts.ksm.append(account)
+            self.balances.ksm[account] = BalanceSheet(
+                assets=defaultdict(Balance, {A_KSM: balance}),
+            )
+            self.totals.assets[A_KSM] += balance
+        if append_or_remove == 'remove':
+            if len(self.balances.ksm) > 1:
+                if account in self.balances.ksm:
+                    self.totals.assets[A_KSM] -= self.balances.ksm[account].assets[A_KSM]
+            else:  # If the last account was removed balance should be 0
+                self.totals.assets[A_KSM] = Balance()
+            self.balances.ksm.pop(account, None)
+            self.accounts.ksm.remove(account)
+
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
@@ -592,7 +669,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         """Adds new blockchain accounts and requeries all balances after the addition.
         The accounts are added in the blockchain object and not in the database.
         Returns the new total balances, the actually added accounts (some
-        accounts may have been invalid) and also any errors that occured
+        accounts may have been invalid) and also any errors that occurred
         during the addition.
 
         May Raise:
@@ -676,7 +753,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-            append_or_remove: str,
+            append_or_remove: Literal['append', 'remove'],
             add_or_sub: AddOrSub,
             already_queried_balances: Optional[List[FVal]] = None,
     ) -> BlockchainBalancesUpdate:
@@ -745,6 +822,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     else:  # remove
                         module.on_account_removal(address)
 
+        elif blockchain == SupportedBlockchain.KUSAMA:
+            # we are adding/removing accounts, make sure query cache is flushed
+            self.flush_cache('query_kusama_balances', arguments_matter=True)
+            self.flush_cache('query_balances', arguments_matter=True)
+            self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.KUSAMA)  # noqa: E501
+            for account in accounts:
+                self.modify_kusama_account(
+                    account=KusamaAddress(account),
+                    append_or_remove=append_or_remove,
+                )
         else:
             # That should not happen. Should be checked by marshmallow
             raise AssertionError(

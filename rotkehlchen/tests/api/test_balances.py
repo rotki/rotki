@@ -29,9 +29,15 @@ from rotkehlchen.tests.utils.blockchain import (
 )
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.exchanges import assert_binance_balances_result
-from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
+from rotkehlchen.tests.utils.factories import (
+    KSM_ADDRESS_1,
+    KSM_ADDRESS_2,
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+)
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.tests.utils.substrate import TEST_KUSAMA_NODES
+from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp
 
 
 def assert_all_balances(
@@ -616,3 +622,48 @@ def test_balances_caching_mixup(
         assert result_btc['per_account'] == {}
         assert result_btc['totals']['assets'] == {}
         assert result_btc['totals']['liabilities'] == {}
+
+
+@pytest.mark.parametrize('kusama_manager_connect_at_start', [TEST_KUSAMA_NODES])
+@pytest.mark.parametrize('ksm_accounts', [[KSM_ADDRESS_1, KSM_ADDRESS_2]])
+def test_query_ksm_balances(
+        rotkehlchen_api_server,
+        ksm_accounts,  # pylint: disable=unused-argument
+):
+    """Test query the KSM balances when multiple accounts are set up works as
+    expected.
+    """
+    async_query = random.choice([False, True])
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "named_blockchain_balances_resource",
+            blockchain=SupportedBlockchain.KUSAMA.value,
+        ),
+        json={'async_query': async_query},
+    )
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    else:
+        result = assert_proper_response_with_result(response)
+
+    # Check per account
+    account_1_balances = result['per_account']['KSM'][KSM_ADDRESS_1]
+    assert 'liabilities' in account_1_balances
+    asset_ksm = account_1_balances['assets']['KSM']
+    assert FVal(asset_ksm['amount']) >= ZERO
+    assert FVal(asset_ksm['usd_value']) >= ZERO
+
+    account_2_balances = result['per_account']['KSM'][KSM_ADDRESS_2]
+    assert 'liabilities' in account_2_balances
+    asset_ksm = account_2_balances['assets']['KSM']
+    assert FVal(asset_ksm['amount']) >= ZERO
+    assert FVal(asset_ksm['usd_value']) >= ZERO
+
+    # Check totals
+    assert 'liabilities' in result['totals']
+    total_ksm = result['totals']['assets']['KSM']
+    assert FVal(total_ksm['amount']) >= ZERO
+    assert FVal(total_ksm['usd_value']) >= ZERO

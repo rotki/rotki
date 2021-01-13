@@ -2,7 +2,7 @@ gevent==1.5a2
 greenlet==0.4.16  # adding this constraint since 0.4.17 does not work with gevent 1.5a2
 web3==5.11.1
 pysqlcipher3==1.0.3
-requests==2.20.0
+requests==2.25.1
 pycryptodome==3.6.6
 pycryptodomex==3.6.6
 coincurve==13.0.0
@@ -10,6 +10,7 @@ typing-extensions==3.7.4.3
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
+substrate-interface==0.11.8
 
 # For the rest api
 flask-cors==3.0.8

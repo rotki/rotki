@@ -2533,6 +2533,9 @@ Getting blockchain account data
 ===============================
 .. http:get:: /api/(version)/blockchains/(name)/
 
+   .. note::
+      Supported blockchains: ``"BTC", "ETH", "KSM"``
+
    Doing a GET on the blokchcains endpoint with a specific blockchain queries account data information for that blockchain.
 
    **Example Request**:
@@ -2560,6 +2563,10 @@ Getting blockchain account data
               "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b",
               "label": null,
               "tags": ["private"]
+           }, {
+              "address": "G7UkJAutjbQyZGRiP8z5bBSBPBJ66JbTKAkFDq3cANwENyX",
+              "label": "my Kusama account",
+              "tags": null
            }],
            "message": "",
       }
@@ -4824,6 +4831,8 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(name)/
 
    .. note::
+      Supported blockchains: ``"BTC", "ETH", "KSM"``
+
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. The updated balances after the account additions are returned.
@@ -4898,13 +4907,20 @@ Adding blockchain accounts
                            "GNO": {"amount": "1", "usd_value": "50"},
                            "RDN": {"amount": "1", "usd_value": "1.5"}
                        },
-                  "liabilities": {}
-                  }}
+                       "liabilities": {}
+                   },
+                   "KSM": { "G7UkJAutjbQyZGRiP8z5bBSBPBJ66JbTKAkFDq3cANwENyX": {
+                       "assets": {
+                           "KSM": {"amount": "12", "usd_value": "894.84"}
+                        },
+                       "liabilities": {}
+                    }
               },
               "totals": {
                   "assets": {
                       "BTC": {"amount": "1", "usd_value": "7540.15"},
                       "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "KSM": {"amount": "12", "usd_value": "894.84"},
                       "RDN": {"amount": "1", "usd_value": "1.5"},
                       "GNO": {"amount": "1", "usd_value": "50"}
                   },
@@ -5202,6 +5218,8 @@ Editing blockchain account data
 
 .. http:patch:: /api/(version)/blockchains/(name)/
 
+   .. note::
+      Supported blockchains: ``"BTC", "ETH", "KSM"``
 
    Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
 
@@ -5262,6 +5280,8 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(name)/
 
    .. note::
+      Supported blockchains: ``"BTC", "ETH", "KSM"``
+
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a DELETE on the the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will remove these accounts from the tracked accounts for the given blockchain and the current user. The updated balances after the account deletions are returned.

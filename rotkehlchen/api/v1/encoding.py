@@ -14,6 +14,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, is_valid_derivation_path
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.substrate.utils import is_valid_kusama_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import DeserializationError, UnknownAsset, XPUBError
@@ -279,13 +280,12 @@ class BlockchainField(fields.Field):
             **_kwargs: Any,
     ) -> SupportedBlockchain:
         if value in ('btc', 'BTC'):
-            blockchain = SupportedBlockchain.BITCOIN
-        elif value in ('eth', 'ETH'):
-            blockchain = SupportedBlockchain.ETHEREUM
-        else:
-            raise ValidationError(f'Unrecognized value {value} given for blockchain name')
-
-        return blockchain
+            return SupportedBlockchain.BITCOIN
+        if value in ('eth', 'ETH'):
+            return SupportedBlockchain.ETHEREUM
+        if value in ('ksm', 'KSM'):
+            return SupportedBlockchain.KUSAMA
+        raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 
 
 class AssetField(fields.Field):
@@ -974,6 +974,24 @@ def _validate_blockchain_account_schemas(
             if not is_valid_btc_address(address):
                 raise ValidationError(
                     f'Given value {address} is not a valid bitcoin address',
+                    field_name='address',
+                )
+            if address in given_addresses:
+                raise ValidationError(
+                    f'Address {address} appears multiple times in the request data',
+                    field_name='address',
+                )
+            given_addresses.add(address)
+
+    # Make sure kusama addresses are valid
+    # TODO: support ENS domains (.eth addresses)
+    # https://guide.kusama.network/docs/en/mirror-ens
+    elif data['blockchain'] == SupportedBlockchain.KUSAMA:
+        for account_data in data['accounts']:
+            address = address_getter(account_data)
+            if not is_valid_kusama_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a valid kusama address',
                     field_name='address',
                 )
             if address in given_addresses:

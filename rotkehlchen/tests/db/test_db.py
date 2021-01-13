@@ -941,8 +941,8 @@ def test_non_checksummed_eth_account_in_db(database):
     warnings = database.msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 2
-    assert f'Non-checksummed eth address {non_checksummed_address}' in warnings[0]
-    assert f'Non-checksummed eth address {invalid_address}' in warnings[1]
+    assert f'Invalid ETH account in DB: {non_checksummed_address}' in warnings[0]
+    assert f'Invalid ETH account in DB: {invalid_address}' in warnings[1]
 
 
 def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):

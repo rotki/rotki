@@ -21,6 +21,7 @@ from rotkehlchen.tests.utils.database import (
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
+from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 
 
 @pytest.fixture(name='max_tasks_num')
@@ -94,6 +95,7 @@ def initialize_mock_rotkehlchen_instance(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        kusama_manager_connect_at_start,
         eth_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
@@ -112,6 +114,10 @@ def initialize_mock_rotkehlchen_instance(
     rpcconnect_patch = patch(
         'rotkehlchen.rotkehlchen.ETHEREUM_NODES_TO_CONNECT_AT_START',
         new=ethereum_manager_connect_at_start,
+    )
+    rpcconnect_patch = patch(
+        'rotkehlchen.rotkehlchen.KUSAMA_NODES_TO_CONNECT_AT_START',
+        new=kusama_manager_connect_at_start,
     )
 
     with settings_patch, rpcconnect_patch:
@@ -147,6 +153,10 @@ def initialize_mock_rotkehlchen_instance(
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         ethereum=rotki.chain_manager.ethereum,
+    )
+    wait_until_all_substrate_nodes_connected(
+        substrate_manager_connect_at_start=kusama_manager_connect_at_start,
+        substrate_manager=rotki.chain_manager.kusama,
     )
 
     aave = rotki.chain_manager.aave
@@ -196,6 +206,7 @@ def fixture_rotkehlchen_api_server(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        kusama_manager_connect_at_start,
         ethrpc_endpoint,
         aave_use_graph,
         max_tasks_num,
@@ -223,6 +234,7 @@ def fixture_rotkehlchen_api_server(
         manually_tracked_balances=manually_tracked_balances,
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
@@ -251,6 +263,7 @@ def rotkehlchen_instance(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        kusama_manager_connect_at_start,
         ethrpc_endpoint,
         aave_use_graph,
         max_tasks_num,
@@ -276,6 +289,7 @@ def rotkehlchen_instance(
         manually_tracked_balances=manually_tracked_balances,
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
