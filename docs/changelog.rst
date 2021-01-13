@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1919` Rotki now supports Kusama blockchain. Users can import their Kusama addresses and see their KSM balances.
 * :feature:`1792` Users should now be able to see the accounting settings used when generating a tax report.
 * :bug:`1946` There should no longer be a non 0-100 percentage in the tax report during the progress report.
 * :feature:`522` Users can connect to different backends from the frontend.

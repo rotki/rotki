@@ -29,8 +29,8 @@ from rotkehlchen.balances.manual import (
     remove_manually_tracked_balances,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
+from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -535,7 +535,9 @@ class RestAPI():
             # If only specific input blockchain was given ignore other results
             if blockchain == SupportedBlockchain.ETHEREUM:
                 result['per_account'].pop('BTC', None)
+                result['per_account'].pop('KSM', None)
                 result['totals']['assets'].pop('BTC', None)
+                result['totals']['assets'].pop('KSM', None)
             elif blockchain == SupportedBlockchain.BITCOIN:
                 val = result['per_account'].get('BTC', None)
                 per_account = {'BTC': val} if val else {}
@@ -543,6 +545,12 @@ class RestAPI():
                 totals: Dict[str, Any] = {'assets': {}, 'liabilities': {}}
                 if val:
                     totals['assets'] = {'BTC': val}
+                result = {'per_account': per_account, 'totals': totals}
+            elif blockchain == SupportedBlockchain.KUSAMA:
+                val = result['per_account'].get('KSM', None)
+                per_account = {'KSM': val} if val else {}
+                val = result['totals']['assets'].get('KSM', None)
+                totals = {'assets': {'KSM': val}, 'liabilities': {}}
                 result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}

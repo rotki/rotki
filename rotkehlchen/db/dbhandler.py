@@ -8,7 +8,6 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 
-from eth_utils import is_checksum_address
 from eth_utils.typing import HexStr
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
@@ -44,7 +43,7 @@ from rotkehlchen.chain.ethereum.uniswap import (
     UNISWAP_TRADES_PREFIX,
     UniswapPoolEvent,
 )
-from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
@@ -65,6 +64,7 @@ from rotkehlchen.db.utils import (
     deserialize_tags_from_db,
     form_query_to_filter_timestamps,
     insert_tag_mappings,
+    is_valid_db_blockchain_account,
     str_to_bool,
 )
 from rotkehlchen.errors import (
@@ -1514,26 +1514,30 @@ class DBHandler:
 
         eth_list = []
         btc_list = []
-
+        ksm_list = []
+        supported_blockchains = {blockchain.value for blockchain in SupportedBlockchain}
         for entry in query:
-            if entry[0] == S_ETH:
-                if not is_checksum_address(entry[1]):
-                    self.msg_aggregator.add_warning(
-                        f'Non-checksummed eth address {entry[1]} detected in the DB. This '
-                        f'should not happen unless the DB was manually modified. '
-                        f'Skipping entry. This needs to be fixed manually. If you '
-                        f'can not do that alone ask for help in the issue tracker',
-                    )
-                    continue
-                eth_list.append(entry[1])
-            elif entry[0] == S_BTC:
-                btc_list.append(entry[1])
-            else:
-                log.warning(
-                    f'unknown blockchain type {entry[0]} found in DB. Ignoring...',
-                )
+            if entry[0] not in supported_blockchains:
+                log.warning(f'Unknown blockchain {entry[0]} found in DB. Ignoring...')
+                continue
 
-        return BlockchainAccounts(eth=eth_list, btc=btc_list)
+            if not is_valid_db_blockchain_account(blockchain=entry[0], account=entry[1]):
+                self.msg_aggregator.add_warning(
+                    f'Invalid {entry[0]} account in DB: {entry[1]}. '
+                    f'This should not happen unless the DB was manually modified. '
+                    f'Skipping entry. This needs to be fixed manually. If you '
+                    f'can not do that alone ask for help in the issue tracker',
+                )
+                continue
+
+            if entry[0] == SupportedBlockchain.BITCOIN.value:
+                btc_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.ETHEREUM.value:
+                eth_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.KUSAMA.value:
+                ksm_list.append(entry[1])
+
+        return BlockchainAccounts(eth=eth_list, btc=btc_list, ksm=ksm_list)
 
     def get_blockchain_account_data(
             self,

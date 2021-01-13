@@ -8,6 +8,8 @@ import pytest
 import requests
 from eth_utils import to_checksum_address
 
+from rotkehlchen.chain.substrate.typing import KusamaAddress
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.api import (
@@ -26,12 +28,17 @@ from rotkehlchen.tests.utils.blockchain import (
 )
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import (
+    DOT_ADDRESS_1,
+    KSM_ADDRESS_1,
+    KSM_ADDRESS_2,
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
     UNIT_BTC_ADDRESS3,
     make_ethereum_address,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.tests.utils.substrate import TEST_KUSAMA_NODES
+from rotkehlchen.typing import BlockchainAccountData, SupportedBlockchain
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -1613,3 +1620,116 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     assert len(query) == 1
     assert query[0][0] == UNIT_BTC_ADDRESS2
     assert query[0][1] == 'desktop'
+
+
+def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server):
+    """Test adding an invalid Kusama blockchain account works as expected.
+    """
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain=SupportedBlockchain.KUSAMA.value,
+        ),
+        json={'accounts': [{'address': DOT_ADDRESS_1}]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'{DOT_ADDRESS_1} is not a valid kusama address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('kusama_manager_connect_at_start', [TEST_KUSAMA_NODES])
+def test_add_ksm_blockchain_account(rotkehlchen_api_server):
+    """Test adding a Kusama blockchain account works as expected.
+    """
+    async_query = random.choice([False, True])
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain=SupportedBlockchain.KUSAMA.value,
+        ),
+        json={
+            'accounts': [{'address': KSM_ADDRESS_1}],
+            'async_query': async_query,
+        },
+    )
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    else:
+        result = assert_proper_response_with_result(response)
+
+    # Check per account
+    account_balances = result['per_account']['KSM'][KSM_ADDRESS_1]
+    assert 'liabilities' in account_balances
+    asset_ksm = account_balances['assets']['KSM']
+    assert FVal(asset_ksm['amount']) >= ZERO
+    assert FVal(asset_ksm['usd_value']) >= ZERO
+
+    # Check totals
+    assert 'liabilities' in result['totals']
+    total_ksm = result['totals']['assets']['KSM']
+    assert FVal(total_ksm['amount']) >= ZERO
+    assert FVal(total_ksm['usd_value']) >= ZERO
+
+
+@pytest.mark.parametrize('kusama_manager_connect_at_start', [TEST_KUSAMA_NODES])
+@pytest.mark.parametrize('ksm_accounts', [[KSM_ADDRESS_1, KSM_ADDRESS_2]])
+def test_remove_ksm_blockchain_account(
+        rotkehlchen_api_server,
+        ksm_accounts,  # pylint: disable=unused-argument
+):
+    """Test removing a Kusama blockchain account works as expected by returning
+    only the balances of the other Kusama accounts.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    async_query = random.choice([False, True])
+
+    # Create KSM accounts
+    accounts_data = [
+        BlockchainAccountData(address=KusamaAddress(KSM_ADDRESS_1)),
+        BlockchainAccountData(address=KusamaAddress(KSM_ADDRESS_2)),
+    ]
+    rotki.data.db.add_blockchain_accounts(
+        blockchain=SupportedBlockchain.KUSAMA,
+        account_data=accounts_data,
+    )
+
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain=SupportedBlockchain.KUSAMA.value,
+        ),
+        json={
+            'accounts': [KSM_ADDRESS_2],
+            'async_query': async_query,
+        },
+    )
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    else:
+        result = assert_proper_response_with_result(response)
+
+    # Check per account
+    assert KSM_ADDRESS_2 not in result['per_account']['KSM']
+    account_balances = result['per_account']['KSM'][KSM_ADDRESS_1]
+    assert 'liabilities' in account_balances
+    asset_ksm = account_balances['assets']['KSM']
+    assert FVal(asset_ksm['amount']) >= ZERO
+    assert FVal(asset_ksm['usd_value']) >= ZERO
+
+    # Check totals
+    assert 'liabilities' in result['totals']
+    total_ksm = result['totals']['assets']['KSM']
+    assert FVal(total_ksm['amount']) >= ZERO
+    assert FVal(total_ksm['usd_value']) >= ZERO
+
+    # Also make sure it's removed from the DB
+    db_accounts = rotki.data.db.get_blockchain_accounts()
+    assert db_accounts.ksm[0] == KSM_ADDRESS_1

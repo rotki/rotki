@@ -2,11 +2,14 @@ from enum import Enum
 from sqlite3 import Cursor
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
+from eth_utils import is_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.substrate.typing import KusamaAddress
+from rotkehlchen.chain.substrate.utils import is_valid_kusama_address
 from rotkehlchen.typing import (
     BlockchainAccountData,
     BTCAddress,
@@ -25,12 +28,16 @@ if TYPE_CHECKING:
 class BlockchainAccounts(NamedTuple):
     eth: List[ChecksumEthAddress]
     btc: List[BTCAddress]
+    ksm: List[KusamaAddress]
 
     def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
+        if blockchain == SupportedBlockchain.BITCOIN:
+            return self.btc
         if blockchain == SupportedBlockchain.ETHEREUM:
             return self.eth
-
-        return self.btc
+        if blockchain == SupportedBlockchain.KUSAMA:
+            return self.ksm
+        raise AssertionError(f'Unsupported blockchain: {blockchain}')
 
 
 class AssetBalance(NamedTuple):
@@ -137,3 +144,19 @@ def insert_tag_mappings(
     cursor.executemany(
         'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
     )
+
+
+def is_valid_db_blockchain_account(
+        blockchain: str,
+        account: str,
+) -> bool:
+    """Validates a blockchain address already stored in DB.
+    """
+    if blockchain == SupportedBlockchain.BITCOIN.value:
+        return True
+    if blockchain == SupportedBlockchain.ETHEREUM.value:
+        return is_checksum_address(account)
+    if blockchain == SupportedBlockchain.KUSAMA.value:
+        return is_valid_kusama_address(account)
+
+    raise AssertionError(f'Unknown blockchain: {blockchain}')

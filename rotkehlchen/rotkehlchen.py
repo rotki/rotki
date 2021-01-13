@@ -20,9 +20,10 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
-from rotkehlchen.tasks.manager import TaskManager, DEFAULT_MAX_TASKS_NUM
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
+from rotkehlchen.chain.substrate.manager import SubstrateManager
+from rotkehlchen.chain.substrate.typing import KUSAMA_NODES_TO_CONNECT_AT_START, SubstrateChain
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
@@ -56,6 +57,7 @@ from rotkehlchen.logging import (
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_location
+from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -258,10 +260,18 @@ class Rotkehlchen():
             greenlet_manager=self.greenlet_manager,
             connect_at_start=ETHEREUM_NODES_TO_CONNECT_AT_START,
         )
+        kusama_manager = SubstrateManager(
+            chain=SubstrateChain.KUSAMA,
+            msg_aggregator=self.msg_aggregator,
+            greenlet_manager=self.greenlet_manager,
+            connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
+        )
+
         Inquirer().inject_ethereum(ethereum_manager)
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             ethereum_manager=ethereum_manager,
+            kusama_manager=kusama_manager,
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,
@@ -714,6 +724,7 @@ class Rotkehlchen():
             balances['blockchain'] = serialized_chain_result['assets']
         except (RemoteError, EthSyncError) as e:
             problem_free = False
+            serialized_chain_result = {'liabilities': {}}
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
 
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)

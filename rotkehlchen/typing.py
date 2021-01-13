@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tup
 from eth_utils.typing import ChecksumAddress
 from typing_extensions import Literal
 
+from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.fval import FVal
 
 ModuleName = Literal[
@@ -114,8 +115,18 @@ ChecksumEthAddress = ChecksumAddress
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
-BlockchainAddress = Union[EthAddress, BTCAddress, ChecksumEthAddress, str]
-ListOfBlockchainAddresses = Union[List[BTCAddress], List[ChecksumEthAddress]]
+BlockchainAddress = Union[
+    EthAddress,
+    BTCAddress,
+    ChecksumEthAddress,
+    KusamaAddress,
+    str,
+]
+ListOfBlockchainAddresses = Union[
+    List[BTCAddress],
+    List[ChecksumEthAddress],
+    List[KusamaAddress],
+]
 
 
 class EthTokenInfo(NamedTuple):
@@ -198,12 +209,15 @@ class SupportedBlockchain(Enum):
     """These are the blockchains for which account tracking is supported """
     ETHEREUM = 'ETH'
     BITCOIN = 'BTC'
+    KUSAMA = 'KSM'
 
     def get_address_type(self) -> Callable:
         if self == SupportedBlockchain.ETHEREUM:
             return ChecksumEthAddress
         if self == SupportedBlockchain.BITCOIN:
             return BTCAddress
+        if self == SupportedBlockchain.KUSAMA:
+            return KusamaAddress
         # else
         raise AssertionError('Invalid SupportedBlockchain value')
 

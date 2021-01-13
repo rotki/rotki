@@ -5,6 +5,8 @@ import pytest
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
+from rotkehlchen.chain.substrate.manager import SubstrateManager
+from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstrateChain
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -12,6 +14,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
 
 
@@ -30,12 +33,22 @@ def fixture_btc_accounts() -> List[BTCAddress]:
     return []
 
 
+@pytest.fixture(name='ksm_accounts')
+def fixture_ksm_accounts() -> List[KusamaAddress]:
+    return []
+
+
 @pytest.fixture(name='blockchain_accounts')
 def fixture_blockchain_accounts(
         ethereum_accounts: List[ChecksumEthAddress],
         btc_accounts: List[BTCAddress],
+        ksm_accounts: List[KusamaAddress],
 ) -> BlockchainAccounts:
-    return BlockchainAccounts(eth=ethereum_accounts, btc=btc_accounts.copy())
+    return BlockchainAccounts(
+        eth=ethereum_accounts,
+        btc=btc_accounts.copy(),
+        ksm=ksm_accounts.copy(),
+    )
 
 
 @pytest.fixture(name='ethrpc_endpoint')
@@ -88,6 +101,44 @@ def fixture_ethereum_manager(
     return manager
 
 
+@pytest.fixture(name='kusama_manager_connect_at_start')
+def fixture_kusama_manager_connect_at_start() -> Sequence[NodeName]:
+    return ()
+
+
+@pytest.fixture(name='kusama_available_node_attributes_map')
+def fixture_kusama_available_node_attributes_map():
+    return {}
+
+
+@pytest.fixture(name='kusama_manager')
+def fixture_kusama_manager(
+        messages_aggregator,
+        greenlet_manager,
+        kusama_available_node_attributes_map,
+        kusama_manager_connect_at_start,
+):
+    kusama_manager = SubstrateManager(
+        chain=SubstrateChain.KUSAMA,
+        msg_aggregator=messages_aggregator,
+        greenlet_manager=greenlet_manager,
+        connect_at_start=kusama_manager_connect_at_start,
+    )
+    if len(kusama_available_node_attributes_map) != 0:
+        # When connection is persisted <SubstrateManager.chain_properties> must
+        # be set manually (either requesting the chain or hard coded)
+        kusama_manager.available_node_attributes_map = kusama_available_node_attributes_map
+        any_node_attributes = list(kusama_manager.available_node_attributes_map.values())[0]
+        kusama_manager._set_chain_properties(any_node_attributes.node_interface)
+    else:
+        wait_until_all_substrate_nodes_connected(
+            substrate_manager_connect_at_start=kusama_manager_connect_at_start,
+            substrate_manager=kusama_manager,
+        )
+
+    return kusama_manager
+
+
 @pytest.fixture(name='ethereum_modules')
 def fixture_ethereum_modules() -> List[str]:
     return []
@@ -106,6 +157,7 @@ def fixture_btc_derivation_gap_limit():
 @pytest.fixture
 def blockchain(
         ethereum_manager,
+        kusama_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
@@ -125,6 +177,7 @@ def blockchain(
     chain_manager = ChainManager(
         blockchain_accounts=blockchain_accounts,
         ethereum_manager=ethereum_manager,
+        kusama_manager=kusama_manager,
         msg_aggregator=messages_aggregator,
         database=database,
         greenlet_manager=greenlet_manager,
