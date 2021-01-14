@@ -1,8 +1,7 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.serialization.deserialize import (
@@ -13,6 +12,9 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import AssetAmount, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 LedgerActionDBTuple = Tuple[
     int,  # timestamp
@@ -47,7 +49,7 @@ def _serialize_action_for_db(
 
 class DBLedgerActions():
 
-    def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator):
+    def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator):
         self.db = database
         self.msg_aggregator = msg_aggregator
 
