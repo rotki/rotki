@@ -5,9 +5,6 @@ import pytest
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2 import (
-    REQUEST_DELTA_TS,
-    Eth2Deposit,
-    ValidatorDetails,
     _get_eth2_staking_deposits_onchain,
     get_eth2_balances,
     get_eth2_details,
@@ -15,6 +12,9 @@ from rotkehlchen.chain.ethereum.eth2 import (
 )
 from rotkehlchen.chain.ethereum.eth2_utils import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
+    REQUEST_DELTA_TS,
+    Eth2Deposit,
+    ValidatorDetails,
     ValidatorPerformance,
 )
 from rotkehlchen.fval import FVal

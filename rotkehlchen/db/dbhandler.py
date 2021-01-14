@@ -30,7 +30,7 @@ from rotkehlchen.chain.ethereum.adex import (
     UnbondRequest,
     deserialize_adex_event_from_db,
 )
-from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSITS_PREFIX, Eth2Deposit
+from rotkehlchen.chain.ethereum.eth2_utils import ETH2_DEPOSITS_PREFIX, Eth2Deposit
 from rotkehlchen.chain.ethereum.structures import (
     AaveEvent,
     YearnVault,
