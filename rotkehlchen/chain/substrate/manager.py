@@ -379,7 +379,16 @@ class SubstrateManager():
             last_block = node_interface.get_block_number(
                 block_hash=node_interface.get_chain_head(),
             )
-        except (requests.exceptions.RequestException, SubstrateRequestException) as e:
+        except (
+            requests.exceptions.RequestException,
+            SubstrateRequestException,
+            # TODO: remove TypeError once py-susbtrate-interface `get_block_number`
+            # handles a None response. Keep ValueError just in case `get_chain_head`
+            # returns None.
+            # https://github.com/polkascan/py-substrate-interface/issues/68
+            TypeError,
+            ValueError,
+        ) as e:
             message = (
                 f'{self.chain} failed to request last block '
                 f'at endpoint: {node_interface.url} due to: {str(e)}.'
