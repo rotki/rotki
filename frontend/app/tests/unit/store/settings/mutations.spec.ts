@@ -5,7 +5,7 @@ import {
   LAST_KNOWN_TIMEFRAME,
   Q3,
   QUERY_PERIOD,
-  TAX_REPORT_PERIOD,
+  PROFIT_LOSS_PERIOD,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   TIMEFRAME_TWO_WEEKS,
@@ -22,7 +22,7 @@ describe('settings:mutations', () => {
       [TIMEFRAME_SETTING]: TIMEFRAME_YEAR,
       [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_TWO_WEEKS,
       [QUERY_PERIOD]: 5,
-      [TAX_REPORT_PERIOD]: {
+      [PROFIT_LOSS_PERIOD]: {
         year: '2018',
         quarter: Q3
       },
@@ -36,7 +36,7 @@ describe('settings:mutations', () => {
     expect(settings[TIMEFRAME_SETTING]).toBe(TIMEFRAME_YEAR);
     expect(settings[LAST_KNOWN_TIMEFRAME]).toBe(TIMEFRAME_TWO_WEEKS);
     expect(settings[QUERY_PERIOD]).toBe(5);
-    expect(settings[TAX_REPORT_PERIOD]).toMatchObject({
+    expect(settings[PROFIT_LOSS_PERIOD]).toMatchObject({
       year: '2018',
       quarter: Q3
     });

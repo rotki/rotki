@@ -52,12 +52,12 @@ import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import ReportPeriodSelector, {
   PeriodChangedEvent,
   SelectionChangedEvent
-} from '@/components/taxreport/ReportPeriodSelector.vue';
-import { ALL, TAX_REPORT_PERIOD } from '@/store/settings/consts';
+} from '@/components/profitloss/ReportPeriodSelector.vue';
+import { ALL, PROFIT_LOSS_PERIOD } from '@/store/settings/consts';
 import {
   FrontendSettingsPayload,
-  Quarter,
-  TaxReportPeriod
+  ProfitLossTimeframe,
+  Quarter
 } from '@/store/settings/types';
 import { ActionStatus } from '@/store/types';
 
@@ -67,7 +67,7 @@ import { ActionStatus } from '@/store/types';
     DateTimePicker
   },
   computed: {
-    ...mapGetters('settings', [TAX_REPORT_PERIOD])
+    ...mapGetters('settings', [PROFIT_LOSS_PERIOD])
   },
   methods: {
     ...mapActions('settings', ['updateSetting'])
@@ -82,7 +82,7 @@ export default class Generate extends Vue {
   year: string = new Date().getFullYear().toString();
   quarter: Quarter = ALL;
 
-  [TAX_REPORT_PERIOD]!: TaxReportPeriod;
+  [PROFIT_LOSS_PERIOD]!: ProfitLossTimeframe;
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
 
   startRules: ((v: string) => boolean | string)[] = [
@@ -96,8 +96,8 @@ export default class Generate extends Vue {
   ];
 
   mounted() {
-    this.year = this.taxReportPeriod.year;
-    this.quarter = this.taxReportPeriod.quarter;
+    this.year = this[PROFIT_LOSS_PERIOD].year;
+    this.quarter = this[PROFIT_LOSS_PERIOD].quarter;
   }
 
   private convertToTimestamp(date: string): number {
@@ -141,7 +141,7 @@ export default class Generate extends Vue {
     }
 
     this.updateSetting({
-      taxReportPeriod: event
+      profitLossReportPeriod: event
     });
   }
 

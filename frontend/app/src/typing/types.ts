@@ -56,7 +56,7 @@ export interface ExchangeInfo {
 
 export type ExchangeData = { [exchange: string]: AssetBalances };
 
-export interface TaxReportEvent {
+export interface ProfitLossPeriod {
   readonly start: number;
   readonly end: number;
 }

@@ -1,9 +1,9 @@
 import { GetterTree } from 'vuex';
-import { TaxReportState } from '@/store/reports/state';
+import { ReportState } from '@/store/reports/state';
 import { RotkehlchenState } from '@/store/types';
 
-export const getters: GetterTree<TaxReportState, RotkehlchenState> = {
-  progress: (state: TaxReportState) => {
+export const getters: GetterTree<ReportState, RotkehlchenState> = {
+  progress: (state: ReportState) => {
     const { historyStart, historyEnd, historyProcess } = state;
     const percentage =
       (historyProcess - historyStart) * (1 / (historyEnd - historyStart));

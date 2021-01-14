@@ -6,7 +6,7 @@ import {
   DEFI_SETUP_DONE,
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
-  TAX_REPORT_PERIOD,
+  PROFIT_LOSS_PERIOD,
   THOUSAND_SEPARATOR,
   TIMEFRAME_ALL,
   TIMEFRAME_REMEMBER,
@@ -19,7 +19,7 @@ export const defaultState: () => SettingsState = () => ({
   [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
   [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL,
   [QUERY_PERIOD]: Defaults.DEFAULT_QUERY_PERIOD,
-  [TAX_REPORT_PERIOD]: {
+  [PROFIT_LOSS_PERIOD]: {
     year: new Date().getFullYear().toString(),
     quarter: ALL
   },

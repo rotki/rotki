@@ -5,7 +5,7 @@ import {
   TIMEFRAME_REMEMBER,
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
-  TAX_REPORT_PERIOD,
+  PROFIT_LOSS_PERIOD,
   QUARTERS,
   THOUSAND_SEPARATOR,
   DECIMAL_SEPARATOR,
@@ -18,7 +18,7 @@ export type TimeFrameSetting = TimeFramePeriod | typeof TIMEFRAME_REMEMBER;
 
 export type Quarter = typeof QUARTERS[number];
 
-export type TaxReportPeriod = {
+export type ProfitLossTimeframe = {
   readonly year: string;
   readonly quarter: Quarter;
 };
@@ -28,7 +28,7 @@ export interface SettingsState {
   readonly [TIMEFRAME_SETTING]: TimeFrameSetting;
   readonly [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod;
   readonly [QUERY_PERIOD]: number;
-  readonly [TAX_REPORT_PERIOD]: TaxReportPeriod;
+  readonly [PROFIT_LOSS_PERIOD]: ProfitLossTimeframe;
   readonly [THOUSAND_SEPARATOR]: string;
   readonly [DECIMAL_SEPARATOR]: string;
   readonly [CURRENCY_LOCATION]: CurrencyLocation;

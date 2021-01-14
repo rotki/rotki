@@ -6,7 +6,7 @@ import {
   TIMEFRAME_REMEMBER,
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
-  TAX_REPORT_PERIOD,
+  PROFIT_LOSS_PERIOD,
   ALL,
   THOUSAND_SEPARATOR,
   DECIMAL_SEPARATOR,
@@ -54,7 +54,7 @@ describe('settings:utils', () => {
         [DEFI_SETUP_DONE]: true,
         [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL,
         [QUERY_PERIOD]: 5,
-        [TAX_REPORT_PERIOD]: {
+        [PROFIT_LOSS_PERIOD]: {
           year: new Date().getFullYear().toString(),
           quarter: ALL
         },

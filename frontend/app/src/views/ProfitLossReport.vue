@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <base-page-header :text="$t('tax_report.title')">
+    <base-page-header :text="$t('profit_loss_report.title')">
       <v-tooltip top>
         <template #activator="{ on, attrs }">
           <v-btn
@@ -14,14 +14,18 @@
             <v-icon color="primary">mdi-cog</v-icon>
           </v-btn>
         </template>
-        <span>{{ $t('tax_report.settings_tooltip') }}</span>
+        <span>{{ $t('profit_loss_report.settings_tooltip') }}</span>
       </v-tooltip>
     </base-page-header>
     <generate v-show="!isRunning" @generate="generate($event)" />
     <div v-if="loaded && !isRunning">
       <v-row>
         <v-col>
-          <i18n tag="div" path="tax_report.report_period" class="text-h5 mt-6">
+          <i18n
+            tag="div"
+            path="profit_loss_report.report_period"
+            class="text-h5 mt-6"
+          >
             <template #start>
               <date-display
                 no-timezone
@@ -44,23 +48,25 @@
         class="mt-4"
       />
       <v-btn
-        class="tax-report__export-csv"
+        class="profit_loss_report__export-csv mt-4"
         depressed
         color="primary"
         @click="exportCSV()"
       >
         {{
           $interop.isPackaged
-            ? $t('tax_report.export_csv')
-            : $t('tax_report.download_csv')
+            ? $t('profit_loss_report.export_csv')
+            : $t('profit_loss_report.download_csv')
         }}
       </v-btn>
-      <tax-report-overview class="tax-report__section" />
-      <tax-report-events class="tax-report__section" />
+      <profit-loss-overview class="mt-4" />
+      <profit-loss-events class="mt-4" />
     </div>
     <progress-screen v-if="isRunning" :progress="progress">
-      <template #message>{{ $t('tax_report.loading_message') }}</template>
-      {{ $t('tax_report.loading_hint') }}
+      <template #message>
+        {{ $t('profit_loss_report.loading_message') }}
+      </template>
+      {{ $t('profit_loss_report.loading_hint') }}
     </progress-screen>
   </v-container>
 </template>
@@ -70,23 +76,23 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import AccountingSettingsDisplay from '@/components/taxreport/AccountingSettingsDisplay.vue';
-import Generate from '@/components/taxreport/Generate.vue';
-import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
-import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
+import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
+import Generate from '@/components/profitloss/Generate.vue';
+import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
+import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import { ReportPeriod } from '@/store/reports/types';
 import { Message } from '@/store/types';
-import { AccountingSettings, TaxReportEvent } from '@/typing/types';
+import { AccountingSettings, ProfitLossPeriod } from '@/typing/types';
 
 @Component({
   components: {
+    ProfitLossOverview,
+    ProfitLossEvents,
     AccountingSettingsDisplay,
     BasePageHeader,
     ProgressScreen,
-    TaxReportEvents,
-    TaxReportOverview,
     Generate
   },
   computed: {
@@ -96,7 +102,7 @@ import { AccountingSettings, TaxReportEvent } from '@/typing/types';
     ...mapGetters('session', ['currency'])
   }
 })
-export default class TaxReport extends Vue {
+export default class ProfitLossReport extends Vue {
   isTaskRunning!: (type: TaskType) => boolean;
   loaded!: boolean;
   currency!: Currency;
@@ -108,7 +114,7 @@ export default class TaxReport extends Vue {
     return this.isTaskRunning(TaskType.TRADE_HISTORY);
   }
 
-  generate(event: TaxReportEvent) {
+  generate(event: ProfitLossPeriod) {
     this.$store.commit('reports/currency', this.currency.ticker_symbol);
     this.$store.dispatch('reports/generate', event);
   }
@@ -117,7 +123,7 @@ export default class TaxReport extends Vue {
     try {
       if (this.$interop.isPackaged) {
         const directory = await this.$interop.openDirectory(
-          this.$tc('tax_report.select_directory')
+          this.$tc('profit_loss_report.select_directory')
         );
         if (!directory) {
           return;
@@ -126,7 +132,9 @@ export default class TaxReport extends Vue {
       } else {
         const { success, message } = await this.$api.downloadCSV();
         if (!success) {
-          this.showMessage(message ?? this.$tc('tax_report.download_failed'));
+          this.showMessage(
+            message ?? this.$tc('profit_loss_report.download_failed')
+          );
         }
       }
     } catch (e) {
@@ -137,21 +145,9 @@ export default class TaxReport extends Vue {
 
   private showMessage(description: string) {
     this.$store.commit('setMessage', {
-      title: this.$tc('tax_report.csv_export_error'),
+      title: this.$tc('profit_loss_report.csv_export_error'),
       description: description
     } as Message);
   }
 }
 </script>
-
-<style scoped lang="scss">
-.tax-report {
-  &__section {
-    margin-top: 20px;
-  }
-
-  &__export-csv {
-    margin-top: 20px;
-  }
-}
-</style>

@@ -76,16 +76,6 @@ export function aggregateTotal(
   }, Zero);
 }
 
-export function splitOnCapital(value: string) {
-  return (
-    value.charAt(0).toLocaleUpperCase() +
-    value
-      .substring(1)
-      .split(/(?=[A-Z])/)
-      .join(' ')
-  );
-}
-
 export function optional(value?: string): string {
   return value ?? '-';
 }
@@ -96,5 +86,4 @@ Vue.filter('capitalize', capitalize);
 Vue.filter('balanceSum', balanceSum);
 Vue.filter('truncateAddress', truncateAddress);
 Vue.filter('aggregateTotal', aggregateTotal);
-Vue.filter('splitOnCapital', splitOnCapital);
 Vue.filter('optional', optional);
