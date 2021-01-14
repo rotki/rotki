@@ -1388,7 +1388,7 @@
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options"
   },
   "blockchain_balances": {
-    "title": "Blockchain Balances",
+    "title": "Blockchain Balances (per asset)",
     "form_dialog": {
       "save": "Save",
       "cancel": "Cancel",
@@ -1400,8 +1400,9 @@
       "title": "Blockchain Balances per Asset"
     },
     "balances": {
-      "eth": "ETH per account balances",
-      "btc": "BTC per account balances"
+      "eth": "Ethereum balances",
+      "btc": "Bitcoin balances",
+      "ksm": "Kusama balances"
     },
     "metamask_import": {
       "error": {
@@ -1736,7 +1737,8 @@
   },
   "blockchains": {
     "eth": "Ethereum",
-    "btc": "Bitcoin"
+    "btc": "Bitcoin",
+    "ksm": "Kusama"
   },
   "sync_buttons": {
     "upload_tooltip": "Push your local database to the server and replace all data there",

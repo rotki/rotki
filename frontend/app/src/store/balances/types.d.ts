@@ -1,7 +1,7 @@
 import { BigNumber } from 'bignumber.js';
 import {
   BtcBalances,
-  EthBalances,
+  BlockchainAssetBalances,
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
@@ -34,8 +34,9 @@ export interface AssetBalances {
 }
 
 export interface BalanceState {
-  eth: EthBalances;
+  eth: BlockchainAssetBalances;
   btc: BtcBalances;
+  ksm: BlockchainAssetBalances;
   totals: AssetBalances;
   liabilities: AssetBalances;
   usdToFiatExchangeRates: ExchangeRates;
@@ -43,6 +44,7 @@ export interface BalanceState {
   exchangeBalances: ExchangeData;
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
+  ksmAccounts: GeneralAccountData[];
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: ManualBalanceByLocation;

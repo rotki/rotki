@@ -28,8 +28,9 @@ interface BlockchainTotals {
 
 export interface BlockchainBalances {
   readonly perAccount: {
-    ETH: EthBalances;
+    ETH: BlockchainAssetBalances;
     BTC: BtcBalances;
+    KSM: BlockchainAssetBalances;
   };
   readonly totals: BlockchainTotals;
 }
@@ -50,7 +51,7 @@ export interface EthBalance {
   readonly liabilities: Balances;
 }
 
-export interface EthBalances {
+export interface BlockchainAssetBalances {
   [account: string]: EthBalance;
 }
 

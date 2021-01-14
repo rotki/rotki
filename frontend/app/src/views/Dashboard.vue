@@ -135,7 +135,7 @@ import {
   ExchangeBalancePayload,
   LocationBalance
 } from '@/store/balances/types';
-import { Blockchain, BTC, ETH, ExchangeInfo } from '@/typing/types';
+import { Blockchain, BTC, ETH, ExchangeInfo, KSM } from '@/typing/types';
 
 @Component({
   components: {
@@ -181,9 +181,11 @@ export default class Dashboard extends Vue {
 
   name(chain: Blockchain): string {
     if (chain === ETH) {
-      return this.$tc('blockchains.eth');
+      return this.$t('blockchains.eth').toString();
     } else if (chain === BTC) {
-      return this.$tc('blockchains.btc');
+      return this.$t('blockchains.btc').toString();
+    } else if (chain === KSM) {
+      return this.$t('blockchains.ksm').toString();
     }
     return '';
   }

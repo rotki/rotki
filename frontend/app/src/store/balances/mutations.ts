@@ -2,7 +2,7 @@ import { MutationTree } from 'vuex';
 import {
   Balances,
   BtcBalances,
-  EthBalances,
+  BlockchainAssetBalances,
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
@@ -13,11 +13,14 @@ import { BalanceState } from '@/store/balances/types';
 import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
 
 export const mutations: MutationTree<BalanceState> = {
-  updateEth(state: BalanceState, payload: EthBalances) {
+  updateEth(state: BalanceState, payload: BlockchainAssetBalances) {
     state.eth = { ...payload };
   },
   updateBtc(state: BalanceState, payload: BtcBalances) {
     state.btc = { ...payload };
+  },
+  updateKsm(state: BalanceState, payload: BlockchainAssetBalances) {
+    state.ksm = { ...payload };
   },
   updateTotals(state: BalanceState, payload: Balances) {
     state.totals = { ...state.totals, ...payload };
@@ -60,6 +63,9 @@ export const mutations: MutationTree<BalanceState> = {
   },
   btcAccounts(state: BalanceState, accounts: BtcAccountData) {
     state.btcAccounts = accounts;
+  },
+  ksmAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
+    state.ksmAccounts = accounts;
   },
   supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {
     state.supportedAssets = supportedAssets;

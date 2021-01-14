@@ -1,10 +1,5 @@
 <template>
   <div class="asset-balances">
-    <v-row v-if="title">
-      <v-col class="text-center text-h6">
-        {{ title }}
-      </v-col>
-    </v-row>
     <v-data-table
       :headers="headers"
       :items="balances"

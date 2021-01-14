@@ -29,6 +29,7 @@ export enum Section {
   DEFI_YEARN_VAULTS_BALANCES = 'defi_yearn_vaults_balances',
   BLOCKCHAIN_BTC = 'blockchain_btc',
   BLOCKCHAIN_ETH = 'blockchain_eth',
+  BLOCKCHAIN_KSM = 'blockchain_ksm',
   DEFI_UNISWAP_BALANCES = 'defi_uniswap_balances',
   DEFI_UNISWAP_TRADES = 'defi_uniswap_trades',
   DEFI_UNISWAP_EVENTS = 'defi_uniswap_events',
