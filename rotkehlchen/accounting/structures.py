@@ -215,6 +215,7 @@ class LedgerActionType(Enum):
     EXPENSE = 1
     LOSS = 2
     DIVIDENDS_INCOME = 3
+    DONATION_RECEIVED = 4
 
     def __str__(self) -> str:
         if self == LedgerActionType.INCOME:
@@ -225,6 +226,8 @@ class LedgerActionType(Enum):
             return 'loss'
         if self == LedgerActionType.DIVIDENDS_INCOME:
             return 'dividends income'
+        if self == LedgerActionType.DONATION_RECEIVED:
+            return 'donation received'
 
         # else
         raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
@@ -238,12 +241,16 @@ class LedgerActionType(Enum):
             return 'C'
         if self == LedgerActionType.DIVIDENDS_INCOME:
             return 'D'
+        if self == LedgerActionType.DONATION_RECEIVED:
+            return 'E'
         # else
         raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
 
     def is_profitable(self) -> bool:
         return self in (
-            LedgerActionType.INCOME, LedgerActionType.DIVIDENDS_INCOME,
+            LedgerActionType.INCOME,
+            LedgerActionType.DIVIDENDS_INCOME,
+            LedgerActionType.DONATION_RECEIVED,
         )
 
 

@@ -104,6 +104,8 @@ INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('B', 2);
 INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('C', 3);
 /* Dividends Income Action Type */
 INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('D', 4);
+/* Donation Received Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('E', 5);
 """
 
 DB_CREATE_TIMED_BALANCES = """

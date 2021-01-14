@@ -2,6 +2,7 @@ from typing import Tuple, Union
 
 from eth_utils.typing import HexAddress, HexStr
 
+from rotkehlchen.accounting.structures import LedgerActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.constants.misc import ZERO
@@ -11,7 +12,6 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnprocessableTradePair,
 )
-from rotkehlchen.accounting.structures import LedgerActionType
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.typing import (
     AssetAmount,
@@ -354,6 +354,8 @@ def deserialize_ledger_action_type_from_db(symbol: str) -> LedgerActionType:
         return LedgerActionType.LOSS
     if symbol == 'D':
         return LedgerActionType.DIVIDENDS_INCOME
+    if symbol == 'E':
+        return LedgerActionType.DONATION_RECEIVED
     # else
     raise DeserializationError(
         f'Failed to deserialize ledger action type symbol. Unknown DB '
