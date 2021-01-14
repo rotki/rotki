@@ -1,15 +1,15 @@
 import { currencies } from '@/data/currencies';
 import {
   EventEntry,
-  TradeHistoryOverview,
+  ProfitLossOverviewData,
   tradeHistoryPlaceholder
 } from '@/model/trade-history-types';
 import { emptyPeriod } from '@/store/reports/const';
 import { ReportPeriod } from '@/store/reports/types';
 import { AccountingSettings } from '@/typing/types';
 
-export interface TaxReportState {
-  overview: TradeHistoryOverview;
+export interface ReportState {
+  overview: ProfitLossOverviewData;
   events: EventEntry[];
   accountingSettings: AccountingSettings | null;
   reportPeriod: ReportPeriod;
@@ -20,7 +20,7 @@ export interface TaxReportState {
   historyProcess: number;
 }
 
-export const defaultState = (): TaxReportState => ({
+export const defaultState = (): ReportState => ({
   overview: tradeHistoryPlaceholder(),
   events: [],
   accountingSettings: null,
@@ -32,4 +32,4 @@ export const defaultState = (): TaxReportState => ({
   historyProcess: -1
 });
 
-export const state: TaxReportState = defaultState();
+export const state: ReportState = defaultState();

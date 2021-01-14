@@ -2,7 +2,7 @@
   <v-row>
     <v-col>
       <v-card>
-        <v-card-title>{{ $t('tax_report_events.title') }}</v-card-title>
+        <v-card-title>{{ $t('profit_loss_events.title') }}</v-card-title>
         <v-card-text>
           <v-data-table
             :headers="headers"
@@ -13,18 +13,18 @@
               <date-display :timestamp="item.time" />
             </template>
             <template #header.paidInProfitCurrency>
-              {{ $t('tax_report_events.headers.paid_in', { currency }) }}
+              {{ $t('profit_loss_events.headers.paid_in', { currency }) }}
             </template>
             <template #header.taxableBoughtCostInProfitCurrency>
               {{
-                $t('tax_report_events.headers.taxable_bought_cost_in', {
+                $t('profit_loss_events.headers.taxable_bought_cost_in', {
                   currency
                 })
               }}
             </template>
             <template #header.taxableReceivedInProfitCurrency>
               {{
-                $t('tax_report_events.headers.taxable_received_in', {
+                $t('profit_loss_events.headers.taxable_received_in', {
                   currency
                 })
               }}
@@ -82,70 +82,70 @@ import { EventEntry } from '@/model/trade-history-types';
     ...mapGetters('balances', ['exchangeRate'])
   }
 })
-export default class TaxReportEvents extends Vue {
+export default class ProfitLossEvents extends Vue {
   events!: EventEntry[];
   currency!: string;
   exchangeRate!: (currency: string) => number;
 
   readonly headers: DataTableHeader[] = [
     {
-      text: this.$t('tax_report_events.headers.type').toString(),
+      text: this.$t('profit_loss_events.headers.type').toString(),
       value: 'type'
     },
     {
-      text: this.$t('tax_report_events.headers.location').toString(),
+      text: this.$t('profit_loss_events.headers.location').toString(),
       value: 'location'
     },
     {
-      text: this.$t('tax_report_events.headers.paid_in', {
+      text: this.$t('profit_loss_events.headers.paid_in', {
         currency: 'USD'
       }).toString(),
       value: 'paidInProfitCurrency',
       align: 'end'
     },
     {
-      text: this.$t('tax_report_events.headers.paid_asset').toString(),
+      text: this.$t('profit_loss_events.headers.paid_asset').toString(),
       value: 'paidAsset'
     },
     {
-      text: this.$t('tax_report_events.headers.paid_in_asset').toString(),
+      text: this.$t('profit_loss_events.headers.paid_in_asset').toString(),
       value: 'paidInAsset',
       align: 'end'
     },
     {
-      text: this.$t('tax_report_events.headers.taxable_amount').toString(),
+      text: this.$t('profit_loss_events.headers.taxable_amount').toString(),
       value: 'taxableAmount',
       align: 'end'
     },
     {
-      text: this.$t('tax_report_events.headers.taxable_bought_cost_in', {
+      text: this.$t('profit_loss_events.headers.taxable_bought_cost_in', {
         currency: 'USD'
       }).toString(),
       value: 'taxableBoughtCostInProfitCurrency',
       align: 'end'
     },
     {
-      text: this.$t('tax_report_events.headers.received_asset').toString(),
+      text: this.$t('profit_loss_events.headers.received_asset').toString(),
       value: 'receivedAsset'
     },
     {
-      text: this.$t('tax_report_events.headers.received_in_asset').toString(),
+      text: this.$t('profit_loss_events.headers.received_in_asset').toString(),
       value: 'receivedInAsset',
       align: 'end'
     },
     {
-      text: this.$t('tax_report_events.headers.taxable_received_in', {
+      text: this.$t('profit_loss_events.headers.taxable_received_in', {
         currency: 'USD'
       }).toString(),
       value: 'taxableReceivedInProfitCurrency',
       align: 'end'
     },
     {
-      text: this.$t('tax_report_events.headers.time').toString(),
+      text: this.$t('profit_loss_events.headers.time').toString(),
       value: 'time'
     },
     {
-      text: this.$t('tax_report_events.headers.virtual').toString(),
+      text: this.$t('profit_loss_events.headers.virtual').toString(),
       value: 'isVirtual',
       align: 'center'
     }

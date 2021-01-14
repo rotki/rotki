@@ -378,7 +378,7 @@
     "subtitle": "Create new tags or modify existing",
     "title": "Tag Manager"
   },
-  "tax_report_events": {
+  "profit_loss_events": {
     "headers": {
       "location": "Location",
       "paid_asset": "Paid Asset",
@@ -395,7 +395,7 @@
     },
     "title": "Events"
   },
-  "tax_report_overview": {
+  "profit_loss_overview": {
     "columns": {
       "result": "Result",
       "value": "{symbol} value"
@@ -1178,7 +1178,7 @@
     },
     "defi": "DeFi",
     "statistics": "Statistics",
-    "tax_report": "Tax Report",
+    "profit_loss_report": "Profit and Loss Report",
     "defi_sub": {
       "overview": "Overview",
       "deposits": "Deposits",
@@ -1576,11 +1576,11 @@
     "no_premium": "@:common.no_premium Statistics are @:common.available_to_premium",
     "get_premium": "@:common.visit_website"
   },
-  "tax_report": {
+  "profit_loss_report": {
     "download_csv": "Download CSV",
     "download_failed": "Download of report is not possible",
     "settings_tooltip": "Open the accounting settings",
-    "title": "Tax Report",
+    "title": "Profit and Loss Report",
     "export_csv": "Export CSV",
     "loading_message": "Please wait while your report is generated...",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",

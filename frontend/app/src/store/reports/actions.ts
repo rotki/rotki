@@ -5,12 +5,12 @@ import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { TaxReportState } from '@/store/reports/state';
+import { ReportState } from '@/store/reports/state';
 import { Message, RotkehlchenState } from '@/store/types';
-import { TaxReportEvent } from '@/typing/types';
+import { ProfitLossPeriod } from '@/typing/types';
 
-export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
-  async generate({ commit, rootState }, payload: TaxReportEvent) {
+export const actions: ActionTree<ReportState, RotkehlchenState> = {
+  async generate({ commit, rootState }, payload: ProfitLossPeriod) {
     commit('accountingSettings', rootState.session!.accountingSettings);
     try {
       const { start, end } = payload;

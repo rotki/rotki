@@ -203,9 +203,9 @@ export default class NavigationMenu extends Vue {
     },
     {
       type: 'item',
-      text: this.$tc('navigation_menu.tax_report'),
-      route: '/tax-report',
-      class: 'tax-report',
+      text: this.$tc('navigation_menu.profit_loss_report'),
+      route: Routes.PROFIT_LOSS_REPORT,
+      class: 'profit-loss-report',
       icon: 'mdi-calculator'
     },
     {

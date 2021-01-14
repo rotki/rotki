@@ -2,18 +2,18 @@
   <v-row>
     <v-col>
       <v-card>
-        <v-card-title v-text="$t('tax_report_overview.title')" />
+        <v-card-title v-text="$t('profit_loss_overview.title')" />
         <v-card-text>
           <v-simple-table>
             <thead>
               <tr>
                 <th
                   class="text-left"
-                  v-text="$t('tax_report_overview.columns.result')"
+                  v-text="$t('profit_loss_overview.columns.result')"
                 />
                 <th
                   class="text-right"
-                  v-text="$t('tax_report_overview.columns.value', { symbol })"
+                  v-text="$t('profit_loss_overview.columns.value', { symbol })"
                 />
               </tr>
             </thead>
@@ -37,6 +37,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
+import { ProfitLossOverviewData } from '@/model/trade-history-types';
 
 @Component({
   components: {
@@ -48,8 +49,8 @@ import { Currency } from '@/model/currency';
     ...mapGetters('balances', ['exchangeRate'])
   }
 })
-export default class TaxReportOverview extends Vue {
-  overview!: TaxReportOverview;
+export default class ProfitLossOverview extends Vue {
+  overview!: ProfitLossOverviewData;
   currency!: Currency;
   exchangeRate!: (currency: string) => number;
 

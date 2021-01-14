@@ -3,7 +3,7 @@ import {
   DEFI_SETUP_DONE,
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
-  TAX_REPORT_PERIOD,
+  PROFIT_LOSS_PERIOD,
   THOUSAND_SEPARATOR,
   DECIMAL_SEPARATOR,
   CURRENCY_LOCATION
@@ -11,7 +11,7 @@ import {
 import { defaultState } from '@/store/settings/state';
 import {
   SettingsState,
-  TaxReportPeriod,
+  ProfitLossTimeframe,
   TimeFramePeriod,
   TimeFrameSetting
 } from '@/store/settings/types';
@@ -23,7 +23,7 @@ type Mutations<S = SettingsState> = {
   [TIMEFRAME_SETTING](state: S, timeframe: TimeFrameSetting): void;
   [LAST_KNOWN_TIMEFRAME](state: S, timeframe: TimeFramePeriod): void;
   [QUERY_PERIOD](state: S, period: number): void;
-  [TAX_REPORT_PERIOD](state: S, period: TaxReportPeriod): void;
+  [PROFIT_LOSS_PERIOD](state: S, period: ProfitLossTimeframe): void;
   [THOUSAND_SEPARATOR](state: S, separator: string): void;
   [DECIMAL_SEPARATOR](state: S, separator: string): void;
   [CURRENCY_LOCATION](state: S, location: CurrencyLocation): void;
@@ -50,11 +50,11 @@ export const mutations: Mutations = {
   [QUERY_PERIOD](state: Writeable<SettingsState>, period: number) {
     state[QUERY_PERIOD] = period;
   },
-  [TAX_REPORT_PERIOD](
+  [PROFIT_LOSS_PERIOD](
     state: Writeable<SettingsState>,
-    period: TaxReportPeriod
+    period: ProfitLossTimeframe
   ) {
-    state[TAX_REPORT_PERIOD] = period;
+    state[PROFIT_LOSS_PERIOD] = period;
   },
   [THOUSAND_SEPARATOR](state: Writeable<SettingsState>, separator: string) {
     state[THOUSAND_SEPARATOR] = separator;

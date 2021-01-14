@@ -35,7 +35,7 @@ export interface TradeHistory {
   readonly all_events: ApiEventEntry[];
 }
 
-export interface TradeHistoryOverview {
+export interface ProfitLossOverviewData {
   readonly loanProfit: BigNumber;
   readonly defiProfitLoss: BigNumber;
   readonly marginPositionsProfitLoss: BigNumber;
@@ -64,7 +64,7 @@ export interface EventEntry {
   readonly isVirtual: boolean;
 }
 
-export const tradeHistoryPlaceholder = (): TradeHistoryOverview => ({
+export const tradeHistoryPlaceholder = (): ProfitLossOverviewData => ({
   loanProfit: Zero,
   defiProfitLoss: Zero,
   marginPositionsProfitLoss: Zero,
@@ -79,7 +79,7 @@ export const tradeHistoryPlaceholder = (): TradeHistoryOverview => ({
 
 export const convertTradeHistoryOverview = (
   overview: ApiTradeHistoryOverview
-): TradeHistoryOverview => ({
+): ProfitLossOverviewData => ({
   loanProfit: bigNumberify(overview.loan_profit),
   marginPositionsProfitLoss: bigNumberify(
     overview.margin_positions_profit_loss
