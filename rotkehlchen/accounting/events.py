@@ -562,7 +562,7 @@ class TaxableEvents():
 
         # should never happen, should be stopped at the main loop
         assert timestamp <= self.query_end_ts, (
-            "Trade time > query_end_ts found in adding to sell event"
+            'Trade time > query_end_ts found in adding to sell event'
         )
 
         # count profit/losses if we are inside the query period
@@ -905,14 +905,41 @@ class TaxableEvents():
             sensitive_log=True,
             action=action,
         )
+        # should never happen, should be stopped at the main loop
+        assert action.timestamp <= self.query_end_ts, (
+            'Ledger action time > query_end_ts found in processing'
+        )
         rate = self.get_rate_in_profit_currency(action.asset, action.timestamp)
         profit_loss = action.amount * rate
-        if action.is_profitable():
-            self.ledger_actions_profit_loss += profit_loss
-        else:
-            self.ledger_actions_profit_loss -= profit_loss
 
-        self.csv_exporter.add_ledger_action(
-            action=action,
-            profit_loss_in_profit_currency=profit_loss,
-        )
+        if action.asset not in self.events:
+            self.events[action.asset] = Events([], [])
+        if action.is_profitable():
+            if action.timestamp > self.query_start_ts:
+                self.ledger_actions_profit_loss += profit_loss
+            self.events[action.asset].buys.append(
+                BuyEvent(
+                    amount=action.amount,
+                    timestamp=action.timestamp,
+                    rate=rate,
+                    fee_rate=ZERO,
+                ),
+            )
+        else:
+            if action.timestamp > self.query_start_ts:
+                self.ledger_actions_profit_loss -= profit_loss
+            result = self.reduce_asset_amount(
+                asset=action.asset,
+                amount=action.amount,
+            )
+            if not result:
+                log.critical(
+                    f'No documented buy found for {action.asset} before '
+                    f'{timestamp_to_date(action.timestamp, formatstr="%d/%m/%Y %H:%M:%S")}',
+                )
+
+        if action.timestamp > self.query_start_ts:
+            self.csv_exporter.add_ledger_action(
+                action=action,
+                profit_loss_in_profit_currency=profit_loss,
+            )
