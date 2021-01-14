@@ -15,6 +15,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.substrate import (
+    KUSAMA_DEFAULT_OWN_RPC_ENDPOINT,
     KUSAMA_SS58_FORMAT,
     KUSAMA_TOKEN,
     KUSAMA_TOKEN_DECIMALS,
@@ -130,7 +131,7 @@ def fixture_kusama_manager(
         kusama_manager_connect_at_start,
 ):
     own_rpc_endpoint = (
-        ksm_rpc_endpoint if ksm_rpc_endpoint is not None else 'http://localhost:9933'
+        ksm_rpc_endpoint if ksm_rpc_endpoint is not None else KUSAMA_DEFAULT_OWN_RPC_ENDPOINT
     )
     kusama_manager = SubstrateManager(
         chain=SubstrateChain.KUSAMA,
@@ -143,6 +144,7 @@ def fixture_kusama_manager(
         # When connection is persisted <SubstrateManager.chain_properties> must
         # be set manually (either requesting the chain or hard coded)
         kusama_manager.available_node_attributes_map = kusama_available_node_attributes_map
+        kusama_manager._set_available_nodes_call_order()
         # NB: for speeding up tests, instead of requesting the properties of
         # the chain, we manually set them.
         kusama_manager.chain_properties = SubstrateChainProperties(

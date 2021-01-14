@@ -10,40 +10,31 @@ SubstrateChainId = NewType('SubstrateChainId', str)
 BlockNumber = NewType('BlockNumber', int)
 
 
-class SubstrateOwnNodeName(Enum):
-    OWN = 0
-
-    def __str__(self) -> str:
-        if self == SubstrateOwnNodeName.OWN:
-            return 'own node'
-        raise AssertionError(f'Unexpected SubstrateOwnNodeName: {self}')
-
-    def endpoint(self) -> str:
-        if self == SubstrateOwnNodeName.OWN:
-            raise NotImplementedError(
-                'The endpoint url for a substrate own node must be got either '
-                'via "own_rpc_endpoint" or the specific db setting',
-            )
-        raise AssertionError(f'Unexpected SubstrateOwnNodeName: {self}')
-
-
 class KusamaNodeName(Enum):
     """Public nodes for Kusama.
     """
-    PARITY = 0
+    OWN = 0
+    PARITY = 1
 
     def __str__(self) -> str:
+        if self == KusamaNodeName.OWN:
+            return 'own node'
         if self == KusamaNodeName.PARITY:
             return 'parity'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
     def endpoint(self) -> str:
+        if self == KusamaNodeName.OWN:
+            raise NotImplementedError(
+                'The endpoint url for a substrate own node must be got either '
+                'via "own_rpc_endpoint" or the specific db setting',
+            )
         if self == KusamaNodeName.PARITY:
             return 'https://kusama-rpc.polkadot.io/'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
 
-NodeName = Union[SubstrateOwnNodeName, KusamaNodeName]
+NodeName = Union[KusamaNodeName]
 
 
 class SubstrateInterfaceAttributes(NamedTuple):

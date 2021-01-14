@@ -9,7 +9,6 @@ from rotkehlchen.chain.substrate.typing import (
     KusamaNodeName,
     NodeNameAttributes,
     SubstrateChain,
-    SubstrateOwnNodeName,
 )
 from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.constants.misc import ZERO
@@ -126,15 +125,15 @@ def test_get_account_balance_calculation(kusama_manager):
     assert balance == FVal(111.004701754251)  # (free + reserved)/10**12
 
 
-def test_get_nodes_call_order(kusama_manager):
-    """Test `_get_nodes_call_order()` returns the available nodes sorted by
-    preference; currently own node first and then by the highest 'weight_block'.
+def test_set_available_nodes_call_order(kusama_manager):
+    """Test `_set_available_nodes_call_order()` sets the available nodes sorted
+    by preference; currently own node first and then by the highest 'weight_block'.
     """
     # Due to `available_node_attributes_map` is a dict we must fake a key for
     # testing purposes as currently KusamaNodeName only has PARITY
     fake_kusama_node_name = object()
     node_attrs_item_1 = (
-        SubstrateOwnNodeName.OWN,
+        KusamaNodeName.OWN,
         NodeNameAttributes(
             node_interface=object(),
             weight_block=1000,
@@ -154,13 +153,19 @@ def test_get_nodes_call_order(kusama_manager):
             weight_block=1000,
         ),
     )
-    available_node_attributes_map = dict(  # noqa: C406
-        [node_attrs_item_3, node_attrs_item_2, node_attrs_item_1],
-    )
+    available_node_attributes_map = dict([  # noqa: C406
+        node_attrs_item_3,
+        node_attrs_item_2,
+        node_attrs_item_1,
+    ])
     kusama_manager.available_node_attributes_map = available_node_attributes_map
-    nodes_call_order = kusama_manager._get_nodes_call_order()
+    kusama_manager._set_available_nodes_call_order()
 
-    assert nodes_call_order == [node_attrs_item_1, node_attrs_item_3, node_attrs_item_2]
+    assert kusama_manager.available_nodes_call_order == [
+        node_attrs_item_1,
+        node_attrs_item_3,
+        node_attrs_item_2,
+    ]
 
 
 @pytest.mark.parametrize('endpoint, formatted_endpoint', [

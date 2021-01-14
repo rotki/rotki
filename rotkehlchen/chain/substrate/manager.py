@@ -29,7 +29,6 @@ from .typing import (
     SubstrateAddress,
     SubstrateChain,
     SubstrateChainId,
-    SubstrateOwnNodeName,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,13 +73,13 @@ def request_available_nodes(func: Callable) -> Callable:
             )
 
         manager = args[0]
-        if len(manager.available_node_attributes_map) == 0:
+        if len(manager.available_nodes_call_order) == 0:
             raise RemoteError(f'{manager.chain} has no nodes available')
 
         args_ = args[1:]
         kwargs_ = kwargs.copy()
         requested_nodes = []
-        for node, node_attributes in manager._get_nodes_call_order():
+        for node, node_attributes in manager.available_nodes_call_order:
             kwargs_.update({'node_interface': node_attributes.node_interface})
             try:
                 result = func(manager, *args_, **kwargs_)
@@ -143,15 +142,19 @@ class SubstrateManager():
         self.chain = chain
         self.greenlet_manager = greenlet_manager
         self.msg_aggregator = msg_aggregator
+        self.connect_at_start = connect_at_start
+        self.own_rpc_endpoint = own_rpc_endpoint
         self.available_node_attributes_map: DictNodeNameNodeAttributes = {}
+        self.available_nodes_call_order: NodesCallOrder = []
         self.chain_properties: SubstrateChainProperties
         if len(connect_at_start) != 0:
-            self._attempt_connections(
-                node_names=connect_at_start,
+            self._attempt_connections()
+        else:
+            log.warning(
+                f"{self.chain} manager won't attempt to connect to nodes",
+                connect_at_start=connect_at_start,
                 own_rpc_endpoint=own_rpc_endpoint,
             )
-        else:
-            log.warning(f"{self.chain} manager won't attempt to connect to nodes")
 
     def _check_chain_id(self, node_interface: SubstrateInterface) -> None:
         """Validate a node connects to the expected chain.
@@ -215,24 +218,15 @@ class SubstrateManager():
 
         return last_block
 
-    def _attempt_connections(
-            self,
-            node_names: Sequence[NodeName],
-            own_rpc_endpoint: str,
-    ) -> None:
-        for node in node_names:
-            if node == SubstrateOwnNodeName.OWN:
-                endpoint = self._format_own_rpc_endpoint(own_rpc_endpoint)
-            else:
-                endpoint = node.endpoint()
-
+    def _attempt_connections(self) -> None:
+        for node in self.connect_at_start:
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=f'{self.chain} manager connection to {node} node',
                 exception_is_error=True,
                 method=self._connect_node,
                 node=node,
-                endpoint=endpoint,
+                endpoint=self._get_node_endpoint(node),
             )
 
     def _connect_node(
@@ -263,12 +257,12 @@ class SubstrateManager():
             return False, message
 
         log.info(f'{self.chain} connected to {node} node at endpoint: {node_interface.url}.')
-        self.available_node_attributes_map[node] = NodeNameAttributes(
+        node_attributes = NodeNameAttributes(
             node_interface=node_interface,
             weight_block=last_block,
         )
-        if node == SubstrateOwnNodeName.OWN:
-            self.own_rpc_endpoint = endpoint
+        self.available_node_attributes_map[node] = node_attributes
+        self._set_available_nodes_call_order()
         return True, ''
 
     @staticmethod
@@ -399,29 +393,10 @@ class SubstrateManager():
         log.debug(f'{self.chain} last block', last_block=last_block)
         return BlockNumber(last_block)
 
-    def _get_nodes_call_order(self) -> NodesCallOrder:
-        """Return a list of maps between a node and its attributes sorted by
-        preference.
-
-        Own node always has preference, then are ordered depending on how close
-        they are to the chain height; the higher 'weight_block' the better.
-        """
-        nodes_sorted: NodesCallOrder = []
-        node_attributes_map = self.available_node_attributes_map.copy()
-        if SubstrateOwnNodeName.OWN in node_attributes_map:
-            own_node_attrs = node_attributes_map.pop(SubstrateOwnNodeName.OWN)
-            nodes_sorted.append((SubstrateOwnNodeName.OWN, own_node_attrs))
-
-        nodes_sorted.extend(
-            sorted(
-                cast(Iterable, node_attributes_map.items()),
-                key=lambda item: -item[1].weight_block,
-            ),
-        )
-        return nodes_sorted
-
     def _get_node_endpoint(self, node: NodeName) -> str:
-        return self.own_rpc_endpoint if node == SubstrateOwnNodeName.OWN else node.endpoint()
+        if node == self.chain.node_name_type().OWN:
+            return self._format_own_rpc_endpoint(self.own_rpc_endpoint)
+        return node.endpoint()
 
     def _get_node_interface(self, endpoint: str) -> SubstrateInterface:
         """Get an instance of SubstrateInterface, a specialized class in
@@ -493,6 +468,24 @@ class SubstrateManager():
 
         log.debug(f'{self.chain} subscan API metadata', result=result)
         return result
+
+    def _set_available_nodes_call_order(self) -> None:
+        """Set `available_nodes_call_order` with a list of items (tuple of node
+        and its attributes) sorted by this criteria: own node always has
+        preference, then are ordered depending on how close they are to the
+        chain height; the higher 'weight_block' the better.
+        """
+        own_node = self.chain.node_name_type().OWN
+        node_attributes_map = self.available_node_attributes_map.copy()
+        own_node_attributes = node_attributes_map.pop(own_node, None)
+        available_nodes_call_order = sorted(
+            cast(Iterable, node_attributes_map.items()),
+            key=lambda item: -item[1].weight_block,
+        )
+        if own_node_attributes is not None:
+            available_nodes_call_order.insert(0, (own_node, own_node_attributes))
+
+        self.available_nodes_call_order = available_nodes_call_order
 
     def _set_chain_properties(self, node_interface: SubstrateInterface) -> None:
         """Return the properties of the chain connected to (e.g. native token,
@@ -598,15 +591,19 @@ class SubstrateManager():
         """Attempt to set the RPC endpoint for the user's own node.
         If connection at endpoint is successful it will set `own_rpc_endpoint`.
         """
+        own_node_name = self.chain.node_name_type().OWN
         if endpoint == '':
-            current_own_rpc_endpoint = getattr(self, 'own_rpc_endpoint', None)
-            log.debug(f'{self.chain} removing own node at endpoint: {current_own_rpc_endpoint}')
-            self.available_node_attributes_map.pop(SubstrateOwnNodeName.OWN, None)
+            log.debug(f'{self.chain} removing own node at endpoint: {self.own_rpc_endpoint}')
+            self.available_node_attributes_map.pop(own_node_name, None)
+            self._set_available_nodes_call_order()
             self.own_rpc_endpoint = ''
             return True, ''
 
-        log.debug(f'{self.chain} setting own node at endpoint: {endpoint}')
-        return self._connect_node(
-            node=SubstrateOwnNodeName.OWN,
+        result, message = self._connect_node(
+            node=own_node_name,
             endpoint=self._format_own_rpc_endpoint(endpoint),
         )
+        if result is True:
+            self.own_rpc_endpoint = endpoint
+
+        return result, message

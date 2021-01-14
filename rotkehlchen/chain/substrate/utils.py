@@ -1,9 +1,9 @@
 from substrateinterface.utils.ss58 import ss58_decode
 
-from .typing import KusamaNodeName, SubstrateChain, SubstrateOwnNodeName
+from .typing import KusamaNodeName, SubstrateChain
 
 KUSAMA_NODES_TO_CONNECT_AT_START = (
-    SubstrateOwnNodeName.OWN,
+    KusamaNodeName.OWN,
     KusamaNodeName.PARITY,
 )
 

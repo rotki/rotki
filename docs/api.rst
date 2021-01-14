@@ -138,6 +138,7 @@ Handling user creation, sign-in, log-out and querying
                   "balance_save_frequency": 24,
                   "include_gas_costs": true,
                   "eth_rpc_endpoint": "http://localhost:8545",
+                  "ksm_rpc_endpoint": "http://localhost:9933",
                   "main_currency": "USD",
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
                   "last_balance_save": 1571552172,
@@ -199,6 +200,7 @@ Handling user creation, sign-in, log-out and querying
                   "balance_save_frequency": 24,
                   "include_gas_costs": true,
                   "eth_rpc_endpoint": "http://localhost:8545",
+                  "ksm_rpc_endpoint": "http://localhost:9933",
                   "main_currency": "USD",
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
                   "last_balance_save": 1571552172,
@@ -563,6 +565,7 @@ Getting or modifying settings
               "balance_save_frequency": 24,
               "include_gas_costs": true,
               "eth_rpc_endpoint": "http://localhost:8545",
+              "ksm_rpc_endpoint": "http://localhost:9933",
               "main_currency": "USD",
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
               "last_balance_save": 1571552172,
@@ -586,6 +589,7 @@ Getting or modifying settings
    :resjson int balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours. Can't be less than 1 hour.
    :resjson bool include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :resjson string eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
+   :resjson string ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :resjson string main_currency: The asset to use for all profit/loss calculation. USD by default.
    :resjson string date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :resjson int last_balance_save: The timestamp at which the balances were last saved in the database.
@@ -620,10 +624,11 @@ Getting or modifying settings
    :reqjson bool[optional] include_crypto2crypto: A boolean denoting whether crypto to crypto trades should be counted.
    :reqjson bool[optional] anonymized_logs: A boolean denoting whether sensitive logs should be anonymized.
    :reqjson int[optional] ui_floating_precision: The number of decimals points to be shown for floating point numbers in the UI. Can be between 0 and 8.
-   :resjson int[optional] taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. Must be either a positive number, or -1. 0 is not a valid value. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
+   :reqjson int[optional] taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. Must be either a positive number, or -1. 0 is not a valid value. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
    :reqjson int[optional] balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours. Can't be less than 1 hour.
    :reqjson bool[optional] include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :reqjson string[optional] eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
+   :reqjson string[optional] ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :reqjson bool[optional] submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the Rotki server.
@@ -650,6 +655,7 @@ Getting or modifying settings
               "balance_save_frequency": 24,
               "include_gas_costs": false,
               "eth_rpc_endpoint": "http://localhost:8545",
+              "ksm_rpc_endpoint": "http://localhost:9933",
               "main_currency": "USD",
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
               "last_balance_save": 1571552172,
