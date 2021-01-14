@@ -54,15 +54,11 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.trades import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.rotkehlchen import (
-    FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_LEDGER_ACTIONS_LIMIT,
-    FREE_TRADES_LIMIT,
-    Rotkehlchen,
-)
+from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
     ApiKey,
@@ -776,7 +772,8 @@ class RestAPI():
             to_ts: Optional[Timestamp],
             location: Optional[Location],
     ) -> Dict[str, Any]:
-        actions, original_length = self.rotkehlchen.query_ledger_actions(
+        actions, original_length = self.rotkehlchen.trades_historian.query_ledger_actions(
+            has_premium=self.rotkehlchen.premium is not None,
             from_ts=from_ts,
             to_ts=to_ts,
             location=location,

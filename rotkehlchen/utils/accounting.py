@@ -1,6 +1,6 @@
 from typing import Optional, Tuple, Union
 
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ETH
@@ -21,6 +21,7 @@ TaxableAction = Union[  # TODO: At this point we perhaps should create an interf
     Loan,
     DefiEvent,
     AMMTrade,
+    LedgerAction,
 ]
 
 
@@ -30,7 +31,16 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
 
     Can Raise assertion error if the action is not of any expected type
     """
-    if isinstance(action, (Trade, AssetMovement, EthereumTransaction, DefiEvent, AMMTrade)):
+    if isinstance(
+            action, (
+                Trade,
+                AssetMovement,
+                EthereumTransaction,
+                DefiEvent,
+                AMMTrade,
+                LedgerAction,
+            ),
+    ):
         return action.timestamp
     if isinstance(action, (MarginPosition, Loan)):
         return action.close_time
@@ -51,6 +61,8 @@ def action_get_type(action: TaxableAction) -> str:
         return 'loan'
     if isinstance(action, DefiEvent):
         return 'defi_event'
+    if isinstance(action, LedgerAction):
+        return 'ledger_action'
     # else
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
@@ -60,7 +72,7 @@ def action_get_assets(
 ) -> Tuple[Asset, Optional[Asset]]:
     if isinstance(action, (Trade, AMMTrade)):
         return trade_get_assets(action)
-    if isinstance(action, (AssetMovement, DefiEvent)):
+    if isinstance(action, (AssetMovement, DefiEvent, LedgerAction)):
         return action.asset, None
     if isinstance(action, EthereumTransaction):
         return A_ETH, None

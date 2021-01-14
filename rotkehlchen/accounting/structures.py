@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, Timestamp, AssetAmount
+from rotkehlchen.typing import AssetAmount, Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 
 
@@ -241,6 +241,11 @@ class LedgerActionType(Enum):
         # else
         raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
 
+    def is_profitable(self) -> bool:
+        return self in (
+            LedgerActionType.INCOME, LedgerActionType.DIVIDENDS_INCOME,
+        )
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class LedgerAction:
@@ -265,3 +270,6 @@ class LedgerAction:
             'link': self.link,
             'notes': self.notes,
         }
+
+    def is_profitable(self) -> bool:
+        return self.action_type.is_profitable()

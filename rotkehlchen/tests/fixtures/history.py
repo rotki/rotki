@@ -2,10 +2,10 @@ import pytest
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
-from rotkehlchen.externalapis.coingecko import Coingecko
 
 
 @pytest.fixture(name='cryptocompare')

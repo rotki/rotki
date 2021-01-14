@@ -1,18 +1,18 @@
 import csv
-from tempfile import mkdtemp
-from zipfile import ZipFile
-
 import logging
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import Any, Dict, List, Optional, Tuple, Union
+from zipfile import ZipFile
 
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
     EV_BUY,
     EV_DEFI,
     EV_INTEREST_PAYMENT,
+    EV_LEDGER_ACTION,
     EV_LOAN_SETTLE,
     EV_MARGIN_CLOSE,
     EV_SELL,
@@ -23,7 +23,15 @@ from rotkehlchen.constants import (
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
-from rotkehlchen.typing import AssetMovementCategory, EmptyStr, EventType, Fee, Location, Timestamp
+from rotkehlchen.typing import (
+    AssetAmount,
+    AssetMovementCategory,
+    EmptyStr,
+    EventType,
+    Fee,
+    Location,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 
 logger = logging.getLogger(__name__)
@@ -36,6 +44,7 @@ FILENAME_GAS_CSV = 'tx_gas_costs.csv'
 FILENAME_MARGIN_CSV = 'margin_positions.csv'
 FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
 FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
+FILENAME_LEDGER_ACTIONS_CSV = 'ledger_actions.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
 
 
@@ -77,6 +86,7 @@ class CSVExporter():
             self.margin_positions_csv: List[Dict[str, Any]] = []
             self.loan_settlements_csv: List[Dict[str, Any]] = []
             self.defi_events_csv: List[Dict[str, Any]] = []
+            self.ledger_actions_csv: List[Dict[str, Any]] = []
             self.all_events_csv: List[Dict[str, Any]] = []
             self.all_events = []
 
@@ -108,7 +118,7 @@ class CSVExporter():
         elif event_type in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
             net_profit_or_loss = paid_in_profit_currency
             net_profit_or_loss_csv = '=-K{}'.format(row)
-        elif event_type in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE, EV_DEFI):
+        elif event_type in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION):
             net_profit_or_loss = taxable_received_in_profit_currency
             net_profit_or_loss_csv = '=L{}'.format(row)
         else:
@@ -469,6 +479,52 @@ class CSVExporter():
             timestamp=event.timestamp,
         )
 
+    def add_ledger_action(
+            self,
+            action: LedgerAction,
+            profit_loss_in_profit_currency: FVal,
+    ) -> None:
+        if not self.create_csv:
+            return
+
+        self.ledger_actions_csv.append({
+            'time': timestamp_to_date(action.timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'type': str(action.action_type),
+            'location': str(action.location),
+            'asset': str(action.asset),
+            'amount': str(action.amount),
+            f'profit_loss_in_{self.profit_currency.identifier}': profit_loss_in_profit_currency,
+        })
+
+        paid_asset: Union[EmptyStr, Asset]
+        received_asset: Union[EmptyStr, Asset]
+        if action.is_profitable():
+            paid_in_profit_currency = ZERO
+            paid_in_asset = ZERO
+            paid_asset = S_EMPTYSTR
+            received_asset = action.asset
+            received_in_asset = action.amount
+            received_in_profit_currency = profit_loss_in_profit_currency
+        else:
+            paid_in_profit_currency = profit_loss_in_profit_currency
+            paid_in_asset = action.amount
+            paid_asset = action.asset
+            received_asset = S_EMPTYSTR
+            received_in_asset = AssetAmount(ZERO)
+            received_in_profit_currency = ZERO
+
+        self.add_to_allevents(
+            event_type=EV_LEDGER_ACTION,
+            location=action.location,
+            paid_in_profit_currency=paid_in_profit_currency,
+            paid_asset=paid_asset,
+            paid_in_asset=paid_in_asset,
+            received_asset=received_asset,
+            received_in_asset=received_in_asset,
+            taxable_received_in_profit_currency=received_in_profit_currency,
+            timestamp=action.timestamp,
+        )
+
     def create_files(self, dirpath: Path) -> Tuple[bool, str]:
         if not self.create_csv:
             return True, ''
@@ -530,6 +586,7 @@ class CSVExporter():
             (dirpath / FILENAME_MARGIN_CSV, FILENAME_MARGIN_CSV),
             (dirpath / FILENAME_LOAN_SETTLEMENTS_CSV, FILENAME_LOAN_SETTLEMENTS_CSV),
             (dirpath / FILENAME_DEFI_EVENTS_CSV, FILENAME_DEFI_EVENTS_CSV),
+            (dirpath / FILENAME_LEDGER_ACTIONS_CSV, FILENAME_LEDGER_ACTIONS_CSV),
             (dirpath / FILENAME_ALL_CSV, FILENAME_ALL_CSV),
         ]
 

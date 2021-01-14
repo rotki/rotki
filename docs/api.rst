@@ -2590,6 +2590,7 @@ Querying complete action history
               "overview": {
                   "loan_profit": "1500",
                   "defi_profit_loss": "140",
+                  "ledger_actions_profit_loss": "1500",
                   "margin_positions_profit_loss": "500",
                   "settlement_losses": "200",
                   "ethereum_transaction_gas_costs": "2.5",
@@ -2634,6 +2635,7 @@ Querying complete action history
 
    :resjson str loan_profit: The profit from loans inside the given time period denominated in the user's profit currency.
    :resjson str defi_profit_loss: The profit/loss from Decentralized finance events inside the given time period denominated in the user's profit currency.
+   :resjson str ledger_actions_profit_loss: The profit/loss from all the manually input ledger actions. Income, loss, expense and more.
    :resjson str margin_positions_profit_loss: The profit/loss from margin positions inside the given time period denominated in the user's profit currency.
    :resjson str settlement_losses: The losses from margin settlements inside the given time period denominated in the user's profit currency.
    :resjson str ethereum_transactions_gas_costs: The losses from ethereum gas fees inside the given time period denominated in the user's profit currency.

@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Optional, Tuple
 
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
@@ -45,6 +45,7 @@ class TaxableEvents():
         self.settlement_losses = ZERO
         self.margin_positions_profit_loss = ZERO
         self.defi_profit_loss = ZERO
+        self.ledger_actions_profit_loss = ZERO
 
     @property
     def include_crypto2crypto(self) -> Optional[bool]:
@@ -897,3 +898,21 @@ class TaxableEvents():
             self.defi_profit_loss -= profit_loss
 
         self.csv_exporter.add_defi_event(event=event, profit_loss_in_profit_currency=profit_loss)
+
+    def add_ledger_action(self, action: LedgerAction) -> None:
+        log.debug(
+            'Accounting for LedgerAction',
+            sensitive_log=True,
+            action=action,
+        )
+        rate = self.get_rate_in_profit_currency(action.asset, action.timestamp)
+        profit_loss = action.amount * rate
+        if action.is_profitable():
+            self.ledger_actions_profit_loss += profit_loss
+        else:
+            self.ledger_actions_profit_loss -= profit_loss
+
+        self.csv_exporter.add_ledger_action(
+            action=action,
+            profit_loss_in_profit_currency=profit_loss,
+        )

@@ -4,7 +4,7 @@ from typing import Dict, List
 import pytest
 import requests
 
-from rotkehlchen.rotkehlchen import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.trades import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
