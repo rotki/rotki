@@ -1369,7 +1369,7 @@
       "addresses_hint": "Insert multiple comma separated addresses",
       "blockchain": "Choose blockchain",
       "account": "Account",
-      "label": "Label",
+      "label": "Name",
       "btc": {
         "xpub": "XPUB",
         "derivation_path": "Derivation Path",

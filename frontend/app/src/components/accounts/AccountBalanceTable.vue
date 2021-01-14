@@ -47,7 +47,7 @@
       }}
     </template>
     <template #item.label="{ item }">
-      <v-row>
+      <v-row class="pt-3 pb-2">
         <v-col cols="12" class="account-balance-table__account">
           <labeled-address-display :account="item" />
           <span v-if="item.tags.length > 0" class="mt-2">
