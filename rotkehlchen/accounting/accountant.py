@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
@@ -266,6 +266,7 @@ class Accountant():
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
+            ledger_actions: List[LedgerAction],
     ) -> Dict[str, Any]:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
@@ -305,6 +306,9 @@ class Accountant():
 
         if len(defi_events) != 0:
             actions.extend(defi_events)
+
+        if len(ledger_actions) != 0:
+            actions.extend(ledger_actions)
 
         actions.sort(key=action_get_timestamp)
         # The first ts is the ts of the first action we have in history or 0 for empty history
@@ -384,6 +388,7 @@ class Accountant():
         sum_other_actions = (
             self.events.margin_positions_profit_loss +
             self.events.defi_profit_loss +
+            self.events.ledger_actions_profit_loss +
             self.events.loan_profit -
             self.events.settlement_losses -
             self.asset_movement_fees -
@@ -392,6 +397,7 @@ class Accountant():
         total_taxable_pl = self.events.taxable_trade_profit_loss + sum_other_actions
         return {
             'overview': {
+                'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
                 'defi_profit_loss': str(self.events.defi_profit_loss),
                 'loan_profit': str(self.events.loan_profit),
                 'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
@@ -446,7 +452,6 @@ class Accountant():
             return False, prev_time
 
         self.currently_processing_timestamp = timestamp
-
         action_type = action_get_type(action)
 
         try:
@@ -516,6 +521,10 @@ class Accountant():
         if action_type == 'defi_event':
             action = cast(DefiEvent, action)
             self.events.add_defi_event(action)
+            return True, prev_time
+        if action_type == 'ledger_action':
+            action = cast(LedgerAction, action)
+            self.events.add_ledger_action(action)
             return True, prev_time
 
         # else if we get here it's a trade

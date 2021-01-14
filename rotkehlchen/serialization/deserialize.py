@@ -2,6 +2,7 @@ from typing import Tuple, Union
 
 from eth_utils.typing import HexAddress, HexStr
 
+from rotkehlchen.accounting.structures import LedgerActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.constants.misc import ZERO
@@ -309,6 +310,56 @@ def deserialize_trade_type_from_db(symbol: str) -> TradeType:
     # else
     raise DeserializationError(
         f'Failed to deserialize trade type symbol. Unknown DB symbol {symbol} for trade type',
+    )
+
+
+LEDGER_ACTION_TYPE_MAPPING = {str(x): x for x in LedgerActionType}
+
+
+def deserialize_ledger_action_type(symbol: str) -> LedgerActionType:
+    """Takes a string and attempts to turn it into a LedgerActionType
+
+    Can throw DeserializationError if the symbol is not as expected
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize ledger action type symbol from {type(symbol)} entry',
+        )
+
+    value = LEDGER_ACTION_TYPE_MAPPING.get(symbol, None)
+    if value is None:
+        raise DeserializationError(
+            f'Failed to deserialize ledger action symbol. Unknown symbol '
+            f'{symbol} for ledger action',
+        )
+
+    return value
+
+
+def deserialize_ledger_action_type_from_db(symbol: str) -> LedgerActionType:
+    """Takes a string from the DB and attempts to turn it into a LedgerActionType
+
+    Can throw DeserializationError if the symbol is not as expected
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize ledger action type symbol from {type(symbol)} entry',
+        )
+
+    if symbol == 'A':
+        return LedgerActionType.INCOME
+    if symbol == 'B':
+        return LedgerActionType.EXPENSE
+    if symbol == 'C':
+        return LedgerActionType.LOSS
+    if symbol == 'D':
+        return LedgerActionType.DIVIDENDS_INCOME
+    if symbol == 'E':
+        return LedgerActionType.DONATION_RECEIVED
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize ledger action type symbol. Unknown DB '
+        f'symbol {symbol} for trade type',
     )
 
 

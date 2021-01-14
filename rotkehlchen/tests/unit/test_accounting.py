@@ -1,12 +1,20 @@
 import pytest
 
+from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
-from rotkehlchen.tests.utils.constants import A_DASH
+from rotkehlchen.tests.utils.constants import A_DASH, A_XMR
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import EthereumTransaction, Location, AssetMovementCategory, Timestamp, Fee
+from rotkehlchen.typing import (
+    AssetAmount,
+    AssetMovementCategory,
+    EthereumTransaction,
+    Fee,
+    Location,
+    Timestamp,
+)
 
 DUMMY_ADDRESS = '0x0'
 DUMMY_HASH = b''
@@ -607,3 +615,82 @@ def test_not_calculate_past_cost_basis(accountant, db_settings):
     assert FVal(result['overview']['taxable_trade_profit_loss']).is_close(expected)
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close(expected)
     assert FVal(result['overview']['total_profit_loss']).is_close(expected)
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_ledger_actions(accountant):
+    """Test for accounting for ledger actions
+
+    Makes sure that Ledger actions are processed in accounting, range is respected
+    and that they contribute to the "bought" amount per asset
+    """
+    ledger_actions_history = [LedgerAction(  # before range - read only for amount not profit
+        identifier=1,
+        timestamp=1435979735,  # 0.1 EUR per ETH
+        action_type=LedgerActionType.INCOME,
+        location=Location.EXTERNAL,
+        asset=A_ETH,
+        amount=AssetAmount(FVal(1)),
+        link='',
+        notes='',
+    ), LedgerAction(
+        identifier=2,
+        timestamp=1437279735,  # 250 EUR per BTC
+        action_type=LedgerActionType.INCOME,
+        location=Location.BLOCKCHAIN,
+        asset=A_BTC,
+        amount=AssetAmount(FVal(1)),
+        link='',
+        notes='',
+    ), LedgerAction(
+        identifier=3,
+        timestamp=1447279735,  # 0.4 EUR per XMR
+        action_type=LedgerActionType.DIVIDENDS_INCOME,
+        location=Location.KRAKEN,
+        asset=A_XMR,
+        amount=AssetAmount(FVal(10)),
+        link='',
+        notes='',
+    ), LedgerAction(
+        identifier=4,
+        timestamp=1457279735,  # 1 EUR per ETH
+        action_type=LedgerActionType.EXPENSE,
+        location=Location.EXTERNAL,
+        asset=A_ETH,
+        amount=AssetAmount(FVal('0.1')),
+        link='',
+        notes='',
+    ), LedgerAction(
+        identifier=5,
+        timestamp=1467279735,  # 420 EUR per BTC
+        action_type=LedgerActionType.LOSS,
+        location=Location.EXTERNAL,
+        asset=A_BTC,
+        amount=AssetAmount(FVal('0.1')),
+        link='',
+        notes='',
+    ), LedgerAction(  # after range and should be completely ignored
+        identifier=6,
+        timestamp=1529693374,
+        action_type=LedgerActionType.EXPENSE,
+        location=Location.EXTERNAL,
+        asset=A_ETH,
+        amount=AssetAmount(FVal('0.5')),
+        link='',
+        notes='',
+    )]
+
+    result = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1519693374,
+        history_list=[],
+        ledger_actions_list=ledger_actions_history,
+    )
+    assert accountant.get_calculated_asset_amount(A_BTC).is_close('0.9')
+    assert accountant.get_calculated_asset_amount(A_ETH).is_close('0.9')
+    assert accountant.get_calculated_asset_amount(A_XMR).is_close('10')
+    # 250 * 1 + 0.4 * 10 - 1 * 0.1  - 420 * 0.1 = 211.9
+    assert FVal(result['overview']['ledger_actions_profit_loss']).is_close('211.9')
+    assert FVal(result['overview']['total_profit_loss']).is_close('211.9')
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('211.9')

@@ -2,7 +2,7 @@ import json
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -43,11 +43,13 @@ prices = {
     'BTC': {
         'EUR': {
             1428994442: FVal(210.865),
+            1437279735: FVal('250'),
             1446979735: FVal(355.9),
             1448994442: FVal(338.805),
             1449809536: FVal(386.175),
             1458994442: FVal(373.295),
             1464393600: FVal(422.9),
+            1467279735: FVal(420),
             1473505138: FVal(556.435),
             1473897600: FVal(542.87),
             1475042230: FVal(537.805),
@@ -75,6 +77,7 @@ prices = {
     },
     'ETH': {
         'EUR': {
+            1435979735: FVal('0.1'),
             1438994442: FVal(2.549),
             1439048640: FVal(1.13),
             1439048643: FVal(1.13),
@@ -82,6 +85,7 @@ prices = {
             1439994442: FVal(1.134),
             1446979735: FVal(0.8583),
             1448994442: FVal(0.83195),
+            1457279735: FVal(1),
             1463184190: FVal(9.187),
             1463508234: FVal(10.785),
             1468994442: FVal(10.80),
@@ -114,6 +118,7 @@ prices = {
     },
     'XMR': {
         'EUR': {
+            1447279735: FVal('0.4'),
             1449809536: FVal(0.39665),
             1539713238: FVal(91.86),
         },
@@ -141,12 +146,14 @@ def check_result_of_history_creation_for_remote_errors(
         asset_movements: List[AssetMovement],
         eth_transactions: List[EthereumTransaction],
         defi_events: List[DefiEvent],
+        ledger_actions: List[LedgerAction],
 ) -> Dict[str, Any]:
     assert len(trade_history) == 0
     assert len(loan_history) == 0
     assert len(asset_movements) == 0
     assert len(eth_transactions) == 0
     assert len(defi_events) == 0
+    assert len(ledger_actions) == 0
     return {}
 
 
@@ -647,6 +654,7 @@ def mock_history_processing(
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
+            ledger_actions: List[LedgerAction],
     ) -> Dict[str, Any]:
         """This function offers some simple assertions on the result of the
         created history. The entire processing part of the history is mocked
@@ -766,6 +774,7 @@ def mock_history_processing(
         assert eth_transactions[2].input_data == MOCK_INPUT_DATA
 
         assert len(defi_events) == 0
+        assert len(ledger_actions) == 0
 
         return {}
 
@@ -777,6 +786,7 @@ def mock_history_processing(
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
+            ledger_actions: List[LedgerAction],
     ) -> Dict[str, Any]:
         """Checks results of history creation but also proceeds to normal history processing"""
         check_result_of_history_creation(
@@ -787,6 +797,7 @@ def mock_history_processing(
             asset_movements=asset_movements,
             eth_transactions=eth_transactions,
             defi_events=defi_events,
+            ledger_actions=ledger_actions,
         )
         return original_history_processing_function(
             start_ts=start_ts,
@@ -796,6 +807,7 @@ def mock_history_processing(
             asset_movements=asset_movements,
             eth_transactions=eth_transactions,
             defi_events=defi_events,
+            ledger_actions=ledger_actions,
         )
 
     if should_mock_history_processing is True:

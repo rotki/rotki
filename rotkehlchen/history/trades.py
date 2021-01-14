@@ -3,11 +3,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-from rotkehlchen.accounting.structures import DefiEvent, DefiEventType
+from rotkehlchen.accounting.structures import DefiEvent, DefiEventType, LedgerAction
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ADX, A_DAI, A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -27,6 +28,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+FREE_LEDGER_ACTIONS_LIMIT = 50
+
 HistoryResult = Tuple[
     str,
     List[Union[Trade, MarginPosition, AMMTrade]],
@@ -34,6 +37,7 @@ HistoryResult = Tuple[
     List[AssetMovement],
     List[EthereumTransaction],
     List[DefiEvent],
+    List[LedgerAction],
 ]
 
 
@@ -75,6 +79,28 @@ class TradesHistorian():
         self.db = db
         self.exchange_manager = exchange_manager
         self.chain_manager = chain_manager
+
+    def query_ledger_actions(
+            self,
+            has_premium: bool,
+            from_ts: Optional[Timestamp],
+            to_ts: Optional[Timestamp],
+            location: Optional[Location] = None,
+    ) -> Tuple[List[LedgerAction], int]:
+        """Queries the ledger actions from the DB and applies the free version limit
+
+        TODO: Since we always query all in one call, the limiting will work, but if we start
+        batch querying by time then we need to amend the logic of limiting here.
+        Would need to use the same logic we do with trades. Using db entries count
+        and count what all calls return and what is sums up to
+        """
+        db = DBLedgerActions(self.db, self.msg_aggregator)
+        actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
+        original_length = len(actions)
+        if has_premium is False:
+            actions = actions[:FREE_LEDGER_ACTIONS_LIMIT]
+
+        return actions, original_length
 
     def get_history(
             self,
@@ -157,6 +183,9 @@ class TradesHistorian():
             location=Location.EXTERNAL,
         )
         history.extend(external_trades)
+
+        # include the ledger actions
+        ledger_actions, _ = self.query_ledger_actions(has_premium, from_ts=start_ts, to_ts=end_ts)
 
         # include uniswap trades
         if has_premium and self.chain_manager.uniswap:
@@ -361,4 +390,5 @@ class TradesHistorian():
             asset_movements,
             eth_transactions,
             defi_events,
+            ledger_actions,
         )

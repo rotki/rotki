@@ -90,6 +90,24 @@ INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('A', 1);
 INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('B', 2);
 """
 
+# Custom enum table for LedgerAction categories (income, expense, loss and more)
+DB_CREATE_LEDGER_ACTION_TYPE = """
+CREATE TABLE IF NOT EXISTS ledger_action_type (
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* Income Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('A', 1);
+/* Expense Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('B', 2);
+/* Loss Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('C', 3);
+/* Dividends Income Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('D', 4);
+/* Donation Received Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('E', 5);
+"""
+
 DB_CREATE_TIMED_BALANCES = """
 CREATE TABLE IF NOT EXISTS timed_balances (
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
@@ -287,6 +305,19 @@ CREATE TABLE IF NOT EXISTS asset_movements (
 );
 """
 
+DB_CREATE_LEDGER_ACTIONS = """
+CREATE TABLE IF NOT EXISTS ledger_actions (
+    identifier INTEGER PRIMARY KEY,
+    timestamp INTEGER,
+    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES ledger_action_type(type),
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    amount TEXT,
+    asset VARCHAR[10],
+    link TEXT,
+    notes TEXT
+);
+"""
+
 DB_CREATE_ETHEREUM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS ethereum_transactions (
     tx_hash BLOB,
@@ -412,7 +443,7 @@ CREATE TABLE IF NOT EXISTS adex_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -444,4 +475,6 @@ PRAGMA foreign_keys=on;
     DB_CREATE_UNISWAP_EVENTS,
     DB_CREATE_ETH2_DEPOSITS,
     DB_CREATE_ADEX_EVENTS,
+    DB_CREATE_LEDGER_ACTION_TYPE,
+    DB_CREATE_LEDGER_ACTIONS,
 )

@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import AssetAmount, Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 
 
@@ -208,3 +208,75 @@ def _evaluate_balance_sheet_input(other: Any, operation: str) -> BalanceSheet:
         raise InputError(f'Found a {type(other)} object during BalanceSheet {operation}')
 
     return transformed_input
+
+
+class LedgerActionType(Enum):
+    INCOME = 0
+    EXPENSE = 1
+    LOSS = 2
+    DIVIDENDS_INCOME = 3
+    DONATION_RECEIVED = 4
+
+    def __str__(self) -> str:
+        if self == LedgerActionType.INCOME:
+            return 'income'
+        if self == LedgerActionType.EXPENSE:
+            return 'expense'
+        if self == LedgerActionType.LOSS:
+            return 'loss'
+        if self == LedgerActionType.DIVIDENDS_INCOME:
+            return 'dividends income'
+        if self == LedgerActionType.DONATION_RECEIVED:
+            return 'donation received'
+
+        # else
+        raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
+
+    def serialize_for_db(self) -> str:
+        if self == LedgerActionType.INCOME:
+            return 'A'
+        if self == LedgerActionType.EXPENSE:
+            return 'B'
+        if self == LedgerActionType.LOSS:
+            return 'C'
+        if self == LedgerActionType.DIVIDENDS_INCOME:
+            return 'D'
+        if self == LedgerActionType.DONATION_RECEIVED:
+            return 'E'
+        # else
+        raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
+
+    def is_profitable(self) -> bool:
+        return self in (
+            LedgerActionType.INCOME,
+            LedgerActionType.DIVIDENDS_INCOME,
+            LedgerActionType.DONATION_RECEIVED,
+        )
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class LedgerAction:
+    """Represents an income/loss/expense for accounting purposes"""
+    identifier: int  # the unique id of the action and DB primary key
+    timestamp: Timestamp
+    action_type: LedgerActionType
+    location: Location
+    amount: AssetAmount
+    asset: Asset
+    link: str
+    notes: str
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'identifier': self.identifier,
+            'timestamp': self.timestamp,
+            'type': str(self.action_type),
+            'location': str(self.location),
+            'amount': str(self.amount),
+            'asset': self.asset.identifier,
+            'link': self.link,
+            'notes': self.notes,
+        }
+
+    def is_profitable(self) -> bool:
+        return self.action_type.is_profitable()

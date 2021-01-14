@@ -46,6 +46,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import PriceHistorian, TradesHistorian
+from rotkehlchen.history.trades import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import (
@@ -80,9 +81,11 @@ log = RotkehlchenLogsAdapter(logger)
 MAIN_LOOP_SECS_DELAY = 10
 FREE_TRADES_LIMIT = 250
 FREE_ASSET_MOVEMENTS_LIMIT = 100
+
 LIMITS_MAPPING = {
     'trade': FREE_TRADES_LIMIT,
     'asset_movement': FREE_ASSET_MOVEMENTS_LIMIT,
+    'ledger_action': FREE_LEDGER_ACTIONS_LIMIT,
 }
 
 ICONS_BATCH_SIZE = 5
@@ -518,6 +521,7 @@ class Rotkehlchen():
             asset_movements,
             eth_transactions,
             defi_events,
+            ledger_actions,
         ) = self.trades_historian.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
@@ -531,6 +535,7 @@ class Rotkehlchen():
             asset_movements=asset_movements,
             eth_transactions=eth_transactions,
             defi_events=defi_events,
+            ledger_actions=ledger_actions,
         )
         return result, error_or_empty
 

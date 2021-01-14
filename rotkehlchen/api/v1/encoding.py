@@ -9,6 +9,7 @@ from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 
+from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
@@ -25,6 +26,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_hex_color_code,
+    deserialize_ledger_action_type,
     deserialize_location,
     deserialize_price,
     deserialize_timestamp,
@@ -389,6 +391,32 @@ class TradePairField(fields.Field):
         return trade_pair
 
 
+class LedgerActionTypeField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: LedgerActionType,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> LedgerActionType:
+        try:
+            action_type = deserialize_ledger_action_type(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return action_type
+
+
 class LocationField(fields.Field):
 
     @staticmethod
@@ -606,6 +634,36 @@ class TradeSchema(Schema):
     fee_currency = AssetField(required=True)
     link = fields.String(missing='')
     notes = fields.String(missing='')
+
+
+class LedgerActionSchema(Schema):
+    timestamp = TimestampField(required=True)
+    action_type = LedgerActionTypeField(required=True)
+    location = LocationField(required=True)
+    amount = AmountField(required=True)
+    asset = AssetField(required=True)
+    link = fields.String(missing='')
+    notes = fields.String(missing='')
+
+
+class LedgerActionWithIdentifierSchema(LedgerActionSchema):
+    identifier = fields.Integer(required=True)
+
+    @post_load  # type: ignore
+    def make_ledger_action(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> LedgerAction:
+        return LedgerAction(**data)
+
+
+class LedgerActionEditSchema(Schema):
+    action = fields.Nested(LedgerActionWithIdentifierSchema, required=True)
+
+
+class LedgerActionIdentifierSchema(Schema):
+    identifier = fields.Integer(required=True)
 
 
 class ManuallyTrackedBalanceSchema(Schema):

@@ -12,6 +12,7 @@ EV_LOAN_SETTLE = EventType('loan_settlement')
 EV_INTEREST_PAYMENT = EventType('interest_rate_payment')
 EV_MARGIN_CLOSE = EventType('margin_position_close')
 EV_DEFI = EventType('defi_event')
+EV_LEDGER_ACTION = EventType('ledger_action')
 
 ZERO = FVal(0)
 ONE = FVal(1)
