@@ -97,4 +97,23 @@ export class HistoryApi {
       )
       .then(handleResponse);
   }
+
+  async ledgerActions(
+    start: number = 0,
+    end: number | undefined = undefined,
+    location: string | undefined = undefined
+  ): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>(`/ledgeractions`, {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          fromTimestamp: start,
+          toTimestamp: end ? end : undefined,
+          location: location ? location : undefined
+        }),
+        validateStatus: validStatus,
+        transformResponse: setupTransformer()
+      })
+      .then(handleResponse);
+  }
 }

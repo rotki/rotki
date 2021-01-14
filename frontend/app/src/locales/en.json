@@ -277,6 +277,35 @@
       "end_after_start": "The end time should be after the start time."
     }
   },
+  "ledger_actions_form": {
+    "date": {
+      "hint": "The date of when the action happened",
+      "label": "Date"
+    },
+    "link": {
+      "label": "Link"
+    },
+    "notes": {
+      "label": "Notes"
+    },
+    "type": {
+      "label": "Type"
+    }
+  },
+  "ledger_actions": {
+    "dialog": {
+      "save": "Save",
+      "add": {
+        "title": "Add a ledger action",
+        "subtitle": "Add a manual entry of income/loss/expense etc."
+      }
+    },
+    "label": "ledger actions",
+    "loading": "Please wait while your ledger actions are getting loaded...",
+    "loading_subtitle": "The loading of ledger actions might take a while depending on the number of actions you performed.",
+    "refresh_tooltip": "Refresh your ledger actions",
+    "title": "Ledger Actions"
+  },
   "loan_liquidation": {
     "liquidated_collateral": "Liquidated collateral",
     "liquidation_events": "Liquidation Events",
@@ -643,7 +672,8 @@
     "tabs": {
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
-      "transactions": "Ethereum Transactions"
+      "transactions": "Ethereum Transactions",
+      "ledger_actions": "Ledger Actions"
     }
   },
   "overview": {
@@ -726,6 +756,16 @@
     }
   },
   "actions": {
+    "ledger_actions": {
+      "error": {
+        "description": "Failed query for ledger actions: {error}",
+        "title": "Ledger actions"
+      },
+      "task": {
+        "description": "actions.ledger_actions.task.description",
+        "title": "Retrieving ledger actions"
+      }
+    },
     "manual_balances": {
       "task": {
         "title": "Retrieving manual balances"
@@ -1186,7 +1226,8 @@
     "history_sub": {
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
-      "ethereum_transactions": "Ethereum Transactions"
+      "ethereum_transactions": "Ethereum Transactions",
+      "ledger_actions": "Ledger Actions"
     },
     "defi": "DeFi",
     "statistics": "Statistics",

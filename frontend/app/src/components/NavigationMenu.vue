@@ -122,6 +122,15 @@ export default class NavigationMenu extends Vue {
           route: '/history/transactions',
           icon: 'mdi-swap-horizontal-bold',
           class: 'eth-transactions'
+        },
+        {
+          type: 'item',
+          text: this.$t(
+            'navigation_menu.history_sub.ledger_actions'
+          ).toString(),
+          route: Routes.HISTORY_LEDGER_ACTIONS,
+          icon: 'mdi-swap-horizontal-bold',
+          class: 'ledger'
         }
       ]
     },

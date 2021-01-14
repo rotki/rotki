@@ -51,6 +51,10 @@ export default new Router({
         {
           path: 'transactions',
           component: () => import('../views/history/Transactions.vue')
+        },
+        {
+          path: Routes.HISTORY_LEDGER_ACTIONS,
+          component: () => import('../views/history/LedgerActions.vue')
         }
       ]
     },

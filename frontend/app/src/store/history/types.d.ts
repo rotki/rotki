@@ -6,6 +6,7 @@ import {
   Trade,
   TradeLocation
 } from '@/services/history/types';
+import { ACTION_TYPES } from '@/store/history/consts';
 
 export interface HistoricData<T> {
   readonly limit: number;
@@ -19,7 +20,10 @@ interface AssetMovements extends HistoricData<AssetMovement> {}
 
 interface EthTransactions extends HistoricData<EthTransaction> {}
 
+interface LedgerActions extends HistoricData<LedgerAction> {}
+
 export interface HistoryState {
+  ledgerActions: LedgerActions;
   trades: Trades;
   assetMovements: AssetMovements;
   transactions: EthTransactions;
@@ -37,3 +41,16 @@ export type EthTransactionWithFee = EthTransaction & {
   readonly gasFee: BigNumber;
   readonly key: string;
 };
+
+export type ActionType = typeof ACTION_TYPES[number];
+
+export interface LedgerAction {
+  readonly identifier: number;
+  readonly timestamp: number;
+  readonly type: ActionType;
+  readonly location: 'blockchain';
+  readonly amount: BigNumber;
+  readonly asset: string;
+  readonly link: string;
+  readonly notes: string;
+}

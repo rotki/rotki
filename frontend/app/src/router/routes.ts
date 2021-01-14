@@ -10,5 +10,6 @@ export const Routes = {
   STAKING_ETH2: '/staking/eth2',
   STAKING_ADEX: '/staking/adex',
   DEFI_AIRDROPS: '/defi/airdrops',
-  PROFIT_LOSS_REPORT: '/profit-loss-report'
+  PROFIT_LOSS_REPORT: '/profit-loss-report',
+  HISTORY_LEDGER_ACTIONS: '/history/ledger-actions'
 };

@@ -28,5 +28,6 @@ export enum TaskType {
   DEFI_UNISWAP_EVENTS = 'uniswap_events',
   STAKING_ADEX = 'staking_adex',
   STAKING_ADEX_HISTORY = 'staking_adex_events',
-  DEFI_AIRDROPS = 'defi_airdrops'
+  DEFI_AIRDROPS = 'defi_airdrops',
+  LEDGER_ACTIONS = 'ledger_actions'
 }
