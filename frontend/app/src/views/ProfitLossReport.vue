@@ -48,7 +48,7 @@
         class="mt-4"
       />
       <v-btn
-        class="profit_loss_report__export-csv"
+        class="profit_loss_report__export-csv mt-4"
         depressed
         color="primary"
         @click="exportCSV()"
@@ -59,8 +59,8 @@
             : $t('profit_loss_report.download_csv')
         }}
       </v-btn>
-      <profit-loss-overview class="profit_loss_report__section" />
-      <profit-loss-events class="profit_loss_report__section" />
+      <profit-loss-overview class="mt-4" />
+      <profit-loss-events class="mt-4" />
     </div>
     <progress-screen v-if="isRunning" :progress="progress">
       <template #message>
@@ -151,15 +151,3 @@ export default class ProfitLossReport extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss">
-.profit-loss-report {
-  &__section {
-    margin-top: 20px;
-  }
-
-  &__export-csv {
-    margin-top: 20px;
-  }
-}
-</style>

@@ -18,10 +18,98 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(item, key) in overview" :key="key">
-                <td>{{ key | splitOnCapital }}</td>
+              <tr>
+                <td>{{ $t('profit_loss_overview.rows.loan_profit') }}</td>
                 <td class="text-right">
-                  <amount-display :value="item" />
+                  <amount-display pnl :value="overview.loanProfit" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{ $t('profit_loss_overview.rows.defi_profit_loss') }}</td>
+                <td class="text-right">
+                  <amount-display pnl :value="overview.defiProfitLoss" />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  {{ $t('profit_loss_overview.rows.margin_positions_pnl') }}
+                </td>
+                <td class="text-right">
+                  <amount-display
+                    pnl
+                    :value="overview.marginPositionsProfitLoss"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>{{ $t('profit_loss_overview.rows.settlement_losses') }}</td>
+                <td class="text-right">
+                  <amount-display pnl :value="overview.settlementLosses" />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  {{
+                    $t(
+                      'profit_loss_overview.rows.ethereum_transaction_gas_costs'
+                    )
+                  }}
+                </td>
+                <td class="text-right">
+                  <amount-display
+                    :value="overview.ethereumTransactionGasCosts"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  {{ $t('profit_loss_overview.rows.asset_movement_fees') }}
+                </td>
+                <td class="text-right">
+                  <amount-display :value="overview.assetMovementFees" />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  {{
+                    $t('profit_loss_overview.rows.general_trade_profit_loss')
+                  }}
+                </td>
+                <td class="text-right">
+                  <amount-display
+                    pnl
+                    :value="overview.generalTradeProfitLoss"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>{{ $t('profit_loss_overview.rows.total_profit_loss') }}</td>
+                <td class="text-right">
+                  <amount-display pnl :value="overview.totalProfitLoss" />
+                </td>
+              </tr>
+              <tr>
+                <td class="font-weight-medium subtitle-1">
+                  {{ $t('profit_loss_overview.rows.taxable_profit_loss') }}
+                </td>
+                <td class="text-right subtitle-1">
+                  <amount-display
+                    pnl
+                    :value="overview.taxableTradeProfitLoss"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td class="font-weight-medium subtitle-1">
+                  {{
+                    $t('profit_loss_overview.rows.total_taxable_profit_loss')
+                  }}
+                </td>
+                <td class="text-right subtitle-1">
+                  <amount-display
+                    pnl
+                    :value="overview.totalTaxableProfitLoss"
+                  />
                 </td>
               </tr>
             </tbody>

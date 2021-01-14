@@ -1,5 +1,12 @@
 <template>
-  <div class="amount-display" :class="privacyMode ? 'blur-content' : ''">
+  <div
+    class="amount-display"
+    :class="{
+      'blur-content': privacyMode,
+      'amount-display--profit': pnl && value.gt(0),
+      'amount-display--loss': pnl && value.lt(0)
+    }"
+  >
     <v-skeleton-loader
       :loading="loading"
       min-width="60"
@@ -97,6 +104,8 @@ export default class AmountDisplay extends Vue {
     validator: chars => chars >= 0 && chars <= 5
   })
   assetPadding!: number;
+  @Prop({ required: false, type: Boolean, default: false })
+  pnl!: boolean;
 
   currency!: Currency;
   privacyMode!: boolean;
@@ -193,6 +202,14 @@ export default class AmountDisplay extends Vue {
 
   &:hover {
     cursor: pointer;
+  }
+
+  &--profit {
+    color: var(--v-rotki-gain-base);
+  }
+
+  &--loss {
+    color: var(--v-rotki-loss-base);
   }
 }
 

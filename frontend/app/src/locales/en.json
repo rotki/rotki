@@ -400,6 +400,18 @@
       "result": "Result",
       "value": "{symbol} value"
     },
+    "rows": {
+      "asset_movement_fees": "Asset Movement Fees",
+      "defi_profit_loss": "DeFi Profit/Loss",
+      "ethereum_transaction_gas_costs": "Ethereum Transaction Gas Costs",
+      "general_trade_profit_loss": "General Trade Profit/Loss",
+      "loan_profit": "Loan Profit",
+      "margin_positions_pnl": "Margin Positions Profit/Loss",
+      "settlement_losses": "Settlement Losses",
+      "taxable_profit_loss": "Taxable Profit/Loss",
+      "total_profit_loss": "Total Profit/Loss",
+      "total_taxable_profit_loss": "Total Taxable Profit/Loss"
+    },
     "title": "Overview"
   },
  "timeframe_settings": {
