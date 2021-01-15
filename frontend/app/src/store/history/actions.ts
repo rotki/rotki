@@ -594,7 +594,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
       for (let i = 0; i < data.length; i++) {
         const transaction: Writeable<EthTransactionEntry> = data[i];
-        if (strings.includes(transaction.txHash)) {
+        const key =
+          transaction.txHash + transaction.fromAddress + transaction.nonce;
+        if (strings.includes(key)) {
           data[i] = { ...data[i], ignoredInAccounting: true };
         }
       }
@@ -670,7 +672,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         if (!transaction.ignoredInAccounting) {
           continue;
         }
-        if (!strings.includes(transaction.txHash)) {
+        const key =
+          transaction.txHash + transaction.fromAddress + transaction.nonce;
+        if (!strings.includes(key)) {
           data[i] = { ...data[i], ignoredInAccounting: false };
         }
       }

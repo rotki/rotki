@@ -49,8 +49,8 @@
                 <v-simple-checkbox
                   :ripple="false"
                   color="primary"
-                  :value="selected.includes(item.txHash)"
-                  @input="selectionChanged(item.txHash, $event)"
+                  :value="selected.includes(getKey(item))"
+                  @input="selectionChanged(getKey(item), $event)"
                 />
               </template>
               <template #item.ignoredInAccounting="{ item }">
@@ -185,6 +185,10 @@ export default class Transactions extends Mixins(StatusMixin) {
 
   selected: string[] = [];
 
+  getKey(tx: EthTransactionWithFee): string {
+    return tx.txHash + tx.fromAddress + tx.nonce;
+  }
+
   setSelected(selected: boolean) {
     const selection = this.selected;
     if (!selected) {
@@ -193,29 +197,30 @@ export default class Transactions extends Mixins(StatusMixin) {
         selection.pop();
       }
     } else {
-      for (const { txHash } of this.visibleTransactions) {
-        if (!txHash || selection.includes(txHash)) {
+      for (const tx of this.visibleTransactions) {
+        const key = this.getKey(tx);
+        if (!key || selection.includes(key)) {
           continue;
         }
-        selection.push(txHash);
+        selection.push(key);
       }
     }
   }
 
-  selectionChanged(txHash: string, selected: boolean) {
+  selectionChanged(key: string, selected: boolean) {
     const selection = this.selected;
     if (!selected) {
-      const index = selection.indexOf(txHash);
+      const index = selection.indexOf(key);
       if (index >= 0) {
         selection.splice(index, 1);
       }
-    } else if (txHash && !selection.includes(txHash)) {
-      selection.push(txHash);
+    } else if (key && !selection.includes(key)) {
+      selection.push(key);
     }
   }
 
   get allSelected(): boolean {
-    const strings = this.visibleTransactions.map(({ txHash }) => txHash);
+    const strings = this.visibleTransactions.map(tx => this.getKey(tx));
     return (
       strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
     );
@@ -225,13 +230,15 @@ export default class Transactions extends Mixins(StatusMixin) {
     let status: ActionStatus;
 
     const actionIds = this.visibleTransactions
-      .filter(({ ignoredInAccounting, txHash }) => {
+      .filter(tx => {
+        const ignoredInAccounting = tx.ignoredInAccounting;
+        const key = this.getKey(tx);
         return (
           (ignore ? !ignoredInAccounting : ignoredInAccounting) &&
-          this.selected.includes(txHash)
+          this.selected.includes(key)
         );
       })
-      .map(({ txHash }) => txHash)
+      .map(tx => this.getKey(tx))
       .filter((value, index, array) => array.indexOf(value) === index);
 
     if (actionIds.length === 0) {
