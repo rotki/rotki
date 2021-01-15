@@ -18,7 +18,14 @@
       @input="onDateChange($event)"
     />
 
-    <v-row align="center">
+    <v-row
+      align="center"
+      :class="
+        $vuetify.breakpoint.mdAndUp
+          ? 'ledger-action-form__amount-wrapper'
+          : null
+      "
+    >
       <v-col cols="12" md="4">
         <asset-select
           :error-messages="errors['asset']"
@@ -137,4 +144,17 @@ export default class LedgerActionForm extends Vue {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.ledger-action-form {
+  &__amount-wrapper {
+    ::v-deep {
+      .v-input {
+        input {
+          height: 60px;
+          max-height: 60px !important;
+        }
+      }
+    }
+  }
+}
+</style>
