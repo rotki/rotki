@@ -15,6 +15,7 @@ export interface GeneralSettings {
   readonly anonymizedLogs: boolean;
   readonly anonymousUsageAnalytics: boolean;
   readonly ethRpcEndpoint: string;
+  readonly ksmRpcEndpoint: string;
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
   readonly thousandSeparator: string;
@@ -113,6 +114,7 @@ interface SettingsPayload {
   anonymized_logs: boolean;
   submit_usage_analytics: boolean;
   eth_rpc_endpoint: string;
+  ksm_rpc_endpoint: string;
   ui_floating_precision: number;
   date_display_format: string;
   include_gas_costs: boolean;

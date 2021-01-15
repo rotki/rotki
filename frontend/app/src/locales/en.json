@@ -528,7 +528,11 @@
       "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
-      "rpc_endpoint": "Eth RPC Endpoint"
+      "rpc_endpoint": "Ethereum Node RPC Endpoint",
+      "ksm_rpc_endpoint": "Kusama Node RPC Endpoint"
+    },
+    "local_nodes": {
+      "title": "Local Nodes"
     },
     "title": "General Settings",
     "validation": {
@@ -563,9 +567,14 @@
         "success":"Error setting floating precision to {precision}"
       },
       "rpc": {
-        "success_set": "RPC endpoint set to {endpoint}",
-        "success_unset": "RPC endpoint was successfully unset",
-        "error": "Error setting rpc endpoint"
+        "success_set": "The Ethereum node RPC endpoint was set to {endpoint}",
+        "success_unset": "The Ethereum node RPC endpoint was successfully unset",
+        "error": "There was an error while setting the Ethereum node RPC endpoint"
+      },
+      "ksm_rpc": {
+        "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
+        "success_unset": "The Kusama node RPC endpoint was successfully unset",
+        "error": "There was an error setting the Kusama node RPC endpoint"
       },
       "scramble": {
         "error": "Error setting scramble mode: {message}"

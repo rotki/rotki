@@ -20,6 +20,7 @@ export interface DBSettings {
   readonly taxfree_after_period: number;
   readonly balance_save_frequency: number;
   readonly eth_rpc_endpoint: string;
+  readonly ksm_rpc_endpoint: string;
   readonly main_currency: string;
   readonly last_balance_save: number;
   readonly anonymized_logs: boolean;

@@ -7,6 +7,7 @@ export class Defaults {
   static DEFAULT_CURRENCY_LOCATION: CurrencyLocation = CURRENCY_AFTER;
   static FLOATING_PRECISION = 2;
   static RPC_ENDPOINT = 'http://localhost:8545';
+  static KSM_RPC_ENDPOINT = 'http://localhost:9933';
   static BALANCE_SAVE_FREQUENCY = 24;
   static ANONYMIZED_LOGS = false;
   static ANONYMOUS_USAGE_ANALYTICS = true;
