@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2015` Users can now selectively ignores trades, deposits/withdrawals, ethereum transactions and ledger actions in the accounting processing of the profit loss report.
 * :feature:`1920` Rotki now supports addition of a custom Kusama endpoint.
 * :feature:`1662` Users are now able to manually input ledger actions such as Income, Donation, Loss, Expense, Dividends Income.
 * :feature:`1866` The tax report is now named Profit and Loss Report.
