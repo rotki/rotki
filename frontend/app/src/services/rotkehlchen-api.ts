@@ -34,15 +34,15 @@ import {
   VersionCheck
 } from '@/services/types-api';
 import {
-  validWithSessionAndExternalService,
   handleResponse,
-  validWithParamsSessionAndExternalService,
-  validStatus,
   validAccountOperationStatus,
-  validWithoutSessionStatus,
-  validWithSessionStatus,
   validAuthorizedStatus,
-  validTaskStatus
+  validStatus,
+  validTaskStatus,
+  validWithoutSessionStatus,
+  validWithParamsSessionAndExternalService,
+  validWithSessionAndExternalService,
+  validWithSessionStatus
 } from '@/services/utils';
 import {
   AccountPayload,
@@ -53,6 +53,7 @@ import { ActionStatus } from '@/store/types';
 import {
   AccountSession,
   Blockchain,
+  BTC,
   ExternalServiceKey,
   ExternalServiceName,
   FiatExchangeRates,
@@ -64,6 +65,7 @@ import {
   TaskResult,
   UnlockPayload
 } from '@/typing/types';
+import { assert } from '@/utils/assertions';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;
@@ -586,13 +588,14 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async editEthAccount(
+  async editAccount(
     payload: BlockchainAccountPayload
   ): Promise<GeneralAccountData[]> {
-    const { address, label, tags } = payload;
+    const { address, label, tags, blockchain } = payload;
+    assert(blockchain !== BTC, 'call editBtcAccount for btc');
     return this.axios
       .patch<ActionResult<GeneralAccountData[]>>(
-        '/blockchains/ETH',
+        `/blockchains/${blockchain}`,
         {
           accounts: [
             {
@@ -794,9 +797,11 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async ethAccounts(): Promise<GeneralAccountData[]> {
+  async accounts(
+    blockchain: Exclude<Blockchain, 'BTC'>
+  ): Promise<GeneralAccountData[]> {
     return this.axios
-      .get<ActionResult<GeneralAccountData[]>>('/blockchains/ETH', {
+      .get<ActionResult<GeneralAccountData[]>>(`/blockchains/${blockchain}`, {
         validateStatus: validWithSessionStatus,
         transformResponse: basicAxiosTransformer
       })

@@ -22,22 +22,32 @@
           :title="$t('blockchain_balances.per_asset.title')"
           :balances="totals"
         />
-        <v-divider />
-        <account-balances
-          :title="$t('blockchain_balances.balances.eth')"
-          blockchain="ETH"
-          :balances="ethAccounts"
-          @edit-account="edit($event)"
-        />
-        <v-divider />
-        <account-balances
-          :title="$t('blockchain_balances.balances.btc')"
-          blockchain="BTC"
-          :balances="btcAccounts"
-          @edit-account="edit($event)"
-        />
       </v-card-text>
     </v-card>
+
+    <account-balances
+      class="mt-4"
+      :title="$t('blockchain_balances.balances.eth')"
+      blockchain="ETH"
+      :balances="ethAccounts"
+      @edit-account="edit($event)"
+    />
+
+    <account-balances
+      class="mt-4"
+      :title="$t('blockchain_balances.balances.btc')"
+      blockchain="BTC"
+      :balances="btcAccounts"
+      @edit-account="edit($event)"
+    />
+
+    <account-balances
+      class="mt-4"
+      :title="$t('blockchain_balances.balances.ksm')"
+      blockchain="KSM"
+      :balances="kusamaBalances"
+      @edit-account="edit($event)"
+    />
   </v-container>
 </template>
 
@@ -61,12 +71,18 @@ import {
     BigDialog
   },
   computed: {
-    ...mapGetters('balances', ['ethAccounts', 'btcAccounts', 'totals'])
+    ...mapGetters('balances', [
+      'ethAccounts',
+      'btcAccounts',
+      'totals',
+      'kusamaBalances'
+    ])
   }
 })
 export default class BlockchainBalances extends Vue {
   ethAccounts!: AccountWithBalance[];
   btcAccounts!: BlockchainAccountWithBalance[];
+  kusamaBalances!: AccountWithBalance[];
   totals!: AccountWithBalance[];
 
   accountToEdit: BlockchainAccountWithBalance | null = null;

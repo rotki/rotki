@@ -31,4 +31,6 @@ const args = [
   tempPath
 ];
 
-spawn('python', args);
+spawn('python', args, {
+  stdio: [process.stdin, process.stdout, process.stderr]
+});

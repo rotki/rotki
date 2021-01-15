@@ -232,7 +232,7 @@ jobs:
           sudo ldconfig
       - name: Setup backend
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements_dev.txt
           pip install -e .
       - name: Restore dependencies
         working-directory: ./frontend/app

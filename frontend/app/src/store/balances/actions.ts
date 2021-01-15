@@ -41,8 +41,9 @@ import {
   Blockchain,
   BTC,
   ETH,
-  SupportedBlockchains,
-  ExchangeRates
+  ExchangeRates,
+  KSM,
+  SupportedBlockchains
 } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 
@@ -308,11 +309,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     payload: { chain?: Blockchain; balances: BlockchainBalances }
   ): Promise<void> {
     const { perAccount, totals } = payload.balances;
-    const { ETH: ethBalances, BTC: btcBalances } = perAccount;
+    const { ETH: ethBalances, BTC: btcBalances, KSM: ksmBalances } = perAccount;
     const chain = payload.chain;
 
     if (!chain || chain === ETH) {
       commit('updateEth', ethBalances ?? {});
+    }
+
+    if (!chain || chain === KSM) {
+      commit('updateKsm', ksmBalances ?? {});
     }
 
     if (!chain || chain === BTC) {
@@ -553,10 +558,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
     const { blockchain } = payload;
-    const isEth = blockchain === ETH;
-    if (isEth) {
-      const accountData = await api.editEthAccount(payload);
-      commit('ethAccounts', accountData);
+    const isBTC = blockchain === BTC;
+    if (!isBTC) {
+      const accountData = await api.editAccount(payload);
+
+      if (blockchain === ETH) {
+        commit('ethAccounts', accountData);
+      } else {
+        commit('ksmAccounts', accountData);
+      }
     } else {
       const accountData = await api.editBtcAccount(payload);
       commit('btcAccounts', accountData);
@@ -565,13 +575,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async accounts({ commit }) {
     try {
-      const [ethAccounts, btcAccounts] = await Promise.all([
-        api.ethAccounts(),
-        api.btcAccounts()
+      const [ethAccounts, btcAccounts, ksmAccounts] = await Promise.all([
+        api.accounts(ETH),
+        api.btcAccounts(),
+        api.accounts(KSM)
       ]);
 
       commit('ethAccounts', ethAccounts);
       commit('btcAccounts', btcAccounts);
+      commit('ksmAccounts', ksmAccounts);
     } catch (e) {
       notify(
         `Failed to accounts: ${e}`,
@@ -584,6 +596,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   /* Remove a tag from all accounts of the state */
   async removeTag({ commit, state }, tagName: string) {
     commit('ethAccounts', removeTags(state.ethAccounts, tagName));
+    commit('ksmAccounts', removeTags(state.ksmAccounts, tagName));
     const btcAccounts = state.btcAccounts;
     const standalone = removeTags(btcAccounts.standalone, tagName);
 

@@ -1,7 +1,8 @@
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
-import { Balance } from '@/services/types-api';
+import { BlockchainAssetBalances } from '@/services/balances/types';
+import { Balance, GeneralAccountData } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import {
   AccountWithBalance,
@@ -9,13 +10,20 @@ import {
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
-  ManualBalanceByLocation,
-  LocationBalance
+  LocationBalance,
+  ManualBalanceByLocation
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
-import { BTC, ETH, ExchangeInfo, GeneralAccount } from '@/typing/types';
+import {
+  Blockchain,
+  BTC,
+  ETH,
+  ExchangeInfo,
+  GeneralAccount,
+  KSM
+} from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
@@ -23,6 +31,7 @@ import { assetSum } from '@/utils/calculation';
 export interface BalanceGetters {
   ethAccounts: BlockchainAccountWithBalance[];
   btcAccounts: BlockchainAccountWithBalance[];
+  kusamaBalances: BlockchainAccountWithBalance[];
   totals: AssetBalance[];
   exchangeRate: (currency: string) => number | undefined;
   exchanges: ExchangeInfo[];
@@ -42,6 +51,33 @@ export interface BalanceGetters {
   isEthereumToken: (asset: string) => boolean;
 }
 
+function balances(
+  accounts: GeneralAccountData[],
+  balances: BlockchainAssetBalances,
+  blockchain: Exclude<Blockchain, 'BTC'>
+): BlockchainAccountWithBalance[] {
+  const data: BlockchainAccountWithBalance[] = [];
+  for (const account of accounts) {
+    const accountAssets = balances[account.address];
+
+    const balance: Balance = accountAssets
+      ? {
+          amount: accountAssets.assets[blockchain].amount,
+          usdValue: assetSum(accountAssets.assets)
+        }
+      : { amount: Zero, usdValue: Zero };
+
+    data.push({
+      address: account.address,
+      label: account.label ?? '',
+      tags: account.tags ?? [],
+      chain: blockchain,
+      balance
+    });
+  }
+  return data;
+}
+
 export const getters: Getters<
   BalanceState,
   BalanceGetters,
@@ -52,28 +88,11 @@ export const getters: Getters<
     eth,
     ethAccounts
   }: BalanceState): BlockchainAccountWithBalance[] {
-    const accounts: BlockchainAccountWithBalance[] = [];
-    for (const account of ethAccounts) {
-      const accountAssets = eth[account.address];
-
-      const balance: Balance = accountAssets
-        ? {
-            amount: accountAssets.assets.ETH.amount,
-            usdValue: assetSum(accountAssets.assets)
-          }
-        : { amount: Zero, usdValue: Zero };
-
-      accounts.push({
-        address: account.address,
-        label: account.label ?? '',
-        tags: account.tags ?? [],
-        chain: ETH,
-        balance
-      });
-    }
-    return accounts;
+    return balances(ethAccounts, eth, ETH);
   },
-
+  kusamaBalances: ({ ksmAccounts, ksm }) => {
+    return balances(ksmAccounts, ksm, KSM);
+  },
   btcAccounts({
     btc,
     btcAccounts
@@ -299,6 +318,8 @@ export const getters: Getters<
     const totals: BlockchainTotal[] = [];
     const ethAccounts: BlockchainAccountWithBalance[] = getters.ethAccounts;
     const btcAccounts: BlockchainAccountWithBalance[] = getters.btcAccounts;
+    const kusamaBalances: BlockchainAccountWithBalance[] =
+      getters.kusamaBalances;
 
     if (ethAccounts.length > 0) {
       const ethStatus = status(Section.BLOCKCHAIN_ETH);
@@ -315,6 +336,15 @@ export const getters: Getters<
         chain: BTC,
         usdValue: sum(btcAccounts),
         loading: btcStatus === Status.NONE || btcStatus === Status.LOADING
+      });
+    }
+
+    if (kusamaBalances.length > 0) {
+      const ksmStatus = status(Section.BLOCKCHAIN_KSM);
+      totals.push({
+        chain: KSM,
+        usdValue: sum(kusamaBalances),
+        loading: ksmStatus === Status.NONE || ksmStatus === Status.LOADING
       });
     }
 

@@ -1,70 +1,73 @@
 <template>
-  <div
+  <v-card
     class="account-balances"
     :class="`${blockchain.toLocaleLowerCase()}-account-balances`"
   >
-    <v-row align="center">
-      <v-col cols="auto" class="account-balances__column" />
-      <v-col>
-        <div class="text-h6 text-center account-balances__title">
-          {{ title }}
-        </div>
-      </v-col>
-      <v-col cols="auto">
-        <refresh-button
-          class="account-balances__refresh"
-          :loading="isLoading"
-          :tooltip="$t('account_balances.refresh_tooltip', { blockchain })"
-          @refresh="refresh"
-        />
-      </v-col>
-    </v-row>
-    <v-row align="center">
-      <v-col cols="6">
-        <v-tooltip top>
-          <template #activator="{ on, attrs }">
-            <span v-bind="attrs" v-on="on">
-              <v-btn
-                color="primary"
-                text
-                outlined
-                :disabled="
-                  isLoading ||
-                  operationRunning ||
-                  selectedAddresses.length === 0
-                "
-                @click="confirmDelete = true"
-              >
-                <v-icon> mdi-delete-outline </v-icon>
-                <span>{{ $t('account_balances.delete_button') }}</span>
-              </v-btn>
-            </span>
-          </template>
-          <span>{{ $t('account_balances.delete_tooltip') }}</span>
-        </v-tooltip>
-      </v-col>
-      <v-col cols="6">
-        <tag-filter v-model="visibleTags" />
-      </v-col>
-    </v-row>
-    <account-balance-table
-      ref="balances"
-      :blockchain="blockchain"
-      :balances="balances"
-      :visible-tags="visibleTags"
-      :selected="selectedAddresses"
-      @edit-click="editAccount($event)"
-      @delete-xpub="xpubToDelete = $event"
-      @addresses-selected="selectedAddresses = $event"
-    />
-    <confirm-dialog
-      :display="confirm"
-      :title="$t('account_balances.confirm_delete.title')"
-      :message="deleteDescription"
-      @cancel="cancelDelete()"
-      @confirm="deleteAccount()"
-    />
-  </div>
+    <v-card-title>
+      <v-row align="center">
+        <v-col>
+          <div class="text-h6 account-balances__title">
+            {{ title }}
+          </div>
+        </v-col>
+        <v-col cols="auto">
+          <refresh-button
+            class="account-balances__refresh"
+            :loading="isLoading"
+            :tooltip="$t('account_balances.refresh_tooltip', { blockchain })"
+            @refresh="refresh"
+          />
+        </v-col>
+      </v-row>
+    </v-card-title>
+    <v-card-text>
+      <v-row align="center">
+        <v-col cols="6">
+          <v-tooltip top>
+            <template #activator="{ on, attrs }">
+              <span v-bind="attrs" v-on="on">
+                <v-btn
+                  color="primary"
+                  text
+                  outlined
+                  :disabled="
+                    isLoading ||
+                    operationRunning ||
+                    selectedAddresses.length === 0
+                  "
+                  @click="confirmDelete = true"
+                >
+                  <v-icon> mdi-delete-outline </v-icon>
+                  <span>{{ $t('account_balances.delete_button') }}</span>
+                </v-btn>
+              </span>
+            </template>
+            <span>{{ $t('account_balances.delete_tooltip') }}</span>
+          </v-tooltip>
+        </v-col>
+        <v-col cols="6">
+          <tag-filter v-model="visibleTags" />
+        </v-col>
+      </v-row>
+      <account-balance-table
+        ref="balances"
+        :blockchain="blockchain"
+        :balances="balances"
+        :visible-tags="visibleTags"
+        :selected="selectedAddresses"
+        @edit-click="editAccount($event)"
+        @delete-xpub="xpubToDelete = $event"
+        @addresses-selected="selectedAddresses = $event"
+      />
+      <confirm-dialog
+        :display="confirm"
+        :title="$t('account_balances.confirm_delete.title')"
+        :message="deleteDescription"
+        @cancel="cancelDelete()"
+        @confirm="deleteAccount()"
+      />
+    </v-card-text>
+  </v-card>
 </template>
 
 <script lang="ts">
