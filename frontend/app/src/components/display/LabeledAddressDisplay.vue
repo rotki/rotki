@@ -145,7 +145,8 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
   }
 
   &__actions {
-    width: 60px;
+    width: 61px;
+    max-width: 65px;
   }
 }
 
