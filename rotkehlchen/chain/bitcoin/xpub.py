@@ -168,7 +168,7 @@ class XpubManager():
         May raise:
         - RemoteError: if blockstream/blockchain.info and others can't be reached
         """
-        last_receiving_idx, last_change_idx = self.db.get_last_xpub_derived_indices(xpub_data)
+        last_receiving_idx, last_change_idx = self.db.get_last_consecutive_xpub_derived_indices(xpub_data)  # noqa: E501
         derived_addresses_data = _derive_addresses_from_xpub_data(
             xpub_data=xpub_data,
             start_receiving_index=last_receiving_idx,
