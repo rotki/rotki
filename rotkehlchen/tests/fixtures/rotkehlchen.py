@@ -124,8 +124,13 @@ def initialize_mock_rotkehlchen_instance(
         'rotkehlchen.rotkehlchen.KUSAMA_NODES_TO_CONNECT_AT_START',
         new=kusama_manager_connect_at_start,
     )
+    ksm_connect_on_startup_patch = patch.object(
+        rotki,
+        '_connect_ksm_manager_on_startup',
+        return_value=bool(blockchain_accounts.ksm),
+    )
 
-    with settings_patch, eth_rpcconnect_patch, ksm_rpcconnect_patch:
+    with settings_patch, eth_rpcconnect_patch, ksm_rpcconnect_patch, ksm_connect_on_startup_patch:
         rotki.unlock_user(
             user=username,
             password=db_password,

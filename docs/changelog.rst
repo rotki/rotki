@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`1920` Rotki now supports your own Kusama node along the public ones.
+* :feature:`1920` Rotki now supports addition of a custom Kusama endpoint.
 * :feature:`1662` Users are now able to manually input ledger actions such as Income, Donation, Loss, Expense, Dividends Income.
 * :feature:`1866` The tax report is now named Profit and Loss Report.
 * :feature:`1466` The account label is now renamed to account name.

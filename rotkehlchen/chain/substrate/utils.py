@@ -6,6 +6,7 @@ KUSAMA_NODES_TO_CONNECT_AT_START = (
     KusamaNodeName.OWN,
     KusamaNodeName.PARITY,
 )
+KUSAMA_NODE_CONNECTION_TIMEOUT = 5
 
 
 def is_valid_kusama_address(value: str) -> bool:
