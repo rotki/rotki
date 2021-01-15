@@ -16,75 +16,77 @@
           <v-icon> mdi-content-save </v-icon>
         </menu-tooltip-button>
       </template>
-      <div class="balance-saved-indicator__content">
-        <v-row v-if="premium">
-          <v-col>
-            <v-row no-gutters>
-              <v-col class="font-weight-medium">
-                {{ $t('sync_indicator.last_data_upload') }}
-              </v-col>
-            </v-row>
-            <v-row class="text--secondary">
-              <v-col>
-                <date-display
-                  v-if="lastDataUpload"
-                  :timestamp="lastDataUpload"
-                />
-                <span v-else>
-                  {{ $t('sync_indicator.never_saved') }}
-                </span>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col>
-                <sync-buttons
-                  :pending="pending"
-                  :sync-action="syncAction"
-                  @action="showConfirmation($event)"
-                />
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
-        <v-divider v-if="premium" />
-        <v-row>
-          <v-col>
-            <v-row class="font-weight-medium" no-gutters>
-              <v-col>{{ $t('sync_indicator.snapshot_title') }}</v-col>
-            </v-row>
-            <v-row class="text--secondary">
-              <v-col>
-                <date-display
-                  v-if="lastBalanceSave"
-                  :timestamp="lastBalanceSave"
-                />
-                <span v-else>
-                  {{ $t('sync_indicator.never_saved') }}
-                </span>
-              </v-col>
-            </v-row>
-            <v-divider />
-            <v-row align="center">
-              <v-col>
-                <v-btn color="primary" outlined @click="refreshAllAndSave()">
-                  <v-icon left>mdi-content-save</v-icon>
-                  {{ $t('sync_indicator.force_save') }}
-                </v-btn>
-              </v-col>
-              <v-col cols="auto">
-                <v-tooltip bottom max-width="300px">
-                  <template #activator="{ on }">
-                    <v-icon class="ml-3" v-on="on">mdi-information</v-icon>
-                  </template>
-                  <div>
-                    {{ $t('sync_indicator.snapshot_tooltip') }}
-                  </div>
-                </v-tooltip>
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
-      </div>
+      <v-container class="balance-saved-indicator__container">
+        <div class="balance-saved-indicator__content">
+          <v-row v-if="premium">
+            <v-col>
+              <v-row no-gutters>
+                <v-col class="font-weight-medium">
+                  {{ $t('sync_indicator.last_data_upload') }}
+                </v-col>
+              </v-row>
+              <v-row class="text--secondary">
+                <v-col>
+                  <date-display
+                    v-if="lastDataUpload"
+                    :timestamp="lastDataUpload"
+                  />
+                  <span v-else>
+                    {{ $t('sync_indicator.never_saved') }}
+                  </span>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <sync-buttons
+                    :pending="pending"
+                    :sync-action="syncAction"
+                    @action="showConfirmation($event)"
+                  />
+                </v-col>
+              </v-row>
+            </v-col>
+          </v-row>
+          <v-divider v-if="premium" class="mt-2" />
+          <v-row class="mt-2">
+            <v-col>
+              <v-row class="font-weight-medium" no-gutters>
+                <v-col>{{ $t('sync_indicator.snapshot_title') }}</v-col>
+              </v-row>
+              <v-row class="text--secondary">
+                <v-col>
+                  <date-display
+                    v-if="lastBalanceSave"
+                    :timestamp="lastBalanceSave"
+                  />
+                  <span v-else>
+                    {{ $t('sync_indicator.never_saved') }}
+                  </span>
+                </v-col>
+              </v-row>
+              <v-divider class="mt-2" />
+              <v-row align="center" class="mt-1">
+                <v-col>
+                  <v-btn color="primary" outlined @click="refreshAllAndSave()">
+                    <v-icon left>mdi-content-save</v-icon>
+                    {{ $t('sync_indicator.force_save') }}
+                  </v-btn>
+                </v-col>
+                <v-col cols="auto">
+                  <v-tooltip bottom max-width="300px">
+                    <template #activator="{ on }">
+                      <v-icon class="ml-3" v-on="on">mdi-information</v-icon>
+                    </template>
+                    <div>
+                      {{ $t('sync_indicator.snapshot_tooltip') }}
+                    </div>
+                  </v-tooltip>
+                </v-col>
+              </v-row>
+            </v-col>
+          </v-row>
+        </div>
+      </v-container>
     </v-menu>
     <confirm-dialog
       confirm-type="warning"
@@ -193,10 +195,13 @@ export default class SyncIndicator extends Mixins(PremiumMixin) {
 
 <style lang="scss" scoped>
 .balance-saved-indicator {
-  &__content {
+  &__container {
     background: white;
+  }
+
+  &__content {
     width: 280px;
-    padding: 0 16px;
+    padding: 16px 16px;
   }
 }
 </style>
