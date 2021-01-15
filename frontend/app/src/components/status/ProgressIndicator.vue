@@ -4,6 +4,7 @@
       id="notification-indicator"
       transition="slide-y-transition"
       bottom
+      max-height="360px"
       offset-y
     >
       <template #activator="{ on }">
@@ -18,42 +19,44 @@
           <v-icon v-else> mdi-check-circle </v-icon>
         </menu-tooltip-button>
       </template>
-      <v-row class="progress-indicator__details">
-        <v-col v-if="tasks.length > 0">
-          <v-list two-line>
-            <template v-for="task in tasks">
-              <v-list-item :key="task.id" class="progress-indicator__task">
-                <v-list-item-content>
-                  <v-list-item-title v-text="task.meta.title" />
-                  <v-list-item-subtitle
-                    v-if="task.meta.description"
-                    class="mt-1"
-                    v-text="task.meta.description"
-                  />
-                  <v-progress-linear
-                    v-if="task.type !== 'process_trade_history'"
-                    indeterminate
-                    class="progress-indicator__task__progress"
-                  />
-                  <v-progress-linear
-                    v-else
-                    :value="progress"
-                    class="progress-indicator__task__progress"
-                  />
-                </v-list-item-content>
-              </v-list-item>
-              <v-divider :key="`task-${task.id}`" />
-            </template>
-          </v-list>
-        </v-col>
-        <v-col v-else class="progress-indicator__no-tasks align justify">
-          <v-icon color="primary">mdi-information</v-icon>
-          <p
-            class="progress-indicator__no-tasks__label"
-            v-text="$t('progress_indicator.no_tasks')"
-          />
-        </v-col>
-      </v-row>
+      <v-container class="progress-indicator__container">
+        <v-row class="progress-indicator__details">
+          <v-col v-if="tasks.length > 0">
+            <v-list two-line>
+              <template v-for="task in tasks">
+                <v-list-item :key="task.id" class="progress-indicator__task">
+                  <v-list-item-content>
+                    <v-list-item-title v-text="task.meta.title" />
+                    <v-list-item-subtitle
+                      v-if="task.meta.description"
+                      class="mt-1"
+                      v-text="task.meta.description"
+                    />
+                    <v-progress-linear
+                      v-if="task.type !== 'process_trade_history'"
+                      indeterminate
+                      class="progress-indicator__task__progress"
+                    />
+                    <v-progress-linear
+                      v-else
+                      :value="progress"
+                      class="progress-indicator__task__progress"
+                    />
+                  </v-list-item-content>
+                </v-list-item>
+                <v-divider :key="`task-${task.id}`" />
+              </template>
+            </v-list>
+          </v-col>
+          <v-col v-else class="progress-indicator__no-tasks align justify">
+            <v-icon color="primary">mdi-information</v-icon>
+            <p
+              class="progress-indicator__no-tasks__label"
+              v-text="$t('progress_indicator.no_tasks')"
+            />
+          </v-col>
+        </v-row>
+      </v-container>
     </v-menu>
   </div>
 </template>
@@ -79,7 +82,13 @@ export default class ProgressIndicator extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '~@/scss/scroll';
+
 .progress-indicator {
+  &__container {
+    @extend .themed-scrollbar;
+  }
+
   &__details {
     width: 350px;
     height: 350px;
