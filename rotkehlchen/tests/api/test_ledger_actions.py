@@ -56,10 +56,6 @@ def _add_ledger_actions(server) -> List[Dict]:
         assert 'identifier' in result
         action['identifier'] = int(result['identifier'])
 
-        # use 'type' at return to compare with the way it's returned from the API
-        action['type'] = action['action_type']
-        del action['action_type']
-
     return actions
 
 
@@ -149,7 +145,6 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
     new_action['asset'] = 'ETH'
     new_action['link'] = 'a link'
     new_action['notes'] = 'new notes'
-    del new_action['type']
 
     # Now get the actions and make sure that one is edited
     response = requests.patch(
@@ -160,14 +155,11 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     result = result['entries']
-    actions[1]['type'] = actions[1]['action_type']
-    del actions[1]['action_type']
     assert result == [actions[0], actions[2], actions[3], actions[1]]
 
     # Try to edit unknown identifier and see it fails
     new_action['identifier'] = 666
     new_action['action_type'] = 'loss'
-    del new_action['type']
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
