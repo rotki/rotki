@@ -14,11 +14,12 @@ from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.substrate import attempt_connect_test_nodes
-
-KSM_ADDRESS_1 = 'GLVeryFRbg5hEKvQZcAnLvXZEXhiYaBjzSDwrXBXrfPF7wj'
-KSM_ADDRESS_2 = 'FRb4hMAhvVjuztKtvNgjEbK863MR3tGSWB9a2EhKem6AygK'
-DOT_ADDRESS_1 = '1gXKQA8JDTjetR759QGGXX98siY4AvaCdp35bswUiuGormc'
+from rotkehlchen.tests.utils.substrate import (
+    DOT_ADDRESS_1,
+    KSM_ADDRESS_1,
+    KSM_ADDRESS_2,
+    attempt_connect_test_nodes,
+)
 
 
 class AccountInfo(NamedTuple):

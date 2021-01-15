@@ -42,7 +42,9 @@ from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
 from rotkehlchen.chain.ethereum.yearn import YearnVaults
+from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.typing import KusamaAddress
+from rotkehlchen.chain.substrate.utils import KUSAMA_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants.assets import A_ADX, A_BTC, A_DAI, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
@@ -83,7 +85,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
 ETH2_DETAILS_REQUERY_SECONDS = 600
-KUSAMA_NODE_CONNECTION_TIMEOUT = 5
 
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
@@ -469,27 +470,21 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_kusama_balances(self, wait_until_node_available: bool = True) -> None:
+    def query_kusama_balances(self, wait_available_node: bool = True) -> None:
         """Queries the KSM balances of the accounts via Kusama endpoints.
 
         May raise:
-        - RemotError if there is a problem querying any remote
+        - RemotError: if no nodes are available or the balances request fails.
         """
         if len(self.accounts.ksm) == 0:
             return
 
         ksm_usd_price = Inquirer().find_usd_price(A_KSM)
-        if wait_until_node_available:
-            try:
-                with gevent.Timeout(KUSAMA_NODE_CONNECTION_TIMEOUT):
-                    while len(self.kusama.available_node_attributes_map) == 0:
-                        gevent.sleep(0.1)
-            except gevent.Timeout as e:
-                raise RemoteError(
-                    f"Kusama manager does not have nodes availables after waiting "
-                    f"{KUSAMA_NODE_CONNECTION_TIMEOUT} seconds. Kusama balances "
-                    f"won't be queried.",
-                ) from e
+        if wait_available_node:
+            wait_until_a_node_is_available(
+                substrate_manager=self.kusama,
+                seconds=KUSAMA_NODE_CONNECTION_TIMEOUT,
+            )
 
         account_amount = self.kusama.get_accounts_balance(self.accounts.ksm)
         total_balance = Balance()
@@ -659,6 +654,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         ksm_usd_price = Inquirer().find_usd_price(A_KSM)
         if append_or_remove == 'append':
+            # Wait until a node is connected when adding a KSM address for the
+            # first time.
+            if len(self.kusama.available_nodes_call_order) == 0:
+                self.kusama.attempt_connections()
+                wait_until_a_node_is_available(
+                    substrate_manager=self.kusama,
+                    seconds=KUSAMA_NODE_CONNECTION_TIMEOUT,
+                )
             amount = self.kusama.get_account_balance(account)
             balance = Balance(amount=amount, usd_value=amount * ksm_usd_price)
             self.accounts.ksm.append(account)

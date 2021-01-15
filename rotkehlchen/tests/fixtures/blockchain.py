@@ -41,6 +41,11 @@ def fixture_btc_accounts() -> List[BTCAddress]:
 
 @pytest.fixture(name='ksm_accounts')
 def fixture_ksm_accounts() -> List[KusamaAddress]:
+    """As per feature requirements, instantiating SubstrateManager won't trigger
+    the logic that attempts to connect to the nodes. Use this fixture with KSM
+    addresses on tests (e.g. integration/API tests) that require connection
+    since instantiation.
+    """
     return []
 
 
@@ -126,6 +131,7 @@ def fixture_kusama_available_node_attributes_map():
 def fixture_kusama_manager(
         messages_aggregator,
         greenlet_manager,
+        ksm_accounts,
         ksm_rpc_endpoint,
         kusama_available_node_attributes_map,
         kusama_manager_connect_at_start,
@@ -138,6 +144,7 @@ def fixture_kusama_manager(
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=kusama_manager_connect_at_start,
+        connect_on_startup=bool(ksm_accounts),
         own_rpc_endpoint=own_rpc_endpoint,
     )
     if len(kusama_available_node_attributes_map) != 0:

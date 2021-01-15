@@ -269,6 +269,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
             connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
+            connect_on_startup=self._connect_ksm_manager_on_startup(),
             own_rpc_endpoint=settings.ksm_rpc_endpoint,
         )
 
@@ -981,3 +982,6 @@ class Rotkehlchen():
     def shutdown(self) -> None:
         self.logout()
         self.shutdown_event.set()
+
+    def _connect_ksm_manager_on_startup(self) -> bool:
+        return bool(self.data.db.get_blockchain_accounts().ksm)

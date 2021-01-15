@@ -5,6 +5,7 @@ from json.decoder import JSONDecodeError
 from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Tuple, cast
 from urllib.parse import urlparse
 
+import gevent
 import requests
 from requests.adapters import Response
 from substrateinterface import SubstrateInterface
@@ -110,6 +111,7 @@ class SubstrateManager():
             greenlet_manager: GreenletManager,
             msg_aggregator: MessagesAggregator,
             connect_at_start: Sequence[NodeName],
+            connect_on_startup: bool,
             own_rpc_endpoint: str,
     ) -> None:
         """An interface to any Substrate chain supported by Rotki.
@@ -147,12 +149,13 @@ class SubstrateManager():
         self.available_node_attributes_map: DictNodeNameNodeAttributes = {}
         self.available_nodes_call_order: NodesCallOrder = []
         self.chain_properties: SubstrateChainProperties
-        if len(connect_at_start) != 0:
-            self._attempt_connections()
+        if connect_on_startup and len(connect_at_start) != 0:
+            self.attempt_connections()
         else:
             log.warning(
                 f"{self.chain} manager won't attempt to connect to nodes",
                 connect_at_start=connect_at_start,
+                connect_on_startup=connect_on_startup,
                 own_rpc_endpoint=own_rpc_endpoint,
             )
 
@@ -217,17 +220,6 @@ class SubstrateManager():
             )
 
         return last_block
-
-    def _attempt_connections(self) -> None:
-        for node in self.connect_at_start:
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=f'{self.chain} manager connection to {node} node',
-                exception_is_error=True,
-                method=self._connect_node,
-                node=node,
-                endpoint=self._get_node_endpoint(node),
-            )
 
     def _connect_node(
             self,
@@ -505,6 +497,17 @@ class SubstrateManager():
         self.chain_properties = self._get_chain_properties(node_interface)
         return None
 
+    def attempt_connections(self) -> None:
+        for node in self.connect_at_start:
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=f'{self.chain} manager connection to {node} node',
+                exception_is_error=True,
+                method=self._connect_node,
+                node=node,
+                endpoint=self._get_node_endpoint(node),
+            )
+
     @request_available_nodes
     def get_account_balance(
             self,
@@ -607,3 +610,22 @@ class SubstrateManager():
             self.own_rpc_endpoint = endpoint
 
         return result, message
+
+
+def wait_until_a_node_is_available(
+        substrate_manager: SubstrateManager,
+        seconds: int,
+) -> None:
+    """Temporarily suspends the caller execution until a node is available or
+    this function timeouts.
+    """
+    try:
+        with gevent.Timeout(seconds):
+            while len(substrate_manager.available_nodes_call_order) == 0:
+                gevent.sleep(0.1)
+    except gevent.Timeout as e:
+        chain = substrate_manager.chain
+        raise RemoteError(
+            f"{chain} manager does not have nodes availables after waiting "
+            f"{seconds} seconds. {chain} balances won't be queried.",
+        ) from e

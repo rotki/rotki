@@ -28,16 +28,18 @@ from rotkehlchen.tests.utils.blockchain import (
 )
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import (
-    DOT_ADDRESS_1,
-    KSM_ADDRESS_1,
-    KSM_ADDRESS_2,
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
     UNIT_BTC_ADDRESS3,
     make_ethereum_address,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES
+from rotkehlchen.tests.utils.substrate import (
+    DOT_ADDRESS_1,
+    KSM_ADDRESS_1,
+    KSM_ADDRESS_2,
+    KUSAMA_TEST_NODES,
+)
 from rotkehlchen.typing import BlockchainAccountData, SupportedBlockchain
 
 logger = logging.getLogger(__name__)
@@ -1642,7 +1644,9 @@ def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 def test_add_ksm_blockchain_account(rotkehlchen_api_server):
-    """Test adding a Kusama blockchain account works as expected.
+    """Test adding a Kusama blockchain account when there is none in the db
+    works as expected, by triggering the logic that attempts to connect to the
+    nodes.
     """
     async_query = random.choice([False, True])
 
@@ -1677,12 +1681,9 @@ def test_add_ksm_blockchain_account(rotkehlchen_api_server):
     assert FVal(total_ksm['usd_value']) >= ZERO
 
 
-@pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 @pytest.mark.parametrize('ksm_accounts', [[KSM_ADDRESS_1, KSM_ADDRESS_2]])
-def test_remove_ksm_blockchain_account(
-        rotkehlchen_api_server,
-        ksm_accounts,  # pylint: disable=unused-argument
-):
+@pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
+def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
     """Test removing a Kusama blockchain account works as expected by returning
     only the balances of the other Kusama accounts.
     """
