@@ -16,7 +16,12 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures import BalanceType, LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import (
+    ActionType,
+    BalanceType,
+    LedgerAction,
+    LedgerActionType,
+)
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -1606,31 +1611,44 @@ class RestAPI():
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def get_ignored_action_ids(self) -> Response:
-        result = self.rotkehlchen.data.db.get_ignored_action_ids()
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
-
-    @require_loggedin_user()
-    def add_ignored_action_ids(self, action_ids: List[str]) -> Response:
-        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
-        if any(x in ignored_action_ids for x in action_ids):
-            msg = 'One of the given action ids already exists in the database'
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-        self.rotkehlchen.data.db.add_to_ignored_action_ids(identifiers=action_ids)
-        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
-        result_dict = _wrap_in_ok_result(process_result_list(ignored_action_ids))
+    def get_ignored_action_ids(self, action_type: Optional[ActionType]) -> Response:
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(action_type)
+        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def remove_ignored_action_ids(self, action_ids: List[str]) -> Response:
-        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
-        if not all(x in ignored_action_ids for x in action_ids):
-            msg = 'One of the given action ids does not exist in the database'
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+    def add_ignored_action_ids(self, action_type: ActionType, action_ids: List[str]) -> Response:
+        try:
+            self.rotkehlchen.data.db.add_to_ignored_action_ids(
+                action_type=action_type,
+                identifiers=action_ids,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        self.rotkehlchen.data.db.remove_from_ignored_action_ids(identifiers=action_ids)
-        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
-        result_dict = _wrap_in_ok_result(process_result_list(ignored_action_ids))
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
+            action_type=action_type,
+        )
+        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def remove_ignored_action_ids(
+            self,
+            action_type: ActionType,
+            action_ids: List[str],
+    ) -> Response:
+        try:
+            self.rotkehlchen.data.db.remove_from_ignored_action_ids(
+                action_type=action_type,
+                identifiers=action_ids,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
+            action_type=action_type,
+        )
+        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()

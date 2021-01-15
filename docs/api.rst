@@ -6179,7 +6179,7 @@ Dealing with ignored actions
 
 .. http:get:: /api/(version)/actions/ignored
 
-   Doing a GET on the ignored actions endpoint will return a list of all action identifiers that the user has set to have ignored during accounting.
+   Doing a GET on the ignored actions endpoint will return a mapping of lists of all action identifiers that the user has set to have ignored during accounting. User can also specify a specific action type to get only that type's mapping.
 
 
    **Example Request**:
@@ -6189,6 +6189,10 @@ Dealing with ignored actions
       GET /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
 
+      {"action_type": "trade"}
+
+   :reqjson str action_type: A type of actions whose ignored ids to return. If it is not specified a mapping of all action types is returned. Valid action types are: ``trade``, ``asset movement``, ``ethereum_transaction`` and ``ledger action``.
+
    **Example Response**:
 
    .. sourcecode:: http
@@ -6197,11 +6201,14 @@ Dealing with ignored actions
       Content-Type: application/json
 
       {
-          "result": ["X124-JYI", "2325"],
+          "result": {
+	      "trade": ["X124-JYI", "2325"],
+	      "ethereum_transaction": ["0xfoo", "0xboo"]
+	  },
           "message": ""
       }
 
-   :resjson list result: A list of action identifiers that will be ignored during accounting
+   :resjson list result: A mapping to a list of action identifiers that will be ignored during accounting for each type of action.
    :statuscode 200: Actions succesfully queried
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in.
@@ -6209,7 +6216,7 @@ Dealing with ignored actions
 
 .. http:put:: /api/(version)/actions/ignored
 
-   Doing a PUT on the ignored actions endpoint will add action identifiers for ignoring during accounting. Returns the list of all ignored action identifiers after the addition.
+   Doing a PUT on the ignored actions endpoint will add action identifiers for ignoring of a given action type during accounting. Returns the list of all ignored action identifiers of the given type after the addition.
 
 
    **Example Request**:
@@ -6219,8 +6226,9 @@ Dealing with ignored actions
       PUT /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
 
-      {"action_ids": ["Z231-XH23K"]}
+      {"action_type": "ledger action", ""action_ids": ["Z231-XH23K"]}
 
+   :reqjson str action_type: A type of actions whose ignored ids to add. Defined above.
    :reqjson list action_ids: A list of action identifiers to add to the ignored actions for accounting
 
    **Example Response**:
@@ -6231,11 +6239,11 @@ Dealing with ignored actions
       Content-Type: application/json
 
       {
-          "result": ["Z231-XH23K", "X124-JYI", "2325"],
+          "result": {"ledger_action": ["Z231-XH23K", "X124-JYI", "2325"]},
           "message": ""
       }
 
-   :resjson list result: A list of action identifiers that are ignored during accounting.
+   :resjson list result: A mapping to a list of action identifiers that are ignored during accounting for the given action type.
    :statuscode 200: Action ids succesfully added
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in. One of the action ids provided is already on the list.
@@ -6243,7 +6251,7 @@ Dealing with ignored actions
 
 .. http:delete:: /api/(version)/actions/ignored/
 
-   Doing a DELETE on the ignored actions endpoint removes action ids from the list of actions to be ignored during accounting.
+   Doing a DELETE on the ignored actions endpoint removes action ids from the list of actions of the given type to be ignored during accounting.
 
 
    **Example Request**:
@@ -6253,9 +6261,10 @@ Dealing with ignored actions
       DELETE /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
 
-      {"action_ids": ["2325"]}
+      {"action_type": "asset movement", "action_ids": ["2325"]}
 
-   :reqjson list action_ids: A list of action identifiers to remove from the ignored action ids list.
+   :reqjson str action_type: A type of actions whose ignored ids to remove. Defined above.
+   :reqjson list action_ids: A list of action identifiers to remove from the ignored action ids list for the action type.
 
    **Example Response**:
 
@@ -6265,7 +6274,7 @@ Dealing with ignored actions
       Content-Type: application/json
 
       {
-          "result": ["Z231-XH23K", "X124-JYI"],
+          "result": {"asset movement": ["Z231-XH23K", "X124-JYI"]},
           "message": ""
       }
 

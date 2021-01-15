@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.accounting.structures import ActionType, DefiEvent, LedgerAction
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
@@ -318,7 +318,7 @@ class Accountant():
 
         prev_time = Timestamp(0)
         count = 0
-        ignored_action_ids = self.db.get_ignored_action_ids()
+        ignored_actionids_mapping = self.db.get_ignored_action_ids(action_type=None)
         for action in actions:
             try:
                 (
@@ -330,7 +330,7 @@ class Accountant():
                     end_ts=end_ts,
                     prev_time=prev_time,
                     db_settings=db_settings,
-                    ignored_action_ids=ignored_action_ids,
+                    ignored_actionids_mapping=ignored_actionids_mapping,
                 )
             except PriceQueryUnsupportedAsset as e:
                 ts = action_get_timestamp(action)
@@ -415,6 +415,45 @@ class Accountant():
             'all_events': self.csvexporter.all_events,
         }
 
+    @staticmethod
+    def _should_ignore_action(
+            action: TaxableAction,
+            action_type: str,
+            ignored_actionids_mapping: Dict[ActionType, List[str]],
+    ) -> Tuple[bool, Any]:
+        # TODO: These ifs/mappings of action type str to the enum
+        # are only due to mix of new and old code. They should be removed and only
+        # the enum should be used everywhere eventually
+        should_ignore = False
+        identifier: Optional[Any] = None
+        if action_type == 'trade':
+            trade = cast(Trade, action)
+            identifier = trade.identifier
+            should_ignore = identifier in ignored_actionids_mapping.get(ActionType.TRADE, [])
+
+        elif action_type == 'asset_movement':
+            movement = cast(AssetMovement, action)
+            identifier = movement.identifier
+            should_ignore = identifier in ignored_actionids_mapping.get(
+                ActionType.ASSET_MOVEMENT, [],
+            )
+
+        elif action_type == 'ethereum_transaction':
+            tx = cast(EthereumTransaction, action)
+            identifier = tx.identifier
+            should_ignore = tx.identifier in ignored_actionids_mapping.get(
+                ActionType.ETHEREUM_TX, [],
+            )
+
+        elif action_type == 'ledger_action':
+            ledger_action = cast(LedgerAction, action)
+            identifier = ledger_action.identifier
+            should_ignore = identifier in ignored_actionids_mapping.get(
+                ActionType.LEDGER_ACTION, [],
+            )
+
+        return should_ignore, identifier
+
     def _process_action(
             self,
             action: TaxableAction,
@@ -422,7 +461,7 @@ class Accountant():
             end_ts: Timestamp,
             prev_time: Timestamp,
             db_settings: DBSettings,
-            ignored_action_ids: List[str],
+            ignored_actionids_mapping: Dict[ActionType, List[str]],
     ) -> Tuple[bool, Timestamp]:
         """Processes each individual action and returns whether we should continue
         looping through the rest of the actions or not
@@ -494,6 +533,18 @@ class Accountant():
             )
             return True, prev_time
 
+        should_ignore, identifier = self._should_ignore_action(
+            action=action,
+            action_type=action_type,
+            ignored_actionids_mapping=ignored_actionids_mapping,
+        )
+        if should_ignore:
+            log.info(
+                f'Ignoring {action_type} action with identifier {identifier} '
+                f'at {timestamp} since the user asked to ignore it',
+            )
+            return True, prev_time
+
         if action_type == 'loan':
             action = cast(Loan, action)
             self.events.add_loan_gain(
@@ -529,14 +580,6 @@ class Accountant():
 
         # else if we get here it's a trade
         trade = cast(Trade, action)
-        # This should eventually be the trade id as given by rotki and not "link"
-        # so that user can input it from the ui by selecting the trade in there
-        if trade.link in ignored_action_ids:
-            log.info(
-                f'Ignoring {trade.location} trade at {trade.timestamp} due to matching ignored id',
-            )
-            return True, prev_time
-
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
         # costs in cost_currency

@@ -11,7 +11,7 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
@@ -37,7 +37,8 @@ from rotkehlchen.api.v1.encoding import (
     ExternalServicesResourceDeleteSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
-    IgnoredActionsSchema,
+    IgnoredActionsGetSchema,
+    IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     LedgerActionEditSchema,
     LedgerActionIdentifierSchema,
@@ -883,18 +884,23 @@ class IgnoredAssetsResource(BaseResource):
 
 class IgnoredActionsResource(BaseResource):
 
-    modify_schema = IgnoredActionsSchema()
+    get_schema = IgnoredActionsGetSchema()
+    modify_schema = IgnoredActionsModifySchema()
 
-    def get(self) -> Response:
-        return self.rest_api.get_ignored_action_ids()
-
-    @use_kwargs(modify_schema, location='json')  # type: ignore
-    def put(self, action_ids: List[str]) -> Response:
-        return self.rest_api.add_ignored_action_ids(action_ids=action_ids)
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, action_type: Optional[ActionType]) -> Response:
+        return self.rest_api.get_ignored_action_ids(action_type=action_type)
 
     @use_kwargs(modify_schema, location='json')  # type: ignore
-    def delete(self, action_ids: List[str]) -> Response:
-        return self.rest_api.remove_ignored_action_ids(action_ids=action_ids)
+    def put(self, action_type: ActionType, action_ids: List[str]) -> Response:
+        return self.rest_api.add_ignored_action_ids(action_type=action_type, action_ids=action_ids)
+
+    @use_kwargs(modify_schema, location='json')  # type: ignore
+    def delete(self, action_type: ActionType, action_ids: List[str]) -> Response:
+        return self.rest_api.remove_ignored_action_ids(
+            action_type=action_type,
+            action_ids=action_ids,
+        )
 
 
 class QueriedAddressesResource(BaseResource):

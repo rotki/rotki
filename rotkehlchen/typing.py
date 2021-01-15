@@ -193,7 +193,7 @@ class EthereumTransaction(NamedTuple):
         return result
 
     def __hash__(self) -> int:
-        return hash(self.tx_hash.hex() + self.from_address + str(self.nonce))
+        return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
         if other is None:
@@ -203,6 +203,10 @@ class EthereumTransaction(NamedTuple):
             return False
 
         return hash(self) == hash(other)
+
+    @property
+    def identifier(self) -> str:
+        return self.tx_hash.hex() + self.from_address + str(self.nonce)
 
 
 class SupportedBlockchain(Enum):

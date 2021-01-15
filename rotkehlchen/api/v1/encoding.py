@@ -9,7 +9,7 @@ from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 
-from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType, ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
@@ -23,6 +23,7 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
+    deserialize_action_type,
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_hex_color_code,
@@ -411,6 +412,32 @@ class LedgerActionTypeField(fields.Field):
     ) -> LedgerActionType:
         try:
             action_type = deserialize_ledger_action_type(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return action_type
+
+
+class ActionTypeField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: ActionType,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> ActionType:
+        try:
+            action_type = deserialize_action_type(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -1152,7 +1179,12 @@ class IgnoredAssetsSchema(Schema):
     assets = fields.List(AssetField(), required=True)
 
 
-class IgnoredActionsSchema(Schema):
+class IgnoredActionsGetSchema(Schema):
+    action_type = ActionTypeField(missing=None)
+
+
+class IgnoredActionsModifySchema(Schema):
+    action_type = ActionTypeField(required=True)
     action_ids = fields.List(fields.String(required=True), required=True)
 
 

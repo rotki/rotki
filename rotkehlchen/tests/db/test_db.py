@@ -97,6 +97,8 @@ TABLES_AT_INIT = [
     'adex_events',
     'ledger_actions',
     'ledger_action_type',
+    'ignored_actions',
+    'action_type',
 ]
 
 

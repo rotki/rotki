@@ -280,3 +280,36 @@ class LedgerAction:
 
     def is_profitable(self) -> bool:
         return self.action_type.is_profitable()
+
+
+class ActionType(Enum):
+    TRADE = 0
+    ASSET_MOVEMENT = 1
+    ETHEREUM_TX = 2
+    LEDGER_ACTION = 3
+
+    def __str__(self) -> str:
+        if self == ActionType.TRADE:
+            return 'trade'
+        if self == ActionType.ASSET_MOVEMENT:
+            return 'asset movement'
+        if self == ActionType.ETHEREUM_TX:
+            return 'ethereum transaction'
+        if self == ActionType.LEDGER_ACTION:
+            return 'ledger action'
+
+        # else
+        raise RuntimeError(f'Corrupt value {self} for ActionType -- Should never happen')
+
+    def serialize_for_db(self) -> str:
+        if self == ActionType.TRADE:
+            return 'A'
+        if self == ActionType.ASSET_MOVEMENT:
+            return 'B'
+        if self == ActionType.ETHEREUM_TX:
+            return 'C'
+        if self == ActionType.LEDGER_ACTION:
+            return 'D'
+
+        # else
+        raise RuntimeError(f'Corrupt value {self} for ActionType -- Should never happen')

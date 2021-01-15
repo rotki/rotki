@@ -192,7 +192,7 @@ class EthereumManager():
             connect_at_start: Sequence[NodeName],
             eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
     ) -> None:
-        log.debug(f'Initializing Ethereum Manager with {ethrpc_endpoint}')
+        log.debug(f'Initializing Ethereum Manager with own rpc endpoint: {ethrpc_endpoint}')
         self.greenlet_manager = greenlet_manager
         self.web3_mapping: Dict[NodeName, Web3] = {}
         self.own_rpc_endpoint = ethrpc_endpoint
