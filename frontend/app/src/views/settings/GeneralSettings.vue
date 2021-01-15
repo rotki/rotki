@@ -27,19 +27,6 @@
               "
               @change="onAnonymousUsageAnalyticsChange($event)"
             />
-            <v-text-field
-              v-model="rpcEndpoint"
-              class="general-settings__fields__rpc-endpoint"
-              :label="$t('general_settings.labels.rpc_endpoint')"
-              type="text"
-              data-vv-name="eth_rpc_endpoint"
-              :success-messages="settingsMessages[RPC_ENDPOINT].success"
-              :error-messages="settingsMessages[RPC_ENDPOINT].error"
-              clearable
-              @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
-              @click:clear="onRpcEndpointChange('')"
-              @change="onRpcEndpointChange($event)"
-            />
 
             <v-text-field
               v-model="balanceSaveFrequency"
@@ -176,6 +163,42 @@
         </v-card>
         <v-card class="mt-5">
           <v-card-title>
+            {{ $t('general_settings.local_nodes.title') }}
+          </v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="rpcEndpoint"
+              class="general-settings__fields__rpc-endpoint"
+              :label="$t('general_settings.labels.rpc_endpoint')"
+              type="text"
+              data-vv-name="eth_rpc_endpoint"
+              :success-messages="settingsMessages[RPC_ENDPOINT].success"
+              :error-messages="settingsMessages[RPC_ENDPOINT].error"
+              clearable
+              @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
+              @click:clear="onRpcEndpointChange('')"
+              @change="onRpcEndpointChange($event)"
+            />
+
+            <v-text-field
+              v-model="ksmRpcEndpoint"
+              class="general-settings__fields__ksm-rpc-endpoint"
+              :label="$t('general_settings.labels.ksm_rpc_endpoint')"
+              type="text"
+              data-vv-name="eth_rpc_endpoint"
+              :success-messages="settingsMessages[KSM_RPC_ENDPOINT].success"
+              :error-messages="settingsMessages[KSM_RPC_ENDPOINT].error"
+              clearable
+              @paste="
+                onKsmRpcEndpointChange($event.clipboardData.getData('text'))
+              "
+              @click:clear="onKsmRpcEndpointChange('')"
+              @change="onKsmRpcEndpointChange($event)"
+            />
+          </v-card-text>
+        </v-card>
+        <v-card class="mt-5">
+          <v-card-title>
             {{ $t('general_settings.frontend.title') }}
           </v-card-title>
           <v-card-text>
@@ -217,6 +240,7 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import { currencies } from '@/data/currencies';
+import { Defaults } from '@/data/defaults';
 import { Currency } from '@/model/currency';
 import { monitor } from '@/services/monitoring';
 import {
@@ -249,6 +273,7 @@ const SETTING_FLOATING_PRECISION = 'floatingPrecision';
 const SETTING_ANONYMIZED_LOGS = 'anonymizedLogs';
 const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
 const SETTING_RPC_ENDPOINT = 'rpcEndpoint';
+const SETTING_KSM_RPC_ENDPOINT = 'ksmRpcEndpoint';
 const SETTING_BALANCE_SAVE_FREQUENCY = 'balanceSaveFrequency';
 const SETTING_DATE_DISPLAY_FORMAT = 'dateDisplayFormat';
 const SETTING_THOUSAND_SEPARATOR = 'thousandSeparator';
@@ -265,6 +290,7 @@ const SETTINGS = [
   SETTING_ANONYMIZED_LOGS,
   SETTING_ANONYMOUS_USAGE_ANALYTICS,
   SETTING_RPC_ENDPOINT,
+  SETTING_KSM_RPC_ENDPOINT,
   SETTING_BALANCE_SAVE_FREQUENCY,
   SETTING_DATE_DISPLAY_FORMAT,
   SETTING_THOUSAND_SEPARATOR,
@@ -309,7 +335,8 @@ export default class General extends Settings {
   floatingPrecision: string = '0';
   anonymizedLogs: boolean = false;
   anonymousUsageAnalytics: boolean = false;
-  rpcEndpoint: string = 'http://localhost:8545';
+  rpcEndpoint: string = Defaults.RPC_ENDPOINT;
+  ksmRpcEndpoint: string = Defaults.KSM_RPC_ENDPOINT;
   balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
   thousandSeparator: string = '';
@@ -328,6 +355,7 @@ export default class General extends Settings {
   readonly ANONYMIZED_LOGS = SETTING_ANONYMIZED_LOGS;
   readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
   readonly RPC_ENDPOINT = SETTING_RPC_ENDPOINT;
+  readonly KSM_RPC_ENDPOINT = SETTING_KSM_RPC_ENDPOINT;
   readonly BALANCE_SAVE_FREQUENCY = SETTING_BALANCE_SAVE_FREQUENCY;
   readonly DATE_DISPLAY_FORMAT = SETTING_DATE_DISPLAY_FORMAT;
   readonly THOUSAND_SEPARATOR = SETTING_THOUSAND_SEPARATOR;
@@ -678,6 +706,35 @@ export default class General extends Settings {
     }
   }
 
+  async onKsmRpcEndpointChange(endpoint: string) {
+    const previousValue = this.generalSettings.ksmRpcEndpoint;
+
+    if (!this.notTheSame(endpoint, previousValue) && endpoint !== '') {
+      return;
+    }
+
+    const message: BaseMessage = {
+      success: endpoint
+        ? this.$t('general_settings.validation.ksm_rpc.success_set', {
+            endpoint
+          }).toString()
+        : this.$t(
+            'general_settings.validation.ksm_rpc.success_unset'
+          ).toString(),
+      error: this.$t('general_settings.validation.ksm_rpc.error').toString()
+    };
+
+    const success = await this.update(
+      { ksm_rpc_endpoint: endpoint },
+      SETTING_KSM_RPC_ENDPOINT,
+      message
+    );
+
+    if (!success) {
+      this.ksmRpcEndpoint = previousValue || '';
+    }
+  }
+
   formatDate(date: string) {
     if (!date) return '';
 
@@ -712,6 +769,7 @@ export default class General extends Settings {
     this.anonymizedLogs = settings.anonymizedLogs;
     this.anonymousUsageAnalytics = settings.anonymousUsageAnalytics;
     this.rpcEndpoint = settings.ethRpcEndpoint;
+    this.ksmRpcEndpoint = settings.ksmRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
     this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();
