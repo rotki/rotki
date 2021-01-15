@@ -1,5 +1,8 @@
 import subprocess
 import gevent
+import requests
+
+from http import HTTPStatus
 
 
 def test_backend():
@@ -16,8 +19,13 @@ def test_backend():
     timeout = 10
     with gevent.Timeout(timeout):
         try:
-            output = proc.stdout.readline()
-            assert 'Rotki API server is running at' in output.decode('utf-8')
+            output = proc.stdout.readline().decode('utf-8')
+            assert 'Rotki API server is running at' in output
+            url = f'http://{output.split()[-1]}/api/1/version'
+            response = requests.get(url)
+            assert response.status_code == HTTPStatus.OK
+            assert 'latest_version' in response.json()['result']
+
         except gevent.Timeout as e:
             raise AssertionError(
                 f'Did not get anything in the stdout after {timeout} seconds',
