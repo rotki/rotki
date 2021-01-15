@@ -11,6 +11,7 @@ import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
+import { Routes } from '@/router/routes';
 
 @Component({
   components: { BasePageHeader, TabNavigation }
@@ -28,6 +29,10 @@ export default class History extends Vue {
     {
       name: this.$tc('history.tabs.transactions'),
       routeTo: '/history/transactions'
+    },
+    {
+      name: this.$t('history.tabs.ledger_actions').toString(),
+      routeTo: Routes.HISTORY_LEDGER_ACTIONS
     }
   ];
 }

@@ -1,7 +1,7 @@
 import sortBy from 'lodash/sortBy';
+import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
-import { Location } from '@/services/types-common';
 import { SupportedAsset } from '@/services/types-model';
 import { BalanceGetters, getters } from '@/store/balances/getters';
 import { AssetBalance, BalanceState } from '@/store/balances/types';
@@ -70,7 +70,7 @@ describe('balances:getters', () => {
           asset: 'DAI',
           label: '123',
           tags: [],
-          location: Location.BANKS
+          location: TRADE_LOCATION_BANKS
         }
       ],
       connectedExchanges: ['bittrex']

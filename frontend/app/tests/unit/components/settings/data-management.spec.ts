@@ -3,7 +3,7 @@ import flushPromises from 'flush-promises';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import DataManagement from '@/components/settings/data-security/DataManagement.vue';
-import { exchanges } from '@/data/defaults';
+import { SUPPORTED_EXCHANGES } from '@/data/defaults';
 import { Api } from '@/plugins/api';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
@@ -130,7 +130,9 @@ describe('DataManagement.vue', () => {
     expect(
       wrapper.find('.data-management__fields__exchange').classes()
     ).not.toContain('success--text');
-    expect(api.balances.deleteExchangeData).toHaveBeenCalledWith(exchanges[0]);
+    expect(api.balances.deleteExchangeData).toHaveBeenCalledWith(
+      SUPPORTED_EXCHANGES[0]
+    );
   });
 
   test('fails to purge exchange data', async () => {

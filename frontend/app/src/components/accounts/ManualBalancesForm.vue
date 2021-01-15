@@ -30,32 +30,27 @@
       :disabled="pending"
       class="manual-balances-form__tags"
     />
-    <v-select
+    <location-selector
       v-model="location"
       class="manual-balances-form__location"
       :disabled="pending"
       :label="$t('manual_balances_form.fields.location')"
-      :items="locations"
-    >
-      <template #item="{ item, attrs, on }">
-        <v-list-item :id="`balance-location__${item}`" v-bind="attrs" v-on="on">
-          {{ item }}
-        </v-list-item>
-      </template>
-    </v-select>
+    />
   </v-form>
 </template>
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
+import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { ManualBalance } from '@/services/balances/types';
-import { Location } from '@/services/types-common';
+import { TradeLocation } from '@/services/history/types';
 
 @Component({
-  components: { TagInput, AssetSelect },
+  components: { LocationSelector, TagInput, AssetSelect },
   computed: {
     ...mapGetters('balances', ['manualLabels'])
   }
@@ -107,11 +102,7 @@ export default class ManualBalancesForm extends Vue {
   label: string = '';
   amount: string = '';
   tags: string[] = [];
-  location: Location = Location.EXTERNAL;
-
-  get locations(): string[] {
-    return Object.values(Location);
-  }
+  location: TradeLocation = TRADE_LOCATION_EXTERNAL;
 
   readonly amountRules = [
     (v: string) => !!v || this.$t('manual_balances_form.validation.amount')

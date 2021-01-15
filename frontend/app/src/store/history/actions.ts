@@ -5,6 +5,7 @@ import { EXCHANGE_CRYPTOCOM, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
+import { balanceKeys } from '@/services/consts';
 import {
   movementNumericKeys,
   tradeNumericKeys,
@@ -21,11 +22,21 @@ import { api } from '@/services/rotkehlchen-api';
 import { LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
+  ACTION_ADD_LEDGER_ACTION,
+  ACTION_DELETE_LEDGER_ACTION,
+  ACTION_EDIT_LEDGER_ACTION,
+  ACTION_FETCH_LEDGER_ACTIONS,
+  MUTATION_ADD_LEDGER_ACTION,
+  MUTATION_SET_LEDGER_ACTIONS
+} from '@/store/history/consts';
+import {
   AccountRequestMeta,
   HistoryState,
+  LedgerAction,
   LocationRequestMeta
 } from '@/store/history/types';
 import { Severity } from '@/store/notifications/consts';
+import { NotificationPayload } from '@/store/notifications/types';
 import { notify } from '@/store/notifications/utils';
 import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 
@@ -355,5 +366,124 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     );
 
     setStatus(Status.LOADED);
+  },
+
+  async [ACTION_FETCH_LEDGER_ACTIONS](
+    {
+      commit,
+      dispatch,
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
+    },
+    refresh: boolean
+  ): Promise<void> {
+    const taskType = TaskType.LEDGER_ACTIONS;
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+
+    const section = Section.LEDGER_ACTIONS;
+    const currentStatus = status(section);
+
+    if (
+      currentStatus === Status.LOADING ||
+      currentStatus === Status.PARTIALLY_LOADED ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+    const setStatus: (newStatus: Status) => void = newStatus => {
+      if (status(section) === newStatus) {
+        return;
+      }
+      const payload: StatusPayload = {
+        section: section,
+        status: newStatus
+      };
+      commit('setStatus', payload, { root: true });
+    };
+
+    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
+
+    try {
+      const { taskId } = await api.history.ledgerActions();
+      const task = createTask<TaskMeta>(taskId, taskType, {
+        title: i18n.t('actions.ledger_actions.task.title').toString(),
+        description: i18n
+          .t('actions.ledger_actions.task.description', {})
+          .toString(),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<
+        LimitedResponse<LedgerAction[]>,
+        TaskMeta
+      >(taskType, `${taskId}`);
+      commit(MUTATION_SET_LEDGER_ACTIONS, result);
+    } catch (e) {
+      const message = i18n
+        .t('actions.ledger_actions.error.description', {
+          error: e.message
+        })
+        .toString();
+      const title = i18n.t('actions.ledger_actions.error.title').toString();
+
+      await dispatch(
+        'notifications/notify',
+        {
+          title,
+          message: message,
+          severity: Severity.ERROR,
+          display: true
+        } as NotificationPayload,
+        { root: true }
+      );
+    } finally {
+      setStatus(Status.LOADED);
+    }
+  },
+
+  async [ACTION_ADD_LEDGER_ACTION](
+    { commit },
+    action: Omit<LedgerAction, 'identifier'>
+  ): Promise<ActionStatus> {
+    try {
+      const { identifier } = await api.history.addLedgerAction(action);
+      commit(MUTATION_ADD_LEDGER_ACTION, {
+        ...action,
+        identifier
+      } as LedgerAction);
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  },
+
+  async [ACTION_EDIT_LEDGER_ACTION](
+    { commit },
+    action: LedgerAction
+  ): Promise<ActionStatus> {
+    try {
+      const result = await api.history.editLedgerAction(action);
+      commit(MUTATION_SET_LEDGER_ACTIONS, result);
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  },
+
+  async [ACTION_DELETE_LEDGER_ACTION](
+    { commit },
+    identifier: number
+  ): Promise<ActionStatus> {
+    try {
+      const result = await api.history.deleteLedgerAction(identifier);
+      commit(MUTATION_SET_LEDGER_ACTIONS, result);
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
   }
 };

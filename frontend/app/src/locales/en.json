@@ -277,6 +277,84 @@
       "end_after_start": "The end time should be after the start time."
     }
   },
+  "ledger_action_form": {
+    "asset":  {
+      "validation": {
+        "non_empty": "The asset field cannot be empty"
+      }
+    },
+    "amount": {
+      "label": "Amount",
+      "validation": {
+        "non_empty": "The amount field cannot be empty."
+      }
+    },
+    "date": {
+      "hint": "The date of when the action happened",
+      "label": "Date"
+    },
+    "link": {
+      "label": "Link"
+    },
+    "location": {
+      "label": "Location",
+      "validation": {
+        "non_empty": "The location field cannot be empty."
+      }
+    },
+    "notes": {
+      "label": "Notes"
+    },
+    "type": {
+      "label": "Type"
+    }
+  },
+  "ledger_actions": {
+    "actions": {
+      "dividends": "Dividends Income",
+      "donation": "Donation Received",
+      "expense": "Expense",
+      "income": "Income",
+      "loss": "Loss"
+    },
+    "delete": {
+      "message": "Are you sure wou want to delete this ledger action?",
+      "title": "Delete LedgerAction"
+    },
+    "delete_failure": {
+      "description":"There was an error while deleting the action: {error}",
+      "title": "Delete Failed"
+    },
+    "details": {
+      "link": "Link",
+      "link_data": "No link found.",
+      "note_data": "No notes found.",
+      "notes": "Notes",
+      "title": "Details"
+    },
+    "dialog": {
+      "save": "Save",
+      "add": {
+        "title": "Add a ledger action",
+        "subtitle": "Add a manual entry of income/loss/expense etc."
+      }
+    },
+    "edit_tooltip": "Edit the ledger action",
+    "delete_tooltip": "Delete the ledger action",
+    "headers": {
+      "actions": "Actions",
+      "amount": "Amount",
+      "asset": "Asset",
+      "date": "Date",
+      "location": "Location",
+      "type": "Type"
+    },
+    "label": "ledger actions",
+    "loading": "Please wait while your ledger actions are getting loaded...",
+    "loading_subtitle": "The loading of ledger actions might take a while depending on the number of actions you performed.",
+    "refresh_tooltip": "Refresh your ledger actions",
+    "title": "Ledger Actions"
+  },
   "loan_liquidation": {
     "liquidated_collateral": "Liquidated collateral",
     "liquidation_events": "Liquidation Events",
@@ -405,6 +483,7 @@
       "defi_profit_loss": "DeFi Profit/Loss",
       "ethereum_transaction_gas_costs": "Ethereum Transaction Gas Costs",
       "general_trade_profit_loss": "General Trade Profit/Loss",
+      "ledger_actions_profit_loss": "Ledger Actions Profit/Loss",
       "loan_profit": "Loan Profit",
       "margin_positions_pnl": "Margin Positions Profit/Loss",
       "settlement_losses": "Settlement Losses",
@@ -614,6 +693,13 @@
     "refresh_tooltip": "Refresh {name} balances",
     "title": "{name} balances"
   },
+  "trade_location": {
+    "banks": "Banks",
+    "commodities": "Commodities",
+    "equities": "Equities",
+    "external": "External",
+    "real_estate": "Real Estate"
+  },
   "trade_location_selector": {
     "selection-none": "Showing results across all locations",
     "selection-single": "Showing results for {location}",
@@ -643,7 +729,8 @@
     "tabs": {
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
-      "transactions": "Ethereum Transactions"
+      "transactions": "Ethereum Transactions",
+      "ledger_actions": "Ledger Actions"
     }
   },
   "overview": {
@@ -726,6 +813,16 @@
     }
   },
   "actions": {
+    "ledger_actions": {
+      "error": {
+        "description": "Failed query for ledger actions: {error}",
+        "title": "Ledger actions"
+      },
+      "task": {
+        "description": "actions.ledger_actions.task.description",
+        "title": "Retrieving ledger actions"
+      }
+    },
     "manual_balances": {
       "task": {
         "title": "Retrieving manual balances"
@@ -1186,7 +1283,8 @@
     "history_sub": {
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
-      "ethereum_transactions": "Ethereum Transactions"
+      "ethereum_transactions": "Ethereum Transactions",
+      "ledger_actions": "Ledger Actions"
     },
     "defi": "DeFi",
     "statistics": "Statistics",

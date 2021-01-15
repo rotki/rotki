@@ -6,8 +6,12 @@ import {
   TradeUpdate
 } from '@/services/history/types';
 import { LimitedResponse } from '@/services/types-api';
+import {
+  MUTATION_ADD_LEDGER_ACTION,
+  MUTATION_SET_LEDGER_ACTIONS
+} from '@/store/history/consts';
 import { defaultHistoricState, defaultState } from '@/store/history/state';
-import { HistoryState } from '@/store/history/types';
+import { HistoryState, LedgerAction } from '@/store/history/types';
 
 export const mutations: MutationTree<HistoryState> = {
   appendTrades(state: HistoryState, trades: LimitedResponse<Trade[]>) {
@@ -76,6 +80,26 @@ export const mutations: MutationTree<HistoryState> = {
 
   resetTransactions(state: HistoryState) {
     state.transactions = defaultHistoricState();
+  },
+
+  [MUTATION_SET_LEDGER_ACTIONS](
+    state: HistoryState,
+    actions: LimitedResponse<LedgerAction[]>
+  ) {
+    state.ledgerActions = {
+      data: [...actions.entries],
+      limit: actions.entriesLimit,
+      found: actions.entriesFound
+    };
+  },
+
+  [MUTATION_ADD_LEDGER_ACTION](state: HistoryState, action: LedgerAction) {
+    const ledgerActions = state.ledgerActions;
+    state.ledgerActions = {
+      data: [...ledgerActions.data, action],
+      limit: ledgerActions.limit,
+      found: ledgerActions.found + 1
+    };
   },
 
   reset(state: HistoryState) {
