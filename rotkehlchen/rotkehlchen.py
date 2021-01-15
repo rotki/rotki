@@ -125,6 +125,7 @@ class Rotkehlchen():
             )
         self.main_loop_spawned = False
         self.args = args
+        self.api_task_greenlets: List[gevent.Greenlet] = []
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
@@ -296,6 +297,7 @@ class Rotkehlchen():
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
             greenlet_manager=self.greenlet_manager,
+            api_task_greenlets=self.api_task_greenlets,
             database=self.data.db,
             cryptocompare=self.cryptocompare,
             premium_sync_manager=self.premium_sync_manager,

@@ -189,10 +189,8 @@ class RestAPI():
         self.stop_event = Event()
         mainloop_greenlet = self.rotkehlchen.start()
         mainloop_greenlet.link_exception(self._handle_killed_greenlets)
-        # Greenlets that will be waited for when we shutdown
+        # Greenlets that will be waited for when we shutdown (just main loop)
         self.waited_greenlets = [mainloop_greenlet]
-        # Greenlets that can be killed instead of waited for when we shutdown
-        self.killable_greenlets: List[gevent.Greenlet] = []
         self.task_lock = Semaphore()
         self.task_id = 0
         self.task_results: Dict[int, Any] = {}
@@ -255,7 +253,7 @@ class RestAPI():
         )
         greenlet.task_id = task_id
         greenlet.link_exception(self._handle_killed_greenlets)
-        self.killable_greenlets.append(greenlet)
+        self.rotkehlchen.api_task_greenlets.append(greenlet)
         return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
 
     # - Public functions not exposed via the rest api
@@ -264,7 +262,7 @@ class RestAPI():
         log.debug('Waiting for greenlets')
         gevent.wait(self.waited_greenlets)
         log.debug('Waited for greenlets. Killing all other greenlets')
-        gevent.killall(self.killable_greenlets)
+        gevent.killall(self.rotkehlchen.api_task_greenlets)
         log.debug('Greenlets killed. Killing zerorpc greenlet')
         log.debug('Shutdown completed')
         logging.shutdown()
@@ -293,7 +291,7 @@ class RestAPI():
             # If no task id is given return list of all pending and completed tasks
             completed = []
             pending = []
-            for greenlet in self.killable_greenlets:
+            for greenlet in self.rotkehlchen.api_task_greenlets:
                 task_id = greenlet.task_id
                 if task_id in self.task_results:
                     completed.append(task_id)
@@ -304,7 +302,7 @@ class RestAPI():
             return api_response(result=result, status_code=HTTPStatus.OK)
 
         with self.task_lock:
-            for idx, greenlet in enumerate(self.killable_greenlets):
+            for idx, greenlet in enumerate(self.rotkehlchen.api_task_greenlets):
                 if greenlet.task_id == task_id:
                     if task_id in self.task_results:
                         # Task has completed and we just got the outcome
@@ -318,8 +316,8 @@ class RestAPI():
                             'result': {'status': 'completed', 'outcome': process_result(ret)},
                             'message': '',
                         }
-                        # Also remove the greenlet from the killable_greenlets
-                        self.killable_greenlets.pop(idx)
+                        # Also remove the greenlet from the api tasks
+                        self.rotkehlchen.api_task_greenlets.pop(idx)
                         return api_response(result=result_dict, status_code=HTTPStatus.OK)
                     # else task is still pending and the greenlet is running
                     result_dict = {
@@ -1053,7 +1051,7 @@ class RestAPI():
         #    All results would be discarded anyway since we are logging out.
         # 2. Have an intricate stop() notification system for each greenlet, but
         #   that is going to get complicated fast.
-        gevent.killall(self.killable_greenlets)
+        gevent.killall(self.rotkehlchen.api_task_greenlets)
         with self.task_lock:
             self.task_results = {}
         self.rotkehlchen.logout()

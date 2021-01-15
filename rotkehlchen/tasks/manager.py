@@ -1,7 +1,10 @@
+import gevent
+
 import logging
+import random
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.db.dbhandler import DBHandler
-from typing import NamedTuple, Set
+from typing import NamedTuple, Set, List
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.utils.misc import ts_now
@@ -15,6 +18,7 @@ logger = logging.getLogger(__name__)
 CRYPTOCOMPARE_QUERY_AFTER_SECS = 86400  # a day
 DEFAULT_MAX_TASKS_NUM = 2
 CRYPTOCOMPARE_HISTOHOUR_FREQUENCY = 240  # at least 4 mins apart
+XPUB_DERIVATION_FREQUENCY = 3600  # every hour
 
 
 class CCHistoQuery(NamedTuple):
@@ -28,6 +32,7 @@ class TaskManager():
             self,
             max_tasks_num: int,
             greenlet_manager: GreenletManager,
+            api_task_greenlets: List[gevent.Greenlet],
             database: DBHandler,
             cryptocompare: Cryptocompare,
             premium_sync_manager: PremiumSyncManager,
@@ -35,12 +40,13 @@ class TaskManager():
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
+        self.api_task_greenlets = api_task_greenlets
         self.database = database
         self.cryptocompare = cryptocompare
         self.premium_sync_manager = premium_sync_manager
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chain_manager = chain_manager
-        self.xpub_derivation_scheduled = False
+        self.last_xpub_derivation_ts = 0
         self.prepared_cryptocompare_query = False
         self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
             after_seconds=None,
@@ -48,6 +54,12 @@ class TaskManager():
             exception_is_error=True,
             method=self._prepare_cryptocompare_queries,
         )
+
+        self.potential_tasks = [
+            self._maybe_schedule_cryptocompare_query,
+            self.premium_sync_manager.maybe_upload_data_to_server,
+            self._maybe_schedule_xpub_derivation,
+        ]
 
     def _prepare_cryptocompare_queries(self) -> None:
         """Prepare the queries to do to cryptocompare
@@ -124,10 +136,28 @@ class TaskManager():
         )
         return True
 
+    def _maybe_schedule_xpub_derivation(self) -> None:
+        """Schedules the xpub derivation task if enough time has passed and if user has xpubs"""
+        now = ts_now()
+        if self.last_xpub_derivation_ts - now < XPUB_DERIVATION_FREQUENCY:
+            return
+
+        xpubs = self.database.get_bitcoin_xpub_data()
+        if len(xpubs) == 0:
+            return
+
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Derive new xpub addresses',
+            exception_is_error=True,
+            method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
+        )
+        self.last_xpub_derivation_ts = now
+
     def schedule(self) -> None:
         """Schedules background tasks"""
         self.greenlet_manager.clear_finished()
-        current_greenlets = len(self.greenlet_manager.greenlets)
+        current_greenlets = len(self.greenlet_manager.greenlets) + len(self.api_task_greenlets)
         not_proceed = current_greenlets >= self.max_tasks_num
         logger.debug(
             f'At task scheduling. Current greenlets: {current_greenlets} '
@@ -137,15 +167,10 @@ class TaskManager():
         if not_proceed:
             return  # too busy
 
-        self._maybe_schedule_cryptocompare_query()
-        self.premium_sync_manager.maybe_upload_data_to_server()
+        callables = random.sample(
+            population=self.potential_tasks,
+            k=min(self.max_tasks_num - current_greenlets, len(self.potential_tasks)),
+        )
 
-        if not self.xpub_derivation_scheduled:
-            # 1 minute in the app's startup try to derive new xpub addresses
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=60.0,
-                task_name='Derive new xpub addresses',
-                exception_is_error=True,
-                method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
-            )
-            self.xpub_derivation_scheduled = True
+        for callable_fn in callables:
+            callable_fn()  # type: ignore

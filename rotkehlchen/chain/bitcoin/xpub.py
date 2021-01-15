@@ -168,7 +168,7 @@ class XpubManager():
         May raise:
         - RemoteError: if blockstream/blockchain.info and others can't be reached
         """
-        last_receiving_idx, last_change_idx = self.db.get_last_xpub_derived_indices(xpub_data)
+        last_receiving_idx, last_change_idx = self.db.get_last_consecutive_xpub_derived_indices(xpub_data)  # noqa: E501
         derived_addresses_data = _derive_addresses_from_xpub_data(
             xpub_data=xpub_data,
             start_receiving_index=last_receiving_idx,
@@ -264,6 +264,7 @@ class XpubManager():
         """Checks all xpub addresseses and sees if new addresses got used.
         If they did it adds them for tracking.
         """
+        log.debug('Starting task for derivation of new xpub addresses')
         xpubs = self.db.get_bitcoin_xpub_data()
         with self.lock:
             for xpub_data in xpubs:

@@ -3056,24 +3056,34 @@ class DBHandler:
 
         return result
 
-    def get_last_xpub_derived_indices(self, xpub_data: XpubData) -> Tuple[int, int]:
-        """Get the last known receiving and change derived indices from the given xpub"""
+    def get_last_consecutive_xpub_derived_indices(self, xpub_data: XpubData) -> Tuple[int, int]:
+        """
+        Get the last known receiving and change derived indices from the given
+        xpub that are consecutive since the beginning.
+
+        For example if we have derived indices 0, 1, 4, 5 then this will return 1.
+
+        This tells us from where to start deriving again safely
+        """
         cursor = self.conn.cursor()
-        result = cursor.execute(
-            'SELECT MAX(derived_index) from xpub_mappings WHERE xpub=? AND '
-            'derivation_path IS ? AND account_index=0;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
-        )
-        result = result.fetchall()
-        last_receiving_idx = int(result[0][0]) if result[0][0] is not None else 0
-        result = cursor.execute(
-            'SELECT MAX(derived_index) from xpub_mappings WHERE xpub=? AND '
-            'derivation_path IS ? AND account_index=1;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
-        )
-        result = result.fetchall()
-        last_change_idx = int(result[0][0]) if result[0][0] is not None else 0
-        return last_receiving_idx, last_change_idx
+        returned_indices = []
+        for acc_idx in (0, 1):
+            query = cursor.execute(
+                'SELECT derived_index from xpub_mappings WHERE xpub=? AND '
+                'derivation_path IS ? AND account_index=?;',
+                (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db(), acc_idx),
+            )
+            prev_index = -1
+            for result in query:
+                index = int(result[0])
+                if index != prev_index + 1:
+                    break
+
+                prev_index = index
+
+            returned_indices.append(0 if prev_index == -1 else prev_index)
+
+        return tuple(returned_indices)  # type: ignore
 
     def get_addresses_to_xpub_mapping(
             self,
