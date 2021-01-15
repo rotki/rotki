@@ -1,6 +1,12 @@
 import i18n from '@/i18n';
 
-export const FETCH_LEDGER_ACTIONS = 'fetchLedgerActions' as const;
+export const ACTION_FETCH_LEDGER_ACTIONS = 'fetchLedgerActions' as const;
+export const ACTION_ADD_LEDGER_ACTION = 'addLedgerAction' as const;
+export const ACTION_EDIT_LEDGER_ACTION = 'editLedgerAction' as const;
+export const ACTION_DELETE_LEDGER_ACTION = 'deleteLedgerAction' as const;
+
+export const MUTATION_ADD_LEDGER_ACTION = 'addLedgerAction' as const;
+export const MUTATION_SET_LEDGER_ACTIONS = 'setLedgerActions' as const;
 
 export const ACTION_INCOME = 'income';
 export const ACTION_LOSS = 'loss';

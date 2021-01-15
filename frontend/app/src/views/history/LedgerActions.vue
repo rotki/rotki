@@ -92,7 +92,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
-import { FETCH_LEDGER_ACTIONS } from '@/store/history/consts';
+import { ACTION_FETCH_LEDGER_ACTIONS } from '@/store/history/consts';
 import { HistoricData, LedgerAction } from '@/store/history/types';
 
 @Component({
@@ -107,7 +107,7 @@ import { HistoricData, LedgerAction } from '@/store/history/types';
     ...mapState('history', ['ledgerActions'])
   },
   methods: {
-    ...mapActions('history', [FETCH_LEDGER_ACTIONS])
+    ...mapActions('history', [ACTION_FETCH_LEDGER_ACTIONS])
   }
 })
 export default class LedgerActions extends Mixins(StatusMixin) {
@@ -136,18 +136,18 @@ export default class LedgerActions extends Mixins(StatusMixin) {
     },
     { text: '', value: 'data-table-expand' }
   ];
-  [FETCH_LEDGER_ACTIONS]!: (refresh: boolean) => Promise<void>;
+  [ACTION_FETCH_LEDGER_ACTIONS]!: (refresh: boolean) => Promise<void>;
   ledgerActions!: HistoricData<LedgerAction>;
 
   openDialog: boolean = false;
   validForm: boolean = false;
 
   async refresh() {
-    await this[FETCH_LEDGER_ACTIONS](true);
+    await this[ACTION_FETCH_LEDGER_ACTIONS](true);
   }
 
   async mounted() {
-    await this[FETCH_LEDGER_ACTIONS](false);
+    await this[ACTION_FETCH_LEDGER_ACTIONS](false);
   }
 
   async addLedgerAction() {

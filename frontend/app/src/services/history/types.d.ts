@@ -58,3 +58,7 @@ export interface EthTransaction {
   readonly inputData: string;
   readonly nonce: number;
 }
+
+export interface LedgerActionResult {
+  readonly identifier: number;
+}

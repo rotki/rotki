@@ -21,7 +21,14 @@ import {
 import { api } from '@/services/rotkehlchen-api';
 import { LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
-import { FETCH_LEDGER_ACTIONS } from '@/store/history/consts';
+import {
+  ACTION_ADD_LEDGER_ACTION,
+  ACTION_DELETE_LEDGER_ACTION,
+  ACTION_EDIT_LEDGER_ACTION,
+  ACTION_FETCH_LEDGER_ACTIONS,
+  MUTATION_ADD_LEDGER_ACTION,
+  MUTATION_SET_LEDGER_ACTIONS
+} from '@/store/history/consts';
 import {
   AccountRequestMeta,
   HistoryState,
@@ -361,7 +368,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     setStatus(Status.LOADED);
   },
 
-  async [FETCH_LEDGER_ACTIONS](
+  async [ACTION_FETCH_LEDGER_ACTIONS](
     {
       commit,
       dispatch,
@@ -414,7 +421,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         LimitedResponse<LedgerAction[]>,
         TaskMeta
       >(taskType, `${taskId}`);
-      commit('setLedgerActions', result);
+      commit(MUTATION_SET_LEDGER_ACTIONS, result);
     } catch (e) {
       const message = i18n
         .t('actions.ledger_actions.error.description', {
@@ -435,6 +442,48 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       );
     } finally {
       setStatus(Status.LOADED);
+    }
+  },
+
+  async [ACTION_ADD_LEDGER_ACTION](
+    { commit },
+    action: Omit<LedgerAction, 'identifier'>
+  ): Promise<ActionStatus> {
+    try {
+      const { identifier } = await api.history.addLedgerAction(action);
+      commit(MUTATION_ADD_LEDGER_ACTION, {
+        ...action,
+        identifier
+      } as LedgerAction);
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  },
+
+  async [ACTION_EDIT_LEDGER_ACTION](
+    { commit },
+    action: LedgerAction
+  ): Promise<ActionStatus> {
+    try {
+      const result = await api.history.editLedgerAction(action);
+      commit(MUTATION_SET_LEDGER_ACTIONS, result);
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  },
+
+  async [ACTION_DELETE_LEDGER_ACTION](
+    { commit },
+    identifier: number
+  ): Promise<ActionStatus> {
+    try {
+      const result = await api.history.deleteLedgerAction(identifier);
+      commit(MUTATION_SET_LEDGER_ACTIONS, result);
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
     }
   }
 };

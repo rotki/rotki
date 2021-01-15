@@ -3,14 +3,25 @@ import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
+import { balanceKeys, basicAxiosTransformer } from '@/services/consts';
 import { tradeNumericKeys } from '@/services/history/const';
-import { NewTrade, Trade, TradeLocation } from '@/services/history/types';
-import { ActionResult, PendingTask } from '@/services/types-api';
+import {
+  LedgerActionResult,
+  NewTrade,
+  Trade,
+  TradeLocation
+} from '@/services/history/types';
+import {
+  ActionResult,
+  LimitedResponse,
+  PendingTask
+} from '@/services/types-api';
 import {
   handleResponse,
   validStatus,
   validWithParamsSessionAndExternalService
 } from '@/services/utils';
+import { LedgerAction } from '@/store/history/types';
 import { assert } from '@/utils/assertions';
 
 export class HistoryApi {
@@ -112,7 +123,49 @@ export class HistoryApi {
           location: location ? location : undefined
         }),
         validateStatus: validStatus,
-        transformResponse: setupTransformer()
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async addLedgerAction(
+    action: Omit<LedgerAction, 'identifier'>
+  ): Promise<LedgerActionResult> {
+    return this.axios
+      .put<ActionResult<LedgerActionResult>>(
+        '/ledgeractions',
+        axiosSnakeCaseTransformer(action),
+        {
+          validateStatus: validStatus,
+          transformResponse: setupTransformer(balanceKeys)
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async editLedgerAction(
+    action: LedgerAction
+  ): Promise<LimitedResponse<LedgerAction>> {
+    return this.axios
+      .patch<ActionResult<LimitedResponse<LedgerAction>>>(
+        '/ledgeractions',
+        axiosSnakeCaseTransformer(action),
+        {
+          validateStatus: validStatus,
+          transformResponse: setupTransformer(balanceKeys)
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async deleteLedgerAction(
+    identifier: number
+  ): Promise<LimitedResponse<LedgerAction>> {
+    return this.axios
+      .delete<ActionResult<LimitedResponse<LedgerAction>>>('/ledgeractions', {
+        params: axiosSnakeCaseTransformer({ identifier }),
+        validateStatus: validStatus,
+        transformResponse: setupTransformer(balanceKeys)
       })
       .then(handleResponse);
   }
