@@ -18,7 +18,7 @@
       @input="onDateChange($event)"
     />
 
-    <v-row>
+    <v-row align="center">
       <v-col cols="12" md="4">
         <asset-select
           :error-messages="errors['asset']"

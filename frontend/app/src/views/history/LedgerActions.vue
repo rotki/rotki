@@ -30,6 +30,9 @@
       </v-card-title>
       <v-card-text>
         <v-data-table
+          show-expand
+          single-expand
+          item-key="identifier"
           :items="ledgerActions.data"
           :headers="headers"
           :footer-props="footerProps"
@@ -71,6 +74,48 @@
               :colspan="headers.length"
               :label="$t('ledger_actions.label')"
             />
+          </template>
+          <template #expanded-item="{ headers, item }">
+            <td
+              :colspan="headers.length"
+              class="ledger-actions__action__details"
+            >
+              <v-col cols="12">
+                <v-row class="pt-3 pb-3">
+                  <span class="text-h6">
+                    {{ $t('ledger_actions.details.title') }}
+                  </span>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-card outlined>
+                      <v-card-title class="subtitle-2">
+                        {{ $t('ledger_actions.details.notes') }}
+                      </v-card-title>
+                      <v-card-text>
+                        {{
+                          item.notes
+                            ? item.notes
+                            : $t('ledger_actions.details.note_data')
+                        }}
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+                <v-row class="mt-2">
+                  <v-col cols="auto" class="font-weight-medium">
+                    {{ $t('ledger_actions.details.link') }}
+                  </v-col>
+                  <v-col>
+                    {{
+                      item.link
+                        ? item.link
+                        : $t('ledger_actions.details.link_data')
+                    }}
+                  </v-col>
+                </v-row>
+              </v-col>
+            </td>
           </template>
         </v-data-table>
       </v-card-text>
@@ -280,4 +325,12 @@ export default class LedgerActions extends Mixins(StatusMixin) {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.ledger-actions {
+  &__action {
+    &__details {
+      background-color: var(--v-rotki-light-grey-base);
+    }
+  }
+}
+</style>

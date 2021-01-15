@@ -325,6 +325,13 @@
       "description":"There was an error while deleting the action: {error}",
       "title": "Delete Failed"
     },
+    "details": {
+      "link": "Link",
+      "link_data": "No link found.",
+      "note_data": "No notes found.",
+      "notes": "Notes",
+      "title": "Details"
+    },
     "dialog": {
       "save": "Save",
       "add": {

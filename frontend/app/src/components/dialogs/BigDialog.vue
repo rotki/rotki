@@ -17,7 +17,7 @@
       </v-card-subtitle>
       <div class="big-dialog__content">
         <v-row align="center" class="mx-0 big-dialog__body">
-          <v-col cols="12">
+          <v-col v-if="display" cols="12">
             <slot />
           </v-col>
         </v-row>
