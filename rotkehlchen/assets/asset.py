@@ -164,6 +164,11 @@ WORLD_TO_BITFINEX = {
     'ZB': 'ZBT',
 }
 
+WORLD_TO_ICONOMI = {
+    # In Rotkehlchen LUNA-2 is Terra Luna but in Bittrex it's LUNA
+    'LUNA-2': 'LUNA',
+}
+
 
 @total_ordering
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)

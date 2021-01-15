@@ -11,7 +11,8 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import RemoteError, UnknownAsset
+from rotkehlchen.assets.converters import ICONOMI_TO_WORLD, UNSUPPORTED_ICONOMI_ASSETS
+from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Location, Price, Trade, TradePair, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.inquirer import Inquirer
@@ -23,17 +24,23 @@ from rotkehlchen.utils.serialization import rlk_jsonloads
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-UNSUPPORTED_ICONOMI_ASSETS = ('ICNGS',)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 def iconomi_asset(asset: str) -> Asset:
-    return Asset(asset.upper())
+    symbol = asset.upper()
+    if symbol in UNSUPPORTED_ICONOMI_ASSETS:
+        raise UnsupportedAsset(symbol)
+    return Asset(ICONOMI_TO_WORLD.get(symbol, symbol))
 
 
 def iconomi_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
+    """May raise:
+    - UnsupportedAsset
+    - UnknownAsset
+    """
     tx_asset = iconomi_asset(pair[:3])
     native_asset = iconomi_asset(pair[3:])
     return tx_asset, native_asset
@@ -219,9 +226,10 @@ class Iconomi(ExchangeInterface):
                     'amount': balance_info['balance'],
                     'usd_value': usd_value,
                 }
-            except UnknownAsset:
+            except (UnknownAsset, UnsupportedAsset) as e:
+                asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported ICONOMI asset {ticker}. '
+                    f'Found {asset_tag} ICONOMI asset {ticker}. '
                     f' Ignoring its balance query.',
                 )
 
