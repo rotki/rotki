@@ -35,9 +35,21 @@ jobs:
               - [AppImage](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage)
               - [Tar with executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz)
             - **OSX**
-              -  [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg)
+              - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg)
+              - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.zip)
             - **Windows**
               - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32-${{ env.RELEASE_VERSION }}.exe)
+            
+            Optionally, you can also [verify the integrity](https://rotki.readthedocs.io/en/latest/installation_guide.html#verifying-integrity) of the aforementioned binaries using the following checksums:
+            
+            - **Linux**
+              - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)
+              - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz.sha512)
+            - **OSX**
+              - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg.sha512)
+              - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.zip.sha512)
+            - **Windows**
+              - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32-${{ env.RELEASE_VERSION }}.exe.sha512)
 
             # Release Highlights
             ----
