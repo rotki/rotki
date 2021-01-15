@@ -270,7 +270,7 @@ class LedgerAction:
         return {
             'identifier': self.identifier,
             'timestamp': self.timestamp,
-            'type': str(self.action_type),
+            'action_type': str(self.action_type),
             'location': str(self.location),
             'amount': str(self.amount),
             'asset': self.asset.identifier,

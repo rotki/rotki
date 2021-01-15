@@ -2345,7 +2345,7 @@ Dealing with ledger actions
               "entries": [{
                   "identifier": 344,
                   "timestamp": 1491606401,
-		  "type": "loss",
+		  "action_type": "loss",
                   "location": "blockchain",
                   "amount": "1550",
                   "asset": "DAI",
@@ -2360,7 +2360,7 @@ Dealing with ledger actions
    :resjson object entries: An array of action objects.
    :resjsonarr int identifier: The uniquely identifying identifier for this action.
    :resjsonarr int timestamp: The timestamp at which the action occured
-   :resjsonarr string type: The type of action. Valid types are: ``income``, ``loss``, ``donation received``, ``expense`` and ``dividends income``.
+   :resjsonarr string action_type: The type of action. Valid types are: ``income``, ``loss``, ``donation received``, ``expense`` and ``dividends income``.
    :resjsonarr string location: A valid location at which the action happened.
    :resjsonarr string amount: The amount of asset for the action
    :resjsonarr string asset: The asset for the action
@@ -2385,14 +2385,15 @@ Dealing with ledger actions
       Host: localhost:5042
 
       {
-          "timestamp": 1491606401,
-	  "type": "income"
-          "location": "external",
-          "amount": "1",
-          "asset": "ETH",
-          "link": "Optional unique identifier"
-          "notes": "Eth I received for being pretty"
-      }
+          "action": {
+	      "timestamp": 1491606401,
+	      "action_type": "income"
+	      "location": "external",
+	      "amount": "1",
+	      "asset": "ETH",
+	      "link": "Optional unique identifier",
+	      "notes": "Eth I received for being pretty"
+      }}
 
    The request object is the same as above, a LedgerAction entry.
 
@@ -2428,7 +2429,7 @@ Dealing with ledger actions
       {
           "identifier": 55
           "timestamp": 1491606401,
-	  "type": "income"
+	  "action_type": "income"
           "location": "external",
           "amount": "2",
           "asset": "ETH",
@@ -2450,7 +2451,7 @@ Dealing with ledger actions
               "entries": [{
                   "identifier": 55,
                   "timestamp": 1491606401,
-        	  "type": "income"
+        	  "action_type": "income"
                   "location": "external",
                   "amount": "2",
                   "asset": "ETH",
@@ -2497,7 +2498,7 @@ Dealing with ledger actions
               "entries": [{
                   "identifier": 35,
                   "timestamp": 1491606401,
-        	  "type": "income"
+        	  "action_type": "income"
                   "location": "external",
                   "amount": "2",
                   "asset": "ETH",
