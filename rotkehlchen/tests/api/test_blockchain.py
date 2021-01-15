@@ -37,7 +37,7 @@ from rotkehlchen.tests.utils.factories import (
     make_ethereum_address,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.tests.utils.substrate import TEST_KUSAMA_NODES
+from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES
 from rotkehlchen.typing import BlockchainAccountData, SupportedBlockchain
 
 logger = logging.getLogger(__name__)
@@ -1640,7 +1640,7 @@ def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server):
     )
 
 
-@pytest.mark.parametrize('kusama_manager_connect_at_start', [TEST_KUSAMA_NODES])
+@pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 def test_add_ksm_blockchain_account(rotkehlchen_api_server):
     """Test adding a Kusama blockchain account works as expected.
     """
@@ -1677,7 +1677,7 @@ def test_add_ksm_blockchain_account(rotkehlchen_api_server):
     assert FVal(total_ksm['usd_value']) >= ZERO
 
 
-@pytest.mark.parametrize('kusama_manager_connect_at_start', [TEST_KUSAMA_NODES])
+@pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 @pytest.mark.parametrize('ksm_accounts', [[KSM_ADDRESS_1, KSM_ADDRESS_2]])
 def test_remove_ksm_blockchain_account(
         rotkehlchen_api_server,

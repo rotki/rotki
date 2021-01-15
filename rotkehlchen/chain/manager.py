@@ -321,6 +321,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
     def set_eth_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         return self.ethereum.set_rpc_endpoint(endpoint)
 
+    def set_ksm_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
+        return self.kusama.set_rpc_endpoint(endpoint)
+
     def deactivate_premium_status(self) -> None:
         dsr = self.makerdao_dsr
         if dsr:

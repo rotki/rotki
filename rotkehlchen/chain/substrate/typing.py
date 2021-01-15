@@ -13,14 +13,22 @@ BlockNumber = NewType('BlockNumber', int)
 class KusamaNodeName(Enum):
     """Public nodes for Kusama.
     """
-    PARITY = 0
+    OWN = 0
+    PARITY = 1
 
     def __str__(self) -> str:
+        if self == KusamaNodeName.OWN:
+            return 'own node'
         if self == KusamaNodeName.PARITY:
             return 'parity'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
     def endpoint(self) -> str:
+        if self == KusamaNodeName.OWN:
+            raise NotImplementedError(
+                'The endpoint url for a substrate own node must be got either '
+                'via "own_rpc_endpoint" or the specific db setting',
+            )
         if self == KusamaNodeName.PARITY:
             return 'https://kusama-rpc.polkadot.io/'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
@@ -84,6 +92,3 @@ class NodeNameAttributes(NamedTuple):
 
 DictNodeNameNodeAttributes = Dict[NodeName, NodeNameAttributes]
 NodesCallOrder = List[Tuple[NodeName, NodeNameAttributes]]
-
-
-KUSAMA_NODES_TO_CONNECT_AT_START = (KusamaNodeName.PARITY, )

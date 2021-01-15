@@ -36,7 +36,7 @@ from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS2,
 )
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
-from rotkehlchen.tests.utils.substrate import TEST_KUSAMA_NODES
+from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES
 from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp
 
 
@@ -624,7 +624,7 @@ def test_balances_caching_mixup(
         assert result_btc['totals']['liabilities'] == {}
 
 
-@pytest.mark.parametrize('kusama_manager_connect_at_start', [TEST_KUSAMA_NODES])
+@pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 @pytest.mark.parametrize('ksm_accounts', [[KSM_ADDRESS_1, KSM_ADDRESS_2]])
 def test_query_ksm_balances(
         rotkehlchen_api_server,

@@ -535,6 +535,7 @@ class RestAPI():
         else:
             result = balances.serialize()
             # If only specific input blockchain was given ignore other results
+            totals: Dict[str, Any] = {'assets': {}, 'liabilities': {}}
             if blockchain == SupportedBlockchain.ETHEREUM:
                 result['per_account'].pop('BTC', None)
                 result['per_account'].pop('KSM', None)
@@ -544,7 +545,6 @@ class RestAPI():
                 val = result['per_account'].get('BTC', None)
                 per_account = {'BTC': val} if val else {}
                 val = result['totals']['assets'].get('BTC', None)
-                totals: Dict[str, Any] = {'assets': {}, 'liabilities': {}}
                 if val:
                     totals['assets'] = {'BTC': val}
                 result = {'per_account': per_account, 'totals': totals}
@@ -552,7 +552,8 @@ class RestAPI():
                 val = result['per_account'].get('KSM', None)
                 per_account = {'KSM': val} if val else {}
                 val = result['totals']['assets'].get('KSM', None)
-                totals = {'assets': {'KSM': val}, 'liabilities': {}}
+                if val:
+                    totals['assets'] = {'KSM': val}
                 result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}

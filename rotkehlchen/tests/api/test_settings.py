@@ -20,7 +20,7 @@ from rotkehlchen.tests.utils.mock import MockWeb3
 from rotkehlchen.typing import ChecksumEthAddress, ModuleName
 
 
-def test_qerying_settings(rotkehlchen_api_server, username):
+def test_querying_settings(rotkehlchen_api_server, username):
     """Make sure that querying settings works for logged in user"""
     response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
     assert_proper_response(response)
@@ -90,6 +90,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = ['makerdao_vaults']
         elif setting == 'frontend_settings':
             value = ''
+        elif setting == 'ksm_rpc_endpoint':
+            value = 'http://kusama.node.com:9933'
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 
@@ -101,7 +103,11 @@ def test_set_settings(rotkehlchen_api_server):
         return_value=0,
     )
     mock_web3 = patch('rotkehlchen.chain.ethereum.manager.Web3', MockWeb3)
-    with block_query, mock_web3:
+    ksm_connect_node = patch(
+        'rotkehlchen.chain.substrate.manager.SubstrateManager._connect_node',
+        return_value=(True, ''),
+    )
+    with block_query, mock_web3, ksm_connect_node:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, "settingsresource"),
             json={'settings': new_settings},
@@ -126,21 +132,33 @@ def test_set_settings(rotkehlchen_api_server):
         assert result[setting] == value
 
 
-def test_set_rpc_endpoint_fail_not_set_others(rotkehlchen_api_server):
+@pytest.mark.parametrize('rpc_setting, error_msg', [
+    (
+        'eth_rpc_endpoint',
+        'Failed to connect to ethereum node own node at endpoint',
+    ),
+    (
+        'ksm_rpc_endpoint',
+        'Kusama failed to connect to own node at endpoint',
+    ),
+])
+def test_set_rpc_endpoint_fail_not_set_others(
+        rotkehlchen_api_server,
+        rpc_setting,
+        error_msg,
+):
     """Test that setting a non-existing eth rpc along with other settings does not modify them"""
-    eth_rpc_endpoint = 'http://working.nodes.com:8545'
+    rpc_endpoint = 'http://working.nodes.com:8545'
     main_currency = A_JPY
     data = {'settings': {
-        'eth_rpc_endpoint': eth_rpc_endpoint,
+        rpc_setting: rpc_endpoint,
         'main_currency': main_currency.identifier,
     }}
 
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg=(
-            f'Failed to connect to ethereum node own node at endpoint {eth_rpc_endpoint}'
-        ),
+        contained_in_msg=f'{error_msg} {rpc_endpoint}',
         status_code=HTTPStatus.CONFLICT,
     )
 
@@ -151,21 +169,20 @@ def test_set_rpc_endpoint_fail_not_set_others(rotkehlchen_api_server):
     result = json_data['result']
     assert json_data['message'] == ''
     assert result['main_currency'] != 'JPY'
-    assert result['eth_rpc_endpoint'] != 'http://working.nodes.com:8545'
+    assert result[rpc_setting] != rpc_endpoint
 
 
-def test_unset_rpc_endpoint(rotkehlchen_api_server):
+@pytest.mark.parametrize('rpc_setting', ['eth_rpc_endpoint', 'ksm_rpc_endpoint'])
+def test_unset_rpc_endpoint(rotkehlchen_api_server, rpc_setting):
     """Test the rpc endpoint can be unset"""
     response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
     result = json_data['result']
-    assert result['eth_rpc_endpoint'] != ''
+    assert result[rpc_setting] != ''
 
-    data = {
-        'settings': {'eth_rpc_endpoint': ''},
-    }
+    data = {'settings': {rpc_setting: ''}}
 
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_proper_response(response)
@@ -173,7 +190,7 @@ def test_unset_rpc_endpoint(rotkehlchen_api_server):
     json_data = response.json()
     result = json_data['result']
     assert json_data['message'] == ''
-    assert result['eth_rpc_endpoint'] == ''
+    assert result[rpc_setting] == ''
 
 
 @pytest.mark.parametrize('added_exchanges', [('kraken',)])

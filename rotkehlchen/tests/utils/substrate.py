@@ -15,13 +15,19 @@ from rotkehlchen.chain.substrate.typing import (
     NodeNameAttributes,
     SubstrateChain,
 )
+from rotkehlchen.constants.assets import A_KSM
+from rotkehlchen.fval import FVal
 
 NODE_CONNECTION_TIMEOUT = 15
 
 log = logging.getLogger(__name__)
 
 
-TEST_KUSAMA_NODES = (KusamaNodeName.PARITY, )
+KUSAMA_TEST_NODES = (KusamaNodeName.PARITY, )
+KUSAMA_SS58_FORMAT = 2
+KUSAMA_TOKEN = A_KSM
+KUSAMA_TOKEN_DECIMALS = FVal(12)
+KUSAMA_DEFAULT_OWN_RPC_ENDPOINT = 'http://localhost:9933'
 
 
 def attempt_connect_test_nodes(
@@ -57,7 +63,7 @@ def attempt_connect_test_nodes(
         return node, node_attributes
 
     if chain == SubstrateChain.KUSAMA:
-        node_names = node_names or TEST_KUSAMA_NODES
+        node_names = node_names or KUSAMA_TEST_NODES
         si_attributes = chain.substrate_interface_attributes()
     else:
         raise AssertionError(f'Unexpected substrate chain type: {chain}')

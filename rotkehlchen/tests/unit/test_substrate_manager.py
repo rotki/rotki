@@ -3,7 +3,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from rotkehlchen.chain.substrate.typing import BlockNumber, SubstrateChain
+from rotkehlchen.chain.substrate.manager import SubstrateManager
+from rotkehlchen.chain.substrate.typing import (
+    BlockNumber,
+    KusamaNodeName,
+    NodeNameAttributes,
+    SubstrateChain,
+)
 from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
@@ -19,7 +25,7 @@ class AccountInfo(NamedTuple):
     value: Dict[str, Any]
 
 
-@pytest.fixture(scope='session', name='kusama_available_node_attributes_map')
+@pytest.fixture(scope='module', name='kusama_available_node_attributes_map')
 def fixture_kusama_available_node_attributes_map():
     """Attempt to connect to Kusama nodes and return the available nodes map.
     The connection will persist along the session.
@@ -117,3 +123,55 @@ def test_get_account_balance_calculation(kusama_manager):
         node_interface=mock_node_interface,
     )
     assert balance == FVal(111.004701754251)  # (free + reserved)/10**12
+
+
+def test_set_available_nodes_call_order(kusama_manager):
+    """Test `_set_available_nodes_call_order()` sets the available nodes sorted
+    by preference; currently own node first and then by the highest 'weight_block'.
+    """
+    # Due to `available_node_attributes_map` is a dict we must fake a key for
+    # testing purposes as currently KusamaNodeName only has PARITY
+    fake_kusama_node_name = object()
+    node_attrs_item_1 = (
+        KusamaNodeName.OWN,
+        NodeNameAttributes(
+            node_interface=object(),
+            weight_block=1000,
+        ),
+    )
+    node_attrs_item_2 = (
+        fake_kusama_node_name,
+        NodeNameAttributes(
+            node_interface=object(),
+            weight_block=750,
+        ),
+    )
+    node_attrs_item_3 = (
+        KusamaNodeName.PARITY,
+        NodeNameAttributes(
+            node_interface=object(),
+            weight_block=1000,
+        ),
+    )
+    available_node_attributes_map = dict([  # noqa: C406
+        node_attrs_item_3,
+        node_attrs_item_2,
+        node_attrs_item_1,
+    ])
+    kusama_manager.available_node_attributes_map = available_node_attributes_map
+    kusama_manager._set_available_nodes_call_order()
+
+    assert kusama_manager.available_nodes_call_order == [
+        node_attrs_item_1,
+        node_attrs_item_3,
+        node_attrs_item_2,
+    ]
+
+
+@pytest.mark.parametrize('endpoint, formatted_endpoint', [
+    ('', 'http://'),
+    ('localhost:9933', 'http://localhost:9933'),
+    ('http://localhost:9933', 'http://localhost:9933'),
+])
+def test_format_own_rpc_endpoint(endpoint, formatted_endpoint):
+    assert formatted_endpoint == SubstrateManager._format_own_rpc_endpoint(endpoint)
