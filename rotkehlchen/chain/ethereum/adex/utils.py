@@ -1,6 +1,6 @@
 from typing import Union, cast
 
-from eth_utils.typing import HexStr
+from eth_typing import HexStr
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken

@@ -18,9 +18,8 @@ from typing import (
 )
 
 import requests
-from eth_typing.evm import ChecksumAddress
+from eth_typing import ChecksumAddress, HexAddress, HexStr
 from eth_utils import to_checksum_address
-from eth_utils.typing import HexAddress, HexStr
 from typing_extensions import Literal
 from web3 import Web3
 

@@ -1,6 +1,6 @@
 from dataclasses import asdict
 
-from eth_utils.typing import HexAddress, HexStr
+from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken

@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-from eth_utils.typing import HexAddress, HexStr
+from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.accounting.structures import LedgerActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken

@@ -2,7 +2,7 @@
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
 
-from eth_utils.typing import ChecksumAddress
+from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
 from rotkehlchen.chain.substrate.typing import KusamaAddress
