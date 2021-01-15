@@ -110,7 +110,9 @@ export default class OtcForm extends Vue {
     [field: string]: string[];
   } = {};
   addExternalTrade!: (trade: NewTrade) => Promise<ActionStatus>;
-  editExternalTrade!: (trade: Trade) => Promise<ActionStatus>;
+  editExternalTrade!: (
+    trade: Omit<Trade, 'ignoredInAccounting'>
+  ) => Promise<ActionStatus>;
 
   private static format = 'DD/MM/YYYY HH:mm';
   readonly assetRules = [

@@ -15,15 +15,18 @@
           <v-icon> mdi-plus </v-icon>
         </v-btn>
         <v-card-title>
-          {{ $t('closed_trades.title') }}
-          <v-spacer />
           <refresh-button
             :loading="refreshing"
             :tooltip="$t('closed_trades.refresh_tooltip')"
             @refresh="refresh"
           />
+          {{ $t('closed_trades.title') }}
         </v-card-title>
         <v-card-text>
+          <ignore-buttons
+            :disabled="selected.length === 0 || loading || refreshing"
+            @ignore="ignoreTrades"
+          />
           <v-data-table
             :items="data"
             :headers="headersClosed"
@@ -38,6 +41,22 @@
             :page.sync="page"
             :loading="refreshing"
           >
+            <template #header.selection>
+              <v-simple-checkbox
+                :ripple="false"
+                :value="allSelected"
+                color="primary"
+                @input="setSelected($event)"
+              />
+            </template>
+            <template #item.selection="{ item }">
+              <v-simple-checkbox
+                :ripple="false"
+                color="primary"
+                :value="selected.includes(item.tradeId)"
+                @input="selectionChanged(item.tradeId, $event)"
+              />
+            </template>
             <template #item.location="{ item }">
               <location-display :identifier="item.location" />
             </template>
@@ -59,6 +78,9 @@
                 :asset="item.feeCurrency"
                 :value="item.fee"
               />
+            </template>
+            <template #item.ignoredInAccounting="{ item }">
+              <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
             </template>
             <template #item.timestamp="{ item }">
               <div class="d-flex flex-row align-center">
@@ -166,23 +188,29 @@
 </template>
 
 <script lang="ts">
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
 import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapMutations } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import OtcForm from '@/components/OtcForm.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
-import { Trade } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { IGNORE_TRADES } from '@/store/history/consts';
+import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
+import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    IgnoreButtons,
     RefreshButton,
     UpgradeRow,
     DateDisplay,
@@ -195,11 +223,17 @@ import { Section } from '@/store/const';
     ...mapGetters('history', ['tradesTotal', 'tradesLimit'])
   },
   methods: {
-    ...mapActions('history', ['deleteExternalTrade'])
+    ...mapActions('history', [
+      'deleteExternalTrade',
+      'ignoreActions',
+      'unignoreActions'
+    ]),
+    ...mapMutations(['setMessage'])
   }
 })
 export default class ClosedTrades extends Mixins(StatusMixin) {
   readonly headersClosed: DataTableHeader[] = [
+    { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$tc('closed_trades.headers.location'),
       value: 'location'
@@ -229,6 +263,10 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
       text: this.$tc('closed_trades.headers.timestamp'),
       value: 'timestamp'
     },
+    {
+      text: this.$t('closed_trades.headers.ignored').toString(),
+      value: 'ignoredInAccounting'
+    },
     { text: '', value: 'data-table-expand' }
   ];
   footerProps = footerProps;
@@ -236,8 +274,8 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   dialogTitle: string = '';
   dialogSubtitle: string = '';
   openDialog: boolean = false;
-  editableItem: Trade | null = null;
-  tradeToDelete: Trade | null = null;
+  editableItem: TradeEntry | null = null;
+  tradeToDelete: TradeEntry | null = null;
   confirmationMessage: string = '';
   tradesLimit!: number;
   tradesTotal!: number;
@@ -245,16 +283,100 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   page: number = 1;
 
   deleteExternalTrade!: (tradeId: string) => Promise<boolean>;
+  ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  setMessage!: (message: Message) => void;
   section = Section.TRADES;
+
+  selected: string[] = [];
+
+  setSelected(selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const total = selection.length;
+      for (let i = 0; i < total; i++) {
+        selection.pop();
+      }
+    } else {
+      for (const { tradeId } of this.data) {
+        if (!tradeId || selection.includes(tradeId)) {
+          continue;
+        }
+        selection.push(tradeId);
+      }
+    }
+  }
+
+  selectionChanged(tradeId: string, selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const index = selection.indexOf(tradeId);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+    } else if (tradeId && !selection.includes(tradeId)) {
+      selection.push(tradeId);
+    }
+  }
+
+  get allSelected(): boolean {
+    const strings = this.data.map(({ tradeId }) => tradeId);
+    return (
+      strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
+    );
+  }
+
+  async ignoreTrades(ignore: boolean) {
+    let status: ActionStatus;
+
+    const actionIds = this.data
+      .filter(({ tradeId, ignoredInAccounting }) => {
+        return (
+          (ignore ? !ignoredInAccounting : ignoredInAccounting) &&
+          this.selected.includes(tradeId)
+        );
+      })
+      .map(({ tradeId }) => tradeId)
+      .filter((value, index, array) => array.indexOf(value) === index);
+
+    if (actionIds.length === 0) {
+      const choice = ignore ? 1 : 2;
+      this.setMessage({
+        success: false,
+        title: this.$tc('closed_trades.ignore.no_actions.title', choice),
+        description: this.$tc(
+          'closed_trades.ignore.no_actions.description',
+          choice
+        )
+      });
+      return;
+    }
+    const payload: IgnoreActionPayload = {
+      actionIds: actionIds,
+      type: IGNORE_TRADES
+    };
+    if (ignore) {
+      status = await this.ignoreActions(payload);
+    } else {
+      status = await this.unignoreActions(payload);
+    }
+
+    if (status.success) {
+      const total = this.selected.length;
+      for (let i = 0; i < total; i++) {
+        this.selected.pop();
+      }
+    }
+  }
 
   @Emit()
   refresh() {}
 
   @Prop({ required: true })
-  data!: Trade[];
+  data!: TradeEntry[];
 
   @Watch('data')
-  onDataUpdate(newData: Trade[], oldData?: Trade[]) {
+  onDataUpdate(newData: TradeEntry[], oldData?: TradeEntry[]) {
     if (oldData && newData.length < oldData.length) {
       this.page = 1;
     }
@@ -266,14 +388,14 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
     this.openDialog = true;
   }
 
-  editTrade(trade: Trade) {
+  editTrade(trade: TradeEntry) {
     this.editableItem = trade;
     this.dialogTitle = this.$tc('closed_trades.dialog.edit.title');
     this.dialogSubtitle = this.$tc('closed_trades.dialog.edit.subtitle');
     this.openDialog = true;
   }
 
-  promptForDelete(trade: Trade) {
+  promptForDelete(trade: TradeEntry) {
     this.confirmationMessage = this.$t('closed_trades.confirmation.message', {
       pair: trade.pair,
       action: trade.tradeType,

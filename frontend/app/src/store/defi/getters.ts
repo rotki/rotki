@@ -1273,7 +1273,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         rate: trade.rate,
         tradeType: 'buy',
         link: '',
-        notes: ''
+        notes: '',
+        ignoredInAccounting: false
       }));
       trades.push(...convertedTrades);
     }

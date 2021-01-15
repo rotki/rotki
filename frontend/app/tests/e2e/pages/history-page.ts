@@ -37,13 +37,13 @@ export class HistoryPage {
   tradeIsVisible(position: number, otcTrade: OTCTrade) {
     cy.get('.closed-trades tbody > tr').eq(position).as('row');
 
-    cy.get('@row').find('td').eq(2).should('contain', otcTrade.pair);
+    cy.get('@row').find('td').eq(3).should('contain', otcTrade.pair);
     cy.get('@row')
       .find('td')
-      .eq(4)
+      .eq(5)
       .find('.amount-display__value')
       .should('contain', otcTrade.amount);
-    cy.get('@row').find('td').eq(1).should('contain', otcTrade.trade_type);
+    cy.get('@row').find('td').eq(2).should('contain', otcTrade.trade_type);
   }
 
   editTrade(position: number, amount: string) {

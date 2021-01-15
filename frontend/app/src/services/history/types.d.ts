@@ -3,6 +3,7 @@ import {
   SupportedExchange,
   SupportedTradeLocation
 } from '@/services/balances/types';
+import { TradeEntry } from '@/store/history/types';
 
 export type TradeType = 'buy' | 'sell';
 
@@ -20,10 +21,10 @@ export interface Trade {
   readonly notes: string;
 }
 
-export type NewTrade = Omit<Trade, 'tradeId'>;
+export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
 
 export interface TradeUpdate {
-  readonly trade: Trade;
+  readonly trade: TradeEntry;
   readonly oldTradeId: string;
 }
 

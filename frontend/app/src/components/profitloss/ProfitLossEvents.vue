@@ -7,6 +7,8 @@
           <v-data-table
             :headers="headers"
             :items="events"
+            sort-by="time"
+            sort-desc
             :footer-props="footerProps"
           >
             <template #item.time="{ item }">

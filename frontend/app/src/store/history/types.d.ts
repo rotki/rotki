@@ -6,7 +6,10 @@ import {
   Trade,
   TradeLocation
 } from '@/services/history/types';
-import { LEDGER_ACTION_TYPES } from '@/store/history/consts';
+import {
+  IGNORE_ACTION_TYPE,
+  LEDGER_ACTION_TYPES
+} from '@/store/history/consts';
 
 export interface HistoricData<T> {
   readonly limit: number;
@@ -14,13 +17,20 @@ export interface HistoricData<T> {
   readonly data: T[];
 }
 
-interface Trades extends HistoricData<Trade> {}
+type EntryMeta = { readonly ignoredInAccounting: boolean };
 
-interface AssetMovements extends HistoricData<AssetMovement> {}
+export type AssetMovementEntry = AssetMovement & EntryMeta;
+export type EthTransactionEntry = EthTransaction & EntryMeta;
+export type TradeEntry = Trade & EntryMeta;
+export type LedgerActionEntry = LedgerAction & EntryMeta;
 
-interface EthTransactions extends HistoricData<EthTransaction> {}
+interface Trades extends HistoricData<TradeEntry> {}
 
-interface LedgerActions extends HistoricData<LedgerAction> {}
+interface AssetMovements extends HistoricData<AssetMovementEntry> {}
+
+interface EthTransactions extends HistoricData<EthTransactionEntry> {}
+
+interface LedgerActions extends HistoricData<LedgerActionEntry> {}
 
 export interface HistoryState {
   ledgerActions: LedgerActions;
@@ -37,7 +47,7 @@ export interface AccountRequestMeta extends TaskMeta {
   readonly address: string;
 }
 
-export type EthTransactionWithFee = EthTransaction & {
+export type EthTransactionWithFee = EthTransactionEntry & {
   readonly gasFee: BigNumber;
   readonly key: string;
 };
@@ -56,3 +66,9 @@ export interface LedgerAction {
 }
 
 export type UnsavedAction = Omit<LedgerAction, 'identifier'>;
+
+export type IgnoreActionType = typeof IGNORE_ACTION_TYPE[number];
+export type IgnoreActionPayload = {
+  readonly actionIds: string[];
+  readonly type: IgnoreActionType;
+};

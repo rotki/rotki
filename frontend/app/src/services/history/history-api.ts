@@ -13,6 +13,7 @@ import {
 } from '@/services/history/types';
 import {
   ActionResult,
+  EntryWithMeta,
   LimitedResponse,
   PendingTask
 } from '@/services/types-api';
@@ -145,9 +146,9 @@ export class HistoryApi {
 
   async editLedgerAction(
     action: LedgerAction
-  ): Promise<LimitedResponse<LedgerAction>> {
+  ): Promise<LimitedResponse<EntryWithMeta<LedgerAction>>> {
     return this.axios
-      .patch<ActionResult<LimitedResponse<LedgerAction>>>(
+      .patch<ActionResult<LimitedResponse<EntryWithMeta<LedgerAction>>>>(
         '/ledgeractions',
         axiosSnakeCaseTransformer({ action }),
         {
@@ -160,13 +161,16 @@ export class HistoryApi {
 
   async deleteLedgerAction(
     identifier: number
-  ): Promise<LimitedResponse<LedgerAction>> {
+  ): Promise<LimitedResponse<EntryWithMeta<LedgerAction>>> {
     return this.axios
-      .delete<ActionResult<LimitedResponse<LedgerAction>>>('/ledgeractions', {
-        data: axiosSnakeCaseTransformer({ identifier }),
-        validateStatus: validStatus,
-        transformResponse: setupTransformer(balanceKeys)
-      })
+      .delete<ActionResult<LimitedResponse<EntryWithMeta<LedgerAction>>>>(
+        '/ledgeractions',
+        {
+          data: axiosSnakeCaseTransformer({ identifier }),
+          validateStatus: validStatus,
+          transformResponse: setupTransformer(balanceKeys)
+        }
+      )
       .then(handleResponse);
   }
 }

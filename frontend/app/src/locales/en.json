@@ -277,6 +277,12 @@
       "end_after_start": "The end time should be after the start time."
     }
   },
+  "ignore_buttons": {
+    "ignore": "Ignore",
+    "ignore_tooltip": "Ignored the selected actions in the profit/loss report",
+    "unignore": "Unignore",
+    "unignore_tooltip": "Included the selected actions in the profit/loss report"
+  },
   "ledger_action_form": {
     "asset":  {
       "validation": {
@@ -347,13 +353,20 @@
       "asset": "Asset",
       "date": "Date",
       "location": "Location",
+      "ignored": "Ignored",
       "type": "Type"
     },
     "label": "ledger actions",
     "loading": "Please wait while your ledger actions are getting loaded...",
     "loading_subtitle": "The loading of ledger actions might take a while depending on the number of actions you performed.",
     "refresh_tooltip": "Refresh your ledger actions",
-    "title": "Ledger Actions"
+    "title": "Ledger Actions",
+    "ignore": {
+      "no_actions": {
+        "description": "All the selected actions are already ignored | All the selected actions are already included",
+        "title": "No actions to ignore | No actions to unignore"
+      }
+    }
   },
   "loan_liquidation": {
     "liquidated_collateral": "Liquidated collateral",
@@ -487,7 +500,7 @@
       "loan_profit": "Loan Profit",
       "margin_positions_pnl": "Margin Positions Profit/Loss",
       "settlement_losses": "Settlement Losses",
-      "taxable_profit_loss": "Taxable Profit/Loss",
+      "taxable_trade_profit_loss": "Taxable Trade Profit/Loss",
       "total_profit_loss": "Total Profit/Loss",
       "total_taxable_profit_loss": "Total Taxable Profit/Loss"
     },
@@ -672,7 +685,14 @@
       "rate": "Rate",
       "amount": "Amount",
       "fee": "Fee",
-      "timestamp": "Date"
+      "timestamp": "Date",
+      "ignored": "Ignored"
+    },
+    "ignore": {
+      "no_actions": {
+        "description": "All the selected actions are already ignored | All the selected actions are already included",
+        "title": "No actions to ignore | No actions to unignore"
+      }
     },
     "details": {
       "title": "Trade Details",
@@ -722,7 +742,8 @@
       "asset": "Asset",
       "amount": "Amount",
       "fee": "Fee",
-      "timestamp": "Date"
+      "timestamp": "Date",
+      "ignored": "Ignored"
     },
     "label": "asset movements",
     "loading": "Please wait while your asset movements are getting loaded...",
@@ -731,7 +752,13 @@
       "title": "Details",
       "no_details": "No details found."
     },
-    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
+    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges.",
+    "ignore": {
+      "no_actions": {
+        "description": "All the selected actions are already ignored | All the selected actions are already included",
+        "title": "No actions to ignore | No actions to unignore"
+      }
+    }
   },
   "history": {
     "header": "History",
@@ -830,6 +857,12 @@
       "task": {
         "description": "actions.ledger_actions.task.description",
         "title": "Retrieving ledger actions"
+      }
+    },
+    "ignore": {
+      "error": {
+        "description": "Failed to ignore the selected actions: {error}",
+        "title": "Ignoring actions failed"
       }
     },
     "manual_balances": {
@@ -1281,6 +1314,12 @@
           "description": "Failed to query the Eth2 staking deposits: {error}"
         }
       }
+    },
+    "unignore": {
+      "error": {
+        "title": "Unignoring actions failed",
+        "description": "Failed to unignore the selected actions: {error}"
+      }
     }
   },
   "navigation_menu": {
@@ -1320,6 +1359,12 @@
     "transaction": "TX:"
   },
   "transactions": {
+    "ignore": {
+      "no_actions": {
+        "description": "All the selected actions are already ignored | All the selected actions are already included",
+        "title": "No actions to ignore | No actions to unignore"
+      }
+    },
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
     "title": "Ethereum Transactions",
@@ -1331,7 +1376,8 @@
       "from_address": "From",
       "to_address": "To",
       "value": "Value",
-      "gas_fee": "Fee"
+      "gas_fee": "Fee",
+      "ignored_in_accounting": "Ignored"
     },
     "label": "transactions"
   },

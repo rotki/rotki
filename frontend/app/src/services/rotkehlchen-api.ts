@@ -21,6 +21,7 @@ import {
   BtcAccountData,
   DBAssetBalance,
   GeneralAccountData,
+  IgnoreActionResult,
   LocationData,
   Messages,
   NetValue,
@@ -49,6 +50,7 @@ import {
   BlockchainAccountPayload,
   XpubPayload
 } from '@/store/balances/types';
+import { IgnoreActionType } from '@/store/history/types';
 import { ActionStatus } from '@/store/types';
 import {
   AccountSession,
@@ -937,6 +939,41 @@ export class RotkehlchenApi {
           asyncQuery: true
         }),
         validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async ignoreActions(
+    actionIds: string[],
+    actionType: IgnoreActionType
+  ): Promise<IgnoreActionResult> {
+    return this.axios
+      .put<ActionResult<IgnoreActionResult>>(
+        '/actions/ignored',
+        axiosSnakeCaseTransformer({
+          actionIds,
+          actionType
+        }),
+        {
+          validateStatus: validStatus,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async unignoreActions(
+    actionIds: string[],
+    actionType: IgnoreActionType
+  ): Promise<IgnoreActionResult> {
+    return this.axios
+      .delete<ActionResult<IgnoreActionResult>>('/actions/ignored', {
+        data: axiosSnakeCaseTransformer({
+          actionIds,
+          actionType
+        }),
+        validateStatus: validStatus,
         transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
