@@ -500,7 +500,7 @@
       "loan_profit": "Loan Profit",
       "margin_positions_pnl": "Margin Positions Profit/Loss",
       "settlement_losses": "Settlement Losses",
-      "taxable_profit_loss": "Taxable Profit/Loss",
+      "taxable_trade_profit_loss": "Taxable Trade Profit/Loss",
       "total_profit_loss": "Total Profit/Loss",
       "total_taxable_profit_loss": "Total Taxable Profit/Loss"
     },

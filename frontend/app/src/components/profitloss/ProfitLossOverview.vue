@@ -103,7 +103,9 @@
               </tr>
               <tr>
                 <td class="font-weight-medium subtitle-1">
-                  {{ $t('profit_loss_overview.rows.taxable_profit_loss') }}
+                  {{
+                    $t('profit_loss_overview.rows.taxable_trade_profit_loss')
+                  }}
                 </td>
                 <td class="text-right subtitle-1">
                   <amount-display
