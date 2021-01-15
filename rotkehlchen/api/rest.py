@@ -801,8 +801,17 @@ class RestAPI():
             location=location,
         )
 
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.LEDGER_ACTION)
+        ignored_ids = mapping.get(ActionType.LEDGER_ACTION, [])
+        entries_result = []
+        for action in actions:
+            entries_result.append({
+                'entry': action.serialize(),
+                'ignored_in_accounting': str(action.identifier) in ignored_ids,
+            })
+
         result = {
-            'entries': [x.serialize() for x in actions],
+            'entries': entries_result,
             'entries_found': original_length,
             'entries_limit': FREE_LEDGER_ACTIONS_LIMIT if self.rotkehlchen.premium is None else -1,
         }

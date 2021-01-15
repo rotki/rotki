@@ -2355,21 +2355,24 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-                  "identifier": 344,
-                  "timestamp": 1491606401,
-		  "action_type": "loss",
-                  "location": "blockchain",
-                  "amount": "1550",
-                  "asset": "DAI",
-                  "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
-                  "notes": "The DAI I lost in the pickle finance hack"
+	          "entry": {
+		      "identifier": 344,
+		      "timestamp": 1491606401,
+		      "action_type": "loss",
+		      "location": "blockchain",
+		      "amount": "1550",
+		      "asset": "DAI",
+		      "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
+		      "notes": "The DAI I lost in the pickle finance hack"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
           "message": ""
       }
 
-   :resjson object entries: An array of action objects.
+   :resjson object entries: An array of action objects and their metadata. Each entry is composed of the ledger action entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each action.
    :resjsonarr int identifier: The uniquely identifying identifier for this action.
    :resjsonarr int timestamp: The timestamp at which the action occured
    :resjsonarr string action_type: The type of action. Valid types are: ``income``, ``loss``, ``donation received``, ``expense`` and ``dividends income``.
@@ -2421,7 +2424,7 @@ Dealing with ledger actions
           "message": ""
       }
 
-   :resjson object result: The identifier ofthe newly created trade
+   :resjson object result: The identifier ofthe newly created ledger action
    :statuscode 200: Ledger action was succesfully added.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is currently logged in.
@@ -2461,21 +2464,24 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-                  "identifier": 55,
-                  "timestamp": 1491606401,
-        	  "action_type": "income"
-                  "location": "external",
-                  "amount": "2",
-                  "asset": "ETH",
-                  "link": "Optional unique identifier",
-                  "notes": "Eth I received for being pretty"
+	          "entry": {
+		      "identifier": 55,
+		      "timestamp": 1491606401,
+		      "action_type": "income"
+		      "location": "external",
+		      "amount": "2",
+		      "asset": "ETH",
+		      "link": "Optional unique identifier",
+		      "notes": "Eth I received for being pretty"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
           "message": ""
       }
 
-   :resjson object entries: An array of action objects after editing. Same schema as above.
+   :resjson object entries: An array of action objects after editing. Same schema as the get method.
    :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
    :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Actions was succesfully edited.
@@ -2508,21 +2514,24 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-                  "identifier": 35,
-                  "timestamp": 1491606401,
-        	  "action_type": "income"
-                  "location": "external",
-                  "amount": "2",
-                  "asset": "ETH",
-                  "link": "Optional unique identifier",
-                  "notes": "Eth I received for being pretty"
+	          "entry": {
+		      "identifier": 35,
+		      "timestamp": 1491606401,
+		      "action_type": "income"
+		      "location": "external",
+		      "amount": "2",
+		      "asset": "ETH",
+		      "link": "Optional unique identifier",
+		      "notes": "Eth I received for being pretty"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
           "message": ""
       }
 
-   :resjson object entries: An array of action objects after deletion. Same schema as above.
+   :resjson object entries: An array of action objects after deletion. Same schema as the get method.
    :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
    :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Action was succesfully removed.
