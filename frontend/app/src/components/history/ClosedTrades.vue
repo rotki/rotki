@@ -15,13 +15,12 @@
           <v-icon> mdi-plus </v-icon>
         </v-btn>
         <v-card-title>
-          {{ $t('closed_trades.title') }}
-          <v-spacer />
           <refresh-button
             :loading="refreshing"
             :tooltip="$t('closed_trades.refresh_tooltip')"
             @refresh="refresh"
           />
+          {{ $t('closed_trades.title') }}
         </v-card-title>
         <v-card-text>
           <ignore-buttons
@@ -204,10 +203,9 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import OtcForm from '@/components/OtcForm.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
-import { Trade } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { TRADES } from '@/store/history/consts';
-import { IgnoreActionPayload } from '@/store/history/types';
+import { IGNORE_TRADES } from '@/store/history/consts';
+import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 
 @Component({
@@ -276,8 +274,8 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   dialogTitle: string = '';
   dialogSubtitle: string = '';
   openDialog: boolean = false;
-  editableItem: Trade | null = null;
-  tradeToDelete: Trade | null = null;
+  editableItem: TradeEntry | null = null;
+  tradeToDelete: TradeEntry | null = null;
   confirmationMessage: string = '';
   tradesLimit!: number;
   tradesTotal!: number;
@@ -355,7 +353,7 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
     }
     const payload: IgnoreActionPayload = {
       actionIds: actionIds,
-      type: TRADES
+      type: IGNORE_TRADES
     };
     if (ignore) {
       status = await this.ignoreActions(payload);
@@ -375,10 +373,10 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   refresh() {}
 
   @Prop({ required: true })
-  data!: Trade[];
+  data!: TradeEntry[];
 
   @Watch('data')
-  onDataUpdate(newData: Trade[], oldData?: Trade[]) {
+  onDataUpdate(newData: TradeEntry[], oldData?: TradeEntry[]) {
     if (oldData && newData.length < oldData.length) {
       this.page = 1;
     }
@@ -390,14 +388,14 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
     this.openDialog = true;
   }
 
-  editTrade(trade: Trade) {
+  editTrade(trade: TradeEntry) {
     this.editableItem = trade;
     this.dialogTitle = this.$tc('closed_trades.dialog.edit.title');
     this.dialogSubtitle = this.$tc('closed_trades.dialog.edit.subtitle');
     this.openDialog = true;
   }
 
-  promptForDelete(trade: Trade) {
+  promptForDelete(trade: TradeEntry) {
     this.confirmationMessage = this.$t('closed_trades.confirmation.message', {
       pair: trade.pair,
       action: trade.tradeType,

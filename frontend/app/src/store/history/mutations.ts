@@ -1,11 +1,5 @@
 import { MutationTree } from 'vuex';
-import {
-  AssetMovement,
-  EthTransaction,
-  Trade,
-  TradeUpdate
-} from '@/services/history/types';
-import { LimitedResponse } from '@/services/types-api';
+import { TradeUpdate } from '@/services/history/types';
 import {
   MUTATION_ADD_LEDGER_ACTION,
   MUTATION_SET_LEDGER_ACTIONS
@@ -14,20 +8,25 @@ import { defaultHistoricState, defaultState } from '@/store/history/state';
 import {
   AssetMovements,
   EthTransactions,
-  LedgerAction,
   HistoryState,
-  Trades
+  Trades,
+  HistoricData,
+  TradeEntry,
+  AssetMovementEntry,
+  LedgerActionEntry,
+  EthTransactionEntry
 } from '@/store/history/types';
 
 export const mutations: MutationTree<HistoryState> = {
   setTrades(state: HistoryState, trades: Trades) {
     state.trades = trades;
   },
-  appendTrades(state: HistoryState, trades: LimitedResponse<Trade[]>) {
+
+  appendTrades(state: HistoryState, trades: HistoricData<TradeEntry>) {
     state.trades = {
-      data: [...state.trades.data, ...trades.entries],
-      limit: trades.entriesLimit,
-      found: trades.entriesFound
+      data: [...state.trades.data, ...trades.data],
+      limit: trades.limit,
+      found: trades.found
     };
   },
 
@@ -35,7 +34,7 @@ export const mutations: MutationTree<HistoryState> = {
     state.trades = defaultHistoricState();
   },
 
-  addTrade(state: HistoryState, trade: Trade) {
+  addTrade(state: HistoryState, trade: TradeEntry) {
     const { data: trades } = state.trades;
     state.trades = { ...state.trades, data: [...trades, trade] };
   },
@@ -68,12 +67,12 @@ export const mutations: MutationTree<HistoryState> = {
 
   updateMovements(
     state: HistoryState,
-    movements: LimitedResponse<AssetMovement[]>
+    movements: HistoricData<AssetMovementEntry>
   ) {
     state.assetMovements = {
-      data: [...state.assetMovements.data, ...movements.entries],
-      limit: movements.entriesLimit,
-      found: movements.entriesFound
+      data: [...state.assetMovements.data, ...movements.data],
+      limit: movements.limit,
+      found: movements.found
     };
   },
   resetMovements(state: HistoryState) {
@@ -86,12 +85,12 @@ export const mutations: MutationTree<HistoryState> = {
 
   updateTransactions(
     state: HistoryState,
-    transactions: LimitedResponse<EthTransaction[]>
+    transactions: HistoricData<EthTransactionEntry>
   ) {
     state.transactions = {
-      data: [...state.transactions.data, ...transactions.entries],
-      limit: transactions.entriesLimit,
-      found: transactions.entriesFound
+      data: [...state.transactions.data, ...transactions.data],
+      limit: transactions.limit,
+      found: transactions.found
     };
   },
 
@@ -101,16 +100,12 @@ export const mutations: MutationTree<HistoryState> = {
 
   [MUTATION_SET_LEDGER_ACTIONS](
     state: HistoryState,
-    actions: LimitedResponse<LedgerAction[]>
+    actions: HistoricData<LedgerActionEntry>
   ) {
-    state.ledgerActions = {
-      data: [...actions.entries],
-      limit: actions.entriesLimit,
-      found: actions.entriesFound
-    };
+    state.ledgerActions = actions;
   },
 
-  [MUTATION_ADD_LEDGER_ACTION](state: HistoryState, action: LedgerAction) {
+  [MUTATION_ADD_LEDGER_ACTION](state: HistoryState, action: LedgerActionEntry) {
     const ledgerActions = state.ledgerActions;
     state.ledgerActions = {
       data: [...ledgerActions.data, action],

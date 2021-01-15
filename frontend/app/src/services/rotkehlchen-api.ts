@@ -21,6 +21,7 @@ import {
   BtcAccountData,
   DBAssetBalance,
   GeneralAccountData,
+  IgnoreActionResult,
   LocationData,
   Messages,
   NetValue,
@@ -49,6 +50,7 @@ import {
   BlockchainAccountPayload,
   XpubPayload
 } from '@/store/balances/types';
+import { IgnoreActionType } from '@/store/history/types';
 import { ActionStatus } from '@/store/types';
 import {
   AccountSession,
@@ -942,12 +944,16 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async ignoreActions(actionIds: string[]): Promise<string[]> {
+  async ignoreActions(
+    actionIds: string[],
+    actionType: IgnoreActionType
+  ): Promise<IgnoreActionResult> {
     return this.axios
-      .put<ActionResult<string[]>>(
+      .put<ActionResult<IgnoreActionResult>>(
         '/actions/ignored',
         axiosSnakeCaseTransformer({
-          actionIds
+          actionIds,
+          actionType
         }),
         {
           validateStatus: validStatus,
@@ -957,11 +963,15 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async unignoreActions(actionIds: string[]): Promise<string[]> {
+  async unignoreActions(
+    actionIds: string[],
+    actionType: IgnoreActionType
+  ): Promise<IgnoreActionResult> {
     return this.axios
-      .delete<ActionResult<string[]>>('/actions/ignored', {
+      .delete<ActionResult<IgnoreActionResult>>('/actions/ignored', {
         data: axiosSnakeCaseTransformer({
-          actionIds
+          actionIds,
+          actionType
         }),
         validateStatus: validStatus,
         transformResponse: basicAxiosTransformer

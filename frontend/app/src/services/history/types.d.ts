@@ -3,6 +3,7 @@ import {
   SupportedExchange,
   SupportedTradeLocation
 } from '@/services/balances/types';
+import { TradeEntry } from '@/store/history/types';
 
 export type TradeType = 'buy' | 'sell';
 
@@ -18,13 +19,12 @@ export interface Trade {
   readonly feeCurrency: string;
   readonly link: string;
   readonly notes: string;
-  readonly ignoredInAccounting: boolean;
 }
 
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
 
 export interface TradeUpdate {
-  readonly trade: Trade;
+  readonly trade: TradeEntry;
   readonly oldTradeId: string;
 }
 
@@ -44,7 +44,6 @@ export interface AssetMovement {
   readonly feeAsset: string;
   readonly fee: BigNumber;
   readonly link: string;
-  readonly ignoredInAccounting: boolean;
 }
 
 export interface EthTransaction {
@@ -59,7 +58,6 @@ export interface EthTransaction {
   readonly gasUsed: BigNumber;
   readonly inputData: string;
   readonly nonce: number;
-  readonly ignoredInAccounting: boolean;
 }
 
 export interface LedgerActionResult {

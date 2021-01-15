@@ -27,8 +27,9 @@ import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import { Trade, TradeLocation } from '@/services/history/types';
+import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { TradeEntry } from '@/store/history/types';
 
 @Component({
   components: {
@@ -49,8 +50,8 @@ export default class TradeHistory extends Mixins(StatusMixin) {
   selectedLocation: TradeLocation | null = null;
   fetchTrades!: (refresh: boolean) => Promise<void>;
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
-  trades!: Trade[];
-  openTrades: Trade[] = [];
+  trades!: TradeEntry[];
+  openTrades: TradeEntry[] = [];
   section = Section.TRADES;
 
   get preview(): boolean {
@@ -63,7 +64,7 @@ export default class TradeHistory extends Mixins(StatusMixin) {
       .filter((value, index, array) => array.indexOf(value) === index);
   }
 
-  get closedTrades(): Trade[] {
+  get closedTrades(): TradeEntry[] {
     if (!this.selectedLocation) {
       return this.trades;
     }

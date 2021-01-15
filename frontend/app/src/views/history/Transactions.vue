@@ -132,7 +132,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
-import { TRANSACTIONS } from '@/store/history/consts';
+import { IGNORE_TRANSACTIONS } from '@/store/history/consts';
 import {
   EthTransactionWithFee,
   IgnoreActionPayload
@@ -249,7 +249,7 @@ export default class Transactions extends Mixins(StatusMixin) {
 
     const payload: IgnoreActionPayload = {
       actionIds: actionIds,
-      type: TRANSACTIONS
+      type: IGNORE_TRANSACTIONS
     };
     if (ignore) {
       status = await this.ignoreActions(payload);

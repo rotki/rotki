@@ -47,8 +47,14 @@ export const ledgerActionsData: ActionDataEntry[] = [
   }
 ];
 
-export const TRANSACTIONS = 'txs';
-export const MOVEMENTS = 'movements';
-export const TRADES = 'trades';
+export const IGNORE_TRANSACTIONS = 'ethereum transaction';
+export const IGNORE_MOVEMENTS = 'asset movement';
+export const IGNORE_TRADES = 'trade';
+export const IGNORE_LEDGER_ACTION = 'ledger action';
 
-export const IGNORE_ACTION_TYPE = [TRANSACTIONS, MOVEMENTS, TRADES] as const;
+export const IGNORE_ACTION_TYPE = [
+  IGNORE_TRANSACTIONS,
+  IGNORE_MOVEMENTS,
+  IGNORE_TRADES,
+  IGNORE_LEDGER_ACTION
+] as const;

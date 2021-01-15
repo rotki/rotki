@@ -142,10 +142,10 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { SupportedExchange } from '@/services/balances/types';
-import { AssetMovement, TradeLocation } from '@/services/history/types';
+import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { MOVEMENTS } from '@/store/history/consts';
-import { IgnoreActionPayload } from '@/store/history/types';
+import { IGNORE_MOVEMENTS } from '@/store/history/consts';
+import { AssetMovementEntry, IgnoreActionPayload } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 
 @Component({
@@ -216,7 +216,7 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
   ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
-  assetMovements!: AssetMovement[];
+  assetMovements!: AssetMovementEntry[];
   assetMovementsTotal!: number;
   assetMovementsLimit!: number;
   page: number = 1;
@@ -287,7 +287,7 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
     }
     const payload: IgnoreActionPayload = {
       actionIds: actionIds,
-      type: MOVEMENTS
+      type: IGNORE_MOVEMENTS
     };
     if (ignore) {
       status = await this.ignoreActions(payload);
@@ -317,7 +317,7 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
       .filter((value, index, array) => array.indexOf(value) === index);
   }
 
-  get movements(): AssetMovement[] {
+  get movements(): AssetMovementEntry[] {
     return this.location
       ? this.assetMovements.filter(value => value.location === this.location)
       : this.assetMovements;

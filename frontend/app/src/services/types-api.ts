@@ -1,4 +1,5 @@
 import { BigNumber } from 'bignumber.js';
+import { IgnoreActionType } from '@/store/history/types';
 
 export const SYNC_UPLOAD = 'upload';
 export const SYNC_DOWNLOAD = 'download';
@@ -21,8 +22,13 @@ export interface SupportedAssets {
   readonly [key: string]: ApiSupportedAsset;
 }
 
+export interface EntryWithMeta<T> {
+  readonly entry: T;
+  readonly ignoredInAccounting: boolean;
+}
+
 export interface LimitedResponse<T> {
-  readonly entries: T;
+  readonly entries: T[];
   readonly entriesFound: number;
   readonly entriesLimit: number;
 }
@@ -118,3 +124,7 @@ export interface TaskStatus {
   readonly pending: number[];
   readonly completed: number[];
 }
+
+export type IgnoreActionResult = {
+  readonly [key in IgnoreActionType]?: string[];
+};
