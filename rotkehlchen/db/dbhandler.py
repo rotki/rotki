@@ -8,7 +8,7 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 
-from eth_utils.typing import HexStr
+from eth_typing import HexStr
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 

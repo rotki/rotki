@@ -3,8 +3,8 @@ import time
 from unittest.mock import patch
 
 import pytest
+from eth_typing import HexAddress, HexStr
 from eth_utils import to_checksum_address
-from eth_utils.typing import HexAddress, HexStr
 from hexbytes import HexBytes
 
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2

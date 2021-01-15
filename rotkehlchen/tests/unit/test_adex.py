@@ -1,4 +1,4 @@
-from eth_utils.typing import HexStr
+from eth_typing import HexStr
 
 from rotkehlchen.chain.ethereum.adex.adex import Adex
 from rotkehlchen.chain.ethereum.adex.typing import TOM_POOL_ID

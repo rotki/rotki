@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
-from eth_typing.evm import ChecksumAddress
-from eth_utils.typing import HexStr
+from eth_typing import ChecksumAddress, HexStr
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
