@@ -155,15 +155,31 @@ def test_query_transactions(rotkehlchen_api_server):
     # There can be more transactions (since the address can make more)
     # but this check ignores them
     previous_index = 0
+    result_entries = [x['entry'] for x in result['entries']]
+    assert all(x['ignored_in_accounting'] is False for x in result['entries']), 'by default nothing should be ignored'  # noqa: E501
     for entry in expected_result:
-        assert entry in result['entries']
-        entry_idx = result['entries'].index(entry)
+        assert entry in result_entries
+        entry_idx = result_entries.index(entry)
         if previous_index != 0:
             assert entry_idx == previous_index + 1
         previous_index = entry_idx
 
     assert result['entries_found'] >= len(expected_result)
     assert result['entries_limit'] == FREE_ETH_TX_LIMIT
+
+    # now let's ignore two transactions
+    ignored_ids = [
+        EXPECTED_AFB7_TXS[2]['tx_hash'] + EXPECTED_AFB7_TXS[2]['from_address'] + str(EXPECTED_AFB7_TXS[2]['nonce']),  # noqa: E501
+        EXPECTED_AFB7_TXS[3]['tx_hash'] + EXPECTED_AFB7_TXS[3]['from_address'] + str(EXPECTED_AFB7_TXS[3]['nonce']),  # noqa: E501
+    ]
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "ignoredactionsresource",
+        ), json={'action_type': 'ethereum transaction', 'action_ids': ignored_ids},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {'ethereum transaction': ignored_ids}
 
     # Check that transactions per address and in a specific time range can be
     # queried and that this is from the DB and not etherscan
@@ -192,9 +208,13 @@ def test_query_transactions(rotkehlchen_api_server):
 
         assert mock_call.call_count == 0
 
-    assert result['entries'] == EXPECTED_AFB7_TXS[2:4][::-1]
+    result_entries = [x['entry'] for x in result['entries']]
+    assert result_entries == EXPECTED_AFB7_TXS[2:4][::-1]
+    msg = 'the transactions we ignored have not been ignored for accounting'
+    assert all(x['ignored_in_accounting'] is True for x in result['entries']), msg
 
 
+# TODO: This is a super slow test. Would make sense to run it sparingly
 @pytest.mark.parametrize('ethereum_accounts', [['0xe62193Bc1c340EF2205C0Bd71691Fad5e5072253']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_over_10k_transactions(rotkehlchen_api_server):
@@ -218,7 +238,7 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
     assert result['entries_limit'] == -1
 
     # Also check some entries in the list that we know of to see that they exist
-    rresult = result['entries'][::-1]
+    rresult = [x['entry'] for x in result['entries'][::-1]]
 
     assert rresult[1]['tx_hash'] == '0xec72748b8b784380ff6fcca9b897d649a0992eaa63b6c025ecbec885f64d2ac9'  # noqa: E501
     assert rresult[1]['nonce'] == 0
@@ -334,7 +354,6 @@ def test_query_transactions_over_limit(
                 ), json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'address': address},
             )
             result = assert_proper_response_with_result(response)
-
             if start_with_valid_premium:
                 assert len(result['entries']) == premium_expected_entries[idx]
                 assert result['entries_found'] == all_transactions_num

@@ -206,7 +206,7 @@ class EthereumTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return self.tx_hash.hex() + self.from_address + str(self.nonce)
+        return '0x' + self.tx_hash.hex() + self.from_address + str(self.nonce)
 
 
 class SupportedBlockchain(Enum):

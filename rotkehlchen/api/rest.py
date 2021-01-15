@@ -2202,13 +2202,25 @@ class RestAPI():
             status_code = HTTPStatus.BAD_GATEWAY
             message = str(e)
 
+        if transactions is not None:
+            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TX)
+            ignored_ids = mapping.get(ActionType.ETHEREUM_TX, [])
+            entries_result = []
+            for entry in transactions:
+                entries_result.append({
+                    'entry': entry.serialize(),
+                    'ignored_in_accounting': entry.identifier in ignored_ids,
+                })
+        else:
+            entries_result = []
+
         result = {
-            'entries': transactions,
+            'entries': entries_result,
             'entries_found': self.rotkehlchen.data.db.get_entries_count('ethereum_transactions'),
             'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
-        return {'result': process_result(result), 'message': message, 'status_code': status_code}
+        return {'result': result, 'message': message, 'status_code': status_code}
 
     @require_loggedin_user()
     def get_ethereum_transactions(

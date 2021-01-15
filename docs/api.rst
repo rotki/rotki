@@ -1123,29 +1123,35 @@ Querying ethereum transactions
 
       { "result":
             "entries": [{
-                "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
-                "timestamp": 1598006527,
-                "block_number": 10703085,
-                "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
-                "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
-                "value": "0",
-                "gas": "61676",
-                "gas_price": "206000000000",
-                "gas_used": "37154",
-                "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
-                "nonce": 2720
+	        "entry": {
+		    "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
+		    "timestamp": 1598006527,
+		    "block_number": 10703085,
+		    "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
+		    "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
+		    "value": "0",
+		    "gas": "61676",
+		    "gas_price": "206000000000",
+		    "gas_used": "37154",
+		    "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
+		    "nonce": 2720
+	       },
+	       "ignored_in_accounting": false
             }, {
-                "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
-                "timestamp": 1588006528,
-                "block_number": 10700085,
-                "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
-                "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
-                "value": "56000300000000000000000",
-                "gas": "610676",
-                "gas_price": "106000000000",
-                "gas_used": "270154",
-                "input_data": "0x",
-                "nonce": 55
+	        "entry": {
+		    "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
+		    "timestamp": 1588006528,
+		    "block_number": 10700085,
+		    "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
+		    "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
+		    "value": "56000300000000000000000",
+		    "gas": "610676",
+		    "gas_price": "106000000000",
+		    "gas_used": "270154",
+		    "input_data": "0x",
+		    "nonce": 55
+		},
+		"ignored_in_accounting": true
             }],
             "entries_found": 95,
             "entries_limit": 500,
