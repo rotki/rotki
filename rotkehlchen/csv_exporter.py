@@ -560,6 +560,10 @@ class CSVExporter():
                 self.defi_events_csv,
             )
             _dict_to_csv_file(
+                dirpath / FILENAME_LEDGER_ACTIONS_CSV,
+                self.ledger_actions_csv,
+            )
+            _dict_to_csv_file(
                 dirpath / FILENAME_ALL_CSV,
                 self.all_events_csv,
             )
