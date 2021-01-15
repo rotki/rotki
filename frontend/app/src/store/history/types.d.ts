@@ -47,10 +47,12 @@ export type LedgerActionType = typeof LEDGER_ACTION_TYPES[number];
 export interface LedgerAction {
   readonly identifier: number;
   readonly timestamp: number;
-  readonly type: LedgerActionType;
-  readonly location: 'blockchain';
+  readonly actionType: LedgerActionType;
+  readonly location: TradeLocation;
   readonly amount: BigNumber;
   readonly asset: string;
   readonly link: string;
   readonly notes: string;
 }
+
+export type UnsavedAction = Omit<LedgerAction, 'identifier'>;

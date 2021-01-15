@@ -149,7 +149,7 @@ export class HistoryApi {
     return this.axios
       .patch<ActionResult<LimitedResponse<LedgerAction>>>(
         '/ledgeractions',
-        axiosSnakeCaseTransformer(action),
+        axiosSnakeCaseTransformer({ action }),
         {
           validateStatus: validStatus,
           transformResponse: setupTransformer(balanceKeys)
@@ -163,7 +163,7 @@ export class HistoryApi {
   ): Promise<LimitedResponse<LedgerAction>> {
     return this.axios
       .delete<ActionResult<LimitedResponse<LedgerAction>>>('/ledgeractions', {
-        params: axiosSnakeCaseTransformer({ identifier }),
+        data: axiosSnakeCaseTransformer({ identifier }),
         validateStatus: validStatus,
         transformResponse: setupTransformer(balanceKeys)
       })

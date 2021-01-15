@@ -317,12 +317,30 @@
       "income": "Income",
       "loss": "Loss"
     },
+    "delete": {
+      "message": "Are you sure wou want to delete this ledger action?",
+      "title": "Delete LedgerAction"
+    },
+    "delete_failure": {
+      "description":"There was an error while deleting the action: {error}",
+      "title": "Delete Failed"
+    },
     "dialog": {
       "save": "Save",
       "add": {
         "title": "Add a ledger action",
         "subtitle": "Add a manual entry of income/loss/expense etc."
       }
+    },
+    "edit_tooltip": "Edit the ledger action",
+    "delete_tooltip": "Delete the ledger action",
+    "headers": {
+      "actions": "Actions",
+      "amount": "Amount",
+      "asset": "Asset",
+      "date": "Date",
+      "location": "Location",
+      "type": "Type"
     },
     "label": "ledger actions",
     "loading": "Please wait while your ledger actions are getting loaded...",

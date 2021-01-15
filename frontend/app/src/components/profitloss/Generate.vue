@@ -60,6 +60,7 @@ import {
   Quarter
 } from '@/store/settings/types';
 import { ActionStatus } from '@/store/types';
+import { convertToTimestamp } from '@/utils/date';
 
 @Component({
   components: {
@@ -100,18 +101,6 @@ export default class Generate extends Vue {
     this.quarter = this[PROFIT_LOSS_PERIOD].quarter;
   }
 
-  private convertToTimestamp(date: string): number {
-    let format: string = 'DD/MM/YYYY';
-    if (date.indexOf(' ') > -1) {
-      format += ' HH:mm';
-      if (date.charAt(date.length - 6) === ':') {
-        format += ':ss';
-      }
-    }
-
-    return moment(date, format).unix();
-  }
-
   get custom(): boolean {
     return this.year === 'custom';
   }
@@ -124,7 +113,7 @@ export default class Generate extends Vue {
     }
 
     this.start = period.start;
-    if (this.convertToTimestamp(period.end) > moment().unix()) {
+    if (convertToTimestamp(period.end) > moment().unix()) {
       this.end = moment().format('DD/MM/YYYY HH:mm:ss');
     } else {
       this.end = period.end;
@@ -150,7 +139,7 @@ export default class Generate extends Vue {
     this.invalidRange =
       !!this.start &&
       !!this.end &&
-      this.convertToTimestamp(this.start) > this.convertToTimestamp(this.end);
+      convertToTimestamp(this.start) > convertToTimestamp(this.end);
     this.message = this.$t('generate.validation.end_after_start').toString();
   }
 
@@ -159,13 +148,13 @@ export default class Generate extends Vue {
     this.invalidRange =
       !!this.start &&
       !!this.end &&
-      this.convertToTimestamp(this.start) > this.convertToTimestamp(this.end);
+      convertToTimestamp(this.start) > convertToTimestamp(this.end);
     this.message = this.$t('generate.validation.end_after_start').toString();
   }
 
   generate() {
-    const start = this.convertToTimestamp(this.start);
-    const end = this.convertToTimestamp(this.end);
+    const start = convertToTimestamp(this.start);
+    const end = convertToTimestamp(this.end);
     this.$emit('generate', {
       start,
       end
