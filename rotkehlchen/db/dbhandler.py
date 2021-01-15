@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import tempfile
+from collections import defaultdict
 from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
@@ -12,7 +13,7 @@ from eth_typing import HexStr
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import Balance, BalanceType
+from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -83,6 +84,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
+    deserialize_action_type_from_db,
     deserialize_asset_amount,
     deserialize_asset_movement_category_from_db,
     deserialize_fee,
@@ -657,32 +659,70 @@ class DBHandler:
         )
         return [Asset(q[0]) for q in cursor]
 
-    def add_to_ignored_action_ids(self, identifiers: List[str]) -> None:
+    def add_to_ignored_action_ids(self, action_type: ActionType, identifiers: List[str]) -> None:
+        """Adds a list of identifiers to be ignored for a given action type
+
+        Raises InputError in case of adding already existing ignored action
+        """
         cursor = self.conn.cursor()
-        tuples = [('ignored_action', x) for x in identifiers]
-        cursor.executemany(
-            'INSERT INTO multisettings(name, value) VALUES(?, ?)',
-            tuples,
-        )
+        tuples = [(action_type.serialize_for_db(), x) for x in identifiers]
+        try:
+            cursor.executemany(
+                'INSERT INTO ignored_actions(type, identifier) VALUES(?, ?)',
+                tuples,
+            )
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            raise InputError('One of the given action ids already exists in the dataase') from e
+
         self.conn.commit()
         self.update_last_write()
 
-    def remove_from_ignored_action_ids(self, identifiers: List[str]) -> None:
+    def remove_from_ignored_action_ids(
+            self,
+            action_type: ActionType,
+            identifiers: List[str],
+    ) -> None:
+        """Removes a list of identifiers to be ignored for a given action type
+
+        Raises InputError in case of removing an action that is not in the DB
+        """
         cursor = self.conn.cursor()
-        tuples = [(x,) for x in identifiers]
+        tuples = [(action_type.serialize_for_db(), x) for x in identifiers]
         cursor.executemany(
-            'DELETE FROM multisettings WHERE name="ignored_action" AND value=?;',
+            'DELETE FROM ignored_actions WHERE type=? AND identifier=?;',
             tuples,
         )
+        affected_rows = cursor.rowcount
+        if affected_rows != len(identifiers):
+            self.conn.rollback()
+            raise InputError(
+                f'Tried to remove {len(identifiers) - affected_rows} '
+                f'ignored actions that do not exist',
+            )
         self.conn.commit()
         self.update_last_write()
 
-    def get_ignored_action_ids(self) -> List[str]:
+    def get_ignored_action_ids(
+            self,
+            action_type: Optional[ActionType],
+    ) -> Dict[ActionType, List[str]]:
         cursor = self.conn.cursor()
-        cursor.execute(
-            'SELECT value FROM multisettings WHERE name="ignored_action";',
-        )
-        return [q[0] for q in cursor]
+        query = 'SELECT type, identifier from ignored_actions'
+
+        tuples: Tuple
+        if action_type is None:
+            query += ';'
+            tuples = ()
+        else:
+            query += ' WHERE type=?;'
+            tuples = (action_type.serialize_for_db(),)
+
+        result = cursor.execute(query, tuples)
+        mapping = defaultdict(list)
+        for entry in result:
+            mapping[deserialize_action_type_from_db(entry[0])].append(entry[1])
+
+        return mapping
 
     def add_multiple_balances(self, balances: List[AssetBalance]) -> None:
         """Execute addition of multiple balances in the DB"""
@@ -1331,9 +1371,10 @@ class DBHandler:
         )
         affected_rows = cursor.rowcount
         if affected_rows != len(accounts):
+            self.conn.rollback()
             raise InputError(
                 f'Tried to remove {len(accounts) - affected_rows} '
-                f'f{blockchain.value} accounts that do not exist',
+                f'{blockchain.value} accounts that do not exist',
             )
 
         # Also remove all ethereum address details saved in the D
@@ -1681,6 +1722,7 @@ class DBHandler:
         )
         affected_rows = cursor.rowcount
         if affected_rows != len(labels):
+            self.conn.rollback()
             raise InputError(
                 f'Tried to remove {len(labels) - affected_rows} '
                 f'manually tracked balance labels that do not exist',

@@ -108,6 +108,30 @@ INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('D', 4);
 INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('E', 5);
 """
 
+# Custom enum table for taxable action types
+DB_CREATE_ACTION_TYPE = """
+CREATE TABLE IF NOT EXISTS action_type (
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* Trade Type */
+INSERT OR IGNORE INTO action_type(type, seq) VALUES ('A', 1);
+/* Asset Movement Type */
+INSERT OR IGNORE INTO action_type(type, seq) VALUES ('B', 2);
+/* Ethereum Transaction Type */
+INSERT OR IGNORE INTO action_type(type, seq) VALUES ('C', 3);
+/* Ledger Actions Type */
+INSERT OR IGNORE INTO action_type(type, seq) VALUES ('D', 4);
+"""
+
+DB_CREATE_IGNORED_ACTIONS = """
+CREATE TABLE IF NOT EXISTS ignored_actions (
+    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES action_type(type),
+    identifier TEXT,
+    PRIMARY KEY (type, identifier)
+);
+"""
+
 DB_CREATE_TIMED_BALANCES = """
 CREATE TABLE IF NOT EXISTS timed_balances (
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
@@ -443,7 +467,7 @@ CREATE TABLE IF NOT EXISTS adex_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -477,4 +501,6 @@ PRAGMA foreign_keys=on;
     DB_CREATE_ADEX_EVENTS,
     DB_CREATE_LEDGER_ACTION_TYPE,
     DB_CREATE_LEDGER_ACTIONS,
+    DB_CREATE_ACTION_TYPE,
+    DB_CREATE_IGNORED_ACTIONS,
 )

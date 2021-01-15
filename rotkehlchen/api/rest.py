@@ -16,7 +16,12 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures import BalanceType, LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import (
+    ActionType,
+    BalanceType,
+    LedgerAction,
+    LedgerActionType,
+)
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -603,8 +608,16 @@ class RestAPI():
         else:
             entry_table = 'trades'
 
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.TRADE)
+        ignored_ids = mapping.get(ActionType.TRADE, [])
+        entries_result = []
+        for entry in trades_result:
+            entries_result.append(
+                {'entry': entry, 'ignored_in_accounting': entry['trade_id'] in ignored_ids},
+            )
+
         result = {
-            'entries': trades_result,
+            'entries': entries_result,
             'entries_found': self.rotkehlchen.data.db.get_entries_count(entry_table),
             'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
@@ -731,10 +744,20 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        serialized_movements = [x.serialize() for x in movements]
+        serialized_movements = process_result_list([x.serialize() for x in movements])
         limit = FREE_ASSET_MOVEMENTS_LIMIT if self.rotkehlchen.premium is None else -1
+
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ASSET_MOVEMENT)
+        ignored_ids = mapping.get(ActionType.ASSET_MOVEMENT, [])
+        entries_result = []
+        for entry in serialized_movements:
+            entries_result.append({
+                'entry': entry,
+                'ignored_in_accounting': entry['identifier'] in ignored_ids,
+            })
+
         result = {
-            'entries': process_result_list(serialized_movements),
+            'entries': entries_result,
             'entries_found': self.rotkehlchen.data.db.get_entries_count('asset_movements'),
             'entries_limit': limit,
         }
@@ -778,8 +801,17 @@ class RestAPI():
             location=location,
         )
 
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.LEDGER_ACTION)
+        ignored_ids = mapping.get(ActionType.LEDGER_ACTION, [])
+        entries_result = []
+        for action in actions:
+            entries_result.append({
+                'entry': action.serialize(),
+                'ignored_in_accounting': str(action.identifier) in ignored_ids,
+            })
+
         result = {
-            'entries': [x.serialize() for x in actions],
+            'entries': entries_result,
             'entries_found': original_length,
             'entries_limit': FREE_LEDGER_ACTIONS_LIMIT if self.rotkehlchen.premium is None else -1,
         }
@@ -1606,31 +1638,44 @@ class RestAPI():
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def get_ignored_action_ids(self) -> Response:
-        result = self.rotkehlchen.data.db.get_ignored_action_ids()
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
-
-    @require_loggedin_user()
-    def add_ignored_action_ids(self, action_ids: List[str]) -> Response:
-        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
-        if any(x in ignored_action_ids for x in action_ids):
-            msg = 'One of the given action ids already exists in the database'
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-        self.rotkehlchen.data.db.add_to_ignored_action_ids(identifiers=action_ids)
-        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
-        result_dict = _wrap_in_ok_result(process_result_list(ignored_action_ids))
+    def get_ignored_action_ids(self, action_type: Optional[ActionType]) -> Response:
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(action_type)
+        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def remove_ignored_action_ids(self, action_ids: List[str]) -> Response:
-        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
-        if not all(x in ignored_action_ids for x in action_ids):
-            msg = 'One of the given action ids does not exist in the database'
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+    def add_ignored_action_ids(self, action_type: ActionType, action_ids: List[str]) -> Response:
+        try:
+            self.rotkehlchen.data.db.add_to_ignored_action_ids(
+                action_type=action_type,
+                identifiers=action_ids,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        self.rotkehlchen.data.db.remove_from_ignored_action_ids(identifiers=action_ids)
-        ignored_action_ids = self.rotkehlchen.data.db.get_ignored_action_ids()
-        result_dict = _wrap_in_ok_result(process_result_list(ignored_action_ids))
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
+            action_type=action_type,
+        )
+        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def remove_ignored_action_ids(
+            self,
+            action_type: ActionType,
+            action_ids: List[str],
+    ) -> Response:
+        try:
+            self.rotkehlchen.data.db.remove_from_ignored_action_ids(
+                action_type=action_type,
+                identifiers=action_ids,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
+            action_type=action_type,
+        )
+        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
@@ -2166,13 +2211,25 @@ class RestAPI():
             status_code = HTTPStatus.BAD_GATEWAY
             message = str(e)
 
+        if transactions is not None:
+            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TX)
+            ignored_ids = mapping.get(ActionType.ETHEREUM_TX, [])
+            entries_result = []
+            for entry in transactions:
+                entries_result.append({
+                    'entry': entry.serialize(),
+                    'ignored_in_accounting': entry.identifier in ignored_ids,
+                })
+        else:
+            entries_result = []
+
         result = {
-            'entries': transactions,
+            'entries': entries_result,
             'entries_found': self.rotkehlchen.data.db.get_entries_count('ethereum_transactions'),
             'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
-        return {'result': process_result(result), 'message': message, 'status_code': status_code}
+        return {'result': result, 'message': message, 'status_code': status_code}
 
     @require_loggedin_user()
     def get_ethereum_transactions(

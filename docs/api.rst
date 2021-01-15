@@ -1123,29 +1123,35 @@ Querying ethereum transactions
 
       { "result":
             "entries": [{
-                "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
-                "timestamp": 1598006527,
-                "block_number": 10703085,
-                "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
-                "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
-                "value": "0",
-                "gas": "61676",
-                "gas_price": "206000000000",
-                "gas_used": "37154",
-                "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
-                "nonce": 2720
+	        "entry": {
+		    "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
+		    "timestamp": 1598006527,
+		    "block_number": 10703085,
+		    "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
+		    "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
+		    "value": "0",
+		    "gas": "61676",
+		    "gas_price": "206000000000",
+		    "gas_used": "37154",
+		    "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
+		    "nonce": 2720
+	       },
+	       "ignored_in_accounting": false
             }, {
-                "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
-                "timestamp": 1588006528,
-                "block_number": 10700085,
-                "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
-                "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
-                "value": "56000300000000000000000",
-                "gas": "610676",
-                "gas_price": "106000000000",
-                "gas_used": "270154",
-                "input_data": "0x",
-                "nonce": 55
+	        "entry": {
+		    "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
+		    "timestamp": 1588006528,
+		    "block_number": 10700085,
+		    "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
+		    "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
+		    "value": "56000300000000000000000",
+		    "gas": "610676",
+		    "gas_price": "106000000000",
+		    "gas_used": "270154",
+		    "input_data": "0x",
+		    "nonce": 55
+		},
+		"ignored_in_accounting": true
             }],
             "entries_found": 95,
             "entries_limit": 500,
@@ -2029,24 +2035,27 @@ Dealing with trades
       {
           "result": {
               "entries": [{
-                  "trade_id": "dsadfasdsad",
-                  "timestamp": 1491606401,
-                  "location": "external",
-                  "pair": "BTC_EUR",
-                  "trade_type": "buy",
-                  "amount": "0.5541",
-                  "rate": "8422.1",
-                  "fee": "0.55",
-                  "fee_currency": "USD",
-                  "link": "Optional unique trade identifier"
-                  "notes": "Optional notes"
+	          "entry": {
+		      "trade_id": "dsadfasdsad",
+		      "timestamp": 1491606401,
+		      "location": "external",
+		      "pair": "BTC_EUR",
+		      "trade_type": "buy",
+		      "amount": "0.5541",
+		      "rate": "8422.1",
+		      "fee": "0.55",
+		      "fee_currency": "USD",
+		      "link": "Optional unique trade identifier",
+		      "notes": "Optional notes"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 95,
               "entries_limit": 250,
           "message": ""
       }
 
-   :resjson object entries: An array of trade objects.
+   :resjson object entries: An array of trade objects and their metadata. Each entry is composed of the main trade entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each trade.
    :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
@@ -2110,22 +2119,22 @@ Dealing with trades
 
       {
           "result": [{
-              "trade_id": "dsadfasdsad",
-              "timestamp": 1491606401,
-              "location": "external",
-              "pair": "BTC_EUR",
-              "trade_type": "buy",
-              "amount": "0.5541",
-              "rate": "8422.1",
-              "fee": "0.55",
-              "fee_currency": "USD",
-              "link": "Optional unique trade identifier"
-              "notes": "Optional notes"
-          }]
+		  "trade_id": "dsadfasdsad",
+		  "timestamp": 1491606401,
+		  "location": "external",
+		  "pair": "BTC_EUR",
+		  "trade_type": "buy",
+		  "amount": "0.5541",
+		  "rate": "8422.1",
+		  "fee": "0.55",
+		  "fee_currency": "USD",
+		  "link": "Optional unique trade identifier",
+		  "notes": "Optional notes"
+          }],
           "message": ""
       }
 
-   :resjson object result: Array of trades with the same schema as seen in `this <trades_schema_section_>`_ section.
+   :resjson object result: Array of trade entries with the same schema as seen in `this <trades_schema_section_>`_ section.
    :statuscode 200: Trades was succesfully added.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is currently logged in.
@@ -2264,24 +2273,27 @@ Querying asset movements
       {
           "result": {
               "entries": [{
-                  "identifier": "foo"
-                  "location": "kraken",
-                  "category": "deposit",
-                  "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
-                  "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
-                  "timestamp": 1451706400
-                  "asset": "ETH",
-                  "amount": "500.55",
-                  "fee_asset": "ETH",
-                  "fee": "0.1",
-                  "link": "optional exchange unique id",
+	          "entry": {
+		      "identifier": "foo"
+		      "location": "kraken",
+		      "category": "deposit",
+		      "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+		      "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
+		      "timestamp": 1451706400
+		      "asset": "ETH",
+		      "amount": "500.55",
+		      "fee_asset": "ETH",
+		      "fee": "0.1",
+		      "link": "optional exchange unique id"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 80,
               "entries_limit": 100,
           "message": ""
       }
 
-   :resjson object entries: An array of deposit/withdrawal objects
+   :resjson object entries: An array of deposit/withdrawal objects and their metadata. Each entry is composed of the main movement entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each asset movement.
    :resjsonarr string identifier: The uniquely identifying identifier for this asset movement
    :resjsonarr string location: A valid location at which the deposit/withdrawal occured
    :resjsonarr string category: Either ``"deposit"`` or ``"withdrawal"``
@@ -2343,21 +2355,24 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-                  "identifier": 344,
-                  "timestamp": 1491606401,
-		  "action_type": "loss",
-                  "location": "blockchain",
-                  "amount": "1550",
-                  "asset": "DAI",
-                  "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
-                  "notes": "The DAI I lost in the pickle finance hack"
+	          "entry": {
+		      "identifier": 344,
+		      "timestamp": 1491606401,
+		      "action_type": "loss",
+		      "location": "blockchain",
+		      "amount": "1550",
+		      "asset": "DAI",
+		      "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
+		      "notes": "The DAI I lost in the pickle finance hack"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
           "message": ""
       }
 
-   :resjson object entries: An array of action objects.
+   :resjson object entries: An array of action objects and their metadata. Each entry is composed of the ledger action entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each action.
    :resjsonarr int identifier: The uniquely identifying identifier for this action.
    :resjsonarr int timestamp: The timestamp at which the action occured
    :resjsonarr string action_type: The type of action. Valid types are: ``income``, ``loss``, ``donation received``, ``expense`` and ``dividends income``.
@@ -2409,7 +2424,7 @@ Dealing with ledger actions
           "message": ""
       }
 
-   :resjson object result: The identifier ofthe newly created trade
+   :resjson object result: The identifier ofthe newly created ledger action
    :statuscode 200: Ledger action was succesfully added.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is currently logged in.
@@ -2449,21 +2464,24 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-                  "identifier": 55,
-                  "timestamp": 1491606401,
-        	  "action_type": "income"
-                  "location": "external",
-                  "amount": "2",
-                  "asset": "ETH",
-                  "link": "Optional unique identifier",
-                  "notes": "Eth I received for being pretty"
+	          "entry": {
+		      "identifier": 55,
+		      "timestamp": 1491606401,
+		      "action_type": "income"
+		      "location": "external",
+		      "amount": "2",
+		      "asset": "ETH",
+		      "link": "Optional unique identifier",
+		      "notes": "Eth I received for being pretty"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
           "message": ""
       }
 
-   :resjson object entries: An array of action objects after editing. Same schema as above.
+   :resjson object entries: An array of action objects after editing. Same schema as the get method.
    :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
    :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Actions was succesfully edited.
@@ -2496,21 +2514,24 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-                  "identifier": 35,
-                  "timestamp": 1491606401,
-        	  "action_type": "income"
-                  "location": "external",
-                  "amount": "2",
-                  "asset": "ETH",
-                  "link": "Optional unique identifier",
-                  "notes": "Eth I received for being pretty"
+	          "entry": {
+		      "identifier": 35,
+		      "timestamp": 1491606401,
+		      "action_type": "income"
+		      "location": "external",
+		      "amount": "2",
+		      "asset": "ETH",
+		      "link": "Optional unique identifier",
+		      "notes": "Eth I received for being pretty"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
           "message": ""
       }
 
-   :resjson object entries: An array of action objects after deletion. Same schema as above.
+   :resjson object entries: An array of action objects after deletion. Same schema as the get method.
    :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
    :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Action was succesfully removed.
@@ -6179,7 +6200,7 @@ Dealing with ignored actions
 
 .. http:get:: /api/(version)/actions/ignored
 
-   Doing a GET on the ignored actions endpoint will return a list of all action identifiers that the user has set to have ignored during accounting.
+   Doing a GET on the ignored actions endpoint will return a mapping of lists of all action identifiers that the user has set to have ignored during accounting. User can also specify a specific action type to get only that type's mapping.
 
 
    **Example Request**:
@@ -6189,6 +6210,10 @@ Dealing with ignored actions
       GET /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
 
+      {"action_type": "trade"}
+
+   :reqjson str action_type: A type of actions whose ignored ids to return. If it is not specified a mapping of all action types is returned. Valid action types are: ``trade``, ``asset movement``, ``ethereum_transaction`` and ``ledger action``.
+
    **Example Response**:
 
    .. sourcecode:: http
@@ -6197,11 +6222,14 @@ Dealing with ignored actions
       Content-Type: application/json
 
       {
-          "result": ["X124-JYI", "2325"],
+          "result": {
+	      "trade": ["X124-JYI", "2325"],
+	      "ethereum_transaction": ["0xfoo", "0xboo"]
+	  },
           "message": ""
       }
 
-   :resjson list result: A list of action identifiers that will be ignored during accounting
+   :resjson list result: A mapping to a list of action identifiers that will be ignored during accounting for each type of action.
    :statuscode 200: Actions succesfully queried
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in.
@@ -6209,7 +6237,7 @@ Dealing with ignored actions
 
 .. http:put:: /api/(version)/actions/ignored
 
-   Doing a PUT on the ignored actions endpoint will add action identifiers for ignoring during accounting. Returns the list of all ignored action identifiers after the addition.
+   Doing a PUT on the ignored actions endpoint will add action identifiers for ignoring of a given action type during accounting. Returns the list of all ignored action identifiers of the given type after the addition.
 
 
    **Example Request**:
@@ -6219,8 +6247,9 @@ Dealing with ignored actions
       PUT /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
 
-      {"action_ids": ["Z231-XH23K"]}
+      {"action_type": "ledger action", ""action_ids": ["Z231-XH23K"]}
 
+   :reqjson str action_type: A type of actions whose ignored ids to add. Defined above.
    :reqjson list action_ids: A list of action identifiers to add to the ignored actions for accounting
 
    **Example Response**:
@@ -6231,11 +6260,11 @@ Dealing with ignored actions
       Content-Type: application/json
 
       {
-          "result": ["Z231-XH23K", "X124-JYI", "2325"],
+          "result": {"ledger_action": ["Z231-XH23K", "X124-JYI", "2325"]},
           "message": ""
       }
 
-   :resjson list result: A list of action identifiers that are ignored during accounting.
+   :resjson list result: A mapping to a list of action identifiers that are ignored during accounting for the given action type.
    :statuscode 200: Action ids succesfully added
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in. One of the action ids provided is already on the list.
@@ -6243,7 +6272,7 @@ Dealing with ignored actions
 
 .. http:delete:: /api/(version)/actions/ignored/
 
-   Doing a DELETE on the ignored actions endpoint removes action ids from the list of actions to be ignored during accounting.
+   Doing a DELETE on the ignored actions endpoint removes action ids from the list of actions of the given type to be ignored during accounting.
 
 
    **Example Request**:
@@ -6253,9 +6282,10 @@ Dealing with ignored actions
       DELETE /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
 
-      {"action_ids": ["2325"]}
+      {"action_type": "asset movement", "action_ids": ["2325"]}
 
-   :reqjson list action_ids: A list of action identifiers to remove from the ignored action ids list.
+   :reqjson str action_type: A type of actions whose ignored ids to remove. Defined above.
+   :reqjson list action_ids: A list of action identifiers to remove from the ignored action ids list for the action type.
 
    **Example Response**:
 
@@ -6265,7 +6295,7 @@ Dealing with ignored actions
       Content-Type: application/json
 
       {
-          "result": ["Z231-XH23K", "X124-JYI"],
+          "result": {"asset movement": ["Z231-XH23K", "X124-JYI"]},
           "message": ""
       }
 
