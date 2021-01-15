@@ -599,7 +599,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
             result = assert_proper_response_with_result(response)
     assert result['entries_found'] > 0
     assert result['entries_limit'] == FREE_TRADES_LIMIT
-    assert_binance_trades_result(result['entries'])
+    assert_binance_trades_result([x['entry'] for x in result['entries']])
 
     # query trades of all exchanges
     with setup.binance_patch, setup.polo_patch:
@@ -615,8 +615,8 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
             result = assert_proper_response_with_result(response)
 
     trades = result['entries']
-    assert_binance_trades_result([x for x in trades if x['location'] == 'binance'])
-    assert_poloniex_trades_result([x for x in trades if x['location'] == 'poloniex'])
+    assert_binance_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'binance'])  # noqa: E501
+    assert_poloniex_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'poloniex'])  # noqa: E501
 
     def assert_okay(response):
         """Helper function for DRY checking below assertions"""
@@ -627,9 +627,9 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
         else:
             result = assert_proper_response_with_result(response)
         trades = result['entries']
-        assert_binance_trades_result([x for x in trades if x['location'] == 'binance'])
+        assert_binance_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'binance'])  # noqa: E501
         assert_poloniex_trades_result(
-            trades=[x for x in trades if x['location'] == 'poloniex'],
+            trades=[x['entry'] for x in trades if x['entry']['location'] == 'poloniex'],
             trades_to_check=(2,),
         )
 
