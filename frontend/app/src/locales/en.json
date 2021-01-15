@@ -483,6 +483,7 @@
       "defi_profit_loss": "DeFi Profit/Loss",
       "ethereum_transaction_gas_costs": "Ethereum Transaction Gas Costs",
       "general_trade_profit_loss": "General Trade Profit/Loss",
+      "ledger_actions_profit_loss": "Ledger Actions Profit/Loss",
       "loan_profit": "Loan Profit",
       "margin_positions_pnl": "Margin Positions Profit/Loss",
       "settlement_losses": "Settlement Losses",

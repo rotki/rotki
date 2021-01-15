@@ -72,6 +72,19 @@
               <tr>
                 <td>
                   {{
+                    $t('profit_loss_overview.rows.ledger_actions_profit_loss')
+                  }}
+                </td>
+                <td class="text-right">
+                  <amount-display
+                    pnl
+                    :value="overview.ledgerActionsProfitLoss"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  {{
                     $t('profit_loss_overview.rows.general_trade_profit_loss')
                   }}
                 </td>
