@@ -7114,6 +7114,7 @@
         "name": "Loki",
         "started": 1519516800,
         "symbol": "LOKI",
+        "swapped_for": "OXEN",
         "type": "own chain"
     },
     "LOOM": {
@@ -12428,7 +12429,7 @@
         "type": "ethereum token"
     },
     "VTC": {
-        "coingecko": "vote-coin",
+        "coingecko": "vertcoin",
         "name": "Vertcoin",
         "started": 1389139200,
         "symbol": "VTC",
@@ -14511,6 +14512,148 @@
         "name": "Terra Virtua Kolect",
         "started": 1607372826,
         "symbol": "TVK",
+        "type": "ethereum token"
+    },
+    "BTCST": {
+        "coingecko": "btc-standard-hashrate-token",
+        "name": "BTC Standard Hashrate Token",
+        "started": 1608698335,
+        "symbol": "BTCST",
+        "type": "own chain"
+    },
+    "XSN": {
+        "coingecko": "stakenet",
+        "name": "Stakenet",
+        "started": 1522281600,
+        "symbol": "XSN",
+        "type": "own chain"
+    },
+    "EXRD": {
+        "coingecko": "e-radix",
+        "ethereum_address": "0x6468e79A80C0eaB0F9A2B574c8d5bC374Af59414",
+        "ethereum_token_decimals": 18,
+        "name": "e-Radix",
+        "started": 1603805479,
+        "symbol": "EXRD",
+        "type": "ethereum token"
+    },
+    "BTCV": {
+        "coingecko": "bitcoinv",
+        "name": "BitcoinV",
+        "started": 1581897600,
+        "symbol": "BTCV",
+        "type": "own chain"
+    },
+    "GOLD": {
+        "coingecko": "gold",
+        "cryptocompare": "",
+        "ethereum_address": "0xE081b71Ed098FBe1108EA48e235b74F122272E68",
+        "ethereum_token_decimals": 18,
+        "name": "GOLD",
+        "started": 1519257489,
+        "symbol": "GOLD",
+        "type": "ethereum token"
+    },
+    "KOK": {
+        "coingecko": "kok-coin",
+        "ethereum_address": "0x7BD6a4E7DB3A34c485A8DD02b30B6565e3bbC633",
+        "ethereum_token_decimals": 18,
+        "name": "KOK Coin",
+        "started": 1578456549,
+        "symbol": "KOK",
+        "type": "ethereum token"
+    },
+    "OXEN": {
+        "coingecko": "loki-network",
+        "cryptocompare": "loki",
+        "ethereum_address": "0x5ff668ddfDcBB7505f41ED56e626E4D4719DcB26",
+        "ethereum_token_decimals": 9,
+        "name": "Oxen",
+        "started": 1601442293,
+        "symbol": "OXEN",
+        "type": "ethereum token and more"
+    },
+    "CRE": {
+        "coingecko": "carry",
+        "ethereum_address": "0x115eC79F1de567eC68B7AE7eDA501b406626478e",
+        "ethereum_token_decimals": 18,
+        "name": "Carry",
+        "started": 1529821129,
+        "symbol": "CRE",
+        "type": "ethereum token"
+    },
+    "ACH": {
+        "coingecko": "alchemy-pay",
+        "ethereum_address": "0xEd04915c23f00A313a544955524EB7DBD823143d",
+        "ethereum_token_decimals": 8,
+        "name": "Alchemy Pay",
+        "started": 1567580452,
+        "symbol": "ACH",
+        "type": "ethereum token"
+    },
+    "BAC": {
+        "coingecko": "basis-cash",
+        "cryptocompare": "",
+        "ethereum_address": "0x3449FC1Cd036255BA1EB19d65fF4BA2b8903A69a",
+        "ethereum_token_decimals": 18,
+        "name": "Basis Cash",
+        "started": 1606676615,
+        "symbol": "BAC",
+        "type": "ethereum token"
+    },
+    "BOND": {
+        "coingecko": "barnbridge",
+        "ethereum_address": "0x0391D2021f89DC339F60Fff84546EA23E337750f",
+        "ethereum_token_decimals": 18,
+        "name": "BarnBridge",
+        "started": 1599494104,
+        "symbol": "BOND",
+        "type": "ethereum token"
+    },
+    "COMBO": {
+        "coingecko": "furucombo",
+        "cryptocompare": "",
+        "ethereum_address": "0xfFffFffF2ba8F66D4e51811C5190992176930278",
+        "ethereum_token_decimals": 18,
+        "name": "Furucombo",
+        "started": 1609231627,
+        "symbol": "COMBO",
+        "type": "ethereum token"
+    },
+    "CUDOS": {
+        "coingecko": "cudos",
+        "ethereum_address": "0x817bbDbC3e8A1204f3691d14bB44992841e3dB35",
+        "ethereum_token_decimals": 18,
+        "name": "Cudos",
+        "started": 1610117980,
+        "symbol": "CUDOS",
+        "type": "ethereum token"
+    },
+    "LON": {
+        "coingecko": "tokenlon",
+        "ethereum_address": "0x0000000000095413afC295d19EDeb1Ad7B71c952",
+        "ethereum_token_decimals": 18,
+        "name": "Tokenlon",
+        "started": 1608523100,
+        "symbol": "LON",
+        "type": "ethereum token"
+    },
+    "PBTC35A": {
+        "coingecko": "pbtc35a",
+        "ethereum_address": "0xA8b12Cc90AbF65191532a12bb5394A714A46d358",
+        "ethereum_token_decimals": 18,
+        "name": "pBTC35A",
+        "started": 1610002577,
+        "symbol": "PBTC35A",
+        "type": "ethereum token"
+    },
+    "ROOK": {
+        "coingecko": "rook",
+        "ethereum_address": "0xfA5047c9c78B8877af97BDcb85Db743fD7313d4a",
+        "ethereum_token_decimals": 18,
+        "name": "KeeperDAO",
+        "started": 1604214421,
+        "symbol": "ROOK",
         "type": "ethereum token"
     }
 }

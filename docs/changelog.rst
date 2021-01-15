@@ -28,6 +28,22 @@ Changelog
   - `Exeedme (XED) <https://www.coingecko.com/en/coins/exeedme>`__
   - `Terra Virtua Kolect (TVK) <https://www.coingecko.com/en/coins/terra-virtua-kolect>`__
   - `Celsius network token (CEL) <https://www.coingecko.com/en/coins/celsius-network-token>`__
+  - `BTC Standard Hashrate Token (BTCST) <https://www.coingecko.com/en/coins/btc-standard-hashrate-token>`__
+  - `Stakenet (XSN) <https://www.coingecko.com/en/coins/stakenet>`__
+  - `e-Radix (EXRD) <https://www.coingecko.com/en/coins/e-radix>`__
+  - `BitcoinV (BTCV) <https://www.coingecko.com/en/coins/bitcoinv>`__
+  - `GOLD (GOLD) <https://www.coingecko.com/en/coins/gold>`__
+  - `KOK Coin (KOK) <https://www.coingecko.com/en/coins/kok-coin>`__
+  - `Oxen (OXEN) <https://www.coingecko.com/en/coins/oxen>`__
+  - `Carry (CRE) <https://www.coingecko.com/en/coins/carry>`__
+  - `Alchemy Pay (ACH) <https://www.coingecko.com/en/coins/alchemy-pay>`__
+  - `Basis Cash (BAC) <https://www.coingecko.com/en/coins/basis-cash>`__
+  - `BarnBridge (BOND) <https://www.coingecko.com/en/coins/barnbridge>`__
+  - `Furucombo (COMBO) <https://www.coingecko.com/en/coins/furucombo>`__
+  - `Cudos (CUDOS) <https://www.coingecko.com/en/coins/cudos>`__
+  - `Tokenlon (LON) <https://www.coingecko.com/en/coins/tokenlon>`__
+  - `pBTC35A (PBTC35A) <https://www.coingecko.com/en/coins/pbtc35a>`__
+  - `KeeperDAO (ROOK) <https://www.coingecko.com/en/coins/keeperdao>`__
 
 * :release:`1.11.0 <2020-12-30>`
 * :bug:`1929` Premium users will be able to see the proper balances after a force pull.

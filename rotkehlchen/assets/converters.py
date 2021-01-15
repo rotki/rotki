@@ -4,6 +4,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITFINEX,
     WORLD_TO_BITTREX,
+    WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
     WORLD_TO_POLONIEX,
     Asset,
@@ -411,6 +412,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'FCT2',  # neither in coingecko nor cryptocompare
     'UPXAU',  # neither in coingecko nor cryptocompare
     'TEA',  # neither in coingecko nor cryptocompare
+    'PANDO',  # neither in coingecko nor cryptocompare (own blockchain, released on 2020)
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
     'AMZN',
@@ -457,6 +459,13 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'IQX',  # no cryptocompare/coingecko data (EOS token)
 )
 
+# https://api.iconomi.com/v1/assets marks delisted assets
+UNSUPPORTED_ICONOMI_ASSETS = (
+    'ICNGS',
+    'FTR',  # delisted
+    'TT',  # delisted
+)
+
 # Exchange symbols that are clearly for testing purposes. They appear in all
 # these places: supported currencies list, supported exchange pairs list and
 # currency map.
@@ -476,6 +485,7 @@ BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
 BITFINEX_TO_WORLD = {v: k for k, v in WORLD_TO_BITFINEX.items()}
 KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
+ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
