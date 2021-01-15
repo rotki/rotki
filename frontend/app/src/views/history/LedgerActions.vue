@@ -29,6 +29,10 @@
         <v-spacer />
       </v-card-title>
       <v-card-text>
+        <ignore-buttons
+          :disabled="selected.length === 0 || loading || refreshing"
+          @ignore="ignoreLedgerActions"
+        />
         <v-data-table
           show-expand
           single-expand
@@ -37,6 +41,22 @@
           :headers="headers"
           :footer-props="footerProps"
         >
+          <template #header.selection>
+            <v-simple-checkbox
+              :ripple="false"
+              :value="allSelected"
+              color="primary"
+              @input="setSelected($event)"
+            />
+          </template>
+          <template #item.selection="{ item }">
+            <v-simple-checkbox
+              :ripple="false"
+              color="primary"
+              :value="selected.includes(item.identifier)"
+              @input="selectionChanged(item.identifier, $event)"
+            />
+          </template>
           <template #item.actionType="{ item }">
             <event-type-display :event-type="item.actionType" />
           </template>
@@ -51,6 +71,9 @@
           </template>
           <template #item.amount="{ item }">
             <amount-display :value="item.amount" />
+          </template>
+          <template #item.ignoredInAccounting="{ item }">
+            <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
           </template>
           <template #item.actions="{ item }">
             <row-actions
@@ -148,6 +171,8 @@
 </template>
 
 <script lang="ts">
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
 import { Component, Mixins } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapMutations, mapState } from 'vuex';
@@ -156,6 +181,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { footerProps } from '@/config/datatable.common';
@@ -168,11 +194,14 @@ import {
   ACTION_DELETE_LEDGER_ACTION,
   ACTION_EDIT_LEDGER_ACTION,
   ACTION_FETCH_LEDGER_ACTIONS,
-  ACTION_INCOME
+  ACTION_INCOME,
+  IGNORE_LEDGER_ACTION
 } from '@/store/history/consts';
 import {
   HistoricData,
+  IgnoreActionPayload,
   LedgerAction,
+  LedgerActionEntry,
   UnsavedAction
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
@@ -191,6 +220,7 @@ const emptyAction: () => UnsavedAction = () => ({
 
 @Component({
   components: {
+    IgnoreButtons,
     ConfirmDialog,
     RowActions,
     LedgerActionForm,
@@ -207,7 +237,9 @@ const emptyAction: () => UnsavedAction = () => ({
       ACTION_FETCH_LEDGER_ACTIONS,
       ACTION_ADD_LEDGER_ACTION,
       ACTION_EDIT_LEDGER_ACTION,
-      ACTION_DELETE_LEDGER_ACTION
+      ACTION_DELETE_LEDGER_ACTION,
+      'ignoreActions',
+      'unignoreActions'
     ]),
     ...mapMutations(['setMessage'])
   }
@@ -216,6 +248,7 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   readonly section = Section.LEDGER_ACTIONS;
   readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
+    { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$t('ledger_actions.headers.location').toString(),
       value: 'location'
@@ -237,6 +270,10 @@ export default class LedgerActions extends Mixins(StatusMixin) {
       value: 'timestamp'
     },
     {
+      text: this.$t('ledger_actions.headers.ignored').toString(),
+      value: 'ignoredInAccounting'
+    },
+    {
       text: this.$t('ledger_actions.headers.actions').toString(),
       align: 'end',
       value: 'actions'
@@ -247,14 +284,98 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   [ACTION_ADD_LEDGER_ACTION]!: (action: UnsavedAction) => Promise<ActionStatus>;
   [ACTION_EDIT_LEDGER_ACTION]!: (action: LedgerAction) => Promise<ActionStatus>;
   [ACTION_DELETE_LEDGER_ACTION]!: (identifier: number) => Promise<ActionStatus>;
+  ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
+  unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
-  ledgerActions!: HistoricData<LedgerAction>;
+  ledgerActions!: HistoricData<LedgerActionEntry>;
 
   openDialog: boolean = false;
   validForm: boolean = false;
   deleteIdentifier: number = 0;
-  action: LedgerAction | UnsavedAction = emptyAction();
+  action: LedgerActionEntry | UnsavedAction = emptyAction();
   errors: { [key in Properties<UnsavedAction, any>]?: string } = {};
+
+  selected: number[] = [];
+
+  setSelected(selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const total = selection.length;
+      for (let i = 0; i < total; i++) {
+        selection.pop();
+      }
+    } else {
+      for (const { identifier } of this.ledgerActions.data) {
+        if (!identifier || selection.includes(identifier)) {
+          continue;
+        }
+        selection.push(identifier);
+      }
+    }
+  }
+
+  selectionChanged(identifier: number, selected: boolean) {
+    const selection = this.selected;
+    if (!selected) {
+      const index = selection.indexOf(identifier);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+    } else if (identifier && !selection.includes(identifier)) {
+      selection.push(identifier);
+    }
+  }
+
+  get allSelected(): boolean {
+    const strings = this.ledgerActions.data.map(({ identifier }) => identifier);
+    return (
+      strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
+    );
+  }
+
+  async ignoreLedgerActions(ignore: boolean) {
+    let status: ActionStatus;
+
+    const actionIds = this.ledgerActions.data
+      .filter(({ identifier, ignoredInAccounting }) => {
+        return (
+          (ignore ? !ignoredInAccounting : ignoredInAccounting) &&
+          this.selected.includes(identifier)
+        );
+      })
+      .map(({ identifier }) => identifier.toString())
+      .filter((value, index, array) => array.indexOf(value) === index);
+
+    if (actionIds.length === 0) {
+      const choice = ignore ? 1 : 2;
+      this.setMessage({
+        success: false,
+        title: this.$tc('ledger_actions.ignore.no_actions.title', choice),
+        description: this.$tc(
+          'ledger_actions.ignore.no_actions.description',
+          choice
+        )
+      });
+      return;
+    }
+    const payload: IgnoreActionPayload = {
+      actionIds: actionIds,
+      type: IGNORE_LEDGER_ACTION
+    };
+
+    if (ignore) {
+      status = await this.ignoreActions(payload);
+    } else {
+      status = await this.unignoreActions(payload);
+    }
+
+    if (status.success) {
+      const total = this.selected.length;
+      for (let i = 0; i < total; i++) {
+        this.selected.pop();
+      }
+    }
+  }
 
   async refresh() {
     await this[ACTION_FETCH_LEDGER_ACTIONS](true);
@@ -264,7 +385,7 @@ export default class LedgerActions extends Mixins(StatusMixin) {
     await this[ACTION_FETCH_LEDGER_ACTIONS](false);
   }
 
-  async showForm(action: LedgerAction | UnsavedAction = emptyAction()) {
+  async showForm(action: LedgerActionEntry | UnsavedAction = emptyAction()) {
     this.action = action;
     this.openDialog = true;
   }
@@ -273,13 +394,12 @@ export default class LedgerActions extends Mixins(StatusMixin) {
     let success: boolean;
     let message: string | undefined;
     if ('identifier' in this.action) {
-      ({ success, message } = await this[ACTION_EDIT_LEDGER_ACTION](
-        this.action
-      ));
+      const { ignoredInAccounting, ...payload } = this
+        .action as LedgerActionEntry;
+      ({ success, message } = await this[ACTION_EDIT_LEDGER_ACTION](payload));
     } else {
-      ({ success, message } = await this[ACTION_ADD_LEDGER_ACTION](
-        this.action
-      ));
+      const payload = { ...this.action };
+      ({ success, message } = await this[ACTION_ADD_LEDGER_ACTION](payload));
     }
 
     if (success) {

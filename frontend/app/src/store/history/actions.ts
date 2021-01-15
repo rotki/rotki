@@ -26,6 +26,7 @@ import {
   ACTION_DELETE_LEDGER_ACTION,
   ACTION_EDIT_LEDGER_ACTION,
   ACTION_FETCH_LEDGER_ACTIONS,
+  IGNORE_LEDGER_ACTION,
   IGNORE_MOVEMENTS,
   IGNORE_TRADES,
   IGNORE_TRANSACTIONS,
@@ -42,6 +43,8 @@ import {
   HistoryState,
   IgnoreActionPayload,
   LedgerAction,
+  LedgerActionEntry,
+  LedgerActions,
   LocationRequestMeta,
   TradeEntry,
   Trades
@@ -470,7 +473,15 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         LimitedResponse<EntryWithMeta<LedgerAction>>,
         TaskMeta
       >(taskType, `${taskId}`);
-      commit(MUTATION_SET_LEDGER_ACTIONS, result);
+      const data: HistoricData<LedgerActionEntry> = {
+        data: result.entries.map(({ entry, ignoredInAccounting }) => ({
+          ...entry,
+          ignoredInAccounting
+        })),
+        limit: result.entriesLimit,
+        found: result.entriesFound
+      };
+      commit(MUTATION_SET_LEDGER_ACTIONS, data);
     } catch (e) {
       const message = i18n
         .t('actions.ledger_actions.error.description', {
@@ -516,7 +527,15 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   ): Promise<ActionStatus> {
     try {
       const result = await api.history.editLedgerAction(action);
-      commit(MUTATION_SET_LEDGER_ACTIONS, result);
+      const data: HistoricData<LedgerActionEntry> = {
+        data: result.entries.map(({ entry, ignoredInAccounting }) => ({
+          ...entry,
+          ignoredInAccounting
+        })),
+        limit: result.entriesLimit,
+        found: result.entriesFound
+      };
+      commit(MUTATION_SET_LEDGER_ACTIONS, data);
       return { success: true };
     } catch (e) {
       return { success: false, message: e.message };
@@ -529,7 +548,15 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   ): Promise<ActionStatus> {
     try {
       const result = await api.history.deleteLedgerAction(identifier);
-      commit(MUTATION_SET_LEDGER_ACTIONS, result);
+      const data: HistoricData<LedgerActionEntry> = {
+        data: result.entries.map(({ entry, ignoredInAccounting }) => ({
+          ...entry,
+          ignoredInAccounting
+        })),
+        limit: result.entriesLimit,
+        found: result.entriesFound
+      };
+      commit(MUTATION_SET_LEDGER_ACTIONS, data);
       return { success: true };
     } catch (e) {
       return { success: false, message: e.message };
@@ -605,6 +632,21 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         found: state.transactions.found,
         limit: state.transactions.limit
       } as EthTransactions);
+    } else if (type === IGNORE_LEDGER_ACTION) {
+      const data = [...state.ledgerActions.data];
+
+      for (let i = 0; i < data.length; i++) {
+        const ledgerAction: Writeable<LedgerActionEntry> = data[i];
+
+        if (strings.includes(ledgerAction.identifier.toString())) {
+          data[i] = { ...data[i], ignoredInAccounting: true };
+        }
+      }
+      commit(MUTATION_SET_LEDGER_ACTIONS, {
+        data,
+        found: state.ledgerActions.found,
+        limit: state.ledgerActions.limit
+      } as LedgerActions);
     }
     return { success: true };
   },
@@ -683,6 +725,24 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         found: state.transactions.found,
         limit: state.transactions.limit
       } as EthTransactions);
+    } else if (type === IGNORE_LEDGER_ACTION) {
+      const data = [...state.ledgerActions.data];
+
+      for (let i = 0; i < data.length; i++) {
+        const ledgerAction: Writeable<LedgerActionEntry> = data[i];
+        if (!ledgerAction.ignoredInAccounting) {
+          continue;
+        }
+
+        if (!strings.includes(ledgerAction.identifier.toString())) {
+          data[i] = { ...data[i], ignoredInAccounting: false };
+        }
+      }
+      commit(MUTATION_SET_LEDGER_ACTIONS, {
+        data,
+        found: state.ledgerActions.found,
+        limit: state.ledgerActions.limit
+      } as LedgerActions);
     }
     return { success: true };
   }

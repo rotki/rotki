@@ -353,13 +353,20 @@
       "asset": "Asset",
       "date": "Date",
       "location": "Location",
+      "ignored": "Ignored",
       "type": "Type"
     },
     "label": "ledger actions",
     "loading": "Please wait while your ledger actions are getting loaded...",
     "loading_subtitle": "The loading of ledger actions might take a while depending on the number of actions you performed.",
     "refresh_tooltip": "Refresh your ledger actions",
-    "title": "Ledger Actions"
+    "title": "Ledger Actions",
+    "ignore": {
+      "no_actions": {
+        "description": "All the selected actions are already ignored | All the selected actions are already included",
+        "title": "No actions to ignore | No actions to unignore"
+      }
+    }
   },
   "loan_liquidation": {
     "liquidated_collateral": "Liquidated collateral",
