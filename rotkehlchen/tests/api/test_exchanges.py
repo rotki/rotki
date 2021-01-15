@@ -668,7 +668,19 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
             result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 4
     assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
-    assert_poloniex_asset_movements(result['entries'], deserialized=True)
+    poloniex_ids = [x['entry']['identifier'] for x in result['entries']]
+    assert_poloniex_asset_movements([x['entry'] for x in result['entries']], deserialized=True)
+    assert all(x['ignored_in_accounting'] is False for x in result['entries']), 'ignored should be false'  # noqa: E501
+
+    # now let's ignore all poloniex action ids
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "ignoredactionsresource",
+        ), json={'action_type': 'asset movement', 'action_ids': poloniex_ids},
+    )
+    result = assert_proper_response_with_result(response)
+    assert set(result['asset movement']) == set(poloniex_ids)
 
     # query asset movements of all exchanges
     with setup.polo_patch:
@@ -684,8 +696,8 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
             result = assert_proper_response_with_result(response)
 
     movements = result['entries']
-    assert_poloniex_asset_movements([x for x in movements if x['location'] == 'poloniex'], True)
-    assert_kraken_asset_movements([x for x in movements if x['location'] == 'kraken'], True)
+    assert_poloniex_asset_movements([x['entry'] for x in movements if x['entry']['location'] == 'poloniex'], True)  # noqa: E501
+    assert_kraken_asset_movements([x['entry'] for x in movements if x['entry']['location'] == 'kraken'], True)  # noqa: E501
 
     def assert_okay(response):
         """Helper function for DRY checking below assertions"""
@@ -697,12 +709,14 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
             result = assert_proper_response_with_result(response)
         movements = result['entries']
         assert_poloniex_asset_movements(
-            to_check_list=[x for x in movements if x['location'] == 'poloniex'],
+            to_check_list=[x['entry'] for x in movements if x['entry']['location'] == 'poloniex'],
             deserialized=True,
             movements_to_check=(1, 2),
         )
+        msg = 'poloniex asset movements should have now been ignored for accounting'
+        assert all(x['ignored_in_accounting'] is True for x in movements if x['entry']['location'] == 'poloniex'), msg  # noqa: E501
         assert_kraken_asset_movements(
-            to_check_list=[x for x in movements if x['location'] == 'kraken'],
+            to_check_list=[x['entry'] for x in movements if x['entry']['location'] == 'kraken'],
             deserialized=True,
             movements_to_check=(0, 1, 2),
         )
@@ -769,7 +783,7 @@ def test_query_asset_movements_over_limit(
         result = assert_proper_response_with_result(response)
         assert result['entries_found'] == all_movements_num
         assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-        assert_poloniex_asset_movements(result['entries'], deserialized=True)
+        assert_poloniex_asset_movements([x['entry'] for x in result['entries']], deserialized=True)
 
         # now query kraken which has a ton of DB entries
         response = requests.get(

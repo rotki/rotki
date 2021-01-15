@@ -47,7 +47,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
     assert_binance_trades_result([t['entry'] for t in result if t['entry']['location'] == 'binance'])  # noqa: E501
     assert_poloniex_trades_result([t['entry'] for t in result if t['entry']['location'] == 'poloniex'])  # noqa: E501
     msg = 'should have no ignored trades at start'
-    assert all([t['ignored_in_accounting'] is False for t in result]), msg
+    assert all(t['ignored_in_accounting'] is False for t in result), msg
 
     # now also try to ignore all binance trades for accounting
     response = requests.put(
@@ -65,7 +65,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         assert len(result) == 2  # only 2 binance trades
         assert_binance_trades_result([t['entry'] for t in result if t['entry']['location'] == 'binance'])  # noqa: E501
         msg = 'binance trades should now be ignored for accounting'
-        assert all([t['ignored_in_accounting'] is True for t in result if t['entry']['location'] == 'binance']), msg  # noqa: E501
+        assert all(t['ignored_in_accounting'] is True for t in result if t['entry']['location'] == 'binance'), msg  # noqa: E501
 
     # Now filter by location with json body
     with setup.binance_patch, setup.polo_patch:

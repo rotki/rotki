@@ -2267,24 +2267,27 @@ Querying asset movements
       {
           "result": {
               "entries": [{
-                  "identifier": "foo"
-                  "location": "kraken",
-                  "category": "deposit",
-                  "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
-                  "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
-                  "timestamp": 1451706400
-                  "asset": "ETH",
-                  "amount": "500.55",
-                  "fee_asset": "ETH",
-                  "fee": "0.1",
-                  "link": "optional exchange unique id",
+	          "entry": {
+		      "identifier": "foo"
+		      "location": "kraken",
+		      "category": "deposit",
+		      "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+		      "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
+		      "timestamp": 1451706400
+		      "asset": "ETH",
+		      "amount": "500.55",
+		      "fee_asset": "ETH",
+		      "fee": "0.1",
+		      "link": "optional exchange unique id"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 80,
               "entries_limit": 100,
           "message": ""
       }
 
-   :resjson object entries: An array of deposit/withdrawal objects
+   :resjson object entries: An array of deposit/withdrawal objects and their metadata. Each entry is composed of the main movement entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each asset movement.
    :resjsonarr string identifier: The uniquely identifying identifier for this asset movement
    :resjsonarr string location: A valid location at which the deposit/withdrawal occured
    :resjsonarr string category: Either ``"deposit"`` or ``"withdrawal"``

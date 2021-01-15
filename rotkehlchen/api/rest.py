@@ -744,10 +744,20 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        serialized_movements = [x.serialize() for x in movements]
+        serialized_movements = process_result_list([x.serialize() for x in movements])
         limit = FREE_ASSET_MOVEMENTS_LIMIT if self.rotkehlchen.premium is None else -1
+
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ASSET_MOVEMENT)
+        ignored_ids = mapping.get(ActionType.ASSET_MOVEMENT, [])
+        entries_result = []
+        for entry in serialized_movements:
+            entries_result.append({
+                'entry': entry,
+                'ignored_in_accounting': entry['identifier'] in ignored_ids,
+            })
+
         result = {
-            'entries': process_result_list(serialized_movements),
+            'entries': entries_result,
             'entries_found': self.rotkehlchen.data.db.get_entries_count('asset_movements'),
             'entries_limit': limit,
         }
