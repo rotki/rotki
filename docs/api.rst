@@ -2029,24 +2029,27 @@ Dealing with trades
       {
           "result": {
               "entries": [{
-                  "trade_id": "dsadfasdsad",
-                  "timestamp": 1491606401,
-                  "location": "external",
-                  "pair": "BTC_EUR",
-                  "trade_type": "buy",
-                  "amount": "0.5541",
-                  "rate": "8422.1",
-                  "fee": "0.55",
-                  "fee_currency": "USD",
-                  "link": "Optional unique trade identifier"
-                  "notes": "Optional notes"
+	          "entry": {
+		      "trade_id": "dsadfasdsad",
+		      "timestamp": 1491606401,
+		      "location": "external",
+		      "pair": "BTC_EUR",
+		      "trade_type": "buy",
+		      "amount": "0.5541",
+		      "rate": "8422.1",
+		      "fee": "0.55",
+		      "fee_currency": "USD",
+		      "link": "Optional unique trade identifier",
+		      "notes": "Optional notes"
+		  },
+		  "ignored_in_accounting": false
               }],
               "entries_found": 95,
               "entries_limit": 250,
           "message": ""
       }
 
-   :resjson object entries: An array of trade objects.
+   :resjson object entries: An array of trade objects and their metadata. Each entry is composed of the main trade entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each trade.
    :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
@@ -2110,22 +2113,22 @@ Dealing with trades
 
       {
           "result": [{
-              "trade_id": "dsadfasdsad",
-              "timestamp": 1491606401,
-              "location": "external",
-              "pair": "BTC_EUR",
-              "trade_type": "buy",
-              "amount": "0.5541",
-              "rate": "8422.1",
-              "fee": "0.55",
-              "fee_currency": "USD",
-              "link": "Optional unique trade identifier"
-              "notes": "Optional notes"
-          }]
+		  "trade_id": "dsadfasdsad",
+		  "timestamp": 1491606401,
+		  "location": "external",
+		  "pair": "BTC_EUR",
+		  "trade_type": "buy",
+		  "amount": "0.5541",
+		  "rate": "8422.1",
+		  "fee": "0.55",
+		  "fee_currency": "USD",
+		  "link": "Optional unique trade identifier",
+		  "notes": "Optional notes"
+          }],
           "message": ""
       }
 
-   :resjson object result: Array of trades with the same schema as seen in `this <trades_schema_section_>`_ section.
+   :resjson object result: Array of trade entries with the same schema as seen in `this <trades_schema_section_>`_ section.
    :statuscode 200: Trades was succesfully added.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is currently logged in.

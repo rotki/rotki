@@ -608,8 +608,16 @@ class RestAPI():
         else:
             entry_table = 'trades'
 
+        mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.TRADE)
+        ignored_ids = mapping.get(ActionType.TRADE, [])
+        entries_result = []
+        for entry in trades_result:
+            entries_result.append(
+                {'entry': entry, 'ignored_in_accounting': entry['trade_id'] in ignored_ids},
+            )
+
         result = {
-            'entries': trades_result,
+            'entries': entries_result,
             'entries_found': self.rotkehlchen.data.db.get_entries_count(entry_table),
             'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
