@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="d-flex flex-row labeled-address-display align-center">
     <v-tooltip top open-delay="400" :disabled="!truncated">
       <template #activator="{ on }">
         <span class="labeled-address-display__address" v-on="on">
@@ -19,39 +19,41 @@
       </template>
       <span> {{ address }} </span>
     </v-tooltip>
-    <div class="labeled-address-display__copy">
-      <v-tooltip top open-delay="400">
-        <template #activator="{ on, attrs }">
-          <v-btn
-            small
-            v-bind="attrs"
-            tile
-            icon
-            v-on="on"
-            @click="copy(address)"
-          >
-            <v-icon small>mdi-content-copy</v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('labeled_address_display.copy') }}</span>
-      </v-tooltip>
-      <v-tooltip top open-delay="600">
-        <template #activator="{ on, attrs }">
-          <v-btn
-            small
-            icon
-            tile
-            v-bind="attrs"
-            target="_blank"
-            :href="$interop.isPackaged ? undefined : url"
-            v-on="on"
-            @click="openLink"
-          >
-            <v-icon small> mdi-launch </v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('labeled_address_display.open_link') }}</span>
-      </v-tooltip>
+    <div class="labeled-address-display__actions">
+      <div class="labeled-address-display__copy">
+        <v-tooltip top open-delay="400">
+          <template #activator="{ on, attrs }">
+            <v-btn
+              small
+              v-bind="attrs"
+              tile
+              icon
+              v-on="on"
+              @click="copy(address)"
+            >
+              <v-icon small>mdi-content-copy</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('labeled_address_display.copy') }}</span>
+        </v-tooltip>
+        <v-tooltip top open-delay="600">
+          <template #activator="{ on, attrs }">
+            <v-btn
+              small
+              icon
+              tile
+              v-bind="attrs"
+              target="_blank"
+              :href="$interop.isPackaged ? undefined : url"
+              v-on="on"
+              @click="openLink"
+            >
+              <v-icon small> mdi-launch </v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('labeled_address_display.open_link') }}</span>
+        </v-tooltip>
+      </div>
     </div>
   </div>
 </template>
@@ -82,10 +84,12 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
   }
 
   get displayAddress(): string {
-    const address = truncateAddress(
-      this.address,
-      truncationPoints[this.$vuetify.breakpoint.name] ?? 4
-    );
+    const name =
+      this.account.label.length > 0 && this.$vuetify.breakpoint.mdAndDown
+        ? 'sm'
+        : this.$vuetify.breakpoint.name;
+    const length = truncationPoints[name] ?? 4;
+    const address = truncateAddress(this.address, length);
     this.truncated = address.includes('...');
     return address;
   }
@@ -109,6 +113,8 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
 
 <style scoped lang="scss">
 .labeled-address-display {
+  max-height: 30px;
+
   &__address {
     font-weight: 500;
     padding-top: 6px;
@@ -136,6 +142,11 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
       height: 30px;
       width: 30px;
     }
+  }
+
+  &__actions {
+    width: 61px;
+    max-width: 65px;
   }
 }
 
