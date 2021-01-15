@@ -277,13 +277,30 @@
       "end_after_start": "The end time should be after the start time."
     }
   },
-  "ledger_actions_form": {
+  "ledger_action_form": {
+    "asset":  {
+      "validation": {
+        "non_empty": "The asset field cannot be empty"
+      }
+    },
+    "amount": {
+      "label": "Amount",
+      "validation": {
+        "non_empty": "The amount field cannot be empty."
+      }
+    },
     "date": {
       "hint": "The date of when the action happened",
       "label": "Date"
     },
     "link": {
       "label": "Link"
+    },
+    "location": {
+      "label": "Location",
+      "validation": {
+        "non_empty": "The location field cannot be empty."
+      }
     },
     "notes": {
       "label": "Notes"
@@ -293,6 +310,13 @@
     }
   },
   "ledger_actions": {
+    "actions": {
+      "dividends": "Dividends Income",
+      "donation": "Donation Received",
+      "expense": "Expense",
+      "income": "Income",
+      "loss": "Loss"
+    },
     "dialog": {
       "save": "Save",
       "add": {
@@ -642,6 +666,13 @@
   "summary_card": {
     "refresh_tooltip": "Refresh {name} balances",
     "title": "{name} balances"
+  },
+  "trade_location": {
+    "banks": "Banks",
+    "commodities": "Commodities",
+    "equities": "Equities",
+    "external": "External",
+    "real_estate": "Real Estate"
   },
   "trade_location_selector": {
     "selection-none": "Showing results across all locations",

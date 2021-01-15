@@ -84,10 +84,12 @@ describe('Accounts', () => {
 
         dashboardPage.visit();
         dashboardPage.getOverallBalance().then($overallBalance => {
-          expect($overallBalance).to.deep.eq(total);
+          expect($overallBalance.toString()).to.eq(total.toString());
         });
         dashboardPage.getLocationBalances().then($dashboardBalances => {
-          expect($dashboardBalances).to.deep.eq($manualBalances);
+          expect($dashboardBalances.toString()).to.eq(
+            $manualBalances.toString()
+          );
         });
       });
       page.visit();

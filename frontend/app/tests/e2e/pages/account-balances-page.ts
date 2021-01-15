@@ -1,5 +1,5 @@
 import { capitalize } from '@/filters';
-import { Location } from '@/services/types-common';
+import { TradeLocation } from '@/services/history/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 function formatAmount(amount: string) {
@@ -10,7 +10,7 @@ export interface FixtureManualBalance {
   readonly asset: string;
   readonly label: string;
   readonly amount: string;
-  readonly location: Location;
+  readonly location: TradeLocation;
   readonly tags: string[];
 }
 
@@ -112,7 +112,7 @@ export class AccountBalancesPage {
             // TODO: extract the replace(',', '') as to use user settings (when implemented)
             cy.wrap($row)
               .find(
-                ':nth-child(4) > .amount-display > .v-skeleton-loader > .amount-display__value'
+                ':nth-child(5) > .amount-display > .v-skeleton-loader > .amount-display__value'
               )
               .then($amount => {
                 if (balanceLocation.renderedValue === Zero) {

@@ -1,5 +1,8 @@
 import { default as BigNumber } from 'bignumber.js';
-import { SupportedExchange } from '@/services/balances/types';
+import {
+  SupportedExchange,
+  SupportedTradeLocation
+} from '@/services/balances/types';
 
 export type TradeType = 'buy' | 'sell';
 
@@ -24,12 +27,7 @@ export interface TradeUpdate {
   readonly oldTradeId: string;
 }
 
-export type TradeLocation =
-  | SupportedExchange
-  | 'ethereum'
-  | 'bitcoin'
-  | 'external'
-  | 'uniswap';
+export type TradeLocation = SupportedExchange | SupportedTradeLocation;
 
 type MovementCategory = 'deposit' | 'withdrawal';
 

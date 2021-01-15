@@ -20,13 +20,13 @@
         <v-icon> mdi-plus </v-icon>
       </v-btn>
       <v-card-title>
-        {{ $t('ledger_actions.title') }}
-        <v-spacer />
         <refresh-button
           :loading="refreshing"
           :tooltip="$t('ledger_actions.refresh_tooltip')"
           @refresh="refresh"
         />
+        {{ $t('ledger_actions.title') }}
+        <v-spacer />
       </v-card-title>
       <v-card-text>
         <v-data-table
@@ -70,11 +70,12 @@
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
+      :action-disabled="!validForm"
       :primary-action="$t('ledger_actions.dialog.save')"
       @confirm="save()"
       @cancel="closeDialog()"
     >
-      <ledger-action-form />
+      <ledger-action-form v-model="validForm" />
     </big-dialog>
   </v-container>
 </template>
@@ -115,7 +116,7 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   readonly headers: DataTableHeader[] = [
     {
       text: 'Location',
-      type: 'location'
+      value: 'location'
     },
     {
       text: 'Type',
@@ -139,6 +140,7 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   ledgerActions!: HistoricData<LedgerAction>;
 
   openDialog: boolean = false;
+  validForm: boolean = false;
 
   async refresh() {
     await this[FETCH_LEDGER_ACTIONS](true);

@@ -67,9 +67,10 @@
             />
           </template>
           <template #item.location="{ item }">
-            <span class="manual-balances-list__location">
-              {{ item.location | capitalize }}
-            </span>
+            <location-display
+              class="manual-balances-list__location"
+              :identifier="item.location"
+            />
           </template>
           <template #item.actions="{ item }">
             <span>
@@ -175,6 +176,10 @@ export default class ManualBalancesList extends Vue {
 
   readonly headers: DataTableHeader[] = [
     {
+      text: this.$t('manual_balances_list.headers.location').toString(),
+      value: 'location'
+    },
+    {
       text: this.$t('manual_balances_list.headers.label').toString(),
       value: 'label'
     },
@@ -194,10 +199,6 @@ export default class ManualBalancesList extends Vue {
       }).toString(),
       value: 'usdValue',
       align: 'end'
-    },
-    {
-      text: this.$t('manual_balances_list.headers.location').toString(),
-      value: 'location'
     },
     {
       text: this.$t('manual_balances_list.headers.actions').toString(),

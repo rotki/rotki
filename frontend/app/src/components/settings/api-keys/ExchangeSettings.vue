@@ -127,7 +127,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { EXCHANGE_CRYPTOCOM, exchanges } from '@/data/defaults';
+import { SUPPORTED_EXCHANGES } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 import { ExchangePayload } from '@/store/balances/types';
 import { trimOnPaste } from '@/utils/event';
@@ -153,7 +153,7 @@ export default class ExchangeSettings extends Vue {
   apiKey: string = '';
   apiSecret: string = '';
   passphrase: string | null = null;
-  selectedExchange: string = exchanges[0];
+  selectedExchange: string = SUPPORTED_EXCHANGES[0];
   pendingRemoval: string = '';
   confirmation: boolean = false;
 
@@ -164,10 +164,8 @@ export default class ExchangeSettings extends Vue {
   selectedKrakenAccountType = '';
 
   get exchanges(): SupportedExchange[] {
-    return exchanges.filter(
-      exchange =>
-        !this.connectedExchanges.includes(exchange) &&
-        exchange !== EXCHANGE_CRYPTOCOM
+    return SUPPORTED_EXCHANGES.filter(
+      exchange => !this.connectedExchanges.includes(exchange)
     );
   }
 
@@ -207,7 +205,7 @@ export default class ExchangeSettings extends Vue {
     this.passphrase = null;
 
     if (includeExchange) {
-      this.selectedExchange = exchanges[0];
+      this.selectedExchange = SUPPORTED_EXCHANGES[0];
     }
   }
 

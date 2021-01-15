@@ -93,7 +93,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import StatusButton from '@/components/settings/data-security/StatusButton.vue';
-import { exchanges } from '@/data/defaults';
+import { SUPPORTED_EXCHANGES } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 
 type ConfirmationData = {
@@ -110,8 +110,8 @@ type ConfirmationType = 'transactions' | 'exchanges' | 'single' | '';
   components: { StatusButton, ConfirmDialog }
 })
 export default class DataManagement extends Vue {
-  exchange: SupportedExchange = exchanges[0];
-  exchanges = exchanges;
+  exchange: SupportedExchange = SUPPORTED_EXCHANGES[0];
+  exchanges = SUPPORTED_EXCHANGES;
 
   transactionPurgeSuccess: boolean = false;
   exchangePurgeSuccess: SupportedExchange | '' = '';

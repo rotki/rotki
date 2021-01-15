@@ -1,18 +1,18 @@
 <template>
   <span
-    class="d-flex align-center"
+    class="d-flex align-center pt-2 pb-2"
     :class="horizontal ? 'flex-row' : 'flex-column'"
   >
     <span>
       <v-img
-        v-if="item.identifier !== 'external'"
+        v-if="item.imageIcon"
         width="24px"
         contain
         position="left"
         max-height="24px"
         :src="item.icon"
       />
-      <v-icon v-else color="accent">mdi-book-open</v-icon>
+      <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
     </span>
     <span :class="horizontal ? 'ml-2' : null" class="mt-2">
       {{ item.name }}

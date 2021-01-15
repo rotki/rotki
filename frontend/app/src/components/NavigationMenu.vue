@@ -129,7 +129,7 @@ export default class NavigationMenu extends Vue {
             'navigation_menu.history_sub.ledger_actions'
           ).toString(),
           route: Routes.HISTORY_LEDGER_ACTIONS,
-          icon: 'mdi-swap-horizontal-bold',
+          icon: 'mdi-book-open-variant',
           class: 'ledger'
         }
       ]
