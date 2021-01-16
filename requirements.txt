@@ -14,7 +14,7 @@ substrate-interface==0.11.8
 
 # For the rest api
 flask-cors==3.0.8
-flask-restful==0.3.7
+flask-restful==0.3.8
 flask==1.1.1
 marshmallow==3.2.1
 webargs==6.0.0
