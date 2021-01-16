@@ -303,6 +303,7 @@ class Rotkehlchen():
             cryptocompare=self.cryptocompare,
             premium_sync_manager=self.premium_sync_manager,
             chain_manager=self.chain_manager,
+            exchange_manager=self.exchange_manager,
         )
         self.user_is_logged_in = True
         log.debug('User unlocking complete')

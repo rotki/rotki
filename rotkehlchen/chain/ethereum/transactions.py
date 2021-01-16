@@ -31,7 +31,7 @@ class EthTransactions(LockableQueryObject):
         self.msg_aggregator = msg_aggregator
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
-    def _single_address_query_transactions(
+    def single_address_query_transactions(
             self,
             address: ChecksumEthAddress,
             start_ts: Timestamp,
@@ -128,7 +128,7 @@ class EthTransactions(LockableQueryObject):
             accounts = self.database.get_blockchain_accounts().eth
 
         for address in accounts:
-            new_transactions = self._single_address_query_transactions(
+            new_transactions = self.single_address_query_transactions(
                 address=address,
                 start_ts=from_ts,
                 end_ts=to_ts,
