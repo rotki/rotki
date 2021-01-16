@@ -19,7 +19,6 @@ PREFER_OUR_STARTED = (
     # For all assets below not much research, just took the earliest one
     'ADA',
     'EOS',
-    'ICN',
     'MLN',
     'QTUM',
     'REP',

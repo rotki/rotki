@@ -6134,15 +6134,6 @@
         "symbol": "ICE",
         "type": "ethereum token"
     },
-    "ICN": {
-        "coingecko": "",
-        "ethereum_address": "0x888666CA69E0f178DED6D75b5726Cee99A87D698",
-        "ethereum_token_decimals": 18,
-        "name": "Iconomi",
-        "started": 1472083200,
-        "symbol": "ICN",
-        "type": "ethereum token"
-    },
     "ICOS": {
         "coingecko": "icos",
         "ethereum_address": "0x014B50466590340D41307Cc54DCee990c8D58aa8",

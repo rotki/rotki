@@ -189,8 +189,7 @@ INITIAL_BACKOFF = 3
 # This requires manual intervention and a lock in of the id mapping by hand
 WORLD_TO_PAPRIKA_ID = {
     'ALQO': 'xlq-alqo',
-    # ICN has both icn-iconomi and icn-icoin. The correct one appears to be the firest
-    'ICN': 'icn-iconomi',
+
     # In Rotkehlchen BCHC means bitcherry. Paprika also has bchc-bcash-classic-token
     'BCHC': 'bchc-bitcherry',
     # In Rotkehlchen BAT means the basic attention token and not bat-batcoin

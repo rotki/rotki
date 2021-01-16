@@ -95,7 +95,6 @@ WORLD_TO_KRAKEN = {
     'REPV2': 'REPV2',
     'DAO': 'XDAO',
     'MLN': 'XMLN',
-    'ICN': 'XICN',
     'GNO': 'GNO',
     'BCH': 'BCH',
     'XLM': 'XXLM',
