@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :release:`1.12.1 <2021-01-16>`
+* :bug:`-` Fix the problem introduced with rotki v1.12.0 for OSX users that made them unable to run the app.
+
 * :release:`1.12.0 <2021-01-16>`
 * :feature:`968` Rotki will now run some heavier tasks periodically in the background to alleviate the alleviate the pressure from big tasks like the profit loss report. These tasks for now are: exchanges trades query, ethereum transactions query, cryptocompare historical price queries and xpub address derivation.
 * :feature:`2015` Users can now selectively ignores trades, deposits/withdrawals, ethereum transactions and ledger actions in the accounting processing of the profit loss report.
