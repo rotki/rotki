@@ -8,8 +8,3 @@ psutil==5.7.0
 pytest-freezegun==0.4.2
 
 -r requirements_docs.txt
-
-# Bumping this to 0.6.1 seems to create problems
-# with pytest in Travis: https://travis-ci.com/github/rotki/rotki/jobs/378466706
-# Locally the same problems do not exist
-ipfshttpclient==0.6.0.post1

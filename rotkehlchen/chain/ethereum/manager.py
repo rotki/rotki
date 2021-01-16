@@ -497,7 +497,7 @@ class EthereumManager():
         if web3 is None:
             return self.etherscan.get_block_by_number(num)
 
-        block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.getBlock(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
+        block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.getBlock(num))  # pylint: disable=no-member  # noqa: E501
         block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
         return block_data  # type: ignore
 

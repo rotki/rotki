@@ -11,5 +11,3 @@ flake8-executable==2.1.1
 flake8-mutable==1.2.0
 pep8-naming==0.11.1
 isort==5.7.0
-# Required for the ethereum related typing
-eth-utils==1.8.4
