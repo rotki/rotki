@@ -17,6 +17,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
+    MarginPosition,
     Trade,
     TradeType,
     trade_pair_from_assets,
@@ -920,3 +921,10 @@ class Binance(ExchangeInterface):
                 movements.append(movement)
 
         return movements
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for binance

@@ -24,7 +24,12 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, get_pair_position_asset
+from rotkehlchen.exchanges.data_structures import (
+    AssetMovement,
+    MarginPosition,
+    Trade,
+    get_pair_position_asset,
+)
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
@@ -534,3 +539,10 @@ class Bittrex(ExchangeInterface):
                 movements.append(movement)
 
         return movements
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for bittrex

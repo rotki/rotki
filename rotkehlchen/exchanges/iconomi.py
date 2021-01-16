@@ -13,7 +13,15 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import ICONOMI_TO_WORLD, UNSUPPORTED_ICONOMI_ASSETS
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import Location, Price, Trade, TradePair, TradeType
+from rotkehlchen.exchanges.data_structures import (
+    AssetMovement,
+    Location,
+    MarginPosition,
+    Price,
+    Trade,
+    TradePair,
+    TradeType,
+)
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -202,7 +210,7 @@ class Iconomi(ExchangeInterface):
             return None, msg
 
         if resp_info['currency'] != 'USD':
-            raise NotImplementedError("API did not return values in USD")
+            raise RemoteError('Iconomi API did not return values in USD')
 
         for balance_info in resp_info['assetList']:
             ticker = balance_info['ticker']
@@ -293,3 +301,17 @@ class Iconomi(ExchangeInterface):
             tickers.append(asset_info['ticker'])
 
         return tickers
+
+    def query_online_deposits_withdrawals(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[AssetMovement]:
+        return []  # noop for iconomi
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for iconomi

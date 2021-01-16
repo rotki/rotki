@@ -11,7 +11,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
+from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
@@ -340,3 +340,6 @@ class Bitmex(ExchangeInterface):
                 )
                 continue
         return movements
+
+    def query_online_trade_history(self, start_ts: Timestamp, end_ts: Timestamp) -> List[Trade]:
+        return []  # noop for bitmex

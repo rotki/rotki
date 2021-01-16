@@ -26,6 +26,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Loan,
+    MarginPosition,
     Trade,
     TradeType,
     invert_pair,
@@ -771,3 +772,10 @@ class Poloniex(ExchangeInterface):
                 movements.append(asset_movement)
 
         return movements
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for poloniex

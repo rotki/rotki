@@ -27,7 +27,7 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -617,3 +617,10 @@ class Coinbasepro(ExchangeInterface):
                 trades.extend(self._read_trades(filepath))
 
         return trades
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for coinbasepro
