@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.utils.misc import ts_now
 
@@ -29,6 +30,11 @@ def fixture_api_task_greenlets() -> List:
     return []
 
 
+@pytest.fixture(name='exchange_manager')
+def fixture_exchange_manager(function_scope_messages_aggregator) -> ExchangeManager:
+    return ExchangeManager(msg_aggregator=function_scope_messages_aggregator)
+
+
 @pytest.fixture(name='task_manager')
 def fixture_task_manager(
         database,
@@ -37,6 +43,7 @@ def fixture_task_manager(
         greenlet_manager,
         api_task_greenlets,
         cryptocompare,
+        exchange_manager,
 ) -> TaskManager:
     task_manager = TaskManager(
         max_tasks_num=max_tasks_num,
@@ -46,6 +53,7 @@ def fixture_task_manager(
         cryptocompare=cryptocompare,
         premium_sync_manager=MockPremiumSyncManager(),  # type: ignore
         chain_manager=blockchain,
+        exchange_manager=exchange_manager,
     )
     return task_manager
 
@@ -112,3 +120,32 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
 
     except gevent.Timeout as e:
         raise AssertionError(f'xpub derivation query was not scheduled within {timeout} seconds') from e  # noqa: E501
+
+
+def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex):
+    now = ts_now()
+    task_manager.potential_tasks = [task_manager._maybe_schedule_exchange_trade_query]
+
+    def mock_query_history(start_ts, end_ts):
+        assert start_ts == 0
+        assert end_ts >= now
+
+    exchange_manager.connected_exchanges['poloniex'] = poloniex
+    poloniex_patch = patch.object(poloniex, 'query_trade_history', wraps=mock_query_history)
+
+    timeout = 5
+    try:
+        with gevent.Timeout(timeout):
+            with poloniex_patch as poloniex_mock:
+                task_manager.schedule()
+                while True:
+                    if poloniex_mock.call_count == 1:
+                        break
+                    gevent.sleep(.2)
+
+                task_manager.schedule()
+                gevent.sleep(.5)
+                assert poloniex_mock.call_count == 1, '2nd schedule should do nothing'
+
+    except gevent.Timeout as e:
+        raise AssertionError(f'exchange query was not scheduled within {timeout} seconds') from e  # noqa: E501
