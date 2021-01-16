@@ -659,10 +659,12 @@ class Binance(ExchangeInterface):
             self.first_connection()
             returned_balances: Dict = {}
             returned_balances = self._query_spot_balances(returned_balances)
-            returned_balances = self._query_lending_balances(returned_balances)
-            returned_balances = self._query_cross_collateral_futures_balances(returned_balances)
-            returned_balances = self._query_margined_futures_balances('fapi', returned_balances)
-            returned_balances = self._query_margined_futures_balances('dapi', returned_balances)
+            if self.name != str(Location.BINANCE_US):
+                returned_balances = self._query_lending_balances(returned_balances)
+                returned_balances = self._query_cross_collateral_futures_balances(returned_balances)  # noqa: E501
+                returned_balances = self._query_margined_futures_balances('fapi', returned_balances)  # noqa: E501
+                returned_balances = self._query_margined_futures_balances('dapi', returned_balances)  # noqa: E501
+
         except RemoteError as e:
             msg = (
                 f'{self.name} account API request failed. '

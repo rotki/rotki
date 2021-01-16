@@ -21,6 +21,7 @@ Changelog
 * :feature:`991` Add Bitcoin.de exchange.
 * :feature:`629` Add ICONOMI exchange. Balances and trades of single assets can be imported.
 * :bug:`1759` Xpub address derivation after restart of the app from an existing xpub should no longer miss addresses
+* :bug:`2047` Fix balances query for users of Binance.us
 
 * :feature:`-` Added support for the following tokens:
 
