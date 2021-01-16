@@ -617,17 +617,6 @@
     }
   },
   "login": {
-    "custom_backend": {
-      "session_only": "Save only for this session",
-      "tooltip": "Connect to a different rotki backend",
-      "label": "Backend URL",
-      "hint": "The url the backend you would like to connect (leave empty for default).",
-      "placeholder": "http://localhost:4242",
-      "validation": {
-        "non_empty": "The custom backend url cannot be empty",
-        "url": "The entry inserted is not in a valid url format"
-      }
-    },
     "remember_me": "Remember User",
     "title": "Sign In",
     "label_username": "Username",
@@ -1871,14 +1860,6 @@
   },
   "connection_loading": {
     "message": "Connecting to rotki backend"
-  },
-  "account_management": {
-    "custom_backend": {
-      "failed":  {
-        "title": "Could not connect to custom backend",
-        "description": "Connection to {url} failed after 5 attempts"
-      }
-    }
   },
   "privacy_notice": {
     "title": "rotki is a local application that respects your privacy.",

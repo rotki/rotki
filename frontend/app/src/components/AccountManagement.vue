@@ -20,7 +20,6 @@
             :errors="errors"
             @touched="errors = []"
             @login="login($event)"
-            @backend-changed="backendChanged($event)"
             @new-account="accountCreation = true"
           />
         </v-slide-y-transition>
@@ -52,15 +51,11 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
 import Login from '@/components/account-management/Login.vue';
 import PremiumReminder from '@/components/account-management/PremiumReminder.vue';
-import {
-  deleteBackendUrl,
-  getBackendUrl
-} from '@/components/account-management/utils';
 import LogLevel from '@/components/helper/LogLevel.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { SyncConflict } from '@/store/session/types';
@@ -85,8 +80,7 @@ const LOG_LEVEL = 'log_level';
     ...mapGetters(['updateNeeded', 'message'])
   },
   methods: {
-    ...mapActions('session', ['unlock']),
-    ...mapMutations(['setMessage'])
+    ...mapActions('session', ['unlock'])
   }
 })
 export default class AccountManagement extends Vue {
@@ -97,7 +91,6 @@ export default class AccountManagement extends Vue {
   connected!: boolean;
   syncConflict!: SyncConflict;
   unlock!: (payload: UnlockPayload) => Promise<ActionStatus>;
-  setMessage!: (message: Message) => void;
   errors: string[] = [];
 
   loglevel: Level = process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL;
@@ -117,20 +110,7 @@ export default class AccountManagement extends Vue {
       return;
     }
 
-    const { sessionOnly, url } = getBackendUrl();
-    if (!!url && !sessionOnly) {
-      await this.backendChanged(url);
-    } else {
-      await this.startBackendWithLogLevel(this.loglevel);
-    }
-  }
-
-  async mounted() {
-    const { sessionOnly } = getBackendUrl();
-    if (sessionOnly) {
-      deleteBackendUrl();
-      await this.startBackendWithLogLevel(this.loglevel);
-    }
+    await this.startBackendWithLogLevel(this.loglevel);
   }
 
   private loadLogLevel() {
@@ -143,26 +123,6 @@ export default class AccountManagement extends Vue {
   @Emit()
   loginComplete() {
     this.dismiss();
-  }
-
-  async backendChanged(url: string | null) {
-    await this.$store.commit('setConnected', false);
-    const { success } = await this.$store.dispatch('connect', url);
-    if (!success) {
-      this.setMessage({
-        success: false,
-        description: this.$t(
-          'account_management.custom_backend.failed.description',
-          { url }
-        ).toString(),
-        title: this.$t(
-          'account_management.custom_backend.failed.title'
-        ).toString()
-      });
-      deleteBackendUrl();
-      await this.startBackendWithLogLevel(this.loglevel);
-    }
-    await this.$store.dispatch('version');
   }
 
   async startBackendWithLogLevel(level: Level) {
