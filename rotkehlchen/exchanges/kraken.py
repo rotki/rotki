@@ -293,7 +293,7 @@ class KrakenAccountType(Enum):
         raise DeserializationError(f'Tried to deserialized invalid kraken account type: {symbol}')
 
 
-class Kraken(ExchangeInterface):
+class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
             api_key: ApiKey,

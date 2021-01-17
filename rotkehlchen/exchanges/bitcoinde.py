@@ -101,7 +101,7 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
     )
 
 
-class Bitcoinde(ExchangeInterface):
+class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
             api_key: ApiKey,

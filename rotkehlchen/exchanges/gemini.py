@@ -82,7 +82,7 @@ def gemini_symbol_to_pair(symbol: str) -> TradePair:
     return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
 
 
-class Gemini(ExchangeInterface):
+class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,

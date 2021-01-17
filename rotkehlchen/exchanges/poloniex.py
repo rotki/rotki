@@ -218,7 +218,7 @@ def _post_process(before: Dict) -> Dict:
     return after
 
 
-class Poloniex(ExchangeInterface):
+class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,

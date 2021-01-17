@@ -192,7 +192,7 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
     return symbols_to_pair
 
 
-class Binance(ExchangeInterface):
+class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """This class supports:
       - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
       - Binance US: when instantiated with uri equals BINANCE_US_BASE_URL.

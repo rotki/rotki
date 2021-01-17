@@ -124,7 +124,7 @@ class ErrorResponseData(NamedTuple):
     reason: Optional[str] = None
 
 
-class Bitfinex(ExchangeInterface):
+class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """Bitfinex exchange api docs:
     https://docs.bitfinex.com/docs
     """

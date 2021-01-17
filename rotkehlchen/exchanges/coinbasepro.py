@@ -77,7 +77,7 @@ class CoinbaseProPermissionError(Exception):
     pass
 
 
-class Coinbasepro(ExchangeInterface):
+class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,

@@ -99,7 +99,7 @@ class TradePairData(NamedTuple):
     trade_pair: TradePair
 
 
-class Bitstamp(ExchangeInterface):
+class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """Bitstamp exchange api docs:
     https://www.bitstamp.net/api/
 
