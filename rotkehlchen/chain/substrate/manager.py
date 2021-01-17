@@ -138,7 +138,7 @@ class SubstrateManager():
         https://docs.api.subscan.io
         """
         if chain not in SubstrateChain:
-            raise AttributeError(f'Unexpected SubstrateManager chain: {chain}')
+            raise AssertionError(f'Unexpected SubstrateManager chain: {chain}')
 
         log.debug(f'Initializing {chain} manager')
         self.chain = chain

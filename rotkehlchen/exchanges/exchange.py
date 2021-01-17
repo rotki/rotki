@@ -35,7 +35,6 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             secret: ApiSecret,
             database: 'DBHandler',
     ):
-        print('Exchange interface ctor called')
         assert isinstance(api_key, T_ApiKey), (
             'api key for {} should be a string'.format(name)
         )
