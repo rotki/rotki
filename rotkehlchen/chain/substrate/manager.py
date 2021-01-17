@@ -415,7 +415,12 @@ class SubstrateManager():
             log.error(message)
             raise RemoteError(message) from e
         except (FileNotFoundError, ValueError, TypeError) as e:
-            raise AttributeError('Invalid SubstrateInterface instantiation') from e
+            message = (
+                f'{self.chain} could not connect to node at endpoint: {endpoint}. '
+                f'Unexpected error during SubstrateInterface instantiation: {str(e)}.'
+            )
+            log.error(message)
+            raise RemoteError('Invalid SubstrateInterface instantiation') from e
 
         return node_interface
 
