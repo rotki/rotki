@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
 * :bug:`2116` Kusama user balance query should now work properly in all cases.
 * :bug:`2113` Iconomi exchange users should now no longer get an error when pulling deposits/withdrawals history
 
