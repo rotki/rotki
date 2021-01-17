@@ -51,7 +51,7 @@ class AdexEventType(Enum):
             return 'withdraw request'
         if self == AdexEventType.CHANNEL_WITHDRAW:
             return 'claim'
-        raise AttributeError(f'Corrupt value {self} for EventType -- Should never happen')
+        raise AssertionError(f'Corrupt value {self} for EventType -- Should never happen')
 
 
 @dataclass(init=True, repr=True)
