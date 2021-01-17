@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2116` Kusama user balance query should now work properly in all cases.
 * :bug:`2113` Iconomi exchange users should now no longer get an error when pulling deposits/withdrawals history
 
 * :release:`1.12.1 <2021-01-16>`
