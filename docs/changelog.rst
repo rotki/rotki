@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2113` Iconomi exchange users should now no longer get an error when pulling deposits/withdrawals history
+
 * :release:`1.12.1 <2021-01-16>`
 * :bug:`-` Fix the problem introduced with rotki v1.12.0 for OSX users that made them unable to run the app.
 
