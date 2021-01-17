@@ -13,7 +13,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES, GLOBAL_REQUESTS_TIMEOUT
+from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT, QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -21,7 +21,7 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.inquirer import Inquirer
@@ -82,7 +82,7 @@ def gemini_symbol_to_pair(symbol: str) -> TradePair:
     return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
 
 
-class Gemini(ExchangeInterface):
+class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
@@ -533,3 +533,10 @@ class Gemini(ExchangeInterface):
             movements.append(movement)
 
         return movements
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for gemini

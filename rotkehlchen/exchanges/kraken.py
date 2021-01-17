@@ -27,6 +27,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
+    MarginPosition,
     Trade,
     get_pair_position_asset,
     trade_pair_from_assets,
@@ -292,7 +293,7 @@ class KrakenAccountType(Enum):
         raise DeserializationError(f'Tried to deserialized invalid kraken account type: {symbol}')
 
 
-class Kraken(ExchangeInterface):
+class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
             api_key: ApiKey,
@@ -752,3 +753,10 @@ class Kraken(ExchangeInterface):
                 continue
 
         return movements
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for kraken

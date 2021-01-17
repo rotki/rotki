@@ -35,6 +35,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             secret: ApiSecret,
             database: 'DBHandler',
     ):
+        print('Exchange interface ctor called')
         assert isinstance(api_key, T_ApiKey), (
             'api key for {} should be a string'.format(name)
         )
@@ -149,14 +150,10 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
         for query_start_ts, query_end_ts in ranges_to_query:
             # If we have a time frame we have not asked the exchange for trades then
             # go ahead and do that now
-            try:
-                new_trades.extend(self.query_online_trade_history(
-                    start_ts=query_start_ts,
-                    end_ts=query_end_ts,
-                ))
-            except NotImplementedError:
-                msg = 'query_online_trade_history should only not be implemented by bitmex'
-                assert self.name == 'bitmex', msg
+            new_trades.extend(self.query_online_trade_history(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            ))
 
         # make sure to add them to the DB
         if new_trades != []:
@@ -193,13 +190,10 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
         )
         new_positions = []
         for query_start_ts, query_end_ts in ranges_to_query:
-            try:
-                new_positions.extend(self.query_online_margin_history(
-                    start_ts=query_start_ts,
-                    end_ts=query_end_ts,
-                ))
-            except NotImplementedError:
-                pass
+            new_positions.extend(self.query_online_margin_history(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            ))
 
         # make sure to add them to the DB
         if new_positions != []:

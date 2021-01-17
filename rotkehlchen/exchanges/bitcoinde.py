@@ -11,7 +11,14 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.exchanges.data_structures import Location, Price, Trade, TradePair
+from rotkehlchen.exchanges.data_structures import (
+    AssetMovement,
+    Location,
+    MarginPosition,
+    Price,
+    Trade,
+    TradePair,
+)
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -94,7 +101,7 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
     )
 
 
-class Bitcoinde(ExchangeInterface):
+class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
             api_key: ApiKey,
@@ -273,3 +280,17 @@ class Bitcoinde(ExchangeInterface):
             trades.append(trade_from_bitcoinde(tx))
 
         return trades
+
+    def query_online_deposits_withdrawals(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[AssetMovement]:
+        return []  # noop for bitcoinde
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for bitcoinde
