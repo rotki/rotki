@@ -772,10 +772,11 @@ class Cryptocompare(ExternalServiceWithApiKey):
             return None
 
         now_ts = ts_now()
-        # save time at start of the query, in case the query does not complete due to rate ilmit
+        # save time at start of the query, in case the query does not complete due to rate limit
         self.last_histohour_query_ts = now_ts
         if cache_key in self.price_history:
             old_data = self.price_history[cache_key].data
+            transformed_old_data = deque([x._asdict() for x in old_data])
             if timestamp > self.price_history[cache_key].end_time:
                 # We have a cache but the requested timestamp does not hit it
                 new_data = self._get_histohour_data_for_range(
@@ -784,9 +785,13 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     from_timestamp=now_ts,
                     to_timestamp=self.price_history[cache_key].end_time,
                 )
-                if old_data[-1].time == new_data[0]['time']:
-                    old_data = old_data[:-1]
-                new_history = deque([x._asdict() for x in old_data]) + new_data
+                if len(new_data) == 0:
+                    new_history = transformed_old_data
+                else:
+                    if len(old_data) != 0 and old_data[-1].time == new_data[0]['time']:
+                        transformed_old_data.pop()
+                    new_history = transformed_old_data + new_data
+
             else:
                 # only other possibility, timestamp < cached start_time
                 # Get all available data, even before to_timestamp
@@ -796,9 +801,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     from_timestamp=self.price_history[cache_key].start_time,
                     to_timestamp=Timestamp(0),
                 )
-                if new_data[-1]['time'] == old_data[0].time:
-                    new_data.pop()
-                new_history = new_data + deque([x._asdict() for x in old_data])
+                if len(new_data) == 0:
+                    new_history = transformed_old_data
+                else:
+                    if len(old_data) != 0 and new_data[-1]['time'] == old_data[0].time:
+                        new_data.pop()
+                    new_history = new_data + transformed_old_data
 
             calculated_history = list(new_history)
 
