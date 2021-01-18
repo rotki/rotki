@@ -1,6 +1,6 @@
 gevent==1.5a2
 greenlet==0.4.16  # adding this constraint since 0.4.17 does not work with gevent 1.5a2
-web3==5.11.1
+web3==5.15.0
 pysqlcipher3==1.0.3
 requests==2.25.1
 pycryptodome==3.6.6
@@ -21,5 +21,3 @@ webargs==6.0.0
 
 #constraints
 setuptools==41.0.1  # constraint required by pyinstaller==3.5.0
-eth-utils==1.8.4  # constraint required by web3==5.3.0
-rlp==1.2.0  # constraint required by eth-rlp 0.1.2  rlp<2,>=0.6.0

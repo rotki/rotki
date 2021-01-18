@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
@@ -110,7 +110,7 @@ def _query_web3_get_logs(
         # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
         # is infura can throw an error here which we can only parse by catching the  exception
         try:
-            new_events_web3 = cast(List[Dict[str, Any]], web3.eth.getLogs(filter_args))
+            new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.getLogs(filter_args)]  # noqa: E501
         except ValueError as e:
             try:
                 decoded_error = json.loads(str(e).replace("'", '"'))
@@ -497,9 +497,9 @@ class EthereumManager():
         if web3 is None:
             return self.etherscan.get_block_by_number(num)
 
-        block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.getBlock(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
+        block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.get_block(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
         block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
-        return block_data  # type: ignore
+        return dict(block_data)
 
     def get_code(
             self,

@@ -30,7 +30,7 @@ class MockEth():
         self.blockNumber = block_number
         self.chainId = 1
 
-    def getBlock(  # noqa: N802 pylint: disable=no-self-use
+    def get_block(  # noqa: N802 pylint: disable=no-self-use
             self,
             _number: int,
     ) -> Dict[str, HexBytes]:
