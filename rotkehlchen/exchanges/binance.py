@@ -17,6 +17,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
+    MarginPosition,
     Trade,
     TradeType,
     trade_pair_from_assets,
@@ -191,7 +192,7 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
     return symbols_to_pair
 
 
-class Binance(ExchangeInterface):
+class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """This class supports:
       - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
       - Binance US: when instantiated with uri equals BINANCE_US_BASE_URL.
@@ -920,3 +921,10 @@ class Binance(ExchangeInterface):
                 movements.append(movement)
 
         return movements
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for binance

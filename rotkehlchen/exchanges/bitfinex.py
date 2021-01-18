@@ -44,7 +44,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -124,7 +124,7 @@ class ErrorResponseData(NamedTuple):
     reason: Optional[str] = None
 
 
-class Bitfinex(ExchangeInterface):
+class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """Bitfinex exchange api docs:
     https://docs.bitfinex.com/docs
     """
@@ -994,3 +994,10 @@ class Bitfinex(ExchangeInterface):
             return result, msg
 
         return True, ''
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for bitfinex

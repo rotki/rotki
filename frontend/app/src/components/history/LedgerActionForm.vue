@@ -10,7 +10,7 @@
 
     <date-time-picker
       :error-messages="errors['timestamp']"
-      :value="datetime"
+      :value="convertFromTs(action.timestamp)"
       :label="$t('ledger_action_form.date.label')"
       persistent-hint
       required
@@ -123,7 +123,11 @@ export default class LedgerActionForm extends Vue {
     this.actionUpdate({ ...this.action, [prop]: value });
   }
 
-  datetime: string = '';
+  convertFromTs(timestamp: number) {
+    return convertFromTimestamp(timestamp);
+  }
+
+  datetime = '';
 
   readonly typeData = ledgerActionsData;
   readonly amountRules = [

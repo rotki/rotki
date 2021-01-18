@@ -12,7 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.inquirer import Inquirer
@@ -97,7 +97,7 @@ class CoinbasePermissionError(Exception):
     pass
 
 
-class Coinbase(ExchangeInterface):
+class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
@@ -577,3 +577,10 @@ class Coinbase(ExchangeInterface):
                 movements.append(movement)
 
         return movements
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for coinbase

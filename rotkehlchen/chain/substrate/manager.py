@@ -138,7 +138,7 @@ class SubstrateManager():
         https://docs.api.subscan.io
         """
         if chain not in SubstrateChain:
-            raise AttributeError(f'Unexpected SubstrateManager chain: {chain}')
+            raise AssertionError(f'Unexpected SubstrateManager chain: {chain}')
 
         log.debug(f'Initializing {chain} manager')
         self.chain = chain
@@ -410,12 +410,17 @@ class SubstrateManager():
         except requests.exceptions.RequestException as e:
             message = (
                 f'{self.chain} could not connect to node at endpoint: {endpoint}. '
-                f'Connection error: {str(e)}.',
+                f'Connection error: {str(e)}.'
             )
             log.error(message)
             raise RemoteError(message) from e
         except (FileNotFoundError, ValueError, TypeError) as e:
-            raise AttributeError('Invalid SubstrateInterface instantiation') from e
+            message = (
+                f'{self.chain} could not connect to node at endpoint: {endpoint}. '
+                f'Unexpected error during SubstrateInterface instantiation: {str(e)}.'
+            )
+            log.error(message)
+            raise RemoteError('Invalid SubstrateInterface instantiation') from e
 
         return node_interface
 
@@ -444,7 +449,7 @@ class SubstrateManager():
             message = (
                 f'{self.chain} chain metadata request was not successful. '
                 f'Response status code: {response.status_code}. '
-                f'Response text: {response.text}.',
+                f'Response text: {response.text}.'
             )
             log.error(message)
             raise RemoteError(message)
@@ -453,7 +458,7 @@ class SubstrateManager():
         except JSONDecodeError as e:
             message = (
                 f'{self.chain} chain metadata request returned invalid JSON '
-                f'response: {response.text}.',
+                f'response: {response.text}.'
             )
             log.error(message)
             raise RemoteError(message) from e

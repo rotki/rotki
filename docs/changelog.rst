@@ -2,6 +2,11 @@
 Changelog
 =========
 
+* :release:`1.12.2 <2021-01-18>`
+* :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
+* :bug:`2116` Kusama user balance query should now work properly in all cases.
+* :bug:`2113` Iconomi exchange users should now no longer get an error when pulling deposits/withdrawals history
+
 * :release:`1.12.1 <2021-01-16>`
 * :bug:`-` Fix the problem introduced with rotki v1.12.0 for OSX users that made them unable to run the app.
 
