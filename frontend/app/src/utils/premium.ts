@@ -3,6 +3,8 @@ import moment from 'moment';
 import Vue, { VueConstructor } from 'vue';
 import Vuex from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
+import { TIME_UNIT_DAY } from '@/components/dashboard/const';
+import { TimeUnit } from '@/components/dashboard/types';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -19,7 +21,7 @@ import HashLink from '@/components/helper/HashLink.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import { DebugSettings } from '@/electron-main/ipc';
+import { DebugSettings, ExposedUtilities } from '@/electron-main/ipc';
 import { api } from '@/services/rotkehlchen-api';
 
 export const setupPremium = () => {
@@ -29,7 +31,29 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 6
+    version: 7,
+    utils: {
+      date: {
+        epoch(): number {
+          return moment().unix();
+        },
+        format(date: string, oldFormat: string, newFormat: string): string {
+          return moment(date, oldFormat).format(newFormat);
+        },
+        now(format: string): string {
+          return moment().format(format);
+        },
+        epochToFormat(epoch: number, format: string): string {
+          return moment(epoch * 1000).format(format);
+        },
+        dateToEpoch(date: string, format: string): number {
+          return moment(date, format).unix();
+        },
+        epochStartSubtract(amount: number, unit: TimeUnit): number {
+          return moment().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
+        }
+      }
+    }
   };
   // Globally registered components are also provided to the premium components.
   Vue.component('AmountDisplay', AmountDisplay);
@@ -168,11 +192,11 @@ declare global {
   interface Window {
     Vue: any;
     Chart: typeof Chart;
-    moment: typeof moment;
     rotki: {
-      useHostComponents: boolean;
-      version: number;
-      debug?: DebugSettings;
+      readonly useHostComponents: boolean;
+      readonly version: number;
+      readonly utils: ExposedUtilities;
+      readonly debug?: DebugSettings;
     };
   }
 }

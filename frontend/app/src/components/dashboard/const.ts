@@ -13,7 +13,7 @@ import { TimeFramePeriod } from '@/store/settings/types';
 const TIME_UNIT_YEAR = 'year';
 const TIME_UNIT_MONTH = 'month';
 const TIME_UNIT_WEEK = 'week';
-const TIME_UNIT_DAY = 'day';
+export const TIME_UNIT_DAY = 'day';
 
 export const TIME_UNITS = [
   TIME_UNIT_YEAR,
