@@ -12,9 +12,23 @@
     @input="displayed(notification.id)"
   >
     <notification
+      popup
       :notification="notification"
       @dismiss="dismiss(notification.id)"
     />
+    <v-divider />
+    <v-row v-if="queue.length > 0" justify="end">
+      <v-col cols="auto">
+        <v-tooltip open-delay="400" top>
+          <template #activator="{ on, attrs }">
+            <v-btn icon v-bind="attrs" v-on="on" @click="dismissAll()">
+              <v-icon>mdi-notification-clear-all</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('notification_popup.dismiss_all') }}</span>
+        </v-tooltip>
+      </v-col>
+    </v-row>
     <v-tooltip v-if="queue.length > 0" bottom>
       <template #activator="{ on }">
         <div class="notification-popup__count__wrapper" v-on="on">
@@ -50,7 +64,7 @@ import { emptyNotification } from '@/store/notifications/utils';
 export default class NotificationPopup extends Vue {
   notification: NotificationData = emptyNotification();
   queue!: NotificationData[];
-  displayed!: (id: number) => void;
+  displayed!: (id: number[]) => void;
 
   @Watch('queue', { deep: true })
   onQueueUpdate() {
@@ -64,7 +78,12 @@ export default class NotificationPopup extends Vue {
   }
 
   dismiss(id: number) {
-    this.displayed(id);
+    this.displayed([id]);
+    this.notification = { ...this.notification, display: false };
+  }
+
+  dismissAll() {
+    this.displayed(this.queue.map(({ id }) => id));
     this.notification = { ...this.notification, display: false };
   }
 }

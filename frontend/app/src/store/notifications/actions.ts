@@ -64,13 +64,20 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
         ]);
       });
   },
-  displayed({ commit, state }, id: number): void {
-    const index = state.data.findIndex(notification => notification.id === id);
-    if (index < 0) {
+  displayed({ commit, state }, ids: number[]): void {
+    if (ids.length <= 0) {
       return;
     }
+
     const notifications = [...state.data];
-    notifications[index] = { ...notifications[index], display: false };
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      const index = notifications.findIndex(({ id: idA }) => idA === id);
+      if (index < 0) {
+        continue;
+      }
+      notifications[index] = { ...notifications[index], display: false };
+    }
     commit('notifications', notifications);
   },
   notify({ commit, getters: { nextId } }, payload: NotificationPayload): void {
