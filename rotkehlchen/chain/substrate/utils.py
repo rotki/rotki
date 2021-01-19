@@ -5,8 +5,9 @@ from .typing import KusamaNodeName, SubstrateChain
 KUSAMA_NODES_TO_CONNECT_AT_START = (
     KusamaNodeName.OWN,
     KusamaNodeName.PARITY,
+    KusamaNodeName.WEB3_FOUNDATION,
 )
-KUSAMA_NODE_CONNECTION_TIMEOUT = 5
+KUSAMA_NODE_CONNECTION_TIMEOUT = 10
 
 
 def is_valid_kusama_address(value: str) -> bool:

@@ -15,12 +15,15 @@ class KusamaNodeName(Enum):
     """
     OWN = 0
     PARITY = 1
+    WEB3_FOUNDATION = 2
 
     def __str__(self) -> str:
         if self == KusamaNodeName.OWN:
             return 'own node'
         if self == KusamaNodeName.PARITY:
             return 'parity'
+        if self == KusamaNodeName.WEB3_FOUNDATION:
+            return 'web3 foundation'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
     def endpoint(self) -> str:
@@ -31,6 +34,8 @@ class KusamaNodeName(Enum):
             )
         if self == KusamaNodeName.PARITY:
             return 'https://kusama-rpc.polkadot.io/'
+        if self == KusamaNodeName.WEB3_FOUNDATION:
+            return 'wss://cc3-5.kusama.network/'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
 
