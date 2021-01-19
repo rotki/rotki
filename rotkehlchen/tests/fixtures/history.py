@@ -4,7 +4,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-from rotkehlchen.history import PriceHistorian, TradesHistorian
+from rotkehlchen.history import PriceHistorian, EventsHistorian
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 
 
@@ -52,7 +52,7 @@ def price_historian(
 
 
 @pytest.fixture
-def trades_historian(data_dir, function_scope_messages_aggregator, blockchain):
+def events_historian(data_dir, function_scope_messages_aggregator, blockchain):
     database = DBHandler(
         user_data_dir=data_dir,
         password='123',
@@ -60,7 +60,7 @@ def trades_historian(data_dir, function_scope_messages_aggregator, blockchain):
         initial_settings=None,
     )
     exchange_manager = ExchangeManager(msg_aggregator=function_scope_messages_aggregator)
-    historian = TradesHistorian(
+    historian = EventsHistorian(
         user_directory=data_dir,
         db=database,
         msg_aggregator=function_scope_messages_aggregator,

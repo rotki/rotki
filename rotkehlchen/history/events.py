@@ -63,7 +63,7 @@ def limit_trade_list_to_period(
     return trades_list[start_idx:end_idx] if start_idx is not None else []
 
 
-class TradesHistorian():
+class EventsHistorian():
 
     def __init__(
             self,
@@ -79,6 +79,10 @@ class TradesHistorian():
         self.db = db
         self.exchange_manager = exchange_manager
         self.chain_manager = chain_manager
+        self._reset_progress_variables()
+
+    def _reset_progress_variables(self):
+        self.processing_state_name = 'Starting query of historical events'
 
     def query_ledger_actions(
             self,
@@ -109,6 +113,7 @@ class TradesHistorian():
             has_premium: bool,
     ) -> HistoryResult:
         """Creates trades and loans history from start_ts to end_ts"""
+        self._reset_progress_variables()
         log.info(
             'Get/create trade history',
             start_ts=start_ts,

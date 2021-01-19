@@ -46,8 +46,8 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
-from rotkehlchen.history import PriceHistorian, TradesHistorian
-from rotkehlchen.history.trades import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history import EventsHistorian, PriceHistorian
+from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import (
@@ -288,7 +288,7 @@ class Rotkehlchen():
             beaconchain=self.beaconchain,
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
-        self.trades_historian = TradesHistorian(
+        self.events_historian = EventsHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
@@ -325,7 +325,7 @@ class Rotkehlchen():
         LoggingSettings(anonymized_logs=DEFAULT_ANONYMIZED_LOGS)
 
         del self.accountant
-        del self.trades_historian
+        del self.events_historian
         del self.data_importer
 
         if self.premium is not None:
@@ -528,7 +528,7 @@ class Rotkehlchen():
             eth_transactions,
             defi_events,
             ledger_actions,
-        ) = self.trades_historian.get_history(
+        ) = self.events_historian.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
             has_premium=self.premium is not None,
