@@ -23,8 +23,8 @@
             {{ $t('account_settings_display.crypto2crypto') }}
           </span>
           <span class="ms-2">
-            <v-icon :class="color(accountingSettings.calculatePastCostBasis)">
-              {{ icon(accountingSettings.calculatePastCostBasis) }}
+            <v-icon :class="color(accountingSettings.includeCrypto2Crypto)">
+              {{ icon(accountingSettings.includeCrypto2Crypto) }}
             </v-icon>
           </span>
         </v-col>
@@ -62,8 +62,10 @@
             {{ $t('account_settings_display.account_asset_movement') }}
           </span>
           <span class="ms-2">
-            <v-icon :class="color(accountingSettings.includeGasCosts)">
-              {{ icon(accountingSettings.includeGasCosts) }}
+            <v-icon
+              :class="color(accountingSettings.accountForAssetsMovements)"
+            >
+              {{ icon(accountingSettings.accountForAssetsMovements) }}
             </v-icon>
           </span>
         </v-col>
