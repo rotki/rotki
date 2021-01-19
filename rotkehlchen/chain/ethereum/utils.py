@@ -19,6 +19,32 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 
 ABI_CODEC = Web3().codec
+# TODO: remove this once web3.py updates ENS library for supporting multichain
+# https://github.com/ethereum/web3.py/issues/1839
+ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS = [
+    {
+        "constant": True,
+        "inputs": [
+            {
+                "name": "node",
+                "type": "bytes32",
+            },
+            {
+                "name": "coinType",
+                "type": "uint256",
+            },
+        ],
+        "name": "addr",
+        "outputs": [
+            {
+                "name": "ret",
+                "type": "bytes",
+            },
+        ],
+        "payable": False,
+        "type": "function",
+    },
+]
 
 
 def token_normalized_value_decimals(token_amount: int, token_decimals: int) -> FVal:

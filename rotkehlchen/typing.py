@@ -222,8 +222,25 @@ class SupportedBlockchain(Enum):
             return BTCAddress
         if self == SupportedBlockchain.KUSAMA:
             return KusamaAddress
-        # else
-        raise AssertionError('Invalid SupportedBlockchain value')
+        raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
+
+    def ens_coin_type(self) -> int:
+        """Return the CoinType number according to EIP-2304, multichain address
+        resolution for ENS domains.
+
+        https://eips.ethereum.org/EIPS/eip-2304
+
+        ENS CoinType numbers:
+        https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
+        https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+        """
+        if self == SupportedBlockchain.ETHEREUM:
+            return 60
+        if self == SupportedBlockchain.BITCOIN:
+            return 0
+        if self == SupportedBlockchain.KUSAMA:
+            return 434
+        raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
 
 class AssetType(Enum):

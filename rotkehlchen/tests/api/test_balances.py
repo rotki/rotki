@@ -31,7 +31,11 @@ from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.exchanges import assert_binance_balances_result
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
-from rotkehlchen.tests.utils.substrate import KSM_ADDRESS_1, KSM_ADDRESS_2, KUSAMA_TEST_NODES
+from rotkehlchen.tests.utils.substrate import (
+    KUSAMA_TEST_NODES,
+    SUBSTRATE_ACC1_KSM_ADDR,
+    SUBSTRATE_ACC2_KSM_ADDR,
+)
 from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp
 
 
@@ -620,7 +624,7 @@ def test_balances_caching_mixup(
 
 
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
-@pytest.mark.parametrize('ksm_accounts', [[KSM_ADDRESS_1, KSM_ADDRESS_2]])
+@pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC2_KSM_ADDR]])
 def test_query_ksm_balances(rotkehlchen_api_server):
     """Test query the KSM balances when multiple accounts are set up works as
     expected.
@@ -642,13 +646,13 @@ def test_query_ksm_balances(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     # Check per account
-    account_1_balances = result['per_account']['KSM'][KSM_ADDRESS_1]
+    account_1_balances = result['per_account']['KSM'][SUBSTRATE_ACC1_KSM_ADDR]
     assert 'liabilities' in account_1_balances
     asset_ksm = account_1_balances['assets']['KSM']
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
-    account_2_balances = result['per_account']['KSM'][KSM_ADDRESS_2]
+    account_2_balances = result['per_account']['KSM'][SUBSTRATE_ACC2_KSM_ADDR]
     assert 'liabilities' in account_2_balances
     asset_ksm = account_2_balances['assets']['KSM']
     assert FVal(asset_ksm['amount']) >= ZERO

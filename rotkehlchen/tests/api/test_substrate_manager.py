@@ -3,7 +3,7 @@ import requests
 
 from rotkehlchen.chain.substrate.typing import KusamaNodeName
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
-from rotkehlchen.tests.utils.substrate import KSM_ADDRESS_1, KUSAMA_TEST_NODES
+from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
 
 
 def test_set_own_rpc_endpoint(rotkehlchen_api_server):
@@ -42,7 +42,7 @@ def test_set_own_rpc_endpoint(rotkehlchen_api_server):
     assert kusama_manager.available_nodes_call_order[0][0] == KusamaNodeName.OWN
 
 
-@pytest.mark.parametrize('ksm_accounts', [[KSM_ADDRESS_1]])
+@pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR]])
 @pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_NODES[0].endpoint()])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [[KusamaNodeName.OWN]])
 def test_unset_own_rpc_endpoint(ksm_rpc_endpoint, rotkehlchen_api_server):

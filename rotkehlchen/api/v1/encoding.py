@@ -1,21 +1,26 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union, cast
 
 import marshmallow
 import webargs
 from eth_utils import to_checksum_address
+from hexbytes import HexBytes
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 
-from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType, ActionType
+from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, is_valid_derivation_path
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.substrate.utils import is_valid_kusama_address
+from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
+from rotkehlchen.chain.substrate.utils import (
+    get_kusama_address_from_public_key,
+    is_valid_kusama_address,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import DeserializationError, UnknownAsset, XPUBError
@@ -1072,13 +1077,12 @@ def _validate_blockchain_account_schemas(
                 )
             given_addresses.add(address)
 
-    # Make sure kusama addresses are valid
-    # TODO: support ENS domains (.eth addresses)
-    # https://guide.kusama.network/docs/en/mirror-ens
+    # Make sure kusama addresses are valid (either ss58 format or ENS domain)
     elif data['blockchain'] == SupportedBlockchain.KUSAMA:
         for account_data in data['accounts']:
             address = address_getter(account_data)
-            if not is_valid_kusama_address(address):
+            # ENS domain will be checked in the transformation step
+            if not address.endswith('.eth') and not is_valid_kusama_address(address):
                 raise ValidationError(
                     f'Given value {address} is not a valid kusama address',
                     field_name='address',
@@ -1098,7 +1102,7 @@ def _transform_eth_address(
     except ValueError:
         # Validation will only let .eth names come here.
         # So let's see if it resolves to anything
-        resolved_address = ethereum.ens_lookup(given_address)
+        resolved_address = cast(ChecksumEthAddress, ethereum.ens_lookup(given_address))
         if resolved_address is None:
             raise ValidationError(
                 f'Given ENS address {given_address} could not be resolved',
@@ -1107,6 +1111,52 @@ def _transform_eth_address(
 
         address = to_checksum_address(resolved_address)
         log.info(f'Resolved ENS {given_address} to {address}')
+
+    return address
+
+
+def _transform_ksm_address(
+        ethereum: EthereumManager,
+        given_address: str,
+) -> KusamaAddress:
+    """Returns a KSM address (if exists) given an ENS domain. At this point any
+    given address has been already validated either as an ENS name or as a
+    valid Kusama address (ss58 format).
+
+    NB: ENS domains for Substrate chains (e.g. KSM, DOT) store the Substrate
+    public key. It requires to encode it with a specific ss58 format for
+    obtainint the specific chain address.
+
+    Kusama/Polkadot ENS domain accounts:
+    https://guide.kusama.network/docs/en/mirror-ens
+
+    ENS domain substrate public key encoding:
+    https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
+    """
+    if not given_address.endswith('.eth'):
+        return KusamaAddress(given_address)
+
+    resolved_address = cast(HexBytes, ethereum.ens_lookup(
+        given_address,
+        blockchain=SupportedBlockchain.KUSAMA,
+    ))
+    if resolved_address is None:
+        raise ValidationError(
+            f'Given ENS address {given_address} could not be resolved for Kusama',
+            field_name='address',
+        ) from None
+
+    public_key = SubstratePublicKey(resolved_address.hex())
+    try:
+        address = get_kusama_address_from_public_key(public_key)
+    except (TypeError, ValueError) as e:
+        raise ValidationError(
+            f"Given ENS address {given_address} does not contain a valid "
+            f"Substrate public key: {public_key}. Kusama address can't be obtained.",
+            field_name='address',
+        ) from e
+
+    log.info(f'Resolved ENS {given_address} to {address}')
 
     return address
 
@@ -1136,6 +1186,12 @@ class BlockchainAccountsPatchSchema(Schema):
         if data['blockchain'] == SupportedBlockchain.ETHEREUM:
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_eth_address(
+                    ethereum=self.ethereum_manager,
+                    given_address=account['address'],
+                )
+        if data['blockchain'] == SupportedBlockchain.KUSAMA:
+            for idx, account in enumerate(data['accounts']):
+                data['accounts'][idx]['address'] = _transform_ksm_address(
                     ethereum=self.ethereum_manager,
                     given_address=account['address'],
                 )
@@ -1173,6 +1229,10 @@ class BlockchainAccountsDeleteSchema(Schema):
         if data['blockchain'] == SupportedBlockchain.ETHEREUM:
             data['accounts'] = [
                 _transform_eth_address(self.ethereum_manager, x) for x in data['accounts']
+            ]
+        if data['blockchain'] == SupportedBlockchain.KUSAMA:
+            data['accounts'] = [
+                _transform_ksm_address(self.ethereum_manager, x) for x in data['accounts']
             ]
         return data
 
