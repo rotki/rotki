@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2135` Users will now properly see the correct accounting settings when creating a profit/loss report.
+
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
 * :bug:`2116` Kusama user balance query should now work properly in all cases.
