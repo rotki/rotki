@@ -1,13 +1,6 @@
-import map from 'lodash/map';
 import i18n from '@/i18n';
 import { Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import {
-  ApiEventEntry,
-  convertEventEntry,
-  convertTradeHistoryOverview,
-  TradeHistory
-} from '@/model/trade-history-types';
 import { api } from '@/services/rotkehlchen-api';
 import { ActionResult, TaskNotFoundError } from '@/services/types-api';
 import { Severity } from '@/store/notifications/consts';
@@ -16,29 +9,6 @@ import store from '@/store/store';
 import { TaskMap } from '@/store/tasks/state';
 
 class TaskManager {
-  onTradeHistory(data: ActionResult<TradeHistory>, _meta: TaskMeta) {
-    const { message, result } = data;
-
-    if (message) {
-      notify(
-        `During trade history query we got:${message}. History report is probably not complete.`,
-        'Trade History Query Warning',
-        Severity.ERROR,
-        true
-      );
-    }
-
-    const { overview, all_events } = result;
-
-    const payload = {
-      overview: convertTradeHistoryOverview(overview),
-      events: map(all_events, (event: ApiEventEntry) =>
-        convertEventEntry(event)
-      )
-    };
-    store.commit('reports/set', payload);
-  }
-
   monitor() {
     const state = store.state;
     const taskState = state.tasks!;
@@ -141,9 +111,7 @@ class TaskManager {
 
   private handler: {
     [type: string]: (result: any, meta: any) => void;
-  } = {
-    [TaskType.TRADE_HISTORY]: this.onTradeHistory
-  };
+  } = {};
 
   registerHandler<R, M extends TaskMeta>(
     task: TaskType,

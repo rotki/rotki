@@ -348,18 +348,16 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  processTradeHistoryAsync(
-    start_ts: number,
-    end_ts: number
-  ): Promise<AsyncQuery> {
+  processTradeHistoryAsync(start: number, end: number): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<AsyncQuery>>('/history/', {
+      .get<ActionResult<PendingTask>>('/history/', {
         params: {
           async_query: true,
-          from_timestamp: start_ts,
-          to_timestamp: end_ts
+          from_timestamp: start,
+          to_timestamp: end
         },
-        validateStatus: validStatus
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }

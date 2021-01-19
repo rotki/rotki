@@ -1,6 +1,6 @@
 import { currencies } from '@/data/currencies';
 import {
-  EventEntry,
+  ProfitLossEvent,
   ProfitLossOverviewData,
   tradeHistoryPlaceholder
 } from '@/model/trade-history-types';
@@ -10,7 +10,7 @@ import { AccountingSettings } from '@/typing/types';
 
 export interface ReportState {
   overview: ProfitLossOverviewData;
-  events: EventEntry[];
+  events: ProfitLossEvent[];
   accountingSettings: AccountingSettings | null;
   reportPeriod: ReportPeriod;
   currency: string;

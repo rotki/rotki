@@ -72,7 +72,7 @@ import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
-import { EventEntry } from '@/model/trade-history-types';
+import { ProfitLossEvent } from '@/model/trade-history-types';
 
 @Component({
   components: {
@@ -85,7 +85,7 @@ import { EventEntry } from '@/model/trade-history-types';
   }
 })
 export default class ProfitLossEvents extends Vue {
-  events!: EventEntry[];
+  events!: ProfitLossEvent[];
   currency!: string;
   exchangeRate!: (currency: string) => number;
 
