@@ -279,7 +279,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        asset_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for account in accounts:
             try:
                 amount = deserialize_asset_amount(account['balance'])
@@ -298,7 +298,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                asset_balance[asset] += Balance(
+                assets_balance[asset] += Balance(
                     amount=amount,
                     usd_value=amount * usd_price,
                 )
@@ -329,7 +329,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-        return dict(asset_balance), ''
+        return dict(assets_balance), ''
 
     def _get_products_ids(self) -> List[str]:
         """Gets a list of all product ids (markets) offered by coinbase PRO

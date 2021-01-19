@@ -199,7 +199,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return False, 'Provided API Key is invalid'
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        asset_balance: Dict[Asset, Balance] = {}
+        assets_balance: Dict[Asset, Balance] = {}
         try:
             resp_info = self._api_query('get', 'user/balance')
         except RemoteError as e:
@@ -231,8 +231,8 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     continue
 
                 amount = FVal(balance_info['balance'])
-                asset_balance[asset] = Balance(
-                    amount=balance_info['balance'],
+                assets_balance[asset] = Balance(
+                    amount=amount,
                     usd_value=amount * usd_price,
                 )
             except (UnknownAsset, UnsupportedAsset) as e:
@@ -249,7 +249,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 f' Ignoring its balance query.',
             )
 
-        return asset_balance, ''
+        return assets_balance, ''
 
     def query_online_trade_history(
             self,

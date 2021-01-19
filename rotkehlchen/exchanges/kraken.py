@@ -503,11 +503,11 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
         try:
-            old_balances = self.api_query('Balance', req={})
+            kraken_balances = self.api_query('Balance', req={})
         except RemoteError as e:
             if "Missing key: 'result'" in str(e):
                 # handle https://github.com/rotki/rotki/issues/946
-                old_balances = {}
+                kraken_balances = {}
             else:
                 msg = (
                     'Kraken API request failed. Could not reach kraken due '
@@ -516,8 +516,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 log.error(msg)
                 return None, msg
 
-        asset_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
-        for kraken_name, amount_ in old_balances.items():
+        assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        for kraken_name, amount_ in kraken_balances.items():
             amount = FVal(amount_)
             if amount == ZERO:
                 continue
@@ -551,7 +551,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 balance.usd_value = balance.amount * usd_price
 
-            asset_balance[our_asset] += balance
+            assets_balance[our_asset] += balance
             log.debug(
                 'kraken balance query result',
                 sensitive_log=True,
@@ -560,7 +560,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 usd_value=balance.usd_value,
             )
 
-        return dict(asset_balance), ''
+        return dict(assets_balance), ''
 
     def query_until_finished(
             self,

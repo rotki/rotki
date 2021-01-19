@@ -214,7 +214,7 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return False, str(e)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        asset_balance: Dict[Asset, Balance] = {}
+        assets_balance: Dict[Asset, Balance] = {}
         try:
             resp_info = self._api_query('get', 'account')
         except RemoteError as e:
@@ -237,12 +237,12 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
 
             amount = FVal(balance['total_amount'])
-            asset_balance[asset] = Balance(
+            assets_balance[asset] = Balance(
                 amount=amount,
                 usd_value=amount * usd_price,
             )
 
-        return asset_balance, ''
+        return assets_balance, ''
 
     def query_online_trade_history(
             self,

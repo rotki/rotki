@@ -460,7 +460,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        asset_balance: Dict[Asset, Balance] = {}
+        assets_balance: Dict[Asset, Balance] = {}
         for poloniex_asset, v in resp.items():
             available = FVal(v['available'])
             on_orders = FVal(v['onOrders'])
@@ -501,7 +501,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 amount = available + on_orders
                 usd_value = amount * usd_price
-                asset_balance[asset] = Balance(
+                assets_balance[asset] = Balance(
                     amount=amount,
                     usd_value=usd_value,
                 )
@@ -513,7 +513,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     usd_value=usd_value,
                 )
 
-        return asset_balance, ''
+        return assets_balance, ''
 
     def query_online_trade_history(
             self,

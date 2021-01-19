@@ -886,7 +886,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # Wallet items indices
         currency_index = 1
         balance_index = 2
-        asset_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for wallet in response_list:
             if len(wallet) < API_WALLET_MIN_RESULT_LENGTH or wallet[balance_index] <= 0:
                 log.error(
@@ -923,12 +923,12 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
 
             amount = FVal(wallet[balance_index])
-            asset_balance[asset] += Balance(
+            assets_balance[asset] += Balance(
                 amount=amount,
                 usd_value=amount * usd_price,
             )
 
-        return dict(asset_balance), ''
+        return dict(assets_balance), ''
 
     def query_online_deposits_withdrawals(
             self,

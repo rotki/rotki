@@ -152,7 +152,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             raise RemoteError(msg) from e
 
-        asset_balance: Dict[Asset, Balance] = {}
+        assets_balance: Dict[Asset, Balance] = {}
         for entry, amount in response_dict.items():
             amount = FVal(amount)
             if not entry.endswith('_balance') or amount == ZERO:
@@ -189,12 +189,12 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            asset_balance[asset] = Balance(
+            assets_balance[asset] = Balance(
                 amount=amount,
                 usd_value=amount * usd_price,
             )
 
-        return dict(asset_balance), ''
+        return assets_balance, ''
 
     def query_online_deposits_withdrawals(
             self,

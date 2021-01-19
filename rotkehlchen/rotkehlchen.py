@@ -743,15 +743,15 @@ class Rotkehlchen():
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 
         # Calculate usd totals
-        asset_total_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        assets_total_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         total_usd_per_location: Dict[str, FVal] = {}
         for location, asset_balance in balances.items():
             total_usd_per_location[location] = ZERO
             for asset, balance in asset_balance.items():
-                asset_total_balance[asset] += balance
+                assets_total_balance[asset] += balance
                 total_usd_per_location[location] += balance.usd_value
 
-        net_usd = sum((balance.usd_value for _, balance in asset_total_balance.items()), ZERO)
+        net_usd = sum((balance.usd_value for _, balance in assets_total_balance.items()), ZERO)
         liabilities_total_usd = sum((liability.usd_value for _, liability in liabilities.items()), ZERO)  # noqa: E501
         net_usd -= liabilities_total_usd
 
@@ -768,15 +768,15 @@ class Rotkehlchen():
             }
 
         # Calculate 'percentage_of_net_value' per asset
-        asset_total_balance_as_dict: Dict[Asset, Dict[str, Any]] = {
-            asset: balance.to_dict() for asset, balance in asset_total_balance.items()
+        assets_total_balance_as_dict: Dict[Asset, Dict[str, Any]] = {
+            asset: balance.to_dict() for asset, balance in assets_total_balance.items()
         }
         liabilities_as_dict: Dict[Asset, Dict[str, Any]] = {
             asset: balance.to_dict() for asset, balance in liabilities.items()
         }
-        for asset, balance_dict in asset_total_balance_as_dict.items():
+        for asset, balance_dict in assets_total_balance_as_dict.items():
             percentage = (balance_dict['usd_value'] / net_usd).to_percentage() if net_usd != ZERO else '0%'  # noqa: E501
-            asset_total_balance_as_dict[asset]['percentage_of_net_value'] = percentage
+            assets_total_balance_as_dict[asset]['percentage_of_net_value'] = percentage
 
         for asset, balance_dict in liabilities_as_dict.items():
             percentage = (balance_dict['usd_value'] / net_usd).to_percentage() if net_usd != ZERO else '0%'  # noqa: E501
@@ -784,7 +784,7 @@ class Rotkehlchen():
 
         # Compose balances response
         result_dict = {
-            'assets': asset_total_balance_as_dict,
+            'assets': assets_total_balance_as_dict,
             'liabilities': liabilities_as_dict,
             'location': location_stats,
             'net_usd': net_usd,

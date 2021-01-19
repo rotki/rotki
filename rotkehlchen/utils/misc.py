@@ -166,17 +166,6 @@ def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str) -> FVal:
     return sum_
 
 
-def merge_dicts(*dict_args: Dict) -> Dict:
-    """
-    Given any number of dicts, shallow copy and merge into a new dict,
-    precedence goes to key value pairs in latter dicts.
-    """
-    result = {}
-    for dictionary in dict_args:
-        result.update(dictionary)
-    return result
-
-
 def retry_calls(
         times: int,
         location: str,
