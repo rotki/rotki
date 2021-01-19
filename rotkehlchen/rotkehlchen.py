@@ -520,7 +520,7 @@ class Rotkehlchen():
             progress = self.events_historian.progress / 2
         elif self.accountant.currently_processing_timestamp == -1:
             processing_state = 'Processing all retrieved historical events'
-            progress = 50
+            progress = FVal(50)
         else:
             processing_state = 'Processing all retrieved historical events'
             diff = self.accountant.events.query_end_ts - self.accountant.events.query_start_ts
