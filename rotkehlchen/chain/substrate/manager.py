@@ -11,6 +11,7 @@ from requests.adapters import Response
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import SubstrateRequestException
 from typing_extensions import Literal
+from websocket import WebSocketException
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
@@ -286,6 +287,7 @@ class SubstrateManager():
             requests.exceptions.RequestException,
             SubstrateRequestException,
             ValueError,
+            WebSocketException,
         ) as e:
             message = (
                 f'{self.chain} failed to request {self.chain_properties.token.identifier} account '
@@ -315,7 +317,11 @@ class SubstrateManager():
         log.debug(f'{self.chain} querying chain ID', url=node_interface.url)
         try:
             chain_id = node_interface.chain
-        except (requests.exceptions.RequestException, SubstrateRequestException) as e:
+        except (
+            requests.exceptions.RequestException,
+            SubstrateRequestException,
+            WebSocketException,
+        ) as e:
             message = (
                 f'{self.chain} failed to request chain ID '
                 f'at endpoint: {node_interface.url} due to: {str(e)}.'
@@ -335,7 +341,11 @@ class SubstrateManager():
         log.debug(f'{self.chain} querying chain properties', url=node_interface.url)
         try:
             properties = node_interface.properties
-        except (requests.exceptions.RequestException, SubstrateRequestException) as e:
+        except (
+            requests.exceptions.RequestException,
+            SubstrateRequestException,
+            WebSocketException,
+        ) as e:
             message = (
                 f'{self.chain} failed to request chain properties '
                 f'at endpoint: {node_interface.url} due to: {str(e)}.'
@@ -374,6 +384,7 @@ class SubstrateManager():
             # https://github.com/polkascan/py-substrate-interface/issues/68
             TypeError,
             ValueError,
+            WebSocketException,
         ) as e:
             message = (
                 f'{self.chain} failed to request last block '
@@ -407,7 +418,7 @@ class SubstrateManager():
                 url=endpoint,
                 type_registry_preset=si_attributes.type_registry_preset,
             )
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, WebSocketException) as e:
             message = (
                 f'{self.chain} could not connect to node at endpoint: {endpoint}. '
                 f'Connection error: {str(e)}.'
