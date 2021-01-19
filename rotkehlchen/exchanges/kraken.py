@@ -6,8 +6,9 @@ import hmac
 import json
 import logging
 import time
+from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -15,6 +16,8 @@ import requests
 from gevent.lock import Semaphore
 from requests import Response
 
+from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2
@@ -32,7 +35,7 @@ from rotkehlchen.exchanges.data_structures import (
     get_pair_position_asset,
     trade_pair_from_assets,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -498,13 +501,13 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     # ---- General exchanges interface ----
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[dict], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         try:
-            old_balances = self.api_query('Balance', req={})
+            kraken_balances = self.api_query('Balance', req={})
         except RemoteError as e:
             if "Missing key: 'result'" in str(e):
                 # handle https://github.com/rotki/rotki/issues/946
-                old_balances = {}
+                kraken_balances = {}
             else:
                 msg = (
                     'Kraken API request failed. Could not reach kraken due '
@@ -513,14 +516,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 log.error(msg)
                 return None, msg
 
-        balances = {}
-        for k, v in old_balances.items():
-            v = FVal(v)
-            if v == FVal(0):
+        assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        for kraken_name, amount_ in kraken_balances.items():
+            amount = FVal(amount_)
+            if amount == ZERO:
                 continue
 
             try:
-                our_asset = asset_from_kraken(k)
+                our_asset = asset_from_kraken(kraken_name)
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unsupported/unknown kraken asset {e.asset_name}. '
@@ -529,17 +532,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
             except DeserializationError:
                 self.msg_aggregator.add_error(
-                    f'Found kraken asset with non-string type {type(k)}. '
+                    f'Found kraken asset with non-string type {type(kraken_name)}. '
                     f' Ignoring its balance query.',
                 )
                 continue
 
-            entry = {}
-            entry['amount'] = v
-            if k == 'KFEE':
+            balance = Balance(amount=amount)
+            if our_asset.identifier != 'KFEE':
                 # There is no price value for KFEE. TODO: Shouldn't we then just skip the balance?
-                entry['usd_value'] = ZERO
-            else:
                 try:
                     usd_price = Inquirer().find_usd_price(our_asset)
                 except RemoteError as e:
@@ -548,24 +548,19 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         f'query USD price: {str(e)}. Skipping balance entry',
                     )
                     continue
-                entry['usd_value'] = FVal(v * usd_price)
 
-            if our_asset not in balances:
-                balances[our_asset] = entry
-            else:  # Some assets may appear twice in kraken balance query for different locations
-                # Spot/staking for example
-                balances[our_asset]['amount'] += entry['amount']
-                balances[our_asset]['usd_value'] += entry['usd_value']
+                balance.usd_value = balance.amount * usd_price
 
+            assets_balance[our_asset] += balance
             log.debug(
                 'kraken balance query result',
                 sensitive_log=True,
                 currency=our_asset,
-                amount=entry['amount'],
-                usd_value=entry['usd_value'],
+                amount=balance.amount,
+                usd_value=balance.usd_value,
             )
 
-        return balances, ''
+        return dict(assets_balance), ''
 
     def query_until_finished(
             self,

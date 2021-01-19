@@ -280,10 +280,10 @@ def test_query_balances(function_scope_coinbasepro):
 
     assert message == ''
     assert len(balances) == 2
-    assert balances[A_BAT]['amount'] == FVal('10.5')
-    assert balances[A_BAT]['usd_value'] is not None
-    assert balances[A_ETH]['amount'] == FVal('2.5')
-    assert balances[A_ETH]['usd_value'] is not None
+    assert balances[A_BAT].amount == FVal('10.5')
+    assert balances[A_BAT].usd_value == FVal('15.75')
+    assert balances[A_ETH].amount == FVal('2.5')
+    assert balances[A_ETH].usd_value == FVal('3.75')
 
 
 def test_query_balances_unknown_asset(function_scope_coinbasepro):
@@ -295,8 +295,8 @@ def test_query_balances_unknown_asset(function_scope_coinbasepro):
 
     assert message == ''
     assert len(balances) == 1
-    assert balances[A_ETH]['amount'] == FVal('2.5')
-    assert balances[A_ETH]['usd_value'] is not None
+    assert balances[A_ETH].amount == FVal('2.5')
+    assert balances[A_ETH].usd_value == FVal('3.75')
 
     warnings = cb.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
@@ -338,8 +338,8 @@ def test_query_balances_keyerror_response(function_scope_coinbasepro):
 
     assert message == ''
     assert len(balances) == 1
-    assert balances[A_ETH]['amount'] == FVal('2.5')
-    assert balances[A_ETH]['usd_value'] is not None
+    assert balances[A_ETH].amount == FVal('2.5')
+    assert balances[A_ETH].usd_value is not None
 
     warnings = cb.msg_aggregator.consume_warnings()
     assert len(warnings) == 0

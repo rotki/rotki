@@ -96,18 +96,18 @@ def test_gemini_query_balances(sandbox_gemini):
     assert msg == ''
     assert len(balances) == 6
 
-    assert balances[A_USD]['amount'] == FVal('523384.71365986583339')
-    assert balances[A_USD]['usd_value'] == balances[A_USD]['amount']
-    assert balances[A_ETH]['amount'] == FVal('19985.07921584')
-    assert balances[A_ETH]['usd_value'] > ZERO
-    assert balances[A_LTC]['amount'] == FVal('20000')
-    assert balances[A_LTC]['usd_value'] > ZERO
-    assert balances[A_BTC]['amount'] == FVal('888.7177526197')
-    assert balances[A_BTC]['usd_value'] > ZERO
-    assert balances[A_ZEC]['amount'] == FVal('20000')
-    assert balances[A_ZEC]['usd_value'] > ZERO
-    assert balances[A_BCH]['amount'] == FVal('20000')
-    assert balances[A_BCH]['usd_value'] > ZERO
+    assert balances[A_USD].amount == FVal('523384.71365986583339')
+    assert balances[A_USD].usd_value == balances[A_USD].amount
+    assert balances[A_ETH].amount == FVal('19985.07921584')
+    assert balances[A_ETH].usd_value > ZERO
+    assert balances[A_LTC].amount == FVal('20000')
+    assert balances[A_LTC].usd_value > ZERO
+    assert balances[A_BTC].amount == FVal('888.7177526197')
+    assert balances[A_BTC].usd_value > ZERO
+    assert balances[A_ZEC].amount == FVal('20000')
+    assert balances[A_ZEC].usd_value > ZERO
+    assert balances[A_BCH].amount == FVal('20000')
+    assert balances[A_BCH].usd_value > ZERO
 
 
 def test_gemini_query_trades(sandbox_gemini):

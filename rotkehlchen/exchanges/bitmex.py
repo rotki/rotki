@@ -8,11 +8,12 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition, Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -217,12 +218,11 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[dict], str]:
-
+    def query_balances(self) -> ExchangeQueryBalances:
+        returned_balances: Dict[Asset, Balance] = {}
         try:
             resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
             # Bitmex shows only BTC balance
-            returned_balances = {}
             usd_price = Inquirer().find_usd_price(A_BTC)
         except RemoteError as e:
             msg = f'Bitmex API request failed due to: {str(e)}'
@@ -232,11 +232,10 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # result is in satoshis
         amount = satoshis_to_btc(FVal(resp['amount']))
         usd_value = amount * usd_price
-
-        returned_balances[A_BTC] = {
-            'amount': amount,
-            'usd_value': usd_value,
-        }
+        returned_balances[A_BTC] = Balance(
+            amount=amount,
+            usd_value=usd_value,
+        )
         log.debug(
             'Bitmex balance query result',
             sensitive_log=True,

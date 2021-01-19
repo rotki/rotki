@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import InputError, RemoteError
@@ -102,30 +103,20 @@ def remove_manually_tracked_balances(db: 'DBHandler', labels: List[str]) -> None
 
 def account_for_manually_tracked_balances(
         db: 'DBHandler',
-        balances: Dict[str, Any],
+        balances: Dict[str, Dict[Asset, Balance]],
 ) -> Dict[str, Any]:
     """Given the big balances mapping adds to it all manually tracked balances"""
     manually_tracked_balances = get_manually_tracked_balances(db)
     for m_entry in manually_tracked_balances:
         location_str = str(m_entry.location)
+        balance = Balance(
+            amount=m_entry.amount,
+            usd_value=m_entry.usd_value,
+        )
         if location_str not in balances:
-            balances[location_str] = {}
-            balances[location_str][m_entry.asset] = {
-                'amount': m_entry.amount,
-                'usd_value': m_entry.usd_value,
-            }
+            balances[location_str] = {m_entry.asset: balance}
+        elif m_entry.asset not in balances[location_str]:
+            balances[location_str][m_entry.asset] = balance
         else:
-            if m_entry.asset not in balances[location_str]:
-                balances[location_str][m_entry.asset] = {
-                    'amount': m_entry.amount,
-                    'usd_value': m_entry.usd_value,
-                }
-            else:
-                old_amount = balances[location_str][m_entry.asset]['amount']
-                old_usd_value = balances[location_str][m_entry.asset]['usd_value']
-                balances[location_str][m_entry.asset] = {
-                    'amount': old_amount + m_entry.amount,
-                    'usd_value': old_usd_value + m_entry.usd_value,
-                }
-
+            balances[location_str][m_entry.asset] += balance
     return balances

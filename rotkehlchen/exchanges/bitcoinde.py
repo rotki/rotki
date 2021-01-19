@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import (
@@ -19,7 +20,7 @@ from rotkehlchen.exchanges.data_structures import (
     Trade,
     TradePair,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -212,8 +213,8 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except RemoteError as e:
             return False, str(e)
 
-    def query_balances(self, **kwargs: Any) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
-        balances = {}
+    def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
+        assets_balance: Dict[Asset, Balance] = {}
         try:
             resp_info = self._api_query('get', 'account')
         except RemoteError as e:
@@ -235,12 +236,13 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            balances[asset] = {
-                'amount': balance['total_amount'],
-                'usd_value': balance['total_amount'] * usd_price,
-            }
+            amount = FVal(balance['total_amount'])
+            assets_balance[asset] = Balance(
+                amount=amount,
+                usd_value=amount * usd_price,
+            )
 
-        return balances, ''
+        return assets_balance, ''
 
     def query_online_trade_history(
             self,

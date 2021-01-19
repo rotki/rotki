@@ -45,7 +45,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -724,7 +724,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             response: Response,
             case: Literal['balances'],
-    ) -> Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str]:
+    ) -> ExchangeQueryBalances:
         ...
 
     @overload  # noqa: F811
@@ -750,7 +750,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Union[
         List,
         Tuple[bool, str],
-        Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str],
+        ExchangeQueryBalances,
     ]:
         """This function processes not successful responses for the cases listed
         in `case`.
@@ -856,7 +856,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         """Return the account exchange balances on Bitfinex
 
         The wallets endpoint returns a list where each item is a currency wallet.
@@ -886,7 +886,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # Wallet items indices
         currency_index = 1
         balance_index = 2
-        asset_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for wallet in response_list:
             if len(wallet) < API_WALLET_MIN_RESULT_LENGTH or wallet[balance_index] <= 0:
                 log.error(
@@ -923,12 +923,12 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
 
             amount = FVal(wallet[balance_index])
-            asset_balance[asset] += Balance(
+            assets_balance[asset] += Balance(
                 amount=amount,
                 usd_value=amount * usd_price,
             )
 
-        return {a: b.to_dict() for a, b in asset_balance.items()}, ''
+        return dict(assets_balance), ''
 
     def query_online_deposits_withdrawals(
             self,

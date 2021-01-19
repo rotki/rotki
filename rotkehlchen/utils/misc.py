@@ -18,7 +18,7 @@ import requests
 from eth_utils.address import to_checksum_address
 from rlp.sedes import big_endian_int
 
-from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT, ZERO, PRICE_HISTORY_DIR
+from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT, PRICE_HISTORY_DIR, ZERO
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     ConversionError,
@@ -164,17 +164,6 @@ def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str) -> FVal:
     for _, value in d.items():
         sum_ += value[attribute]
     return sum_
-
-
-def merge_dicts(*dict_args: Dict) -> Dict:
-    """
-    Given any number of dicts, shallow copy and merge into a new dict,
-    precedence goes to key value pairs in latter dicts.
-    """
-    result = {}
-    for dictionary in dict_args:
-        result.update(dictionary)
-    return result
 
 
 def retry_calls(

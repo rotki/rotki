@@ -7,15 +7,28 @@ import logging
 import os
 import time
 from base64 import b64decode, b64encode
+from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
@@ -28,7 +41,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -258,7 +271,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         try:
             accounts = self._api_query('accounts')
         except (CoinbaseProPermissionError, RemoteError) as e:
@@ -266,7 +279,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Dict[str, Any]] = {}
+        assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for account in accounts:
             try:
                 amount = deserialize_asset_amount(account['balance'])
@@ -285,15 +298,10 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                if asset in returned_balances:
-                    amount = returned_balances[asset]['amount'] + amount
-                else:
-                    returned_balances[asset] = {}
-
-                returned_balances[asset]['amount'] = amount
-                usd_value = returned_balances[asset]['amount'] * usd_price
-                returned_balances[asset]['usd_value'] = usd_value
-
+                assets_balance[asset] += Balance(
+                    amount=amount,
+                    usd_value=amount * usd_price,
+                )
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found coinbase pro balance result with unknown asset '
@@ -321,7 +329,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-        return returned_balances, ''
+        return dict(assets_balance), ''
 
     def _get_products_ids(self) -> List[str]:
         """Gets a list of all product ids (markets) offered by coinbase PRO

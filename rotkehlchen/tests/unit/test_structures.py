@@ -35,6 +35,18 @@ def test_balance_addition():
         result = a + {'amount': 1, 'usd_value': 'dsad'}
 
 
+def test_balance_raddition():
+    a = Balance(amount=FVal('1.5'), usd_value=FVal('1.6'))
+    b = Balance(amount=FVal('2.5'), usd_value=FVal('2.7'))
+    c = Balance(amount=FVal('3'), usd_value=FVal('3.21'))
+
+    result = sum([a, b, c])
+
+    assert isinstance(result, Balance)
+    assert result.amount == FVal('7')
+    assert result.usd_value == FVal('7.51')
+
+
 def test_balance_sheet_addition():
     a = BalanceSheet(
         assets={
@@ -70,6 +82,46 @@ def test_balance_sheet_addition():
         },
     )
     assert a + b == c
+
+
+def test_balance_sheet_raddition():
+    a = BalanceSheet(
+        assets={
+            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
+            A_ETH: Balance(amount=FVal('1.5'), usd_value=FVal('450')),
+        },
+        liabilities={
+            A_DAI: Balance(amount=FVal('5'), usd_value=FVal('5.1')),
+            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
+        },
+    )
+    b = BalanceSheet(
+        assets={
+            A_EUR: Balance(amount=FVal('3'), usd_value=FVal('3.5')),
+            A_ETH: Balance(amount=FVal('3'), usd_value=FVal('900')),
+            A_BTC: Balance(amount=FVal('1'), usd_value=FVal('10000')),
+        },
+        liabilities={
+            A_DAI: Balance(amount=FVal('10'), usd_value=FVal('10.2')),
+        },
+    )
+    c = BalanceSheet(
+        assets={
+            A_EUR: Balance(amount=FVal('3'), usd_value=FVal('3.5')),
+            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
+            A_ETH: Balance(amount=FVal('4.5'), usd_value=FVal('1350')),
+            A_BTC: Balance(amount=FVal('1'), usd_value=FVal('10000')),
+        },
+        liabilities={
+            A_DAI: Balance(amount=FVal('15'), usd_value=FVal('15.3')),
+            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
+        },
+    )
+
+    result = sum([a, b])
+
+    assert isinstance(result, BalanceSheet)
+    assert result == c
 
 
 def test_default_balance_sheet():

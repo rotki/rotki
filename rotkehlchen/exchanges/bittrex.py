@@ -13,6 +13,7 @@ import requests
 from requests.adapters import Response
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants.misc import ZERO
@@ -30,7 +31,7 @@ from rotkehlchen.exchanges.data_structures import (
     Trade,
     get_pair_position_asset,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -308,7 +309,7 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         try:
             resp = self.api_query('balances')
         except RemoteError as e:
@@ -319,7 +320,7 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        returned_balances = {}
+        returned_balances: Dict[Asset, Balance] = {}
         for entry in resp:
             try:
                 asset = asset_from_bittrex(entry['currencySymbol'])
@@ -355,17 +356,18 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            balance = {}
-            balance['amount'] = FVal(entry['total'])
-            balance['usd_value'] = FVal(balance['amount']) * usd_price
-            returned_balances[asset] = balance
-
+            amount = FVal(entry['total'])
+            usd_value = amount * usd_price
+            returned_balances[asset] = Balance(
+                amount=amount,
+                usd_value=usd_value,
+            )
             log.debug(
                 'bittrex balance query result',
                 sensitive_log=True,
                 currency=asset,
-                amount=balance['amount'],
-                usd_value=balance['usd_value'],
+                amount=amount,
+                usd_value=usd_value,
             )
 
         return returned_balances, ''

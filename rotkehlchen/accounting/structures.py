@@ -122,6 +122,16 @@ class Balance:
             usd_value=self.usd_value + other.usd_value,
         )
 
+    def __radd__(self, other: Any) -> 'Balance':
+        if other == 0:
+            return self
+
+        other = _evaluate_balance_input(other, 'addition')
+        return Balance(
+            amount=self.amount + other.amount,
+            usd_value=self.usd_value + other.usd_value,
+        )
+
     def __sub__(self, other: Any) -> 'Balance':
         other = _evaluate_balance_input(other, 'subtraction')
         return Balance(
@@ -175,6 +185,16 @@ class BalanceSheet:
         return BalanceSheet(
             assets=combine_dicts(self.assets, other.assets, op=operator.add),
             liabilities=combine_dicts(self.liabilities, other.liabilities, op=operator.add),
+        )
+
+    def __radd__(self, other: Any) -> 'BalanceSheet':
+        if other == 0:
+            return self
+
+        other = _evaluate_balance_sheet_input(other, 'addition')
+        return BalanceSheet(
+            assets=self.assets + other.assets,
+            liabilities=self.liabilities + other.liabilities,
         )
 
     def __sub__(self, other: Any) -> 'BalanceSheet':

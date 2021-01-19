@@ -11,6 +11,7 @@ import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT, QUERY_RETRY_TIMES
@@ -22,7 +23,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -279,7 +280,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         try:
             balances = self._private_api_query('balances')
         except (GeminiPermissionError, RemoteError) as e:
@@ -287,7 +288,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Dict[str, Any]] = {}
+        returned_balances: Dict[Asset, Balance] = {}
         for entry in balances:
             try:
                 amount = deserialize_asset_amount(entry['amount'])
@@ -304,11 +305,11 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         f'query USD price: {str(e)}. Skipping balance entry',
                     )
                     continue
-                returned_balances[asset] = {
-                    'amount': amount,
-                    'usd_value': amount * usd_price,
-                }
 
+                returned_balances[asset] = Balance(
+                    amount=amount,
+                    usd_value=amount * usd_price,
+                )
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found gemini balance result with unknown asset '

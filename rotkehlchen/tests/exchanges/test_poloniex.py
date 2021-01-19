@@ -365,8 +365,10 @@ def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
 
     assert msg == ''
     assert len(balances) == 2
-    assert balances[A_BTC]['amount'] == FVal('5.5')
-    assert balances[A_ETH]['amount'] == FVal('11.0')
+    assert balances[A_BTC].amount == FVal('5.5')
+    assert balances[A_BTC].usd_value == FVal('8.25')
+    assert balances[A_ETH].amount == FVal('11.0')
+    assert balances[A_ETH].usd_value == FVal('16.5')
 
     warnings = poloniex.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
