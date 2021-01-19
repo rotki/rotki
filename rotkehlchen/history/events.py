@@ -418,7 +418,7 @@ class EventsHistorian():
                         asset=asset,
                         amount=balance.amount,
                     ))
-        step = self._increase_progress(step, total_steps)
+        step = self._increase_progress(step, total_steps)  # lgtm [py/unused-local-variable]
 
         history.sort(key=action_get_timestamp)
         return (
