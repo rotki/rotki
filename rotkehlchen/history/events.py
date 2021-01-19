@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+# eth transactions, external trades, ledger actions, uniswap trades, makerDAO DSR,
+# makerDAO vaults, yearn vaults, compound, adex staking, aave lending
+HISTORY_QUERY_STEPS = 3
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
 HistoryResult = Tuple[
@@ -81,8 +84,14 @@ class EventsHistorian():
         self.chain_manager = chain_manager
         self._reset_progress_variables()
 
-    def _reset_progress_variables(self):
+    def _reset_progress_variables(self) -> None:
         self.processing_state_name = 'Starting query of historical events'
+        self.progress = ZERO
+
+    def _increase_progress(self, step: int, total_steps: int) -> int:
+        step += 1
+        self.progress = FVal(step / total_steps)
+        return step
 
     def query_ledger_actions(
             self,
@@ -114,6 +123,8 @@ class EventsHistorian():
     ) -> HistoryResult:
         """Creates trades and loans history from start_ts to end_ts"""
         self._reset_progress_variables()
+        step = 0
+        total_steps = len(self.exchange_manager.connected_exchanges) + HISTORY_QUERY_STEPS
         log.info(
             'Get/create trade history',
             start_ts=start_ts,
@@ -153,7 +164,8 @@ class EventsHistorian():
             nonlocal empty_or_error
             empty_or_error += '\n' + error_msg
 
-        for _, exchange in self.exchange_manager.connected_exchanges.items():
+        for name, exchange in self.exchange_manager.connected_exchanges.items():
+            self.processing_state_name = f'Querying {name} exchange history'
             exchange.query_history_with_callbacks(
                 # We need to have full history of exchanges available
                 start_ts=Timestamp(0),
@@ -161,8 +173,10 @@ class EventsHistorian():
                 success_callback=populate_history_cb,
                 fail_callback=fail_history_cb,
             )
+            step = self._increase_progress(step, total_steps)
 
         try:
+            self.processing_state_name = 'Querying ethereum transactions history'
             eth_transactions = self.chain_manager.ethereum.transactions.query(
                 addresses=None,  # all addresses
                 # We need to have full history of transactions available
@@ -179,8 +193,10 @@ class EventsHistorian():
                 f'The final history result will not include ethereum transactions',
             )
             empty_or_error += '\n' + msg
+        step = self._increase_progress(step, total_steps)
 
         # Include the external trades in the history
+        self.processing_state_name = 'Querying external trades history'
         external_trades = self.db.get_trades(
             # We need to have full history of trades available
             from_ts=Timestamp(0),
@@ -188,22 +204,28 @@ class EventsHistorian():
             location=Location.EXTERNAL,
         )
         history.extend(external_trades)
+        step = self._increase_progress(step, total_steps)
 
         # include the ledger actions
+        self.processing_state_name = 'Querying ledger actions history'
         ledger_actions, _ = self.query_ledger_actions(has_premium, from_ts=start_ts, to_ts=end_ts)
+        step = self._increase_progress(step, total_steps)
 
         # include uniswap trades
         if has_premium and self.chain_manager.uniswap:
+            self.processing_state_name = 'Querying uniswap history'
             uniswap_trades = self.chain_manager.uniswap.get_trades(
                 addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
                 from_timestamp=Timestamp(0),
                 to_timestamp=now,
             )
             history.extend(uniswap_trades)
+        step = self._increase_progress(step, total_steps)
 
         # Include makerdao DSR gains
         defi_events = []
         if self.chain_manager.makerdao_dsr and has_premium:
+            self.processing_state_name = 'Querying makerDAO DSR history'
             dsr_gains = self.chain_manager.makerdao_dsr.get_dsr_gains_in_period(
                 from_ts=start_ts,
                 to_ts=end_ts,
@@ -216,9 +238,11 @@ class EventsHistorian():
                         asset=A_DAI,
                         amount=gain,
                     ))
+        step = self._increase_progress(step, total_steps)
 
         # Include makerdao vault events
         if self.chain_manager.makerdao_vaults and has_premium:
+            self.processing_state_name = 'Querying makerDAO vaults history'
             vault_details = self.chain_manager.makerdao_vaults.get_vault_details()
             # We count the loss on a vault in the period if the last event is within
             # the given period. It's not a very accurate approach but it's good enough
@@ -233,9 +257,11 @@ class EventsHistorian():
                         asset=A_USD,
                         amount=detail.total_liquidated.usd_value + detail.total_interest_owed,
                     ))
+        step = self._increase_progress(step, total_steps)
 
         # include yearn vault events
         if self.chain_manager.yearn_vaults and has_premium:
+            self.processing_state_name = 'Querying yearn vaults history'
             yearn_vaults_history = self.chain_manager.yearn_vaults.get_history(
                 given_defi_balances=self.chain_manager.defi_balances,
                 addresses=self.chain_manager.queried_addresses_for_module('yearn_vaults'),
@@ -253,9 +279,11 @@ class EventsHistorian():
                         asset=A_USD,
                         amount=vault_history.profit_loss.usd_value,
                     ))
+        step = self._increase_progress(step, total_steps)
 
         # include compound events
         if self.chain_manager.compound and has_premium:
+            self.processing_state_name = 'Querying compound history'
             compound_history = self.chain_manager.compound.get_history(
                 given_defi_balances=self.chain_manager.defi_balances,
                 addresses=self.chain_manager.queried_addresses_for_module('compound'),
@@ -305,10 +333,12 @@ class EventsHistorian():
                         asset=event.asset,
                         amount=event.realized_pnl.amount,
                     ))
+        step = self._increase_progress(step, total_steps)
 
         # include adex staking profit
         adex = self.chain_manager.adex
         if adex is not None and has_premium:
+            self.processing_state_name = 'Querying adex staking history'
             adx_mapping = adex.get_events_history(
                 addresses=self.chain_manager.queried_addresses_for_module('adex'),
                 reset_db_data=False,
@@ -329,10 +359,12 @@ class EventsHistorian():
                         asset=A_DAI,
                         amount=adx_detail.dai_profit_loss.amount,
                     ))
+        step = self._increase_progress(step, total_steps)
 
         # include aave lending events
         aave = self.chain_manager.aave
         if aave is not None and has_premium:
+            self.processing_state_name = 'Querying aave history'
             mapping = aave.get_history(
                 given_defi_balances=self.chain_manager.defi_balances,
                 addresses=self.chain_manager.queried_addresses_for_module('aave'),
@@ -386,6 +418,7 @@ class EventsHistorian():
                         asset=asset,
                         amount=balance.amount,
                     ))
+        step = self._increase_progress(step, total_steps)
 
         history.sort(key=action_get_timestamp)
         return (

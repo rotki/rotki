@@ -1315,6 +1315,11 @@ class RestAPI():
             )
 
     @require_loggedin_user()
+    def get_history_status(self) -> Response:
+        result = self.rotkehlchen.get_history_query_status()
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
     def query_periodic_data(self) -> Response:
         data = self.rotkehlchen.query_periodic_data()
         result = process_result(data)

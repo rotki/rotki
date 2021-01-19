@@ -514,12 +514,28 @@ class Rotkehlchen():
         self.data.db.remove_blockchain_accounts(blockchain, accounts)
         return balances_update
 
+    def get_history_query_status(self) -> Dict[str, str]:
+        if self.events_historian.progress < FVal('100'):
+            processing_state = self.events_historian.processing_state_name
+            progress = self.events_historian.progress / 2
+        elif self.accountant.currently_processing_timestamp == -1:
+            processing_state = 'Processing all retrieved historical events'
+            progress = 50
+        else:
+            processing_state = 'Processing all retrieved historical events'
+            diff = self.accountant.events.query_end_ts - self.accountant.events.query_start_ts
+            progress = 50 + FVal(
+                self.accountant.currently_processing_timestamp -
+                self.accountant.events.query_start_ts,
+            ) / FVal(diff) / 2
+
+        return {'processing_state': str(processing_state), 'total_progress': str(progress)}
+
     def process_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Tuple[Dict[str, Any], str]:
-        self.accountant.reset_processing_timestamps()
         (
             error_or_empty,
             history,
@@ -977,8 +993,6 @@ class Rotkehlchen():
         if self.user_is_logged_in:
             result['last_balance_save'] = self.data.db.get_last_balance_save_time()
             result['eth_node_connection'] = self.chain_manager.ethereum.web3_mapping.get(NodeName.OWN, None) is not None  # noqa : E501
-            result['history_process_start_ts'] = self.accountant.started_processing_timestamp
-            result['history_process_current_ts'] = self.accountant.currently_processing_timestamp
             result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
         return result
 
