@@ -2,18 +2,20 @@ import hashlib
 import hmac
 import logging
 import time
+from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -318,7 +320,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         try:
             resp = self._api_query('accounts')
         except RemoteError as e:
@@ -329,7 +331,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Dict[str, Any]] = {}
+        returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for account in resp:
             try:
                 if not account['balance']:
@@ -353,15 +355,10 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                if asset in returned_balances:
-                    amount = returned_balances[asset]['amount'] + amount
-                else:
-                    returned_balances[asset] = {}
-
-                returned_balances[asset]['amount'] = amount
-                usd_value = returned_balances[asset]['amount'] * usd_price
-                returned_balances[asset]['usd_value'] = usd_value
-
+                returned_balances[asset] += Balance(
+                    amount=amount,
+                    usd_value=amount * usd_price,
+                )
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found coinbase balance result with unknown asset '
@@ -389,7 +386,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-        return returned_balances, ''
+        return dict(returned_balances), ''
 
     def query_online_trade_history(
             self,

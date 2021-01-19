@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -63,8 +64,7 @@ def test_querying_balances(function_scope_kraken):
     assert isinstance(result, dict)
     for asset, entry in result.items():
         assert isinstance(asset, Asset)
-        assert 'usd_value' in entry
-        assert 'amount' in entry
+        assert isinstance(entry, Balance)
 
 
 def test_querying_trade_history(function_scope_kraken):
@@ -143,8 +143,10 @@ def test_kraken_query_balances_unknown_asset(function_scope_kraken):
 
     assert msg == ''
     assert len(balances) == 2
-    assert balances[A_BTC]['amount'] == FVal('5.0')
-    assert balances[A_ETH]['amount'] == FVal('10.0')
+    assert balances[A_BTC].amount == FVal('5.0')
+    assert balances[A_BTC].usd_value == FVal('7.5')
+    assert balances[A_ETH].amount == FVal('10.0')
+    assert balances[A_ETH].usd_value == FVal('15.0')
 
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(warnings) == 1

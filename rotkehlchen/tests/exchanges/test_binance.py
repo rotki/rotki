@@ -199,11 +199,11 @@ def test_binance_query_balances_include_features(function_scope_binance):
 
     assert msg == ''
     assert len(balances) == 5
-    assert balances[A_BTC]['amount'] == FVal('4723847.39208129')
-    assert balances[A_ETH]['amount'] == FVal('4763368.68006011')
-    assert balances[A_BUSD]['amount'] == FVal('7.49283144')
-    assert balances[A_USDT]['amount'] == FVal('201.01')
-    assert balances[A_DOT]['amount'] == FVal('500.55')
+    assert balances[A_BTC].amount == FVal('4723847.39208129')
+    assert balances[A_ETH].amount == FVal('4763368.68006011')
+    assert balances[A_BUSD].amount == FVal('7.49283144')
+    assert balances[A_USDT].amount == FVal('201.01')
+    assert balances[A_DOT].amount == FVal('500.55')
 
     warnings = binance.msg_aggregator.consume_warnings()
     assert len(warnings) == 2

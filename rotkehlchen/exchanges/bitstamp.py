@@ -23,6 +23,7 @@ import requests
 from requests.adapters import Response
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants.misc import ZERO
@@ -40,7 +41,7 @@ from rotkehlchen.exchanges.data_structures import (
     Trade,
     TradeType,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -128,7 +129,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         """Return the account balances on Bistamp
 
         The balance endpoint returns a dict where the keys (str) are related to
@@ -151,7 +152,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             raise RemoteError(msg) from e
 
-        asset_balance: Dict[Asset, Dict[str, FVal]] = {}
+        asset_balance: Dict[Asset, Balance] = {}
         for entry, amount in response_dict.items():
             amount = FVal(amount)
             if not entry.endswith('_balance') or amount == ZERO:
@@ -188,12 +189,12 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            asset_balance[asset] = {
-                'amount': amount,
-                'usd_value': amount * usd_price,
-            }
+            asset_balance[asset] = Balance(
+                amount=amount,
+                usd_value=amount * usd_price,
+            )
 
-        return asset_balance, ''
+        return dict(asset_balance), ''
 
     def query_online_deposits_withdrawals(
             self,
@@ -657,7 +658,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             response: Response,
             case: Literal['balances'],
-    ) -> Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str]:
+    ) -> ExchangeQueryBalances:
         ...
 
     @overload  # noqa: F811
@@ -683,7 +684,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Union[
         List,
         Tuple[bool, str],
-        Tuple[Optional[Dict[Asset, Dict[str, FVal]]], str],
+        ExchangeQueryBalances,
     ]:
         """This function processes not successful responses for the following
         cases listed in `case`.

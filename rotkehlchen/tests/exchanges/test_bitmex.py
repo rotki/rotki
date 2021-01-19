@@ -299,3 +299,17 @@ def test_bitmex_margin_history(sandbox_bitmex):
         ),
     ]
     assert result == resulting_margin_positions
+
+
+def test_bitmex_query_balances(sandbox_bitmex):
+    mock_response = {'amount': 123456789}
+    with patch.object(sandbox_bitmex, '_api_query_dict', return_value=mock_response):
+        balances, msg = sandbox_bitmex.query_balances()
+
+    assert msg == ''
+    assert len(balances) == 1
+    assert balances[A_BTC].amount == FVal('1.23456789')
+    assert balances[A_BTC].usd_value == FVal('1.851851835')
+
+    warnings = sandbox_bitmex.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0

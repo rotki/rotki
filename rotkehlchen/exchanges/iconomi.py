@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import ICONOMI_TO_WORLD, UNSUPPORTED_ICONOMI_ASSETS
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
@@ -22,10 +23,10 @@ from rotkehlchen.exchanges.data_structures import (
     TradePair,
     TradeType,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, FVal, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
@@ -197,8 +198,8 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except RemoteError:
             return False, 'Provided API Key is invalid'
 
-    def query_balances(self, **kwargs: Any) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
-        balances = {}
+    def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
+        asset_balance: Dict[Asset, Balance] = {}
         try:
             resp_info = self._api_query('get', 'user/balance')
         except RemoteError as e:
@@ -222,7 +223,6 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 # in EUR. So let's use the Inquirer for now.
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
-                    usd_value = balance_info['balance'] * usd_price
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing ICONOMI balance entry due to inability to '
@@ -230,10 +230,11 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                balances[asset] = {
-                    'amount': balance_info['balance'],
-                    'usd_value': usd_value,
-                }
+                amount = FVal(balance_info['balance'])
+                asset_balance[asset] = Balance(
+                    amount=balance_info['balance'],
+                    usd_value=amount * usd_price,
+                )
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
@@ -248,7 +249,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 f' Ignoring its balance query.',
             )
 
-        return balances, ''
+        return asset_balance, ''
 
     def query_online_trade_history(
             self,

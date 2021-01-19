@@ -91,8 +91,8 @@ def test_bittrex_query_balances_unknown_asset(bittrex):
 
     assert msg == ''
     assert len(balances) == 2
-    assert balances[A_BTC]['amount'] == FVal('5.0')
-    assert balances[A_ETH]['amount'] == FVal('10.0')
+    assert balances[A_BTC].amount == FVal('5.0')
+    assert balances[A_ETH].amount == FVal('10.0')
 
     warnings = bittrex.msg_aggregator.consume_warnings()
     assert len(warnings) == 2

@@ -1,8 +1,10 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import requests
 
+from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -18,6 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+ExchangeQueryBalances = Tuple[Optional[Dict[Asset, Balance]], str]
 ExchangeHistorySuccessCallback = Callable[
     [List[Trade], List[MarginPosition], List[AssetMovement], Any],
     None,
@@ -51,12 +54,23 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         log.info(f'Initialized {name} exchange')
 
-    def query_balances(self, **kwargs: Any) -> Tuple[Optional[dict], str]:
+    def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Returns the balances held in the exchange in the following format:
-        {
-            'name' : {'amount': 1337, 'usd_value': 42},
-            'ICN': {'amount': 42, 'usd_value': 1337}
-        }
+
+        Successful response:
+        (
+            {  # dict can be empty
+                'name' : Balance(amount=1337, usd_value=42),
+                'ICN': Balance(amount=42, usd_value=1337)
+            },
+            '',  # empty string
+        )
+
+        Unsuccessful response:
+        (
+            None,
+            'The reason of the failure',  # non-empty string
+        )
 
         The name must be the canonical name used by rotkehlchen
         """

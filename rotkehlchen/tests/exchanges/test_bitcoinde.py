@@ -35,8 +35,8 @@ def test_bitcoinde_query_balances_unknown_asset(function_scope_bitcoinde):
 
     assert msg == ''
     assert len(balances) == 6
-    assert balances[A_ETH]['amount'] == FVal('32.0')
-    assert balances[A_BTC]['amount'] == FVal('0.5')
+    assert balances[A_ETH].amount == FVal('32.0')
+    assert balances[A_BTC].amount == FVal('0.5')
 
     warnings = bitcoinde.msg_aggregator.consume_warnings()
     assert len(warnings) == 0

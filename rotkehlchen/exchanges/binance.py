@@ -1,8 +1,20 @@
 import hashlib
 import hmac
 import logging
+from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 from urllib.parse import urlencode
 
 import gevent
@@ -11,6 +23,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL, BINANCE_US_BASE_URL
 from rotkehlchen.constants.misc import ZERO
@@ -22,7 +35,7 @@ from rotkehlchen.exchanges.data_structures import (
     TradeType,
     trade_pair_from_assets,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -424,7 +437,10 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
-    def _query_spot_balances(self, balances: Dict) -> Dict:
+    def _query_spot_balances(
+            self,
+            balances: DefaultDict[Asset, Balance],
+    ) -> DefaultDict[Asset, Balance]:
         account_data = self.api_query_dict('api', 'account')
         for entry in account_data['balances']:
             if len(entry['asset']) >= 5 and entry['asset'].startswith('LD'):
@@ -465,20 +481,17 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            balance = {}
-            balance['amount'] = amount
-            balance['usd_value'] = FVal(amount * usd_price)
-
-            if asset not in balances:
-                balances[asset] = balance
-            else:  # Some assets may appear twice in binance balance query for different locations
-                # Lending/staking for example
-                balances[asset]['amount'] += balance['amount']
-                balances[asset]['usd_value'] += balance['usd_value']
+            balances[asset] += Balance(
+                amount=amount,
+                usd_value=amount * usd_price,
+            )
 
         return balances
 
-    def _query_lending_balances(self, balances: Dict) -> Dict:
+    def _query_lending_balances(
+            self,
+            balances: DefaultDict[Asset, Balance],
+    ) -> DefaultDict[Asset, Balance]:
         data = self.api_query_dict('sapi', 'lending/union/account')
         positions = data.get('positionAmountVos', None)
         if positions is None:
@@ -525,16 +538,17 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            balance = Balance(amount=amount, usd_value=amount * usd_price)
-            if asset not in balances:
-                balances[asset] = balance.to_dict()
-            else:
-                balances[asset]['amount'] += balance.amount
-                balances[asset]['usd_value'] += balance.usd_value
+            balances[asset] += Balance(
+                amount=amount,
+                usd_value=amount * usd_price,
+            )
 
         return balances
 
-    def _query_cross_collateral_futures_balances(self, balances: Dict) -> Dict:
+    def _query_cross_collateral_futures_balances(
+            self,
+            balances: DefaultDict[Asset, Balance],
+    ) -> DefaultDict[Asset, Balance]:
         futures_response = self.api_query_dict('sapi', 'futures/loan/wallet')
         try:
             cross_collaterals = futures_response['crossCollaterals']
@@ -573,12 +587,10 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                balance = Balance(amount=amount, usd_value=amount * usd_price)
-                if asset not in balances:
-                    balances[asset] = balance.to_dict()
-                else:
-                    balances[asset]['amount'] += balance.amount
-                    balances[asset]['usd_value'] += balance.usd_value
+                balances[asset] += Balance(
+                    amount=amount,
+                    usd_value=amount * usd_price,
+                )
 
         except KeyError as e:
             self.msg_aggregator.add_error(
@@ -591,8 +603,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _query_margined_futures_balances(
             self,
             api_type: Literal['fapi', 'dapi'],
-            balances: Dict,
-    ) -> Dict:
+            balances: DefaultDict[Asset, Balance],
+    ) -> DefaultDict[Asset, Balance]:
         try:
             response = self.api_query_list(api_type, 'balance')
         except BinancePermissionError as e:
@@ -638,12 +650,10 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                balance = Balance(amount=amount, usd_value=amount * usd_price)
-                if asset not in balances:
-                    balances[asset] = balance.to_dict()
-                else:
-                    balances[asset]['amount'] += balance.amount
-                    balances[asset]['usd_value'] += balance.usd_value
+                balances[asset] += Balance(
+                    amount=amount,
+                    usd_value=amount * usd_price,
+                )
 
         except KeyError as e:
             self.msg_aggregator.add_error(
@@ -655,10 +665,10 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         try:
             self.first_connection()
-            returned_balances: Dict = {}
+            returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
             if self.name != str(Location.BINANCE_US):
                 returned_balances = self._query_lending_balances(returned_balances)
@@ -679,7 +689,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             sensitive_log=True,
             balances=returned_balances,
         )
-        return returned_balances, ''
+        return dict(returned_balances), ''
 
     def query_online_trade_history(
             self,

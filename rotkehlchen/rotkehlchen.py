@@ -6,13 +6,15 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
 from rotkehlchen.chain.ethereum.manager import (
@@ -71,7 +73,6 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import combine_stat_dicts, dict_get_sumof, merge_dicts
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -715,7 +716,7 @@ class Rotkehlchen():
         """
         log.info('query_balances called', requested_save_data=requested_save_data)
 
-        balances = {}
+        balances: Dict[str, Dict[Asset, Balance]] = {}
         problem_free = True
         for _, exchange in self.exchange_manager.connected_exchanges.items():
             exchange_balances, _ = exchange.query_balances(ignore_cache=ignore_cache)
@@ -725,74 +726,69 @@ class Rotkehlchen():
             else:
                 balances[exchange.name] = exchange_balances
 
+        liabilities: Dict[Asset, Balance]
         try:
             blockchain_result = self.chain_manager.query_balances(
                 blockchain=None,
                 force_token_detection=ignore_cache,
                 ignore_cache=ignore_cache,
             )
-            serialized_chain_result = blockchain_result.totals.to_dict()
-            balances['blockchain'] = serialized_chain_result['assets']
+            balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets
+            liabilities = blockchain_result.totals.liabilities
         except (RemoteError, EthSyncError) as e:
             problem_free = False
-            serialized_chain_result = {'liabilities': {}}
+            liabilities = {}
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
 
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 
-        combined = combine_stat_dicts([v for k, v in balances.items()])
-        total_usd_per_location = [(k, dict_get_sumof(v, 'usd_value')) for k, v in balances.items()]
-        liabilities = serialized_chain_result['liabilities']  # atm liabilities only on chain
+        # Calculate usd totals
+        asset_total_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        total_usd_per_location: Dict[str, FVal] = {}
+        for location, asset_balance in balances.items():
+            total_usd_per_location[location] = ZERO
+            for asset, balance in asset_balance.items():
+                asset_total_balance[asset] += balance
+                total_usd_per_location[location] += balance.usd_value
 
-        # calculate net usd value
-        net_usd = ZERO
-        for _, v in combined.items():
-            net_usd += FVal(v['usd_value'])
-        # subtract liabilities
-        liabilities_total_usd = sum(x['usd_value'] for _, x in liabilities.items())
+        net_usd = sum((balance.usd_value for _, balance in asset_total_balance.items()), ZERO)
+        liabilities_total_usd = sum((liability.usd_value for _, liability in liabilities.items()), ZERO)  # noqa: E501
         net_usd -= liabilities_total_usd
 
-        stats: Dict[str, Any] = {
-            'location': {
-            },
-            'net_usd': net_usd,
-        }
-        for entry in total_usd_per_location:
-            name = entry[0]
-            total = entry[1]
-            if name == 'blockchain':  # blockchain is the only location with liabilities atm
-                total -= liabilities_total_usd
+        # Calculate location stats
+        location_stats: Dict[str, Any] = {}
+        for location, total_usd in total_usd_per_location.items():
+            if location == str(Location.BLOCKCHAIN):
+                total_usd -= liabilities_total_usd
 
-            if net_usd != ZERO:
-                percentage = (total / net_usd).to_percentage()
-            else:
-                percentage = '0%'
-            stats['location'][name] = {
-                'usd_value': total,
+            percentage = (total_usd / net_usd).to_percentage() if net_usd != ZERO else '0%'
+            location_stats[location] = {
+                'usd_value': total_usd,
                 'percentage_of_net_value': percentage,
             }
 
-        for k, v in combined.items():
-            if net_usd != ZERO:
-                percentage = (v['usd_value'] / net_usd).to_percentage()
-            else:
-                percentage = '0%'
-            combined[k]['percentage_of_net_value'] = percentage
-
-        for k, v in liabilities.items():
-            if net_usd != ZERO:
-                percentage = (v['usd_value'] / net_usd).to_percentage()
-            else:
-                percentage = '0%'
-            liabilities[k]['percentage_of_net_value'] = percentage
-
-        balance_sheet = {
-            'assets': combined,
-            'liabilities': liabilities,
+        # Calculate 'percentage_of_net_value' per asset
+        asset_total_balance_as_dict: Dict[Asset, Dict[str, Any]] = {
+            asset: balance.to_dict() for asset, balance in asset_total_balance.items()
         }
+        liabilities_as_dict: Dict[Asset, Dict[str, Any]] = {
+            asset: balance.to_dict() for asset, balance in liabilities.items()
+        }
+        for asset, balance_dict in asset_total_balance_as_dict.items():
+            percentage = (balance_dict['usd_value'] / net_usd).to_percentage() if net_usd != ZERO else '0%'  # noqa: E501
+            asset_total_balance_as_dict[asset]['percentage_of_net_value'] = percentage
 
-        result_dict = merge_dicts(balance_sheet, stats)
+        for asset, balance_dict in liabilities_as_dict.items():
+            percentage = (balance_dict['usd_value'] / net_usd).to_percentage() if net_usd != ZERO else '0%'  # noqa: E501
+            liabilities_as_dict[asset]['percentage_of_net_value'] = percentage
 
+        # Compose balances response
+        result_dict = {
+            'assets': asset_total_balance_as_dict,
+            'liabilities': liabilities_as_dict,
+            'location': location_stats,
+            'net_usd': net_usd,
+        }
         allowed_to_save = requested_save_data or self.data.should_save_balances()
 
         if problem_free and allowed_to_save:

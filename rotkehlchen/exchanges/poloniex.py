@@ -12,6 +12,7 @@ import requests
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.misc import ZERO
@@ -32,7 +33,7 @@ from rotkehlchen.exchanges.data_structures import (
     invert_pair,
     trade_pair_from_assets,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -448,7 +449,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     # ---- General exchanges interface ----
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
+    def query_balances(self) -> ExchangeQueryBalances:
         try:
             resp = self.api_query_dict('returnCompleteBalances', {"account": "all"})
         except RemoteError as e:
@@ -459,11 +460,11 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        balances = {}
+        asset_balance: Dict[Asset, Balance] = {}
         for poloniex_asset, v in resp.items():
             available = FVal(v['available'])
             on_orders = FVal(v['onOrders'])
-            if (available != FVal(0) or on_orders != FVal(0)):
+            if available != ZERO or on_orders != ZERO:
                 try:
                     asset = asset_from_poloniex(poloniex_asset)
                 except UnsupportedAsset as e:
@@ -489,8 +490,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                entry = {}
-                entry['amount'] = available + on_orders
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:
@@ -500,19 +499,21 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                usd_value = entry['amount'] * usd_price
-                entry['usd_value'] = usd_value
-                balances[asset] = entry
-
+                amount = available + on_orders
+                usd_value = amount * usd_price
+                asset_balance[asset] = Balance(
+                    amount=amount,
+                    usd_value=usd_value,
+                )
                 log.debug(
                     'Poloniex balance query',
                     sensitive_log=True,
                     currency=asset,
-                    amount=entry['amount'],
+                    amount=amount,
                     usd_value=usd_value,
                 )
 
-        return balances, ''
+        return asset_balance, ''
 
     def query_online_trade_history(
             self,
